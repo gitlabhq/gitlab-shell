@@ -1,0 +1,11 @@
+#!/usr/bin/env ruby
+
+#
+# GitLab shell, invoked from ~/.ssh/authorized_keys
+#
+
+ROOT_PATH = File.expand_path('..',  __FILE__)
+
+puts ENV['SSH_CONNECTION'].inspect
+
+exit
