@@ -1,2 +1,3 @@
 user: git
 repos_path: "/home/git/repositories"
+auth_file: "/home/git/.ssh/authorized_keys"
