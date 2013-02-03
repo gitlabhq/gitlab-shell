@@ -1,11 +1,14 @@
 #!/usr/bin/env ruby
 
+unless ENV['SSH_CONNECTION']
+  puts "Only ssh allowed"
+  exit
+end
 #
 # GitLab shell, invoked from ~/.ssh/authorized_keys
 #
-
-ROOT_PATH = File.expand_path('..',  __FILE__)
-
-puts ENV['SSH_CONNECTION'].inspect
+ROOT_PATH = File.join(File.expand_path(File.dirname(__FILE__)), "..")
+require File.join(ROOT_PATH, 'lib', 'gitlab_shell')
+GitlabShell.new.exec
 
 exit
