@@ -1,5 +1,5 @@
 require 'open3'
-require 'yaml'
+require_relative 'gitlab_config'
 
 class GitlabShell
   attr_accessor :username, :repo_name, :git_cmd, :repos_path
@@ -7,8 +7,7 @@ class GitlabShell
   def initialize
     @username = ARGV.shift
     @origin_cmd = ENV['SSH_ORIGINAL_COMMAND']
-    @config = YAML.load_file(File.join(ROOT_PATH, 'config.yml'))
-    @repos_path = @config['repos_path']
+    @repos_path = GitlabConfig.new.repos_path
   end
 
   def exec

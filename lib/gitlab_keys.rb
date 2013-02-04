@@ -1,5 +1,5 @@
 require 'open3'
-require 'yaml'
+require_relative 'gitlab_config'
 
 class GitlabKeys
   attr_accessor :auth_file, :key, :username
@@ -8,9 +8,7 @@ class GitlabKeys
     @command = ARGV.shift
     @username = ARGV.shift
     @key = ARGV.shift
-
-    config = YAML.load_file(File.join(ROOT_PATH, 'config.yml'))
-    @auth_file = config['auth_file']
+    @auth_file = GitlabConfig.new.auth_file
   end
 
   def exec
@@ -27,7 +25,7 @@ class GitlabKeys
 
   def add_key
     cmd = "command=\"#{ROOT_PATH}/bin/gitlab-shell #{@username}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{@key}"
-    cmd = "echo \"#{cmd}\" >> #{auth_file}"
+    cmd = "echo \'#{cmd}\' >> #{auth_file}"
     system(cmd)
   end
 
