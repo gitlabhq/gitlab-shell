@@ -15,6 +15,8 @@ class GitlabShell
       parse_cmd
 
       if git_cmds.include?(@git_cmd)
+        ENV['GL_USER'] = @username
+
         process_cmd
       else
         puts 'Not allowed command'
