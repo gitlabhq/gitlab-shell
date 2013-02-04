@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+#
+# GitLab Projects shell. Add/remove projects from /home/git/repositories
+#
+# Ex.
+#   /bin/gitlab-projects add-project gitlab/gitlab-ci.git
+#
+#
+ROOT_PATH = File.join(File.expand_path(File.dirname(__FILE__)), "..")
+require File.join(ROOT_PATH, 'lib', 'gitlab_projects')
+GitlabProjects.new.exec
+
+exit
