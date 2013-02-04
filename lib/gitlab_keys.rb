@@ -37,8 +37,7 @@ class GitlabKeys
   end
 
   def rm_user
-    cmd = "sed -i '/#{@username}/d' #{auth_file}"
-    puts cmd
+    cmd = "sed -i '/gitlab-shell #{@username},/d' #{auth_file}"
     system(cmd)
   end
 end
