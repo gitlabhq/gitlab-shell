@@ -10,6 +10,7 @@ class GitlabProjects
     @project_name = ARGV.shift
     @repos_path = GitlabConfig.new.repos_path
     @full_path = File.join(@repos_path, @project_name)
+    @hook_path = File.join(ROOT_PATH, 'hooks', 'post-receive')
   end
 
   def exec
@@ -24,8 +25,8 @@ class GitlabProjects
   protected
 
   def add_project
-    FileUtils.mkdir_p(@full_path, mode: 0770 )
-    cmd = "cd #{@full_path} && git init --bare"
+    FileUtils.mkdir_p(@full_path, mode: 0770)
+    cmd = "cd #{@full_path} && git init --bare && ln -s #{@hook_path} #{@full_path}/hooks/post-receive"
     system(cmd)
   end
 
