@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+
+#
+# GitLab shell, invoked from ~/.ssh/authorized_keys
+#
+ROOT_PATH = File.join(File.expand_path(File.dirname(__FILE__)), "..")
+
+commands = [
+  "mkdir -p /home/git/repositories",
+  "mkdir -p /home/git/.ssh",
+  "chmod -R ug+rwX,o-rwx /home/git/repositories/",
+  "find /home/git/repositories -type d -print0 | xargs -0 chmod g+s"
+]
+
+commands.each do |cmd|
+  puts "#{cmd}: #{system(cmd)}"
+end
+
+exit
