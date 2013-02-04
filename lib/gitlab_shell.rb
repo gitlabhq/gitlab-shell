@@ -1,4 +1,6 @@
 require 'open3'
+require 'net/http'
+
 require_relative 'gitlab_config'
 
 class GitlabShell
@@ -17,7 +19,9 @@ class GitlabShell
       if git_cmds.include?(@git_cmd)
         ENV['GL_USER'] = @username
 
-        process_cmd
+        if validate_access
+          process_cmd
+        end
       else
         puts 'Not allowed command'
       end
@@ -41,5 +45,14 @@ class GitlabShell
   def process_cmd
     repo_full_path = File.join(repos_path, repo_name)
     system("#{@git_cmd} #{repo_full_path}")
+  end
+
+  def validate_access
+    @ref_name = 'master' # just hardcode it cause we dont know ref
+    project_name = @repo_name.gsub("'", "")
+    project_name = project_name.gsub(/\.git$/, "")
+    url = "http://127.0.0.1:3000/api/v3/allowed?project=#{project_name}&username=#{@username}&action=#{@git_cmd}&ref=#{@ref_name}"
+    resp = Net::HTTP.get_response(URI.parse(url))
+    resp.code == '200' && resp.body == 'true'
   end
 end
