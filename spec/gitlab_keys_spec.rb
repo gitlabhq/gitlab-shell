@@ -20,7 +20,7 @@ describe GitlabKeys do
     end
 
     it "should receive valid cmd" do
-      valid_cmd = "echo 'command=\"/home/git/gitlab-shell/spec/../bin/gitlab-shell dzaporozhets\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAAB3NzaDAxx2E' >> /home/git/.ssh/authorized_keys"
+      valid_cmd = "echo 'command=\"#{ROOT_PATH}/bin/gitlab-shell dzaporozhets\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAAB3NzaDAxx2E' >> /home/git/.ssh/authorized_keys"
       @gl_keys.should_receive(:system).with(valid_cmd)
       @gl_keys.send :add_key
     end

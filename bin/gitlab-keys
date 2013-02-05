@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+require_relative '../lib/gitlab_init'
+
 #
 # GitLab Keys shell. Add/remove keys from ~/.ssh/authorized_keys
 #
@@ -8,7 +10,7 @@
 #
 #   /bin/gitlab-keys rm-key dzaporozhets "ssh-rsa AAAAx321..."
 #
-ROOT_PATH = File.join(File.expand_path(File.dirname(__FILE__)), "..")
+
 require File.join(ROOT_PATH, 'lib', 'gitlab_keys')
 GitlabKeys.new.exec
 
