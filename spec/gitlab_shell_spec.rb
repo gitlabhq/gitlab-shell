@@ -5,11 +5,11 @@ describe GitlabShell do
   describe :initialize do
     before do
       ssh_cmd 'git-receive-pack'
-      ARGV[0] = 'dzaporozhets'
+      ARGV[0] = 'key-56'
       @shell = GitlabShell.new
     end
 
-    it { @shell.username.should == 'dzaporozhets' }
+    it { @shell.key_id.should == 'key-56' }
     it { @shell.repos_path.should == "/home/git/repositories" }
   end
 
@@ -62,7 +62,7 @@ describe GitlabShell do
   end
 
   def stubbed_shell
-    ARGV[0] = 'dzaporozhets'
+    ARGV[0] = 'key-56'
     @shell = GitlabShell.new
     @shell.stub(validate_access: true)
     @shell.stub(process_cmd: true)

@@ -1,13 +1,13 @@
 require 'open3'
-require 'net/http'
 
 require_relative 'gitlab_config'
+require_relative 'gitlab_net'
 
 class GitlabShell
-  attr_accessor :username, :repo_name, :git_cmd, :repos_path, :repo_name
+  attr_accessor :key_id, :repo_name, :git_cmd, :repos_path, :repo_name
 
   def initialize
-    @username = ARGV.shift
+    @key_id = ARGV.shift
     @origin_cmd = ENV['SSH_ORIGINAL_COMMAND']
     @repos_path = GitlabConfig.new.repos_path
   end
@@ -17,7 +17,7 @@ class GitlabShell
       parse_cmd
 
       if git_cmds.include?(@git_cmd)
-        ENV['GL_USER'] = @username
+        ENV['GL_USER'] = @key_id
 
         if validate_access
           process_cmd
@@ -26,7 +26,8 @@ class GitlabShell
         puts 'Not allowed command'
       end
     else
-      puts "Welcome #{@username}!"
+      user = api.discover(@key_id)
+      puts "Welcome to GitLab, #{user['name']}!"
     end
   end
 
@@ -49,10 +50,11 @@ class GitlabShell
 
   def validate_access
     @ref_name = 'master' # just hardcode it cause we dont know ref
-    project_name = @repo_name.gsub("'", "")
-    project_name = project_name.gsub(/\.git$/, "")
-    url = "http://127.0.0.1:3000/api/v3/allowed?project=#{project_name}&username=#{@username}&action=#{@git_cmd}&ref=#{@ref_name}"
-    resp = Net::HTTP.get_response(URI.parse(url))
-    resp.code == '200' && resp.body == 'true'
+
+    api.allowed?(@git_cmd, @repo_name, @key_id, @ref_name)
+  end
+
+  def api
+    GitlabNet.new
   end
 end
