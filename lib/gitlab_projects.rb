@@ -3,7 +3,7 @@ require 'fileutils'
 require_relative 'gitlab_config'
 
 class GitlabProjects
-  attr_accessor :project_name
+  attr_reader :project_name, :full_path
 
   def initialize
     @command = ARGV.shift
@@ -25,12 +25,12 @@ class GitlabProjects
   protected
 
   def add_project
-    FileUtils.mkdir_p(@full_path, mode: 0770)
-    cmd = "cd #{@full_path} && git init --bare && ln -s #{@hook_path} #{@full_path}/hooks/post-receive"
+    FileUtils.mkdir_p(full_path, mode: 0770)
+    cmd = "cd #{full_path} && git init --bare && ln -s #{@hook_path} #{full_path}/hooks/post-receive"
     system(cmd)
   end
 
   def rm_project
-    FileUtils.rm_rf(@full_path)
+    FileUtils.rm_rf(full_path)
   end
 end

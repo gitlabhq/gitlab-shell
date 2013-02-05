@@ -17,10 +17,21 @@ describe GitlabProjects do
     before do
       argv('add-project', 'gitlab-ci.git')
       @gl_projects = GitlabProjects.new
+      @gl_projects.stub(full_path: tmp_repo_path)
+    end
+
+    after do
+      FileUtils.rm_rf(tmp_repo_path)
+    end
+
+    it "should create a directory" do
+      @gl_projects.stub(system: true)
+      @gl_projects.send :add_project
+      File.exists?(tmp_repo_path).should be_true
     end
 
     it "should receive valid cmd" do
-      valid_cmd = "cd /home/git/repositories/gitlab-ci.git && git init --bare && ln -s /home/git/gitlab-shell/hooks/post-receive /home/git/repositories/gitlab-ci.git/hooks/post-receive"
+      valid_cmd = "cd #{tmp_repo_path} && git init --bare && ln -s /home/git/gitlab-shell/hooks/post-receive #{tmp_repo_path}/hooks/post-receive"
       @gl_projects.should_receive(:system).with(valid_cmd)
       @gl_projects.send :add_project
     end
@@ -30,5 +41,9 @@ describe GitlabProjects do
     args.each_with_index do |arg, i|
       ARGV[i] = arg
     end
+  end
+
+  def tmp_repo_path
+    File.join(ROOT_PATH, 'tmp', 'gitlab-ci.git')
   end
 end
