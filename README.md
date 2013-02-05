@@ -17,20 +17,25 @@
 
 Add repo
 
-   ./bin/gitlab-projects add-project gitlab/gitlab-ci.git
+    ./bin/gitlab-projects add-project gitlab/gitlab-ci.git
 
 Remove repo 
 
-   ./bin/gitlab-projects rm-project gitlab/gitlab-ci.git
+    ./bin/gitlab-projects rm-project gitlab/gitlab-ci.git
+
+Import repo 
+
+    ./bin/gitlab-projects import-project https://github.com/randx/six.git
+
 
 ### Keys: 
 
 
 Add key
 
-   ./bin/gitlab-keys add-key key-782 "ssh-rsa AAAAx321..."
+    ./bin/gitlab-keys add-key key-782 "ssh-rsa AAAAx321..."
 
 Remove key
 
-   ./bin/gitlab-keys rm-key key-23 "ssh-rsa AAAAx321..."
+    ./bin/gitlab-keys rm-key key-23 "ssh-rsa AAAAx321..."
 

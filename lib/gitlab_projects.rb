@@ -17,6 +17,7 @@ class GitlabProjects
     case @command
     when 'add-project'; add_project
     when 'rm-project';  rm_project
+    when 'import-project'; import_project
     else
       puts 'not allowed'
     end
@@ -32,5 +33,11 @@ class GitlabProjects
 
   def rm_project
     FileUtils.rm_rf(full_path)
+  end
+
+  def import_project
+    dir = @project_name.match(/[a-zA-Z\.\_\-]+\.git$/).to_s
+    cmd = "cd #{@repos_path} && git clone --bare #{@project_name} #{dir} && ln -s #{@hook_path} #{@repos_path}/#{dir}/hooks/post-receive"
+    system(cmd)
   end
 end
