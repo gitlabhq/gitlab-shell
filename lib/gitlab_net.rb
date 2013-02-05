@@ -22,6 +22,10 @@ class GitlabNet
     JSON.parse(resp.body)
   end
 
+  def check
+    get("#{host}/check")
+  end
+
   protected
 
   def host

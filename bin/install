@@ -9,6 +9,7 @@ require_relative '../lib/gitlab_init'
 commands = [
   "mkdir -p /home/git/repositories",
   "mkdir -p /home/git/.ssh",
+  "touch /home/git/.ssh/authorized_keys",
   "chmod -R ug+rwX,o-rwx /home/git/repositories/",
   "find /home/git/repositories -type d -print0 | xargs -0 chmod g+s"
 ]

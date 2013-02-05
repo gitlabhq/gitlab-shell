@@ -1,4 +1,11 @@
+# GitLab user. git by default
 user: git
+
+# Url to gitlab instance. Used for api calls
 gitlab_url: "http://localhost/"
+
+# Repositories path
 repos_path: "/home/git/repositories"
+
+# File used as authorized_keys for gitlab user
 auth_file: "/home/git/.ssh/authorized_keys"
