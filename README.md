@@ -1,5 +1,7 @@
 ### gitlab-shell: ssh access and repostiory management
 
+[![CI](http://ci.gitlab.org/projects/4/status?ref=master)](http://ci.gitlab.org/projects/4?ref=master)
+
 ### Setup
 
     ./bin/install
