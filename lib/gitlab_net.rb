@@ -1,6 +1,8 @@
 require 'net/http'
 require 'json'
 
+require_relative 'gitlab_config'
+
 class GitlabNet
   def allowed?(cmd, repo, key, ref)
     project_name = repo.gsub("'", "")
@@ -23,7 +25,7 @@ class GitlabNet
   protected
 
   def host
-    "http://127.0.0.1:3000/api/v3/internal"
+    "#{GitlabConfig.new.gitlab_url}api/v3/internal"
   end
 
   def get(url)

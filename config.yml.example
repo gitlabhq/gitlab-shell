@@ -1,3 +1,4 @@
 user: git
+gitlab_url: "http://localhost/"
 repos_path: "/home/git/repositories"
 auth_file: "/home/git/.ssh/authorized_keys"
