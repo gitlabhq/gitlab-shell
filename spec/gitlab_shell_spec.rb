@@ -1,12 +1,12 @@
+require_relative 'spec_helper'
 require_relative '../lib/gitlab_shell'
 
 describe GitlabShell do
 
   describe :initialize do
     before do
-      ROOT_PATH = File.join(File.expand_path(File.dirname(__FILE__)), "..")
       ENV['SSH_ORIGINAL_COMMAND'] = 'git-receive-pack'
-      ARGV = ['dzaporozhets']
+      ARGV[0] = 'dzaporozhets'
       @shell = GitlabShell.new
     end
 
