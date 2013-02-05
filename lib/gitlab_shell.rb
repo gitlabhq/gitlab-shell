@@ -4,7 +4,7 @@ require 'net/http'
 require_relative 'gitlab_config'
 
 class GitlabShell
-  attr_accessor :username, :repo_name, :git_cmd, :repos_path
+  attr_accessor :username, :repo_name, :git_cmd, :repos_path, :repo_name
 
   def initialize
     @username = ARGV.shift

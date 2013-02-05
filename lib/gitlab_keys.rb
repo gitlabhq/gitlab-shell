@@ -15,7 +15,6 @@ class GitlabKeys
     case @command
     when 'add-key'; add_key
     when 'rm-key';  rm_key
-    when 'rm-user'; rm_user
     else
       puts 'not allowed'
     end
@@ -31,11 +30,6 @@ class GitlabKeys
 
   def rm_key
     cmd = "sed '/#{@key}/d' #{auth_file}"
-    system(cmd)
-  end
-
-  def rm_user
-    cmd = "sed -i '/gitlab-shell #{@username},/d' #{auth_file}"
     system(cmd)
   end
 end
