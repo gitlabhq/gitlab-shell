@@ -2,11 +2,11 @@ require 'open3'
 require_relative 'gitlab_config'
 
 class GitlabKeys
-  attr_accessor :auth_file, :key, :username
+  attr_accessor :auth_file, :key
 
   def initialize
     @command = ARGV.shift
-    @username = ARGV.shift
+    @key_id = ARGV.shift
     @key = ARGV.shift
     @auth_file = GitlabConfig.new.auth_file
   end
@@ -23,13 +23,13 @@ class GitlabKeys
   protected
 
   def add_key
-    cmd = "command=\"#{ROOT_PATH}/bin/gitlab-shell #{@username}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{@key}"
+    cmd = "command=\"#{ROOT_PATH}/bin/gitlab-shell #{@key_id}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{@key}"
     cmd = "echo \'#{cmd}\' >> #{auth_file}"
     system(cmd)
   end
 
   def rm_key
-    cmd = "sed '/#{@key}/d' #{auth_file}"
+    cmd = "sed '/#{@key_id}/d' #{auth_file}"
     system(cmd)
   end
 end
