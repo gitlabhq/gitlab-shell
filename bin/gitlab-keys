@@ -6,6 +6,7 @@
 # Ex.
 #   /bin/gitlab-keys add-key dzaporozhets "ssh-rsa AAAAx321..."
 #
+#   /bin/gitlab-keys rm-key dzaporozhets "ssh-rsa AAAAx321..."
 #
 ROOT_PATH = File.join(File.expand_path(File.dirname(__FILE__)), "..")
 require File.join(ROOT_PATH, 'lib', 'gitlab_keys')

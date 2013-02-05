@@ -2,7 +2,6 @@ require_relative 'spec_helper'
 require_relative '../lib/gitlab_shell'
 
 describe GitlabShell do
-
   describe :initialize do
     before do
       ssh_cmd 'git-receive-pack'
