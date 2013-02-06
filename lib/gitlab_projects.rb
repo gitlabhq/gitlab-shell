@@ -10,7 +10,6 @@ class GitlabProjects
     @project_name = ARGV.shift
     @repos_path = GitlabConfig.new.repos_path
     @full_path = File.join(@repos_path, @project_name)
-    @hook_path = File.join(ROOT_PATH, 'hooks', 'post-receive')
   end
 
   def exec
@@ -27,8 +26,15 @@ class GitlabProjects
 
   def add_project
     FileUtils.mkdir_p(full_path, mode: 0770)
-    cmd = "cd #{full_path} && git init --bare && ln -s #{@hook_path} #{full_path}/hooks/post-receive"
+    cmd = "cd #{full_path} && git init --bare && #{create_hooks_cmd}"
     system(cmd)
+  end
+
+  def create_hooks_cmd
+    pr_hook_path = File.join(ROOT_PATH, 'hooks', 'post-receive')
+    up_hook_path = File.join(ROOT_PATH, 'hooks', 'update')
+
+    "ln -s #{pr_hook_path} #{full_path}/hooks/post-receive && ln -s #{up_hook_path} #{full_path}/hooks/update"
   end
 
   def rm_project
@@ -37,7 +43,7 @@ class GitlabProjects
 
   def import_project
     dir = @project_name.match(/[a-zA-Z\.\_\-]+\.git$/).to_s
-    cmd = "cd #{@repos_path} && git clone --bare #{@project_name} #{dir} && ln -s #{@hook_path} #{@repos_path}/#{dir}/hooks/post-receive"
+    cmd = "cd #{@repos_path} && git clone --bare #{@project_name} #{dir} && #{create_hooks_cmd}"
     system(cmd)
   end
 end

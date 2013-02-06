@@ -9,7 +9,7 @@ class GitlabNet
     project_name = project_name.gsub(/\.git$/, "")
     key_id = key.gsub("key-", "")
 
-    url = "#{host}/allowed?project=#{project_name}&key_id=#{key_id}&action=#{cmd}&ref=#{ref}"
+    url = "#{host}/allowed?key_id=#{key_id}&action=#{cmd}&ref=#{ref}&project=#{project_name}"
 
     resp = get(url)
 

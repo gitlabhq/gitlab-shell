@@ -49,9 +49,7 @@ class GitlabShell
   end
 
   def validate_access
-    @ref_name = 'master' # just hardcode it cause we dont know ref
-
-    api.allowed?(@git_cmd, @repo_name, @key_id, @ref_name)
+    api.allowed?(@git_cmd, @repo_name, @key_id, '_any')
   end
 
   def api
