@@ -1,5 +1,4 @@
 require 'open3'
-require_relative 'gitlab_config'
 
 class GitlabKeys
   attr_accessor :auth_file, :key

@@ -1,6 +1,5 @@
 require 'open3'
 require 'fileutils'
-require_relative 'gitlab_config'
 
 class GitlabProjects
   attr_reader :project_name, :full_path
