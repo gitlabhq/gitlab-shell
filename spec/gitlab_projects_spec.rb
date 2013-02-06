@@ -31,7 +31,9 @@ describe GitlabProjects do
     end
 
     it "should receive valid cmd" do
-      valid_cmd = "cd #{tmp_repo_path} && git init --bare && ln -s #{ROOT_PATH}/hooks/post-receive #{tmp_repo_path}/hooks/post-receive"
+      valid_cmd = "cd #{tmp_repo_path} && git init --bare"
+      valid_cmd << " && ln -s #{ROOT_PATH}/hooks/post-receive #{tmp_repo_path}/hooks/post-receive"
+      valid_cmd << " && ln -s #{ROOT_PATH}/hooks/update #{tmp_repo_path}/hooks/update"
       @gl_projects.should_receive(:system).with(valid_cmd)
       @gl_projects.send :add_project
     end
