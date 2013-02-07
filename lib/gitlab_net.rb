@@ -36,7 +36,7 @@ class GitlabNet
     url = URI.parse(url)
     http = Net::HTTP.new(url.host, url.port)
     http.use_ssl = (url.port == 443)
-    request = Net::HTTP::Get.new(url.path)
+    request = Net::HTTP::Get.new(url.request_uri)
     http.start {|http| http.request(request) }
   end
 end
