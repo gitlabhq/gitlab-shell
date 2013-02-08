@@ -7,7 +7,7 @@ require_relative '../lib/gitlab_init'
 #
 
 config = GitlabConfig.new
-key_dir = config.auth_file.delete "authorized_keys"
+key_dir = File.dirname("#{config.auth_file}")
 
 commands = [
   "mkdir -p #{config.repos_path}",
