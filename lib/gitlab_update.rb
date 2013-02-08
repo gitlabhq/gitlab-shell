@@ -13,6 +13,11 @@ class GitlabUpdate
   end
 
   def exec
+    # Skip update hook for local push when key_id is nil
+    # It required for gitlab instance to make local pushes
+    # without validation of access
+    exit 0 if @key_id.nil?
+
     if api.allowed?('git-receive-pack', @repo_name, @key_id, @refname)
       exit 0
     else
