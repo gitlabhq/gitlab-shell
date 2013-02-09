@@ -33,7 +33,7 @@ describe GitlabKeys do
     end
 
     it "should receive valid cmd" do
-      valid_cmd = "sed -i '/key-741/d' #{GitlabConfig.new.auth_file}"
+      valid_cmd = "sed -i '/shell key-741/d' #{GitlabConfig.new.auth_file}"
       @gl_keys.should_receive(:system).with(valid_cmd)
       @gl_keys.send :rm_key
     end
