@@ -25,7 +25,7 @@ Remove repo
 
 Import repo 
 
-    ./bin/gitlab-projects import-project https://github.com/randx/six.git
+    ./bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git
 
 
 ### Keys: 
