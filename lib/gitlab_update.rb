@@ -18,6 +18,13 @@ class GitlabUpdate
     # without validation of access
     exit 0 if @key_id.nil?
 
+    # Also skip update hook for non-gitlab keys
+    # and reset GL_USER env
+    unless @key_id =~ /\Akey\-\d+\Z/
+      ENV['GL_USER'] = nil
+      exit 0
+    end
+
     if api.allowed?('git-receive-pack', @repo_name, @key_id, @refname)
       exit 0
     else
