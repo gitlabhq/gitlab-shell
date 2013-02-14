@@ -18,7 +18,7 @@ class GitlabUpdate
   end
 
   def exec
-    # reset GL_USER env since we already
+    # reset GL_ID env since we already
     # get value from it
     ENV['GL_ID'] = nil
 
