@@ -6,12 +6,15 @@ require_relative '../lib/gitlab_init'
 # GitLab shell, invoked from ~/.ssh/authorized_keys
 #
 
+config = GitlabConfig.new
+key_dir = File.dirname("#{config.auth_file}")
+
 commands = [
-  "mkdir -p /home/git/repositories",
-  "mkdir -p /home/git/.ssh",
-  "touch /home/git/.ssh/authorized_keys",
-  "chmod -R ug+rwX,o-rwx /home/git/repositories/",
-  "find /home/git/repositories -type d -print0 | xargs -0 chmod g+s"
+  "mkdir -p #{config.repos_path}",
+  "mkdir -p #{key_dir}",
+  "touch #{config.auth_file}",
+  "chmod -R ug+rwX,o-rwx #{config.repos_path}",
+  "find #{config.repos_path} -type d -print0 | xargs -0 chmod g+s"
 ]
 
 commands.each do |cmd|

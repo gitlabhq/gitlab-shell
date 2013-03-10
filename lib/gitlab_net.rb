@@ -6,7 +6,9 @@ require_relative 'gitlab_config'
 class GitlabNet
   def allowed?(cmd, repo, key, ref)
     project_name = repo.gsub("'", "")
-    project_name = project_name.gsub(/\.git$/, "")
+    project_name = project_name.gsub(/\.git\Z/, "")
+    project_name = project_name.gsub(/\A\//, "")
+
     key_id = key.gsub("key-", "")
 
     url = "#{host}/allowed?key_id=#{key_id}&action=#{cmd}&ref=#{ref}&project=#{project_name}"
@@ -33,6 +35,10 @@ class GitlabNet
   end
 
   def get(url)
-    Net::HTTP.get_response(URI.parse(url))
+    url = URI.parse(url)
+    http = Net::HTTP.new(url.host, url.port)
+    http.use_ssl = (url.port == 443)
+    request = Net::HTTP::Get.new(url.request_uri)
+    http.start {|http| http.request(request) }
   end
 end

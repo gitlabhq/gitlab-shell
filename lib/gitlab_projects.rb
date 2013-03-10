@@ -41,8 +41,8 @@ class GitlabProjects
   end
 
   def import_project
-    dir = @project_name.match(/[a-zA-Z\.\_\-]+\.git$/).to_s
-    cmd = "cd #{@repos_path} && git clone --bare #{@project_name} #{dir} && #{create_hooks_cmd}"
+    @source = ARGV.shift
+    cmd = "cd #{@repos_path} && git clone --bare #{@source} #{@project_name} && #{create_hooks_cmd}"
     system(cmd)
   end
 end

@@ -16,7 +16,7 @@ class GitlabShell
       parse_cmd
 
       if git_cmds.include?(@git_cmd)
-        ENV['GL_USER'] = @key_id
+        ENV['GL_ID'] = @key_id
 
         if validate_access
           process_cmd

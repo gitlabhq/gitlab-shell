@@ -1,0 +1,5 @@
+v1.0.4
+  - requires gitlab c9ca15e
+  - dont use post-receive file any more. Make all updates in update
+  - fixed issue with invalid GL_USER
+  - use GL_ID instead of GL_USER

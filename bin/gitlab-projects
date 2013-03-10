@@ -11,6 +11,8 @@ require_relative '../lib/gitlab_init'
 #
 #   /bin/gitlab-projects rm-project gitlab/gitlab-ci.git
 #
+#   /bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git
+#
 require File.join(ROOT_PATH, 'lib', 'gitlab_projects')
 GitlabProjects.new.exec
 

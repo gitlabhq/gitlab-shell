@@ -4,7 +4,7 @@
 # will be processed properly.
 
 refname = ARGV[0]
-key_id  = ENV['GL_USER']
+key_id  = ENV['GL_ID']
 repo_path = `pwd`
 
 require_relative '../lib/gitlab_update'
