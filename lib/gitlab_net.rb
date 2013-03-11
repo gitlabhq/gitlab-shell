@@ -35,7 +35,6 @@ class GitlabNet
   end
 
   def get(url)
-    puts url.inspect
     url = URI.parse(url)
     http = Net::HTTP.new(url.host, url.port)
     http.use_ssl = (url.port == 443)
