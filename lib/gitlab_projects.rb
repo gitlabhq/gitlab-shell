@@ -2,7 +2,17 @@ require 'open3'
 require 'fileutils'
 
 class GitlabProjects
-  attr_reader :project_name, :full_path
+  # Project name is a directory name for repository with .git at the end
+  # It may be namespaced or not. Like repo.git or gitlab/repo.git
+  attr_reader :project_name
+
+  # Absolute path to directory where repositories stored
+  # By default it is /home/git/repositories
+  attr_reader :repos_path
+
+  # Full path is an absolute path to the repository
+  # Ex /home/git/repositories/test.git
+  attr_reader :full_path
 
   def initialize
     @command = ARGV.shift
@@ -42,7 +52,7 @@ class GitlabProjects
 
   def import_project
     @source = ARGV.shift
-    cmd = "cd #{@repos_path} && git clone --bare #{@source} #{@project_name} && #{create_hooks_cmd}"
+    cmd = "cd #{repos_path} && git clone --bare #{@source} #{project_name} && #{create_hooks_cmd}"
     system(cmd)
   end
 end
