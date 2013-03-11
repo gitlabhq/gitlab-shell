@@ -6,7 +6,7 @@ class GitlabUpdate
     @repo_path = repo_path.strip
     @repo_name = repo_path
     @repo_name.gsub!(GitlabConfig.new.repos_path.to_s, "")
-    @repo_name.gsub!(/.git$/, "")
+    @repo_name.gsub!(/\.git$/, "")
     @repo_name.gsub!(/^\//, "")
 
     @key_id = key_id
