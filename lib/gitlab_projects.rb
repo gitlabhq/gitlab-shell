@@ -1,6 +1,8 @@
 require 'open3'
 require 'fileutils'
 
+require_relative 'gitlab_config'
+
 class GitlabProjects
   # Project name is a directory name for repository with .git at the end
   # It may be namespaced or not. Like repo.git or gitlab/repo.git

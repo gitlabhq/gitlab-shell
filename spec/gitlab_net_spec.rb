@@ -9,6 +9,15 @@ describe GitlabNet, vcr: true do
     gitlab_net.stub!(:host).and_return('https://dev.gitlab.org/api/v3/internal')
   end
 
+  describe :check do
+    it 'should return 200 code for gitlab check' do
+      VCR.use_cassette("check-ok") do
+        result = gitlab_net.check
+        result.code.should == '200'
+      end
+    end
+  end
+
   describe :discover do
     it 'should return user has based on key id' do
       VCR.use_cassette("discover-ok") do

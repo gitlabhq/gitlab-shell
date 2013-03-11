@@ -62,6 +62,14 @@ describe GitlabProjects do
     end
   end
 
+  describe :exec do
+    it 'should puts message if unknown command arg' do
+      gitlab_projects = build_gitlab_projects('edit-project', repo_name)
+      gitlab_projects.should_receive(:puts).with('not allowed')
+      gitlab_projects.exec
+    end
+  end
+
   def build_gitlab_projects(*args)
     argv(*args)
     gl_projects = GitlabProjects.new
