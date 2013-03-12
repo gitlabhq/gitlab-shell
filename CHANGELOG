@@ -1,3 +1,7 @@
+v1.1.0
+  - added mv-project feature
+  - increased test coverage
+
 v1.0.4
   - requires gitlab c9ca15e
   - dont use post-receive file any more. Make all updates in update
