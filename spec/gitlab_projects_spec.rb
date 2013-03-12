@@ -39,6 +39,21 @@ describe GitlabProjects do
     end
   end
 
+  describe :mv_project do
+    let(:gl_projects) { build_gitlab_projects('mv-project', repo_name, 'repo.git') }
+
+    before do
+      FileUtils.mkdir_p(tmp_repo_path)
+    end
+
+    it "should move a repo directory" do
+      File.exists?(tmp_repo_path).should be_true
+      gl_projects.exec
+      File.exists?(tmp_repo_path).should be_false
+      File.exists?(File.join(tmp_repos_path, 'repo.git')).should be_true
+    end
+  end
+
   describe :rm_project do
     let(:gl_projects) { build_gitlab_projects('rm-project', repo_name) }
 

@@ -27,6 +27,7 @@ class GitlabProjects
     case @command
     when 'add-project'; add_project
     when 'rm-project';  rm_project
+    when 'mv-project';  mv_project
     when 'import-project'; import_project
     else
       puts 'not allowed'
@@ -52,9 +53,34 @@ class GitlabProjects
     FileUtils.rm_rf(full_path)
   end
 
+  # Import project via git clone --bare
+  # URL must be publicly clonable
   def import_project
     @source = ARGV.shift
     cmd = "cd #{repos_path} && git clone --bare #{@source} #{project_name} && #{create_hooks_cmd}"
     system(cmd)
+  end
+
+  # Move repository from one directory to another
+  #
+  # Ex.
+  #  gitlab.git -> gitlabhq.git
+  #  gitlab/gitlab-ci.git -> randx/six.git
+  #
+  # Wont work if target namespace directory does not exist
+  #
+  def mv_project
+    new_path = ARGV.shift
+
+    return false unless new_path
+
+    new_full_path = File.join(repos_path, new_path)
+
+    # check if source repo exists
+    # and target repo does not exist
+    return false unless File.exists?(full_path)
+    return false if File.exists?(new_full_path)
+
+    FileUtils.mv(full_path, new_full_path)
   end
 end
