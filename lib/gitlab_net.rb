@@ -18,6 +18,15 @@ class GitlabNet
     !!(resp.code == '200' && resp.body == 'true')
   end
 
+  def admin?(key)
+    key_id = key.gsub("key-", "")
+
+    url = "#{host}/admin?key_id=#{key_id}"
+
+    resp = get(url)
+
+    !!(resp.code == '200' && resp.body == 'true')
+  end
   def discover(key)
     key_id = key.gsub("key-", "")
     resp = get("#{host}/discover?key_id=#{key_id}")

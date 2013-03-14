@@ -14,7 +14,7 @@ describe GitlabKeys do
     let(:gitlab_keys) { build_gitlab_keys('add-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E') }
 
     it "should receive valid cmd" do
-      valid_cmd = "echo 'command=\"#{ROOT_PATH}/bin/gitlab-shell key-741\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAAB3NzaDAxx2E' >> #{GitlabConfig.new.auth_file}"
+      valid_cmd = "echo 'command=\"#{ROOT_PATH}/bin/gitlab-shell key-741\",no-port-forwarding,no-X11-forwarding ssh-rsa AAAAB3NzaDAxx2E' >> #{GitlabConfig.new.auth_file}"
       gitlab_keys.should_receive(:system).with(valid_cmd)
       gitlab_keys.send :add_key
     end

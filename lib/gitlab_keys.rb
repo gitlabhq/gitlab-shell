@@ -24,7 +24,7 @@ class GitlabKeys
   protected
 
   def add_key
-    cmd = "command=\"#{ROOT_PATH}/bin/gitlab-shell #{@key_id}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{@key}"
+    cmd = "command=\"#{ROOT_PATH}/bin/gitlab-shell #{@key_id}\",no-port-forwarding,no-X11-forwarding #{@key}"
     cmd = "echo \'#{cmd}\' >> #{auth_file}"
     system(cmd)
   end
