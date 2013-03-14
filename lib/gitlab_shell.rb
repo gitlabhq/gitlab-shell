@@ -22,15 +22,29 @@ class GitlabShell
           process_cmd
         end
       else
-        puts 'Not allowed command'
+        if admin?
+          process_admin_cmd
+        else
+          puts 'Not allowed command'
+        end
       end
     else
-      user = api.discover(@key_id)
-      puts "Welcome to GitLab, #{user['name']}!"
+      if admin?
+        # Execute the shell.
+        process_admin_cmd
+      else
+        user = api.discover(@key_id)
+        puts "Welcome to GitLab, #{user['name']}!"
+      end
     end
   end
 
   protected
+
+  # Wrapper around Kernel::exec
+  def exec_cmd args
+    Kernel::exec args
+  end
 
   def parse_cmd
     args = @origin_cmd.split(' ')
@@ -43,8 +57,19 @@ class GitlabShell
   end
 
   def process_cmd
+    ENV.delete 'SSH_TTY'       # Disable TTY
+    ENV.delete 'SSH_AUTH_SOCK' # Disable SSH forwarding
     repo_full_path = File.join(repos_path, repo_name)
-    system("#{@git_cmd} #{repo_full_path}")
+    exec_cmd("#{@git_cmd} #{repo_full_path}")
+  end
+
+  def process_admin_cmd
+    args = @origin_cmd ? @origin_cmd : [ ENV["SHELL"], "-l" ]
+    exec_cmd(args)
+  end
+
+  def admin?
+    api.admin?(@key_id)
   end
 
   def validate_access

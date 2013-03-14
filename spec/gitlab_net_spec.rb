@@ -60,4 +60,22 @@ describe GitlabNet, vcr: true do
       end
     end
   end
+
+  describe :admin? do
+    context 'ssh key for an admin account' do
+      it 'should return true' do
+        VCR.use_cassette("is-admin") do
+          gitlab_net.should be_admin('key-1')
+        end
+      end
+    end
+
+    context 'ssh key for a non-admin account' do
+      it 'should return false' do
+        VCR.use_cassette("is-not-admin") do
+          gitlab_net.should_not be_admin('key-2')
+        end
+      end
+    end
+  end
 end
