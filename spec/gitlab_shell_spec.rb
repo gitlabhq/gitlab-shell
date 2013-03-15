@@ -5,7 +5,7 @@ describe GitlabShell do
   subject do
     ARGV[0] = 'key-56'
     GitlabShell.new.tap do |shell|
-      shell.stub(process_cmd: true)
+      shell.stub(exec_cmd: :exec_called)
       shell.stub(api: api)
     end
   end
@@ -53,6 +53,10 @@ describe GitlabShell do
       it "should process the command" do
         subject.should_receive(:process_cmd).with()
       end
+
+      it "should execute the command" do
+        subject.should_receive(:exec_cmd).with("git-upload-pack /home/git/repositories/gitlab-ci.git")
+      end
     end
 
     context 'git-receive-pack' do
@@ -62,6 +66,10 @@ describe GitlabShell do
       it "should process the command" do
         subject.should_receive(:process_cmd).with()
       end
+
+      it "should execute the command" do
+        subject.should_receive(:exec_cmd).with("git-receive-pack /home/git/repositories/gitlab-ci.git")
+      end
     end
 
     context 'arbitrary command' do
@@ -70,6 +78,10 @@ describe GitlabShell do
 
       it "should not process the command" do
         subject.should_not_receive(:process_cmd)
+      end
+
+      it "should not execute the command" do
+        subject.should_not_receive(:exec_cmd)
       end
     end
 
