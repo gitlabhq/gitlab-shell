@@ -16,12 +16,14 @@ describe GitlabShell do
     end
   end
   let(:key_id) { "key-#{rand(100) + 100}" }
+  let(:repository_path) { "/home/git#{rand(100)}/repos" }
+  before { GitlabConfig.any_instance.stub(:repos_path).and_return(repository_path) }
 
   describe :initialize do
     before { ssh_cmd 'git-receive-pack' }
 
     its(:key_id) { should == key_id }
-    its(:repos_path) { should == "/home/git/repositories" }
+    its(:repos_path) { should == repository_path }
   end
 
   describe :parse_cmd do
@@ -56,7 +58,7 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with("git-upload-pack /home/git/repositories/gitlab-ci.git")
+        subject.should_receive(:exec_cmd).with("git-upload-pack #{File.join(repository_path, 'gitlab-ci.git')}")
       end
 
       it "should set the GL_ID environment variable" do
@@ -73,7 +75,7 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with("git-receive-pack /home/git/repositories/gitlab-ci.git")
+        subject.should_receive(:exec_cmd).with("git-receive-pack #{File.join(repository_path, 'gitlab-ci.git')}")
       end
     end
 
