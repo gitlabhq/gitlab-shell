@@ -3,7 +3,7 @@ require_relative '../lib/gitlab_shell'
 
 describe GitlabShell do
   subject do
-    ARGV[0] = 'key-56'
+    ARGV[0] = key_id
     GitlabShell.new.tap do |shell|
       shell.stub(exec_cmd: :exec_called)
       shell.stub(api: api)
@@ -15,11 +15,12 @@ describe GitlabShell do
       api.stub(allowed?: true)
     end
   end
+  let(:key_id) { "key-#{rand(100) + 100}" }
 
   describe :initialize do
     before { ssh_cmd 'git-receive-pack' }
 
-    its(:key_id) { should == 'key-56' }
+    its(:key_id) { should == key_id }
     its(:repos_path) { should == "/home/git/repositories" }
   end
 
@@ -57,6 +58,10 @@ describe GitlabShell do
       it "should execute the command" do
         subject.should_receive(:exec_cmd).with("git-upload-pack /home/git/repositories/gitlab-ci.git")
       end
+
+      it "should set the GL_ID environment variable" do
+        ENV.should_receive("[]=").with("GL_ID", key_id)
+      end
     end
 
     context 'git-receive-pack' do
@@ -90,7 +95,7 @@ describe GitlabShell do
       after { subject.exec }
 
       it "should call api.discover" do
-        api.should_receive(:discover).with('key-56')
+        api.should_receive(:discover).with(key_id)
       end
     end
   end
@@ -101,7 +106,7 @@ describe GitlabShell do
 
     it "should call api.allowed?" do
       api.should_receive(:allowed?).
-        with('git-upload-pack', 'gitlab-ci.git', 'key-56', '_any')
+        with('git-upload-pack', 'gitlab-ci.git', key_id, '_any')
     end
   end
 
