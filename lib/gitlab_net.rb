@@ -31,7 +31,7 @@ class GitlabNet
   protected
 
   def host
-    "#{GitlabConfig.new.gitlab_url}api/v3/internal"
+    "#{GitlabConfig.new.gitlab_url}/api/v3/internal"
   end
 
   def get(url)
