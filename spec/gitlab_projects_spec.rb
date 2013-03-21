@@ -77,6 +77,33 @@ describe GitlabProjects do
     end
   end
 
+  describe :enable_git_protocol do
+    let(:gl_projects) { build_gitlab_projects('enable-git-protocol', repo_name) }
+
+    before do
+      FileUtils.mkdir_p(tmp_repo_path)
+    end
+
+    it "should touch a file in repo directory" do
+      gl_projects.exec
+      File.exists?("#{tmp_repo_path}/git-daemon-export-ok").should be_true
+    end
+  end
+
+  describe :disable_git_protocol do
+    let(:gl_projects) { build_gitlab_projects('disable-git-protocol', repo_name) }
+
+    before do
+      FileUtils.mkdir_p(tmp_repo_path)
+      FileUtils.touch("#{tmp_repo_path}/git-daemon-export-ok")
+    end
+
+    it "should touch a file in repo directory" do
+      gl_projects.exec
+      File.exists?("#{tmp_repo_path}/git-daemon-export-ok").should be_false
+    end
+  end
+
   describe :exec do
     it 'should puts message if unknown command arg' do
       gitlab_projects = build_gitlab_projects('edit-project', repo_name)
