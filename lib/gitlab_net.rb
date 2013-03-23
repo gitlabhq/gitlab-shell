@@ -30,15 +30,28 @@ class GitlabNet
 
   protected
 
+  def config
+    @config ||= GitlabConfig.new
+  end
+
   def host
-    "#{GitlabConfig.new.gitlab_url}/api/v3/internal"
+    "#{config.gitlab_url}/api/v3/internal"
   end
 
   def get(url)
     url = URI.parse(url)
     http = Net::HTTP.new(url.host, url.port)
     http.use_ssl = (url.port == 443)
+
+    if config.http_settings['self_signed_cert'] && http.use_ssl?
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    end
+
     request = Net::HTTP::Get.new(url.request_uri)
+    if config.http_settings['user'] && config.http_settings['password']
+      request.basic_auth config.http_settings['user'], config.http_settings['password']
+    end
+
     http.start {|http| http.request(request) }
   end
 end
