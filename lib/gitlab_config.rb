@@ -18,4 +18,8 @@ class GitlabConfig
   def gitlab_url
     @config['gitlab_url'] ||= "http://localhost/"
   end
+
+  def http_settings
+    @config['http_settings'] ||= {}
+  end
 end
