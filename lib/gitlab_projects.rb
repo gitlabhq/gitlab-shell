@@ -26,6 +26,8 @@ class GitlabProjects
   def exec
     case @command
     when 'add-project'; add_project
+    when 'enable-git-protocol'; enable_git_protocol
+    when 'disable-git-protocol'; disable_git_protocol
     when 'rm-project';  rm_project
     when 'mv-project';  mv_project
     when 'import-project'; import_project
@@ -83,5 +85,19 @@ class GitlabProjects
     return false if File.exists?(new_full_path)
 
     FileUtils.mv(full_path, new_full_path)
+  end
+
+  # Enable acceess to repository via git://githost/project_name_with_namespace.git
+  #
+  # access without acl check
+  def enable_git_protocol
+    cmd = "touch #{full_path}/git-daemon-export-ok"
+    system(cmd)
+  end
+
+  # Disable acceess to repository via git://githost/project_name_with_namespace.git
+  def disable_git_protocol
+    cmd = "rm #{full_path}/git-daemon-export-ok"
+    system(cmd)
   end
 end
