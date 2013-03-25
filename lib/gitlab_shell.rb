@@ -26,7 +26,7 @@ class GitlabShell
       end
     else
       user = api.discover(@key_id)
-      puts "Welcome to GitLab, #{user['name']}!"
+      puts "Welcome to GitLab, #{user && user['name'] || 'Anonymous'}!"
     end
   end
 
