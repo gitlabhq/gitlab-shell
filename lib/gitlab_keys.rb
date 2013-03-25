@@ -18,6 +18,7 @@ class GitlabKeys
     when 'rm-key';  rm_key
     else
       puts 'not allowed'
+      false
     end
   end
 

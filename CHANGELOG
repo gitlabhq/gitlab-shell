@@ -1,3 +1,6 @@
+v1.2.0
+  - Return non-zero result if gitlab-projects and gitlab-keys execution was not successful
+
 v1.1.0
   - added mv-project feature
   - increased test coverage

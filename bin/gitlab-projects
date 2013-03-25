@@ -16,6 +16,10 @@ require_relative '../lib/gitlab_init'
 #   /bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git
 #
 require File.join(ROOT_PATH, 'lib', 'gitlab_projects')
-GitlabProjects.new.exec
 
-exit
+# Return non-zero if command execution was not successful
+if GitlabProjects.new.exec
+  exit 0
+else
+  exit 1
+end

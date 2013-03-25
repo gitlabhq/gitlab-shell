@@ -12,6 +12,10 @@ require_relative '../lib/gitlab_init'
 #
 
 require File.join(ROOT_PATH, 'lib', 'gitlab_keys')
-GitlabKeys.new.exec
 
-exit
+# Return non-zero if command execution was not successful
+if GitlabKeys.new.exec
+  exit 0
+else
+  exit 1
+end

@@ -31,6 +31,7 @@ class GitlabProjects
     when 'import-project'; import_project
     else
       puts 'not allowed'
+      false
     end
   end
 
