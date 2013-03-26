@@ -22,7 +22,7 @@ class GitlabNet
   def discover(key)
     key_id = key.gsub("key-", "")
     resp = get("#{host}/discover?key_id=#{key_id}")
-    JSON.parse(resp.body)
+    JSON.parse(resp.body) rescue nil
   end
 
   def check
