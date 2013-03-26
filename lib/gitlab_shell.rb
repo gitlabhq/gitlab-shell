@@ -44,11 +44,15 @@ class GitlabShell
 
   def process_cmd
     repo_full_path = File.join(repos_path, repo_name)
-    system("#{@git_cmd} #{repo_full_path}")
+    exec_cmd "#{@git_cmd} #{repo_full_path}"
   end
 
   def validate_access
     api.allowed?(@git_cmd, @repo_name, @key_id, '_any')
+  end
+
+  def exec_cmd args
+    Kernel::exec args
   end
 
   def api
