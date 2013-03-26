@@ -16,7 +16,10 @@ class GitlabConfig
   end
 
   def gitlab_url
-    @config['gitlab_url'] ||= "http://localhost/"
+    @gitlab_url ||= begin
+      url = @config['gitlab_url'] || "http://localhost"
+      url = $1  if url =~ /\A(.+)\/\z/
+    end
   end
 
   def http_settings
