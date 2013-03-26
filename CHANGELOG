@@ -1,5 +1,9 @@
+Not yet released
+  - Interpret login with deploy key as anonymous one
+
 v1.2.0
   - Return non-zero result if gitlab-projects and gitlab-keys execution was not successful
+  - http_settings configuration option added
 
 v1.1.0
   - added mv-project feature
