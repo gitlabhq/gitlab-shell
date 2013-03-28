@@ -29,6 +29,7 @@ class GitlabProjects
     when 'rm-project';  rm_project
     when 'mv-project';  mv_project
     when 'import-project'; import_project
+    when 'fork-project'; fork_project
     else
       puts 'not allowed'
       false
@@ -83,5 +84,17 @@ class GitlabProjects
     return false if File.exists?(new_full_path)
 
     FileUtils.mv(full_path, new_full_path)
+  end
+
+  def fork_project
+    new_namespace = ARGV.shift
+
+    return false unless new_namespace
+
+    namespaced_path = File.join(repos_path, new_namespace)
+    return false unless File.exists?(namespaced_path)
+
+    cmd = "cd #{namespaced_path} && git clone --bare #{@full_path}"
+    system(cmd)
   end
 end

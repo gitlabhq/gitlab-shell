@@ -18,7 +18,7 @@ describe GitlabProjects do
 
     it { @gl_projects.project_name.should == repo_name }
     it { @gl_projects.instance_variable_get(:@command).should == 'add-project' }
-    it { @gl_projects.instance_variable_get(:@full_path).should == '/home/git/repositories/gitlab-ci.git' }
+    it { @gl_projects.instance_variable_get(:@full_path).should == "#{GitlabConfig.new.repos_path}/gitlab-ci.git" }
   end
 
   describe :add_project do
@@ -74,6 +74,17 @@ describe GitlabProjects do
     it "should import a repo" do
       gl_projects.exec
       File.exists?(File.join(tmp_repo_path, 'HEAD')).should be_true
+    end
+  end
+
+  describe :fork_project do
+    let(:gl_projects) { build_gitlab_projects('fork-project', repo_name, 'forked-to-namespace')}
+
+    it "should fork the repo" do
+      gl_projects.exec
+      File.exists?(File.join(tmp_repo_path, 'forked-to-namespace', repo_name))
+      File.exists?(File.join(tmp_repo_path, 'forked-to-namespace', repo_name, '/hooks/update/post-receive'))
+      File.exists?(File.join(tmp_repo_path, 'forked-to-namespace', repo_name, '/hooks/update/'))
     end
   end
 
