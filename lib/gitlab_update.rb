@@ -51,9 +51,13 @@ class GitlabUpdate
   end
 
   def update_redis
-    command = "#{@redis['bin']} -h #{@redis['host']} -p #{@redis['port']} rpush '#{@redis['namespace']}:queue:post_receive' "+
-              "'{\"class\":\"PostReceive\",\"args\":[\"#{@repo_path}\",\"#{@oldrev}\",\"#{@newrev}\",\"#{@refname}\",\"#{@key_id}\"]}' > /dev/null 2>&1"
+    if @redis.present?
+      redis_command = "#{@redis['bin']} -h #{@redis['host']} -p #{@redis['port']} rpush '#{@redis['namespace']}:queue:post_receive'"
+    else
+      redis_commend = "env -i redis-cli"
+    end
 
+    command = "#{redis_command} '{\"class\":\"PostReceive\",\"args\":[\"#{@repo_path}\",\"#{@oldrev}\",\"#{@newrev}\",\"#{@refname}\",\"#{@key_id}\"]}' > /dev/null 2>&1"
     system(command)
   end
 end
