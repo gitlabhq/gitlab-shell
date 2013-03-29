@@ -15,6 +15,8 @@ class GitlabUpdate
 
     @oldrev  = ARGV[1]
     @newrev  = ARGV[2]
+
+    @redis = GitlabConfig.new.redis
   end
 
   def exec
@@ -49,7 +51,9 @@ class GitlabUpdate
   end
 
   def update_redis
-    command = "env -i redis-cli rpush 'resque:gitlab:queue:post_receive' '{\"class\":\"PostReceive\",\"args\":[\"#{@repo_path}\",\"#{@oldrev}\",\"#{@newrev}\",\"#{@refname}\",\"#{@key_id}\"]}' > /dev/null 2>&1"
+    command = "#{@redis['bin']} -h #{@redis['host']} -p #{@redis['port']} rpush '#{@redis['namespace']}:queue:post_receive' "+
+              "'{\"class\":\"PostReceive\",\"args\":[\"#{@repo_path}\",\"#{@oldrev}\",\"#{@newrev}\",\"#{@refname}\",\"#{@key_id}\"]}' > /dev/null 2>&1"
+
     system(command)
   end
 end
