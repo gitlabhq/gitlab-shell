@@ -15,6 +15,6 @@ function rvm_loaded() {
   return 1;
 }
 
-[ -f $GITLAB_SHELL_RVMRC ] && rvm_loaded && source $GITLAB_SHELL_RVMRC;
+[ -f $GITLAB_SHELL_RVMRC ] && rvm_loaded && source $GITLAB_SHELL_RVMRC &> /dev/null;
 
 exec $GITLAB_SHELL_DIR/bin/gitlab-shell.rb $@
