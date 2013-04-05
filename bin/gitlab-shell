@@ -3,12 +3,18 @@
 GITLAB_SHELL_DIR=$(cd "$(dirname "$0")/.."; pwd);
 GITLAB_SHELL_RVMRC="$GITLAB_SHELL_DIR/.rvmrc";
 
-if [ -f "/usr/local/rvm/scripts/rvm" ]; then
-  source /usr/local/rvm/scripts/rvm;
-else
-  source ~/.rvm/scripts/rvm;
-fi
+function rvm_loaded() {
+  if [ -f "/usr/local/rvm/scripts/rvm" ]; then
+    source /usr/local/rvm/scripts/rvm;
+    return 0;
+  elif [ -f ~/.rvm/scripts/rvm ]; then
+    source ~/.rvm/scripts/rvm;
+    return 0;
+  fi
 
-[[ -f $GITLAB_SHELL_RVMRC ]] && source $GITLAB_SHELL_RVMRC;
+  return 1;
+}
+
+[ -f $GITLAB_SHELL_RVMRC ] && rvm_loaded && source $GITLAB_SHELL_RVMRC;
 
 exec $GITLAB_SHELL_DIR/bin/gitlab-shell.rb $@
