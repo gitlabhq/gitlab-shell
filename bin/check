@@ -17,8 +17,10 @@ end
 
 puts "\nCheck directories and files: "
 
-config = GitlabConfig.new
+config = $gitlabConfig
 dirs = [config.repos_path, config.auth_file]
+dirs.push(config.http_settings['ssl_ca_path']) if not config.http_settings['ssl_ca_path'].nil?
+dirs.push(config.http_settings['ssl_ca_file']) if not config.http_settings['ssl_ca_file'].nil?
 
 dirs.each do |dir|
   print "\t#{dir}: "

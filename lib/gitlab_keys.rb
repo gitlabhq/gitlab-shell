@@ -9,7 +9,7 @@ class GitlabKeys
     @command = ARGV.shift
     @key_id = ARGV.shift
     @key = ARGV.shift
-    @auth_file = GitlabConfig.new.auth_file
+    @auth_file = $gitlabConfig.auth_file
   end
 
   def exec
