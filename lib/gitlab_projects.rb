@@ -19,7 +19,7 @@ class GitlabProjects
   def initialize
     @command = ARGV.shift
     @project_name = ARGV.shift
-    @repos_path = GitlabConfig.new.repos_path
+    @repos_path = $gitlabConfig.repos_path
     @full_path = File.join(@repos_path, @project_name)
   end
 

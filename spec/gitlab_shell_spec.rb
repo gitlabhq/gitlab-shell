@@ -17,7 +17,7 @@ describe GitlabShell do
   end
   let(:key_id) { "key-#{rand(100) + 100}" }
   let(:repository_path) { "/home/git#{rand(100)}/repos" }
-  before { GitlabConfig.any_instance.stub(:repos_path).and_return(repository_path) }
+  before { $gitlabConfig.stub(:repos_path).and_return(repository_path) }
 
   describe :initialize do
     before { ssh_cmd 'git-receive-pack' }

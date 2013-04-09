@@ -8,7 +8,7 @@ class GitlabShell
   def initialize
     @key_id = ARGV.shift
     @origin_cmd = ENV['SSH_ORIGINAL_COMMAND']
-    @repos_path = GitlabConfig.new.repos_path
+    @repos_path = $gitlabConfig.repos_path
   end
 
   def exec

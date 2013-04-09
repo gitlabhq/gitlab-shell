@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: get
-    uri: https://dev.gitlab.org/api/v3/internal/discover?key_id=1
+    uri: http://localhost/api/v3/internal/discover?key_id=1
     body:
       encoding: US-ASCII
       string: ''

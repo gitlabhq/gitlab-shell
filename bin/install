@@ -6,7 +6,7 @@ require_relative '../lib/gitlab_init'
 # GitLab shell, invoked from ~/.ssh/authorized_keys
 #
 
-config = GitlabConfig.new
+config = $gitlabConfig
 key_dir = File.dirname("#{config.auth_file}")
 
 commands = [

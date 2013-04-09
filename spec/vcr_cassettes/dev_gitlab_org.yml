@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: get
-    uri: https://dev.gitlab.org/api/v3/internal/allowed?action=git-receive-pack&key_id=100&project=gitlab/gitlabhq&ref=master
+    uri: http://localhost/api/v3/internal/allowed?action=git-receive-pack&key_id=100&project=gitlab/gitlabhq&ref=master
     body:
       encoding: US-ASCII
       string: ''

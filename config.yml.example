@@ -7,6 +7,12 @@ gitlab_url: "http://localhost/"
 http_settings:
 #  user: someone
 #  password: somepass
+#  use_ssl: false
+#  ssl_version: TLSv1_client
+# These two options are mutually exclusive with _file being preferred
+#  ssl_ca_path: /etc/ssl/certs
+#  ssl_ca_file: /etc/ssl/cert.pem
+#  ssl_verify_depth: 2
   self_signed_cert: false
 
 # Repositories path
@@ -14,3 +20,9 @@ repos_path: "/home/git/repositories"
 
 # File used as authorized_keys for gitlab user
 auth_file: "/home/git/.ssh/authorized_keys"
+
+# Access log
+access_log: "gitlab-shell_access.log"
+
+# Error log
+error_log: "gitlab-shell_error.log"
