@@ -3,9 +3,11 @@ require_relative 'gitlab_net'
 
 class GitlabUpdate
   def initialize(repo_path, key_id, refname)
+    config = GitlabConfig.new
+
     @repo_path = repo_path.strip
     @repo_name = repo_path
-    @repo_name.gsub!(GitlabConfig.new.repos_path.to_s, "")
+    @repo_name.gsub!(config.repos_path.to_s, "")
     @repo_name.gsub!(/\.git$/, "")
     @repo_name.gsub!(/^\//, "")
 
@@ -16,7 +18,7 @@ class GitlabUpdate
     @oldrev  = ARGV[1]
     @newrev  = ARGV[2]
 
-    @redis = GitlabConfig.new.redis
+    @redis = config.redis
   end
 
   def exec
@@ -52,15 +54,15 @@ class GitlabUpdate
 
   def update_redis
     if !@redis.empty? && !@redis.has_key?("socket")
-      redis_command = "#{@redis['bin']} -h #{@redis['host']} -p #{@redis['port']} rpush '#{@redis['namespace']}:queue:post_receive'"
+      redis_command = "#{@redis['bin']} -h #{@redis['host']} -p #{@redis['port']}"
     elsif !@redis.empty? && @redis.has_key?("socket")
-      redis_command = "#{@redis['bin']} -s #{@redis['socket']} rpush '#{@redis['namespace']}:queue:post_receive'"
+      redis_command = "#{@redis['bin']} -s #{@redis['socket']}"
     else
       # Default to old method of connecting to redis for users that haven't updated their configuration
-      redis_commend = "env -i redis-cli"
+      redis_command = "env -i redis-cli"
     end
 
-    command = "#{redis_command} '{\"class\":\"PostReceive\",\"args\":[\"#{@repo_path}\",\"#{@oldrev}\",\"#{@newrev}\",\"#{@refname}\",\"#{@key_id}\"]}' > /dev/null 2>&1"
+    command = "#{redis_command} rpush '#{@redis['namespace']}:queue:post_receive' '{\"class\":\"PostReceive\",\"args\":[\"#{@repo_path}\",\"#{@oldrev}\",\"#{@newrev}\",\"#{@refname}\",\"#{@key_id}\"]}' > /dev/null 2>&1"
     system(command)
   end
 end
