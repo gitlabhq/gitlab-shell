@@ -51,9 +51,12 @@ class GitlabUpdate
   end
 
   def update_redis
-    if @redis.present?
+    if !@redis.empty? && !@redis.has_key?("socket")
       redis_command = "#{@redis['bin']} -h #{@redis['host']} -p #{@redis['port']} rpush '#{@redis['namespace']}:queue:post_receive'"
+    elsif !@redis.empty? && @redis.has_key?("socket")
+      redis_command = "#{@redis['bin']} -s #{@redis['socket']} rpush '#{@redis['namespace']}:queue:post_receive'"
     else
+      # Default to old method of connecting to redis for users that haven't updated their configuration
       redis_commend = "env -i redis-cli"
     end
 
