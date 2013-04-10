@@ -20,5 +20,6 @@ redis:
   bin: /usr/bin/redis-cli
   host: 127.0.0.1
   port: 6379
+  # socket: /tmp/redis.socket # Only define this if you want to use sockets
   namespace: resque:gitlab
 
