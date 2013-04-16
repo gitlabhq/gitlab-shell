@@ -78,13 +78,13 @@ describe GitlabProjects do
   end
 
   describe :fork_project do
-    let(:gl_project_import) { build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git') }
-    let(:gl_projects_fork) { build_gitlab_projects('fork-project', repo_name, 'forked-to-namespace')}
+    let(:source_repo_name) { File.join('source-namespace', repo_name) }
     let(:dest_repo) { File.join(tmp_repos_path, 'forked-to-namespace', repo_name) }
+    let(:gl_projects_fork) { build_gitlab_projects('fork-project', source_repo_name, 'forked-to-namespace') }
+    let(:gl_projects_import) { build_gitlab_projects('import-project', source_repo_name, 'https://github.com/randx/six.git') }
 
     before do
-      FileUtils.mkdir_p(tmp_repo_path)
-      gl_project_import.exec
+      gl_projects_import.exec
     end
 
     it "should not fork into a namespace that doesn't exist" do
@@ -118,7 +118,7 @@ describe GitlabProjects do
     argv(*args)
     gl_projects = GitlabProjects.new
     gl_projects.stub(repos_path: tmp_repos_path)
-    gl_projects.stub(full_path: tmp_repo_path)
+    gl_projects.stub(full_path: File.join(tmp_repos_path, gl_projects.project_name))
     gl_projects
   end
 
