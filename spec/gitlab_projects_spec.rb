@@ -78,13 +78,20 @@ describe GitlabProjects do
   end
 
   describe :fork_project do
+    let(:gl_project_import) { build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git') }
     let(:gl_projects) { build_gitlab_projects('fork-project', repo_name, 'forked-to-namespace')}
+
+    before do
+      FileUtils.mkdir_p(tmp_repo_path)
+      FileUtils.mkdir_p(File.join(tmp_repos_path, 'forked-to-namespace'))
+      gl_project_import.exec
+    end
 
     it "should fork the repo" do
       gl_projects.exec
-      File.exists?(File.join(tmp_repo_path, 'forked-to-namespace', repo_name))
-      File.exists?(File.join(tmp_repo_path, 'forked-to-namespace', repo_name, '/hooks/update/post-receive'))
-      File.exists?(File.join(tmp_repo_path, 'forked-to-namespace', repo_name, '/hooks/update/'))
+      File.exists?(File.join(tmp_repos_path, 'forked-to-namespace', repo_name)).should be_true
+      File.exists?(File.join(tmp_repos_path, 'forked-to-namespace', repo_name, '/hooks/update/post-receive')).should be_true
+      File.exists?(File.join(tmp_repos_path, 'forked-to-namespace', repo_name, '/hooks/update/')).should be_true
     end
   end
 
