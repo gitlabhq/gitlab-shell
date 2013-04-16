@@ -13,6 +13,8 @@ require_relative '../lib/gitlab_init'
 #
 #   /bin/gitlab-projects mv-project gitlab/gitlab-ci.git randx/fork.git
 #
+#   /bin/gitlab-projects fork-project gitlab/gitlab-ci.git randx
+#
 #   /bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git
 #
 require File.join(ROOT_PATH, 'lib', 'gitlab_projects')
