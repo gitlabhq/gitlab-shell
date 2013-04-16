@@ -90,8 +90,8 @@ describe GitlabProjects do
     it "should fork the repo" do
       gl_projects.exec
       File.exists?(File.join(tmp_repos_path, 'forked-to-namespace', repo_name)).should be_true
-      File.exists?(File.join(tmp_repos_path, 'forked-to-namespace', repo_name, '/hooks/update/post-receive')).should be_true
-      File.exists?(File.join(tmp_repos_path, 'forked-to-namespace', repo_name, '/hooks/update/')).should be_true
+      File.exists?(File.join(tmp_repos_path, 'forked-to-namespace', repo_name, '/hooks/update')).should be_true
+      File.exists?(File.join(tmp_repos_path, 'forked-to-namespace', repo_name, '/hooks/post-receive')).should be_true
     end
   end
 
