@@ -94,7 +94,7 @@ class GitlabProjects
     return false unless File.exists?(namespaced_path)
 
     #a project of the same name cannot already be within the destination namespace
-    full_destination_path = File.join(namespaced_path, project_name)
+    full_destination_path = File.join(namespaced_path, project_name.split('/')[-1])
     return false if File.exists?(full_destination_path)
 
     cmd = "cd #{namespaced_path} && git clone --bare #{full_path} && #{create_hooks_to(full_destination_path)}"
