@@ -86,11 +86,16 @@ class GitlabProjects
   def fork_project
     new_namespace = ARGV.shift
 
+    # destination namespace must be provided
     return false unless new_namespace
 
+    #destination namespace must exist
     namespaced_path = File.join(repos_path, new_namespace)
     return false unless File.exists?(namespaced_path)
+
+    #a project of the same name cannot already be within the destination namespace
     full_destination_path = File.join(namespaced_path, project_name)
+    return false if File.exists?(full_destination_path)
 
     cmd = "cd #{namespaced_path} && git clone --bare #{full_path} && #{create_hooks_to(full_destination_path)}"
     system(cmd)

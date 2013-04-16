@@ -79,19 +79,30 @@ describe GitlabProjects do
 
   describe :fork_project do
     let(:gl_project_import) { build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git') }
-    let(:gl_projects) { build_gitlab_projects('fork-project', repo_name, 'forked-to-namespace')}
+    let(:gl_projects_fork) { build_gitlab_projects('fork-project', repo_name, 'forked-to-namespace')}
+    let(:dest_repo) { File.join(tmp_repos_path, 'forked-to-namespace', repo_name) }
 
     before do
       FileUtils.mkdir_p(tmp_repo_path)
-      FileUtils.mkdir_p(File.join(tmp_repos_path, 'forked-to-namespace'))
       gl_project_import.exec
     end
 
+    it "should not fork into a namespace that doesn't exist" do
+      gl_projects_fork.exec.should be_false
+    end
+
     it "should fork the repo" do
-      gl_projects.exec
-      File.exists?(File.join(tmp_repos_path, 'forked-to-namespace', repo_name)).should be_true
-      File.exists?(File.join(tmp_repos_path, 'forked-to-namespace', repo_name, '/hooks/update')).should be_true
-      File.exists?(File.join(tmp_repos_path, 'forked-to-namespace', repo_name, '/hooks/post-receive')).should be_true
+      # create destination namespace
+      FileUtils.mkdir_p(File.join(tmp_repos_path, 'forked-to-namespace'))
+      gl_projects_fork.exec.should be_true
+      File.exists?(dest_repo).should be_true
+      File.exists?(File.join(dest_repo, '/hooks/update')).should be_true
+      File.exists?(File.join(dest_repo, '/hooks/post-receive')).should be_true
+    end
+
+    it "should not fork if a project of the same name already exists" do
+      #trying to fork again should fail as the repo already exists
+      gl_projects_fork.exec.should be_false
     end
   end
 
