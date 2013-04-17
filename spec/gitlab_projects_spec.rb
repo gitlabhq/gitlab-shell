@@ -18,7 +18,7 @@ describe GitlabProjects do
 
     it { @gl_projects.project_name.should == repo_name }
     it { @gl_projects.instance_variable_get(:@command).should == 'add-project' }
-    it { @gl_projects.instance_variable_get(:@full_path).should == '/home/git/repositories/gitlab-ci.git' }
+    it { @gl_projects.instance_variable_get(:@full_path).should == "#{GitlabConfig.new.repos_path}/gitlab-ci.git" }
   end
 
   describe :add_project do
@@ -77,6 +77,35 @@ describe GitlabProjects do
     end
   end
 
+  describe :fork_project do
+    let(:source_repo_name) { File.join('source-namespace', repo_name) }
+    let(:dest_repo) { File.join(tmp_repos_path, 'forked-to-namespace', repo_name) }
+    let(:gl_projects_fork) { build_gitlab_projects('fork-project', source_repo_name, 'forked-to-namespace') }
+    let(:gl_projects_import) { build_gitlab_projects('import-project', source_repo_name, 'https://github.com/randx/six.git') }
+
+    before do
+      gl_projects_import.exec
+    end
+
+    it "should not fork into a namespace that doesn't exist" do
+      gl_projects_fork.exec.should be_false
+    end
+
+    it "should fork the repo" do
+      # create destination namespace
+      FileUtils.mkdir_p(File.join(tmp_repos_path, 'forked-to-namespace'))
+      gl_projects_fork.exec.should be_true
+      File.exists?(dest_repo).should be_true
+      File.exists?(File.join(dest_repo, '/hooks/update')).should be_true
+      File.exists?(File.join(dest_repo, '/hooks/post-receive')).should be_true
+    end
+
+    it "should not fork if a project of the same name already exists" do
+      #trying to fork again should fail as the repo already exists
+      gl_projects_fork.exec.should be_false
+    end
+  end
+
   describe :exec do
     it 'should puts message if unknown command arg' do
       gitlab_projects = build_gitlab_projects('edit-project', repo_name)
@@ -89,7 +118,7 @@ describe GitlabProjects do
     argv(*args)
     gl_projects = GitlabProjects.new
     gl_projects.stub(repos_path: tmp_repos_path)
-    gl_projects.stub(full_path: tmp_repo_path)
+    gl_projects.stub(full_path: File.join(tmp_repos_path, gl_projects.project_name))
     gl_projects
   end
 

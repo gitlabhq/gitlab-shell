@@ -29,6 +29,7 @@ class GitlabProjects
     when 'rm-project';  rm_project
     when 'mv-project';  mv_project
     when 'import-project'; import_project
+    when 'fork-project'; fork_project
     else
       puts 'not allowed'
       false
@@ -44,10 +45,7 @@ class GitlabProjects
   end
 
   def create_hooks_cmd
-    pr_hook_path = File.join(ROOT_PATH, 'hooks', 'post-receive')
-    up_hook_path = File.join(ROOT_PATH, 'hooks', 'update')
-
-    "ln -s #{pr_hook_path} #{full_path}/hooks/post-receive && ln -s #{up_hook_path} #{full_path}/hooks/update"
+    create_hooks_to(full_path)
   end
 
   def rm_project
@@ -84,4 +82,33 @@ class GitlabProjects
 
     FileUtils.mv(full_path, new_full_path)
   end
+
+  def fork_project
+    new_namespace = ARGV.shift
+
+    # destination namespace must be provided
+    return false unless new_namespace
+
+    #destination namespace must exist
+    namespaced_path = File.join(repos_path, new_namespace)
+    return false unless File.exists?(namespaced_path)
+
+    #a project of the same name cannot already be within the destination namespace
+    full_destination_path = File.join(namespaced_path, project_name.split('/')[-1])
+    return false if File.exists?(full_destination_path)
+
+    cmd = "cd #{namespaced_path} && git clone --bare #{full_path} && #{create_hooks_to(full_destination_path)}"
+    system(cmd)
+  end
+
+  private
+
+  def create_hooks_to(dest_path)
+    pr_hook_path = File.join(ROOT_PATH, 'hooks', 'post-receive')
+    up_hook_path = File.join(ROOT_PATH, 'hooks', 'update')
+
+    "ln -s #{pr_hook_path} #{dest_path}/hooks/post-receive && ln -s #{up_hook_path} #{dest_path}/hooks/update"
+
+  end
+
 end
