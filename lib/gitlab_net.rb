@@ -42,7 +42,7 @@ class GitlabNet
   def get(url)
     url = URI.parse(url)
     http = Net::HTTP.new(url.host, url.port)
-    http.use_ssl = (url.port == 443)
+    http.use_ssl = (url.scheme == 'https')
 
     if config.http_settings['self_signed_cert'] && http.use_ssl?
       http.verify_mode = OpenSSL::SSL::VERIFY_NONE
