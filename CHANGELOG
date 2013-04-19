@@ -1,4 +1,6 @@
-Not yet released
+v1.3.0
+  - Fork-project command
+  - Custom redis configuration
   - Interpret login with deploy key as anonymous one
 
 v1.2.0
