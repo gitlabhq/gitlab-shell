@@ -26,4 +26,23 @@ class GitlabConfig
   def redis
     @config['redis'] ||= {}
   end
+
+  def redis_namespace
+    redis['namespace'] || 'resque:gitlab'
+  end
+
+  # Build redis command to write update event in gitlab queue
+  def redis_command
+    if redis.empty?
+      # Default to old method of connecting to redis
+      # for users that haven't updated their configuration
+      "env -i redis-cli"
+    else
+      if redis.has_key?("socket")
+        "#{redis['bin']} -s #{redis['socket']}"
+      else
+        "#{redis['bin']} -h #{redis['host']} -p #{redis['port']}"
+      end
+    end
+  end
 end

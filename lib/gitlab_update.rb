@@ -2,8 +2,10 @@ require_relative 'gitlab_init'
 require_relative 'gitlab_net'
 
 class GitlabUpdate
+  attr_reader :config
+
   def initialize(repo_path, key_id, refname)
-    config = GitlabConfig.new
+    @config = GitlabConfig.new
 
     @repo_path = repo_path.strip
     @repo_name = repo_path
@@ -17,8 +19,6 @@ class GitlabUpdate
 
     @oldrev  = ARGV[1]
     @newrev  = ARGV[2]
-
-    @redis = config.redis
   end
 
   def exec
@@ -53,16 +53,7 @@ class GitlabUpdate
   end
 
   def update_redis
-    if !@redis.empty? && !@redis.has_key?("socket")
-      redis_command = "#{@redis['bin']} -h #{@redis['host']} -p #{@redis['port']}"
-    elsif !@redis.empty? && @redis.has_key?("socket")
-      redis_command = "#{@redis['bin']} -s #{@redis['socket']}"
-    else
-      # Default to old method of connecting to redis for users that haven't updated their configuration
-      redis_command = "env -i redis-cli"
-    end
-
-    command = "#{redis_command} rpush '#{@redis['namespace']}:queue:post_receive' '{\"class\":\"PostReceive\",\"args\":[\"#{@repo_path}\",\"#{@oldrev}\",\"#{@newrev}\",\"#{@refname}\",\"#{@key_id}\"]}' > /dev/null 2>&1"
+    command = "#{config.redis_command} rpush '#{config.redis_namespace}:queue:post_receive' '{\"class\":\"PostReceive\",\"args\":[\"#{@repo_path}\",\"#{@oldrev}\",\"#{@newrev}\",\"#{@refname}\",\"#{@key_id}\"]}' > /dev/null 2>&1"
     system(command)
   end
 end
