@@ -12,7 +12,9 @@ key_dir = File.dirname("#{config.auth_file}")
 commands = [
   "mkdir -p #{config.repos_path}",
   "mkdir -p #{key_dir}",
+  "chmod 700 #{key_dir}",
   "touch #{config.auth_file}",
+  "chmod 600 #{config.auth_file}",
   "chmod -R ug+rwX,o-rwx #{config.repos_path}",
   "find #{config.repos_path} -type d -print0 | xargs -0 chmod g+s"
 ]
