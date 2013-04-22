@@ -7,6 +7,10 @@ branches:
 rvm:
   - 1.9.3-p327
   - 2.0.0
+  - rbx-nightly-19mode
+matrix:
+  allow_failures:
+    - rvm: rbx-nightly-19mode
 before_script:
   - "cp config.yml.example config.yml"
 script: "bundle exec rspec spec"
