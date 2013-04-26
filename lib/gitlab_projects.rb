@@ -30,6 +30,7 @@ class GitlabProjects
     when 'mv-project';  mv_project
     when 'import-project'; import_project
     when 'fork-project'; fork_project
+    when 'update-head' ; update_head
     else
       puts 'not allowed'
       false
@@ -99,6 +100,14 @@ class GitlabProjects
 
     cmd = "cd #{namespaced_path} && git clone --bare #{full_path} && #{create_hooks_to(full_destination_path)}"
     system(cmd)
+  end
+
+  def update_head
+    new_branch = ARGV.shift
+
+    File.open(full_path+'/HEAD', 'w+') { |f|
+      f.write('ref: refs/heads/'+new_branch+$/)
+    } if File.exist?(full_path+'/refs/heads/'+new_branch)
   end
 
   private
