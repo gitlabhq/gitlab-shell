@@ -24,7 +24,7 @@ describe GitlabKeys do
     let(:gitlab_keys) { build_gitlab_keys('rm-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E') }
 
     it "should receive valid cmd" do
-      valid_cmd = "sed -i '/shell key-741/d' #{GitlabConfig.new.auth_file}"
+      valid_cmd = "sed -i '/shell key-741\"/d' #{GitlabConfig.new.auth_file}"
       gitlab_keys.should_receive(:system).with(valid_cmd)
       gitlab_keys.send :rm_key
     end

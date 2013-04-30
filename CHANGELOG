@@ -1,3 +1,6 @@
+v1.4.0
+  - Regex used in rm-key command was too lax
+
 v1.3.0
   - Fork-project command
   - Custom redis configuration
