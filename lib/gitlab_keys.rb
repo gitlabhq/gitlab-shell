@@ -31,7 +31,7 @@ class GitlabKeys
   end
 
   def rm_key
-    cmd = "sed -i '/shell #{@key_id}\"/d' #{auth_file}"
+    cmd = "sed '/shell #{@key_id}\"/d' #{auth_file} > #{auth_file}.$$ && /bin/mv #{auth_file}.$$ #{auth_file}"
     system(cmd)
   end
 end
