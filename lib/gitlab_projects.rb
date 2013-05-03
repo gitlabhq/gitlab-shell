@@ -19,6 +19,7 @@ class GitlabProjects
   def initialize
     @command = ARGV.shift
     @project_name = ARGV.shift
+
     @repos_path = GitlabConfig.new.repos_path
     @full_path = File.join(@repos_path, @project_name)
   end
@@ -56,7 +57,12 @@ class GitlabProjects
   # URL must be publicly clonable
   def import_project
     @source = ARGV.shift
-    cmd = "cd #{repos_path} && git clone --bare #{@source} #{project_name} && #{create_hooks_cmd}"
+    @source_control = ARGV.shift
+
+    prefix = import_prefix_for @source_control
+    suffix = import_suffix_for @source_control
+
+    cmd = "cd #{repos_path} && #{prefix} #{@source} #{project_name}#{suffix} && #{create_hooks_cmd}"
     system(cmd)
   end
 
@@ -102,6 +108,25 @@ class GitlabProjects
   end
 
   private
+
+
+  def import_prefix_for(source_control)
+    case source_control
+    when "git"
+      "git clone --bare"
+    when "svn"
+      "git svn clone"
+    end
+  end
+
+  def import_suffix_for(source_control)
+    case source_control
+    when "git"
+      ""
+    when "svn"
+      ".svn_tmp && git clone --bare #{project_name}.svn_tmp #{project_name} && rm -rf #{project_name}.svn_tmp"
+    end
+  end
 
   def create_hooks_to(dest_path)
     pr_hook_path = File.join(ROOT_PATH, 'hooks', 'post-receive')
