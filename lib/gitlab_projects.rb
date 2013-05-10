@@ -59,10 +59,9 @@ class GitlabProjects
     @source = ARGV.shift
     @source_control = ARGV.shift
 
-    prefix = import_prefix_for @source_control
-    suffix = import_suffix_for @source_control
+    clone_command = get_clone_command_for @project_name, @source_control
 
-    cmd = "cd #{repos_path} && #{prefix} #{@source} #{project_name}#{suffix} && #{create_hooks_cmd}"
+    cmd = "cd #{repos_path} && #{clone_command} && #{create_hooks_cmd}"
     system(cmd)
   end
 
@@ -109,22 +108,17 @@ class GitlabProjects
 
   private
 
-
-  def import_prefix_for(source_control)
+  def get_clone_command_for(project_name, source_control)
     case source_control
     when "git"
-      "git clone --bare"
+      "git clone --bare #{@source} #{project_name}"
     when "svn"
-      "git svn clone"
-    end
-  end
+      make_temp_repo = "mkdir #{project_name}.svn_tmp && cd #{project_name}.svn_tmp"
+      clone_svn_repo = "svn2git #{@source}"
+      move_git_repo_to_bare = "cd ../ && git clone --bare #{project_name}.svn_tmp #{project_name}"
+      remove_tmp_repo = "rm -rf #{project_name}.svn_tmp"
 
-  def import_suffix_for(source_control)
-    case source_control
-    when "git"
-      ""
-    when "svn"
-      ".svn_tmp && git clone --bare #{project_name}.svn_tmp #{project_name} && rm -rf #{project_name}.svn_tmp"
+      "#{make_temp_repo} && #{clone_svn_repo} && #{move_git_repo_to_bare} && #{remove_tmp_repo}"
     end
   end
 

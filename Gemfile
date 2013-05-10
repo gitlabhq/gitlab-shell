@@ -7,4 +7,9 @@ group :development do
   gem 'guard'
   gem 'guard-rspec'
   gem 'vcr'
+
 end
+
+
+gem 'svn2git' 
+

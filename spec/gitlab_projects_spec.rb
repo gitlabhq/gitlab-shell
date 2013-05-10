@@ -77,7 +77,7 @@ describe GitlabProjects do
     end
 
     it "should import a svn repo" do
-      gl_projects = build_gitlab_projects('import-project', repo_name, 'http://gitlab-shell-import-test.googlecode.com/svn/trunk/', 'svn')
+      gl_projects = build_gitlab_projects('import-project', repo_name, 'http://gitlab-shell-import-test.googlecode.com/svn/', 'svn')
       gl_projects.exec
 
       File.exists?("#{tmp_repo_path}.svn_tmp").should be_false
