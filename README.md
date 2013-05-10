@@ -32,6 +32,7 @@ Remove repo
 Import repo 
 
     ./bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git
+    ./bin/gitlab-projects import-project yosy/gitlab_shell_test.git http://gitlab-shell-import-test.googlecode.com/svn/trunk/ svn
 
 Fork repo
 

@@ -69,10 +69,18 @@ describe GitlabProjects do
   end
 
   describe :import_project do
-    let(:gl_projects) { build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git') }
-
-    it "should import a repo" do
+    it "should import a git repo" do
+      gl_projects = build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git', 'git')
       gl_projects.exec
+
+      File.exists?(File.join(tmp_repo_path, 'HEAD')).should be_true
+    end
+
+    it "should import a svn repo" do
+      gl_projects = build_gitlab_projects('import-project', repo_name, 'http://gitlab-shell-import-test.googlecode.com/svn/', 'svn')
+      gl_projects.exec
+
+      File.exists?("#{tmp_repo_path}.svn_tmp").should be_false
       File.exists?(File.join(tmp_repo_path, 'HEAD')).should be_true
     end
   end
@@ -81,7 +89,7 @@ describe GitlabProjects do
     let(:source_repo_name) { File.join('source-namespace', repo_name) }
     let(:dest_repo) { File.join(tmp_repos_path, 'forked-to-namespace', repo_name) }
     let(:gl_projects_fork) { build_gitlab_projects('fork-project', source_repo_name, 'forked-to-namespace') }
-    let(:gl_projects_import) { build_gitlab_projects('import-project', source_repo_name, 'https://github.com/randx/six.git') }
+    let(:gl_projects_import) { build_gitlab_projects('import-project', source_repo_name, 'https://github.com/randx/six.git', 'git') }
 
     before do
       gl_projects_import.exec
