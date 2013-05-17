@@ -2,6 +2,10 @@ require_relative 'spec_helper'
 require_relative '../lib/gitlab_keys'
 
 describe GitlabKeys do
+  before do
+    $logger = double('logger').as_null_object
+  end
+
   describe :initialize do
     let(:gitlab_keys) { build_gitlab_keys('add-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E') }
 
@@ -18,6 +22,11 @@ describe GitlabKeys do
       gitlab_keys.should_receive(:system).with(valid_cmd)
       gitlab_keys.send :add_key
     end
+
+    it "should log an add-key event" do
+      $logger.should_receive(:info).with('Adding key key-741 => "ssh-rsa AAAAB3NzaDAxx2E"')
+      gitlab_keys.send :add_key
+    end
   end
 
   describe :rm_key do
@@ -26,6 +35,11 @@ describe GitlabKeys do
     it "should receive valid cmd" do
       valid_cmd = "sed -i '/shell key-741\"/d' #{GitlabConfig.new.auth_file}"
       gitlab_keys.should_receive(:system).with(valid_cmd)
+      gitlab_keys.send :rm_key
+    end
+
+    it "should log an rm-key event" do
+      $logger.should_receive(:info).with('Removing key key-741')
       gitlab_keys.send :rm_key
     end
   end
@@ -46,6 +60,13 @@ describe GitlabKeys do
     it 'should puts message if unknown command arg' do
       gitlab_keys = build_gitlab_keys('change-key')
       gitlab_keys.should_receive(:puts).with('not allowed')
+      gitlab_keys.exec
+    end
+
+    it 'should log an error on unknown commands' do
+      gitlab_keys = build_gitlab_keys('nooope')
+      gitlab_keys.stub(puts: nil)
+      $logger.should_receive(:error).with('Attempt to execute invalid gitlab-keys command "nooope".')
       gitlab_keys.exec
     end
   end
