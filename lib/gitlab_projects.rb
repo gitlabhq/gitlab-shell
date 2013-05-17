@@ -2,6 +2,7 @@ require 'open3'
 require 'fileutils'
 
 require_relative 'gitlab_config'
+require_relative 'gitlab_logger'
 
 class GitlabProjects
   # Project name is a directory name for repository with .git at the end
@@ -31,6 +32,7 @@ class GitlabProjects
     when 'import-project'; import_project
     when 'fork-project'; fork_project
     else
+      $logger.error "Attempt to execute invalid gitlab-projects command #{@command.inspect}."
       puts 'not allowed'
       false
     end
@@ -39,6 +41,7 @@ class GitlabProjects
   protected
 
   def add_project
+    $logger.info "Adding project #{@project_name} at <#{full_path}>."
     FileUtils.mkdir_p(full_path, mode: 0770)
     cmd = "cd #{full_path} && git init --bare && #{create_hooks_cmd}"
     system(cmd)
@@ -49,6 +52,7 @@ class GitlabProjects
   end
 
   def rm_project
+    $logger.info "Removing project #{@project_name} from <#{full_path}>."
     FileUtils.rm_rf(full_path)
   end
 
@@ -56,6 +60,7 @@ class GitlabProjects
   # URL must be publicly clonable
   def import_project
     @source = ARGV.shift
+    $logger.info "Importing project #{@project_name} from <#{@source}> to <#{full_path}>."
     cmd = "cd #{repos_path} && git clone --bare #{@source} #{project_name} && #{create_hooks_cmd}"
     system(cmd)
   end
@@ -80,6 +85,7 @@ class GitlabProjects
     return false unless File.exists?(full_path)
     return false if File.exists?(new_full_path)
 
+    $logger.info "Moving project #{@project_name} from <#{full_path}> to <#{new_full_path}>."
     FileUtils.mv(full_path, new_full_path)
   end
 
@@ -97,6 +103,7 @@ class GitlabProjects
     full_destination_path = File.join(namespaced_path, project_name.split('/')[-1])
     return false if File.exists?(full_destination_path)
 
+    $logger.info "Forking project from <#{full_path}> to <#{full_destination_path}>."
     cmd = "cd #{namespaced_path} && git clone --bare #{full_path} && #{create_hooks_to(full_destination_path)}"
     system(cmd)
   end
