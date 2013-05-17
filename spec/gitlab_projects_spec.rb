@@ -4,6 +4,7 @@ require_relative '../lib/gitlab_projects'
 describe GitlabProjects do
   before do
     FileUtils.mkdir_p(tmp_repos_path)
+    $logger = double('logger').as_null_object
   end
 
   after do
@@ -37,10 +38,16 @@ describe GitlabProjects do
       gl_projects.should_receive(:system).with(valid_cmd)
       gl_projects.exec
     end
+
+    it "should log an add-project event" do
+      $logger.should_receive(:info).with("Adding project #{repo_name} at <#{tmp_repo_path}>.")
+      gl_projects.exec
+    end
   end
 
   describe :mv_project do
     let(:gl_projects) { build_gitlab_projects('mv-project', repo_name, 'repo.git') }
+    let(:new_repo_path) { File.join(tmp_repos_path, 'repo.git') }
 
     before do
       FileUtils.mkdir_p(tmp_repo_path)
@@ -50,7 +57,13 @@ describe GitlabProjects do
       File.exists?(tmp_repo_path).should be_true
       gl_projects.exec
       File.exists?(tmp_repo_path).should be_false
-      File.exists?(File.join(tmp_repos_path, 'repo.git')).should be_true
+      File.exists?(new_repo_path).should be_true
+    end
+
+    it "should log an mv-project event" do
+      message = "Moving project #{repo_name} from <#{tmp_repo_path}> to <#{new_repo_path}>."
+      $logger.should_receive(:info).with(message)
+      gl_projects.exec
     end
   end
 
@@ -66,6 +79,11 @@ describe GitlabProjects do
       gl_projects.exec
       File.exists?(tmp_repo_path).should be_false
     end
+
+    it "should log an rm-project event" do
+      $logger.should_receive(:info).with("Removing project #{repo_name} from <#{tmp_repo_path}>.")
+      gl_projects.exec
+    end
   end
 
   describe :import_project do
@@ -74,6 +92,12 @@ describe GitlabProjects do
     it "should import a repo" do
       gl_projects.exec
       File.exists?(File.join(tmp_repo_path, 'HEAD')).should be_true
+    end
+
+    it "should log an import-project event" do
+      message = "Importing project #{repo_name} from <https://github.com/randx/six.git> to <#{tmp_repo_path}>."
+      $logger.should_receive(:info).with(message)
+      gl_projects.exec
     end
   end
 
@@ -104,12 +128,27 @@ describe GitlabProjects do
       #trying to fork again should fail as the repo already exists
       gl_projects_fork.exec.should be_false
     end
+
+    it "should log a fork-project event" do
+      message = "Forking project from <#{File.join(tmp_repos_path, source_repo_name)}> to <#{dest_repo}>."
+      $logger.should_receive(:info).with(message)
+
+      # create destination namespace
+      FileUtils.mkdir_p(File.join(tmp_repos_path, 'forked-to-namespace'))
+      gl_projects_fork.exec.should be_true
+    end
   end
 
   describe :exec do
     it 'should puts message if unknown command arg' do
       gitlab_projects = build_gitlab_projects('edit-project', repo_name)
       gitlab_projects.should_receive(:puts).with('not allowed')
+      gitlab_projects.exec
+    end
+
+    it 'should log a message for unknown commands' do
+      gitlab_projects = build_gitlab_projects('hurf-durf', repo_name)
+      $logger.should_receive(:error).with('Attempt to execute invalid gitlab-projects command "hurf-durf".')
       gitlab_projects.exec
     end
   end
