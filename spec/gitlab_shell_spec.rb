@@ -64,6 +64,13 @@ describe GitlabShell do
       it "should set the GL_ID environment variable" do
         ENV.should_receive("[]=").with("GL_ID", key_id)
       end
+
+      it "should log the command execution" do
+        message = "gitlab-shell: executing git command "
+        message << "<git-upload-pack #{File.join(repository_path, 'gitlab-ci.git')}> "
+        message << "for user with key #{key_id}."
+        $logger.should_receive(:info).with(message)
+      end
     end
 
     context 'git-receive-pack' do
@@ -77,6 +84,13 @@ describe GitlabShell do
       it "should execute the command" do
         subject.should_receive(:exec_cmd).with("git-receive-pack #{File.join(repository_path, 'gitlab-ci.git')}")
       end
+
+      it "should log the command execution" do
+        message = "gitlab-shell: executing git command "
+        message << "<git-receive-pack #{File.join(repository_path, 'gitlab-ci.git')}> "
+        message << "for user with key #{key_id}."
+        $logger.should_receive(:info).with(message)
+      end
     end
 
     context 'arbitrary command' do
@@ -89,6 +103,11 @@ describe GitlabShell do
 
       it "should not execute the command" do
         subject.should_not_receive(:exec_cmd)
+      end
+
+      it "should log the attempt" do
+        message = "gitlab-shell: Attempt to execute disallowed command <arbitrary command> by user with key #{key_id}."
+        $logger.should_receive(:warn).with(message)
       end
     end
 
@@ -109,6 +128,13 @@ describe GitlabShell do
     it "should call api.allowed?" do
       api.should_receive(:allowed?).
         with('git-upload-pack', 'gitlab-ci.git', key_id, '_any')
+    end
+
+    it "should disallow access and log the attempt if allowed? returns false" do
+      api.stub(allowed?: false)
+      message = "gitlab-shell: Access denied for git command <git-upload-pack gitlab-ci.git> "
+      message << "by user with key #{key_id}."
+      $logger.should_receive(:warn).with(message)
     end
   end
 
