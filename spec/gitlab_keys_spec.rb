@@ -63,10 +63,10 @@ describe GitlabKeys do
       gitlab_keys.exec
     end
 
-    it 'should log an error on unknown commands' do
+    it 'should log a warning on unknown commands' do
       gitlab_keys = build_gitlab_keys('nooope')
       gitlab_keys.stub(puts: nil)
-      $logger.should_receive(:error).with('Attempt to execute invalid gitlab-keys command "nooope".')
+      $logger.should_receive(:warn).with('Attempt to execute invalid gitlab-keys command "nooope".')
       gitlab_keys.exec
     end
   end

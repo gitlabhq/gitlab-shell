@@ -32,7 +32,7 @@ class GitlabProjects
     when 'import-project'; import_project
     when 'fork-project'; fork_project
     else
-      $logger.error "Attempt to execute invalid gitlab-projects command #{@command.inspect}."
+      $logger.warn "Attempt to execute invalid gitlab-projects command #{@command.inspect}."
       puts 'not allowed'
       false
     end

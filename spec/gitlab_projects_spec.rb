@@ -180,9 +180,9 @@ describe GitlabProjects do
       gitlab_projects.exec
     end
 
-    it 'should log a message for unknown commands' do
+    it 'should log a warning for unknown commands' do
       gitlab_projects = build_gitlab_projects('hurf-durf', repo_name)
-      $logger.should_receive(:error).with('Attempt to execute invalid gitlab-projects command "hurf-durf".')
+      $logger.should_receive(:warn).with('Attempt to execute invalid gitlab-projects command "hurf-durf".')
       gitlab_projects.exec
     end
   end
