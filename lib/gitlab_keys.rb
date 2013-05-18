@@ -18,7 +18,7 @@ class GitlabKeys
     when 'add-key'; add_key
     when 'rm-key';  rm_key
     else
-      $logger.error "Attempt to execute invalid command #{@command.inspect}."
+      $logger.error "Attempt to execute invalid gitlab-keys command #{@command.inspect}."
       puts 'not allowed'
       false
     end
