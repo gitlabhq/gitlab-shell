@@ -131,7 +131,15 @@ describe GitlabProjects do
       gl_projects_import.exec
     end
 
+    it "should not fork without a destination namespace" do
+      missing_arg = build_gitlab_projects('fork-project', source_repo_name)
+      $logger.should_receive(:error).with("fork-project failed: no destination namespace provided.")
+      missing_arg.exec.should be_false
+    end
+
     it "should not fork into a namespace that doesn't exist" do
+      message = "fork-project failed: destination namespace <#{tmp_repos_path}/forked-to-namespace> does not exist."
+      $logger.should_receive(:error).with(message)
       gl_projects_fork.exec.should be_false
     end
 
@@ -145,7 +153,13 @@ describe GitlabProjects do
     end
 
     it "should not fork if a project of the same name already exists" do
-      #trying to fork again should fail as the repo already exists
+      # create a fake project at the intended destination
+      FileUtils.mkdir_p(File.join(tmp_repos_path, 'forked-to-namespace', repo_name))
+
+      # trying to fork again should fail as the repo already exists
+      message = "fork-project failed: destination repository <#{tmp_repos_path}/forked-to-namespace/#{repo_name}> "
+      message << "already exists."
+      $logger.should_receive(:error).with(message)
       gl_projects_fork.exec.should be_false
     end
 
