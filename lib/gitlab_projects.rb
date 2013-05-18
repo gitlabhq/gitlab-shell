@@ -103,15 +103,24 @@ class GitlabProjects
     new_namespace = ARGV.shift
 
     # destination namespace must be provided
-    return false unless new_namespace
+    unless new_namespace
+      $logger.error "fork-project failed: no destination namespace provided."
+      return false
+    end
 
-    #destination namespace must exist
+    # destination namespace must exist
     namespaced_path = File.join(repos_path, new_namespace)
-    return false unless File.exists?(namespaced_path)
+    unless File.exists?(namespaced_path)
+      $logger.error "fork-project failed: destination namespace <#{namespaced_path}> does not exist."
+      return false
+    end
 
-    #a project of the same name cannot already be within the destination namespace
+    # a project of the same name cannot already be within the destination namespace
     full_destination_path = File.join(namespaced_path, project_name.split('/')[-1])
-    return false if File.exists?(full_destination_path)
+    if File.exists?(full_destination_path)
+      $logger.error "fork-project failed: destination repository <#{full_destination_path}> already exists."
+      return false
+    end
 
     $logger.info "Forking project from <#{full_path}> to <#{full_destination_path}>."
     cmd = "cd #{namespaced_path} && git clone --bare #{full_path} && #{create_hooks_to(full_destination_path)}"
