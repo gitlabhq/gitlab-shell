@@ -32,7 +32,7 @@ class GitlabConfig
   end
 
   def log_file
-    @config['log_file'] ||= File.join(ROOT_PATH, 'log', 'gitlab_shell.log')
+    @config['log_file'] ||= File.join(ROOT_PATH, 'gitlab-shell.log')
   end
 
   def log_level
