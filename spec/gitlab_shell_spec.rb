@@ -11,13 +11,15 @@ describe GitlabShell do
   end
   let(:api) do
     double(GitlabNet).tap do |api|
-      api.stub(discover: 'John Doe')
+      api.stub(discover: { 'name' => 'John Doe' })
       api.stub(allowed?: true)
     end
   end
   let(:key_id) { "key-#{rand(100) + 100}" }
   let(:repository_path) { "/home/git#{rand(100)}/repos" }
-  before { GitlabConfig.any_instance.stub(:repos_path).and_return(repository_path) }
+  before do
+    GitlabConfig.any_instance.stub(repos_path: repository_path, audit_usernames: false)
+  end
 
   describe :initialize do
     before { ssh_cmd 'git-receive-pack' }
@@ -70,6 +72,11 @@ describe GitlabShell do
         message << "<git-upload-pack #{File.join(repository_path, 'gitlab-ci.git')}> "
         message << "for user with key #{key_id}."
         $logger.should_receive(:info).with(message)
+      end
+
+      it "should use usernames if configured to do so" do
+        GitlabConfig.any_instance.stub(audit_usernames: true)
+        $logger.should_receive(:info) { |msg| msg.should =~ /for John Doe/ }
       end
     end
 

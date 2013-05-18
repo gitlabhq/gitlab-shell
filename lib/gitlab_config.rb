@@ -39,6 +39,10 @@ class GitlabConfig
     @config['log_level'] ||= 'INFO'
   end
 
+  def audit_usernames
+    @config['audit_usernames'] ||= false
+  end
+
   # Build redis command to write update event in gitlab queue
   def redis_command
     if redis.empty?
