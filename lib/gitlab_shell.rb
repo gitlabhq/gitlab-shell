@@ -25,6 +25,7 @@ class GitlabShell
         else
           message = "gitlab-shell: Access denied for git command <#{@origin_cmd}> by #{log_username}."
           $logger.warn message
+          $stderr.puts "Access denied."
         end
       else
         message = "gitlab-shell: Attempt to execute disallowed command <#{@origin_cmd}> by #{log_username}."
