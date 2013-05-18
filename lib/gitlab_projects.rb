@@ -76,14 +76,24 @@ class GitlabProjects
   def mv_project
     new_path = ARGV.shift
 
-    return false unless new_path
+    unless new_path
+      $logger.error "mv-project failed: no destination path provided."
+      return false
+    end
 
     new_full_path = File.join(repos_path, new_path)
 
-    # check if source repo exists
-    # and target repo does not exist
-    return false unless File.exists?(full_path)
-    return false if File.exists?(new_full_path)
+    # verify that the source repo exists
+    unless File.exists?(full_path)
+      $logger.error "mv-project failed: source path <#{full_path}> does not exist."
+      return false
+    end
+
+    # ...and that the target repo does not exist
+    if File.exists?(new_full_path)
+      $logger.error "mv-project failed: destination path <#{new_full_path}> already exists."
+      return false
+    end
 
     $logger.info "Moving project #{@project_name} from <#{full_path}> to <#{new_full_path}>."
     FileUtils.mv(full_path, new_full_path)
@@ -115,7 +125,6 @@ class GitlabProjects
     up_hook_path = File.join(ROOT_PATH, 'hooks', 'update')
 
     "ln -s #{pr_hook_path} #{dest_path}/hooks/post-receive && ln -s #{up_hook_path} #{dest_path}/hooks/update"
-
   end
 
 end
