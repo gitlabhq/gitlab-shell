@@ -60,6 +60,26 @@ describe GitlabProjects do
       File.exists?(new_repo_path).should be_true
     end
 
+    it "should fail if no destination path is provided" do
+      incomplete = build_gitlab_projects('mv-project', repo_name)
+      $logger.should_receive(:error).with("mv-project failed: no destination path provided.")
+      incomplete.exec.should be_false
+    end
+
+    it "should fail if the source path doesn't exist" do
+      bad_source = build_gitlab_projects('mv-project', 'bad-src.git', 'dest.git')
+      $logger.should_receive(:error).with("mv-project failed: source path <#{tmp_repos_path}/bad-src.git> does not exist.")
+      bad_source.exec.should be_false
+    end
+
+    it "should fail if the destination path already exists" do
+      FileUtils.mkdir_p(File.join(tmp_repos_path, 'already-exists.git'))
+      bad_dest = build_gitlab_projects('mv-project', repo_name, 'already-exists.git')
+      message = "mv-project failed: destination path <#{tmp_repos_path}/already-exists.git> already exists."
+      $logger.should_receive(:error).with(message)
+      bad_dest.exec.should be_false
+    end
+
     it "should log an mv-project event" do
       message = "Moving project #{repo_name} from <#{tmp_repo_path}> to <#{new_repo_path}>."
       $logger.should_receive(:info).with(message)
