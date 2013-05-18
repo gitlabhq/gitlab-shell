@@ -3,6 +3,7 @@ require 'openssl'
 require 'json'
 
 require_relative 'gitlab_config'
+require_relative 'gitlab_logger'
 
 class GitlabNet
   def allowed?(cmd, repo, key, ref)
@@ -13,7 +14,6 @@ class GitlabNet
     key_id = key.gsub("key-", "")
 
     url = "#{host}/allowed?key_id=#{key_id}&action=#{cmd}&ref=#{ref}&project=#{project_name}"
-
     resp = get(url)
 
     !!(resp.code == '200' && resp.body == 'true')
@@ -40,6 +40,8 @@ class GitlabNet
   end
 
   def get(url)
+    $logger.debug "Performing GET #{url}"
+
     url = URI.parse(url)
     http = Net::HTTP.new(url.host, url.port)
     http.use_ssl = (url.scheme == 'https')
@@ -53,6 +55,8 @@ class GitlabNet
       request.basic_auth config.http_settings['user'], config.http_settings['password']
     end
 
-    http.start {|http| http.request(request) }
+    http.start {|http| http.request(request) }.tap do |resp|
+      $logger.debug { "Received response #{resp.code} => #{resp.body}" }
+    end
   end
 end
