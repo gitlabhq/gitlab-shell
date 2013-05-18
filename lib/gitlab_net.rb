@@ -56,7 +56,11 @@ class GitlabNet
     end
 
     http.start {|http| http.request(request) }.tap do |resp|
-      $logger.debug { "Received response #{resp.code} => #{resp.body}" }
+      if resp.code == "200"
+        $logger.debug { "Received response #{resp.code} => <#{resp.body}>." }
+      else
+        $logger.error { "API call <GET #{url}> failed: #{resp.code} => <#{resp.body}>." }
+      end
     end
   end
 end
