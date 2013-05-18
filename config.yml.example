@@ -25,7 +25,8 @@ redis:
   namespace: resque:gitlab
 
 # Log file.
-log_file: "/home/git/gitlab-shell/gitlab-shell.log"
+# Default is gitlab-shell.log in the root directory.
+# log_file: "/home/git/gitlab-shell/gitlab-shell.log"
 
 # Log level. INFO by default
 log_level: INFO
