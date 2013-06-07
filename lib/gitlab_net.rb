@@ -42,10 +42,14 @@ class GitlabNet
   def get(url)
     url = URI.parse(url)
     http = Net::HTTP.new(url.host, url.port)
-    http.use_ssl = (url.scheme == 'https')
 
-    if config.http_settings['self_signed_cert'] && http.use_ssl?
-      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    if URI::HTTPS === url
+      http.use_ssl = true
+      http.cert_store = cert_store
+
+      if config.http_settings['self_signed_cert']
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      end
     end
 
     request = Net::HTTP::Get.new(url.request_uri)
@@ -54,5 +58,19 @@ class GitlabNet
     end
 
     http.start {|http| http.request(request) }
+  end
+
+  def cert_store
+    @cert_store ||= OpenSSL::X509::Store.new.tap { |store|
+      store.set_default_paths
+
+      if ca_file = config.http_settings['ca_file']
+        store.add_file(ca_file)
+      end
+
+      if ca_path = config.http_settings['ca_path']
+        store.add_path(ca_path)
+      end
+    }
   end
 end
