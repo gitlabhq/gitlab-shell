@@ -1,7 +1,10 @@
 #!/bin/bash
 
+# $1 is an optional argument specifying the location of the repositories directory.
+# Defaults to /home/git/repositories if not provided
+
 home_dir="/home/git"
-src="$home_dir/repositories"
+src=${1:-"$home_dir/repositories"}
 
 for dir in `ls "$src/"`
 do
