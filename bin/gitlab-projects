@@ -17,6 +17,8 @@ require_relative '../lib/gitlab_init'
 #
 #   /bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git
 #
+#   /bin/gitlab-projects update-head gitlab/gitlab-ci.git 5-2-stable
+#
 require File.join(ROOT_PATH, 'lib', 'gitlab_projects')
 
 # Return non-zero if command execution was not successful

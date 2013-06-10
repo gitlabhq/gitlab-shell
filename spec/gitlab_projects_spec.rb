@@ -106,6 +106,27 @@ describe GitlabProjects do
     end
   end
 
+  describe :update_head do
+    let(:gl_projects) { build_gitlab_projects('update-head', repo_name, 'stable') }
+
+    before do
+      FileUtils.mkdir_p(tmp_repo_path)
+      system("git init --bare #{tmp_repo_path}")
+      system("touch #{tmp_repo_path}/refs/heads/stable")
+      File.read(File.join(tmp_repo_path, 'HEAD')).strip.should == 'ref: refs/heads/master'
+    end
+
+    it "should update head for repo" do
+      gl_projects.exec.should be_true
+      File.read(File.join(tmp_repo_path, 'HEAD')).strip.should == 'ref: refs/heads/stable'
+    end
+
+    it "should log an update_head event" do
+      $logger.should_receive(:info).with("Update head in project #{repo_name} to <stable>.")
+      gl_projects.exec
+    end
+  end
+
   describe :import_project do
     let(:gl_projects) { build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git') }
 
