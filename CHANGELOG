@@ -1,3 +1,9 @@
+v1.5.0
+  - Logger
+  - Ability to specify ca_file/ca_path
+  - Update-head command for project
+  - Better regexp for key_id inside shell
+
 v1.4.0
   - Regex used in rm-key command was too lax
 
