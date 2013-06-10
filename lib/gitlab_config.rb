@@ -31,6 +31,18 @@ class GitlabConfig
     redis['namespace'] || 'resque:gitlab'
   end
 
+  def log_file
+    @config['log_file'] ||= File.join(ROOT_PATH, 'gitlab-shell.log')
+  end
+
+  def log_level
+    @config['log_level'] ||= 'INFO'
+  end
+
+  def audit_usernames
+    @config['audit_usernames'] ||= false
+  end
+
   # Build redis command to write update event in gitlab queue
   def redis_command
     if redis.empty?
