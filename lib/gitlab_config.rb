@@ -19,6 +19,10 @@ class GitlabConfig
     @config['gitlab_url'] ||= "http://localhost/"
   end
 
+  def gitlab_shell_bin
+    @config['gitlab_shell_bin'] || "#{ROOT_PATH}/bin/gitlab-shell"
+  end
+
   def http_settings
     @config['http_settings'] ||= {}
   end

@@ -11,6 +11,7 @@ class GitlabKeys
     @key_id = ARGV.shift
     @key = ARGV.shift
     @auth_file = GitlabConfig.new.auth_file
+    @gitlab_shell_bin = GitlabConfig.new.gitlab_shell_bin
   end
 
   def exec
@@ -28,7 +29,7 @@ class GitlabKeys
 
   def add_key
     $logger.info "Adding key #{@key_id} => #{@key.inspect}"
-    cmd = "command=\"#{ROOT_PATH}/bin/gitlab-shell #{@key_id}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{@key}"
+    cmd = "command=\"#{@gitlab_shell_bin} #{@key_id}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{@key}"
     cmd = "echo \'#{cmd}\' >> #{auth_file}"
     system(cmd)
   end
