@@ -37,3 +37,7 @@ log_level: INFO
 # Set to true to see real usernames in the logs instead of key ids, which is easier to follow, but
 # incurs an extra API call on every gitlab-shell command.
 audit_usernames: false
+
+# Overwrite Gitlab-Shell wrapper binary to a custom script. This can be used to wrap gitlab-shell with a custom ruby environment (ie. rvm). 
+# The default value is "ROOT_DIR/gitlab-shell/bin/gitlab-shell"
+# gitlab_shell_bin: "/home/git/gitlab-shell/bin/gitlab-shell-custom_rubyenv"
