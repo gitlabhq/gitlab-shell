@@ -1,7 +1,7 @@
 # GitLab user. git by default
 user: git
 
-# Url to gitlab instance. Used for api calls. Should be ends with slash.
+# Url to gitlab instance. Used for api calls. Should end with a slash.
 gitlab_url: "http://localhost/"
 
 http_settings:
