@@ -4,6 +4,11 @@ require 'fileutils'
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 
+ENV['http_proxy'] = http_proxy_settings['proxy_url']
+ENV['https_proxy'] = http_proxy_settings['proxy_url']
+ENV['HTTP_USER'] = http_proxy_settings['proxy_user']
+ENV['HTTP_PASSWORD'] = http_proxy_settings['proxy_passwd']
+
 class GitlabProjects
   # Project name is a directory name for repository with .git at the end
   # It may be namespaced or not. Like repo.git or gitlab/repo.git
