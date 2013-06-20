@@ -15,9 +15,9 @@ http_proxy_settings:
 #	proxy_url: "proxy.mycompany.com:port"
 #	proxy_user: myname
 #	proxy_passwd: mypassword
-  proxy_url: "abc.xyz.com:8080"
-  proxy_user: "test"
-  proxy_passwd: "test"	
+  proxy_url: ""
+  proxy_user: ""
+  proxy_passwd: ""
 
 # Repositories path
 # REPOS_PATH MUST NOT BE A SYMLINK!!!
