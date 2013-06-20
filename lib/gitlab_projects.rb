@@ -4,10 +4,12 @@ require 'fileutils'
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 
-ENV['http_proxy'] = http_proxy_settings['proxy_url']
-ENV['https_proxy'] = http_proxy_settings['proxy_url']
-ENV['HTTP_USER'] = http_proxy_settings['proxy_user']
-ENV['HTTP_PASSWORD'] = http_proxy_settings['proxy_passwd']
+config = GitlabConfig.new
+
+ENV['http_proxy'] = config.http_proxy_settings['proxy_url']
+ENV['https_proxy'] = config.http_proxy_settings['proxy_url']
+ENV['HTTP_USER'] = config.http_proxy_settings['proxy_user']
+ENV['HTTP_PASSWORD'] = config.http_proxy_settings['proxy_passwd']
 
 class GitlabProjects
   # Project name is a directory name for repository with .git at the end
