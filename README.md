@@ -8,6 +8,9 @@
 * [![Coverage Status](https://coveralls.io/repos/gitlabhq/gitlab-shell/badge.png?branch=master)](https://coveralls.io/r/gitlabhq/gitlab-shell)
 
 
+__Requires ruby 1.9+__
+
+
 ### Setup
 
     ./bin/install
