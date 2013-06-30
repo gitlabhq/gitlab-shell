@@ -26,6 +26,10 @@ class GitlabProjects
 
   def exec
     case @command
+    when 'create-branch'; create_branch
+    when 'rm-branch'; rm_branch
+    when 'create-tag'; create_tag
+    when 'rm-tag'; rm_tag
     when 'add-project'; add_project
     when 'rm-project';  rm_project
     when 'mv-project';  mv_project
@@ -40,6 +44,32 @@ class GitlabProjects
   end
 
   protected
+
+  def create_branch
+    branch_name = ARGV.shift
+    ref = ARGV.shift || "HEAD"
+    cmd = "cd #{full_path} && git branch #{branch_name} #{ref}"
+    system(cmd)
+  end
+
+  def rm_branch
+    branch_name = ARGV.shift
+    cmd = "cd #{full_path} && git branch -D #{branch_name}"
+    system(cmd)
+  end
+
+  def create_tag
+    tag_name = ARGV.shift
+    ref = ARGV.shift || "HEAD"
+    cmd = "cd #{full_path} && git tag #{tag_name} #{ref}"
+    system(cmd)
+  end
+
+  def rm_tag
+    tag_name = ARGV.shift
+    cmd = "cd #{full_path} && git tag -d #{tag_name}"
+    system(cmd)
+  end
 
   def add_project
     $logger.info "Adding project #{@project_name} at <#{full_path}>."

@@ -22,6 +22,74 @@ describe GitlabProjects do
     it { @gl_projects.instance_variable_get(:@full_path).should == "#{GitlabConfig.new.repos_path}/gitlab-ci.git" }
   end
 
+  describe :create_branch do
+    let(:gl_projects_create) {
+      build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git')
+    }
+    let(:gl_projects) { build_gitlab_projects('create-branch', repo_name, 'test_branch', 'master') }
+
+    it "should create a branch" do
+      gl_projects_create.exec
+      gl_projects.exec
+      branch_ref = `cd #{tmp_repo_path} && git rev-parse test_branch`.strip
+      master_ref = `cd #{tmp_repo_path} && git rev-parse master`.strip
+      branch_ref.should == master_ref
+    end
+  end
+
+  describe :rm_branch do
+    let(:gl_projects_create) {
+      build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git')
+    }
+    let(:gl_projects_create_branch) {
+      build_gitlab_projects('create-branch', repo_name, 'test_branch', 'master')
+    }
+    let(:gl_projects) { build_gitlab_projects('rm-branch', repo_name, 'test_branch') }
+
+    it "should remove a branch" do
+      gl_projects_create.exec
+      gl_projects_create_branch.exec
+      branch_ref = `cd #{tmp_repo_path} && git rev-parse test_branch`.strip
+      gl_projects.exec
+      branch_del = `cd #{tmp_repo_path} && git rev-parse test_branch`.strip
+      branch_del.should_not == branch_ref
+    end
+  end
+
+  describe :create_tag do
+    let(:gl_projects_create) {
+      build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git')
+    }
+    let(:gl_projects) { build_gitlab_projects('create-tag', repo_name, 'test_tag', 'master') }
+
+    it "should create a tag" do
+      gl_projects_create.exec
+      gl_projects.exec
+      tag_ref = `cd #{tmp_repo_path} && git rev-parse test_tag`.strip
+      master_ref = `cd #{tmp_repo_path} && git rev-parse master`.strip
+      tag_ref.should == master_ref
+    end
+  end
+
+  describe :rm_tag do
+    let(:gl_projects_create) {
+      build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git')
+    }
+    let(:gl_projects_create_tag) {
+      build_gitlab_projects('create-tag', repo_name, 'test_tag', 'master')
+    }
+    let(:gl_projects) { build_gitlab_projects('rm-tag', repo_name, 'test_tag') }
+
+    it "should remove a branch" do
+      gl_projects_create.exec
+      gl_projects_create_tag.exec
+      branch_ref = `cd #{tmp_repo_path} && git rev-parse test_tag`.strip
+      gl_projects.exec
+      branch_del = `cd #{tmp_repo_path} && git rev-parse test_tag`.strip
+      branch_del.should_not == branch_ref
+    end
+  end
+
   describe :add_project do
     let(:gl_projects) { build_gitlab_projects('add-project', repo_name) }
 
