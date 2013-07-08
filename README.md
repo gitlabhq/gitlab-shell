@@ -40,6 +40,26 @@ Fork repo
 
     ./bin/gitlab-projects fork-project gitlab/gitlab-ci.git randx
 
+Update HEAD
+
+    ./bin/gitlab-projects update-head gitlab/gitlab-ci.git 3-2-stable
+
+Create branch
+
+    ./bin/gitlab-projects create-branch gitlab/gitlab-ci.git 3-2-stable master
+
+Remove branch
+
+    ./bin/gitlab-projects rm-branch gitlab/gitlab-ci.git 3-0-stable
+
+Create tag
+
+    ./bin/gitlab-projects create-tag gitlab/gitlab-ci.git v3.0.0 3-0-stable 
+
+Remove tag
+
+    ./bin/gitlab-projects rm-tag gitlab/gitlab-ci.git v3.0.0
+
 
 ### Keys: 
 
