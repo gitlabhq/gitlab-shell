@@ -182,6 +182,9 @@ class GitlabProjects
   private
 
   def create_hooks_to(dest_path)
-    "ln -s #{File.join(ROOT_PATH, 'hooks', 'update')} #{dest_path}/hooks/update"
+    symlink_cmds = Dir[File.join(ROOT_PATH, 'hooks', '*')].sort.map do |hook|
+      "ln -s #{hook} #{dest_path}/hooks/"
+    end
+    symlink_cmds.join(' && ')
   end
 end
