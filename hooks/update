@@ -7,12 +7,15 @@ refname = ARGV[0]
 key_id  = ENV['GL_ID']
 repo_path = `pwd`
 
-Dir.foreach(File.join(repo_path.chomp, "/hooks/update.d")) do |file|
-  next if file == '.' or file == '..'
-  scriptname=File.join(repo_path.chomp, "hooks/update.d/#{file}")
-  system scriptname, *ARGV
-end
-
 require_relative '../lib/gitlab_update'
+
+update_d_dir=File.join(repo_path.chomp, "/hooks/update.d")
+if File.directory?(update_d_dir)
+  Dir.foreach(update_d_dir) do |file|
+    next if file == '.' or file == '..'
+    scriptname=File.join(repo_path.chomp, "hooks/update.d/#{file}")
+    system scriptname, *ARGV
+  end
+end
 
 GitlabUpdate.new(repo_path, key_id, refname).exec
