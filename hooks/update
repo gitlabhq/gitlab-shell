@@ -14,7 +14,10 @@ if File.directory?(update_d_dir)
   Dir.foreach(update_d_dir) do |file|
     next if file == '.' or file == '..'
     scriptname=File.join(repo_path.chomp, "hooks/update.d/#{file}")
-    system scriptname, *ARGV
+    if ! system scriptname, *ARGV
+      puts "hooklet #{file} failed"
+      exit(1)
+    end
   end
 end
 
