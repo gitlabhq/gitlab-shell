@@ -1,3 +1,6 @@
+v1.7.0
+  - Clean authorized_keys file with `gitlab-keys clear`
+
 v1.6.0
   - Create branch/tag functionality
   - Remove branch/tag functionality
