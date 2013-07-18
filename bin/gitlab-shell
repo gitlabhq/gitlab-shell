@@ -1,18 +1,20 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env bash
 
-unless ENV['SSH_CONNECTION']
-  puts "Only ssh allowed"
-  exit
-end
+GITLAB_SHELL_DIR=$(cd "$(dirname "$0")/.."; pwd);
+GITLAB_SHELL_RVMRC="$GITLAB_SHELL_DIR/.rvmrc";
 
-require_relative '../lib/gitlab_init'
+function rvm_loaded() {
+  if [ -f "/usr/local/rvm/scripts/rvm" ]; then
+    source /usr/local/rvm/scripts/rvm;
+    return 0;
+  elif [ -f ~/.rvm/scripts/rvm ]; then
+    source ~/.rvm/scripts/rvm;
+    return 0;
+  fi
 
-#
-#
-# GitLab shell, invoked from ~/.ssh/authorized_keys
-#
-#
-require File.join(ROOT_PATH, 'lib', 'gitlab_shell')
-GitlabShell.new.exec
+  return 1;
+}
 
-exit
+[ -f $GITLAB_SHELL_RVMRC ] && rvm_loaded && source $GITLAB_SHELL_RVMRC &> /dev/null;
+
+exec $GITLAB_SHELL_DIR/bin/gitlab-shell.rb $@
