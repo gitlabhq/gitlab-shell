@@ -36,7 +36,7 @@ class GitlabKeys
 
   def rm_key
     $logger.info "Removing key #{@key_id}"
-    cmd = "sed -i '/shell #{@key_id}\"/d' #{auth_file}"
+    cmd = "sed -i'' '/shell #{@key_id}\"/d' #{auth_file}"
     system(cmd)
   end
 
