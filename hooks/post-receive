@@ -1,6 +1,23 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env bash
 
 # This file was placed here by GitLab.
-# IT IS DEPRECATED NOW.
 # All GitLab logic handled by update hook
+# We continue to use this hook to allow custom hooks
 
+stdin=""
+while read oldrev newrev ref
+do
+  stdin+="$oldrev $newrev $ref\n"
+done
+
+[ -d hooks/post-receive.d ] || exit 0
+for i in hooks/post-receive.d/*
+do
+    [ -x "$i" ] || continue
+    # call the hooklet with the same arguments we got
+    echo -ne "$stdin" | "$i" "$@"   || {
+        # hooklet failed; we need to log it...
+        echo hooklet $i failed
+        exit 1
+    }
+done

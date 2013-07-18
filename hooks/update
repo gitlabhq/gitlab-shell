@@ -9,4 +9,16 @@ repo_path = `pwd`
 
 require_relative '../lib/gitlab_update'
 
+update_d_dir=File.join(repo_path.chomp, "/hooks/update.d")
+if File.directory?(update_d_dir)
+  Dir.foreach(update_d_dir) do |file|
+    next if file == '.' or file == '..'
+    scriptname=File.join(repo_path.chomp, "hooks/update.d/#{file}")
+    if ! system scriptname, *ARGV
+      puts "hooklet #{file} failed"
+      exit(1)
+    end
+  end
+end
+
 GitlabUpdate.new(repo_path, key_id, refname).exec
