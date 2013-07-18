@@ -17,6 +17,7 @@ class GitlabKeys
     case @command
     when 'add-key'; add_key
     when 'rm-key';  rm_key
+    when 'clear';  clear
     else
       $logger.warn "Attempt to execute invalid gitlab-keys command #{@command.inspect}."
       puts 'not allowed'
@@ -37,5 +38,9 @@ class GitlabKeys
     $logger.info "Removing key #{@key_id}"
     cmd = "sed -i '/shell #{@key_id}\"/d' #{auth_file}"
     system(cmd)
+  end
+
+  def clear
+    system("echo '# Managed by gitlab-shell' > #{auth_file}")
   end
 end

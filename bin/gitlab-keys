@@ -10,6 +10,8 @@ require_relative '../lib/gitlab_init'
 #
 #   /bin/gitlab-keys rm-key key-23 "ssh-rsa AAAAx321..."
 #
+#   /bin/gitlab-keys clear"
+#
 
 require File.join(ROOT_PATH, 'lib', 'gitlab_keys')
 
