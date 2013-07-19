@@ -1,6 +1,4 @@
 #!/usr/bin/env ruby
 
 # This file was placed here by GitLab.
-# IT IS DEPRECATED NOW.
-# All GitLab logic handled by update hook
-
+# You can put your own hook here, but be careful when updating gitlab-shell!
