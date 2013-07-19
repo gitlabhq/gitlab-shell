@@ -1,4 +1,3 @@
-require 'open3'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
