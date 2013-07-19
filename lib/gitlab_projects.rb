@@ -182,9 +182,6 @@ class GitlabProjects
   private
 
   def create_hooks_to(dest_path)
-    pr_hook_path = File.join(ROOT_PATH, 'hooks', 'post-receive')
-    up_hook_path = File.join(ROOT_PATH, 'hooks', 'update')
-
-    "ln -s #{pr_hook_path} #{dest_path}/hooks/post-receive && ln -s #{up_hook_path} #{dest_path}/hooks/update"
+    "ln -s #{File.join(ROOT_PATH, 'hooks', 'update')} #{dest_path}/hooks/update"
   end
 end
