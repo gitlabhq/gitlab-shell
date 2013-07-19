@@ -101,7 +101,6 @@ describe GitlabProjects do
 
     it "should receive valid cmd" do
       valid_cmd = "cd #{tmp_repo_path} && git init --bare"
-      valid_cmd << " && ln -s #{ROOT_PATH}/hooks/post-receive #{tmp_repo_path}/hooks/post-receive"
       valid_cmd << " && ln -s #{ROOT_PATH}/hooks/update #{tmp_repo_path}/hooks/update"
       gl_projects.should_receive(:system).with(valid_cmd)
       gl_projects.exec
@@ -238,7 +237,6 @@ describe GitlabProjects do
       gl_projects_fork.exec.should be_true
       File.exists?(dest_repo).should be_true
       File.exists?(File.join(dest_repo, '/hooks/update')).should be_true
-      File.exists?(File.join(dest_repo, '/hooks/post-receive')).should be_true
     end
 
     it "should not fork if a project of the same name already exists" do
