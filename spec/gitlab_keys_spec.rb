@@ -31,9 +31,12 @@ describe GitlabKeys do
 
   describe :rm_key do
     let(:gitlab_keys) { build_gitlab_keys('rm-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E') }
+    let(:temp_file) { mock(:temp_file, path: 'tmp_path') }
+    before { Tempfile.should_receive(:open).and_yield(temp_file) }
 
     it "should receive valid cmd" do
-      valid_cmd = "sed -i '/shell key-741\"/d' #{GitlabConfig.new.auth_file}"
+      auth_file = GitlabConfig.new.auth_file
+      valid_cmd = "sed '/shell key-741\"/d' #{auth_file} > tmp_path && mv tmp_path #{auth_file}"
       gitlab_keys.should_receive(:system).with(valid_cmd)
       gitlab_keys.send :rm_key
     end

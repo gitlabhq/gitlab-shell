@@ -1,3 +1,4 @@
+require 'tempfile'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
@@ -35,8 +36,10 @@ class GitlabKeys
 
   def rm_key
     $logger.info "Removing key #{@key_id}"
-    cmd = "sed -i '/shell #{@key_id}\"/d' #{auth_file}"
-    system(cmd)
+    Tempfile.open('authorized_keys') do |temp|
+      cmd = "sed '/shell #{@key_id}\"/d' #{auth_file} > #{temp.path} && mv #{temp.path} #{auth_file}"
+      system(cmd)
+    end
   end
 
   def clear
