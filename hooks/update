@@ -1,13 +1,13 @@
-#!/usr/bin/env ruby
+#!/bin/bash
+# GitLab update hook -- do not modify!
+# To add your own update hook, create an update.local executable
 
-# This file was placed here by GitLab. It makes sure that your pushed commits
-# will be processed properly.
-# You can add your own hooks to this file, but be careful when updating gitlab-shell!
+hooks_dir="$(cd `dirname $0` && pwd)"
+update_gitlab="$hooks_dir/update.gitlab"
+update_local="$hooks_dir/update.local"
 
-refname = ARGV[0]
-key_id  = ENV['GL_ID']
-repo_path = `pwd`
+$update_gitlab "$@" || exit 1
 
-require_relative '../lib/gitlab_update'
-
-GitlabUpdate.new(repo_path, key_id, refname).exec
+if [ -x $update_local ]; then
+  $update_local "$@" || exit 1
+fi
