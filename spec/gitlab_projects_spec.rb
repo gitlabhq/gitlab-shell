@@ -101,7 +101,8 @@ describe GitlabProjects do
 
     it "should receive valid cmd" do
       valid_cmd = "cd #{tmp_repo_path} && git init --bare"
-      valid_cmd << " && ln -s #{ROOT_PATH}/hooks/update #{tmp_repo_path}/hooks/update"
+      valid_cmd << " && ln -s #{ROOT_PATH}/hooks/update #{tmp_repo_path}/hooks/"
+      valid_cmd << " && ln -s #{ROOT_PATH}/hooks/update.gitlab #{tmp_repo_path}/hooks/"
       gl_projects.should_receive(:system).with(valid_cmd)
       gl_projects.exec
     end
