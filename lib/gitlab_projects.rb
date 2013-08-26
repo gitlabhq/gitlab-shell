@@ -88,7 +88,7 @@ class GitlabProjects
   end
 
   # Import project via git clone --bare
-  # URL must be publicly clonable
+  # URL must be publicly cloneable
   def import_project
     @source = ARGV.shift
     $logger.info "Importing project #{@project_name} from <#{@source}> to <#{full_path}>."

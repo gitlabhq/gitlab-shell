@@ -72,7 +72,7 @@ Remove key
 
     ./bin/gitlab-keys rm-key key-23 "ssh-rsa AAAAx321..."
 
-Remoev all keys from authorized_keys file
+Remove all keys from authorized_keys file
 
     ./bin/gitlab-keys clear
 
