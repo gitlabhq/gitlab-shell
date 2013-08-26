@@ -15,7 +15,7 @@ class GitlabUpdate
 
     @key_id = key_id
     @refname = refname
-    @branch_name = /refs\/heads\/([\w\.-]+)/.match(refname).to_a.last
+    @branch_name = /refs\/heads\/([\/\w\.-]+)/.match(refname).to_a.last
 
     @oldrev  = ARGV[1]
     @newrev  = ARGV[2]
