@@ -60,7 +60,7 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with("git-upload-pack #{File.join(repository_path, 'gitlab-ci.git')}")
+        subject.should_receive(:exec_cmd).with("git-upload-pack", File.join(repository_path, 'gitlab-ci.git'))
       end
 
       it "should set the GL_ID environment variable" do
@@ -89,7 +89,7 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with("git-receive-pack #{File.join(repository_path, 'gitlab-ci.git')}")
+        subject.should_receive(:exec_cmd).with("git-receive-pack", File.join(repository_path, 'gitlab-ci.git'))
       end
 
       it "should log the command execution" do
