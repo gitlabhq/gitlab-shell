@@ -9,6 +9,7 @@ class GitlabConfig
 
   def repos_path
     @config['repos_path'] ||= "/home/git/repositories"
+    @config['repos_path'] = File.realpath(@config['repos_path'])
   end
 
   def auth_file
