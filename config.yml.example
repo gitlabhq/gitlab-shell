@@ -12,7 +12,9 @@ http_settings:
   self_signed_cert: false
 
 # Repositories path
-# REPOS_PATH MUST NOT BE A SYMLINK!!!
+# Give the canonicalized absolute pathname,
+# REPOS_PATH MUST NOT CONTAIN ANY SYMLINK!!!
+# Check twice that none of the components is a symlink, including "/home".
 repos_path: "/home/git/repositories"
 
 # File used as authorized_keys for gitlab user
