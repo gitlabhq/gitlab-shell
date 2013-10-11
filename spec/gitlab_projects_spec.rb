@@ -209,6 +209,29 @@ describe GitlabProjects do
     end
   end
 
+  describe :update_imported_project do
+    let(:gl_projects) { build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git') }
+
+    it "should update an existing repo (master branch)" do
+      gl_projects.exec
+
+      origin_count = IO.popen("cd #{tmp_repo_path} && git log --oneline | wc -l") { |f| f.gets }.to_i
+      system("cd #{tmp_repo_path} && git update-ref HEAD HEAD~2")
+      postreset_count = IO.popen("cd #{tmp_repo_path} && git log --oneline | wc -l") { |f| f.gets }.to_i
+
+      (origin_count - postreset_count).should == 3
+
+      build_gitlab_projects('sync-imported-repository', repo_name, 'https://github.com/randx/six.git', 'master', 'master').exec
+
+      afterupdate_count = IO.popen("cd #{tmp_repo_path} && git log --oneline | wc -l") { |f| f.gets }.to_i
+      afterupdate_count.should == origin_count
+    end
+
+    it "should update an existing repo (other branch)"
+
+    it "should update an existing repo (different branches)"
+  end
+
   describe :fork_project do
     let(:source_repo_name) { File.join('source-namespace', repo_name) }
     let(:dest_repo) { File.join(tmp_repos_path, 'forked-to-namespace', repo_name) }
