@@ -1,4 +1,5 @@
 require 'open3'
+require 'shellwords'
 
 require_relative 'gitlab_net'
 
@@ -40,9 +41,9 @@ class GitlabShell
   protected
 
   def parse_cmd
-    args = @origin_cmd.split(' ')
-    @git_cmd = args.shift
-    @repo_name = args.shift
+    args = Shellwords.shellwords(@origin_cmd)
+    @git_cmd = args[0]
+    @repo_name = args[1]
   end
 
   def git_cmds
@@ -51,17 +52,16 @@ class GitlabShell
 
   def process_cmd
     repo_full_path = File.join(repos_path, repo_name)
-    cmd = "#{@git_cmd} #{repo_full_path}"
-    $logger.info "gitlab-shell: executing git command <#{cmd}> for #{log_username}."
-    exec_cmd(cmd)
+    $logger.info "gitlab-shell: executing git command <#{@git_cmd} #{repo_full_path}> for #{log_username}."
+    exec_cmd(@git_cmd,repo_full_path)
   end
 
   def validate_access
     api.allowed?(@git_cmd, @repo_name, @key_id, '_any')
   end
 
-  def exec_cmd args
-    Kernel::exec args
+  def exec_cmd *args
+    Kernel::exec *args
   end
 
   def api
