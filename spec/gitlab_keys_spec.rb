@@ -16,15 +16,18 @@ describe GitlabKeys do
 
   describe :add_key do
     let(:gitlab_keys) { build_gitlab_keys('add-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E') }
+    let(:file) { mock(:file) }
 
     it "should receive valid cmd" do
-      valid_cmd = "echo 'command=\"#{ROOT_PATH}/bin/gitlab-shell key-741\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAAB3NzaDAxx2E' >> #{GitlabConfig.new.auth_file}"
-      gitlab_keys.should_receive(:system).with(valid_cmd)
+      auth_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell key-741\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAAB3NzaDAxx2E"
+      gitlab_keys.should_receive(:open).with(GitlabConfig.new.auth_file, 'a').and_yield(file)
+      file.should_receive(:puts).with(auth_line)
       gitlab_keys.send :add_key
     end
 
     it "should log an add-key event" do
       $logger.should_receive(:info).with('Adding key key-741 => "ssh-rsa AAAAB3NzaDAxx2E"')
+      gitlab_keys.stub(:open)
       gitlab_keys.send :add_key
     end
   end
