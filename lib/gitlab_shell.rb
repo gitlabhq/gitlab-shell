@@ -53,7 +53,7 @@ class GitlabShell
   def process_cmd
     repo_full_path = File.join(repos_path, repo_name)
     $logger.info "gitlab-shell: executing git command <#{@git_cmd} #{repo_full_path}> for #{log_username}."
-    exec_cmd(@git_cmd,repo_full_path)
+    exec_cmd(@git_cmd, repo_full_path)
   end
 
   def validate_access

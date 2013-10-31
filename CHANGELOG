@@ -1,3 +1,6 @@
+v1.7.2
+  - More safe command execution
+
 v1.7.1
   - Fixed issue when developers are able to push to protected branches that contain a '/' in the branch name.
 
