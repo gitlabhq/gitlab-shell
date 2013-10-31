@@ -166,17 +166,22 @@ class GitlabProjects
       return false
     end
 
-    unless File.exists?(File.join(full_path, 'refs/heads', new_head))
-      $logger.error "update-head failed: specified branch does not exist in ref/heads."
+    unless (system("cd #{full_path} && git show-ref --heads --tags #{new_head}"))
+      $logger.error "update-head failed: error while looking for branch ref in project #{project_name}."
       return false
     end
 
-    File.open(File.join(full_path, 'HEAD'), 'w') do |f|
-      f.write("ref: refs/heads/#{new_head}")
+    show_ref = `cd #{full_path} && git show-ref --tags --heads #{new_head}`
+    if show_ref.to_s == ''
+      $logger.error "update-head failed: specified branch ref could not be found in project #{project_name}."
+      return false
     end
 
-    $logger.info "Update head in project #{project_name} to <#{new_head}>."
-    true
+    if (system("cd #{full_path} && git symbolic-ref HEAD refs/heads/#{new_head}"))
+      $logger.info "Update head in project #{project_name} to <#{new_head}>."
+      return true
+    end
+    false
   end
 
   private
