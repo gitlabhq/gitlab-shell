@@ -48,38 +48,40 @@ class GitlabProjects
   def create_branch
     branch_name = ARGV.shift
     ref = ARGV.shift || "HEAD"
-    cmd = "cd #{full_path} && git branch #{branch_name} #{ref}"
-    system(cmd)
+    cmd = %W(git --git-dir=#{full_path} branch #{branch_name} #{ref})
+    system(*cmd)
   end
 
   def rm_branch
     branch_name = ARGV.shift
-    cmd = "cd #{full_path} && git branch -D #{branch_name}"
-    system(cmd)
+    cmd = %W(git --git-dir=#{full_path} branch -D #{branch_name})
+    system(*cmd)
   end
 
   def create_tag
     tag_name = ARGV.shift
     ref = ARGV.shift || "HEAD"
-    cmd = "cd #{full_path} && git tag #{tag_name} #{ref}"
-    system(cmd)
+    cmd = %W(git --git-dir=#{full_path} tag #{tag_name} #{ref})
+    system(*cmd)
   end
 
   def rm_tag
     tag_name = ARGV.shift
-    cmd = "cd #{full_path} && git tag -d #{tag_name}"
-    system(cmd)
+    cmd = %W(git --git-dir=#{full_path} tag -d #{tag_name})
+    system(*cmd)
   end
 
   def add_project
     $logger.info "Adding project #{@project_name} at <#{full_path}>."
     FileUtils.mkdir_p(full_path, mode: 0770)
-    cmd = "cd #{full_path} && git init --bare && #{create_hooks_cmd}"
-    system(cmd)
+    cmd = %W(git --git-dir=#{full_path} init --bare)
+    system(*cmd) && create_hooks(full_path)
   end
 
-  def create_hooks_cmd
-    create_hooks_to(full_path)
+  def create_hooks(path)
+    hook = File.join(path, 'hooks', 'update')
+    File.delete(hook) if File.exists?(hook)
+    File.symlink(File.join(ROOT_PATH, 'hooks', 'update'), hook)
   end
 
   def rm_project
@@ -92,8 +94,8 @@ class GitlabProjects
   def import_project
     @source = ARGV.shift
     $logger.info "Importing project #{@project_name} from <#{@source}> to <#{full_path}>."
-    cmd = "cd #{repos_path} && git clone --bare #{@source} #{project_name} && #{create_hooks_cmd}"
-    system(cmd)
+    cmd = %W(git clone --bare #{@source} #{project_name})
+    system(*cmd, chdir: repos_path) && create_hooks(full_path)
   end
 
   # Move repository from one directory to another
@@ -154,8 +156,8 @@ class GitlabProjects
     end
 
     $logger.info "Forking project from <#{full_path}> to <#{full_destination_path}>."
-    cmd = "cd #{namespaced_path} && git clone --bare #{full_path} && #{create_hooks_to(full_destination_path)}"
-    system(cmd)
+    cmd = %W(git clone --bare #{full_path})
+    system(*cmd, chdir: namespaced_path) && create_hooks(full_destination_path)
   end
 
   def update_head
@@ -177,11 +179,5 @@ class GitlabProjects
 
     $logger.info "Update head in project #{project_name} to <#{new_head}>."
     true
-  end
-
-  private
-
-  def create_hooks_to(dest_path)
-    "ln -s #{File.join(ROOT_PATH, 'hooks', 'update')} #{dest_path}/hooks/update"
   end
 end
