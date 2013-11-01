@@ -1,3 +1,6 @@
+v1.7.4
+  - More protection against shell injection
+
 v1.7.3
   - Use Kernel#open to append lines to authorized_keys
 
