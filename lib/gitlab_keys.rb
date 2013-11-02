@@ -36,8 +36,13 @@ class GitlabKeys
   def rm_key
     $logger.info "Removing key #{@key_id}"
     Tempfile.open('authorized_keys') do |temp|
-      cmd = "sed '/shell #{@key_id}\"/d' #{auth_file} > #{temp.path} && mv #{temp.path} #{auth_file}"
-      system(cmd)
+      open(auth_file, 'r+') do |current|
+        current.each do |line|
+          temp.puts(line) unless line.include?("/bin/gitlab-shell #{@key_id}\"")
+        end
+      end
+      temp.close
+      FileUtils.cp(temp.path, auth_file)
     end
   end
 
