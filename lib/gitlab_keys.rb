@@ -47,6 +47,6 @@ class GitlabKeys
   end
 
   def clear
-    system("echo '# Managed by gitlab-shell' > #{auth_file}")
+    open(auth_file, 'w') { |file| file.puts '# Managed by gitlab-shell' }
   end
 end
