@@ -116,6 +116,7 @@ describe GitlabProjects do
   describe :mv_project do
     let(:gl_projects) { build_gitlab_projects('mv-project', repo_name, 'repo.git') }
     let(:new_repo_path) { File.join(tmp_repos_path, 'repo.git') }
+    let(:nonexistent_parent_path) { File.join(tmp_repos_path, 'nonexistent', 'repo.git') } 
 
     before do
       FileUtils.mkdir_p(tmp_repo_path)
@@ -127,6 +128,14 @@ describe GitlabProjects do
       File.exists?(tmp_repo_path).should be_false
       File.exists?(new_repo_path).should be_true
     end
+
+    it "should move a repo directory even if the namespace directory does not exist" do
+        File.exists?(tmp_repo_path).should be_true
+        build_gitlab_projects('mv-project', repo_name, 'nonexistent/repo.git').exec
+        File.exists?(tmp_repo_path).should be_false
+        File.exists?(nonexistent_parent_path).should be_true
+    end
+
 
     it "should fail if no destination path is provided" do
       incomplete = build_gitlab_projects('mv-project', repo_name)

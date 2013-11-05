@@ -115,6 +115,7 @@ class GitlabProjects
     end
 
     new_full_path = File.join(repos_path, new_path)
+    parent_path = File.join(repos_path, new_path[0...-1])
 
     # verify that the source repo exists
     unless File.exists?(full_path)
@@ -127,6 +128,9 @@ class GitlabProjects
       $logger.error "mv-project failed: destination path <#{new_full_path}> already exists."
       return false
     end
+
+    # Make the parent path if necessary
+    FileUtils.mkdir_p(parent_path)
 
     $logger.info "Moving project #{@project_name} from <#{full_path}> to <#{new_full_path}>."
     FileUtils.mv(full_path, new_full_path)
