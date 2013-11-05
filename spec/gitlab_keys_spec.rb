@@ -14,39 +14,46 @@ describe GitlabKeys do
     it { gitlab_keys.instance_variable_get(:@key_id).should == 'key-741' }
   end
 
-  describe :add_key do
-    let(:gitlab_keys) { build_gitlab_keys('add-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E') }
-    let(:file) { mock(:file) }
-
-    it "should receive valid cmd" do
-      auth_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell key-741\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAAB3NzaDAxx2E"
-      gitlab_keys.should_receive(:open).with(GitlabConfig.new.auth_file, 'a').and_yield(file)
-      file.should_receive(:puts).with(auth_line)
-      gitlab_keys.send :add_key
+  context "file writing tests" do
+    before do
+      FileUtils.mkdir_p(File.dirname(tmp_authorized_keys_path))
+      open(tmp_authorized_keys_path, 'w') { |file| file.puts('existing content') }
+      gitlab_keys.stub(auth_file: tmp_authorized_keys_path)
     end
 
-    it "should log an add-key event" do
-      $logger.should_receive(:info).with('Adding key key-741 => "ssh-rsa AAAAB3NzaDAxx2E"')
-      gitlab_keys.stub(:open)
-      gitlab_keys.send :add_key
-    end
-  end
+    describe :add_key do
+      let(:gitlab_keys) { build_gitlab_keys('add-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E') }
 
-  describe :rm_key do
-    let(:gitlab_keys) { build_gitlab_keys('rm-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E') }
-    let(:temp_file) { mock(:temp_file, path: 'tmp_path') }
-    before { Tempfile.should_receive(:open).and_yield(temp_file) }
+      it "adds a line at the end of the file" do
+        gitlab_keys.send :add_key
+        auth_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell key-741\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAAB3NzaDAxx2E"
+        File.read(tmp_authorized_keys_path).should == "existing content\n#{auth_line}\n"
+      end
 
-    it "should receive valid cmd" do
-      auth_file = GitlabConfig.new.auth_file
-      valid_cmd = "sed '/shell key-741\"/d' #{auth_file} > tmp_path && mv tmp_path #{auth_file}"
-      gitlab_keys.should_receive(:system).with(valid_cmd)
-      gitlab_keys.send :rm_key
+      it "should log an add-key event" do
+        $logger.should_receive(:info).with('Adding key key-741 => "ssh-rsa AAAAB3NzaDAxx2E"')
+        gitlab_keys.stub(:open)
+        gitlab_keys.send :add_key
+      end
     end
 
-    it "should log an rm-key event" do
-      $logger.should_receive(:info).with('Removing key key-741')
-      gitlab_keys.send :rm_key
+    describe :rm_key do
+      let(:gitlab_keys) { build_gitlab_keys('rm-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E') }
+
+      it "removes the right line" do
+        other_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell key-742\",options ssh-rsa AAAAB3NzaDAxx2E"
+        open(tmp_authorized_keys_path, 'a') do |auth_file|
+          auth_file.puts "command=\"#{ROOT_PATH}/bin/gitlab-shell key-741\",options ssh-rsa AAAAB3NzaDAxx2E"
+          auth_file.puts other_line
+        end
+        gitlab_keys.send :rm_key
+        File.read(tmp_authorized_keys_path).should == "existing content\n#{other_line}\n"
+      end
+
+      it "should log an rm-key event" do
+        $logger.should_receive(:info).with('Removing key key-741')
+        gitlab_keys.send :rm_key
+      end
     end
   end
 
@@ -86,5 +93,9 @@ describe GitlabKeys do
     args.each_with_index do |arg, i|
       ARGV[i] = arg
     end
+  end
+
+  def tmp_authorized_keys_path
+    File.join(ROOT_PATH, 'tmp', 'authorized_keys')
   end
 end
