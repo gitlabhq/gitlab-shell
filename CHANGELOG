@@ -1,3 +1,6 @@
+v1.7.5
+  - Remove keys from authorized_keys using ruby instead of shell
+
 v1.7.4
   - More protection against shell injection
 
