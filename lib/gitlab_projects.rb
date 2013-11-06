@@ -168,11 +168,6 @@ class GitlabProjects
       return false
     end
 
-    unless File.exists?(File.join(full_path, 'refs/heads', new_head))
-      $logger.error "update-head failed: specified branch does not exist in ref/heads."
-      return false
-    end
-
     File.open(File.join(full_path, 'HEAD'), 'w') do |f|
       f.write("ref: refs/heads/#{new_head}")
     end
