@@ -48,7 +48,7 @@ class GitlabProjects
   def create_branch
     branch_name = ARGV.shift
     ref = ARGV.shift || "HEAD"
-    cmd = %W(git --git-dir=#{full_path} branch #{branch_name} #{ref})
+    cmd = %W(git --git-dir=#{full_path} branch -- #{branch_name} #{ref})
     system(*cmd)
   end
 
@@ -61,7 +61,7 @@ class GitlabProjects
   def create_tag
     tag_name = ARGV.shift
     ref = ARGV.shift || "HEAD"
-    cmd = %W(git --git-dir=#{full_path} tag #{tag_name} #{ref})
+    cmd = %W(git --git-dir=#{full_path} tag -- #{tag_name} #{ref})
     system(*cmd)
   end
 
@@ -94,7 +94,7 @@ class GitlabProjects
   def import_project
     @source = ARGV.shift
     $logger.info "Importing project #{@project_name} from <#{@source}> to <#{full_path}>."
-    cmd = %W(git clone --bare #{@source} #{full_path})
+    cmd = %W(git clone --bare -- #{@source} #{full_path})
     system(*cmd) && create_hooks(full_path)
   end
 
@@ -156,7 +156,7 @@ class GitlabProjects
     end
 
     $logger.info "Forking project from <#{full_path}> to <#{full_destination_path}>."
-    cmd = %W(git clone --bare #{full_path} #{full_destination_path})
+    cmd = %W(git clone --bare -- #{full_path} #{full_destination_path})
     system(*cmd) && create_hooks(full_destination_path)
   end
 
