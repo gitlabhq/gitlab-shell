@@ -1,5 +1,6 @@
 require_relative 'gitlab_init'
 require_relative 'gitlab_net'
+require 'json'
 
 class GitlabUpdate
   attr_reader :config
@@ -53,7 +54,8 @@ class GitlabUpdate
   end
 
   def update_redis
-    command = "#{config.redis_command} rpush '#{config.redis_namespace}:queue:post_receive' '{\"class\":\"PostReceive\",\"args\":[\"#{@repo_path}\",\"#{@oldrev}\",\"#{@newrev}\",\"#{@refname}\",\"#{@key_id}\"]}' > /dev/null 2>&1"
-    system(command)
+    queue = "#{config.redis_namespace}:queue:post_receive"
+    msg = JSON.dump({'class' => 'PostReceive', 'args' => [@repo_path, @oldrev, @newrev, @refname, @key_id]})
+    system(*config.redis_command, 'rpush', queue, msg, err: '/dev/null', out: '/dev/null')
   end
 end
