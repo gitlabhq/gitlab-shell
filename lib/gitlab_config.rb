@@ -48,12 +48,12 @@ class GitlabConfig
     if redis.empty?
       # Default to old method of connecting to redis
       # for users that haven't updated their configuration
-      "env -i redis-cli"
+      %W(env -i redis-cli)
     else
       if redis.has_key?("socket")
-        "#{redis['bin']} -s #{redis['socket']}"
+        %W(#{redis['bin']} -s #{redis['socket']})
       else
-        "#{redis['bin']} -h #{redis['host']} -p #{redis['port']}"
+        %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']})
       end
     end
   end
