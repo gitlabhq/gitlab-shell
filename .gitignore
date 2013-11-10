@@ -1,3 +1,4 @@
 config.yml
 tmp/*
 *.log
+/*.log.*
