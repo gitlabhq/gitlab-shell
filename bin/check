@@ -18,7 +18,7 @@ end
 puts "\nCheck directories and files: "
 
 config = GitlabConfig.new
-dirs = [config.repos_path, config.auth_file]
+dirs = [config.repos_path, config.auth_file, config.redis['bin']]
 
 dirs.each do |dir|
   print "\t#{dir}: "
