@@ -43,7 +43,7 @@ class GitlabShell
   def parse_cmd
     args = Shellwords.shellwords(@origin_cmd)
     @git_cmd = args[0]
-    @repo_name = args[1]
+    @repo_name = escape_path(args[1])
   end
 
   def git_cmds
@@ -85,5 +85,13 @@ class GitlabShell
   # User identifier to be used in log messages.
   def log_username
     @config.audit_usernames ? username : "user with key #{@key_id}"
+  end
+
+  def escape_path(path)
+    if File.absolute_path(path, repos_path) == File.join(repos_path, path)
+      path
+    else
+      raise "Wrong repository path"
+    end
   end
 end
