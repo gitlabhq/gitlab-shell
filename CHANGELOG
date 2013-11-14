@@ -1,4 +1,7 @@
-v1.7.7.
+v1.7.8
+  - Escape repository path to prevent relative links
+
+v1.7.7
   - Separate options from arguments with --
 
 v1.7.6
