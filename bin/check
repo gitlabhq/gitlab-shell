@@ -21,6 +21,7 @@ config = GitlabConfig.new
 dirs = [config.repos_path, config.auth_file, config.redis['bin']]
 
 dirs.each do |dir|
+  abort("ERROR: missing option in config.yml") unless dir
   print "\t#{dir}: "
   if File.exists?(dir)
     print 'OK'
