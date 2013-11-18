@@ -1,8 +1,9 @@
 v1.7.8
-  - Escape repository path to prevent relative links
+  - Escape repository path to prevent relative links (CVE-2013-4583)
 
 v1.7.7
-  - Separate options from arguments with --
+  - Separate options from arguments with -- (CVE-2013-4582)
+  - Bypass shell and use stdlib JSON for GitlabUpdate (CVE-2013-4581)
 
 v1.7.6
   - Fix gitlab-projects update-head for improted repo when branch exists but not listed in refs/head
@@ -11,10 +12,10 @@ v1.7.5
   - Remove keys from authorized_keys using ruby instead of shell
 
 v1.7.4
-  - More protection against shell injection
+  - More protection against shell injection (CVE-2013-4546)
 
 v1.7.3
-  - Use Kernel#open to append lines to authorized_keys
+  - Use Kernel#open to append lines to authorized_keys (CVE-2013-4490)
 
 v1.7.2
   - More safe command execution
