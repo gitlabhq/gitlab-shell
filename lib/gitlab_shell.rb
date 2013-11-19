@@ -1,4 +1,3 @@
-require 'open3'
 require 'shellwords'
 
 require_relative 'gitlab_net'
