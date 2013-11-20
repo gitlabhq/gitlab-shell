@@ -88,7 +88,9 @@ class GitlabShell
   end
 
   def escape_path(path)
-    if File.absolute_path(path, repos_path) == File.join(repos_path, path)
+    full_repo_path = File.join(repos_path, path)
+
+    if File.absolute_path(full_repo_path) == full_repo_path
       path
     else
       raise "Wrong repository path"
