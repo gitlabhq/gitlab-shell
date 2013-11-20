@@ -34,7 +34,7 @@ class GitlabUpdate
         update_redis
         exit 0
       else
-        puts "GitLab: You are not allowed to access #{@branch_name}! "
+        puts "GitLab: You are not allowed to access #{@branch_name}!"
         exit 1
       end
     else
@@ -57,7 +57,7 @@ class GitlabUpdate
     queue = "#{config.redis_namespace}:queue:post_receive"
     msg = JSON.dump({'class' => 'PostReceive', 'args' => [@repo_path, @oldrev, @newrev, @refname, @key_id]})
     unless system(*config.redis_command, 'rpush', queue, msg, err: '/dev/null', out: '/dev/null')
-      puts "GitLab: An unexpected error occurred (redis-cli returned #{$?.exitstatus}). "
+      puts "GitLab: An unexpected error occurred (redis-cli returned #{$?.exitstatus})."
       exit 1
     end
   end
