@@ -20,7 +20,13 @@ commands = [
 ]
 
 commands.each do |cmd|
-  puts "#{cmd}: #{system(cmd)}"
+  print "#{cmd}: "
+  if system(cmd)
+    puts 'OK'
+  else
+    puts 'Failed'
+    abort "#{$PROGRAM_NAME} failed"
+  end
 end
 
 exit
