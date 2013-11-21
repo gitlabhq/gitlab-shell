@@ -12,7 +12,7 @@ resp = GitlabNet.new.check
 if resp.code == "200"
   print 'OK'
 else
-  puts "FAILED. code: #{resp.code}"
+  abort "FAILED. code: #{resp.code}"
 end
 
 puts "\nCheck directories and files: "
@@ -21,11 +21,18 @@ config = GitlabConfig.new
 dirs = [config.repos_path, config.auth_file]
 
 dirs.each do |dir|
+  abort("ERROR: missing option in config.yml") unless dir
   print "\t#{dir}: "
   if File.exists?(dir)
     print 'OK'
   else
-    puts "FAILED"
+    abort "FAILED"
   end
   puts "\n"
 end
+
+print "Test redis-cli executable: "
+abort('FAILED') unless system(*config.redis_command, '--version')
+
+print "Send ping to redis server: "
+abort unless system(*config.redis_command, 'ping')
