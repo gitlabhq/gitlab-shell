@@ -1,4 +1,3 @@
-require 'open3'
 require 'fileutils'
 
 require_relative 'gitlab_config'
