@@ -31,6 +31,7 @@ class GitlabKeys
     $logger.info "Adding key #{@key_id} => #{@key.inspect}"
     auth_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell #{@key_id}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{@key}"
     open(auth_file, 'a') { |file| file.puts(auth_line) }
+    true
   end
 
   def rm_key
@@ -44,9 +45,11 @@ class GitlabKeys
       temp.close
       FileUtils.cp(temp.path, auth_file)
     end
+    true
   end
 
   def clear
     open(auth_file, 'w') { |file| file.puts '# Managed by gitlab-shell' }
+    true
   end
 end
