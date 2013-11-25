@@ -53,13 +53,17 @@ describe GitlabKeys do
       File.read(tmp_authorized_keys_path).should == "existing content\n#{other_line}\n"
     end
 
-    it "should log an rm-key event" do
-      $logger.should_receive(:info).with('Removing key key-741')
-      gitlab_keys.send :rm_key
-    end
+    context "without file writing" do
+      before { Tempfile.stub(:open) }
 
-    it "should return true" do
-      gitlab_keys.send(:rm_key).should be_true
+      it "should log an rm-key event" do
+        $logger.should_receive(:info).with('Removing key key-741')
+        gitlab_keys.send :rm_key
+      end
+
+      it "should return true" do
+        gitlab_keys.send(:rm_key).should be_true
+      end
     end
   end
 
@@ -67,6 +71,7 @@ describe GitlabKeys do
     let(:gitlab_keys) { build_gitlab_keys('clear') }
 
     it "should return true" do
+      gitlab_keys.stub(:open)
       gitlab_keys.send(:clear).should be_true
     end
   end
