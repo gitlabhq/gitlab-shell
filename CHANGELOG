@@ -1,3 +1,6 @@
+v1.8.0
+  - Fix return values in GitlabKeys
+
 v1.7.9
   - Fix escape of repository path for custom ssh port
 
