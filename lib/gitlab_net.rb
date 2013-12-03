@@ -43,7 +43,11 @@ class GitlabNet
     $logger.debug "Performing GET #{url}"
 
     url = URI.parse(url)
-    http = Net::HTTP.new(url.host, url.port)
+    if config.http_settings['proxy_from_env']
+      http = Net::HTTP.new(url.host, url.port)
+    else
+      http = Net::HTTP.new(url.host, url.port, nil)
+    end
 
     if URI::HTTPS === url
       http.use_ssl = true

@@ -10,6 +10,7 @@ http_settings:
 #  ca_file: /etc/ssl/cert.pem
 #  ca_path: /etc/pki/tls/certs
   self_signed_cert: false
+  proxy_from_env: false
 
 # Repositories path
 # Give the canonicalized absolute pathname,
