@@ -1,5 +1,7 @@
 ### gitlab-shell: ssh access and repository management
 
+GitLab Shell is an application that allows you to execute git commands and provide ssh access to git repositories. It is not a unix shell nor a replacement for Bash or Zsh.
+
 #### Code status
 
 * [![CI](http://ci.gitlab.org/projects/4/status.png?ref=master)](http://ci.gitlab.org/projects/4?ref=master)
