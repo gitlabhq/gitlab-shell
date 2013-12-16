@@ -118,6 +118,24 @@ describe GitlabShell do
       end
     end
 
+    context 'one word arbitrary command' do
+      before { ssh_cmd 'one-word-arbitrary-command' }
+      after { subject.exec }
+
+      it "should not process the command" do
+        subject.should_not_receive(:process_cmd)
+      end
+
+      it "should not execute the command" do
+        subject.should_not_receive(:exec_cmd)
+      end
+
+      it "should log the attempt" do
+        message = "gitlab-shell: Attempt to execute disallowed command <one-word-arbitrary-command> by user with key #{key_id}."
+        $logger.should_receive(:warn).with(message)
+      end
+    end
+
     context 'no command' do
       before { ssh_cmd nil }
       after { subject.exec }
