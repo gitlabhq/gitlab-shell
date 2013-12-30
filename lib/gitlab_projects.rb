@@ -86,6 +86,13 @@ class GitlabProjects
   def rm_project
     $logger.info "Removing project #{@project_name} from <#{full_path}>."
     FileUtils.rm_rf(full_path)
+
+    hook = File.join(ROOT_PATH, 'hooks', 'remove')
+    if File.exists?(hook)
+      cmd = hook+" #{@project_name} #{repos_path} #{full_path}"
+      $logger.info "Executing project remove hook: #{cmd}>."
+      system(*cmd)
+    end
   end
 
   # Import project via git clone --bare
