@@ -30,6 +30,10 @@ Add repo
 
     ./bin/gitlab-projects add-project gitlab/gitlab-ci.git
 
+Init repo
+
+    ./bin/gitlab-projects init-project root/example /home/git/gitlab/tmp/gitlab-autoinit-template/example true /home/git/gitlab-autoinit-template Administrator admin@local.host
+
 Remove repo 
 
     ./bin/gitlab-projects rm-project gitlab/gitlab-ci.git
