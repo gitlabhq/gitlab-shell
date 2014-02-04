@@ -30,7 +30,7 @@ class GitlabShell
       else
         message = "gitlab-shell: Attempt to execute disallowed command <#{@origin_cmd}> by #{log_username}."
         $logger.warn message
-        puts 'Not allowed command'
+        $stderr.puts 'Not allowed command'
       end
     else
       puts "Welcome to GitLab, #{username}!"
