@@ -179,8 +179,12 @@ describe GitlabProjects do
 
     before do
       FileUtils.mkdir_p(tmp_repo_path)
-      system("git init --bare #{tmp_repo_path}")
-      system("touch #{tmp_repo_path}/refs/heads/stable")
+      system("git init --bare #{tmp_repo_path} && cd #{tmp_repo_path} && touch test && git hash-object -w test")
+      system("cd #{tmp_repo_path} && git config -f config user.name \"t\" && git config -f config user.email \"t@test\"")
+      tree_init_sha = `cd #{tmp_repo_path} && git write-tree --missing-ok`
+      commit_sha = `cd #{tmp_repo_path} && git commit-tree -m "test" #{tree_init_sha}`
+      system("cd #{tmp_repo_path} && git update-ref refs/heads/master #{commit_sha}")
+      system("cd #{tmp_repo_path} && git branch stable")
       File.read(File.join(tmp_repo_path, 'HEAD')).strip.should == 'ref: refs/heads/master'
     end
 

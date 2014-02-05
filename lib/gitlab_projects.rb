@@ -167,10 +167,12 @@ class GitlabProjects
       return false
     end
 
-    File.open(File.join(full_path, 'HEAD'), 'w') do |f|
-      f.write("ref: refs/heads/#{new_head}")
+    unless (system("cd #{full_path} && git show-ref --heads #{new_head}"))
+      $logger.error "update-head failed: error while looking for branch ref in project #{project_name}."
+      return false
     end
 
+    system("cd #{full_path} && git symbolic-ref HEAD refs/heads/#{new_head}")
     $logger.info "Update head in project #{project_name} to <#{new_head}>."
     true
   end
