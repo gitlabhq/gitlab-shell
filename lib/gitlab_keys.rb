@@ -1,5 +1,3 @@
-require 'tempfile'
-
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 
@@ -29,27 +27,36 @@ class GitlabKeys
 
   def add_key
     $logger.info "Adding key #{@key_id} => #{@key.inspect}"
-    auth_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell #{@key_id}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{@key}"
-    open(auth_file, 'a') { |file| file.puts(auth_line) }
-    true
+    open('a') do |file|
+      file.puts "command=\"#{ROOT_PATH}/bin/gitlab-shell #{@key_id}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{@key}"
+    end
   end
 
   def rm_key
     $logger.info "Removing key #{@key_id}"
-    Tempfile.open('authorized_keys') do |temp|
-      open(auth_file, 'r+') do |current|
-        current.each do |line|
-          temp.puts(line) unless line.include?("/bin/gitlab-shell #{@key_id}\"")
-        end
+    open('r+') do |file|
+      lines = []
+      file.each_line do |line|
+        lines << line unless line.include?("/bin/gitlab-shell #{@key_id}\"")
       end
-      temp.close
-      FileUtils.cp(temp.path, auth_file)
+      file.rewind
+      lines.each { |line| file << line }
+      file.truncate(file.pos)
     end
-    true
   end
 
   def clear
-    open(auth_file, 'w') { |file| file.puts '# Managed by gitlab-shell' }
+    open('w') do |file|
+      file.puts '# Managed by gitlab-shell'
+    end
+  end
+
+  def open(mode)
+    File.open(auth_file, mode) do |file|
+      # get an exclusive lock
+      file.flock(File::LOCK_EX)
+      yield file
+    end
     true
   end
 end
