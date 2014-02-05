@@ -30,6 +30,7 @@ class GitlabProjects
     when 'create-tag'; create_tag
     when 'rm-tag'; rm_tag
     when 'add-project'; add_project
+    when 'init-project'; init_project
     when 'rm-project';  rm_project
     when 'mv-project';  mv_project
     when 'import-project'; import_project
@@ -75,6 +76,75 @@ class GitlabProjects
     FileUtils.mkdir_p(full_path, mode: 0770)
     cmd = %W(git --git-dir=#{full_path} init --bare)
     system(*cmd) && create_hooks(full_path)
+  end
+
+  def init_project
+    tmp_path = ARGV.shift
+    init_from_template = ARGV.shift
+    config_auto_init_template_dir = ARGV.shift
+    username = ARGV.shift
+    user_email = ARGV.shift
+    $logger.info "Initializing project"
+
+    # create the tmp directory
+    FileUtils.mkdir_p(tmp_path, mode: 0770)
+
+    # set some git config stuff
+    cmd = "git config --global user.name '#{username}'"
+    result = system(*cmd)
+    $logger.info "#{cmd} #{result}"
+    cmd = "git config --global user.email '#{user_email}'"
+    result = system(*cmd)
+    $logger.info "#{cmd} #{result}"
+
+    # change workind dir to tmp_path to init the repo
+    FileUtils.cd(tmp_path) do
+      # if user (which installed gitlab) created the autoinit-template-dir, copy everything
+      if init_from_template == "true"
+        FileUtils.cp_r(Dir.glob("#{config_auto_init_template_dir}/*"), tmp_path)
+      # else create a simple README.md file
+      else
+        FileUtils.touch "README.md"
+        begin
+          file = File.open("README.md", "w")
+          file.write("# README")
+          file.write("\n")
+          file.write("This file was automatically created by GitLab.")
+          file.write("\n")
+        rescue IOError => e
+          $logger.warn "Could not write to README.md"
+        ensure
+          file.close unless file == nil
+        end
+      end
+
+      # add everything to the repo and push it into the repo
+      git_init_repo(tmp_path)
+    end
+  end
+
+  def git_init_repo(tmp_path)
+    cmd = "git init"
+    result = system(*cmd)
+    $logger.info "#{cmd} #{result}"
+
+    cmd = "git add ."
+    result = system(*cmd)
+    $logger.info "#{cmd} #{result}"
+
+    cmd = "git commit -m 'initial commit by GitLab'"
+    result = system(*cmd)
+    $logger.info "#{cmd} #{result}"
+
+    cmd = "git remote add origin #{full_path}"
+    result = system(*cmd)
+    $logger.info "#{cmd} #{result}"
+
+    cmd = "git push -u origin master"
+    result = system(*cmd)
+    $logger.info "#{cmd} #{result}"
+
+    FileUtils.rm_rf("#{tmp_path}")
   end
 
   def create_hooks(path)
