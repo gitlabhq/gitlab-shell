@@ -95,7 +95,7 @@ describe GitlabProjects do
 
     it "should create a directory" do
       gl_projects.stub(system: true)
-      gl_projects.stub(create_hooks: true)
+      GitlabProjects.stub(create_hooks: true)
       gl_projects.exec
       File.exists?(tmp_repo_path).should be_true
     end
@@ -103,7 +103,7 @@ describe GitlabProjects do
     it "should receive valid cmd" do
       valid_cmd = ['git', "--git-dir=#{tmp_repo_path}", 'init', '--bare']
       gl_projects.should_receive(:system).with(*valid_cmd).and_return(true)
-      gl_projects.should_receive(:create_hooks).with(tmp_repo_path)
+      GitlabProjects.should_receive(:create_hooks).with(tmp_repo_path)
       gl_projects.exec
     end
 
