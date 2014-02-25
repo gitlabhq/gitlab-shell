@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+
+# Recreate GitLab hooks in the Git repositories managed by GitLab.
+#
+# This script is used when restoring a GitLab backup.
+
+require_relative '../lib/gitlab_init'
+require File.join(ROOT_PATH, 'lib', 'gitlab_projects')
+
+Dir["#{GitlabConfig.new.repos_path}/*/*.git"].each do |repo|
+  GitlabProjects.create_hooks(repo)
+end
