@@ -16,7 +16,11 @@ class GitlabUpdate
 
     @key_id = key_id
     @refname = refname
-    @branch_name = /refs\/heads\/([\/\w\.-]+)/.match(refname).to_a.last
+    if tag?
+      @branch_name = "tag-create"
+    else
+      @branch_name = /refs\/heads\/([\/\w\.-]+)/.match(refname).to_a.last
+    end
 
     @oldrev  = ARGV[1]
     @newrev  = ARGV[2]
@@ -60,5 +64,9 @@ class GitlabUpdate
       puts "GitLab: An unexpected error occurred (redis-cli returned #{$?.exitstatus})."
       exit 1
     end
+  end
+
+  def tag?
+    !!(/refs\/tags\/(.*)/.match(@refname))
   end
 end
