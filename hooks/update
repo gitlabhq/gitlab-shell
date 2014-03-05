@@ -9,9 +9,5 @@ key_id  = ENV['GL_ID']
 repo_path = `pwd`
 
 require_relative '../lib/gitlab_update'
-if /refs\/tags\/(.*)/.match(refname)
-  raise "Tag".inspect
-else
-  raise "Non-tag - #{refname}".inspect
-  GitlabUpdate.new(repo_path, key_id, refname).exec
-end
+
+GitlabUpdate.new(repo_path, key_id, refname).exec
