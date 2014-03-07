@@ -59,8 +59,8 @@ class GitlabShell
     api.allowed?(@git_cmd, @repo_name, @key_id, '_any')
   end
 
-  def exec_cmd *args
-    Kernel::exec *args
+  def exec_cmd(*args)
+    Kernel::exec({'PATH' => ENV['PATH'], 'GL_ID' => ENV['GL_ID']}, *args, unset_env_others: true)
   end
 
   def api
