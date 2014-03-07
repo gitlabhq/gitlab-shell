@@ -6,7 +6,7 @@
 
 refname = ARGV[0]
 key_id  = ENV['GL_ID']
-repo_path = `pwd`
+repo_path = Dir.pwd
 
 require_relative '../lib/gitlab_update'
 
