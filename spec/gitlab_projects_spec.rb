@@ -179,8 +179,8 @@ describe GitlabProjects do
 
     before do
       FileUtils.mkdir_p(tmp_repo_path)
-      system("git init --bare #{tmp_repo_path}")
-      system("touch #{tmp_repo_path}/refs/heads/stable")
+      system(*%W(git init --bare #{tmp_repo_path}))
+      FileUtils.touch(File.join(tmp_repo_path, "refs/heads/stable"))
       File.read(File.join(tmp_repo_path, 'HEAD')).strip.should == 'ref: refs/heads/master'
     end
 
