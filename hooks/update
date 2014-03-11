@@ -1,13 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env bash
 
-# This file was placed here by GitLab. It makes sure that your pushed commits
-# will be processed properly.
-# You can add your own hooks to this file, but be careful when updating gitlab-shell!
-
-refname = ARGV[0]
-key_id  = ENV['GL_ID']
-repo_path = Dir.pwd
-
-require_relative '../lib/gitlab_update'
-
-GitlabUpdate.new(repo_path, key_id, refname).exec
+[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*
+$(dirname $(readlink -f $0))/update.rb "$@"
