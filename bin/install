@@ -10,18 +10,18 @@ config = GitlabConfig.new
 key_dir = File.dirname("#{config.auth_file}")
 
 commands = [
-  "mkdir -p #{config.repos_path}",
-  "mkdir -p #{key_dir}",
-  "chmod 700 #{key_dir}",
-  "touch #{config.auth_file}",
-  "chmod 600 #{config.auth_file}",
-  "chmod -R ug+rwX,o-rwx #{config.repos_path}",
-  "find #{config.repos_path} -type d -print0 | xargs -0 chmod g+s"
+  %W(mkdir -p #{config.repos_path}),
+  %W(mkdir -p #{key_dir}),
+  %W(chmod 700 #{key_dir}),
+  %W(touch #{config.auth_file}),
+  %W(chmod 600 #{config.auth_file}),
+  %W(chmod -R ug+rwX,o-rwx #{config.repos_path}),
+  %W(find #{config.repos_path} -type d -exec chmod g+s {} ;)
 ]
 
 commands.each do |cmd|
-  print "#{cmd}: "
-  if system(cmd)
+  print "#{cmd.join(' ')}: "
+  if system(*cmd)
     puts 'OK'
   else
     puts 'Failed'
