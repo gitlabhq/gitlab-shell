@@ -60,7 +60,7 @@ class GitlabShell
   end
 
   def exec_cmd(*args)
-    Kernel::exec({'PATH' => ENV['PATH'], 'GL_ID' => ENV['GL_ID']}, *args, unset_env_others: true)
+    Kernel::exec({'PATH' => ENV['PATH'], 'GL_ID' => ENV['GL_ID']}, *args, unsetenv_others: true)
   end
 
   def api
