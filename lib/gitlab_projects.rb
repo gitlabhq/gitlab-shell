@@ -99,11 +99,14 @@ class GitlabProjects
     $logger.info "Importing project #{@project_name} from <#{@source}> to <#{full_path}>."
     cmd = %W(git clone --bare -- #{@source} #{full_path})
 
+    pid = Process.spawn(*cmd)
+
     begin
       Timeout.timeout(timeout) do
-        system(*cmd)
+        Process.wait(pid)
       end
-    rescue
+    rescue Timeout::Error
+      Process.kill('TERM', pid)
       $logger.error "Importing project #{@project_name} from <#{@source}> failed due to timeout."
       FileUtils.rm_rf(full_path)
       false
