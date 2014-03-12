@@ -36,7 +36,11 @@ Remove repo
 
 Import repo 
 
-    ./bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git
+    # Default timeout is 2 minutes 
+    ./bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git 
+    
+    # Override timeout in seconds
+    ./bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git 90
 
 Fork repo
 
