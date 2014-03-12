@@ -29,9 +29,13 @@ class GitlabKeys
 
   def add_key
     $logger.info "Adding key #{@key_id} => #{@key.inspect}"
-    auth_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell #{@key_id}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{@key}"
+    auth_line = key_line(@key_id, @key)
     open(auth_file, 'a') { |file| file.puts(auth_line) }
     true
+  end
+
+  def key_line(key_id, public_key)
+    auth_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell #{key_id}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{public_key}"
   end
 
   def rm_key
