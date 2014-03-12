@@ -196,17 +196,38 @@ describe GitlabProjects do
   end
 
   describe :import_project do
-    let(:gl_projects) { build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git') }
+    context 'success import' do
+      let(:gl_projects) { build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git') }
 
-    it "should import a repo" do
-      gl_projects.exec
-      File.exists?(File.join(tmp_repo_path, 'HEAD')).should be_true
+      it { gl_projects.exec.should be_true }
+
+      it "should import a repo" do
+        gl_projects.exec
+        File.exists?(File.join(tmp_repo_path, 'HEAD')).should be_true
+      end
+
+      it "should log an import-project event" do
+        message = "Importing project #{repo_name} from <https://github.com/randx/six.git> to <#{tmp_repo_path}>."
+        $logger.should_receive(:info).with(message)
+        gl_projects.exec
+      end
     end
 
-    it "should log an import-project event" do
-      message = "Importing project #{repo_name} from <https://github.com/randx/six.git> to <#{tmp_repo_path}>."
-      $logger.should_receive(:info).with(message)
-      gl_projects.exec
+    context 'timeout' do
+      let(:gl_projects) { build_gitlab_projects('import-project', repo_name, 'https://github.com/gitlabhq/gitlabhq.git', '1') }
+
+      it { gl_projects.exec.should be_false }
+
+      it "should not import a repo" do
+        gl_projects.exec
+        File.exists?(File.join(tmp_repo_path, 'HEAD')).should be_false
+      end
+
+      it "should log an import-project event" do
+        message = "Importing project #{repo_name} from <https://github.com/gitlabhq/gitlabhq.git> failed due to timeout."
+        $logger.should_receive(:error).with(message)
+        gl_projects.exec
+      end
     end
   end
 

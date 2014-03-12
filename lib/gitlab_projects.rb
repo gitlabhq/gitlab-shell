@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'timeout'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
@@ -92,9 +93,26 @@ class GitlabProjects
   # URL must be publicly cloneable
   def import_project
     @source = ARGV.shift
+
+    # timeout for clone
+    timeout = (ARGV.shift || 120).to_i
     $logger.info "Importing project #{@project_name} from <#{@source}> to <#{full_path}>."
     cmd = %W(git clone --bare -- #{@source} #{full_path})
-    system(*cmd) && self.class.create_hooks(full_path)
+
+    pid = Process.spawn(*cmd)
+
+    begin
+      Timeout.timeout(timeout) do
+        Process.wait(pid)
+      end
+    rescue Timeout::Error
+      Process.kill('KILL', pid)
+      $logger.error "Importing project #{@project_name} from <#{@source}> failed due to timeout."
+      FileUtils.rm_rf(full_path)
+      false
+    else
+      self.class.create_hooks(full_path)
+    end
   end
 
   # Move repository from one directory to another
