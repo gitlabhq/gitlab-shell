@@ -106,7 +106,7 @@ class GitlabProjects
         Process.wait(pid)
       end
     rescue Timeout::Error
-      Process.kill('TERM', pid)
+      Process.kill('KILL', pid)
       $logger.error "Importing project #{@project_name} from <#{@source}> failed due to timeout."
       FileUtils.rm_rf(full_path)
       false
