@@ -214,7 +214,7 @@ describe GitlabProjects do
     end
 
     context 'timeout' do
-      let(:gl_projects) { build_gitlab_projects('import-project', repo_name, 'https://dev.gitlab.org/samples/private.git', '1') }
+      let(:gl_projects) { build_gitlab_projects('import-project', repo_name, 'https://mystery@github.com/user/project.git', '1') }
 
       it { gl_projects.exec.should be_false }
 
@@ -224,7 +224,7 @@ describe GitlabProjects do
       end
 
       it "should log an import-project event" do
-        message = "Importing project #{repo_name} from <https://dev.gitlab.org/samples/private.git> failed due to timeout."
+        message = "Importing project #{repo_name} from <https://mystery@github.com/user/project.git> failed due to timeout."
         $logger.should_receive(:error).with(message)
         gl_projects.exec
       end
