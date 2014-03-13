@@ -8,9 +8,11 @@ require_relative '../lib/gitlab_init'
 # Ex.
 #   /bin/gitlab-keys add-key key-782 "ssh-rsa AAAAx321..."
 #
+#   printf "key-782\tssh-rsa AAAAx321...\n" | /bin/gitlab-keys batch-add-keys
+#
 #   /bin/gitlab-keys rm-key key-23 "ssh-rsa AAAAx321..."
 #
-#   /bin/gitlab-keys clear"
+#   /bin/gitlab-keys clear
 #
 
 require File.join(ROOT_PATH, 'lib', 'gitlab_keys')

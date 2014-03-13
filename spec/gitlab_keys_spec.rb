@@ -1,5 +1,6 @@
 require_relative 'spec_helper'
 require_relative '../lib/gitlab_keys'
+require 'stringio'
 
 describe GitlabKeys do
   before do
@@ -35,6 +36,47 @@ describe GitlabKeys do
 
       it "should return true" do
         gitlab_keys.send(:add_key).should be_true
+      end
+    end
+  end
+
+  describe :batch_add_keys do
+    let(:gitlab_keys) { build_gitlab_keys('batch-add-keys') }
+    let(:fake_stdin) { StringIO.new("key-12\tssh-dsa ASDFASGADG\nkey-123\tssh-rsa GFDGDFSGSDFG\n", 'r') }
+    before do
+      create_authorized_keys_fixture
+      gitlab_keys.stub(stdin: fake_stdin)
+    end
+
+    it "adds lines at the end of the file" do
+      gitlab_keys.send :batch_add_keys
+      auth_line1 = "command=\"#{ROOT_PATH}/bin/gitlab-shell key-12\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-dsa ASDFASGADG"
+      auth_line2 = "command=\"#{ROOT_PATH}/bin/gitlab-shell key-123\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa GFDGDFSGSDFG"
+      File.read(tmp_authorized_keys_path).should == "existing content\n#{auth_line1}\n#{auth_line2}\n"
+    end
+
+    context "with invalid input" do
+      let(:fake_stdin) { StringIO.new("key-12\tssh-dsa ASDFASGADG\nkey-123\tssh-rsa GFDGDFSGSDFG\nfoo\tbar\tbaz\n", 'r') }
+
+      it "aborts" do
+        gitlab_keys.should_receive(:abort)
+        gitlab_keys.send :batch_add_keys
+      end
+    end
+
+    context "without file writing" do
+      before do
+        gitlab_keys.should_receive(:open).and_yield(mock(:file, puts: nil))
+      end
+
+      it "should log an add-key event" do
+        $logger.should_receive(:info).with('Adding key key-12 => "ssh-dsa ASDFASGADG"')
+        $logger.should_receive(:info).with('Adding key key-123 => "ssh-rsa GFDGDFSGSDFG"')
+        gitlab_keys.send :batch_add_keys
+      end
+
+      it "should return true" do
+        gitlab_keys.send(:batch_add_keys).should be_true
       end
     end
   end
