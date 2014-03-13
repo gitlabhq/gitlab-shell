@@ -213,6 +213,15 @@ describe GitlabProjects do
       end
     end
 
+    context 'already exists' do
+      let(:gl_projects) { build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git') }
+
+      it 'should import only once' do
+        gl_projects.exec.should be_true
+        gl_projects.exec.should be_false
+      end
+    end
+
     context 'timeout' do
       let(:gl_projects) { build_gitlab_projects('import-project', repo_name, 'https://github.com/gitlabhq/gitlabhq.git', '1') }
 

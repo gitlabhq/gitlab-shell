@@ -92,6 +92,9 @@ class GitlabProjects
   # Import project via git clone --bare
   # URL must be publicly cloneable
   def import_project
+    # Skip import if repo already exists
+    return false if File.exists?(full_path)
+
     @source = ARGV.shift
 
     # timeout for clone
