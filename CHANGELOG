@@ -1,3 +1,6 @@
+v1.8.4
+  - Dont do import if repository exists
+
 v1.8.3
   - Add timeout option for repository import
 
