@@ -16,6 +16,7 @@ class GitlabKeys
   def exec
     case @command
     when 'add-key'; add_key
+    when 'batch-add-keys'; batch_add_keys
     when 'rm-key';  rm_key
     when 'clear';  clear
     else
@@ -29,9 +30,30 @@ class GitlabKeys
 
   def add_key
     $logger.info "Adding key #{@key_id} => #{@key.inspect}"
-    auth_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell #{@key_id}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{@key}"
+    auth_line = key_line(@key_id, @key)
     open(auth_file, 'a') { |file| file.puts(auth_line) }
     true
+  end
+
+  def batch_add_keys
+    open(auth_file, 'a') do |file|
+      stdin.each_line do |input|
+        tokens = input.strip.split("\t")
+        abort("#{$0}: invalid input #{input.inspect}") unless tokens.count == 2
+        key_id, public_key = tokens
+        $logger.info "Adding key #{key_id} => #{public_key.inspect}"
+        file.puts(key_line(key_id, public_key))
+      end
+    end
+    true
+  end
+
+  def stdin
+    $stdin
+  end
+
+  def key_line(key_id, public_key)
+    auth_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell #{key_id}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{public_key}"
   end
 
   def rm_key
