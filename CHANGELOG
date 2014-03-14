@@ -1,6 +1,8 @@
+v1.8.5
+  - Add `gitlab-keys batch-add-keys` subcommand for authorized_keys rebuilds
+
 v1.8.4
   - Dont do import if repository exists
-  - Add `gitlab-keys batch-add-keys` subcommand for authorized_keys rebuilds
 
 v1.8.3
   - Add timeout option for repository import
