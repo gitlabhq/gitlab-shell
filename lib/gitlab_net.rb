@@ -6,14 +6,26 @@ require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 
 class GitlabNet
-  def allowed?(cmd, repo, key, ref)
+  def allowed?(cmd, repo, actor, ref, oldrev = nil, newrev = nil)
     project_name = repo.gsub("'", "")
     project_name = project_name.gsub(/\.git\Z/, "")
     project_name = project_name.gsub(/\A\//, "")
 
-    key_id = key.gsub("key-", "")
+    params = {
+      action: cmd,
+      ref: ref,
+      project: project_name,
+      oldrev: oldrev,
+      newrev: newrev
+    }
 
-    url = "#{host}/allowed?key_id=#{key_id}&action=#{cmd}&ref=#{ref}&project=#{project_name}"
+    if actor =~ /\Akey\-\d+\Z/
+      params.merge!(key_id: actor.gsub("key-", ""))
+    elsif actor =~ /\Auser\-\d+\Z/
+      params.merge!(user_id: actor.gsub("user-", ""))
+    end
+
+    url = "#{host}/allowed?" + URI.encode_www_form(params)
     resp = get(url)
 
     !!(resp.code == '200' && resp.body == 'true')
