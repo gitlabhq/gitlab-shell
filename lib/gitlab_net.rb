@@ -15,9 +15,10 @@ class GitlabNet
       action: cmd,
       ref: ref,
       project: project_name,
-      oldrev: oldrev,
-      newrev: newrev
     }
+
+    params.merge!(oldrev: oldrev) if oldrev
+    params.merge!(newrev: newrev) if newrev
 
     if actor =~ /\Akey\-\d+\Z/
       params.merge!(key_id: actor.gsub("key-", ""))
