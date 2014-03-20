@@ -1,3 +1,7 @@
+v1.9.0
+  - Call api in update hook for both ssdh and http push. Requires GitLab 6.7+
+  - Pass oldrev and newrev to api.allowed?
+
 v1.8.5
   - Add `gitlab-keys batch-add-keys` subcommand for authorized_keys rebuilds
 
