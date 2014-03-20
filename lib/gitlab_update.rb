@@ -5,7 +5,7 @@ require 'json'
 class GitlabUpdate
   attr_reader :config
 
-  def initialize(repo_path, key_id, refname)
+  def initialize(repo_path, actor, refname)
     @config = GitlabConfig.new
 
     @repo_path = repo_path.strip
@@ -14,7 +14,7 @@ class GitlabUpdate
     @repo_name.gsub!(/\.git$/, "")
     @repo_name.gsub!(/^\//, "")
 
-    @key_id = key_id
+    @actor = actor
     @refname = refname
     @branch_name = /refs\/heads\/([\/\w\.-]+)/.match(refname).to_a.last
 
@@ -27,19 +27,12 @@ class GitlabUpdate
     # get value from it
     ENV['GL_ID'] = nil
 
-    # If its push over ssh
-    # we need to check user permission per branch first
-    if ssh?
-      if api.allowed?('git-receive-pack', @repo_name, @key_id, @branch_name)
-        update_redis
-        exit 0
-      else
-        puts "GitLab: You are not allowed to access #{@branch_name}!"
-        exit 1
-      end
-    else
+    if api.allowed?('git-receive-pack', @repo_name, @actor, @branch_name, @oldrev, @newrev)
       update_redis
       exit 0
+    else
+      puts "GitLab: You are not allowed to access #{@branch_name}!"
+      exit 1
     end
   end
 
@@ -49,13 +42,9 @@ class GitlabUpdate
     GitlabNet.new
   end
 
-  def ssh?
-    @key_id =~ /\Akey\-\d+\Z/
-  end
-
   def update_redis
     queue = "#{config.redis_namespace}:queue:post_receive"
-    msg = JSON.dump({'class' => 'PostReceive', 'args' => [@repo_path, @oldrev, @newrev, @refname, @key_id]})
+    msg = JSON.dump({'class' => 'PostReceive', 'args' => [@repo_path, @oldrev, @newrev, @refname, @actor]})
     unless system(*config.redis_command, 'rpush', queue, msg, err: '/dev/null', out: '/dev/null')
       puts "GitLab: An unexpected error occurred (redis-cli returned #{$?.exitstatus})."
       exit 1
