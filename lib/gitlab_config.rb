@@ -53,7 +53,11 @@ class GitlabConfig
       if redis.has_key?("socket")
         %W(#{redis['bin']} -s #{redis['socket']})
       else
-        %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']})
+        if redis.has_key?("pass")
+          %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']} -a #{redis['pass']})
+        else
+          %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']})
+        end
       end
     end
   end
