@@ -11,6 +11,14 @@ http_settings:
 #  ca_path: /etc/pki/tls/certs
   self_signed_cert: false
 
+http_proxy_settings:
+#	proxy_url: "proxy.mycompany.com:port"
+#	proxy_user: myname
+#	proxy_passwd: mypassword
+  proxy_url: ""
+  proxy_user: ""
+  proxy_passwd: ""
+
 # Repositories path
 # Give the canonicalized absolute pathname,
 # REPOS_PATH MUST NOT CONTAIN ANY SYMLINK!!!

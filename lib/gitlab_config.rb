@@ -23,6 +23,10 @@ class GitlabConfig
     @config['http_settings'] ||= {}
   end
 
+  def http_proxy_settings
+	@config['http_proxy_settings'] ||= {}
+  end
+
   def redis
     @config['redis'] ||= {}
   end
