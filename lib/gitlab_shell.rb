@@ -61,7 +61,7 @@ class GitlabShell
 
   # This method is not covered by Rspec because it ends the current Ruby process.
   def exec_cmd(*args)
-    Kernel::exec({'PATH' => ENV['PATH'], 'GL_ID' => ENV['GL_ID']}, *args, unsetenv_others: true)
+    Kernel::exec({'PATH' => ENV['PATH'], 'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'], 'GL_ID' => ENV['GL_ID']}, *args, unsetenv_others: true)
   end
 
   def api
