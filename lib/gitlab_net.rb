@@ -6,7 +6,7 @@ require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 
 class GitlabNet
-  def allowed?(cmd, repo, actor, ref, oldrev = nil, newrev = nil)
+  def allowed?(cmd, repo, actor, ref, oldrev = nil, newrev = nil, forced_push = false)
     project_name = repo.gsub("'", "")
     project_name = project_name.gsub(/\.git\Z/, "")
     project_name = project_name.gsub(/\A\//, "")
