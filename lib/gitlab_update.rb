@@ -23,7 +23,7 @@ class GitlabUpdate
   end
 
   def forced_push?
-    missed_refs = IO.popen(%W(git rev-list #{@newrev}..#{@oldrev} --)).read
+    missed_refs = IO.popen(%W(git rev-list #{@oldrev} ^#{@newrev})).read
     missed_refs.split("\n").size > 0
   end
 
@@ -32,7 +32,7 @@ class GitlabUpdate
     # get value from it
     ENV['GL_ID'] = nil
 
-    if api.allowed?('git-receive-pack', @repo_name, @actor, @ref_name, @oldrev, @newrev, forced_push)
+    if api.allowed?('git-receive-pack', @repo_name, @actor, @ref_name, @oldrev, @newrev, forced_push?)
       update_redis
       exit 0
     else

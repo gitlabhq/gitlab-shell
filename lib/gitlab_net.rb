@@ -15,6 +15,7 @@ class GitlabNet
       action: cmd,
       ref: ref,
       project: project_name,
+      forced_push: forced_push,
     }
 
     params.merge!(oldrev: oldrev) if oldrev
