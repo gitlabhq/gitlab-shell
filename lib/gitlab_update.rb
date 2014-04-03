@@ -23,8 +23,12 @@ class GitlabUpdate
   end
 
   def forced_push?
-    missed_refs = IO.popen(%W(git rev-list #{@oldrev} ^#{@newrev})).read
-    missed_refs.split("\n").size > 0
+    if @oldrev !~ /00000000/ && @newrev !~ /00000000/
+      missed_refs = IO.popen(%W(git rev-list #{@oldrev} ^#{@newrev})).read
+      missed_refs.split("\n").size > 0
+    else
+      false
+    end
   end
 
   def exec
