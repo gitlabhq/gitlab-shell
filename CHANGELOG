@@ -1,3 +1,6 @@
+v1.9.2
+  - Add support for force push detection 
+
 v1.9.1
   - Update hook sends branch and tag name 
 
