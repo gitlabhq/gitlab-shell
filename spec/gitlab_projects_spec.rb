@@ -151,10 +151,8 @@ describe GitlabProjects do
       valid_push_cmd = ["git", "push", "-u", "origin", "master"]
       gl_projects.should_receive(:system).with(*valid_push_cmd).and_return(true)
 
-
       valid_clean_up_cmd = ["rm", "-rf", "#{tmp_init_path}"]
       gl_projects.should_receive(:system).with(*valid_clean_up_cmd).and_return(true)
-
 
       GitlabProjects.should_receive(:create_hooks).with(tmp_repo_path_from_template)
       gl_projects.exec
