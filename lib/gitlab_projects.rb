@@ -96,63 +96,48 @@ class GitlabProjects
     current_user_name = ARGV.shift
     current_user_email = ARGV.shift
     project_template_tmp_path = File.join(@gitlab_config.tmp_init_path,project_name_tmp)
-    #project_name_dirs_tmp = Pathname(project_name_tmp).each_filename.to_a
-    #project_name_dirs = project_name_dirs_tmp.map { |i| "{" + i.to_s + "}" }.join("/")
 
-    #$logger.info "#{project_name_dirs_tmp}"
-    #$logger.info "#{project_name_dirs}"
-
-    # 0.) set git user
-    # 1.) init bare repo
-    # 2.) create tmp dir for template files
-    # 3.) init git repo into tmp dir
-    # 4.) copy template files into tmp dir
-    $logger.info "git config --global user.name '#{current_user_name}'"
+    #set git user and email
     cmd = %W(git config --global user.name '#{current_user_name}')
     system(*cmd)
-
-    $logger.info "git config --global user.email '#{current_user_email}'"
     cmd = %W(git config --global user.email '#{current_user_email}')
     system(*cmd)
 
+    # create directory
     $logger.info "Adding project #{@project_name} at <#{full_path}> and init it with template path #{project_template_path}"
     FileUtils.mkdir_p(full_path, mode: 0770)
 
-    $logger.info "git --git-dir=#{full_path} init --bare"
+    # init the repo with bare option
     cmd = %W(git --git-dir=#{full_path} init --bare)
     system(*cmd)
 
+    # create tmp directories
     FileUtils.mkdir_p(gitlab_config.tmp_init_path, mode: 0700)
     FileUtils.mkdir_p(project_template_tmp_path, mode: 0700)
 
+    # copy all files from project-template into the tmp directory
     FileUtils.cd(project_template_tmp_path) do
-      $logger.info "git init"
       cmd = %W(git init)
       system(*cmd)
 
       FileUtils.cp_r(Dir.glob("#{project_template_path}/*"), "./")
 
-      $logger.info "git add ."
       cmd = %W(git add .)
       result = system(*cmd)
       $logger.info("#{cmd}, #{result}")
 
-      $logger.info "git commit -m 'initial commit by GitLabHQ from template \"#{project_template_name}\"'"
       cmd = "git commit -m 'initial commit by GitLabHQ from template \"#{project_template_name}\"'"
       result = system(*cmd)
       $logger.info("#{cmd}, #{result}")
 
-      $logger.info "git remote add origin #{full_path}"
       cmd = %W(git remote add origin #{full_path})
       result = system(*cmd)
       $logger.info("#{cmd}, #{result}")
 
-      $logger.info "git push -u origin master"
       cmd = %W(git push -u origin master)
       push_result = system(*cmd)
       $logger.info("#{cmd}, #{result}")
 
-      $logger.info "rm -rf #{project_template_tmp_path}"
       cmd = %W(rm -rf #{project_template_tmp_path})
       system(*cmd)
     end
