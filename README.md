@@ -18,27 +18,31 @@ __Requires ruby 1.9+__
     ./bin/install
 
 
-### Check 
+### Check
 
     ./bin/check
 
 
 ### Repos:
- 
+
 
 Add repo
 
     ./bin/gitlab-projects add-project gitlab/gitlab-ci.git
 
-Remove repo 
+Add repo from template
+
+    ./bin/gitlab-projects add-init-project gitlab/gitlab-ci.git /home/git/gitlab-templates/1/template-name template-name "Administrator" "admin@local.host"
+
+Remove repo
 
     ./bin/gitlab-projects rm-project gitlab/gitlab-ci.git
 
-Import repo 
+Import repo
 
-    # Default timeout is 2 minutes 
-    ./bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git 
-    
+    # Default timeout is 2 minutes
+    ./bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git
+
     # Override timeout in seconds
     ./bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git 90
 
@@ -60,14 +64,14 @@ Remove branch
 
 Create tag
 
-    ./bin/gitlab-projects create-tag gitlab/gitlab-ci.git v3.0.0 3-0-stable 
+    ./bin/gitlab-projects create-tag gitlab/gitlab-ci.git v3.0.0 3-0-stable
 
 Remove tag
 
     ./bin/gitlab-projects rm-tag gitlab/gitlab-ci.git v3.0.0
 
 
-### Keys: 
+### Keys:
 
 
 Add key

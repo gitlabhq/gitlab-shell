@@ -4,11 +4,14 @@ require_relative '../lib/gitlab_projects'
 describe GitlabProjects do
   before do
     FileUtils.mkdir_p(tmp_repos_path)
+    FileUtils.mkdir_p(tmp_repos_templates_path)
+    FileUtils.touch(File.join(tmp_repos_templates_path, 'REAMDE.md'))
     $logger = double('logger').as_null_object
   end
 
   after do
     FileUtils.rm_rf(tmp_repos_path)
+    FileUtils.rm_rf(tmp_repos_templates_path)
   end
 
   describe :initialize do
@@ -109,6 +112,56 @@ describe GitlabProjects do
 
     it "should log an add-project event" do
       $logger.should_receive(:info).with("Adding project #{repo_name} at <#{tmp_repo_path}>.")
+      gl_projects.exec
+    end
+  end
+
+  describe :add_init_project do
+    let(:gl_projects) { build_gitlab_projects('add-init-project', repo_name_from_template, tmp_repos_templates_path, 'rspec test template', 'Administrator', 'admin@local.host') }
+
+    it "should create a directory" do
+      gl_projects.stub(system: true)
+      GitlabProjects.stub(create_hooks: true)
+      gl_projects.exec
+      File.exists?(tmp_repo_path_from_template).should be_true
+    end
+
+    it "should receive valid cmds" do
+      valid_cmd_user_name = ["git", "config", "--global", "user.name", "'Administrator'"]
+      gl_projects.should_receive(:system).with(*valid_cmd_user_name).and_return(true)
+
+      valid_cmd_user_mail = ["git", "config", "--global", "user.email", "'admin@local.host'"]
+      gl_projects.should_receive(:system).with(*valid_cmd_user_mail).and_return(true)
+
+      valid_init_bare_cmd = ["git", "--git-dir=#{tmp_repo_path_from_template}", "init", "--bare"]
+      gl_projects.should_receive(:system).with(*valid_init_bare_cmd).and_return(true)
+
+      valid_init_cmd = ["git", "init"]
+      gl_projects.should_receive(:system).with(*valid_init_cmd).and_return(true)
+
+      valid_add_cmd = ["git", "add", "."]
+      gl_projects.should_receive(:system).with(*valid_add_cmd).and_return(true)
+
+      valid_commit_cmd = ["git commit -m 'initial commit by GitLabHQ from template \"rspec test template\"'"]
+      gl_projects.should_receive(:system).with(*valid_commit_cmd).and_return(true)
+
+      valid_add_origin_cmd = ["git", "remote", "add", "origin", "#{tmp_repo_path_from_template}"]
+      gl_projects.should_receive(:system).with(*valid_add_origin_cmd).and_return(true)
+
+      valid_push_cmd = ["git", "push", "-u", "origin", "master"]
+      gl_projects.should_receive(:system).with(*valid_push_cmd).and_return(true)
+
+
+      valid_clean_up_cmd = ["rm", "-rf", "#{tmp_init_path}"]
+      gl_projects.should_receive(:system).with(*valid_clean_up_cmd).and_return(true)
+
+
+      GitlabProjects.should_receive(:create_hooks).with(tmp_repo_path_from_template)
+      gl_projects.exec
+    end
+
+    it "should log an add-init-project event" do
+      $logger.should_receive(:info).with("Adding project #{repo_name_from_template} at <#{tmp_repo_path_from_template}> and init it with template path #{tmp_repos_templates_path}")
       gl_projects.exec
     end
   end
@@ -323,12 +376,28 @@ describe GitlabProjects do
     File.join(ROOT_PATH, 'tmp', 'repositories')
   end
 
+  def tmp_repos_templates_path
+    File.join(ROOT_PATH, 'tmp', 'templates')
+  end
+
   def tmp_repo_path
     File.join(tmp_repos_path, repo_name)
   end
 
+  def tmp_repo_path_from_template
+    File.join(tmp_repos_path, repo_name_from_template)
+  end
+
   def repo_name
     'gitlab-ci.git'
+  end
+
+  def repo_name_from_template
+    'gitlab-ci-from-template.git'
+  end
+
+  def tmp_init_path
+    File.join(GitlabConfig.new.tmp_init_path, repo_name_from_template.gsub('.git', ''))
   end
 
   def capture_in_tmp_repo(cmd)

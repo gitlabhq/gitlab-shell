@@ -123,20 +123,16 @@ class GitlabProjects
       FileUtils.cp_r(Dir.glob("#{project_template_path}/*"), "./")
 
       cmd = %W(git add .)
-      result = system(*cmd)
-      $logger.info("#{cmd}, #{result}")
+      system(*cmd)
 
       cmd = "git commit -m 'initial commit by GitLabHQ from template \"#{project_template_name}\"'"
-      result = system(*cmd)
-      $logger.info("#{cmd}, #{result}")
+      system(*cmd)
 
       cmd = %W(git remote add origin #{full_path})
-      result = system(*cmd)
-      $logger.info("#{cmd}, #{result}")
+      system(*cmd)
 
       cmd = %W(git push -u origin master)
-      push_result = system(*cmd)
-      $logger.info("#{cmd}, #{result}")
+      system(*cmd)
 
       cmd = %W(rm -rf #{project_template_tmp_path})
       system(*cmd)
