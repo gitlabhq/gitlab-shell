@@ -21,7 +21,7 @@ describe GitlabNet, vcr: true do
   describe :discover do
     it 'should return user has based on key id' do
       VCR.use_cassette("discover-ok") do
-        user = gitlab_net.discover('key-1')
+        user = gitlab_net.discover('key-126')
         user['name'].should == 'Dmitriy Zaporozhets'
       end
     end
@@ -31,14 +31,14 @@ describe GitlabNet, vcr: true do
     context 'ssh key with access to project' do
       it 'should allow pull access for dev.gitlab.org' do
         VCR.use_cassette("allowed-pull") do
-          access = gitlab_net.allowed?('git-receive-pack', 'gitlab/gitlabhq.git', 'key-1', 'master')
+          access = gitlab_net.allowed?('git-receive-pack', 'gitlab/gitlabhq.git', 'key-126', 'master')
           access.should be_true
         end
       end
 
       it 'should allow push access for dev.gitlab.org' do
         VCR.use_cassette("allowed-push") do
-          access = gitlab_net.allowed?('git-upload-pack', 'gitlab/gitlabhq.git', 'key-1', 'master')
+          access = gitlab_net.allowed?('git-upload-pack', 'gitlab/gitlabhq.git', 'key-126', 'master')
           access.should be_true
         end
       end

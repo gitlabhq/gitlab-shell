@@ -2,13 +2,15 @@
 http_interactions:
 - request:
     method: get
-    uri: https://dev.gitlab.org/api/v3/internal/allowed?action=git-receive-pack&key_id=1&project=gitlab/gitlabhq&ref=master
+    uri: https://dev.gitlab.org/api/v3/internal/allowed?action=git-receive-pack&forced_push=false&key_id=126&project=gitlab/gitlabhq&ref=master
     body:
       encoding: US-ASCII
       string: ''
     headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
       Accept:
-      - ! '*/*'
+      - "*/*"
       User-Agent:
       - Ruby
   response:
@@ -19,7 +21,7 @@ http_interactions:
       Server:
       - nginx/1.1.19
       Date:
-      - Mon, 11 Mar 2013 12:13:31 GMT
+      - Mon, 14 Apr 2014 18:25:53 GMT
       Content-Type:
       - application/json
       Content-Length:
@@ -28,21 +30,17 @@ http_interactions:
       - keep-alive
       Status:
       - 200 OK
-      X-Ua-Compatible:
-      - IE=Edge,chrome=1
       Etag:
-      - ! '"b326b5062b2f0e69046810717534cb09"'
+      - '"b326b5062b2f0e69046810717534cb09"'
       Cache-Control:
       - max-age=0, private, must-revalidate
       X-Request-Id:
-      - ac00b27743e177559476f6575e45d1c2
+      - b049c014-05c4-4ec7-a591-1b0661257e33
       X-Runtime:
-      - '0.017272'
-      X-Rack-Cache:
-      - miss
+      - '0.055486'
     body:
-      encoding: US-ASCII
+      encoding: UTF-8
       string: 'true'
     http_version: 
-  recorded_at: Mon, 11 Mar 2013 12:13:31 GMT
+  recorded_at: Mon, 14 Apr 2014 18:25:53 GMT
 recorded_with: VCR 2.4.0

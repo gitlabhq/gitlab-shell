@@ -2,13 +2,15 @@
 http_interactions:
 - request:
     method: get
-    uri: https://dev.gitlab.org/api/v3/internal/allowed?action=git-upload-pack&key_id=2&project=gitlab/gitlabhq&ref=master
+    uri: https://dev.gitlab.org/api/v3/internal/allowed?action=git-upload-pack&forced_push=false&key_id=2&project=gitlab/gitlabhq&ref=master
     body:
       encoding: US-ASCII
       string: ''
     headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
       Accept:
-      - ! '*/*'
+      - "*/*"
       User-Agent:
       - Ruby
   response:
@@ -19,7 +21,7 @@ http_interactions:
       Server:
       - nginx/1.1.19
       Date:
-      - Mon, 11 Mar 2013 12:21:31 GMT
+      - Mon, 14 Apr 2014 18:25:54 GMT
       Content-Type:
       - application/json
       Content-Length:
@@ -28,19 +30,15 @@ http_interactions:
       - keep-alive
       Status:
       - 404 Not Found
-      X-Ua-Compatible:
-      - IE=Edge,chrome=1
       Cache-Control:
       - no-cache
       X-Request-Id:
-      - 6242870566154e17170c86ebb7f7a448
+      - 2a2a3ef9-aaf1-4ffb-8b18-475d52ec5e09
       X-Runtime:
-      - '0.005174'
-      X-Rack-Cache:
-      - miss
+      - '0.013223'
     body:
-      encoding: US-ASCII
-      string: ! '{"message":"404 Not found"}'
+      encoding: UTF-8
+      string: '{"message":"404 Not found"}'
     http_version: 
-  recorded_at: Mon, 11 Mar 2013 12:21:31 GMT
+  recorded_at: Mon, 14 Apr 2014 18:25:54 GMT
 recorded_with: VCR 2.4.0

@@ -2,13 +2,15 @@
 http_interactions:
 - request:
     method: get
-    uri: https://dev.gitlab.org/api/v3/internal/discover?key_id=1
+    uri: https://dev.gitlab.org/api/v3/internal/discover?key_id=126
     body:
       encoding: US-ASCII
       string: ''
     headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
       Accept:
-      - ! '*/*'
+      - "*/*"
       User-Agent:
       - Ruby
   response:
@@ -19,30 +21,26 @@ http_interactions:
       Server:
       - nginx/1.1.19
       Date:
-      - Mon, 11 Mar 2013 12:25:45 GMT
+      - Mon, 14 Apr 2014 18:25:53 GMT
       Content-Type:
       - application/json
       Content-Length:
-      - '332'
+      - '56'
       Connection:
       - keep-alive
       Status:
       - 200 OK
-      X-Ua-Compatible:
-      - IE=Edge,chrome=1
       Etag:
-      - ! '"132e22d01addb4fe7fc1ee9f954b69e1"'
+      - '"1d75c1cf3d4bfa4d2b7bb6a0bcfd7f55"'
       Cache-Control:
       - max-age=0, private, must-revalidate
       X-Request-Id:
-      - 47a6a45ce3073d1f7497d15290c109ef
+      - c3d44ccc-7599-4cc1-879e-281894f9cb39
       X-Runtime:
-      - '0.007938'
-      X-Rack-Cache:
-      - miss
+      - '0.010799'
     body:
-      encoding: US-ASCII
-      string: ! '{"name":"Dmitriy Zaporozhets"}'
+      encoding: UTF-8
+      string: '{"name":"Dmitriy Zaporozhets","username":"dzaporozhets"}'
     http_version: 
-  recorded_at: Mon, 11 Mar 2013 12:25:44 GMT
+  recorded_at: Mon, 14 Apr 2014 18:25:53 GMT
 recorded_with: VCR 2.4.0

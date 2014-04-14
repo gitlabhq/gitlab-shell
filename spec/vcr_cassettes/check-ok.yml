@@ -7,8 +7,10 @@ http_interactions:
       encoding: US-ASCII
       string: ''
     headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
       Accept:
-      - ! '*/*'
+      - "*/*"
       User-Agent:
       - Ruby
   response:
@@ -19,30 +21,26 @@ http_interactions:
       Server:
       - nginx/1.1.19
       Date:
-      - Mon, 11 Mar 2013 13:05:30 GMT
+      - Mon, 14 Apr 2014 18:25:52 GMT
       Content-Type:
       - application/json
       Content-Length:
-      - '71'
+      - '72'
       Connection:
       - keep-alive
       Status:
       - 200 OK
-      X-Ua-Compatible:
-      - IE=Edge,chrome=1
       Etag:
-      - ! '"cb194c2a4bfe01ae695d15ad834b7f5c"'
+      - '"263db4ad138ffbada1f94332a1a2e1e8"'
       Cache-Control:
       - max-age=0, private, must-revalidate
       X-Request-Id:
-      - 66424e020a58b1fc50efcf846e301b40
+      - 17b6ff1c-e1a5-4443-b053-74cfced03184
       X-Runtime:
-      - '0.003728'
-      X-Rack-Cache:
-      - miss
+      - '0.004863'
     body:
-      encoding: US-ASCII
-      string: ! '{"api_version":"v3","gitlab_version":"5.0.0pre","gitlab_rev":"473efc8"}'
+      encoding: UTF-8
+      string: '{"api_version":"v3","gitlab_version":"6.8.0.pre","gitlab_rev":"352bb97"}'
     http_version: 
-  recorded_at: Mon, 11 Mar 2013 13:05:30 GMT
+  recorded_at: Mon, 14 Apr 2014 18:25:52 GMT
 recorded_with: VCR 2.4.0
