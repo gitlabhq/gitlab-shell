@@ -332,6 +332,6 @@ describe GitlabProjects do
   end
 
   def capture_in_tmp_repo(cmd)
-    IO.popen(cmd, chdir: tmp_repo_path).read.strip
+    IO.popen([*cmd, {chdir: tmp_repo_path}]).read.strip
   end
 end
