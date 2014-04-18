@@ -1,3 +1,6 @@
+v1.9.4
+  - Use lock file when modify authorized_keys
+
 v1.9.3
   - Ignore force push detection for new branch or branch remove push
 
