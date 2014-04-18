@@ -36,13 +36,15 @@ class GitlabKeys
   end
 
   def batch_add_keys
-    open(auth_file, 'a') do |file|
-      stdin.each_line do |input|
-        tokens = input.strip.split("\t")
-        abort("#{$0}: invalid input #{input.inspect}") unless tokens.count == 2
-        key_id, public_key = tokens
-        $logger.info "Adding key #{key_id} => #{public_key.inspect}"
-        file.puts(key_line(key_id, public_key))
+    lock do
+      open(auth_file, 'a') do |file|
+        stdin.each_line do |input|
+          tokens = input.strip.split("\t")
+          abort("#{$0}: invalid input #{input.inspect}") unless tokens.count == 2
+          key_id, public_key = tokens
+          $logger.info "Adding key #{key_id} => #{public_key.inspect}"
+          file.puts(key_line(key_id, public_key))
+        end
       end
     end
     true
@@ -57,15 +59,17 @@ class GitlabKeys
   end
 
   def rm_key
-    $logger.info "Removing key #{@key_id}"
-    Tempfile.open('authorized_keys') do |temp|
-      open(auth_file, 'r+') do |current|
-        current.each do |line|
-          temp.puts(line) unless line.include?("/bin/gitlab-shell #{@key_id}\"")
+    lock do
+      $logger.info "Removing key #{@key_id}"
+      Tempfile.open('authorized_keys') do |temp|
+        open(auth_file, 'r+') do |current|
+          current.each do |line|
+            temp.puts(line) unless line.include?("/bin/gitlab-shell #{@key_id}\"")
+          end
         end
+        temp.close
+        FileUtils.cp(temp.path, auth_file)
       end
-      temp.close
-      FileUtils.cp(temp.path, auth_file)
     end
     true
   end
@@ -73,5 +77,21 @@ class GitlabKeys
   def clear
     open(auth_file, 'w') { |file| file.puts '# Managed by gitlab-shell' }
     true
+  end
+
+
+  def lock(timeout = 10)
+    File.open(lock_file, "w+") do |f|
+      begin
+        f.flock File::LOCK_EX
+        Timeout::timeout(timeout) { yield }
+      ensure
+        f.flock File::LOCK_UN
+      end
+    end
+  end
+
+  def lock_file
+    @lock_file ||= File.join(ROOT_PATH, "authorized_keys.lock")
   end
 end
