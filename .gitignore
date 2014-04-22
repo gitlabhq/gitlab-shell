@@ -2,3 +2,4 @@ config.yml
 tmp/*
 *.log
 /*.log.*
+authorized_keys.lock
