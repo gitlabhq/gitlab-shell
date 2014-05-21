@@ -42,6 +42,10 @@ Import repo
     # Override timeout in seconds
     ./bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git 90
 
+Sync imported repo
+
+    ./bin/gitlab-projects sync-imported-repository randx/six.git https://github.com/randx/six.git master master
+
 Fork repo
 
     ./bin/gitlab-projects fork-project gitlab/gitlab-ci.git randx

@@ -40,6 +40,7 @@ class GitlabProjects
     when 'rm-project';  rm_project
     when 'mv-project';  mv_project
     when 'import-project'; import_project
+    when 'sync-imported-repository'; sync_imported_repository
     when 'fork-project'; fork_project
     when 'update-head';  update_head
     else
@@ -118,6 +119,20 @@ class GitlabProjects
     else
       self.class.create_hooks(full_path)
     end
+  end
+
+  # Fetch new commits and tags from a given branch of an imported project
+  # URL must be publicly cloneable
+  def sync_imported_repository
+    @source = ARGV.shift
+    @source_branch = ARGV.shift
+    @dest_branch = ARGV.shift
+
+    $logger.info "Update imported project #{@project_name} from <#{@source}:#{@source_branch}> to <#{full_path}:#{@dest_branch}>."
+    cmd = "cd #{repos_path}/#{project_name} && git fetch #{@source} #{@source_branch}:#{@dest_branch}"
+
+    # Please note that this command doesn't fire a GitPushService
+    system(cmd)
   end
 
   # Move repository from one directory to another
