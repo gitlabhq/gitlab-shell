@@ -96,7 +96,10 @@ describe GitlabKeys do
     end
 
     context "without file writing" do
-      before { Tempfile.stub(:open) }
+      before do
+        Tempfile.stub(:open)
+        gitlab_keys.stub(:lock).and_yield
+      end
 
       it "should log an rm-key event" do
         $logger.should_receive(:info).with('Removing key key-741')
@@ -146,6 +149,10 @@ describe GitlabKeys do
   end
 
   describe :lock do
+    before do
+      GitlabKeys.any_instance.stub(lock_file: tmp_lock_file_path)
+    end
+
     it "should raise exception if operation lasts more then timeout" do
       key = GitlabKeys.new
       expect do
@@ -200,5 +207,9 @@ describe GitlabKeys do
 
   def tmp_authorized_keys_path
     File.join(ROOT_PATH, 'tmp', 'authorized_keys')
+  end
+
+  def tmp_lock_file_path
+    tmp_authorized_keys_path + '.lock'
   end
 end
