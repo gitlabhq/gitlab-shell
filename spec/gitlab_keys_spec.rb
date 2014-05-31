@@ -28,6 +28,7 @@ describe GitlabKeys do
 
     context "without file writing" do
       before { gitlab_keys.stub(:open) }
+      before { create_authorized_keys_fixture }
 
       it "should log an add-key event" do
         $logger.should_receive(:info).with('Adding key key-741 => "ssh-rsa AAAAB3NzaDAxx2E"')
