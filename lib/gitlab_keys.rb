@@ -92,6 +92,6 @@ class GitlabKeys
   end
 
   def lock_file
-    @lock_file ||= File.join(ROOT_PATH, "authorized_keys.lock")
+    @lock_file ||= auth_file + '.lock'
   end
 end

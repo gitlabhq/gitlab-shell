@@ -1,3 +1,6 @@
+v1.9.5
+  - Put authorized_keys.lock in the same directory as authorized_keys
+
 v1.9.4
   - Use lock file when modify authorized_keys
 
