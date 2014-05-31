@@ -29,9 +29,11 @@ class GitlabKeys
   protected
 
   def add_key
-    $logger.info "Adding key #{@key_id} => #{@key.inspect}"
-    auth_line = key_line(@key_id, @key)
-    open(auth_file, 'a') { |file| file.puts(auth_line) }
+    lock do
+      $logger.info "Adding key #{@key_id} => #{@key.inspect}"
+      auth_line = key_line(@key_id, @key)
+      open(auth_file, 'a') { |file| file.puts(auth_line) }
+    end
     true
   end
 
