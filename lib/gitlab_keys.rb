@@ -1,4 +1,5 @@
 require 'tempfile'
+require 'timeout'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
