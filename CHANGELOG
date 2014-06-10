@@ -1,3 +1,6 @@
+v1.9.6
+  - Explicitly require 'timeout' from the standard library
+
 v1.9.5
   - Put authorized_keys.lock in the same directory as authorized_keys
   - Use lock file when add new entries to authorized_keys
