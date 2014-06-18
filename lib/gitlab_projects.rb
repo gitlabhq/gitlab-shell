@@ -55,35 +55,35 @@ class GitlabProjects
 
   protected
 
-  def create_branch
-    branch_name = ARGV.shift
+  def create_git_object(object_type, opts = nil)
+    name = ARGV.shift
     ref = ARGV.shift || "HEAD"
-    cmd = %W(git --git-dir=#{full_path} branch -- #{branch_name} #{ref})
+    cmd = %W(git --git-dir=#{full_path} #{object_type} -- #{name} #{ref})
+    cmd.insert(-4, *opts) if opts
+    system(*cmd)
+  end
+
+  def create_branch
+    create_git_object :branch
+  end
+
+  def create_tag
+    opt = %W(-a -m #{ARGV[2]}) if ARGV.size == 3
+    create_git_object :tag, opt
+  end
+
+  def rm_git_object(object_type, delete_arg)
+    name = ARGV.shift
+    cmd = %W(git --git-dir=#{full_path} #{object_type} #{delete_arg} #{name})
     system(*cmd)
   end
 
   def rm_branch
-    branch_name = ARGV.shift
-    cmd = %W(git --git-dir=#{full_path} branch -D #{branch_name})
-    system(*cmd)
-  end
-
-  def create_tag
-    tag_name = ARGV.shift
-    ref = ARGV.shift || "HEAD"
-    cmd = %W(git --git-dir=#{full_path} tag)
-    if ARGV.size > 0
-      msg = ARGV.shift
-      cmd += %W(-a -m #{msg})
-    end
-    cmd += %W(-- #{tag_name} #{ref})
-    system(*cmd)
+    rm_git_object :branch, '-D'
   end
 
   def rm_tag
-    tag_name = ARGV.shift
-    cmd = %W(git --git-dir=#{full_path} tag -d #{tag_name})
-    system(*cmd)
+    rm_git_object :tag, '-d'
   end
 
   def add_project
