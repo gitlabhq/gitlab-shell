@@ -2,7 +2,10 @@
 user: git
 
 # Url to gitlab instance. Used for api calls. Should end with a slash.
-gitlab_url: "http://localhost/"
+# Default: http://localhost:8080/
+# You only have to change the default if you have configured Unicorn
+# to listen on a custom port.
+gitlab_url: "http://localhost:8080/"
 
 http_settings:
 #  user: someone
