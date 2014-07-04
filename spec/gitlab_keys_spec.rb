@@ -82,6 +82,14 @@ describe GitlabKeys do
     end
   end
 
+  describe :stdin do
+    let(:gitlab_keys) { build_gitlab_keys }
+    subject { gitlab_keys.send :stdin }
+    before { $stdin = 1 }
+
+    it { should equal(1) }
+  end
+
   describe :rm_key do
     let(:gitlab_keys) { build_gitlab_keys('rm-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E') }
 
@@ -129,9 +137,21 @@ describe GitlabKeys do
       gitlab_keys.exec
     end
 
+    it 'batch-add-keys arg should execute batch_add_keys method' do
+      gitlab_keys = build_gitlab_keys('batch-add-keys')
+      gitlab_keys.should_receive(:batch_add_keys)
+      gitlab_keys.exec
+    end
+
     it 'rm-key arg should execute rm_key method' do
       gitlab_keys = build_gitlab_keys('rm-key')
       gitlab_keys.should_receive(:rm_key)
+      gitlab_keys.exec
+    end
+
+    it 'clear arg should execute clear method' do
+      gitlab_keys = build_gitlab_keys('clear')
+      gitlab_keys.should_receive(:clear)
       gitlab_keys.exec
     end
 
