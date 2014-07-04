@@ -176,6 +176,7 @@ describe GitlabProjects do
 
   describe :update_head do
     let(:gl_projects) { build_gitlab_projects('update-head', repo_name, 'stable') }
+    let(:gl_projects_fail) { build_gitlab_projects 'update-head', repo_name }
 
     before do
       FileUtils.mkdir_p(tmp_repo_path)
@@ -192,6 +193,11 @@ describe GitlabProjects do
     it "should log an update_head event" do
       $logger.should_receive(:info).with("Update head in project #{repo_name} to <stable>.")
       gl_projects.exec
+    end
+
+    it "should failed and log an error" do
+      $logger.should_receive(:error).with("update-head failed: no branch provided.")
+      gl_projects_fail.exec.should be_false
     end
   end
 

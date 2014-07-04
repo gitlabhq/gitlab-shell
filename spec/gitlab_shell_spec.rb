@@ -145,6 +145,31 @@ describe GitlabShell do
     end
   end
 
+  describe :exec_cmd do
+    let(:shell) { GitlabShell.new }
+    before { Kernel.stub!(:exec) }
+
+    it "uses Kernel::exec method" do
+      Kernel.should_receive(:exec).with(kind_of(Hash), 1, unsetenv_others: true).once
+      shell.send :exec_cmd, 1
+    end
+  end
+
+  describe :api do
+    let(:shell) { GitlabShell.new }
+    subject { shell.send :api }
+
+    it { should be_a(GitlabNet) }
+  end
+
+  describe :escape_path do
+    let(:shell) { GitlabShell.new }
+    before { File.stub(:absolute_path) { 'y' } }
+    subject { -> { shell.send(:escape_path, 'z') } }
+
+    it { should raise_error(RuntimeError, "Wrong repository path") }
+  end
+
   def ssh_cmd(cmd)
     ENV['SSH_ORIGINAL_COMMAND'] = cmd
   end
