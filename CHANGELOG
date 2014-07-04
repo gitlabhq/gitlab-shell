@@ -1,3 +1,7 @@
+v1.9.7
+  - Increased test coverage
+  - By default use direct unicorn connection (localhost:8080)
+
 v1.9.6
   - Explicitly require 'timeout' from the standard library
 
