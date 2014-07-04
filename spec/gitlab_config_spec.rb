@@ -24,7 +24,7 @@ describe GitlabConfig do
     subject { config.gitlab_url }
 
     it { should_not be_empty }
-    it { should eq('http://localhost/') }
+    it { should eq('http://localhost:8080/') }
   end
 
   describe :audit_usernames do
