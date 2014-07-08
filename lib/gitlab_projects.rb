@@ -1,10 +1,13 @@
 require 'fileutils'
 require 'timeout'
+require 'pathname'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 
 class GitlabProjects
+  attr_reader :gitlab_config
+
   # Project name is a directory name for repository with .git at the end
   # It may be namespaced or not. Like repo.git or gitlab/repo.git
   attr_reader :project_name
@@ -24,9 +27,10 @@ class GitlabProjects
   end
 
   def initialize
+    @gitlab_config = GitlabConfig.new
     @command = ARGV.shift
     @project_name = ARGV.shift
-    @repos_path = GitlabConfig.new.repos_path
+    @repos_path = @gitlab_config.repos_path
     @full_path = File.join(@repos_path, @project_name)
   end
 
@@ -37,6 +41,7 @@ class GitlabProjects
     when 'create-tag'; create_tag
     when 'rm-tag'; rm_tag
     when 'add-project'; add_project
+    when 'add-init-project'; add_init_project
     when 'rm-project';  rm_project
     when 'mv-project';  mv_project
     when 'import-project'; import_project
@@ -82,6 +87,58 @@ class GitlabProjects
     FileUtils.mkdir_p(full_path, mode: 0770)
     cmd = %W(git --git-dir=#{full_path} init --bare)
     system(*cmd) && self.class.create_hooks(full_path)
+  end
+
+  def add_init_project
+    project_name_tmp = @project_name.gsub('.git', '')
+    project_template_path = ARGV.shift
+    project_template_name = ARGV.shift
+    current_user_name = ARGV.shift
+    current_user_email = ARGV.shift
+    project_template_tmp_path = File.join(@gitlab_config.tmp_init_path,project_name_tmp)
+
+    #set git user and email
+    cmd = %W(git config --global user.name '#{current_user_name}')
+    system(*cmd)
+    cmd = %W(git config --global user.email '#{current_user_email}')
+    system(*cmd)
+
+    # create directory
+    $logger.info "Adding project #{@project_name} at <#{full_path}> and init it with template path #{project_template_path}"
+    FileUtils.mkdir_p(full_path, mode: 0770)
+
+    # init the repo with bare option
+    cmd = %W(git --git-dir=#{full_path} init --bare)
+    system(*cmd)
+
+    # create tmp directories
+    FileUtils.mkdir_p(gitlab_config.tmp_init_path, mode: 0700)
+    FileUtils.mkdir_p(project_template_tmp_path, mode: 0700)
+
+    # copy all files from project-template into the tmp directory
+    FileUtils.cd(project_template_tmp_path) do
+      cmd = %W(git init)
+      system(*cmd)
+
+      FileUtils.cp_r(Dir.glob("#{project_template_path}/*"), "./")
+
+      cmd = %W(git add .)
+      system(*cmd)
+
+      cmd = "git commit -m 'initial commit by GitLabHQ from template \"#{project_template_name}\"'"
+      system(*cmd)
+
+      cmd = %W(git remote add origin #{full_path})
+      system(*cmd)
+
+      cmd = %W(git push -u origin master)
+      system(*cmd)
+
+      cmd = %W(rm -rf #{project_template_tmp_path})
+      system(*cmd)
+    end
+
+    self.class.create_hooks(full_path)
   end
 
   def rm_project

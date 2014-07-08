@@ -15,6 +15,10 @@ class GitlabConfig
     @config['auth_file'] ||= "/home/git/.ssh/authorized_keys"
   end
 
+  def tmp_init_path
+    @config['tmp_init_path'] ||= "home/git/gitlab-templates/tmp"
+  end
+
   def gitlab_url
     @config['gitlab_url'] ||= "http://localhost/"
   end
