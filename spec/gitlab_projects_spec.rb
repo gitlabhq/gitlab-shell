@@ -60,14 +60,33 @@ describe GitlabProjects do
     let(:gl_projects_create) {
       build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git')
     }
-    let(:gl_projects) { build_gitlab_projects('create-tag', repo_name, 'test_tag', 'master') }
+    context "lightweight tag" do
+      let(:gl_projects) { build_gitlab_projects('create-tag', repo_name, 'test_tag', 'master') }
 
-    it "should create a tag" do
-      gl_projects_create.exec
-      gl_projects.exec
-      tag_ref = capture_in_tmp_repo(%W(git rev-parse test_tag))
-      master_ref = capture_in_tmp_repo(%W(git rev-parse master))
-      tag_ref.should == master_ref
+      it "should create a tag" do
+        gl_projects_create.exec
+        gl_projects.exec
+        tag_ref = capture_in_tmp_repo(%W(git rev-parse test_tag))
+        master_ref = capture_in_tmp_repo(%W(git rev-parse master))
+        tag_ref.should == master_ref
+      end
+    end
+    context "annotated tag" do
+      msg = 'some message'
+      tag_name = 'test_annotated_tag'
+      let(:gl_projects) { build_gitlab_projects('create-tag', repo_name, tag_name, 'master', msg) }
+
+      it "should create an annotated tag" do
+        gl_projects_create.exec
+        gl_projects.exec
+
+        tag_ref = capture_in_tmp_repo(%W(git rev-parse #{tag_name}^{}))
+        master_ref = capture_in_tmp_repo(%W(git rev-parse master))
+        tag_msg = capture_in_tmp_repo(%W(git tag -l -n1 #{tag_name}))
+
+        tag_ref.should == master_ref
+        tag_msg.should == tag_name + ' ' + msg
+      end
     end
   end
 

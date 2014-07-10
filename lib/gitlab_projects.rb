@@ -67,7 +67,12 @@ class GitlabProjects
   def create_tag
     tag_name = ARGV.shift
     ref = ARGV.shift || "HEAD"
-    cmd = %W(git --git-dir=#{full_path} tag -- #{tag_name} #{ref})
+    cmd = %W(git --git-dir=#{full_path} tag)
+    if ARGV.size > 0
+      msg = ARGV.shift
+      cmd += %W(-a -m #{msg})
+    end
+    cmd += %W(-- #{tag_name} #{ref})
     system(*cmd)
   end
 
