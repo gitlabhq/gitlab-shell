@@ -19,7 +19,7 @@ class GitlabProjects
 
   def self.create_hooks(path)
     hook = File.join(path, 'hooks', 'update')
-    File.delete(hook) if File.exists?(hook)
+    File.delete(hook) if File.exists?(hook) || File.symlink?(hook)
     File.symlink(File.join(ROOT_PATH, 'hooks', 'update'), hook)
   end
 
