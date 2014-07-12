@@ -74,14 +74,14 @@ describe GitlabProjects do
     context "annotated tag" do
       msg = 'some message'
       tag_name = 'test_annotated_tag'
+
       let(:gl_projects) { build_gitlab_projects('create-tag', repo_name, tag_name, 'master', msg) }
 
       it "should create an annotated tag" do
         gl_projects_create.exec
-        gl_projects.exec
-
         system(*%W(git --git-dir=#{tmp_repo_path} config user.name Joe))
         system(*%W(git --git-dir=#{tmp_repo_path} config user.email joe@smith.com))
+        gl_projects.exec
 
         tag_ref = capture_in_tmp_repo(%W(git rev-parse #{tag_name}^{}))
         master_ref = capture_in_tmp_repo(%W(git rev-parse master))
