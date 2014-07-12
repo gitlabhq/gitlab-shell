@@ -80,6 +80,9 @@ describe GitlabProjects do
         gl_projects_create.exec
         gl_projects.exec
 
+        system(*%W(git --git-dir=#{tmp_repo_path} config user.name Joe))
+        system(*%W(git --git-dir=#{tmp_repo_path} config user.email joe@smith.com))
+
         tag_ref = capture_in_tmp_repo(%W(git rev-parse #{tag_name}^{}))
         master_ref = capture_in_tmp_repo(%W(git rev-parse master))
         tag_msg = capture_in_tmp_repo(%W(git tag -l -n1 #{tag_name}))
