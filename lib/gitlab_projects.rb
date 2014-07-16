@@ -18,6 +18,7 @@ class GitlabProjects
   attr_reader :full_path
 
   def self.create_hooks(path)
+    FileUtils.mkdir(File.join(path, 'hooks'), mode: 0770) if !File.directory?(File.join(path, 'hooks'))
     hook = File.join(path, 'hooks', 'update')
     File.delete(hook) if File.exists?(hook)
     File.symlink(File.join(ROOT_PATH, 'hooks', 'update'), hook)
