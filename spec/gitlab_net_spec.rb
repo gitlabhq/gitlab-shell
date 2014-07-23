@@ -79,7 +79,6 @@ describe GitlabNet, vcr: true do
   describe :http_client_for do
     subject { gitlab_net.send :http_client_for, URI('https://localhost/') }
     before do
-      gitlab_net.stub! :cert_store
       gitlab_net.send(:config).http_settings.stub(:[]).with('self_signed_cert') { true }
     end
 
@@ -105,34 +104,5 @@ describe GitlabNet, vcr: true do
 
     it { should_not be_nil }
   end
-
-  describe :cert_store do
-    let(:store) do
-      double(OpenSSL::X509::Store).tap do |store|
-        OpenSSL::X509::Store.stub(:new) { store }
-      end
-    end
-
-    before :each do
-      store.should_receive(:set_default_paths).once
-    end
-
-    after do
-      gitlab_net.send :cert_store
-    end
-
-    it "calls add_file with http_settings['ca_file']" do
-      gitlab_net.send(:config).http_settings.stub(:[]).with('ca_file') { 'test_file' }
-      gitlab_net.send(:config).http_settings.stub(:[]).with('ca_path') { nil }
-      store.should_receive(:add_file).with('test_file')
-      store.should_not_receive(:add_path)
-    end
-
-    it "calls add_path with http_settings['ca_path']" do
-      gitlab_net.send(:config).http_settings.stub(:[]).with('ca_file') { nil }
-      gitlab_net.send(:config).http_settings.stub(:[]).with('ca_path') { 'test_path' }
-      store.should_not_receive(:add_file)
-      store.should_receive(:add_path).with('test_path')
-    end
-  end
 end
+

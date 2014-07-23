@@ -57,7 +57,6 @@ class GitlabNet
     Net::HTTP.new(url.host, url.port).tap do |http|
       if URI::HTTPS === url
         http.use_ssl = true
-        http.cert_store = cert_store
         http.verify_mode = OpenSSL::SSL::VERIFY_NONE if config.http_settings['self_signed_cert']
       end
     end
@@ -84,18 +83,5 @@ class GitlabNet
       end
     end
   end
-
-  def cert_store
-    @cert_store ||= OpenSSL::X509::Store.new.tap { |store|
-      store.set_default_paths
-
-      if ca_file = config.http_settings['ca_file']
-        store.add_file(ca_file)
-      end
-
-      if ca_path = config.http_settings['ca_path']
-        store.add_path(ca_path)
-      end
-    }
-  end
 end
+
