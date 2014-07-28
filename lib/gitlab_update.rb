@@ -4,6 +4,13 @@ require 'json'
 
 class GitlabUpdate
   attr_reader :config
+  attr_reader :repo_path
+  attr_reader :repo_name
+  attr_reader :key_id
+  attr_reader :refname
+  attr_reader :branch_name
+  attr_reader :oldrev
+  attr_reader :newrev
 
   def initialize(repo_path, actor, ref)
     @config = GitlabConfig.new
