@@ -73,16 +73,27 @@ class GitlabNet
     $logger.debug "Performing GET #{url}"
 
     url = URI.parse(url)
-    http = http_client_for url
     request = http_request_for url
 
-    http.start { |http| http.request(request) }.tap do |resp|
-      if resp.code == "200"
-        $logger.debug { "Received response #{resp.code} => <#{resp.body}>." }
-      else
-        $logger.error { "API call <GET #{url}> failed: #{resp.code} => <#{resp.body}>." }
-      end
+    resp = nil
+    if config.unix_socket then
+      sock = Net::BufferedIO.new(UNIXSocket.new(config.unix_socket))
+      request.exec(sock, "1.1", url.request_uri)
+
+      resp = Net::HTTPResponse.read_new(sock)
+      resp.reading_body(sock, true) { }
+    else
+      http = http_client_for url
+      http.start
+      resp = http.request(request)
     end
+
+    if resp.code == "200"
+      $logger.debug { "Received response #{resp.code} => <#{resp.body}>." }
+    else
+      $logger.error { "API call <GET #{url}> failed: #{resp.code} => <#{resp.body}>." }
+    end
+    resp
   end
 
   def cert_store

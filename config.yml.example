@@ -15,6 +15,10 @@ http_settings:
 #  ca_path: /etc/pki/tls/certs
   self_signed_cert: false
 
+# Alternatively to communicating via TCP sockets, the Unix domain socket
+# can be used. Useful if HTTP is only accessible with a client certificate.
+# unix_socket: "/home/git/gitlab/tmp/sockets/gitlab.socket"
+
 # Repositories path
 # Give the canonicalized absolute pathname,
 # REPOS_PATH MUST NOT CONTAIN ANY SYMLINK!!!
