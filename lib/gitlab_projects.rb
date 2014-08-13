@@ -18,9 +18,29 @@ class GitlabProjects
   attr_reader :full_path
 
   def self.create_hooks(path)
-    hook = File.join(path, 'hooks', 'update')
-    File.delete(hook) if File.exists?(hook)
-    File.symlink(File.join(ROOT_PATH, 'hooks', 'update'), hook)
+     ['applypatch-msg',
+      'pre-applypatch',
+      'post-applypatch',
+      'pre-commit',
+      'prepare-commit-msg',
+      'commit-msg',
+      'post-commit',
+      'pre-rebase',
+      'post-checkout',
+      'post-merge',
+      'pre-push',
+      'pre-receive',
+      'update',
+      'post-recieve',
+      'post-receive',
+      'post-update',
+      'pre-auto-gc',
+      'post-rewrite'].each do |hookname|
+         hook = File.join(path, 'hooks', hookname)
+         File.delete(hook) if File.exists?(hook)
+         File.delete(hook) if File.symlink?(hook)
+         File.symlink(File.join(ROOT_PATH, 'hooks', hookname), hook) if File.exists?(File.join(ROOT_PATH, 'hooks', hookname))
+     end
   end
 
   def initialize
