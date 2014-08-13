@@ -31,7 +31,6 @@ class GitlabProjects
       'pre-push',
       'pre-receive',
       'update',
-      'post-recieve',
       'post-receive',
       'post-update',
       'pre-auto-gc',
