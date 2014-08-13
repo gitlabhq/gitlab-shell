@@ -1,23 +1,19 @@
 require_relative 'gitlab_init'
 require_relative 'gitlab_net'
+require_relative 'names_helper'
 require 'json'
 
 class GitlabUpdate
-  attr_reader :config
+  include NamesHelper
+
+  attr_reader :config, :repo_path, :repo_name,
+    :ref, :ref_name, :oldrev, :newrev
 
   def initialize(repo_path, actor, ref)
     @config = GitlabConfig.new
-
-    @repo_path = repo_path.strip
-    @repo_name = @repo_path
-    @repo_name.gsub!(config.repos_path.to_s, "")
-    @repo_name.gsub!(/\.git$/, "")
-    @repo_name.gsub!(/^\//, "")
-
-    @actor = actor
-    @ref = ref
-    @ref_name = ref.gsub(/\Arefs\/(tags|heads)\//, '')
-
+    @repo_path, @actor, @ref = repo_path.strip, actor, ref
+    @repo_name = extract_repo_name(@repo_path.dup, config.repos_path.to_s)
+    @ref_name = extract_ref_name(ref)
     @oldrev  = ARGV[1]
     @newrev  = ARGV[2]
   end
