@@ -1,6 +1,6 @@
 config.yml
 tmp/*
 *.log
-/*.log.*
+/*.log*
 authorized_keys.lock
 coverage/
