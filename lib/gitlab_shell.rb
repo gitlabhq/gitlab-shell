@@ -3,7 +3,7 @@ require 'shellwords'
 require_relative 'gitlab_net'
 
 class GitlabShell
-  DisallowedCommandError = Class.new(StandardError)
+  class DisallowedCommandError < StandardError; end
 
   attr_accessor :key_id, :repo_name, :git_cmd, :repos_path, :repo_name
 
