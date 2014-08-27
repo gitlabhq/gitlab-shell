@@ -1,3 +1,6 @@
+v1.9.8
+  - Replace raise with abort when checking path to prevent path exposure
+
 v1.9.7
   - Increased test coverage
   - By default use direct unicorn connection (localhost:8080)
