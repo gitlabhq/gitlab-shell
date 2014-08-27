@@ -1,5 +1,6 @@
 v1.9.8
   - Replace raise with abort when checking path to prevent path exposure
+  - Handle invalid number of arguments on remote commands
 
 v1.9.7
   - Increased test coverage
