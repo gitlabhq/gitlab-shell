@@ -167,7 +167,7 @@ describe GitlabShell do
     before { File.stub(:absolute_path) { 'y' } }
     subject { -> { shell.send(:escape_path, 'z') } }
 
-    it { should raise_error(RuntimeError, "Wrong repository path") }
+    it { should raise_error(SystemExit, "Wrong repository path") }
   end
 
   def ssh_cmd(cmd)

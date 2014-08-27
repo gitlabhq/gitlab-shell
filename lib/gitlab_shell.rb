@@ -93,7 +93,7 @@ class GitlabShell
     if File.absolute_path(full_repo_path) == full_repo_path
       path
     else
-      raise "Wrong repository path"
+      abort "Wrong repository path"
     end
   end
 end
