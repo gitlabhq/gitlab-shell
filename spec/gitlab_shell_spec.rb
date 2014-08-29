@@ -48,6 +48,14 @@ describe GitlabShell do
       its(:repo_name) { should == 'dmitriy.zaporozhets/gitlab-ci.git' }
       its(:git_cmd) { should == 'git-upload-pack' }
     end
+
+    context 'with an invalid number of arguments' do
+      before { ssh_cmd 'foobar' }
+
+      it "should raise an DisallowedCommandError" do
+        expect { subject.send :parse_cmd }.to raise_error(GitlabShell::DisallowedCommandError)
+      end
+    end
   end
 
   describe :exec do

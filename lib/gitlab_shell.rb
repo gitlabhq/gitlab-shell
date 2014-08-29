@@ -3,6 +3,8 @@ require 'shellwords'
 require_relative 'gitlab_net'
 
 class GitlabShell
+  class DisallowedCommandError < StandardError; end
+
   attr_accessor :key_id, :repo_name, :git_cmd, :repos_path, :repo_name
 
   def initialize
@@ -28,19 +30,22 @@ class GitlabShell
           $stderr.puts "Access denied."
         end
       else
-        message = "gitlab-shell: Attempt to execute disallowed command <#{@origin_cmd}> by #{log_username}."
-        $logger.warn message
-        puts 'Not allowed command'
+        raise DisallowedCommandError
       end
     else
       puts "Welcome to GitLab, #{username}!"
     end
+  rescue DisallowedCommandError => ex
+    message = "gitlab-shell: Attempt to execute disallowed command <#{@origin_cmd}> by #{log_username}."
+    $logger.warn message
+    puts 'Not allowed command'
   end
 
   protected
 
   def parse_cmd
     args = Shellwords.shellwords(@origin_cmd)
+    raise DisallowedCommandError unless args.count == 2
     @git_cmd = args[0]
     @repo_name = escape_path(args[1])
   end
