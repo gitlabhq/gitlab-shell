@@ -6,20 +6,16 @@ require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 
 class GitlabNet
-  def allowed?(cmd, repo, actor, ref, oldrev = nil, newrev = nil, forced_push = false)
+  def allowed?(cmd, repo, actor, changes)
     project_name = repo.gsub("'", "")
     project_name = project_name.gsub(/\.git\Z/, "")
     project_name = project_name.gsub(/\A\//, "")
 
     params = {
       action: cmd,
-      ref: ref,
+      changes: changes,
       project: project_name,
-      forced_push: forced_push,
     }
-
-    params.merge!(oldrev: oldrev) if oldrev
-    params.merge!(newrev: newrev) if newrev
 
     if actor =~ /\Akey\-\d+\Z/
       params.merge!(key_id: actor.gsub("key-", ""))
@@ -86,7 +82,7 @@ class GitlabNet
   end
 
   def cert_store
-    @cert_store ||= OpenSSL::X509::Store.new.tap { |store|
+    @cert_store ||= OpenSSL::X509::Store.new.tap do |store|
       store.set_default_paths
 
       if ca_file = config.http_settings['ca_file']
@@ -96,6 +92,6 @@ class GitlabNet
       if ca_path = config.http_settings['ca_path']
         store.add_path(ca_path)
       end
-    }
+    end
   end
 end

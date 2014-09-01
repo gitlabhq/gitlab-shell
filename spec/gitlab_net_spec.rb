@@ -4,6 +4,7 @@ require_relative '../lib/gitlab_net'
 
 describe GitlabNet, vcr: true do
   let(:gitlab_net) { GitlabNet.new }
+  let(:changes) { ['0000000000000000000000000000000000000000 92d0970eefd7acb6d548878925ce2208cfe2d2ec refs/heads/branch4'] }
 
   before do
     gitlab_net.stub!(:host).and_return('https://dev.gitlab.org/api/v3/internal')
@@ -31,14 +32,14 @@ describe GitlabNet, vcr: true do
     context 'ssh key with access to project' do
       it 'should allow pull access for dev.gitlab.org' do
         VCR.use_cassette("allowed-pull") do
-          access = gitlab_net.allowed?('git-receive-pack', 'gitlab/gitlabhq.git', 'key-126', 'master')
+          access = gitlab_net.allowed?('git-receive-pack', 'gitlab/gitlabhq.git', 'key-126', changes)
           access.should be_true
         end
       end
 
       it 'should allow push access for dev.gitlab.org' do
         VCR.use_cassette("allowed-push") do
-          access = gitlab_net.allowed?('git-upload-pack', 'gitlab/gitlabhq.git', 'key-126', 'master')
+          access = gitlab_net.allowed?('git-upload-pack', 'gitlab/gitlabhq.git', 'key-126', changes)
           access.should be_true
         end
       end
@@ -47,21 +48,21 @@ describe GitlabNet, vcr: true do
     context 'ssh key without access to project' do
       it 'should deny pull access for dev.gitlab.org' do
         VCR.use_cassette("denied-pull") do
-          access = gitlab_net.allowed?('git-receive-pack', 'gitlab/gitlabhq.git', 'key-2', 'master')
+          access = gitlab_net.allowed?('git-receive-pack', 'gitlab/gitlabhq.git', 'key-2', changes)
           access.should be_false
         end
       end
 
       it 'should deny push access for dev.gitlab.org' do
         VCR.use_cassette("denied-push") do
-          access = gitlab_net.allowed?('git-upload-pack', 'gitlab/gitlabhq.git', 'key-2', 'master')
+          access = gitlab_net.allowed?('git-upload-pack', 'gitlab/gitlabhq.git', 'key-2', changes)
           access.should be_false
         end
       end
 
       it 'should deny push access for dev.gitlab.org (with user)' do
         VCR.use_cassette("denied-push-with-user") do
-          access = gitlab_net.allowed?('git-upload-pack', 'gitlab/gitlabhq.git', 'user-1', 'master')
+          access = gitlab_net.allowed?('git-upload-pack', 'gitlab/gitlabhq.git', 'user-1', changes)
           access.should be_false
         end
       end
