@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'gitlab_update'
+require 'names_helper'
 
 describe NamesHelper do
   include NamesHelper

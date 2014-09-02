@@ -4,10 +4,14 @@
 # will be processed properly.
 # You can add your own hooks to this file, but be careful when updating gitlab-shell!
 
-refname = ARGV[0]
+refs = ARGF.read
 key_id  = ENV['GL_ID']
 repo_path = Dir.pwd
 
-require_relative '../lib/gitlab_update'
+require_relative '../lib/gitlab_access'
 
-GitlabUpdate.new(repo_path, key_id, refname).exec
+if GitlabAccess.new(repo_path, key_id, refs).exec
+  exit 0
+else
+  exit 1
+end

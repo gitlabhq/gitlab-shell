@@ -295,7 +295,8 @@ describe GitlabProjects do
       FileUtils.mkdir_p(File.join(tmp_repos_path, 'forked-to-namespace'))
       gl_projects_fork.exec.should be_true
       File.exists?(dest_repo).should be_true
-      File.exists?(File.join(dest_repo, '/hooks/update')).should be_true
+      File.exists?(File.join(dest_repo, '/hooks/pre-receive')).should be_true
+      File.exists?(File.join(dest_repo, '/hooks/post-receive')).should be_true
     end
 
     it "should not fork if a project of the same name already exists" do

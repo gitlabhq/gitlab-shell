@@ -1,6 +1,8 @@
-v1.9.8
+v2.0.0
+  - Works with GitLab v7.3+
   - Replace raise with abort when checking path to prevent path exposure
   - Handle invalid number of arguments on remote commands
+  - Replace update hook with pre-receive and post-receive hooks. 
 
 v1.9.7
   - Increased test coverage
