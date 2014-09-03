@@ -1,11 +1,11 @@
 ---
 http_interactions:
 - request:
-    method: get
-    uri: https://dev.gitlab.org/api/v3/internal/allowed?action=git-receive-pack&changes=0000000000000000000000000000000000000000%2092d0970eefd7acb6d548878925ce2208cfe2d2ec%20refs/heads/branch4&key_id=2&project=gitlab/gitlabhq
+    method: post
+    uri: https://dev.gitlab.org/api/v3/internal/allowed
     body:
       encoding: US-ASCII
-      string: ''
+      string: action=git-receive-pack&changes=0000000000000000000000000000000000000000+92d0970eefd7acb6d548878925ce2208cfe2d2ec+refs%2Fheads%2Fbranch4&project=gitlab%2Fgitlabhq&key_id=2
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -13,6 +13,8 @@ http_interactions:
       - "*/*"
       User-Agent:
       - Ruby
+      Content-Type:
+      - application/x-www-form-urlencoded
   response:
     status:
       code: 404
@@ -21,7 +23,7 @@ http_interactions:
       Server:
       - nginx/1.1.19
       Date:
-      - Mon, 01 Sep 2014 16:23:52 GMT
+      - Wed, 03 Sep 2014 11:27:38 GMT
       Content-Type:
       - application/json
       Content-Length:
@@ -33,12 +35,12 @@ http_interactions:
       Cache-Control:
       - no-cache
       X-Request-Id:
-      - 1721b961-9792-4af4-b3d2-fff0f7aa33b7
+      - f9c23a82-be65-41c8-958a-5f3e1b9aa58b
       X-Runtime:
-      - '0.034322'
+      - '0.028027'
     body:
       encoding: UTF-8
       string: '{"message":"404 Not found"}'
     http_version: 
-  recorded_at: Mon, 01 Sep 2014 16:23:52 GMT
+  recorded_at: Wed, 03 Sep 2014 11:27:38 GMT
 recorded_with: VCR 2.4.0
