@@ -23,8 +23,8 @@ class GitlabNet
       params.merge!(user_id: actor.gsub("user-", ""))
     end
 
-    url = "#{host}/allowed?" + URI.encode_www_form(params)
-    resp = get(url)
+    url = "#{host}/allowed"
+    resp = post(url, params)
 
     !!(resp.code == '200' && resp.body == 'true')
   end
@@ -59,10 +59,15 @@ class GitlabNet
     end
   end
 
-  def http_request_for(url)
+  def http_request_for(url, method = :get)
     user = config.http_settings['user']
     password = config.http_settings['password']
-    Net::HTTP::Get.new(url.request_uri).tap { |r| r.basic_auth(user, password) if user && password }
+
+    if method == :get
+      Net::HTTP::Get.new(url.request_uri).tap { |r| r.basic_auth(user, password) if user && password }
+    else
+      Net::HTTP::Post.new(url.request_uri).tap { |r| r.basic_auth(user, password) if user && password }
+    end
   end
 
   def get(url)
@@ -77,6 +82,23 @@ class GitlabNet
         $logger.debug { "Received response #{resp.code} => <#{resp.body}>." }
       else
         $logger.error { "API call <GET #{url}> failed: #{resp.code} => <#{resp.body}>." }
+      end
+    end
+  end
+
+  def post(url, params)
+    $logger.debug "Performing POST #{url}"
+
+    url = URI.parse(url)
+    http = http_client_for(url)
+    request = http_request_for(url, :post)
+    request.set_form_data(params)
+
+    http.start { |http| http.request(request) }.tap do |resp|
+      if resp.code == "200"
+        $logger.debug { "Received response #{resp.code} => <#{resp.body}>." }
+      else
+        $logger.error { "API call <POST #{url}> failed: #{resp.code} => <#{resp.body}>." }
       end
     end
   end

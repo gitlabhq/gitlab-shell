@@ -21,7 +21,7 @@ class GitlabAccess
     else
       # reset GL_ID env since we stop git push here
       ENV['GL_ID'] = nil
-      puts "GitLab: You are not allowed to access #{@ref_name}!"
+      puts "GitLab: You are not allowed to access some of the refs!"
       exit 1
     end
   end
