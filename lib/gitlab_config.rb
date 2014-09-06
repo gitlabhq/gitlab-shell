@@ -50,11 +50,13 @@ class GitlabConfig
       # for users that haven't updated their configuration
       %W(env -i redis-cli)
     else
-      if redis.has_key?("socket")
-        %W(#{redis['bin']} -s #{redis['socket']})
-      else
-        %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']})
-      end
+      cmd = if redis.has_key?("socket")
+          %W(#{redis['bin']} -s #{redis['socket']})
+        else
+          %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']})
+        end
+      cmd += %W( -n #{redis['db_num']}) if redis.has_key?("db_num")
+      cmd
     end
   end
 end

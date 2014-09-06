@@ -31,6 +31,7 @@ redis:
   port: 6379
   # socket: /tmp/redis.socket # Only define this if you want to use sockets
   namespace: resque:gitlab
+  # db_num: 1 # Only define this if you want to change the database number
 
 # Log file.
 # Default is gitlab-shell.log in the root directory.
