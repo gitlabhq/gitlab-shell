@@ -7,7 +7,7 @@ It is not a Unix shell nor a replacement for Bash or Zsh.
 ## Code status
 
 [![CI](http://ci.gitlab.org/projects/4/status.png?ref=master)](http://ci.gitlab.org/projects/4?ref=master)
-[![Build Status](https://travis-ci.org/gitlabhq/gitlab-shell.png?branch=master)](https://travis-ci.org/gitlabhq/gitlab-shell)
+[![Build Status](https://semaphoreapp.com/api/v1/projects/a71ddd46-a9cc-4062-875e-7ade19a44927/243336/badge.png)](https://semaphoreapp.com/gitlabhq/gitlab-shell)
 [![Code Climate](https://codeclimate.com/github/gitlabhq/gitlab-shell.png)](https://codeclimate.com/github/gitlabhq/gitlab-shell)
 [![Coverage Status](https://coveralls.io/repos/gitlabhq/gitlab-shell/badge.png?branch=master)](https://coveralls.io/r/gitlabhq/gitlab-shell)
 
