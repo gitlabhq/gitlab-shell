@@ -3,6 +3,7 @@ v2.0.0
   - Replace raise with abort when checking path to prevent path exposure
   - Handle invalid number of arguments on remote commands
   - Replace update hook with pre-receive and post-receive hooks. 
+  - Ignore missing repositories in create-hooks
 
 v1.9.7
   - Increased test coverage
