@@ -96,6 +96,20 @@ class GitlabProjects
     FileUtils.rm_rf(full_path)
   end
 
+  def mask_password_in_url(url)
+    result = URI(url)
+    result.password = "*****" unless result.password.nil?
+    result
+  rescue
+    url
+  end
+
+  def remove_origin_in_repo
+    cmd = %W(git --git-dir=#{full_path} remote remove origin)
+    pid = Process.spawn(*cmd)
+    Process.wait(pid)
+  end
+
   # Import project via git clone --bare
   # URL must be publicly cloneable
   def import_project
@@ -103,10 +117,11 @@ class GitlabProjects
     return false if File.exists?(full_path)
 
     @source = ARGV.shift
+    masked_source = mask_password_in_url(@source)
 
     # timeout for clone
     timeout = (ARGV.shift || 120).to_i
-    $logger.info "Importing project #{@project_name} from <#{@source}> to <#{full_path}>."
+    $logger.info "Importing project #{@project_name} from <#{masked_source}> to <#{full_path}>."
     cmd = %W(git clone --bare -- #{@source} #{full_path})
 
     pid = Process.spawn(*cmd)
@@ -116,7 +131,7 @@ class GitlabProjects
         Process.wait(pid)
       end
     rescue Timeout::Error
-      $logger.error "Importing project #{@project_name} from <#{@source}> failed due to timeout."
+      $logger.error "Importing project #{@project_name} from <#{masked_source}> failed due to timeout."
 
       Process.kill('KILL', pid)
       Process.wait
@@ -124,6 +139,9 @@ class GitlabProjects
       false
     else
       self.class.create_hooks(full_path)
+      # The project was imported successfully.
+      # Remove the origin URL since it may contain password.
+      remove_origin_in_repo
     end
   end
 
