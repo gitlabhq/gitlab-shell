@@ -21,10 +21,12 @@ describe GitlabConfig do
   end
 
   describe :gitlab_url do
+    let(:url) { 'http://test.com' }
     subject { config.gitlab_url }
+    before { config.send(:config)['gitlab_url'] = url }
 
     it { should_not be_empty }
-    it { should eq('http://localhost:8080/') }
+    it { should eq(url) }
   end
 
   describe :audit_usernames do
