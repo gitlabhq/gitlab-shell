@@ -55,6 +55,8 @@ class GitlabConfig
       %W(env -i redis-cli)
     else
       redis['database'] ||= 0
+      redis['host'] ||= '127.0.0.1'
+      redis['port'] ||= '6379'
       if redis.has_key?("socket")
         %W(#{redis['bin']} -s #{redis['socket']} -n #{redis['database']})
       else
