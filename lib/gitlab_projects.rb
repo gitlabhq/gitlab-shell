@@ -105,7 +105,7 @@ class GitlabProjects
   end
 
   def remove_origin_in_repo
-    cmd = %W(git --git-dir=#{full_path} remote remove origin)
+    cmd = %W(git --git-dir=#{full_path} remote rm origin)
     pid = Process.spawn(*cmd)
     Process.wait(pid)
   end
