@@ -31,6 +31,7 @@ redis:
   port: 6379
   # pass: redispass # Allows you to specify the password for Redis
   # socket: /tmp/redis.socket # Only define this if you want to use sockets
+  database: 0
   namespace: resque:gitlab
 
 # Log file.

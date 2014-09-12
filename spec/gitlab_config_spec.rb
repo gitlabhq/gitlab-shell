@@ -11,6 +11,7 @@ describe GitlabConfig do
     it { should have_key('bin') }
     it { should have_key('host') }
     it { should have_key('port') }
+    it { should have_key('database') }
     it { should have_key('namespace') }
   end
 

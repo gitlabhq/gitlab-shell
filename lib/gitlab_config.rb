@@ -54,13 +54,14 @@ class GitlabConfig
       # for users that haven't updated their configuration
       %W(env -i redis-cli)
     else
+      redis['database'] ||= 0
       if redis.has_key?("socket")
-        %W(#{redis['bin']} -s #{redis['socket']})
+        %W(#{redis['bin']} -s #{redis['socket']} -n #{redis['database']})
       else
         if redis.has_key?("pass")
-          %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']} -a #{redis['pass']})
+          %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']} -n #{redis['database']} -a #{redis['pass']})
         else
-          %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']})
+          %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']} -n #{redis['database']})
         end
       end
     end
