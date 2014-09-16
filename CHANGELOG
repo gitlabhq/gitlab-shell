@@ -1,5 +1,6 @@
 v1.9.8
   - Ignore missing repositories in create-hooks
+  - Symlink the whole hooks directory
 
 v1.9.7
   - Increased test coverage
