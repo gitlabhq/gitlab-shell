@@ -1,3 +1,6 @@
+v1.9.8
+  - Ignore missing repositories in create-hooks
+
 v1.9.7
   - Increased test coverage
   - By default use direct unicorn connection (localhost:8080)
