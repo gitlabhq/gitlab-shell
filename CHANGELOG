@@ -4,6 +4,7 @@ v2.0.0
   - Handle invalid number of arguments on remote commands
   - Replace update hook with pre-receive and post-receive hooks. 
   - Ignore missing repositories in create-hooks
+  - Connect to Redis via sockets by default
 
 v1.9.7
   - Increased test coverage
