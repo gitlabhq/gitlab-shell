@@ -5,6 +5,8 @@ require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 
 class GitlabProjects
+  GLOBAL_HOOKS_DIRECTORY = File.join(ROOT_PATH, 'hooks')
+
   # Project name is a directory name for repository with .git at the end
   # It may be namespaced or not. Like repo.git or gitlab/repo.git
   attr_reader :project_name
@@ -18,10 +20,10 @@ class GitlabProjects
   attr_reader :full_path
 
   def self.create_hooks(path)
-    %w(pre-receive post-receive).each do |hook_name|
-      hook = File.join(path, 'hooks', hook_name)
-      File.delete(hook) if File.exists?(hook)
-      File.symlink(File.join(ROOT_PATH, 'hooks', hook_name), hook)
+    local_hooks_directory = File.join(path, 'hooks')
+    unless File.realpath(local_hooks_directory) == File.realpath(GLOBAL_HOOKS_DIRECTORY)
+      FileUtils.mv(local_hooks_directory, "#{local_hooks_directory}.#{Time.now.to_i}")
+      FileUtils.ln_s(GLOBAL_HOOKS_DIRECTORY, local_hooks_directory)
     end
   end
 
