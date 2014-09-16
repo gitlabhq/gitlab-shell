@@ -46,11 +46,6 @@ eos
   describe :redis_command do
     subject { config.redis_command }
 
-    it { should be_an(Array) }
-    it { should include(config.redis['host']) }
-    it { should include(config.redis['bin']) }
-    it { should include(config.redis['port'].to_s) }
-
     context "with empty redis config" do
       before do
         config.stub(:redis) { {} }
@@ -58,6 +53,17 @@ eos
 
       it { should be_an(Array) }
       it { should include('redis-cli') }
+    end
+
+    context "with host and port" do
+      before do
+        config.stub(:redis) { {'host' => 'localhost', 'port' => 1123, 'bin' => '/usr/bin/redis-cli'} }
+      end
+
+      it { should be_an(Array) }
+      it { should include(config.redis['host']) }
+      it { should include(config.redis['bin']) }
+      it { should include(config.redis['port'].to_s) }
     end
 
     context "with redis socket" do
