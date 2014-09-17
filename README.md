@@ -31,6 +31,10 @@ Remove repo:
 
     ./bin/gitlab-projects rm-project gitlab/gitlab-ci.git
 
+List repos:
+
+    ./bin/gitlab-projects list-projects
+
 Import repo:
 
     # Default timeout is 2 minutes

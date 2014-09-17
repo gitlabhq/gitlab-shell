@@ -31,7 +31,7 @@ class GitlabProjects
     @command = ARGV.shift
     @project_name = ARGV.shift
     @repos_path = GitlabConfig.new.repos_path
-    @full_path = File.join(@repos_path, @project_name)
+    @full_path = File.join(@repos_path, @project_name) unless @project_name.nil?
   end
 
   def exec
@@ -41,6 +41,7 @@ class GitlabProjects
     when 'create-tag'; create_tag
     when 'rm-tag'; rm_tag
     when 'add-project'; add_project
+    when 'list-projects'; puts list_projects
     when 'rm-project';  rm_project
     when 'mv-project';  mv_project
     when 'import-project'; import_project
@@ -91,6 +92,13 @@ class GitlabProjects
     FileUtils.mkdir_p(full_path, mode: 0770)
     cmd = %W(git --git-dir=#{full_path} init --bare)
     system(*cmd) && self.class.create_hooks(full_path)
+  end
+
+  def list_projects
+    $logger.info 'Listing projects'
+    Dir.chdir(repos_path) do
+      next Dir.glob('**/*.git')
+    end
   end
 
   def rm_project
