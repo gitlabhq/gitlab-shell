@@ -135,6 +135,22 @@ describe GitlabProjects do
     end
   end
 
+  describe :list_projects do
+    let(:gl_projects) do
+      build_gitlab_projects('add-project', "list_test/#{repo_name}")
+    end
+
+    before do
+      FileUtils.mkdir_p(tmp_repos_path)
+    end
+
+    it "should create projects and list them" do
+      GitlabProjects.stub(create_hooks: true)
+      gl_projects.exec
+      gl_projects.send(:list_projects).should == ["list_test/#{repo_name}"]
+    end
+  end
+
   describe :mv_project do
     let(:gl_projects) { build_gitlab_projects('mv-project', repo_name, 'repo.git') }
     let(:new_repo_path) { File.join(tmp_repos_path, 'repo.git') }
