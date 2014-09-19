@@ -11,6 +11,8 @@ require_relative '../lib/gitlab_init'
 #
 #   /bin/gitlab-projects rm-project gitlab/gitlab-ci.git
 #
+#   /bin/gitlab-projects list-projects
+#
 #   /bin/gitlab-projects mv-project gitlab/gitlab-ci.git randx/fork.git
 #
 #   /bin/gitlab-projects fork-project gitlab/gitlab-ci.git randx
