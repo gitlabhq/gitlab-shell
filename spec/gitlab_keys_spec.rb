@@ -41,6 +41,19 @@ describe GitlabKeys do
     end
   end
 
+  describe :list_keys do
+    let(:gitlab_keys) do
+      build_gitlab_keys('add-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E')
+    end
+
+    it "adds a key and lists it" do
+      create_authorized_keys_fixture
+      gitlab_keys.send :add_key
+      auth_line1 = 'key-741 AAAAB3NzaDAxx2E'
+      gitlab_keys.send(:list_keys).should == "#{auth_line1}\n"
+    end
+  end
+
   describe :batch_add_keys do
     let(:gitlab_keys) { build_gitlab_keys('batch-add-keys') }
     let(:fake_stdin) { StringIO.new("key-12\tssh-dsa ASDFASGADG\nkey-123\tssh-rsa GFDGDFSGSDFG\n", 'r') }
