@@ -13,6 +13,6 @@ describe GitlabPostReceive do
 
   describe :initialize do
     it { gitlab_post_receive.repo_path.should == repo_path }
-    it { gitlab_post_receive.changes.should == ['wow'] }
+    it { gitlab_post_receive.changes.should == 'wow' }
   end
 end
