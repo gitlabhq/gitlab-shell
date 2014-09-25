@@ -1,3 +1,6 @@
+v2.0.1
+  - Send post-receive changes to redis as a string instead of array 
+
 v2.0.0
   - Works with GitLab v7.3+
   - Replace raise with abort when checking path to prevent path exposure

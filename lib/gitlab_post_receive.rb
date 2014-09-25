@@ -7,7 +7,7 @@ class GitlabPostReceive
   def initialize(repo_path, actor, changes)
     @config = GitlabConfig.new
     @repo_path, @actor = repo_path.strip, actor
-    @changes = changes.lines
+    @changes = changes
   end
 
   def exec
