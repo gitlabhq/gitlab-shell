@@ -3,7 +3,7 @@ env:
   - TRAVIS=true
 branches:
   only:
-    - 'master'
+    - 'fh-master'
 rvm:
   - 1.9.3-p327
   - 2.0.0
