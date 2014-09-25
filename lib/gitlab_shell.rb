@@ -8,7 +8,7 @@ class GitlabShell
   attr_accessor :key_id, :repo_name, :git_cmd, :repos_path, :repo_name
 
   def initialize
-    @key_id = /key-[0-9]+/.match(ARGV.join).to_s
+    @key_id = /key-\S+/.match(ARGV.join).to_s
     @origin_cmd = ENV['SSH_ORIGINAL_COMMAND']
     @config = GitlabConfig.new
     @repos_path = @config.repos_path
