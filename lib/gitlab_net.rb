@@ -17,9 +17,9 @@ class GitlabNet
       project: project_name,
     }
 
-    if actor =~ /\Akey\-\d+\Z/
+    if actor =~ /\Akey\-\S+\Z/
       params.merge!(key_id: actor.gsub("key-", ""))
-    elsif actor =~ /\Auser\-\d+\Z/
+    elsif actor =~ /\Auser\-\S+\Z/
       params.merge!(user_id: actor.gsub("user-", ""))
     end
 
