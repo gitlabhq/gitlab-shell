@@ -32,7 +32,7 @@ class GitlabConfig
   end
 
   def redis_namespace
-    redis['namespace'] || 'resque:gitlab'
+    redis['namespace'] || 'sidekiq:gitlab'
   end
 
   def log_file
