@@ -5,3 +5,4 @@ tmp/*
 authorized_keys.lock
 coverage/
 tags
+.bundle/
