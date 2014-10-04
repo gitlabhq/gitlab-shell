@@ -10,7 +10,8 @@ class GitlabAccess
 
   def initialize(repo_path, actor, changes)
     @config = GitlabConfig.new
-    @repo_path, @actor = repo_path.strip, actor
+    @repo_path = repo_path.strip
+    @actor = actor
     @repo_name = extract_repo_name(@repo_path.dup, config.repos_path.to_s)
     @changes = changes.lines
   end
