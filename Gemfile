@@ -8,3 +8,5 @@ group :development do
   gem 'guard-rspec'
   gem 'vcr'
 end
+
+gem 'bunny'

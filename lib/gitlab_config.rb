@@ -30,6 +30,10 @@ class GitlabConfig
   def redis
     @config['redis'] ||= {}
   end
+  
+  def rabbit
+    @config['rabbit'] ||= {}
+  end
 
   def redis_namespace
     redis['namespace'] || 'resque:gitlab'

@@ -1,5 +1,7 @@
 require_relative 'gitlab_init'
+require_relative 'gitlab_logger'
 require 'json'
+require 'bunny'
 
 class GitlabPostReceive
   attr_reader :config, :repo_path, :changes
@@ -16,6 +18,7 @@ class GitlabPostReceive
     ENV['GL_ID'] = nil
 
     update_redis
+    update_rabbit if config.rabbit['enabled']
   end
 
   protected
@@ -26,6 +29,29 @@ class GitlabPostReceive
     unless system(*config.redis_command, 'rpush', queue, msg, err: '/dev/null', out: '/dev/null')
       puts "GitLab: An unexpected error occurred (redis-cli returned #{$?.exitstatus})."
       exit 1
+    end
+  end
+
+  def update_rabbit
+    begin
+      # Connect to rabbitmq server
+      conn = Bunny.new(:host => config.rabbit['host'], :vhost => config.rabbit['vhost'], :user => config.rabbit['user'], :password => config.rabbit['password'])
+      conn.start
+
+      # Setup connection to queue
+      channel = conn.create_channel
+      queue = channel.queue(config.rabbit['queue'], :durable => true)
+
+      # Send message
+      repo = @repo_path.gsub("#{config.repos_path}/", "")
+      msg = JSON.dump({'type' => 'post_receive', 'repo' => repo, 'repo_path' => @repo_path, 'actor' => @actor, 'changes' => @changes})
+      queue.publish(msg, :routing_key => queue.name)
+      $logger.info { "Published post_receive message to rabbit repo=#{repo} actor=#{@actor}" }
+      # All done, clean up
+      conn.close
+    rescue Exception => e
+      puts "Gitlab: An error occurred publishing post-receive message to rabbit"
+      $logger.error { "Exception publishing post-receive message to rabbit #{e.message} #{e.backtrace.inspect}" }
     end
   end
 end
