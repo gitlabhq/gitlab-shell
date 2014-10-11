@@ -1,4 +1,5 @@
 require 'yaml'
+require 'uri'
 
 class GitlabConfig
   attr_reader :config
@@ -29,6 +30,17 @@ class GitlabConfig
 
   def redis
     @config['redis'] ||= {}
+    # backwards compatibility
+    if @config['redis']['host'] && @config['redis']['port']
+      @config['redis']['url'] = "redis://#{@config['redis']['host']}:@config['redis']['port']"
+    elsif @config['redis']['socket']
+      @config['redis']['url'] = "unix:/#{@config['redis']['socket']}"
+    end
+    if ENV['REDIS_URL']
+      @config['redis']['url'] = ENV['REDIS_URL']
+    end
+    @config['redis']['database'] ||= 0
+    @config['redis']
   end
 
   def redis_namespace
@@ -49,21 +61,19 @@ class GitlabConfig
 
   # Build redis command to write update event in gitlab queue
   def redis_command
-    if redis.empty?
+    if not redis.has_key?("url")
       # Default to old method of connecting to redis
       # for users that haven't updated their configuration
       %W(env -i redis-cli)
     else
-      redis['database'] ||= 0
-      redis['host'] ||= '127.0.0.1'
-      redis['port'] ||= '6379'
-      if redis.has_key?("socket")
-        %W(#{redis['bin']} -s #{redis['socket']} -n #{redis['database']})
+      redis_url = URI.parse(redis['url'])
+      if redis_url.scheme == 'unix'
+        %W(#{redis['bin']} -s #{redis_url.path} -n #{redis['database']})
       else
         if redis.has_key?("pass")
-          %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']} -n #{redis['database']} -a #{redis['pass']})
+          %W(#{redis['bin']} -h #{redis_url.host} -p #{redis_url.port} -n #{redis['database']} -a #{redis['pass']})
         else
-          %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']} -n #{redis['database']})
+          %W(#{redis['bin']} -h #{redis_url.host} -p #{redis_url.port} -n #{redis['database']})
         end
       end
     end
