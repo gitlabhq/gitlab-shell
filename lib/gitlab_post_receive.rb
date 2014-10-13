@@ -40,12 +40,12 @@ class GitlabPostReceive
 
       # Setup connection to queue
       channel = conn.create_channel
-      queue = channel.queue(config.rabbit['queue'], :durable => true)
+      queue = channel.queue(config.rabbit['queue'], :durable => true, :auto_delete => true)
 
       # Send message
       repo = @repo_path.gsub("#{config.repos_path}/", "")
       msg = JSON.dump({'type' => 'post_receive', 'repo' => repo, 'repo_path' => @repo_path, 'actor' => @actor, 'changes' => @changes})
-      queue.publish(msg, :routing_key => queue.name)
+      queue.publish(msg, :persistent => true, :content_type => "application/json")
       $logger.info { "Published post_receive message to rabbit repo=#{repo} actor=#{@actor}" }
       # All done, clean up
       conn.close
