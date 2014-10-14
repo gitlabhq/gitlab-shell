@@ -35,7 +35,7 @@ class GitlabPostReceive
   def update_rabbit
     begin
       # Connect to rabbitmq server
-      conn = Bunny.new(:host => config.rabbit['host'], :vhost => config.rabbit['vhost'], :user => config.rabbit['user'], :password => config.rabbit['password'])
+      conn = Bunny.new(:hosts => config.rabbit['hosts'], :vhost => config.rabbit['vhost'], :user => config.rabbit['user'], :password => config.rabbit['password'])
       conn.start
 
       # Setup connection to queue

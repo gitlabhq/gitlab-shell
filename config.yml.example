@@ -36,7 +36,8 @@ redis:
 
 rabbit:
   enabled: false
-  host: 127.0.0.1
+  hosts:
+    - 127.0.0.1
   vhost: /
   user: user
   password: password
