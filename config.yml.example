@@ -34,6 +34,14 @@ redis:
   socket: /var/run/redis/redis.sock # Comment out this line if you want to use TCP
   namespace: resque:gitlab
 
+rabbit:
+  enabled: false
+  host: 127.0.0.1
+  vhost: /
+  user: user
+  password: password
+  queue: gitlab
+
 # Log file.
 # Default is gitlab-shell.log in the root directory.
 # log_file: "/home/git/gitlab-shell/gitlab-shell.log"
