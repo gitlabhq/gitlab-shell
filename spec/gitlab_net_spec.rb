@@ -8,6 +8,7 @@ describe GitlabNet, vcr: true do
 
   before do
     gitlab_net.stub!(:host).and_return('https://dev.gitlab.org/api/v3/internal')
+    gitlab_net.stub!(:secret_token).and_return('a123')
   end
 
   describe :check do
@@ -15,6 +16,13 @@ describe GitlabNet, vcr: true do
       VCR.use_cassette("check-ok") do
         result = gitlab_net.check
         result.code.should == '200'
+      end
+    end
+
+    it 'adds the secret_token to request' do
+      VCR.use_cassette("check-ok") do
+        Net::HTTP::Get.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
+        gitlab_net.check
       end
     end
   end
@@ -26,6 +34,13 @@ describe GitlabNet, vcr: true do
         user['name'].should == 'Dmitriy Zaporozhets'
       end
     end
+
+    it 'adds the secret_token to request' do
+      VCR.use_cassette("discover-ok") do
+          Net::HTTP::Get.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
+          gitlab_net.discover('key-126')
+        end
+      end
   end
 
   describe :allowed? do
@@ -34,6 +49,13 @@ describe GitlabNet, vcr: true do
         VCR.use_cassette("allowed-pull") do
           access = gitlab_net.allowed?('git-receive-pack', 'gitlab/gitlabhq.git', 'key-126', changes)
           access.should be_true
+        end
+      end
+
+      it 'adds the secret_token theo request' do
+        VCR.use_cassette("allowed-pull") do
+          Net::HTTP::Post.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
+          gitlab_net.allowed?('git-receive-pack', 'gitlab/gitlabhq.git', 'key-126', changes)          
         end
       end
 

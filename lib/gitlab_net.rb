@@ -76,6 +76,7 @@ class GitlabNet
     url = URI.parse(url)
     http = http_client_for url
     request = http_request_for url
+    request.set_form_data(secret_token: secret_token)
 
     http.start { |http| http.request(request) }.tap do |resp|
       if resp.code == "200"
@@ -92,7 +93,7 @@ class GitlabNet
     url = URI.parse(url)
     http = http_client_for(url)
     request = http_request_for(url, :post)
-    request.set_form_data(params)
+    request.set_form_data(params.merge(secret_token: secret_token))
 
     http.start { |http| http.request(request) }.tap do |resp|
       if resp.code == "200"
@@ -115,5 +116,9 @@ class GitlabNet
         store.add_path(ca_path)
       end
     end
+  end
+
+  def secret_token
+    @secret_token ||= File.read File.join(ROOT_PATH, '.gitlab_shell_secret')
   end
 end
