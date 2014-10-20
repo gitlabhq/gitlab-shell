@@ -1,3 +1,6 @@
+v2.1.0
+  - Use secret token with GitLab internal API. Requires GitLab 7.5 or higher
+
 v2.0.1
   - Send post-receive changes to redis as a string instead of array 
 
