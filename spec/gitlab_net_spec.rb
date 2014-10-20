@@ -37,10 +37,10 @@ describe GitlabNet, vcr: true do
 
     it 'adds the secret_token to request' do
       VCR.use_cassette("discover-ok") do
-          Net::HTTP::Get.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
-          gitlab_net.discover('key-126')
-        end
+        Net::HTTP::Get.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
+        gitlab_net.discover('key-126')
       end
+    end
   end
 
   describe :allowed? do
@@ -55,7 +55,7 @@ describe GitlabNet, vcr: true do
       it 'adds the secret_token theo request' do
         VCR.use_cassette("allowed-pull") do
           Net::HTTP::Post.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
-          gitlab_net.allowed?('git-receive-pack', 'gitlab/gitlabhq.git', 'key-126', changes)          
+          gitlab_net.allowed?('git-receive-pack', 'gitlab/gitlabhq.git', 'key-126', changes)
         end
       end
 
