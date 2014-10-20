@@ -6,3 +6,5 @@ authorized_keys.lock
 coverage/
 .gitlab_shell_secret
 .bundle
+tags
+.bundle/
