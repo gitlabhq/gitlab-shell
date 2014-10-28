@@ -12,7 +12,6 @@ class GitlabShell
     @origin_cmd = ENV['SSH_ORIGINAL_COMMAND']
     @config = GitlabConfig.new
     @repos_path = @config.repos_path
-    @user_tried = false
   end
 
   def exec
@@ -75,10 +74,9 @@ class GitlabShell
 
   def user
     # Can't use "@user ||=" because that will keep hitting the API when @user is really nil!
-    if @user_tried
+    if instance_variable_defined?('@user')
       @user
     else
-      @user_tried = true
       @user = api.discover(@key_id)
     end
   end
