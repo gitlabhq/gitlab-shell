@@ -19,6 +19,7 @@ class GitlabKeys
     when 'add-key'; add_key
     when 'batch-add-keys'; batch_add_keys
     when 'rm-key';  rm_key
+    when 'list-keys'; puts list_keys
     when 'clear';  clear
     else
       $logger.warn "Attempt to execute invalid gitlab-keys command #{@command.inspect}."
@@ -36,6 +37,19 @@ class GitlabKeys
       open(auth_file, 'a') { |file| file.puts(auth_line) }
     end
     true
+  end
+
+  def list_keys
+    $logger.info 'Listing all keys'
+    keys = ''
+    File.readlines(auth_file).each do |line|
+      # key_id & public_key
+      # command=".../bin/gitlab-shell key-741" ... ssh-rsa AAAAB3NzaDAxx2E\n
+      #                               ^^^^^^^              ^^^^^^^^^^^^^^^
+      matches = /^command=\".+?\s+(.+?)\".+?ssh-rsa\s(.+)\s*.*\n*$/.match(line)
+      keys << "#{matches[1]} #{matches[2]}\n" unless matches.nil?
+    end
+    keys
   end
 
   def batch_add_keys
