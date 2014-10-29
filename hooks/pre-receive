@@ -1,8 +1,12 @@
 #!/usr/bin/env ruby
 
-# This file was placed here by GitLab. It makes sure that your pushed commits
-# will be processed properly.
-# You can add your own hooks to this file, but be careful when updating gitlab-shell!
+# This file was placed here by GitLab Shell.
+# It is a shared file that is symlinked from all repositories.
+# It makes sure that your pushed commits will be processed properly.
+# You can add your own hooks to by uncommenting the lines at the bottom.
+# If you upgrade GitLab Shell you will have to redo your changes.
+# In GitLab Enterprise Edition you can use Git Hooks instead.
+# See http://doc.gitlab.com/ee/git_hooks/git_hooks.html
 
 refs = ARGF.read
 key_id  = ENV['GL_ID']
@@ -15,3 +19,12 @@ if GitlabAccess.new(repo_path, key_id, refs).exec
 else
   exit 1
 end
+
+## How to add a custom hooks to some repositories:
+## 1) Put a file with custom code in the repository root directory.
+## 2) Uncomment the lines below.
+## 3) Replace 'project-specific-hook' with the name if the custom file.
+#
+# if File.exists?('project-specific-hook')
+#   execute 'project-specific-hook'
+# end

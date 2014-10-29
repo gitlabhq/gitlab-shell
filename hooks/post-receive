@@ -1,8 +1,14 @@
 #!/usr/bin/env ruby
 
-# This file was placed here by GitLab. It makes sure that your pushed commits
-# will be processed properly.
-# You can add your own hooks to this file, but be careful when updating gitlab-shell!
+# This file was placed here by GitLab Shell.
+# It is a shared file that is symlinked from all repositories.
+# It makes sure that your pushed commits will be processed properly.
+# You can add your own hooks to by uncommenting the lines at the bottom.
+# If you upgrade GitLab Shell you will have to redo your changes.
+# Consider using project services of post-receive hooks
+# See http://doc.gitlab.com/ce/integration/README.html
+# Or use web hooks that trigger an external application
+# See http://doc.gitlab.com/ce/web_hooks/web_hooks.html
 
 changes = ARGF.read
 key_id  = ENV['GL_ID']
@@ -15,3 +21,12 @@ if GitlabPostReceive.new(repo_path, key_id, changes).exec
 else
   exit 1
 end
+
+## How to add a custom hooks to some repositories:
+## 1) Put a file with custom code in the repository root directory.
+## 2) Uncomment the lines below.
+## 3) Replace 'project-specific-hook' with the name if the custom file.
+#
+# if File.exists?('project-specific-hook')
+#   execute 'project-specific-hook'
+# end
