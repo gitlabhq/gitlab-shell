@@ -18,7 +18,7 @@ class GitlabAccess
 
   def exec
     if api.allowed?('git-receive-pack', @repo_name, @actor, @changes)
-      exit 0
+      return true
     else
       # reset GL_ID env since we stop git push here
       ENV['GL_ID'] = nil
