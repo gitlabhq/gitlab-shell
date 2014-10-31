@@ -27,5 +27,6 @@ class GitlabPostReceive
       puts "GitLab: An unexpected error occurred (redis-cli returned #{$?.exitstatus})."
       exit 1
     end
+    return true
   end
 end
