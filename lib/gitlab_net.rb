@@ -25,7 +25,7 @@ class GitlabNet
 
     url = "#{host}/allowed"
     resp = post(url, params)
-
+    puts resp.body unless ['true','false'].include?(resp.body)
     !!(resp.code == '200' && resp.body == 'true')
   end
 
