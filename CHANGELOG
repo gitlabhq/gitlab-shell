@@ -1,3 +1,6 @@
+v2.2.0
+  - Support for custom hooks (Drew Blessing and Jose Kahan)
+
 v2.1.0
   - Use secret token with GitLab internal API. Requires GitLab 7.5 or higher
 
