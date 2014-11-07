@@ -23,9 +23,12 @@ class GitlabPostReceive
   def update_redis
     queue = "#{config.redis_namespace}:queue:post_receive"
     msg = JSON.dump({'class' => 'PostReceive', 'args' => [@repo_path, @actor, @changes]})
-    unless system(*config.redis_command, 'rpush', queue, msg, err: '/dev/null', out: '/dev/null')
+    if system(*config.redis_command, 'rpush', queue, msg,
+              err: '/dev/null', out: '/dev/null')
+      return true
+    else
       puts "GitLab: An unexpected error occurred (redis-cli returned #{$?.exitstatus})."
-      exit 1
+      return false
     end
   end
 end
