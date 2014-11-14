@@ -40,7 +40,7 @@ http_interactions:
       - '0.015198'
     body:
       encoding: UTF-8
-      string: '{"message":"404 Not found"}'
+      string: '{"status": false, "message":"404 Not found"}'
     http_version: 
   recorded_at: Wed, 03 Sep 2014 11:27:38 GMT
 recorded_with: VCR 2.4.0
