@@ -65,7 +65,7 @@ class GitlabProjects
 
   def rm_branch
     branch_name = ARGV.shift
-    cmd = %W(git --git-dir=#{full_path} branch -D #{branch_name})
+    cmd = %W(git --git-dir=#{full_path} branch -D -- #{branch_name})
     system(*cmd)
   end
 
@@ -83,7 +83,7 @@ class GitlabProjects
 
   def rm_tag
     tag_name = ARGV.shift
-    cmd = %W(git --git-dir=#{full_path} tag -d #{tag_name})
+    cmd = %W(git --git-dir=#{full_path} tag -d -- #{tag_name})
     system(*cmd)
   end
 
