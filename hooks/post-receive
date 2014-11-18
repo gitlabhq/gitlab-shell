@@ -1,18 +1,5 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env bash
 
-# This file was placed here by GitLab. It makes sure that your pushed commits
-# will be processed properly.
-
-refs = ARGF.read
-key_id  = ENV['GL_ID']
-repo_path = Dir.pwd
-
-require_relative '../lib/gitlab_custom_hook'
-require_relative '../lib/gitlab_post_receive'
-
-if GitlabPostReceive.new(repo_path, key_id, refs).exec &&
-    GitlabCustomHook.new.post_receive(refs, repo_path)
-  exit 0
-else
-  exit 1
-end
+# Remove paths Git automatically prepends to PATH on hooks.
+export PATH="$GITLAB_PATH_OUTSIDE_HOOK"
+ruby "$GIT_DIR/hooks/post-receive-main.rb"
