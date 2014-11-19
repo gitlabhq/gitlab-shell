@@ -1,6 +1,3 @@
-v2.3.0
-  - Restore PATH before calling hooks
-
 v2.2.0
   - Support for custom hooks (Drew Blessing and Jose Kahan)
 
