@@ -54,8 +54,8 @@ class GitlabCustomHook
       # only output stdut_stderr if scripts doesn't return 0
       unless wait_thr.value == 0
         exit_status = false
-        stdout_stderr.each_line { |line| puts line }
       end
+      stdout_stderr.each_line { |line| puts line }
     end
 
     exit_status
