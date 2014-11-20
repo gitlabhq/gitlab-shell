@@ -1,3 +1,9 @@
+v2.5.0
+  - Restore PATH before calling hooks v2
+
+v2.4.0
+  - Show error message when git access is rejected
+
 v2.2.0
   - Support for custom hooks (Drew Blessing and Jose Kahan)
 

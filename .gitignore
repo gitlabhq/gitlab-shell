@@ -8,3 +8,4 @@ coverage/
 .bundle
 tags
 .bundle/
+hooks/.env
