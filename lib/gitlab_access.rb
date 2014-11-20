@@ -1,6 +1,5 @@
 require_relative 'gitlab_init'
 require_relative 'gitlab_net'
-require_relative 'gitlab_access_status'
 require_relative 'names_helper'
 require 'json'
 
@@ -18,14 +17,13 @@ class GitlabAccess
   end
 
   def exec
-    status = api.check_access('git-receive-pack', @repo_name, @actor, @changes)
-    if status.allowed?
-      true
+    if api.allowed?('git-receive-pack', @repo_name, @actor, @changes)
+      return true
     else
       # reset GL_ID env since we stop git push here
       ENV['GL_ID'] = nil
-      puts "GitLab: #{status.message}"
-      false
+      puts "GitLab: You are not allowed to access some of the refs!"
+      return false
     end
   end
 

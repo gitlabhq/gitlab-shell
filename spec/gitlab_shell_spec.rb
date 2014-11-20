@@ -1,6 +1,5 @@
 require_relative 'spec_helper'
 require_relative '../lib/gitlab_shell'
-require_relative '../lib/gitlab_access_status'
 
 describe GitlabShell do
   subject do
@@ -13,7 +12,7 @@ describe GitlabShell do
   let(:api) do
     double(GitlabNet).tap do |api|
       api.stub(discover: { 'name' => 'John Doe' })
-      api.stub(check_access: GitAccessStatus.new(true))
+      api.stub(allowed?: true)
     end
   end
   let(:key_id) { "key-#{rand(100) + 100}" }
@@ -141,13 +140,13 @@ describe GitlabShell do
     before { ssh_cmd 'git-upload-pack gitlab-ci.git' }
     after { subject.exec }
 
-    it "should call api.check_access" do
-      api.should_receive(:check_access).
+    it "should call api.allowed?" do
+      api.should_receive(:allowed?).
         with('git-upload-pack', 'gitlab-ci.git', key_id, '_any')
     end
 
-    it "should disallow access and log the attempt if check_access returns false status" do
-      api.stub(check_access: GitAccessStatus.new(false))
+    it "should disallow access and log the attempt if allowed? returns false" do
+      api.stub(allowed?: false)
       message = "gitlab-shell: Access denied for git command <git-upload-pack gitlab-ci.git> "
       message << "by user with key #{key_id}."
       $logger.should_receive(:warn).with(message)

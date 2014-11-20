@@ -60,7 +60,7 @@ class GitlabShell
   end
 
   def validate_access
-    api.check_access(@git_cmd, @repo_name, @key_id, '_any').allowed?
+    api.allowed?(@git_cmd, @repo_name, @key_id, '_any')
   end
 
   # This method is not covered by Rspec because it ends the current Ruby process.
