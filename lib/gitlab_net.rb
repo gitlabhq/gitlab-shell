@@ -6,7 +6,7 @@ require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 
 class GitlabNet
-  def allowed?(cmd, repo, actor, changes)
+  def check_access(cmd, repo, actor, changes)
     project_name = repo.gsub("'", "")
     project_name = project_name.gsub(/\.git\Z/, "")
     project_name = project_name.gsub(/\A\//, "")
@@ -26,7 +26,11 @@ class GitlabNet
     url = "#{host}/allowed"
     resp = post(url, params)
 
-    !!(resp.code == '200' && resp.body == 'true')
+    if resp.code == '200'
+      GitAccessStatus.create_from_json(resp.body)
+    else
+      GitAccessStatus.new(false, "API is not accesible")
+    end
   end
 
   def discover(key)
