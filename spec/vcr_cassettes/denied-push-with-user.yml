@@ -42,7 +42,7 @@ http_interactions:
       - '0.019640'
     body:
       encoding: UTF-8
-      string: 'false'
+      string: '{"status": false}'
     http_version: 
   recorded_at: Wed, 03 Sep 2014 11:27:39 GMT
 recorded_with: VCR 2.4.0
