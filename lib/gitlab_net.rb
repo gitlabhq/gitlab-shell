@@ -4,6 +4,7 @@ require 'json'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
+require_relative 'gitlab_access'
 
 class GitlabNet
   def check_access(cmd, repo, actor, changes)
