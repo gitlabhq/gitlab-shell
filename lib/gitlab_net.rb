@@ -74,9 +74,10 @@ class GitlabNet
     $logger.debug "Performing GET #{url}"
 
     url = URI.parse(url)
+    query = URI.decode_www_form(url.query || []) << ["secret_token", secret_token]
+    url.query = URI.encode_www_form(query)
     http = http_client_for url
     request = http_request_for url
-    request.set_form_data(secret_token: secret_token)
 
     http.start { |http| http.request(request) }.tap do |resp|
       if resp.code == "200"
