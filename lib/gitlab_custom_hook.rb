@@ -22,7 +22,7 @@ class GitlabCustomHook
   def update(ref_name, old_value, new_value, repo_path)
     hook = hook_file('update', repo_path)
     return true if hook.nil?
-    system(hook, ref_name, old_value, new_value) ? true : false
+    system(hook, ref_name, old_value, new_value)
   end
 
   private
@@ -51,11 +51,11 @@ class GitlabCustomHook
       # need to close stdin before reading stdout
       stdin.close
 
-      # only output stdut_stderr if scripts doesn't return 0
       unless wait_thr.value == 0
         exit_status = false
-        stdout_stderr.each_line { |line| puts line }
       end
+
+      stdout_stderr.each_line { |line| puts line }
     end
 
     exit_status
