@@ -109,6 +109,7 @@ class GitlabProjects
   def mask_password_in_url(url)
     result = URI(url)
     result.password = "*****" unless result.password.nil?
+    result.user = "*****" unless result.user.nil? #it's needed for oauth access_token
     result
   rescue
     url
