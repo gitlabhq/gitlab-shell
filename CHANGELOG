@@ -1,3 +1,6 @@
+v2.4.1
+  - Access token masking in url before loging
+
 v2.4.0
   - Show error message when git push is rejected
 
