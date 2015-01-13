@@ -19,7 +19,8 @@ describe GitlabShell do
   let(:key_id) { "key-#{rand(100) + 100}" }
   let(:repository_path) { "/home/git#{rand(100)}/repos" }
   before do
-    GitlabConfig.any_instance.stub(repos_path: repository_path, audit_usernames: false)
+    GitlabConfig.any_instance.stub(repos_path: repository_path, audit_usernames: false, audit_client_ip: false)
+    ssh_client_ip '1.2.3.4'
   end
 
   describe :initialize do
@@ -86,6 +87,11 @@ describe GitlabShell do
       it "should use usernames if configured to do so" do
         GitlabConfig.any_instance.stub(audit_usernames: true)
         $logger.should_receive(:info) { |msg| msg.should =~ /for John Doe/ }
+      end
+
+      it "should log users' IP if configured to do so" do
+        GitlabConfig.any_instance.stub(audit_client_ip: true)
+        $logger.should_receive(:info) { |msg| msg.should =~ /from 1.2.3.4/ }
       end
     end
 
@@ -181,6 +187,10 @@ describe GitlabShell do
 
   def ssh_cmd(cmd)
     ENV['SSH_ORIGINAL_COMMAND'] = cmd
+  end
+
+  def ssh_client_ip(ip)
+    ENV['SSH_CONNECTION'] = "#{ip} 12345 12.34.56.78 54321"
   end
 
 end

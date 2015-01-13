@@ -47,6 +47,10 @@ class GitlabConfig
     @config['audit_usernames'] ||= false
   end
 
+  def audit_client_ip
+    @config['audit_client_ip'] ||= false
+  end
+
   # Build redis command to write update event in gitlab queue
   def redis_command
     if redis.empty?

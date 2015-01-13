@@ -10,6 +10,7 @@ class GitlabShell
   def initialize
     @key_id = /key-[0-9]+/.match(ARGV.join).to_s
     @origin_cmd = ENV['SSH_ORIGINAL_COMMAND']
+    @client_ip = ENV['SSH_CONNECTION'].split(' ')[0]
     @config = GitlabConfig.new
     @repos_path = @config.repos_path
   end
@@ -24,7 +25,7 @@ class GitlabShell
         if validate_access
           process_cmd
         else
-          message = "gitlab-shell: Access denied for git command <#{@origin_cmd}> by #{log_username}."
+          message = "gitlab-shell: Access denied for git command <#{@origin_cmd}> by #{user_identifier}."
           $logger.warn message
           $stderr.puts "Access denied."
         end
@@ -35,7 +36,7 @@ class GitlabShell
       puts "Welcome to GitLab, #{username}!"
     end
   rescue DisallowedCommandError => ex
-    message = "gitlab-shell: Attempt to execute disallowed command <#{@origin_cmd}> by #{log_username}."
+    message = "gitlab-shell: Attempt to execute disallowed command <#{@origin_cmd}> by #{user_identifier}."
     $logger.warn message
     puts 'Not allowed command'
   end
@@ -55,7 +56,7 @@ class GitlabShell
 
   def process_cmd
     repo_full_path = File.join(repos_path, repo_name)
-    $logger.info "gitlab-shell: executing git command <#{@git_cmd} #{repo_full_path}> for #{log_username}."
+    $logger.info "gitlab-shell: executing git command <#{@git_cmd} #{repo_full_path}> for #{user_identifier}."
     exec_cmd(@git_cmd, repo_full_path)
   end
 
@@ -85,9 +86,13 @@ class GitlabShell
     user && user['name'] || 'Anonymous'
   end
 
-  # User identifier to be used in log messages.
   def log_username
     @config.audit_usernames ? username : "user with key #{@key_id}"
+  end
+
+  # User identifier to be used in log messages.
+  def user_identifier
+    @config.audit_client_ip ? "#{log_username} from #{@client_ip}" : log_username
   end
 
   def escape_path(path)

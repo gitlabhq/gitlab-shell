@@ -43,6 +43,12 @@ eos
     it("returns false by default") { should eq(false) }
   end
 
+  describe :audit_client_ip do
+    subject { config.audit_client_ip }
+
+    it("returns false by default") { should eq(false) }
+  end
+
   describe :redis_command do
     subject { config.redis_command }
 
