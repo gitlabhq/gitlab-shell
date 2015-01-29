@@ -14,7 +14,7 @@ class GitlabNet
 
     params = {
       action: cmd,
-      changes: changes,
+      changes: changes.join("\n"),
       project: project_name,
     }
 
