@@ -11,10 +11,11 @@ class GitlabNet
     project_name = repo.gsub("'", "")
     project_name = project_name.gsub(/\.git\Z/, "")
     project_name = project_name.gsub(/\A\//, "")
+    changes = changes.join("\n") unless changes.kind_of?(String)
 
     params = {
       action: cmd,
-      changes: changes.join("\n"),
+      changes: changes,
       project: project_name,
     }
 
