@@ -1,3 +1,6 @@
+v2.4.2
+  - Pass git changes list as string instead of array
+
 v2.4.1
   - Access token masking in url before loging
 
