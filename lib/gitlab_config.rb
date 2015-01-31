@@ -47,6 +47,10 @@ class GitlabConfig
     @config['audit_usernames'] ||= false
   end
 
+  def unix_socket
+    @config['unix_socket']
+  end
+
   # Build redis command to write update event in gitlab queue
   def redis_command
     if redis.empty?
