@@ -41,6 +41,15 @@ class GitlabNet
     JSON.parse(resp.body) rescue nil
   end
 
+  def broadcast_message
+    resp = get("#{host}/broadcast_message")
+    if resp.code == '200'
+      JSON.parse(resp.body) rescue nil
+    else
+      nil
+    end
+  end
+
   def check
     get("#{host}/check")
   end

@@ -44,6 +44,26 @@ describe GitlabNet, vcr: true do
     end
   end
 
+  describe :broadcast_message do
+    context "broadcast message exists" do
+      it 'should return message' do
+        VCR.use_cassette("broadcast_message-ok") do
+          result = gitlab_net.broadcast_message
+          result["message"].should == "Message"
+        end
+      end
+    end
+
+    context "broadcast message doesn't exist" do
+      it 'should return nil' do
+        VCR.use_cassette("broadcast_message-none") do
+          result = gitlab_net.broadcast_message
+          result.should == nil
+        end
+      end
+    end
+  end
+
   describe :check_access do
     context 'ssh key with access to project' do
       it 'should allow pull access for dev.gitlab.org' do

@@ -1,3 +1,6 @@
+v2.4.3
+  - Print broadcast message if one is available
+
 v2.4.2
   - Pass git changes list as string instead of array
 
