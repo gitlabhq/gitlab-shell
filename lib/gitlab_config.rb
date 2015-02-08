@@ -19,6 +19,10 @@ class GitlabConfig
     @config['auth_file'] ||= File.join(home, ".ssh/authorized_keys")
   end
 
+  def secret_file
+    @config['secret_file'] ||= File.join(ROOT_PATH, '.gitlab_shell_secret')
+  end
+
   def gitlab_url
     @config['gitlab_url'] ||= "http://localhost/"
   end
