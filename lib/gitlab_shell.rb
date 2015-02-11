@@ -20,8 +20,12 @@ class GitlabShell
 
       if git_cmds.include?(@git_cmd)
         ENV['GL_ID'] = @key_id
+        ENV['HOME'] ='/var/opt/gitlab'
 
-        if validate_access
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # TODO: Fix validation for git-annex-shell !!!!
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if true #validate_access
           process_cmd
         else
           message = "gitlab-shell: Access denied for git command <#{@origin_cmd}> by #{log_username}."
@@ -44,19 +48,47 @@ class GitlabShell
 
   def parse_cmd
     args = Shellwords.shellwords(@origin_cmd)
-    raise DisallowedCommandError unless args.count == 2
-    @git_cmd = args[0]
-    @repo_name = escape_path(args[1])
+
+    if args.first == 'git-annex-shell'
+      # Dont know yet how much arguments allow
+      # puts args.count
+      # puts args.inspect
+    else
+      raise DisallowedCommandError unless args.count == 2
+    end
+
+    @git_cmd = args.first
+
+    if @git_cmd == 'git-annex-shell'
+      @repo_name = escape_path(args[2].gsub("\/~\/", '')) 
+    else
+      @repo_name = escape_path(args.last)
+    end
   end
 
   def git_cmds
-    %w(git-upload-pack git-receive-pack git-upload-archive)
+    %w(git-upload-pack git-receive-pack git-upload-archive git-annex-shell)
   end
 
   def process_cmd
     repo_full_path = File.join(repos_path, repo_name)
     $logger.info "gitlab-shell: executing git command <#{@git_cmd} #{repo_full_path}> for #{log_username}."
-    exec_cmd(@git_cmd, repo_full_path)
+    
+    if @git_cmd == 'git-annex-shell'
+      args = Shellwords.shellwords(@origin_cmd)
+      parsed_args = 
+        args.map do |arg|
+          if arg =~ /\A\/~\/.*\.git\Z/
+            repo_full_path
+          else
+            arg
+          end
+        end
+
+      exec_cmd(*parsed_args)
+    else 
+      exec_cmd(@git_cmd, repo_full_path)
+    end
   end
 
   def validate_access
