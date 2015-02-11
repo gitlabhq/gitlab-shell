@@ -139,12 +139,13 @@ describe GitlabNet, vcr: true do
     let(:user) { 'user' }
     let(:password) { 'password' }
     let(:url) { URI 'http://localhost/' }
-    subject { gitlab_net.send :http_request_for, url }
+    subject { gitlab_net.send :http_request_for, :get, url }
 
     before do
       gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
       gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
       get.should_receive(:basic_auth).with(user, password).once
+      get.should_receive(:set_form_data).with(hash_including(secret_token: 'a123')).once
     end
 
     it { should_not be_nil }
