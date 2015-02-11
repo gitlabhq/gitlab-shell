@@ -135,6 +135,27 @@ describe GitlabShell do
         api.should_receive(:discover).with(key_id)
       end
     end
+
+    context "failed connection" do
+      before { 
+        ssh_cmd 'git-upload-pack gitlab-ci.git'
+        api.stub(:check_access).and_raise(GitlabNet::ApiUnreachableError)
+      }
+      after { subject.exec }
+
+      it "should not process the command" do
+        subject.should_not_receive(:process_cmd)
+      end
+
+      it "should not execute the command" do
+        subject.should_not_receive(:exec_cmd)
+      end
+
+      it "should log the failed connection" do
+        message = "gitlab-shell: Failed to connect to internal API"
+        $logger.should_receive(:warn).with(message)
+      end
+    end
   end
 
   describe :validate_access do

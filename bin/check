@@ -8,12 +8,17 @@ require_relative '../lib/gitlab_net'
 #
 
 print "Check GitLab API access: "
-resp = GitlabNet.new.check
-if resp.code == "200"
-  print 'OK'
-else
-  abort "FAILED. code: #{resp.code}"
+begin
+  resp = GitlabNet.new.check
+  if resp.code == "200"
+    print 'OK'
+  else
+    abort "FAILED. code: #{resp.code}"
+  end
+rescue GitlabNet::ApiUnreachableError
+  abort "FAILED: Failed to connect to internal API"
 end
+
 
 puts "\nCheck directories and files: "
 

@@ -18,9 +18,13 @@ class GitlabPostReceive
 
     update_redis
 
-    if broadcast_message = GitlabNet.new.broadcast_message
-      puts
-      print_broadcast_message(broadcast_message["message"])
+    begin
+      broadcast_message = GitlabNet.new.broadcast_message
+      if broadcast_message
+        puts
+        print_broadcast_message(broadcast_message["message"])
+      end
+    rescue GitlabNet::ApiUnreachableError
     end
   end
 

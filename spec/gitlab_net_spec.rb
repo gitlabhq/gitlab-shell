@@ -26,6 +26,11 @@ describe GitlabNet, vcr: true do
         gitlab_net.check
       end
     end
+
+    it "raises an exception if the connection fails" do
+      Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
+      expect { gitlab_net.check }.to raise_error(GitlabNet::ApiUnreachableError)
+    end
   end
 
   describe :discover do
@@ -40,6 +45,13 @@ describe GitlabNet, vcr: true do
       VCR.use_cassette("discover-ok") do
         Net::HTTP::Get.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
         gitlab_net.discover('key-126')
+      end
+    end
+
+    it "raises an exception if the connection fails" do
+      VCR.use_cassette("discover-ok") do
+        Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
+        expect { gitlab_net.discover('key-126') }.to raise_error(GitlabNet::ApiUnreachableError)
       end
     end
   end
@@ -109,6 +121,13 @@ describe GitlabNet, vcr: true do
           access.allowed?.should be_false
         end
       end
+    end
+
+    it "raises an exception if the connection fails" do
+      Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
+      expect { 
+        gitlab_net.check_access('git-upload-pack', 'gitlab/gitlabhq.git', 'user-1', changes)
+      }.to raise_error(GitlabNet::ApiUnreachableError)
     end
   end
 

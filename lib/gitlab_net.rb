@@ -7,6 +7,8 @@ require_relative 'gitlab_logger'
 require_relative 'gitlab_access'
 
 class GitlabNet
+  class ApiUnreachableError < StandardError; end
+
   def check_access(cmd, repo, actor, changes)
     project_name = repo.gsub("'", "")
     project_name = project_name.gsub(/\.git\Z/, "")
@@ -97,7 +99,11 @@ class GitlabNet
     http = http_client_for(uri)
     request = http_request_for(method, uri, params)
 
-    response = http.start { http.request(request) }
+    begin
+      response = http.start { http.request(request) }
+    rescue 
+      raise ApiUnreachableError 
+    end
 
     if response.code == "200"
       $logger.debug "Received response #{response.code} => <#{response.body}>."
