@@ -20,12 +20,11 @@ class GitlabShell
 
       if git_cmds.include?(@git_cmd)
         ENV['GL_ID'] = @key_id
-        ENV['HOME'] ='/var/opt/gitlab'
 
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # TODO: Fix validation for git-annex-shell !!!!
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        if true #validate_access
+        if validate_access
           process_cmd
         else
           message = "gitlab-shell: Access denied for git command <#{@origin_cmd}> by #{log_username}."
@@ -60,7 +59,7 @@ class GitlabShell
     @git_cmd = args.first
 
     if @git_cmd == 'git-annex-shell'
-      @repo_name = escape_path(args[2].gsub("\/~\/", '')) 
+      @repo_name = escape_path(args[2].gsub("\/~\/", ''))
     else
       @repo_name = escape_path(args.last)
     end
@@ -73,10 +72,10 @@ class GitlabShell
   def process_cmd
     repo_full_path = File.join(repos_path, repo_name)
     $logger.info "gitlab-shell: executing git command <#{@git_cmd} #{repo_full_path}> for #{log_username}."
-    
+
     if @git_cmd == 'git-annex-shell'
       args = Shellwords.shellwords(@origin_cmd)
-      parsed_args = 
+      parsed_args =
         args.map do |arg|
           if arg =~ /\A\/~\/.*\.git\Z/
             repo_full_path
@@ -86,7 +85,7 @@ class GitlabShell
         end
 
       exec_cmd(*parsed_args)
-    else 
+    else
       exec_cmd(@git_cmd, repo_full_path)
     end
   end
