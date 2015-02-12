@@ -18,15 +18,20 @@ class GitlabAccess
   end
 
   def exec
-    status = api.check_access('git-receive-pack', @repo_name, @actor, @changes)
-    if status.allowed?
-      true
-    else
-      # reset GL_ID env since we stop git push here
-      ENV['GL_ID'] = nil
-      puts "GitLab: #{status.message}"
-      false
+    begin
+      status = api.check_access('git-receive-pack', @repo_name, @actor, @changes)
+
+      return true if status.allowed?
+
+      message = status.message
+    rescue GitlabNet::ApiUnreachableError
+      message = "Failed to authorize your Git request: internal API unreachable"
     end
+
+    # reset GL_ID env since we stop git push here
+    ENV['GL_ID'] = nil
+    puts "GitLab: #{message}"
+    false
   end
 
   protected

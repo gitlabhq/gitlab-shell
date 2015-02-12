@@ -21,15 +21,14 @@ class GitlabShell
       if git_cmds.include?(@git_cmd)
         ENV['GL_ID'] = @key_id
 
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # TODO: Fix validation for git-annex-shell !!!!
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        if validate_access
+        access = api.check_access(@git_cmd, @repo_name, @key_id, '_any')
+
+        if access.allowed?
           process_cmd
         else
           message = "gitlab-shell: Access denied for git command <#{@origin_cmd}> by #{log_username}."
           $logger.warn message
-          $stderr.puts "Access denied."
+          puts access.message
         end
       else
         raise DisallowedCommandError
@@ -37,10 +36,12 @@ class GitlabShell
     else
       puts "Welcome to GitLab, #{username}!"
     end
+  rescue GitlabNet::ApiUnreachableError => ex
+    puts "Failed to authorize your Git request: internal API unreachable"
   rescue DisallowedCommandError => ex
     message = "gitlab-shell: Attempt to execute disallowed command <#{@origin_cmd}> by #{log_username}."
     $logger.warn message
-    puts 'Not allowed command'
+    puts 'Disallowed command'
   end
 
   protected
@@ -90,10 +91,6 @@ class GitlabShell
     end
   end
 
-  def validate_access
-    api.check_access(@git_cmd, @repo_name, @key_id, '_any').allowed?
-  end
-
   # This method is not covered by Rspec because it ends the current Ruby process.
   def exec_cmd(*args)
     Kernel::exec({'PATH' => ENV['PATH'], 'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'], 'GL_ID' => ENV['GL_ID']}, *args, unsetenv_others: true)
@@ -104,11 +101,12 @@ class GitlabShell
   end
 
   def user
-    # Can't use "@user ||=" because that will keep hitting the API when @user is really nil!
-    if instance_variable_defined?('@user')
-      @user
-    else
+    return @user if defined?(@user)
+
+    begin
       @user = api.discover(@key_id)
+    rescue GitlabNet::ApiUnreachableError
+      @user = nil
     end
   end
 
