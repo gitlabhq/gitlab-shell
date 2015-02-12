@@ -36,7 +36,6 @@ class GitlabShell
       puts "Welcome to GitLab, #{username}!"
     end
   rescue GitlabNet::ApiUnreachableError => ex
-    $logger.warn "gitlab-shell: Failed to connect to internal API"
     puts "Failed to authorize your Git request: internal API unreachable"
   rescue DisallowedCommandError => ex
     message = "gitlab-shell: Attempt to execute disallowed command <#{@origin_cmd}> by #{log_username}."

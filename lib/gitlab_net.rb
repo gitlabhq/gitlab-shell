@@ -101,7 +101,8 @@ class GitlabNet
 
     begin
       response = http.start { http.request(request) }
-    rescue 
+    rescue => e
+      $logger.warn "Failed to connect to internal API <#{method.to_s.upcase} #{url}>: #{e.inspect}"
       raise ApiUnreachableError 
     end
 
