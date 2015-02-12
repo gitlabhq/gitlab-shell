@@ -150,11 +150,6 @@ describe GitlabShell do
       it "should not execute the command" do
         subject.should_not_receive(:exec_cmd)
       end
-
-      it "should log the failed connection" do
-        message = "gitlab-shell: Failed to connect to internal API"
-        $logger.should_receive(:warn).with(message)
-      end
     end
   end
 
