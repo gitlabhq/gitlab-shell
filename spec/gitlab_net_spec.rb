@@ -26,6 +26,11 @@ describe GitlabNet, vcr: true do
         gitlab_net.check
       end
     end
+
+    it "raises an exception if the connection fails" do
+      Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
+      expect { gitlab_net.check }.to raise_error(GitlabNet::ApiUnreachableError)
+    end
   end
 
   describe :discover do
@@ -40,6 +45,13 @@ describe GitlabNet, vcr: true do
       VCR.use_cassette("discover-ok") do
         Net::HTTP::Get.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
         gitlab_net.discover('key-126')
+      end
+    end
+
+    it "raises an exception if the connection fails" do
+      VCR.use_cassette("discover-ok") do
+        Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
+        expect { gitlab_net.discover('key-126') }.to raise_error(GitlabNet::ApiUnreachableError)
       end
     end
   end
@@ -110,6 +122,13 @@ describe GitlabNet, vcr: true do
         end
       end
     end
+
+    it "raises an exception if the connection fails" do
+      Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
+      expect { 
+        gitlab_net.check_access('git-upload-pack', 'gitlab/gitlabhq.git', 'user-1', changes)
+      }.to raise_error(GitlabNet::ApiUnreachableError)
+    end
   end
 
   describe :host do
@@ -139,12 +158,13 @@ describe GitlabNet, vcr: true do
     let(:user) { 'user' }
     let(:password) { 'password' }
     let(:url) { URI 'http://localhost/' }
-    subject { gitlab_net.send :http_request_for, url }
+    subject { gitlab_net.send :http_request_for, :get, url }
 
     before do
       gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
       gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
       get.should_receive(:basic_auth).with(user, password).once
+      get.should_receive(:set_form_data).with(hash_including(secret_token: 'a123')).once
     end
 
     it { should_not be_nil }

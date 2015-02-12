@@ -7,6 +7,8 @@ require_relative 'gitlab_logger'
 require_relative 'gitlab_access'
 
 class GitlabNet
+  class ApiUnreachableError < StandardError; end
+
   def check_access(cmd, repo, actor, changes)
     project_name = repo.gsub("'", "")
     project_name = project_name.gsub(/\.git\Z/, "")
@@ -64,63 +66,65 @@ class GitlabNet
     "#{config.gitlab_url}/api/v3/internal"
   end
 
-  def http_client_for(url)
-    Net::HTTP.new(url.host, url.port).tap do |http|
-      if URI::HTTPS === url
-        http.use_ssl = true
-        http.cert_store = cert_store
-        http.verify_mode = OpenSSL::SSL::VERIFY_NONE if config.http_settings['self_signed_cert']
-      end
+  def http_client_for(uri)
+    http = Net::HTTP.new(uri.host, uri.port)
+
+    if uri.is_a?(URI::HTTPS)
+      http.use_ssl = true
+      http.cert_store = cert_store
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE if config.http_settings['self_signed_cert']
     end
+
+    http
   end
 
-  def http_request_for(url, method = :get)
+  def http_request_for(method, uri, params = {})
+    request_klass = method == :get ? Net::HTTP::Get : Net::HTTP::Post
+    request = request_klass.new(uri.request_uri)
+
     user = config.http_settings['user']
     password = config.http_settings['password']
+    request.basic_auth(user, password) if user && password
 
-    if method == :get
-      Net::HTTP::Get.new(url.request_uri).tap { |r| r.basic_auth(user, password) if user && password }
-    else
-      Net::HTTP::Post.new(url.request_uri).tap { |r| r.basic_auth(user, password) if user && password }
+    request.set_form_data(params.merge(secret_token: secret_token))
+
+    request
+  end
+
+  def request(method, url, params = {})
+    $logger.debug "Performing #{method.to_s.upcase} #{url}"
+
+    uri = URI.parse(url)
+    
+    http = http_client_for(uri)
+    request = http_request_for(method, uri, params)
+
+    begin
+      response = http.start { http.request(request) }
+    rescue 
+      raise ApiUnreachableError 
     end
+
+    if response.code == "200"
+      $logger.debug "Received response #{response.code} => <#{response.body}>."
+    else
+      $logger.error "API call <#{method.to_s.upcase} #{url}> failed: #{response.code} => <#{response.body}>."
+    end
+
+    response
   end
 
   def get(url)
-    $logger.debug "Performing GET #{url}"
-
-    url = URI.parse(url)
-    http = http_client_for url
-    request = http_request_for url
-    request.set_form_data(secret_token: secret_token)
-
-    http.start { |http| http.request(request) }.tap do |resp|
-      if resp.code == "200"
-        $logger.debug { "Received response #{resp.code} => <#{resp.body}>." }
-      else
-        $logger.error { "API call <GET #{url}> failed: #{resp.code} => <#{resp.body}>." }
-      end
-    end
+    request(:get, url)
   end
 
   def post(url, params)
-    $logger.debug "Performing POST #{url}"
-
-    url = URI.parse(url)
-    http = http_client_for(url)
-    request = http_request_for(url, :post)
-    request.set_form_data(params.merge(secret_token: secret_token))
-
-    http.start { |http| http.request(request) }.tap do |resp|
-      if resp.code == "200"
-        $logger.debug { "Received response #{resp.code} => <#{resp.body}>." }
-      else
-        $logger.error { "API call <POST #{url}> failed: #{resp.code} => <#{resp.body}>." }
-      end
-    end
+    request(:post, url, params)
   end
 
   def cert_store
-    @cert_store ||= OpenSSL::X509::Store.new.tap do |store|
+    @cert_store ||= begin
+      store = OpenSSL::X509::Store.new
       store.set_default_paths
 
       if ca_file = config.http_settings['ca_file']
@@ -130,6 +134,8 @@ class GitlabNet
       if ca_path = config.http_settings['ca_path']
         store.add_path(ca_path)
       end
+
+      store
     end
   end
 
