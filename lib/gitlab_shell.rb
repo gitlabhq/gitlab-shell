@@ -49,7 +49,7 @@ class GitlabShell
     args = Shellwords.shellwords(@origin_cmd)
     raise DisallowedCommandError unless args.count == 2
     @git_cmd = args[0]
-    @repo_name = escape_path(args[1])
+    @repo_name = args[1].nil? ? "" : escape_path(args[1])
   end
 
   def git_cmds
