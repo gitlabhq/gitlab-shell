@@ -48,20 +48,15 @@ class GitlabShell
 
   def parse_cmd
     args = Shellwords.shellwords(@origin_cmd)
-
-    if args.first == 'git-annex-shell'
-      # Dont know yet how much arguments allow
-      # puts args.count
-      # puts args.inspect
-    else
-      raise DisallowedCommandError unless args.count == 2
-    end
-
     @git_cmd = args.first
 
     if @git_cmd == 'git-annex-shell'
       @repo_name = escape_path(args[2].gsub("\/~\/", ''))
+
+      # Make sure repository has git-annex enabled
+      enable_git_annex(@repo_name)
     else
+      raise DisallowedCommandError unless args.count == 2
       @repo_name = escape_path(args.last)
     end
   end
@@ -129,6 +124,16 @@ class GitlabShell
       path
     else
       abort "Wrong repository path"
+    end
+  end
+
+  def enable_git_annex(path)
+    full_repo_path = File.join(repos_path, path)
+
+    unless File.exists?(File.join(full_repo_path, '.git', 'annex'))
+      cmd = %W(git --git-dir=#{full_repo_path} annex init "GitLab")
+      system(*cmd)
+      $logger.info "Enable git-annex for repository: #{path}."
     end
   end
 end

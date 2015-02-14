@@ -238,9 +238,4 @@ class GitlabProjects
     $logger.info "Update head in project #{project_name} to <#{new_head}>."
     true
   end
-
-  def git_init_annex
-    cmd = %W(git --git-dir=#{full_path} annex init "GitLab")
-    system(*cmd)
-  end
 end
