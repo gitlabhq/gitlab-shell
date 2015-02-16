@@ -1,5 +1,5 @@
 v2.5.0
-  - Support git-annex tool
+  - Support git-annex tool (disabled by default)
 
 v2.4.3
   - Print broadcast message if one is available
