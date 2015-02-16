@@ -185,6 +185,15 @@ describe GitlabShell do
         subject.should_not_receive(:exec_cmd)
       end
     end
+
+    describe 'git-annex' do
+      before { ssh_cmd 'git-annex-shell commit /~/gitlab-ci.git SHA256' }
+      after { subject.exec }
+
+      it "should execute the command" do
+        subject.should_receive(:exec_cmd).with("git-annex-shell", "commit", File.join(tmp_repos_path, 'gitlab-ci.git'), "SHA256")
+      end
+    end
   end
 
   describe :validate_access do
@@ -232,5 +241,4 @@ describe GitlabShell do
   def ssh_cmd(cmd)
     ENV['SSH_ORIGINAL_COMMAND'] = cmd
   end
-
 end
