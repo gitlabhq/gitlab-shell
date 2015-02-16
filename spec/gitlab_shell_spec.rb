@@ -3,6 +3,14 @@ require_relative '../lib/gitlab_shell'
 require_relative '../lib/gitlab_access_status'
 
 describe GitlabShell do
+  before do
+    FileUtils.mkdir_p(tmp_repos_path)
+  end
+
+  after do
+    FileUtils.rm_rf(tmp_repos_path)
+  end
+
   subject do
     ARGV[0] = key_id
     GitlabShell.new.tap do |shell|
@@ -10,51 +18,77 @@ describe GitlabShell do
       shell.stub(api: api)
     end
   end
+
   let(:api) do
     double(GitlabNet).tap do |api|
       api.stub(discover: { 'name' => 'John Doe' })
       api.stub(check_access: GitAccessStatus.new(true))
     end
   end
+
   let(:key_id) { "key-#{rand(100) + 100}" }
-  let(:repository_path) { "/home/git#{rand(100)}/repos" }
+  let(:tmp_repos_path) { File.join(ROOT_PATH, 'tmp', 'repositories') }
+
   before do
-    GitlabConfig.any_instance.stub(repos_path: repository_path, audit_usernames: false)
+    GitlabConfig.any_instance.stub(repos_path: tmp_repos_path, audit_usernames: false)
   end
 
   describe :initialize do
     before { ssh_cmd 'git-receive-pack' }
 
     its(:key_id) { should == key_id }
-    its(:repos_path) { should == repository_path }
+    its(:repos_path) { should == tmp_repos_path }
   end
 
   describe :parse_cmd do
-    context 'w/o namespace' do
+    describe 'git' do
+      context 'w/o namespace' do
+        before do
+          ssh_cmd 'git-upload-pack gitlab-ci.git'
+          subject.send :parse_cmd
+        end
+
+        its(:repo_name) { should == 'gitlab-ci.git' }
+        its(:git_cmd) { should == 'git-upload-pack' }
+      end
+
+      context 'namespace' do
+        before do
+          ssh_cmd 'git-upload-pack dmitriy.zaporozhets/gitlab-ci.git'
+          subject.send :parse_cmd
+        end
+
+        its(:repo_name) { should == 'dmitriy.zaporozhets/gitlab-ci.git' }
+        its(:git_cmd) { should == 'git-upload-pack' }
+      end
+
+      context 'with an invalid number of arguments' do
+        before { ssh_cmd 'foobar' }
+
+        it "should raise an DisallowedCommandError" do
+          expect { subject.send :parse_cmd }.to raise_error(GitlabShell::DisallowedCommandError)
+        end
+      end
+    end
+
+    describe 'git-annex' do
+      let(:repo_path) { File.join(tmp_repos_path, 'dzaporozhets/gitlab.git') }
+
       before do
-        ssh_cmd 'git-upload-pack gitlab-ci.git'
+        # Create existing project
+        FileUtils.mkdir_p(repo_path)
+        cmd = %W(git --git-dir=#{repo_path} init --bare)
+        system(*cmd)
+
+        ssh_cmd 'git-annex-shell inannex /~/dzaporozhets/gitlab.git SHA256E'
         subject.send :parse_cmd
       end
 
-      its(:repo_name) { should == 'gitlab-ci.git' }
-      its(:git_cmd) { should == 'git-upload-pack' }
-    end
+      its(:repo_name) { should == 'dzaporozhets/gitlab.git' }
+      its(:git_cmd) { should == 'git-annex-shell' }
 
-    context 'namespace' do
-      before do
-        ssh_cmd 'git-upload-pack dmitriy.zaporozhets/gitlab-ci.git'
-        subject.send :parse_cmd
-      end
-
-      its(:repo_name) { should == 'dmitriy.zaporozhets/gitlab-ci.git' }
-      its(:git_cmd) { should == 'git-upload-pack' }
-    end
-
-    context 'with an invalid number of arguments' do
-      before { ssh_cmd 'foobar' }
-
-      it "should raise an DisallowedCommandError" do
-        expect { subject.send :parse_cmd }.to raise_error(GitlabShell::DisallowedCommandError)
+      it 'should init git-annex' do
+        File.exists?(File.join(tmp_repos_path, 'dzaporozhets/gitlab.git/annex')).should be_true
       end
     end
   end
@@ -69,7 +103,7 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with("git-upload-pack", File.join(repository_path, 'gitlab-ci.git'))
+        subject.should_receive(:exec_cmd).with("git-upload-pack", File.join(tmp_repos_path, 'gitlab-ci.git'))
       end
 
       it "should set the GL_ID environment variable" do
@@ -78,7 +112,7 @@ describe GitlabShell do
 
       it "should log the command execution" do
         message = "gitlab-shell: executing git command "
-        message << "<git-upload-pack #{File.join(repository_path, 'gitlab-ci.git')}> "
+        message << "<git-upload-pack #{File.join(tmp_repos_path, 'gitlab-ci.git')}> "
         message << "for user with key #{key_id}."
         $logger.should_receive(:info).with(message)
       end
@@ -98,12 +132,12 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with("git-receive-pack", File.join(repository_path, 'gitlab-ci.git'))
+        subject.should_receive(:exec_cmd).with("git-receive-pack", File.join(tmp_repos_path, 'gitlab-ci.git'))
       end
 
       it "should log the command execution" do
         message = "gitlab-shell: executing git command "
-        message << "<git-receive-pack #{File.join(repository_path, 'gitlab-ci.git')}> "
+        message << "<git-receive-pack #{File.join(tmp_repos_path, 'gitlab-ci.git')}> "
         message << "for user with key #{key_id}."
         $logger.should_receive(:info).with(message)
       end
@@ -137,7 +171,7 @@ describe GitlabShell do
     end
 
     context "failed connection" do
-      before { 
+      before {
         ssh_cmd 'git-upload-pack gitlab-ci.git'
         api.stub(:check_access).and_raise(GitlabNet::ApiUnreachableError)
       }
@@ -149,6 +183,15 @@ describe GitlabShell do
 
       it "should not execute the command" do
         subject.should_not_receive(:exec_cmd)
+      end
+    end
+
+    describe 'git-annex' do
+      before { ssh_cmd 'git-annex-shell commit /~/gitlab-ci.git SHA256' }
+      after { subject.exec }
+
+      it "should execute the command" do
+        subject.should_receive(:exec_cmd).with("git-annex-shell", "commit", File.join(tmp_repos_path, 'gitlab-ci.git'), "SHA256")
       end
     end
   end
@@ -198,5 +241,4 @@ describe GitlabShell do
   def ssh_cmd(cmd)
     ENV['SSH_ORIGINAL_COMMAND'] = cmd
   end
-
 end
