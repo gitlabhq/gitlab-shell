@@ -48,7 +48,7 @@ class GitlabConfig
   end
 
   def git_annex_enabled?
-    @config['git_annex_enabled'] ||= true
+    @config['git_annex_enabled'] ||= false
   end
 
   # Build redis command to write update event in gitlab queue

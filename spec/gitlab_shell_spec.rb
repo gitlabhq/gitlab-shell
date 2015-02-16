@@ -75,6 +75,8 @@ describe GitlabShell do
       let(:repo_path) { File.join(tmp_repos_path, 'dzaporozhets/gitlab.git') }
 
       before do
+        GitlabConfig.any_instance.stub(git_annex_enabled?: true)
+
         # Create existing project
         FileUtils.mkdir_p(repo_path)
         cmd = %W(git --git-dir=#{repo_path} init --bare)
@@ -187,7 +189,11 @@ describe GitlabShell do
     end
 
     describe 'git-annex' do
-      before { ssh_cmd 'git-annex-shell commit /~/gitlab-ci.git SHA256' }
+      before do
+        GitlabConfig.any_instance.stub(git_annex_enabled?: true)
+        ssh_cmd 'git-annex-shell commit /~/gitlab-ci.git SHA256'
+      end
+
       after { subject.exec }
 
       it "should execute the command" do

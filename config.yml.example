@@ -50,4 +50,4 @@ audit_usernames: false
 # Enable git-annex support
 # git-annex allows managing files with git, without checking the file contents into git
 # See https://git-annex.branchable.com/ for documentation
-git_annex_enabled: true
+git_annex_enabled: false
