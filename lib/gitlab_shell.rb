@@ -50,11 +50,11 @@ class GitlabShell
     args = Shellwords.shellwords(@origin_cmd)
     @git_cmd = args.first
 
-    if @git_cmd == 'git-annex-shell'
+    if @git_cmd == 'git-annex-shell' && @config.git_annex_enabled?
       @repo_name = escape_path(args[2].gsub("\/~\/", ''))
 
       # Make sure repository has git-annex enabled
-      enable_git_annex(@repo_name)
+      init_git_annex(@repo_name)
     else
       raise DisallowedCommandError unless args.count == 2
       @repo_name = escape_path(args.last)
@@ -68,7 +68,7 @@ class GitlabShell
   def process_cmd
     repo_full_path = File.join(repos_path, repo_name)
 
-    if @git_cmd == 'git-annex-shell'
+    if @git_cmd == 'git-annex-shell' && @config.git_annex_enabled?
       args = Shellwords.shellwords(@origin_cmd)
       parsed_args =
         args.map do |arg|
@@ -127,7 +127,7 @@ class GitlabShell
     end
   end
 
-  def enable_git_annex(path)
+  def init_git_annex(path)
     full_repo_path = File.join(repos_path, path)
 
     unless File.exists?(File.join(full_repo_path, '.git', 'annex'))

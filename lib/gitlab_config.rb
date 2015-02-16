@@ -47,6 +47,10 @@ class GitlabConfig
     @config['audit_usernames'] ||= false
   end
 
+  def git_annex_enabled?
+    @config['git_annex_enabled'] ||= true
+  end
+
   # Build redis command to write update event in gitlab queue
   def redis_command
     if redis.empty?
