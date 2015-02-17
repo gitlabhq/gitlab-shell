@@ -1,5 +1,6 @@
 v2.5.0
   - Support git-annex tool (disabled by default)
+  - Add rubocop (Ruby static code analyzer) for development
 
 v2.4.3
   - Print broadcast message if one is available
