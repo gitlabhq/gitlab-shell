@@ -130,9 +130,9 @@ class GitlabShell
   def init_git_annex(path)
     full_repo_path = File.join(repos_path, path)
 
-    unless File.exists?(File.join(full_repo_path, '.git', 'annex'))
+    unless File.exists?(File.join(full_repo_path, 'annex'))
       cmd = %W(git --git-dir=#{full_repo_path} annex init "GitLab")
-      system(*cmd)
+      system(*cmd, err: '/dev/null', out: '/dev/null')
       $logger.info "Enable git-annex for repository: #{path}."
     end
   end
