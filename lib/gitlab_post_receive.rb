@@ -20,11 +20,13 @@ class GitlabPostReceive
 
     begin
       broadcast_message = GitlabNet.new.broadcast_message
-      if broadcast_message
+
+      if broadcast_message.has_key?("message")
         puts
         print_broadcast_message(broadcast_message["message"])
       end
     rescue GitlabNet::ApiUnreachableError
+      nil
     end
   end
 

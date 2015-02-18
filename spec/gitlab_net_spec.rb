@@ -70,7 +70,7 @@ describe GitlabNet, vcr: true do
       it 'should return nil' do
         VCR.use_cassette("broadcast_message-none") do
           result = gitlab_net.broadcast_message
-          result.should == nil
+          result.should == {}
         end
       end
     end
@@ -125,7 +125,7 @@ describe GitlabNet, vcr: true do
 
     it "raises an exception if the connection fails" do
       Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
-      expect { 
+      expect {
         gitlab_net.check_access('git-upload-pack', 'gitlab/gitlabhq.git', 'user-1', changes)
       }.to raise_error(GitlabNet::ApiUnreachableError)
     end

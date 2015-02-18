@@ -45,11 +45,7 @@ class GitlabNet
 
   def broadcast_message
     resp = get("#{host}/broadcast_message")
-    if resp.code == '200'
-      JSON.parse(resp.body) rescue nil
-    else
-      nil
-    end
+    JSON.parse(resp.body) rescue {}
   end
 
   def check
@@ -95,7 +91,7 @@ class GitlabNet
     $logger.debug "Performing #{method.to_s.upcase} #{url}"
 
     uri = URI.parse(url)
-    
+
     http = http_client_for(uri)
     request = http_request_for(method, uri, params)
 
@@ -103,7 +99,7 @@ class GitlabNet
       response = http.start { http.request(request) }
     rescue => e
       $logger.warn "Failed to connect to internal API <#{method.to_s.upcase} #{url}>: #{e.inspect}"
-      raise ApiUnreachableError 
+      raise ApiUnreachableError
     end
 
     if response.code == "200"
