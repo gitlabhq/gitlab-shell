@@ -50,11 +50,15 @@ class GitlabShell
     args = Shellwords.shellwords(@origin_cmd)
     @git_cmd = args.first
 
-    if @git_cmd == 'git-annex-shell' && @config.git_annex_enabled?
-      @repo_name = escape_path(args[2].sub(/\A\/~\//, ''))
+    if @git_cmd == 'git-annex-shell'
+      if @config.git_annex_enabled?
+        @repo_name = escape_path(args[2].sub(/\A\/~\//, ''))
 
-      # Make sure repository has git-annex enabled
-      init_git_annex(@repo_name)
+        # Make sure repository has git-annex enabled
+        init_git_annex(@repo_name)
+      else
+        raise DisallowedCommandError
+      end
     else
       raise DisallowedCommandError unless args.count == 2
       @repo_name = escape_path(args.last)
@@ -68,21 +72,25 @@ class GitlabShell
   def process_cmd
     repo_full_path = File.join(repos_path, repo_name)
 
-    if @git_cmd == 'git-annex-shell' && @config.git_annex_enabled?
-      args = Shellwords.shellwords(@origin_cmd)
-      parsed_args =
-        args.map do |arg|
-          # Convert /~/group/project.git to group/project.git
-          # to make git annex path compatible with gitlab-shell
-          if arg =~ /\A\/~\/.*\.git\Z/
-            repo_full_path
-          else
-            arg
+    if @git_cmd == 'git-annex-shell'
+      if @config.git_annex_enabled?
+        args = Shellwords.shellwords(@origin_cmd)
+        parsed_args =
+          args.map do |arg|
+            # Convert /~/group/project.git to group/project.git
+            # to make git annex path compatible with gitlab-shell
+            if arg =~ /\A\/~\/.*\.git\Z/
+              repo_full_path
+            else
+              arg
+            end
           end
-        end
 
-      $logger.info "gitlab-shell: executing git-annex command <#{parsed_args.join(' ')}> for #{log_username}."
-      exec_cmd(*parsed_args)
+        $logger.info "gitlab-shell: executing git-annex command <#{parsed_args.join(' ')}> for #{log_username}."
+        exec_cmd(*parsed_args)
+      else
+        raise DisallowedCommandError
+      end
     else
       $logger.info "gitlab-shell: executing git command <#{@git_cmd} #{repo_full_path}> for #{log_username}."
       exec_cmd(@git_cmd, repo_full_path)
