@@ -1,3 +1,6 @@
+v2.5.2
+  - Safer line sub for git-annex command
+
 v2.5.1
   - Expect broadcast message to return empty JSON if no message now
 

@@ -51,7 +51,7 @@ class GitlabShell
     @git_cmd = args.first
 
     if @git_cmd == 'git-annex-shell' && @config.git_annex_enabled?
-      @repo_name = escape_path(args[2].gsub("\/~\/", ''))
+      @repo_name = escape_path(args[2].sub(/\A\/~\//, ''))
 
       # Make sure repository has git-annex enabled
       init_git_annex(@repo_name)
