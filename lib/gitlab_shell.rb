@@ -18,20 +18,18 @@ class GitlabShell
     if @origin_cmd
       parse_cmd
 
-      if git_cmds.include?(@git_cmd)
-        ENV['GL_ID'] = @key_id
+      raise DisallowedCommandError unless git_cmds.include?(@git_cmd)
 
-        access = api.check_access(@git_cmd, @repo_name, @key_id, '_any')
+      ENV['GL_ID'] = @key_id
 
-        if access.allowed?
-          process_cmd
-        else
-          message = "gitlab-shell: Access denied for git command <#{@origin_cmd}> by #{log_username}."
-          $logger.warn message
-          puts access.message
-        end
+      access = api.check_access(@git_cmd, @repo_name, @key_id, '_any')
+
+      if access.allowed?
+        process_cmd
       else
-        raise DisallowedCommandError
+        message = "gitlab-shell: Access denied for git command <#{@origin_cmd}> by #{log_username}."
+        $logger.warn message
+        puts access.message
       end
     else
       puts "Welcome to GitLab, #{username}!"
@@ -51,14 +49,12 @@ class GitlabShell
     @git_cmd = args.first
 
     if @git_cmd == 'git-annex-shell'
-      if @config.git_annex_enabled?
-        @repo_name = escape_path(args[2].sub(/\A\/~\//, ''))
+      raise DisallowedCommandError unless @config.git_annex_enabled?
 
-        # Make sure repository has git-annex enabled
-        init_git_annex(@repo_name)
-      else
-        raise DisallowedCommandError
-      end
+      @repo_name = escape_path(args[2].sub(/\A\/~\//, ''))
+
+      # Make sure repository has git-annex enabled
+      init_git_annex(@repo_name)
     else
       raise DisallowedCommandError unless args.count == 2
       @repo_name = escape_path(args.last)
@@ -73,24 +69,22 @@ class GitlabShell
     repo_full_path = File.join(repos_path, repo_name)
 
     if @git_cmd == 'git-annex-shell'
-      if @config.git_annex_enabled?
-        args = Shellwords.shellwords(@origin_cmd)
-        parsed_args =
-          args.map do |arg|
-            # Convert /~/group/project.git to group/project.git
-            # to make git annex path compatible with gitlab-shell
-            if arg =~ /\A\/~\/.*\.git\Z/
-              repo_full_path
-            else
-              arg
-            end
-          end
+      raise DisallowedCommandError unless @config.git_annex_enabled?
 
-        $logger.info "gitlab-shell: executing git-annex command <#{parsed_args.join(' ')}> for #{log_username}."
-        exec_cmd(*parsed_args)
-      else
-        raise DisallowedCommandError
-      end
+      args = Shellwords.shellwords(@origin_cmd)
+      parsed_args =
+        args.map do |arg|
+          # Convert /~/group/project.git to group/project.git
+          # to make git annex path compatible with gitlab-shell
+          if arg =~ /\A\/~\/.*\.git\Z/
+            repo_full_path
+          else
+            arg
+          end
+        end
+
+      $logger.info "gitlab-shell: executing git-annex command <#{parsed_args.join(' ')}> for #{log_username}."
+      exec_cmd(*parsed_args)
     else
       $logger.info "gitlab-shell: executing git command <#{@git_cmd} #{repo_full_path}> for #{log_username}."
       exec_cmd(@git_cmd, repo_full_path)
