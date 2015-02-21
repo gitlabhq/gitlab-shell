@@ -52,4 +52,5 @@ audit_usernames: false
 # See https://git-annex.branchable.com/ for documentation
 # If enabled, git-annex needs to be installed on the server where gitlab-shell is setup
 # For Debian and Ubuntu systems this can be done with: sudo apt-get install git-annex
+# For CentOS: sudo yum install epel-release && sudo yum install git-annex
 git_annex_enabled: false
