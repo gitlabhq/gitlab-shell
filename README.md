@@ -2,12 +2,11 @@
 
 ## GitLab Shell handles git commands for GitLab
 
-GitLab Shell is a progam that executes git commands for GitLab.
+GitLab Shell handles git commands for GitLab and modifies the list of authorized keys.
 GitLab Shell is not a Unix shell nor a replacement for Bash or Zsh.
 
-Hwen you access the GitLab server over ssh then GitLab Shell will:
+When you access the GitLab server over ssh then GitLab Shell will:
 
-1. Checks if your ssh key is known in authrorized keys.
 1. Limits you to predefined git commands (git push, git pull, git annex).
 1. Call the GitLab Rails API to check if you are authorized
 1. It will execute the pre-receive hooks (called Git Hooks in GitLab Enterprise Edition)
