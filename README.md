@@ -1,4 +1,6 @@
-# gitlab-shell: git access for GitLab
+# GitLab Shell
+
+## GitLab Shell handles git commands for GitLab
 
 GitLab Shell is a progam that executes git commands for GitLab.
 GitLab Shell is not a Unix shell nor a replacement for Bash or Zsh.
