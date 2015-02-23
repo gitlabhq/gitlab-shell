@@ -16,7 +16,7 @@ class GitlabPostReceive
     # get value from it
     ENV['GL_ID'] = nil
 
-    success = update_redis
+    result = update_redis
 
     begin
       broadcast_message = GitlabNet.new.broadcast_message
@@ -29,7 +29,7 @@ class GitlabPostReceive
       nil
     end
 
-    success
+    result
   end
 
   protected
