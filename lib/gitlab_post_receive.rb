@@ -16,7 +16,7 @@ class GitlabPostReceive
     # get value from it
     ENV['GL_ID'] = nil
 
-    update_redis
+    result = update_redis
 
     begin
       broadcast_message = GitlabNet.new.broadcast_message
@@ -28,6 +28,8 @@ class GitlabPostReceive
     rescue GitlabNet::ApiUnreachableError
       nil
     end
+
+    result
   end
 
   protected
