@@ -2,7 +2,7 @@ source "http://rubygems.org"
 
 group :development, :test do
   gem 'coveralls', require: false
-  gem 'rspec'
+  gem 'rspec', '~> 2.14.0'
   gem 'webmock'
   gem 'guard'
   gem 'guard-rspec'
