@@ -15,8 +15,7 @@ commands = [
   %W(chmod 700 #{key_dir}),
   %W(touch #{config.auth_file}),
   %W(chmod 600 #{config.auth_file}),
-  %W(chmod -R ug+rwX,o-rwx #{config.repos_path}),
-  %W(find #{config.repos_path} -type d -exec chmod g+s {} ;)
+  %W(chmod ug+rwX,o-rwx #{config.repos_path}),
 ]
 
 commands.each do |cmd|

@@ -1,3 +1,6 @@
+v2.5.4
+  - Remove recursive commands from bin/install
+
 v2.5.3
   - Improve git-annex integration
 
