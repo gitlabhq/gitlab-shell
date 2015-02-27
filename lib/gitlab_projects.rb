@@ -23,7 +23,7 @@ class GitlabProjects
     local_hooks_directory = File.join(path, 'hooks')
 
     if File.realpath(local_hooks_directory) != File.realpath(GLOBAL_HOOKS_DIRECTORY)
-      $logger.info "Moving existing hooks directory and simlinking global hooks directory for #{path}."
+      $logger.info "Moving existing hooks directory and symlinking global hooks directory for #{path}."
       FileUtils.mv(local_hooks_directory, "#{local_hooks_directory}.old.#{Time.now.to_i}")
       FileUtils.ln_s(GLOBAL_HOOKS_DIRECTORY, local_hooks_directory)
     else
