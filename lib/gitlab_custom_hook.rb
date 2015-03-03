@@ -33,7 +33,7 @@ class GitlabCustomHook
 
     # we combine both stdout and stderr as we don't know what stream
     # will be used by the custom hook
-    Open3.popen2e (hook) do |stdin, stdout_stderr, wait_thr|
+    Open3.popen2e(hook) do |stdin, stdout_stderr, wait_thr|
       exit_status = true
       stdin.sync = true
 
@@ -43,7 +43,7 @@ class GitlabCustomHook
       begin
         # inject all the changes as stdin to the hook
         changes.lines do |line|
-          stdin.puts (line)
+          stdin.puts(line)
         end
       rescue Errno::EPIPE
       end
