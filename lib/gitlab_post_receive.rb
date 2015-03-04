@@ -62,7 +62,7 @@ class GitlabPostReceive
 
       # Center the line by calculating the left padding measured in characters.
       line_padding = [(total_width - line.length) / 2, 0].max
-      puts(" " * line_padding) + line
+      puts((" " * line_padding) + line)
     end
 
     puts
