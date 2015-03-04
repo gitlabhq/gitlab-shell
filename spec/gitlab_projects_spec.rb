@@ -3,6 +3,7 @@ require_relative '../lib/gitlab_projects'
 
 describe GitlabProjects do
   before do
+    GitlabConfig.any_instance.stub(repos_path: tmp_repos_path)
     FileUtils.mkdir_p(tmp_repos_path)
     $logger = double('logger').as_null_object
   end
