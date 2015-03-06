@@ -19,7 +19,7 @@ class GitlabAccess
 
   def exec
     begin
-      status = api.check_access('git-receive-pack', @repo_name, @actor, @changes)
+      status = api.check_access('git-receive-pack', @repo_name, @actor, @changes.to_a)
 
       return true if status.allowed?
 
