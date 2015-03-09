@@ -47,6 +47,11 @@ class GitlabConfig
     @config['audit_usernames'] ||= false
   end
 
+  def ssh_options
+    @config['ssh_options'] ||=
+      'no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty'
+  end
+
   def git_annex_enabled?
     @config['git_annex_enabled'] ||= false
   end

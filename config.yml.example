@@ -54,3 +54,7 @@ audit_usernames: false
 # For Debian and Ubuntu systems this can be done with: sudo apt-get install git-annex
 # For CentOS: sudo yum install epel-release && sudo yum install git-annex
 git_annex_enabled: false
+
+# SSH options.
+# Options to be used for building the authorized_keys file.
+# ssh_options: no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty
