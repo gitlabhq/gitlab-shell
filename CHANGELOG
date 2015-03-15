@@ -1,3 +1,6 @@
+v2.5.5
+  - Prevent character encoding issues by sending received changes as raw data.
+
 v2.5.4
   - Remove recursive commands from bin/install
 

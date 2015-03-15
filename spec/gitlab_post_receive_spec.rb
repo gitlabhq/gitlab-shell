@@ -5,9 +5,11 @@ describe GitlabPostReceive do
   let(:repository_path) { "/home/git/repositories" }
   let(:repo_name)   { 'dzaporozhets/gitlab-ci' }
   let(:actor)   { 'key-123' }
-  let(:changes)   { 'wow' }
+  let(:changes) { "123456 789012 refs/heads/tést\n654321 210987 refs/tags/tag" }
+  let(:wrongly_encoded_changes) { changes.encode("ISO-8859-1").force_encoding("UTF-8") }
+  let(:base64_changes) { Base64.encode64(wrongly_encoded_changes) }
   let(:repo_path)  { File.join(repository_path, repo_name) + ".git" }
-  let(:gitlab_post_receive) { GitlabPostReceive.new(repo_path, actor, changes) }
+  let(:gitlab_post_receive) { GitlabPostReceive.new(repo_path, actor, wrongly_encoded_changes) }
   let(:message) { "test " * 10 + "message " * 10 }
 
   before do
@@ -56,7 +58,7 @@ describe GitlabPostReceive do
       expect(gitlab_post_receive).to receive(:system).with(
         *[
           *%w(env -i redis-cli rpush resque:gitlab:queue:post_receive), 
-          %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}","#{changes}"]}/,
+          %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}]}/,
           { err: "/dev/null", out: "/dev/null" }
         ]
       ).and_return(true)
