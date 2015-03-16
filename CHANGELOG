@@ -1,4 +1,4 @@
-v2.5.5
+v2.6.0
   - Prevent character encoding issues by sending received changes as raw data.
 
 v2.5.4
