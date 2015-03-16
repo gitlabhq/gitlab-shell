@@ -1,6 +1,7 @@
 require_relative 'gitlab_init'
 require_relative 'gitlab_net'
 require 'json'
+require 'base64'
 
 class GitlabPostReceive
   attr_reader :config, :repo_path, :changes
@@ -70,8 +71,11 @@ class GitlabPostReceive
   end
 
   def update_redis
+    # Encode changes as base64 so we don't run into trouble with non-UTF-8 input.
+    changes = Base64.encode64(@changes)
+
     queue = "#{config.redis_namespace}:queue:post_receive"
-    msg = JSON.dump({ 'class' => 'PostReceive', 'args' => [@repo_path, @actor, @changes] })
+    msg = JSON.dump({ 'class' => 'PostReceive', 'args' => [@repo_path, @actor, changes] })
     if system(*config.redis_command, 'rpush', queue, msg,
               err: '/dev/null', out: '/dev/null')
       return true
