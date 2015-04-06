@@ -5,6 +5,9 @@ unless ENV['SSH_CONNECTION']
   exit
 end
 
+key_id = /key-[0-9]+/.match(ARGV.join).to_s
+original_cmd = ENV['SSH_ORIGINAL_COMMAND']
+
 require_relative '../lib/gitlab_init'
 
 #
@@ -14,7 +17,7 @@ require_relative '../lib/gitlab_init'
 #
 require File.join(ROOT_PATH, 'lib', 'gitlab_shell')
 
-if GitlabShell.new.exec
+if GitlabShell.new(key_id, original_cmd).exec
   exit 0
 else
   exit 1
