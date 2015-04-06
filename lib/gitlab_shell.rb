@@ -7,6 +7,8 @@ class GitlabShell
   class DisallowedCommandError < StandardError; end
   class InvalidRepositoryPathError < StandardError; end
 
+  GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-annex-shell).freeze
+
   attr_accessor :key_id, :repo_name, :git_cmd, :repos_path, :repo_name
 
   def initialize(key_id, origin_cmd)
@@ -24,11 +26,7 @@ class GitlabShell
 
     parse_cmd
 
-    raise DisallowedCommandError unless git_cmds.include?(@git_cmd)
-
-    status = api.check_access(@git_cmd, @repo_name, @key_id, '_any')
-
-    raise AccessDeniedError, status.message unless status.allowed?
+    verify_access
 
     process_cmd
 
@@ -59,6 +57,8 @@ class GitlabShell
     args = Shellwords.shellwords(@origin_cmd)
     @git_cmd = args.first
 
+    raise DisallowedCommandError unless GIT_COMMANDS.include?(@git_cmd)
+
     if @git_cmd == 'git-annex-shell'
       raise DisallowedCommandError unless @config.git_annex_enabled?
 
@@ -72,8 +72,10 @@ class GitlabShell
     end
   end
 
-  def git_cmds
-    %w(git-upload-pack git-receive-pack git-upload-archive git-annex-shell)
+  def verify_access
+    status = api.check_access(@git_cmd, @repo_name, @key_id, '_any')
+
+    raise AccessDeniedError, status.message unless status.allowed?
   end
 
   def process_cmd
