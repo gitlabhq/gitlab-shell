@@ -1,3 +1,6 @@
+v2.6.1
+  - Write errors to stderr to get git to abort and show them as such.
+
 v2.6.0
   - Prevent character encoding issues by sending received changes as raw data.
 
