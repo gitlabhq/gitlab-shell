@@ -14,5 +14,8 @@ if GitlabAccess.new(repo_path, key_id, refs).exec &&
     GitlabCustomHook.new.pre_receive(refs, repo_path)
   exit 0
 else
+  # reset GL_ID env since we stop git push here
+  ENV['GL_ID'] = nil
+  
   exit 1
 end

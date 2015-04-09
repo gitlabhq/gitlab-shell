@@ -5,6 +5,8 @@ require_relative 'names_helper'
 require 'json'
 
 class GitlabAccess
+  class AccessDeniedError < StandardError; end
+
   include NamesHelper
 
   attr_reader :config, :repo_path, :repo_name, :changes
@@ -18,19 +20,16 @@ class GitlabAccess
   end
 
   def exec
-    begin
-      status = api.check_access('git-receive-pack', @repo_name, @actor, @changes)
+    status = api.check_access('git-receive-pack', @repo_name, @actor, @changes)
 
-      return true if status.allowed?
+    raise AccessDeniedError, status.message unless status.allowed?
 
-      message = status.message
-    rescue GitlabNet::ApiUnreachableError
-      message = "Failed to authorize your Git request: internal API unreachable"
-    end
-
-    # reset GL_ID env since we stop git push here
-    ENV['GL_ID'] = nil
-    puts "GitLab: #{message}"
+    true
+  rescue GitlabNet::ApiUnreachableError
+    $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
+    false
+  rescue AccessDeniedError => ex
+    $stderr.puts "GitLab: #{ex.message}"
     false
   end
 

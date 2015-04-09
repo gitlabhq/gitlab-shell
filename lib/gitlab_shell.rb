@@ -3,7 +3,9 @@ require 'shellwords'
 require_relative 'gitlab_net'
 
 class GitlabShell
+  class AccessDeniedError < StandardError; end
   class DisallowedCommandError < StandardError; end
+  class InvalidRepositoryPathError < StandardError; end
 
   attr_accessor :key_id, :repo_name, :git_cmd, :repos_path, :repo_name
 
@@ -15,31 +17,41 @@ class GitlabShell
   end
 
   def exec
-    if @origin_cmd
-      parse_cmd
-
-      raise DisallowedCommandError unless git_cmds.include?(@git_cmd)
-
-      ENV['GL_ID'] = @key_id
-
-      access = api.check_access(@git_cmd, @repo_name, @key_id, '_any')
-
-      if access.allowed?
-        process_cmd
-      else
-        message = "gitlab-shell: Access denied for git command <#{@origin_cmd}> by #{log_username}."
-        $logger.warn message
-        puts access.message
-      end
-    else
+    unless @origin_cmd
       puts "Welcome to GitLab, #{username}!"
+      return true
     end
+
+    parse_cmd
+
+    raise DisallowedCommandError unless git_cmds.include?(@git_cmd)
+
+    ENV['GL_ID'] = @key_id
+    status = api.check_access(@git_cmd, @repo_name, @key_id, '_any')
+
+    raise AccessDeniedError, status.message unless status.allowed?
+
+    process_cmd
+
+    true
   rescue GitlabNet::ApiUnreachableError => ex
-    puts "Failed to authorize your Git request: internal API unreachable"
+    $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
+    false
+  rescue AccessDeniedError => ex
+    message = "gitlab-shell: Access denied for git command <#{@origin_cmd}> by #{log_username}."
+    $logger.warn message
+
+    $stderr.puts "GitLab: #{ex.message}"
+    false
   rescue DisallowedCommandError => ex
     message = "gitlab-shell: Attempt to execute disallowed command <#{@origin_cmd}> by #{log_username}."
     $logger.warn message
-    puts 'Disallowed command'
+
+    $stderr.puts "GitLab: Disallowed command"
+    false
+  rescue InvalidRepositoryPathError => ex
+    $stderr.puts "GitLab: Invalid repository path"
+    false
   end
 
   protected
@@ -125,7 +137,7 @@ class GitlabShell
     if File.absolute_path(full_repo_path) == full_repo_path
       path
     else
-      abort "Wrong repository path"
+      raise InvalidRepositoryPathError
     end
   end
 
