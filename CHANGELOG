@@ -1,3 +1,6 @@
+v2.6.2
+  - Include ecdsa keys in `gitlab_keys list-keys`.
+
 v2.6.1
   - Write errors to stderr to get git to abort and show them as such.
 
