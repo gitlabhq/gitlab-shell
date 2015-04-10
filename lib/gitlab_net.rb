@@ -137,6 +137,6 @@ class GitlabNet
   end
 
   def secret_token
-    @secret_token ||= File.read File.join(ROOT_PATH, '.gitlab_shell_secret')
+    @secret_token ||= File.read config.secret_file
   end
 end

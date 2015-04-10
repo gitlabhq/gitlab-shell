@@ -25,6 +25,10 @@ repos_path: "/home/git/repositories"
 # File used as authorized_keys for gitlab user
 auth_file: "/home/git/.ssh/authorized_keys"
 
+# File that contains the secret key for verifying access to GitLab.
+# Default is .gitlab_shell_secret in the root directory.
+# secret_file: "/home/git/gitlab-shell/.gitlab_shell_secret"
+
 # Redis settings used for pushing commit notices to gitlab
 redis:
   bin: /usr/bin/redis-cli
