@@ -24,14 +24,6 @@ describe GitlabPostReceive do
       allow(gitlab_post_receive).to receive(:system).and_return(true)
     end
 
-    it "resets the GL_ID environment variable" do
-      ENV["GL_ID"] = actor
-
-      gitlab_post_receive.exec
-
-      expect(ENV["GL_ID"]).to be_nil
-    end
-
     it "prints the broadcast message" do
       expect(gitlab_post_receive).to receive(:puts).ordered
       expect(gitlab_post_receive).to receive(:puts).with(

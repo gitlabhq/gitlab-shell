@@ -7,11 +7,13 @@ class GitlabShell
   class DisallowedCommandError < StandardError; end
   class InvalidRepositoryPathError < StandardError; end
 
+  GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-annex-shell).freeze
+
   attr_accessor :key_id, :repo_name, :git_cmd, :repos_path, :repo_name
 
-  def initialize
-    @key_id = /key-[0-9]+/.match(ARGV.join).to_s
-    @origin_cmd = ENV['SSH_ORIGINAL_COMMAND']
+  def initialize(key_id, origin_cmd)
+    @key_id = key_id
+    @origin_cmd = origin_cmd
     @config = GitlabConfig.new
     @repos_path = @config.repos_path
   end
@@ -24,12 +26,7 @@ class GitlabShell
 
     parse_cmd
 
-    raise DisallowedCommandError unless git_cmds.include?(@git_cmd)
-
-    ENV['GL_ID'] = @key_id
-    status = api.check_access(@git_cmd, @repo_name, @key_id, '_any')
-
-    raise AccessDeniedError, status.message unless status.allowed?
+    verify_access
 
     process_cmd
 
@@ -60,6 +57,8 @@ class GitlabShell
     args = Shellwords.shellwords(@origin_cmd)
     @git_cmd = args.first
 
+    raise DisallowedCommandError unless GIT_COMMANDS.include?(@git_cmd)
+
     if @git_cmd == 'git-annex-shell'
       raise DisallowedCommandError unless @config.git_annex_enabled?
 
@@ -73,8 +72,10 @@ class GitlabShell
     end
   end
 
-  def git_cmds
-    %w(git-upload-pack git-receive-pack git-upload-archive git-annex-shell)
+  def verify_access
+    status = api.check_access(@git_cmd, @repo_name, @key_id, '_any')
+
+    raise AccessDeniedError, status.message unless status.allowed?
   end
 
   def process_cmd
@@ -105,7 +106,7 @@ class GitlabShell
 
   # This method is not covered by Rspec because it ends the current Ruby process.
   def exec_cmd(*args)
-    Kernel::exec({ 'PATH' => ENV['PATH'], 'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'], 'GL_ID' => ENV['GL_ID'] }, *args, unsetenv_others: true)
+    Kernel::exec({ 'PATH' => ENV['PATH'], 'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'], 'GL_ID' => @key_id }, *args, unsetenv_others: true)
   end
 
   def api
