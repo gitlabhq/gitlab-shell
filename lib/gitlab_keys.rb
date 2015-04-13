@@ -46,7 +46,7 @@ class GitlabKeys
       # key_id & public_key
       # command=".../bin/gitlab-shell key-741" ... ssh-rsa AAAAB3NzaDAxx2E\n
       #                               ^^^^^^^              ^^^^^^^^^^^^^^^
-      matches = /^command=\".+?\s+(.+?)\".+?ssh-rsa\s(.+)\s*.*\n*$/.match(line)
+      matches = /^command=\".+?\s+(.+?)\".+?(?:ssh|ecdsa)-.*?\s(.+)\s*.*\n*$/.match(line)
       keys << "#{matches[1]} #{matches[2]}\n" unless matches.nil?
     end
     keys
