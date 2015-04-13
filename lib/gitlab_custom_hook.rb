@@ -4,24 +4,21 @@ class GitlabCustomHook
   def pre_receive(changes, repo_path)
     hook = hook_file('pre-receive', repo_path)
     return true if hook.nil?
-    if call_receive_hook(hook, changes)
-      return true
-    else
-      # reset GL_ID env since we stop git push here
-      ENV['GL_ID'] = nil
-      return false
-    end
+
+    call_receive_hook(hook, changes)
   end
 
   def post_receive(changes, repo_path)
     hook = hook_file('post-receive', repo_path)
     return true if hook.nil?
-    call_receive_hook(hook, changes) ? true : false
+    
+    call_receive_hook(hook, changes)
   end
 
   def update(ref_name, old_value, new_value, repo_path)
     hook = hook_file('update', repo_path)
     return true if hook.nil?
+
     system(hook, ref_name, old_value, new_value)
   end
 

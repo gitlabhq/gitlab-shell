@@ -13,10 +13,6 @@ class GitlabPostReceive
   end
 
   def exec
-    # reset GL_ID env since we already
-    # get value from it
-    ENV['GL_ID'] = nil
-
     result = update_redis
 
     begin
