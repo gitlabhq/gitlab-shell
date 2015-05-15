@@ -22,7 +22,7 @@ describe GitlabNet, vcr: true do
 
     it 'adds the secret_token to request' do
       VCR.use_cassette("check-ok") do
-        Net::HTTP::Get.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
+        Net::HTTP::Get.should_receive(:new).with(/[?&]secret_token=a123\z/).and_call_original
         gitlab_net.check
       end
     end
@@ -44,7 +44,7 @@ describe GitlabNet, vcr: true do
 
     it 'adds the secret_token to request' do
       VCR.use_cassette("discover-ok") do
-        Net::HTTP::Get.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
+        Net::HTTP::Get.should_receive(:new).with(/[?&]secret_token=a123\z/).and_call_original
         gitlab_net.discover('key-126')
       end
     end
@@ -250,7 +250,10 @@ describe GitlabNet, vcr: true do
   describe :http_request_for do
     let(:get) do
       double(Net::HTTP::Get).tap do |get|
-        Net::HTTP::Get.stub(:new) { get }
+        Net::HTTP::Get.stub(:new) { |url|
+          url.should =~ /[?&]secret_token=a123\z/
+          get
+        }
       end
     end
     let(:user) { 'user' }
@@ -262,7 +265,6 @@ describe GitlabNet, vcr: true do
       gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
       gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
       get.should_receive(:basic_auth).with(user, password).once
-      get.should_receive(:set_form_data).with(hash_including(secret_token: 'a123')).once
     end
 
     it { should_not be_nil }
