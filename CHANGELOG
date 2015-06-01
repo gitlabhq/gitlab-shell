@@ -1,5 +1,6 @@
 v2.6.3
   - Prevent keys with a very specific comment from accidentally being deleted.
+  - Create repo path if not exists. Issue: https://github.com/gitlabhq/gitlabhq/issues/6228
 
 v2.6.2
   - Include ecdsa keys in `gitlab_keys list-keys`.
