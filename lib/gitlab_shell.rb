@@ -7,7 +7,7 @@ class GitlabShell
   class DisallowedCommandError < StandardError; end
   class InvalidRepositoryPathError < StandardError; end
 
-  GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-annex-shell).freeze
+  GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-annex-shell git-lfs-authenticate).freeze
 
   attr_accessor :key_id, :repo_name, :git_cmd, :repos_path, :repo_name
 
@@ -56,16 +56,29 @@ class GitlabShell
   def parse_cmd
     args = Shellwords.shellwords(@origin_cmd)
     @git_cmd = args.first
+    @git_access = @git_cmd
 
     raise DisallowedCommandError unless GIT_COMMANDS.include?(@git_cmd)
 
-    if @git_cmd == 'git-annex-shell'
+    case @git_cmd
+    when 'git-annex-shell'
       raise DisallowedCommandError unless @config.git_annex_enabled?
 
       @repo_name = escape_path(args[2].sub(/\A\/~\//, ''))
 
       # Make sure repository has git-annex enabled
       init_git_annex(@repo_name)
+    when 'git-lfs-authenticate'
+      raise DisallowedCommandError unless args.count >= 2
+      @repo_name = escape_path(args[1])
+      case args[2]
+      when 'download'
+        @git_access = 'git-upload-pack'
+      when 'upload'
+        @git_access = 'git-receive-pack'
+      else
+        raise DisallowedCommandError
+      end
     else
       raise DisallowedCommandError unless args.count == 2
       @repo_name = escape_path(args.last)
@@ -73,7 +86,7 @@ class GitlabShell
   end
 
   def verify_access
-    status = api.check_access(@git_cmd, @repo_name, @key_id, '_any')
+    status = api.check_access(@git_access, @repo_name, @key_id, '_any')
 
     raise AccessDeniedError, status.message unless status.allowed?
   end
