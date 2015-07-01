@@ -1,0 +1,22 @@
+before_script:
+  - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin
+  - gem install bundler
+  - cp config.yml.example config.yml
+  - bundle install
+
+rspec:
+  script:
+    - bundle exec rspec spec
+  tags:
+    - git-annex
+    - ruby
+  except:
+    - tags
+
+rubocop:
+  script: 
+    - bundle exec rubocop
+  tags:
+    - ruby
+  except:
+    - tags
