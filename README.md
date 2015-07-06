@@ -139,3 +139,32 @@ List all keys:
 Remove all keys from authorized_keys file:
 
     ./bin/gitlab-keys clear
+
+## Git LFS remark
+
+If you want to play with git-lfs (https://git-lfs.github.com/) on GitLab, you should do the following:
+
+ * Install LFS-server (no production-ready implementation yet, but you can use https://github.com/github/lfs-test-server) on any host;
+ * Add some user on LFS-server (for example: user ```foo``` with password ```bar```);
+ * Add ```git-lfs-authenticate``` script in any PATH-available directory on GIT-server like this:
+```
+#!/bin/sh
+echo "{
+  \"href\": \"http://lfs.test.local:9999/test/test\",
+  \"header\": {
+    \"Authorization\": \"Basic `echo -n foo:bar | base64`\"
+  }
+}"
+ ```
+
+After that you can play with git-lfs (git-lfs feature will be available via ssh protocol).
+
+This design will work without a script git-lfs-authenticate, but with the following limitations:
+
+ * You will need to manually configure lfs-server URL for every user working copy;
+ * SSO don't work and you need to manually add lfs-server credentials for every user working copy (otherwise, git-lfs will ask for the password for each file).
+
+Usefull links:
+
+ * https://github.com/github/git-lfs/tree/master/docs/api - Git LFS API, also contains more information about ```git-lfs-authenticate```;
+ * https://github.com/github/git-lfs/wiki/Implementations - Git LFS-server implementations.
