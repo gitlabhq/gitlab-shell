@@ -119,7 +119,17 @@ class GitlabShell
 
   # This method is not covered by Rspec because it ends the current Ruby process.
   def exec_cmd(*args)
-    Kernel::exec({ 'PATH' => ENV['PATH'], 'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'], 'GL_ID' => @key_id }, *args, unsetenv_others: true)
+    env = {
+      'PATH' => ENV['PATH'],
+      'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
+      'GL_ID' => @key_id
+    }
+
+    if @config.git_annex_enabled?
+      env.merge!({ 'GIT_ANNEX_SHELL_LIMITED' => '1' })
+    end
+
+    Kernel::exec(env, *args, unsetenv_others: true)
   end
 
   def api
