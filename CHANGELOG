@@ -1,3 +1,5 @@
+v2.6.4
+  - Remove keys from authorized_keys in-place
 v2.6.3
   - Prevent keys with a very specific comment from accidentally being deleted.
 

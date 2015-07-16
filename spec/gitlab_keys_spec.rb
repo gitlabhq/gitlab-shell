@@ -109,17 +109,19 @@ describe GitlabKeys do
     it "removes the right line" do
       create_authorized_keys_fixture
       other_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell key-742\",options ssh-rsa AAAAB3NzaDAxx2E"
+      delete_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell key-741\",options ssh-rsa AAAAB3NzaDAxx2E"
       open(tmp_authorized_keys_path, 'a') do |auth_file|
-        auth_file.puts "command=\"#{ROOT_PATH}/bin/gitlab-shell key-741\",options ssh-rsa AAAAB3NzaDAxx2E"
+        auth_file.puts delete_line
         auth_file.puts other_line
       end
       gitlab_keys.send :rm_key
-      File.read(tmp_authorized_keys_path).should == "existing content\n#{other_line}\n"
+      erased_line = delete_line.gsub(/./, '#')
+      File.read(tmp_authorized_keys_path).should == "existing content\n#{erased_line}\n#{other_line}\n"
     end
 
     context "without file writing" do
       before do
-        Tempfile.stub(:open)
+        gitlab_keys.stub(:open)
         gitlab_keys.stub(:lock).and_yield
       end
 
