@@ -1,3 +1,5 @@
+v2.6.4
+  - Increase batch_add_keys lock timeout to 300 seconds
 v2.6.3
   - Prevent keys with a very specific comment from accidentally being deleted.
 

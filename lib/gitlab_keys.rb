@@ -53,7 +53,7 @@ class GitlabKeys
   end
 
   def batch_add_keys
-    lock do
+    lock(300) do # Allow 300 seconds (5 minutes) for batch_add_keys
       open(auth_file, 'a') do |file|
         stdin.each_line do |input|
           tokens = input.strip.split("\t")
