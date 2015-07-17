@@ -1,4 +1,3 @@
-require 'tempfile'
 require 'timeout'
 
 require_relative 'gitlab_config'
@@ -82,14 +81,14 @@ class GitlabKeys
   def rm_key
     lock do
       $logger.info "Removing key #{@key_id}"
-      Tempfile.open('authorized_keys') do |temp|
-        open(auth_file, 'r+') do |current|
-          current.each do |line|
-            temp.puts(line) unless line.start_with?("command=\"#{key_command(@key_id)}\"")
-          end
+      open(auth_file, 'r+') do |f|
+        while line = f.gets do
+          next unless line.start_with?("command=\"#{key_command(@key_id)}\"")
+          f.seek(-line.length, IO::SEEK_CUR)
+          # Overwrite the line with #'s. Because the 'line' variable contains
+          # a terminating '\n', we write line.length - 1 '#' characters.
+          f.write('#' * (line.length - 1))
         end
-        temp.close
-        FileUtils.cp(temp.path, auth_file)
       end
     end
     true
