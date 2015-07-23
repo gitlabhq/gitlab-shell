@@ -16,7 +16,7 @@ RUN gem install --no-ri --no-rdoc \
 
 # git user
 RUN groupadd -r git &&\
-     useradd -r -g git git && \
+     useradd -r -s /bin/bash -g git git && \
      mkdir --parent /home/git && \
      chown -R git:git /home/git
 
@@ -28,7 +28,7 @@ WORKDIR /home/git/gitlab-shell
 RUN ./bin/install
 
 COPY authorized_keys /home/git/.ssh/authorized_keys
-COPY dummy-redis-cli.sh /usr/local/bin/redis-cli
+COPY dummy-redis-cli.sh /usr/bin/redis-cli
 
 
 USER root
