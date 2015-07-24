@@ -9,9 +9,8 @@ RUN mkdir /var/run/sshd
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 
 # gems
+ENV GEM_HOME="/usr/local/lib/ruby/gems/2.1.0"
 RUN gem install --no-ri --no-rdoc \
-     charlock_holmes \
-     bundler \
      bunny
 
 # git user
