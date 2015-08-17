@@ -21,11 +21,19 @@ class GitlabProjects
 
   def self.create_hooks(path)
     local_hooks_directory = File.join(path, 'hooks')
+    real_local_hooks_directory = :not_found
+    begin
+      real_local_hooks_directory = File.realpath(local_hooks_directory)
+    rescue Errno::ENOENT
+      # real_local_hooks_directory == :not_found
+    end
 
-    if File.realpath(local_hooks_directory) != File.realpath(GLOBAL_HOOKS_DIRECTORY)
-      $logger.info "Moving existing hooks directory and symlinking global hooks directory for #{path}."
-      FileUtils.mv(local_hooks_directory, "#{local_hooks_directory}.old.#{Time.now.to_i}")
-      FileUtils.ln_s(GLOBAL_HOOKS_DIRECTORY, local_hooks_directory)
+    if real_local_hooks_directory != File.realpath(GLOBAL_HOOKS_DIRECTORY)
+      if File.exist?(local_hooks_directory)
+        $logger.info "Moving existing hooks directory and symlinking global hooks directory for #{path}."
+        FileUtils.mv(local_hooks_directory, "#{local_hooks_directory}.old.#{Time.now.to_i}")
+      end
+      FileUtils.ln_sf(GLOBAL_HOOKS_DIRECTORY, local_hooks_directory)
     else
       $logger.info "Hooks already exist for #{path}."
       true

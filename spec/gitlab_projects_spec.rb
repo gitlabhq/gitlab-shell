@@ -12,6 +12,51 @@ describe GitlabProjects do
     FileUtils.rm_rf(tmp_repos_path)
   end
 
+  describe :create_hooks do
+    let(:repo_path) { File.join(tmp_repos_path, 'hook-test.git') }
+    let(:hooks_dir) { File.join(repo_path, 'hooks') }
+    let(:target_hooks_dir) { File.join(ROOT_PATH, 'hooks') }
+    let(:existing_target) { File.join(repo_path, 'foobar') }
+
+    before do
+      FileUtils.rm_rf(repo_path)
+      FileUtils.mkdir_p(repo_path)
+    end
+
+    context 'hooks is a directory' do
+      let(:existing_file) { File.join(hooks_dir, 'my-file') }
+
+      before do
+        FileUtils.mkdir_p(hooks_dir)
+        FileUtils.touch(existing_file)
+        GitlabProjects.create_hooks(repo_path)
+      end
+
+      it { File.readlink(hooks_dir).should == target_hooks_dir }
+      it { Dir[File.join(repo_path, "hooks.old.*/my-file")].count.should == 1 }
+    end
+
+    context 'hooks is a valid symlink' do
+      before do
+        FileUtils.mkdir_p existing_target
+        File.symlink(existing_target, hooks_dir)
+        GitlabProjects.create_hooks(repo_path)
+      end
+
+      it { File.readlink(hooks_dir).should == target_hooks_dir }
+    end
+
+    context 'hooks is a broken symlink' do
+      before do
+        FileUtils.rm_f(existing_target)
+        File.symlink(existing_target, hooks_dir)
+        GitlabProjects.create_hooks(repo_path)
+      end
+
+      it { File.readlink(hooks_dir).should == target_hooks_dir }
+    end
+  end
+
   describe :initialize do
     before do
       argv('add-project', repo_name)
