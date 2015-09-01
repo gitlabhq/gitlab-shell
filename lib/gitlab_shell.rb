@@ -122,6 +122,7 @@ class GitlabShell
     env = {
       'PATH' => ENV['PATH'],
       'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
+      'LANG' => ENV['LANG'],
       'GL_ID' => @key_id
     }
 
