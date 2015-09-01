@@ -1,3 +1,6 @@
+v2.6.5 (unreleased)
+  - Add git-lfs-authenticate command to white list (this command is used by git-lfs for SSO authentication through SSH-protocol)
+
 v2.6.4
   - Remove keys from authorized_keys in-place
   - Increase batch_add_keys lock timeout to 300 seconds
