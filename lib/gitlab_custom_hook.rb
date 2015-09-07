@@ -48,11 +48,14 @@ class GitlabCustomHook
       # need to close stdin before reading stdout
       stdin.close
 
+      stdout_stderr.each_line do |line| 
+        puts line 
+        $stdout.flush
+      end
+      
       unless wait_thr.value == 0
         exit_status = false
       end
-
-      stdout_stderr.each_line { |line| puts line }
     end
 
     exit_status
