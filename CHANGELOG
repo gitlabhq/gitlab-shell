@@ -1,3 +1,6 @@
+v2.6.5
+  - Handle broken symlinks in create-hooks
+
 v2.6.4
   - Remove keys from authorized_keys in-place
   - Increase batch_add_keys lock timeout to 300 seconds
