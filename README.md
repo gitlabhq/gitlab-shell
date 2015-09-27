@@ -40,10 +40,10 @@ An overview of the four cases described above:
 
 ## Code status
 
-[![CI](https://ci.gitlab.org/projects/4/status.png?ref=master)](https://ci.gitlab.org/projects/4?ref=master)
-[![Build Status](https://semaphoreapp.com/api/v1/projects/a71ddd46-a9cc-4062-875e-7ade19a44927/243336/badge.png)](https://semaphoreapp.com/gitlabhq/gitlab-shell)
-[![Code Climate](https://codeclimate.com/github/gitlabhq/gitlab-shell.png)](https://codeclimate.com/github/gitlabhq/gitlab-shell)
-[![Coverage Status](https://coveralls.io/repos/gitlabhq/gitlab-shell/badge.png?branch=master)](https://coveralls.io/r/gitlabhq/gitlab-shell)
+[![CI](https://ci.gitlab.org/projects/4/status.svg?ref=master)](https://ci.gitlab.org/projects/4?ref=master)
+[![Build Status](https://semaphoreapp.com/api/v1/projects/a71ddd46-a9cc-4062-875e-7ade19a44927/243336/badge.svg)](https://semaphoreapp.com/gitlabhq/gitlab-shell)
+[![Code Climate](https://codeclimate.com/github/gitlabhq/gitlab-shell.svg)](https://codeclimate.com/github/gitlabhq/gitlab-shell)
+[![Coverage Status](https://coveralls.io/repos/gitlabhq/gitlab-shell/badge.svg?branch=master)](https://coveralls.io/r/gitlabhq/gitlab-shell)
 
 ## Requirements
 
