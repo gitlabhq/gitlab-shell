@@ -67,7 +67,7 @@ class GitlabShell
       @repo_name = escape_path(args[2].sub(/\A\/~\//, ''))
 
       # Make sure repository has git-annex enabled
-      init_git_annex(@repo_name)
+      init_git_annex(@repo_name) unless gcryptsetup?(args)
     when 'git-lfs-authenticate'
       raise DisallowedCommandError unless args.count >= 2
       @repo_name = escape_path(args[1])
@@ -176,5 +176,10 @@ class GitlabShell
       system(*cmd, err: '/dev/null', out: '/dev/null')
       $logger.info "Enable git-annex for repository: #{path}."
     end
+  end
+
+  def gcryptsetup?(args)
+    non_dashed = args.reject { |a| a.start_with?('-') }
+    non_dashed[0, 2] == %w{git-annex-shell gcryptsetup}
   end
 end

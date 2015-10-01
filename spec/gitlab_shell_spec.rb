@@ -96,6 +96,14 @@ describe GitlabShell do
       it 'should init git-annex' do
         File.exists?(File.join(tmp_repos_path, 'dzaporozhets/gitlab.git/annex')).should be_true
       end
+
+      context 'with git-annex-shell gcryptsetup' do
+        let(:ssh_cmd) { 'git-annex-shell gcryptsetup /~/dzaporozhets/gitlab.git' }
+
+        it 'should not init git-annex' do
+          File.exists?(File.join(tmp_repos_path, 'dzaporozhets/gitlab.git/annex')).should be_false
+        end
+      end
     end
   end
 
