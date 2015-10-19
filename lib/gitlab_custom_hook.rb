@@ -33,6 +33,7 @@ class GitlabCustomHook
     Open3.popen2e(hook) do |stdin, stdout_stderr, wait_thr|
       exit_status = true
       stdin.sync = true
+      $stdout.sync = true
 
       # in git, pre- and post- receive hooks may just exit without
       # reading stdin. We catch the exception to avoid a broken pipe
@@ -48,10 +49,7 @@ class GitlabCustomHook
       # need to close stdin before reading stdout
       stdin.close
 
-      stdout_stderr.each_line do |line|
-        puts line
-        $stdout.flush
-      end
+      stdout_stderr.each_line { |line| puts line }
 
       unless wait_thr.value == 0
         exit_status = false
