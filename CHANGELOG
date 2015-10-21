@@ -1,4 +1,4 @@
-v2.6.6 (unreleased)
+v2.6.6
   - Do not clean LANG environment variable for the git hooks when working through the SSH-protocol
   - Add git-lfs-authenticate command to white list (this command is used by git-lfs for SSO authentication through SSH-protocol)
   - Handle git-annex and gcryptsetup
