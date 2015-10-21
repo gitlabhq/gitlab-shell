@@ -55,11 +55,12 @@ class GitlabProjects
     when 'rm-tag'; rm_tag
     when 'add-project'; add_project
     when 'list-projects'; puts list_projects
-    when 'rm-project';  rm_project
-    when 'mv-project';  mv_project
+    when 'rm-project'; rm_project
+    when 'mv-project'; mv_project
     when 'import-project'; import_project
     when 'fork-project'; fork_project
-    when 'update-head';  update_head
+    when 'update-head'; update_head
+    when 'gc'; gc
     else
       $logger.warn "Attempt to execute invalid gitlab-projects command #{@command.inspect}."
       puts 'not allowed'
@@ -245,5 +246,11 @@ class GitlabProjects
 
     $logger.info "Update head in project #{project_name} to <#{new_head}>."
     true
+  end
+
+  def gc
+    $logger.info "Running git gc for <#{full_path}>."
+    cmd = %W(git --git-dir=#{full_path} gc)
+    system(*cmd)
   end
 end
