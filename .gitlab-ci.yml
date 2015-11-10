@@ -1,5 +1,6 @@
 before_script:
   - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin
+  - apt-get update
   - apt-get install git-annex
   - gem install --bindir ~/bin bundler
   - cp config.yml.example config.yml
