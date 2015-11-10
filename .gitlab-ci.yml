@@ -1,6 +1,6 @@
 before_script:
   - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin
-  - gem install bundler
+  - gem install --bindir ~/bin bundler
   - cp config.yml.example config.yml
   - bundle install
 
