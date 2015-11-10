@@ -1,5 +1,6 @@
 before_script:
   - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin
+  - apt-get install git-annex
   - gem install --bindir ~/bin bundler
   - cp config.yml.example config.yml
   - bundle install
@@ -8,7 +9,6 @@ rspec:
   script:
     - bundle exec rspec spec
   tags:
-    - git-annex
     - ruby
   except:
     - tags
