@@ -59,6 +59,7 @@ class GitlabProjects
     when 'mv-project';  mv_project
     when 'import-project'; import_project
     when 'fork-project'; fork_project
+    when 'fetch-remote'; fetch_remote
     when 'update-head';  update_head
     else
       $logger.warn "Attempt to execute invalid gitlab-projects command #{@command.inspect}."
@@ -126,6 +127,30 @@ class GitlabProjects
     result
   rescue
     url
+  end
+
+  def fetch_remote
+    @name = ARGV.shift
+
+    # timeout for fetch
+    timeout = (ARGV.shift || 120).to_i
+    $logger.info "Fetching remote #{@name} for project #{@project_name}."
+    cmd = %W(git --git-dir=#{full_path} fetch #{@name} --tags)
+    pid = Process.spawn(*cmd)
+
+    begin
+      Timeout.timeout(timeout) do
+        Process.wait(pid)
+      end
+
+      $?.exitstatus.zero?
+    rescue Timeout::Error
+      $logger.error "Fetching remote #{@name} for project #{@project_name} failed due to timeout."
+
+      Process.kill('KILL', pid)
+      Process.wait
+      false
+    end
   end
 
   def remove_origin_in_repo
