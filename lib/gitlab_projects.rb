@@ -154,19 +154,23 @@ class GitlabProjects
       Timeout.timeout(timeout) do
         Process.wait(pid)
       end
+
+      return false unless $?.exitstatus.zero?
     rescue Timeout::Error
       $logger.error "Importing project #{@project_name} from <#{masked_source}> failed due to timeout."
 
       Process.kill('KILL', pid)
       Process.wait
       FileUtils.rm_rf(full_path)
-      false
-    else
-      self.class.create_hooks(full_path)
-      # The project was imported successfully.
-      # Remove the origin URL since it may contain password.
-      remove_origin_in_repo
+      return false
     end
+
+    self.class.create_hooks(full_path)
+    # The project was imported successfully.
+    # Remove the origin URL since it may contain password.
+    remove_origin_in_repo
+
+    true
   end
 
   # Move repository from one directory to another
