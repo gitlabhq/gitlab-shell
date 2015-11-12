@@ -5,6 +5,7 @@ require 'json'
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 require_relative 'gitlab_access'
+require_relative 'httpunix'
 
 class GitlabNet
   class ApiUnreachableError < StandardError; end
@@ -63,7 +64,11 @@ class GitlabNet
   end
 
   def http_client_for(uri)
-    http = Net::HTTP.new(uri.host, uri.port)
+    if uri.is_a?(URI::HTTPUNIX)
+      http = Net::HTTPUNIX.new(uri.hostname)
+    else
+      http = Net::HTTP.new(uri.host, uri.port)
+    end
 
     if uri.is_a?(URI::HTTPS)
       http.use_ssl = true
