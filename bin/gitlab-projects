@@ -1,8 +1,7 @@
 #!/usr/bin/env ruby
 
 
-$:.unshift File.expand_path('../lib', __FILE__)
-require 'gitlab_init'
+require_relative '../lib/gitlab_init'
 
 #
 # GitLab Projects shell. Add/remove projects from /home/git/repositories

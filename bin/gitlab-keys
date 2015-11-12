@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
-$:.unshift File.expand_path('../lib', __FILE__)
-require 'gitlab_init'
+require_relative '../lib/gitlab_init'
 
 #
 # GitLab Keys shell. Add/remove keys from ~/.ssh/authorized_keys

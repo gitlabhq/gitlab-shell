@@ -1,8 +1,7 @@
 #!/usr/bin/env ruby
 
-$:.unshift File.expand_path('../lib', __FILE__)
-require 'gitlab_init'
-require 'gitlab_net'
+require_relative '../lib/gitlab_init'
+require_relative '../lib/gitlab_net'
 
 #
 # GitLab shell check task
