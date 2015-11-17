@@ -1,3 +1,7 @@
+v2.6.7
+  - Exit with non-zero status when import-repository fails
+  - Add fetch-remote command
+
 v2.6.6
   - Do not clean LANG environment variable for the git hooks when working through the SSH-protocol
   - Add git-lfs-authenticate command to white list (this command is used by git-lfs for SSO authentication through SSH-protocol)
@@ -59,13 +63,13 @@ v2.1.0
   - Use secret token with GitLab internal API. Requires GitLab 7.5 or higher
 
 v2.0.1
-  - Send post-receive changes to redis as a string instead of array 
+  - Send post-receive changes to redis as a string instead of array
 
 v2.0.0
   - Works with GitLab v7.3+
   - Replace raise with abort when checking path to prevent path exposure
   - Handle invalid number of arguments on remote commands
-  - Replace update hook with pre-receive and post-receive hooks. 
+  - Replace update hook with pre-receive and post-receive hooks.
   - Symlink the whole hooks directory
   - Ignore missing repositories in create-hooks
   - Connect to Redis via sockets by default
@@ -89,10 +93,10 @@ v1.9.3
   - Ignore force push detection for new branch or branch remove push
 
 v1.9.2
-  - Add support for force push detection 
+  - Add support for force push detection
 
 v1.9.1
-  - Update hook sends branch and tag name 
+  - Update hook sends branch and tag name
 
 v1.9.0
   - Call api in update hook for both ssdh and http push. Requires GitLab 6.7+
