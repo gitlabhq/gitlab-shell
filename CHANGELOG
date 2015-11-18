@@ -1,3 +1,5 @@
+v2.6.8 (unreleased)
+
 v2.6.7
   - Exit with non-zero status when import-repository fails
   - Add fetch-remote command
