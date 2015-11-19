@@ -250,6 +250,10 @@ class GitlabProjects
 
   def gc
     $logger.info "Running git gc for <#{full_path}>."
+    unless File.exists?(full_path)
+      $logger.error "gc failed: destination path <#{full_path}> does not exist."
+      return false
+    end
     cmd = %W(git --git-dir=#{full_path} gc)
     system(*cmd)
   end
