@@ -1,4 +1,4 @@
-v2.6.8 (unreleased)
+v2.6.8
   - Revert git-lfs-authenticate command from white list
 
 v2.6.7
