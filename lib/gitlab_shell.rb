@@ -119,6 +119,13 @@ class GitlabShell
 
   # This method is not covered by Rspec because it ends the current Ruby process.
   def exec_cmd(*args)
+    # If you want to call a command without arguments, use
+    # exec_cmd(['my_command', 'my_command']) . Otherwise use
+    # exec_cmd('my_command', 'my_argument', ...).
+    if args.count == 1 && !args.first.is_a?(Array)
+      raise DisallowedCommandError
+    end
+
     env = {
       'PATH' => ENV['PATH'],
       'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
