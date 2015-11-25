@@ -17,7 +17,7 @@ require_relative '../lib/gitlab_init'
 #
 require File.join(ROOT_PATH, 'lib', 'gitlab_shell')
 
-if GitlabShell.new(key_id, original_cmd).exec
+if GitlabShell.new(key_id).exec(original_cmd)
   exit 0
 else
   exit 1
