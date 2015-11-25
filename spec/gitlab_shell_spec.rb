@@ -236,6 +236,15 @@ describe GitlabShell do
       Kernel.should_receive(:exec).with(kind_of(Hash), 1, 2, unsetenv_others: true).once
       shell.send :exec_cmd, 1, 2
     end
+
+    it "refuses to execute a lone non-array argument" do
+      expect { shell.send :exec_cmd, 1 }.to raise_error(GitlabShell::DisallowedCommandError)
+    end
+
+    it "allows one argument if it is an array" do
+      Kernel.should_receive(:exec).with(kind_of(Hash), [1, 2], unsetenv_others: true).once
+      shell.send :exec_cmd, [1, 2]
+    end
   end
 
   describe :api do
