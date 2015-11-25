@@ -111,8 +111,6 @@ class GitlabShell
 
       $logger.info "gitlab-shell: executing git-annex command <#{parsed_args.join(' ')}> for #{log_username}."
       exec_cmd(*parsed_args)
-    elsif @git_cmd == 'git-lfs-authenticate'
-      exec_cmd(@origin_cmd)
     else
       $logger.info "gitlab-shell: executing git command <#{@git_cmd} #{repo_full_path}> for #{log_username}."
       exec_cmd(@git_cmd, repo_full_path)
