@@ -120,6 +120,7 @@ class GitlabShell
   # This method is not covered by Rspec because it ends the current Ruby process.
   def exec_cmd(*args)
     env = {
+      'HOME' => ENV['HOME'],
       'PATH' => ENV['PATH'],
       'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
       'LANG' => ENV['LANG'],
