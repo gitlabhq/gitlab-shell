@@ -17,6 +17,9 @@ class GitlabShell
     @repos_path = @config.repos_path
   end
 
+  # The origin_cmd variable contains UNTRUSTED input. If the user ran
+  # ssh git@gitlab.example.com 'evil command', then origin_cmd contains
+  # 'evil command'.
   def exec(origin_cmd)
     unless origin_cmd
       puts "Welcome to GitLab, #{username}!"
