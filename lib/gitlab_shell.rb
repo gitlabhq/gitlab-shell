@@ -11,37 +11,40 @@ class GitlabShell
 
   attr_accessor :key_id, :repo_name, :git_cmd, :repos_path, :repo_name
 
-  def initialize(key_id, origin_cmd)
+  def initialize(key_id)
     @key_id = key_id
-    @origin_cmd = origin_cmd
     @config = GitlabConfig.new
     @repos_path = @config.repos_path
   end
 
-  def exec
-    unless @origin_cmd
+  # The origin_cmd variable contains UNTRUSTED input. If the user ran
+  # ssh git@gitlab.example.com 'evil command', then origin_cmd contains
+  # 'evil command'.
+  def exec(origin_cmd)
+    unless origin_cmd
       puts "Welcome to GitLab, #{username}!"
       return true
     end
 
-    parse_cmd
+    args = Shellwords.shellwords(origin_cmd)
+    parse_cmd(args)
 
     verify_access
 
-    process_cmd
+    process_cmd(args)
 
     true
   rescue GitlabNet::ApiUnreachableError => ex
     $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
     false
   rescue AccessDeniedError => ex
-    message = "gitlab-shell: Access denied for git command <#{@origin_cmd}> by #{log_username}."
+    message = "gitlab-shell: Access denied for git command <#{origin_cmd}> by #{log_username}."
     $logger.warn message
 
     $stderr.puts "GitLab: #{ex.message}"
     false
   rescue DisallowedCommandError => ex
-    message = "gitlab-shell: Attempt to execute disallowed command <#{@origin_cmd}> by #{log_username}."
+    message = "gitlab-shell: Attempt to execute disallowed command <#{origin_cmd}> by #{log_username}."
     $logger.warn message
 
     $stderr.puts "GitLab: Disallowed command"
@@ -53,8 +56,7 @@ class GitlabShell
 
   protected
 
-  def parse_cmd
-    args = Shellwords.shellwords(@origin_cmd)
+  def parse_cmd(args)
     @git_cmd = args.first
     @git_access = @git_cmd
 
@@ -91,13 +93,12 @@ class GitlabShell
     raise AccessDeniedError, status.message unless status.allowed?
   end
 
-  def process_cmd
+  def process_cmd(args)
     repo_full_path = File.join(repos_path, repo_name)
 
     if @git_cmd == 'git-annex-shell'
       raise DisallowedCommandError unless @config.git_annex_enabled?
 
-      args = Shellwords.shellwords(@origin_cmd)
       parsed_args =
         args.map do |arg|
           # Convert /~/group/project.git to group/project.git
@@ -119,6 +120,13 @@ class GitlabShell
 
   # This method is not covered by Rspec because it ends the current Ruby process.
   def exec_cmd(*args)
+    # If you want to call a command without arguments, use
+    # exec_cmd(['my_command', 'my_command']) . Otherwise use
+    # exec_cmd('my_command', 'my_argument', ...).
+    if args.count == 1 && !args.first.is_a?(Array)
+      raise DisallowedCommandError
+    end
+
     env = {
       'HOME' => ENV['HOME'],
       'PATH' => ENV['PATH'],
