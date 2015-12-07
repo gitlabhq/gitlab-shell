@@ -9,7 +9,7 @@ class GitlabPostReceive
   def initialize(repo_path, actor, changes)
     @config = GitlabConfig.new
     @repo_path, @actor = repo_path.strip, actor
-    @changes = changes.lines
+    @changes = changes.lines.to_a
   end
 
   def exec
@@ -46,7 +46,7 @@ class GitlabPostReceive
       repo = @repo_path.gsub("#{config.repos_path}/", "")
       msg = JSON.dump({'type' => 'post_receive', 'repo' => repo, 'repo_path' => @repo_path, 'actor' => @actor, 'changes' => @changes})
       queue.publish(msg, :persistent => true, :content_type => "application/json")
-      $logger.info { "Published post_receive message to rabbit repo=#{repo} actor=#{@actor}" }
+      $logger.info { "Published post_receive message to rabbit repo=#{repo} actor=#{@actor} changes=#{@changes}" }
       # All done, clean up
       conn.close
     rescue Exception => e
