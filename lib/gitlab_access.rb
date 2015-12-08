@@ -12,7 +12,7 @@ class GitlabAccess
     @config = GitlabConfig.new
     @repo_path, @actor = repo_path.strip, actor
     @repo_name = extract_repo_name(@repo_path.dup, config.repos_path.to_s)
-    @changes = changes.lines
+    @changes = changes.lines.to_a
   end
 
   def exec
