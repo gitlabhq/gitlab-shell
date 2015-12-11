@@ -24,7 +24,7 @@ class GitlabConfig
   end
 
   def gitlab_url
-    @config['gitlab_url'] ||= "http://localhost/"
+    (@config['gitlab_url'] ||= "http://localhost").sub(%r{/*$}, '')
   end
 
   def http_settings
