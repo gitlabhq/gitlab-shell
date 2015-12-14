@@ -35,6 +35,12 @@ eos
 
     it { should_not be_empty }
     it { should eq(url) }
+
+    context 'remove trailing slashes' do
+      before { config.send(:config)['gitlab_url'] = url + '//' }
+      
+      it { should eq(url) }
+    end
   end
 
   describe :audit_usernames do
