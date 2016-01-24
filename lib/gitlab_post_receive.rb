@@ -1,5 +1,6 @@
 require_relative 'gitlab_init'
 require_relative 'gitlab_net'
+require_relative 'gitlab_merge_request_hook'
 require 'json'
 require 'base64'
 
@@ -22,6 +23,7 @@ class GitlabPostReceive
         puts
         print_broadcast_message(broadcast_message["message"])
       end
+      GitlabMergeRequestHook.new(@repo_path, @config, @changes).exec
     rescue GitlabNet::ApiUnreachableError
       nil
     end
