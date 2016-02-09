@@ -73,7 +73,7 @@ class GitlabNet
       http = Net::HTTP.new(uri.host, uri.port)
     end
 
-    http.read_timeout = options[:read_timeout] || READ_TIMEOUT
+    http.read_timeout = options[:read_timeout] || read_timeout
 
     if uri.is_a?(URI::HTTPS)
       http.use_ssl = true
@@ -153,5 +153,9 @@ class GitlabNet
 
   def secret_token
     @secret_token ||= File.read config.secret_file
+  end
+
+  def read_timeout
+    config.http_settings['read_timeout'] || READ_TIMEOUT
   end
 end
