@@ -106,10 +106,15 @@ class GitlabNet
     request = http_request_for(method, uri, params)
 
     begin
+      start_time = Time.new
       response = http.start { http.request(request) }
     rescue => e
       $logger.warn "Failed to connect to internal API <#{method.to_s.upcase} #{url}>: #{e.inspect}"
       raise ApiUnreachableError
+    ensure
+      $logger.info do
+        sprintf('%s %s %0.5f', method.to_s.upcase, url, Time.new - start_time)
+      end
     end
 
     if response.code == "200"
