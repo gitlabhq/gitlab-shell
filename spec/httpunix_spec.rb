@@ -24,6 +24,11 @@ class HTTPUNIXServer < WEBrick::HTTPServer
     socket.close
     @listeners << server
   end
+
+  def start(&block)
+    setup_shutdown_pipe
+    super.start(&block)
+  end
 end
 
 def tmp_socket_path
