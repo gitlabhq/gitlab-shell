@@ -10,6 +10,9 @@ require_relative 'httpunix'
 class GitlabNet
   class ApiUnreachableError < StandardError; end
 
+  CHECK_TIMEOUT = 5
+  READ_TIMEOUT = 300
+
   def check_access(cmd, repo, actor, changes)
     project_name = repo.gsub("'", "")
     project_name = project_name.gsub(/\.git\Z/, "")
@@ -50,7 +53,7 @@ class GitlabNet
   end
 
   def check
-    get("#{host}/check")
+    get("#{host}/check", read_timeout: CHECK_TIMEOUT)
   end
 
   protected
@@ -63,12 +66,14 @@ class GitlabNet
     "#{config.gitlab_url}/api/v3/internal"
   end
 
-  def http_client_for(uri)
+  def http_client_for(uri, options={})
     if uri.is_a?(URI::HTTPUNIX)
       http = Net::HTTPUNIX.new(uri.hostname)
     else
       http = Net::HTTP.new(uri.host, uri.port)
     end
+
+    http.read_timeout = options[:read_timeout] || READ_TIMEOUT
 
     if uri.is_a?(URI::HTTPS)
       http.use_ssl = true
@@ -92,12 +97,12 @@ class GitlabNet
     request
   end
 
-  def request(method, url, params = {})
+  def request(method, url, params = {}, options={})
     $logger.debug "Performing #{method.to_s.upcase} #{url}"
 
     uri = URI.parse(url)
 
-    http = http_client_for(uri)
+    http = http_client_for(uri, options)
     request = http_request_for(method, uri, params)
 
     begin
@@ -116,8 +121,8 @@ class GitlabNet
     response
   end
 
-  def get(url)
-    request(:get, url)
+  def get(url, options={})
+    request(:get, url, {}, options)
   end
 
   def post(url, params)
