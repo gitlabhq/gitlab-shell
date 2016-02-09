@@ -143,7 +143,7 @@ describe GitlabNet, vcr: true do
     subject { gitlab_net.send :http_client_for, URI('https://localhost/') }
     before do
       gitlab_net.stub! :cert_store
-      gitlab_net.send(:config).http_settings.stub(:[]).with('self_signed_cert') { true }
+      gitlab_net.send(:config).stub(:http_settings) { {'self_signed_cert' => true} }
     end
 
     its(:verify_mode) { should eq(OpenSSL::SSL::VERIFY_NONE) }

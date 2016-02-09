@@ -17,6 +17,7 @@ gitlab_url: "http://localhost:8080"
 
 # See installation.md#using-https for additional HTTPS configuration details.
 http_settings:
+#  read_timeout: 300
 #  user: someone
 #  password: somepass
 #  ca_file: /etc/ssl/cert.pem
