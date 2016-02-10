@@ -1,3 +1,5 @@
+image: "ruby:2.2"
+
 before_script:
   - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
   - apt-get update
@@ -6,6 +8,7 @@ before_script:
   - cp config.yml.example config.yml
   - bundle install
 
+#ruby 2.2
 rspec:
   script:
     - bundle exec rspec spec
@@ -16,6 +19,25 @@ rspec:
 
 rubocop:
   script: 
+    - bundle exec rubocop
+  tags:
+    - ruby
+  except:
+    - tags
+
+#ruby 2.1
+rspec:
+  image: ruby:2.1
+  script:
+    - bundle exec rspec spec
+  tags:
+    - ruby
+  except:
+    - tags
+
+rubocop:
+  image: ruby:2.1
+  script:
     - bundle exec rubocop
   tags:
     - ruby
