@@ -26,7 +26,7 @@ rubocop:
     - tags
 
 #ruby 2.1
-rspec:
+rspec:ruby2.1:
   image: ruby:2.1
   script:
     - bundle exec rspec spec
@@ -35,7 +35,7 @@ rspec:
   except:
     - tags
 
-rubocop:
+rubocop:ruby2.1:
   image: ruby:2.1
   script:
     - bundle exec rubocop
