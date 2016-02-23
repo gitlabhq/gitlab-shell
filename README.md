@@ -168,7 +168,7 @@ This design will work without a script git-lfs-authenticate, but with the follow
  * You will need to manually configure lfs-server URL for every user working copy;
  * SSO don't work and you need to manually add lfs-server credentials for every user working copy (otherwise, git-lfs will ask for the password for each file).
 
-Usefull links:
+Useful links:
 
  * https://github.com/github/git-lfs/tree/master/docs/api - Git LFS API, also contains more information about ```git-lfs-authenticate```;
  * https://github.com/github/git-lfs/wiki/Implementations - Git LFS-server implementations.
