@@ -60,7 +60,7 @@ class GitlabProjects
     when 'import-project'; import_project
     when 'fork-project'; fork_project
     when 'fetch-remote'; fetch_remote
-    when 'update-head';  update_head
+    when 'update-head'; update_head
     when 'gc'; gc
     else
       $logger.warn "Attempt to execute invalid gitlab-projects command #{@command.inspect}."
@@ -135,8 +135,13 @@ class GitlabProjects
 
     # timeout for fetch
     timeout = (ARGV.shift || 120).to_i
+
+    # fetch with --force ?
+    forced = (ARGV.shift == '--force' || false)
+
     $logger.info "Fetching remote #{@name} for project #{@project_name}."
     cmd = %W(git --git-dir=#{full_path} fetch #{@name} --tags)
+    cmd << '--force' if forced
     pid = Process.spawn(*cmd)
 
     begin
