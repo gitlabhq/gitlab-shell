@@ -137,7 +137,7 @@ class GitlabProjects
     timeout = (ARGV.shift || 120).to_i
 
     # fetch with --force ?
-    forced = (ARGV.shift == '--force' || false)
+    forced = (ARGV.shift == '--force')
 
     $logger.info "Fetching remote #{@name} for project #{@project_name}."
     cmd = %W(git --git-dir=#{full_path} fetch #{@name} --tags)
