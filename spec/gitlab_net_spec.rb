@@ -76,6 +76,34 @@ describe GitlabNet, vcr: true do
     end
   end
 
+  describe :ssh_key do
+    it "should return nil when the resource is not implemented" do
+      VCR.use_cassette("ssh-key-not-implemented") do
+        result = gitlab_net.ssh_key("whatever")
+        result.should be_nil
+      end
+    end
+
+    it "should return nil when the fingerprint is not found" do
+      VCR.use_cassette("ssh-key-not-found") do
+        result = gitlab_net.ssh_key("whatever")
+        result.should be_nil
+      end
+    end
+
+    it "should return a ssh key with a valid fingerprint" do
+      VCR.use_cassette("ssh-key-ok") do
+        result = gitlab_net.ssh_key("42:18:16")
+        result.should eq({
+          "created_at" => "2016-03-04T18:27:36.959Z",
+          "id" => 2,
+          "key" => "ssh-rsa a-made=up-rsa-key dummy@gitlab.com",
+          "title" => "some key title"
+        })
+      end
+    end
+  end
+
   describe :check_access do
     context 'ssh key with access to project' do
       it 'should allow pull access for dev.gitlab.org' do

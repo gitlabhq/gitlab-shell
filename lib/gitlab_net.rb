@@ -56,6 +56,11 @@ class GitlabNet
     get("#{host}/check", read_timeout: CHECK_TIMEOUT)
   end
 
+  def ssh_key(fingerprint)
+    resp = get("#{host}/ssh-key?fingerprint=#{fingerprint}")
+    JSON.parse(resp.body) rescue nil
+  end
+
   protected
 
   def config

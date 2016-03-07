@@ -1,0 +1,50 @@
+---
+http_interactions:
+- request:
+    method: get
+    uri: https://dev.gitlab.org/api/v3/internal/ssh-key?fingerprint=whatever
+    body:
+      encoding: US-ASCII
+      string: secret_token=a123
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+      Content-Type:
+      - application/x-www-form-urlencoded
+  response:
+    status:
+      code: 501
+      message: Not Implemented
+    headers:
+      Server:
+      - nginx
+      Date:
+      - Mon, 07 Mar 2016 12:09:59 GMT
+      Content-Type:
+      - text/html; charset=utf-8
+      Connection:
+      - keep-alive
+      Cache-Control:
+      - no-cache
+      Set-Cookie:
+      - _gitlab_session=a924e63729e538c9efe10fa8338077d7; path=/; expires=Mon, 14
+        Mar 2016 12:09:59 -0000; secure; HttpOnly
+      Status:
+      - 501 Not Implemented
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Request-Id:
+      - 275ad011-515f-4239-80be-e537fd7c9086
+      X-Runtime:
+      - '2.169401'
+      X-Xss-Protection:
+      - 1; mode=block
+    http_version: 
+  recorded_at: Mon, 07 Mar 2016 12:10:00 GMT
+recorded_with: VCR 2.4.0
