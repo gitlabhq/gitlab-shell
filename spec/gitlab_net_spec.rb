@@ -8,8 +8,8 @@ describe GitlabNet, vcr: true do
   let(:changes) { ['0000000000000000000000000000000000000000 92d0970eefd7acb6d548878925ce2208cfe2d2ec refs/heads/branch4'] }
 
   before do
-    gitlab_net.stub!(:host).and_return('https://dev.gitlab.org/api/v3/internal')
-    gitlab_net.stub!(:secret_token).and_return('a123')
+    gitlab_net.stub(:host).and_return('https://dev.gitlab.org/api/v3/internal')
+    gitlab_net.stub(:secret_token).and_return('a123')
   end
 
   describe :check do
@@ -142,7 +142,7 @@ describe GitlabNet, vcr: true do
   describe :http_client_for do
     subject { gitlab_net.send :http_client_for, URI('https://localhost/') }
     before do
-      gitlab_net.stub! :cert_store
+      gitlab_net.stub :cert_store
       gitlab_net.send(:config).stub(:http_settings) { {'self_signed_cert' => true} }
     end
 
