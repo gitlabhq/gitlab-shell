@@ -1,3 +1,8 @@
+v2.6.11
+  - Increase HTTP timeout and log request durations
+  - Workaround for a Webrick issue on Ruby 2.2
+  - New optional `--force` parameter for `gitlab-projects fetch-remote`
+
 v2.6.10
   - Add git gc for housekeeping
 
