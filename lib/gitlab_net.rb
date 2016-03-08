@@ -56,9 +56,11 @@ class GitlabNet
     get("#{host}/check", read_timeout: CHECK_TIMEOUT)
   end
 
-  def ssh_key(fingerprint)
+  def authorized_key(fingerprint)
     resp = get("#{host}/ssh-key?fingerprint=#{fingerprint}")
-    JSON.parse(resp.body) rescue nil
+    JSON.parse(resp.body) if resp.code == "200"
+  rescue
+    nil
   end
 
   protected

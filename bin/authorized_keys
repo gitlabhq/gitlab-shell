@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+
+#
+# GitLab shell authorized_keys. Query gitlab API to get the authorized command for a given ssh key fingerprint
+#
+# Ex.
+#   /bin/authorized_keys e6:17:f2:f3:b7
+#
+# Returns
+#   command="/bin/gitlab-shell key-#",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAAB3NzaC1yc2EAAAADAQA...
+#
+
+fingerprint = ARGV[0]
+abort "# No fingerprint provided" if fingerprint.nil?
+
+require_relative "../lib/gitlab_init"
+require_relative "../lib/gitlab_net"
+require_relative "../lib/gitlab_keys"
+
+authorized_key = GitlabNet.new.authorized_key(fingerprint)
+unless authorized_key.nil?
+  puts GitlabKey.new.key_line(authorized_key["id"], authorized_key["key"])
+else
+  puts "# No key was found with fingerprint #{fingerprint}"
+end
