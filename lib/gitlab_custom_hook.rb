@@ -1,25 +1,34 @@
 require 'open3'
 
 class GitlabCustomHook
-  def pre_receive(changes, repo_path)
-    hook = hook_file('pre-receive', repo_path)
-    return true if hook.nil?
 
-    call_receive_hook(hook, changes)
+  def pre_receive(changes, repo_path)
+    hooks = hook_files('pre-receive', repo_path)
+    return true if hooks.nil?
+    hooks.each do | hook |
+      return false if not call_receive_hook(hook, changes)
+    end
+    true
   end
 
   def post_receive(changes, repo_path)
-    hook = hook_file('post-receive', repo_path)
-    return true if hook.nil?
-    
-    call_receive_hook(hook, changes)
+    hooks = hook_files('post-receive', repo_path)
+    return true if hooks.nil?
+    hooks.each do | hook |
+      return false if not call_receive_hook(hook, changes)
+    end
+    true
   end
 
   def update(ref_name, old_value, new_value, repo_path)
-    hook = hook_file('update', repo_path)
-    return true if hook.nil?
-
-    system(hook, ref_name, old_value, new_value)
+    hooks = hook_files('update', repo_path)
+    return true if hooks.nil?
+    hooks.each do | hook |
+      if not system(hook, ref_name, old_value, new_value)
+        return false
+      end
+    end
+    true
   end
 
   private
@@ -58,9 +67,21 @@ class GitlabCustomHook
     exit_status
   end
 
-  def hook_file(hook_type, repo_path)
-    hook_path = File.join(repo_path.strip, 'custom_hooks')
+  def hook_files(hook_type, repo_path)
+    hook_files = []
+    parent_path = File.dirname repo_path
+    hook_path = File.join(parent_path.strip, 'custom_hooks')
+    if Dir.exist?("#{hook_path}/#{hook_type}.d")
+      hook_files += Dir["#{hook_path}/#{hook_type}.d/*"].sort
+    end
     hook_file = "#{hook_path}/#{hook_type}"
-    hook_file if File.exist?(hook_file)
+    hook_files.push(hook_file) if File.exist?(hook_file)
+    hook_path = File.join(repo_path.strip, 'custom_hooks')
+    if Dir.exist?("#{hook_path}/#{hook_type}.d")
+      hook_files += Dir["#{hook_path}/#{hook_type}.d/*"].sort
+    end
+    hook_file = "#{hook_path}/#{hook_type}"
+    hook_files.push(hook_file) if File.exist?(hook_file)
+    hook_files
   end
 end
