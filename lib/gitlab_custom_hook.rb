@@ -5,8 +5,8 @@ class GitlabCustomHook
   def pre_receive(changes, repo_path)
     hooks = hook_files('pre-receive', repo_path)
     return true if hooks.nil?
-    hooks.each do | hook |
-      return false if not call_receive_hook(hook, changes)
+    hooks.each do |hook|
+      return false unless call_receive_hook(hook, changes)
     end
     true
   end
@@ -14,8 +14,8 @@ class GitlabCustomHook
   def post_receive(changes, repo_path)
     hooks = hook_files('post-receive', repo_path)
     return true if hooks.nil?
-    hooks.each do | hook |
-      return false if not call_receive_hook(hook, changes)
+    hooks.each do |hook|
+      return false unless call_receive_hook(hook, changes)
     end
     true
   end
@@ -23,8 +23,8 @@ class GitlabCustomHook
   def update(ref_name, old_value, new_value, repo_path)
     hooks = hook_files('update', repo_path)
     return true if hooks.nil?
-    hooks.each do | hook |
-      if not system(hook, ref_name, old_value, new_value)
+    hooks.each do |hook|
+      unless system(hook, ref_name, old_value, new_value)
         return false
       end
     end
