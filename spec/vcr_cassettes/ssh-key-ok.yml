@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: get
-    uri: https://dev.gitlab.org/api/v3/internal/ssh-key?fingerprint=42:18:16
+    uri: https://dev.gitlab.org/api/v3/internal/authorized_keys?fingerprint=42:18:16
     body:
       encoding: US-ASCII
       string: secret_token=a123

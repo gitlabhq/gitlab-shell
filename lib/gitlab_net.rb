@@ -57,7 +57,7 @@ class GitlabNet
   end
 
   def authorized_key(fingerprint)
-    resp = get("#{host}/ssh-key?fingerprint=#{fingerprint}")
+    resp = get("#{host}/authorized_keys?fingerprint=#{fingerprint}")
     JSON.parse(resp.body) if resp.code == "200"
   rescue
     nil
