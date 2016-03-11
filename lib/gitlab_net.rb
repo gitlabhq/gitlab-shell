@@ -57,7 +57,7 @@ class GitlabNet
   end
 
   def authorized_key(key)
-    resp = get("#{host}/authorized_keys?key=#{key}")
+    resp = get("#{host}/authorized_keys?key=#{URI.escape(key, '+/=')}")
     JSON.parse(resp.body) if resp.code == "200"
   rescue
     nil

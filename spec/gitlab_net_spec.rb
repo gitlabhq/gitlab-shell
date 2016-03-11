@@ -77,6 +77,8 @@ describe GitlabNet, vcr: true do
   end
 
   describe :authorized_key do
+    let (:ssh_key) { "AAAAB3NzaC1yc2EAAAADAQABAAACAQDPKPqqnqQ9PDFw65cO7iHXrKw6ucSZg8Bd2CZ150Yy1YRDPJOWeRNCnddS+M/Lk" }
+
     it "should return nil when the resource is not implemented" do
       VCR.use_cassette("ssh-key-not-implemented") do
         result = gitlab_net.authorized_key("whatever")
@@ -93,7 +95,7 @@ describe GitlabNet, vcr: true do
 
     it "should return a ssh key with a valid fingerprint" do
       VCR.use_cassette("ssh-key-ok") do
-        result = gitlab_net.authorized_key("42:18:16")
+        result = gitlab_net.authorized_key(ssh_key)
         result.should eq({
           "created_at" => "2016-03-04T18:27:36.959Z",
           "id" => 2,
