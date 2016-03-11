@@ -56,8 +56,8 @@ class GitlabNet
     get("#{host}/check", read_timeout: CHECK_TIMEOUT)
   end
 
-  def authorized_key(fingerprint)
-    resp = get("#{host}/authorized_keys?fingerprint=#{fingerprint}")
+  def authorized_key(key)
+    resp = get("#{host}/authorized_keys?key=#{key}")
     JSON.parse(resp.body) if resp.code == "200"
   rescue
     nil
