@@ -19,7 +19,7 @@ require_relative "../lib/gitlab_keys"
 
 authorized_key = GitlabNet.new.authorized_key(key)
 unless authorized_key.nil?
-  puts GitlabKey.new.key_line(authorized_key["id"], authorized_key["key"])
+  puts GitlabKey.new.key_line("key-#{authorized_key['id']}", authorized_key["key"])
 else
   puts "# No key was found for #{key}"
 end
