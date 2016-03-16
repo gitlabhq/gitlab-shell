@@ -1,3 +1,6 @@
+v2.6.12
+  - Fix git-annex issue not working using custom SSH port repositories
+
 v2.6.11
   - Increase HTTP timeout and log request durations
   - Workaround for a Webrick issue on Ruby 2.2
