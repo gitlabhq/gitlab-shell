@@ -101,9 +101,8 @@ class GitlabShell
 
       parsed_args =
         args.map do |arg|
-          # Convert /~/group/project.git to group/project.git
-          # to make git annex path compatible with gitlab-shell
-          if arg =~ /\A\/~\/.*\.git\Z/
+          # use full repo path
+          if arg =~ /\A\/.*\.git\Z/
             repo_full_path
           else
             arg
