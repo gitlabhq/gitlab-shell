@@ -105,8 +105,8 @@ describe GitlabShell do
         end
       end
 
-      context 'git annex SSH custom port issue' do
-        # the args from SSH are actually just /dzaporozhets/gitlab.git in this case
+      context 'with git-annex and relative path without ~/' do
+        # Using a SSH URL on a custom port will generate /dzaporozhets/gitlab.git
         let(:ssh_args) { %W(git-annex-shell inannex /dzaporozhets/gitlab.git SHA256E) }
 
         it 'should init git-annex' do
