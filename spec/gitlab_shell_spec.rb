@@ -104,6 +104,15 @@ describe GitlabShell do
           File.exists?(File.join(tmp_repos_path, 'dzaporozhets/gitlab.git/annex')).should be_false
         end
       end
+
+      context 'with git-annex and relative path without ~/' do
+        # Using a SSH URL on a custom port will generate /dzaporozhets/gitlab.git
+        let(:ssh_args) { %W(git-annex-shell inannex /dzaporozhets/gitlab.git SHA256E) }
+
+        it 'should init git-annex' do
+          File.exists?(File.join(tmp_repos_path, 'dzaporozhets/gitlab.git/annex')).should be_true
+        end
+      end
     end
   end
 
@@ -171,7 +180,7 @@ describe GitlabShell do
       end
     end
 
-    context 'no command' do      
+    context 'no command' do
       after { subject.exec(nil) }
 
       it "should call api.discover" do
