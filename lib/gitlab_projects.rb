@@ -61,6 +61,8 @@ class GitlabProjects
     when 'fork-project'; fork_project
     when 'fetch-remote'; fetch_remote
     when 'update-head'; update_head
+    when 'push-branches'; push_branches
+    when 'delete-remote-branches'; delete_remote_branches
     when 'gc'; gc
     else
       $logger.warn "Attempt to execute invalid gitlab-projects command #{@command.inspect}."
@@ -70,6 +72,47 @@ class GitlabProjects
   end
 
   protected
+
+  def push_branches
+    remote_name = ARGV.shift
+
+    $logger.info "Pushing branches from #{full_path} to remote #{remote_name}: #{ARGV}"
+    cmd = %W(git --git-dir=#{full_path} push --tags -- #{remote_name}).concat(ARGV)
+    pid = Process.spawn(*cmd)
+
+    begin
+      Process.wait(pid)
+
+      $?.exitstatus.zero?
+    rescue => exception
+      $logger.error "Pushing branches to remote #{remote_name} failed due to: #{exception.message}"
+
+      Process.kill('KILL', pid)
+      Process.wait
+      false
+    end
+  end
+
+  def delete_remote_branches
+    remote_name = ARGV.shift
+    branches = ARGV.map { |branch_name| ":#{branch_name}" }
+
+    $logger.info "Pushing deleted branches from #{full_path} to remote #{remote_name}: #{ARGV}"
+    cmd = %W(git --git-dir=#{full_path} push -- #{remote_name}).concat(branches)
+    pid = Process.spawn(*cmd)
+
+    begin
+      Process.wait(pid)
+
+      $?.exitstatus.zero?
+    rescue => exception
+      $logger.error "Pushing deleted branches to remote #{remote_name} failed due to: #{exception.message}"
+
+      Process.kill('KILL', pid)
+      Process.wait
+      false
+    end
+  end
 
   def create_branch
     branch_name = ARGV.shift
