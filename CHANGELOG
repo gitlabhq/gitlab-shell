@@ -1,3 +1,7 @@
+v2.6.13
+  - Add push-branches command
+  - Add delete-remote-branches command
+
 v2.6.12
   - Fix git-annex issue not working using custom SSH port repositories
 
