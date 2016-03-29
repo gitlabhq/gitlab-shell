@@ -8,8 +8,8 @@ describe GitlabNet, vcr: true do
   let(:changes) { ['0000000000000000000000000000000000000000 92d0970eefd7acb6d548878925ce2208cfe2d2ec refs/heads/branch4'] }
 
   before do
-    gitlab_net.stub!(:host).and_return('https://dev.gitlab.org/api/v3/internal')
-    gitlab_net.stub!(:secret_token).and_return('a123')
+    gitlab_net.stub(:host).and_return('https://dev.gitlab.org/api/v3/internal')
+    gitlab_net.stub(:secret_token).and_return('a123')
   end
 
   describe :check do
@@ -72,6 +72,36 @@ describe GitlabNet, vcr: true do
           result = gitlab_net.broadcast_message
           result.should == {}
         end
+      end
+    end
+  end
+
+  describe :authorized_key do
+    let (:ssh_key) { "AAAAB3NzaC1yc2EAAAADAQABAAACAQDPKPqqnqQ9PDFw65cO7iHXrKw6ucSZg8Bd2CZ150Yy1YRDPJOWeRNCnddS+M/Lk" }
+
+    it "should return nil when the resource is not implemented" do
+      VCR.use_cassette("ssh-key-not-implemented") do
+        result = gitlab_net.authorized_key("whatever")
+        result.should be_nil
+      end
+    end
+
+    it "should return nil when the fingerprint is not found" do
+      VCR.use_cassette("ssh-key-not-found") do
+        result = gitlab_net.authorized_key("whatever")
+        result.should be_nil
+      end
+    end
+
+    it "should return a ssh key with a valid fingerprint" do
+      VCR.use_cassette("ssh-key-ok") do
+        result = gitlab_net.authorized_key(ssh_key)
+        result.should eq({
+          "created_at" => "2016-03-04T18:27:36.959Z",
+          "id" => 2,
+          "key" => "ssh-rsa a-made=up-rsa-key dummy@gitlab.com",
+          "title" => "some key title"
+        })
       end
     end
   end
@@ -142,7 +172,7 @@ describe GitlabNet, vcr: true do
   describe :http_client_for do
     subject { gitlab_net.send :http_client_for, URI('https://localhost/') }
     before do
-      gitlab_net.stub! :cert_store
+      gitlab_net.stub :cert_store
       gitlab_net.send(:config).stub(:http_settings) { {'self_signed_cert' => true} }
     end
 
