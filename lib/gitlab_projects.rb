@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'timeout'
+require 'open3'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
@@ -63,6 +64,7 @@ class GitlabProjects
     when 'update-head'; update_head
     when 'push-branches'; push_branches
     when 'delete-remote-branches'; delete_remote_branches
+    when 'list-remote-tags'; list_remote_tags
     when 'gc'; gc
     else
       $logger.warn "Attempt to execute invalid gitlab-projects command #{@command.inspect}."
@@ -73,11 +75,32 @@ class GitlabProjects
 
   protected
 
+  def list_remote_tags
+    remote_name = ARGV.shift
+
+    tag_list, exit_code, error = nil
+    cmd = %W(git --git-dir=#{full_path} ls-remote --tags #{remote_name})
+
+    Open3.popen3(*cmd) do |stdin, stdout, stderr, wait_thr|
+      tag_list  = stdout.read
+      error     = stderr.read
+      exit_code = wait_thr.value.exitstatus
+    end
+
+    if exit_code.zero?
+      puts tag_list
+      true
+    else
+      puts error
+      false
+    end
+  end
+
   def push_branches
     remote_name = ARGV.shift
 
     $logger.info "Pushing branches from #{full_path} to remote #{remote_name}: #{ARGV}"
-    cmd = %W(git --git-dir=#{full_path} push --tags -- #{remote_name}).concat(ARGV)
+    cmd = %W(git --git-dir=#{full_path} push -- #{remote_name}).concat(ARGV)
     pid = Process.spawn(*cmd)
 
     begin
