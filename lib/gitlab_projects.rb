@@ -180,11 +180,15 @@ class GitlabProjects
     timeout = (ARGV.shift || 120).to_i
 
     # fetch with --force ?
-    forced = (ARGV.shift == '--force')
+    forced = ARGV.include?('--force')
+
+    # fetch with --tags or --no-tags
+    tags_option = ARGV.include?('--no-tags') ? '--no-tags' : '--tags'
 
     $logger.info "Fetching remote #{@name} for project #{@project_name}."
-    cmd = %W(git --git-dir=#{full_path} fetch #{@name} --tags)
+    cmd = %W(git --git-dir=#{full_path} fetch #{@name})
     cmd << '--force' if forced
+    cmd << tags_option
     pid = Process.spawn(*cmd)
 
     begin
