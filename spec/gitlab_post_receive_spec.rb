@@ -38,7 +38,7 @@ describe GitlabPostReceive do
         "    message message message message message message message message"
       ).ordered
 
-      expect(gitlab_post_receive).to receive(:puts).ordered      
+      expect(gitlab_post_receive).to receive(:puts).ordered
       expect(gitlab_post_receive).to receive(:puts).with(
         "========================================================================"
       ).ordered
@@ -49,7 +49,7 @@ describe GitlabPostReceive do
     it "pushes a Sidekiq job onto the queue" do
       expect(gitlab_post_receive).to receive(:system).with(
         *[
-          *%w(env -i redis-cli rpush resque:gitlab:queue:post_receive), 
+          *%w(env -i redis-cli rpush resque:gitlab:queue:post_receive),
           %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}]}/,
           { err: "/dev/null", out: "/dev/null" }
         ]
