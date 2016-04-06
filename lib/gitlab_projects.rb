@@ -358,7 +358,7 @@ class GitlabProjects
       $logger.error "gc failed: destination path <#{full_path}> does not exist."
       return false
     end
-    cmd = %W(git --git-dir=#{full_path} gc --no-prune)
+    cmd = %W(git --git-dir=#{full_path} gc)
     system(*cmd)
   end
 end
