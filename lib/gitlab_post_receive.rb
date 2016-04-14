@@ -2,14 +2,16 @@ require_relative 'gitlab_init'
 require_relative 'gitlab_net'
 require 'json'
 require 'base64'
+require 'securerandom'
 
 class GitlabPostReceive
-  attr_reader :config, :repo_path, :changes
+  attr_reader :config, :repo_path, :changes, :jid
 
   def initialize(repo_path, actor, changes)
     @config = GitlabConfig.new
     @repo_path, @actor = repo_path.strip, actor
     @changes = changes
+    @jid = SecureRandom.hex(12)
   end
 
   def exec
@@ -71,7 +73,7 @@ class GitlabPostReceive
     changes = Base64.encode64(@changes)
 
     queue = "#{config.redis_namespace}:queue:post_receive"
-    msg = JSON.dump({ 'class' => 'PostReceive', 'args' => [@repo_path, @actor, changes] })
+    msg = JSON.dump({ 'class' => 'PostReceive', 'args' => [@repo_path, @actor, changes], 'jid' => @jid  })
     if system(*config.redis_command, 'rpush', queue, msg,
               err: '/dev/null', out: '/dev/null')
       return true
