@@ -1,6 +1,7 @@
 v3.0.0
   - Remove list-remote-tags command (Robert Schilling)
   - Remove rm-tag command (Robert Schilling)
+  - Remove create-branch and rm-branch commands (Robert Schilling)
 
 v2.7.1
   - Add new command to list tags from a remote repo

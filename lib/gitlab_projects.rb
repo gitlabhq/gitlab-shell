@@ -50,8 +50,6 @@ class GitlabProjects
 
   def exec
     case @command
-    when 'create-branch'; create_branch
-    when 'rm-branch'; rm_branch
     when 'create-tag'; create_tag
     when 'add-project'; add_project
     when 'list-projects'; puts list_projects
@@ -112,19 +110,6 @@ class GitlabProjects
       Process.wait
       false
     end
-  end
-
-  def create_branch
-    branch_name = ARGV.shift
-    ref = ARGV.shift || "HEAD"
-    cmd = %W(git --git-dir=#{full_path} branch -- #{branch_name} #{ref})
-    system(*cmd)
-  end
-
-  def rm_branch
-    branch_name = ARGV.shift
-    cmd = %W(git --git-dir=#{full_path} branch -D -- #{branch_name})
-    system(*cmd)
   end
 
   def create_tag
