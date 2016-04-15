@@ -100,10 +100,6 @@ Fork repo:
 
     ./bin/gitlab-projects fork-project gitlab/gitlab-ci.git randx
 
-Update HEAD:
-
-    ./bin/gitlab-projects update-head gitlab/gitlab-ci.git 3-2-stable
-
 Create tag (lightweight & annotated):
 
     ./bin/gitlab-projects create-tag gitlab/gitlab-ci.git v3.0.0 3-0-stable
