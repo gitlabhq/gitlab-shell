@@ -50,7 +50,7 @@ describe GitlabPostReceive do
       expect(gitlab_post_receive).to receive(:system).with(
         *[
           *%w(env -i redis-cli rpush resque:gitlab:queue:post_receive), 
-          %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}]}/,
+          %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}],"jid":"#{gitlab_post_receive.jid}"}/,
           { err: "/dev/null", out: "/dev/null" }
         ]
       ).and_return(true)
