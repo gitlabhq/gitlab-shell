@@ -139,25 +139,6 @@ describe GitlabProjects do
     end
   end
 
-  describe :rm_tag do
-    let(:gl_projects_create) {
-      build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git')
-    }
-    let(:gl_projects_create_tag) {
-      build_gitlab_projects('create-tag', repo_name, 'test_tag', 'master')
-    }
-    let(:gl_projects) { build_gitlab_projects('rm-tag', repo_name, 'test_tag') }
-
-    it "should remove a branch" do
-      gl_projects_create.exec
-      gl_projects_create_tag.exec
-      branch_ref = capture_in_tmp_repo(%W(git rev-parse test_tag))
-      gl_projects.exec
-      branch_del = capture_in_tmp_repo(%W(git rev-parse test_tag))
-      branch_del.should_not == branch_ref
-    end
-  end
-
   describe :add_project do
     let(:gl_projects) { build_gitlab_projects('add-project', repo_name) }
 

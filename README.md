@@ -117,10 +117,6 @@ Create tag (lightweight & annotated):
     ./bin/gitlab-projects create-tag gitlab/gitlab-ci.git v3.0.0 3-0-stable
     ./bin/gitlab-projects create-tag gitlab/gitlab-ci.git v3.0.0 3-0-stable 'annotated message goes here'
 
-Remove tag:
-
-    ./bin/gitlab-projects rm-tag gitlab/gitlab-ci.git v3.0.0
-
 Gc repo:
 
     ./bin/gitlab-projects gc gitlab/gitlab-ci.git

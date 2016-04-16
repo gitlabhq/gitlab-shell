@@ -53,7 +53,6 @@ class GitlabProjects
     when 'create-branch'; create_branch
     when 'rm-branch'; rm_branch
     when 'create-tag'; create_tag
-    when 'rm-tag'; rm_tag
     when 'add-project'; add_project
     when 'list-projects'; puts list_projects
     when 'rm-project'; rm_project
@@ -137,12 +136,6 @@ class GitlabProjects
       cmd += %W(-a -m #{msg})
     end
     cmd += %W(-- #{tag_name} #{ref})
-    system(*cmd)
-  end
-
-  def rm_tag
-    tag_name = ARGV.shift
-    cmd = %W(git --git-dir=#{full_path} tag -d -- #{tag_name})
     system(*cmd)
   end
 
