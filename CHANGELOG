@@ -1,6 +1,10 @@
+v3.0.0
+  - Remove list-remote-tags command (Robert Schilling)
+
 v2.7.1
   - Add new command to list tags from a remote repo
   - Add the ability to fetch remote repo with or without tags
+
 v2.7.0
   - Add support for ssh AuthorizedKeysCommand query by key
 
