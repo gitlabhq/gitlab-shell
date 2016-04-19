@@ -68,40 +68,6 @@ describe GitlabProjects do
     it { @gl_projects.instance_variable_get(:@full_path).should == "#{GitlabConfig.new.repos_path}/gitlab-ci.git" }
   end
 
-  describe :create_branch do
-    let(:gl_projects_create) {
-      build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git')
-    }
-    let(:gl_projects) { build_gitlab_projects('create-branch', repo_name, 'test_branch', 'master') }
-
-    it "should create a branch" do
-      gl_projects_create.exec
-      gl_projects.exec
-      branch_ref = capture_in_tmp_repo(%W(git rev-parse test_branch))
-      master_ref = capture_in_tmp_repo(%W(git rev-parse master))
-      branch_ref.should == master_ref
-    end
-  end
-
-  describe :rm_branch do
-    let(:gl_projects_create) {
-      build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git')
-    }
-    let(:gl_projects_create_branch) {
-      build_gitlab_projects('create-branch', repo_name, 'test_branch', 'master')
-    }
-    let(:gl_projects) { build_gitlab_projects('rm-branch', repo_name, 'test_branch') }
-
-    it "should remove a branch" do
-      gl_projects_create.exec
-      gl_projects_create_branch.exec
-      branch_ref = capture_in_tmp_repo(%W(git rev-parse test_branch))
-      gl_projects.exec
-      branch_del = capture_in_tmp_repo(%W(git rev-parse test_branch))
-      branch_del.should_not == branch_ref
-    end
-  end
-
   describe :create_tag do
     let(:gl_projects_create) {
       build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git')
