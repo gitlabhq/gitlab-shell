@@ -61,6 +61,7 @@ class GitlabProjects
     when 'update-head'; update_head
     when 'push-branches'; push_branches
     when 'delete-remote-branches'; delete_remote_branches
+    when 'list-remote-tags'; list_remote_tags
     when 'gc'; gc
     else
       $logger.warn "Attempt to execute invalid gitlab-projects command #{@command.inspect}."
@@ -70,6 +71,27 @@ class GitlabProjects
   end
 
   protected
+
+  def list_remote_tags
+    remote_name = ARGV.shift
+
+    tag_list, exit_code, error = nil
+    cmd = %W(git --git-dir=#{full_path} ls-remote --tags #{remote_name})
+
+    Open3.popen3(*cmd) do |stdin, stdout, stderr, wait_thr|
+      tag_list  = stdout.read
+      error     = stderr.read
+      exit_code = wait_thr.value.exitstatus
+    end
+
+    if exit_code.zero?
+      puts tag_list
+      true
+    else
+      puts error
+      false
+    end
+  end
 
   def push_branches
     remote_name = ARGV.shift

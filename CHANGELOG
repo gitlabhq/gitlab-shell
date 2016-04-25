@@ -1,5 +1,4 @@
 v3.0.0
-  - Remove list-remote-tags command (Robert Schilling)
   - Remove rm-tag command (Robert Schilling)
   - Remove create-branch and rm-branch commands (Robert Schilling)
   - Update PostReceive worker so it logs a unique JID in Sidekiq
