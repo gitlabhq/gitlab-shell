@@ -58,7 +58,6 @@ class GitlabProjects
     when 'import-project'; import_project
     when 'fork-project'; fork_project
     when 'fetch-remote'; fetch_remote
-    when 'update-head'; update_head
     when 'push-branches'; push_branches
     when 'delete-remote-branches'; delete_remote_branches
     when 'list-remote-tags'; list_remote_tags
@@ -312,22 +311,6 @@ class GitlabProjects
     $logger.info "Forking project from <#{full_path}> to <#{full_destination_path}>."
     cmd = %W(git clone --bare -- #{full_path} #{full_destination_path})
     system(*cmd) && self.class.create_hooks(full_destination_path)
-  end
-
-  def update_head
-    new_head = ARGV.shift
-
-    unless new_head
-      $logger.error "update-head failed: no branch provided."
-      return false
-    end
-
-    File.open(File.join(full_path, 'HEAD'), 'w') do |f|
-      f.write("ref: refs/heads/#{new_head}")
-    end
-
-    $logger.info "Update head in project #{project_name} to <#{new_head}>."
-    true
   end
 
   def gc

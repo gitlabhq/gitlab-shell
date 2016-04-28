@@ -2,6 +2,7 @@ v3.0.0
   - Remove rm-tag command (Robert Schilling)
   - Remove create-branch and rm-branch commands (Robert Schilling)
   - Update PostReceive worker so it logs a unique JID in Sidekiq
+  - Remove update-head command
 
 v2.7.2
   - Do not prune objects during 'git gc'
