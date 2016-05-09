@@ -257,6 +257,20 @@ describe GitlabNet, vcr: true do
       end
     end
 
+    context "with password" do
+      it 'uses the specified host, port, and password' do
+        allow(gitlab_net).to receive(:config).and_return(config)
+        allow(config).to receive(:redis).and_return( { 'host' => 'localhost', 'port' => 1123, 'pass' => 'secret' } )
+
+        expect_any_instance_of(Redis).to receive(:initialize).with({ host: 'localhost',
+                                                                     port: 1123,
+                                                                     db: 0,
+                                                                     password: 'secret'}).and_call_original
+        gitlab_net.redis_client
+      end
+    end
+
+
     context "with redis socket" do
       let(:socket) { '/tmp/redis.socket' }
 
