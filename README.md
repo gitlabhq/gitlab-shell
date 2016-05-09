@@ -10,7 +10,7 @@ When you access the GitLab server over ssh then GitLab Shell will:
 1. Limits you to predefined git commands (git push, git pull, git annex).
 1. Call the GitLab Rails API to check if you are authorized
 1. It will execute the pre-receive hooks (called Git Hooks in GitLab Enterprise Edition)
-1. It will excute the action you requested
+1. It will execute the action you requested
 1. Process the GitLab post-receive actions
 1. Process any custom post-receive actions
 
@@ -34,7 +34,7 @@ The authorization checks for git pull are much simpler since you only have to ch
 An overview of the four cases described above:
 
 1. git pull over ssh  -> gitlab-shell -> API call to gitlab-rails (Authorization) -> accept or decline -> execute git command
-1. git pull over http -> gitlab-rails (AUthorization) -> accept or decline -> execute git command
+1. git pull over http -> gitlab-rails (Authorization) -> accept or decline -> execute git command
 1. git push over ssh  -> gitlab-shell (git command is not executed yet) -> execute git command -> gitlab-shell pre-receive hook -> API call to gitlab-rails (authorization) -> accept or decline push
 1. git push over http -> gitlab-rails (git command is not executed yet) -> execute git command -> gitlab-shell pre-receive hook -> API call to gitlab-rails (authorization) -> accept or decline push
 
