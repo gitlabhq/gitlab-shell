@@ -54,26 +54,4 @@ class GitlabConfig
   def git_annex_enabled?
     @config['git_annex_enabled'] ||= false
   end
-
-  # Build redis command to write update event in gitlab queue
-  def redis_command
-    if redis.empty?
-      # Default to old method of connecting to redis
-      # for users that haven't updated their configuration
-      %W(env -i redis-cli)
-    else
-      redis['database'] ||= 0
-      redis['host'] ||= '127.0.0.1'
-      redis['port'] ||= '6379'
-      if redis.has_key?("socket")
-        %W(#{redis['bin']} -s #{redis['socket']} -n #{redis['database']})
-      else
-        if redis.has_key?("pass")
-          %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']} -n #{redis['database']} -a #{redis['pass']})
-        else
-          %W(#{redis['bin']} -h #{redis['host']} -p #{redis['port']} -n #{redis['database']})
-        end
-      end
-    end
-  end
 end

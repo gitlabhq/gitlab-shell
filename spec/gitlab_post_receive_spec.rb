@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'spec_helper'
 require 'gitlab_post_receive'
 
@@ -11,6 +12,7 @@ describe GitlabPostReceive do
   let(:repo_path)  { File.join(repository_path, repo_name) + ".git" }
   let(:gitlab_post_receive) { GitlabPostReceive.new(repo_path, actor, wrongly_encoded_changes) }
   let(:message) { "test " * 10 + "message " * 10 }
+  let(:redis_client) { double('redis_client') }
 
   before do
     GitlabConfig.any_instance.stub(repos_path: repository_path)
@@ -20,11 +22,11 @@ describe GitlabPostReceive do
   describe "#exec" do
 
     before do
-      GitlabConfig.any_instance.stub(redis_command: %w(env -i redis-cli))
-      allow(gitlab_post_receive).to receive(:system).and_return(true)
+      allow_any_instance_of(GitlabNet).to receive(:redis_client).and_return(redis_client)
     end
 
     it "prints the broadcast message" do
+      expect(redis_client).to receive(:rpush)
       expect(gitlab_post_receive).to receive(:puts).ordered
       expect(gitlab_post_receive).to receive(:puts).with(
         "========================================================================"
@@ -38,7 +40,7 @@ describe GitlabPostReceive do
         "    message message message message message message message message"
       ).ordered
 
-      expect(gitlab_post_receive).to receive(:puts).ordered      
+      expect(gitlab_post_receive).to receive(:puts).ordered
       expect(gitlab_post_receive).to receive(:puts).with(
         "========================================================================"
       ).ordered
@@ -47,12 +49,9 @@ describe GitlabPostReceive do
     end
 
     it "pushes a Sidekiq job onto the queue" do
-      expect(gitlab_post_receive).to receive(:system).with(
-        *[
-          *%w(env -i redis-cli rpush resque:gitlab:queue:post_receive), 
-          %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}],"jid":"#{gitlab_post_receive.jid}"}/,
-          { err: "/dev/null", out: "/dev/null" }
-        ]
+      expect(redis_client).to receive(:rpush).with(
+        'resque:gitlab:queue:post_receive',
+         %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}],"jid":"#{gitlab_post_receive.jid}"}/
       ).and_return(true)
 
       gitlab_post_receive.exec
@@ -61,7 +60,7 @@ describe GitlabPostReceive do
     context "when the redis command succeeds" do
 
       before do
-        allow(gitlab_post_receive).to receive(:system).and_return(true)
+        allow(redis_client).to receive(:rpush).and_return(true)
       end
 
       it "returns true" do
@@ -72,8 +71,7 @@ describe GitlabPostReceive do
     context "when the redis command fails" do
 
       before do
-        allow(gitlab_post_receive).to receive(:system).and_return(false)
-        allow($?).to receive(:exitstatus).and_return(nil)
+        allow(redis_client).to receive(:rpush).and_raise('Fail')
       end
 
       it "returns false" do

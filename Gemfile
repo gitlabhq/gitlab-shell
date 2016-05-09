@@ -1,5 +1,7 @@
 source "http://rubygems.org"
 
+gem 'redis', '~> 3.3'
+
 group :development, :test do
   gem 'coveralls', require: false
   gem 'rspec', '~> 2.14.0'
