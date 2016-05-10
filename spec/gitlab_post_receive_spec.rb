@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'spec_helper'
 require 'gitlab_post_receive'
 
@@ -21,7 +22,7 @@ describe GitlabPostReceive do
 
     before do
       GitlabConfig.any_instance.stub(redis_command: %w(env -i redis-cli))
-      allow(gitlab_post_receive).to receive(:system).and_return(true)
+      allow(Open3).to receive(:popen2).and_return(0)
     end
 
     it "prints the broadcast message" do
@@ -47,13 +48,15 @@ describe GitlabPostReceive do
     end
 
     it "pushes a Sidekiq job onto the queue" do
-      expect(gitlab_post_receive).to receive(:system).with(
+      stdin = double('stdin')
+
+      expect(stdin).to receive(:write).with(
+        %Q/RPUSH 'resque:gitlab:queue:post_receive' '{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}],"jid":"#{gitlab_post_receive.jid}"}'/)
+      expect(stdin).to receive(:close)
+      expect(Open3).to receive(:popen2).with(
         *[
-          *%w(env -i redis-cli rpush resque:gitlab:queue:post_receive), 
-          %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}],"jid":"#{gitlab_post_receive.jid}"}/,
-          { err: "/dev/null", out: "/dev/null" }
-        ]
-      ).and_return(true)
+          *%w(env -i redis-cli --pipe)
+        ]).and_yield(stdin, double('stdout'), double('wait_thr', value: 0)).and_return(0)
 
       gitlab_post_receive.exec
     end
@@ -72,7 +75,7 @@ describe GitlabPostReceive do
     context "when the redis command fails" do
 
       before do
-        allow(gitlab_post_receive).to receive(:system).and_return(false)
+        allow(Open3).to receive(:popen2).and_return(1)
         allow($?).to receive(:exitstatus).and_return(nil)
       end
 

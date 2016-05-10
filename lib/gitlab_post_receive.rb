@@ -2,6 +2,7 @@ require_relative 'gitlab_init'
 require_relative 'gitlab_net'
 require 'json'
 require 'base64'
+require 'open3'
 require 'securerandom'
 
 class GitlabPostReceive
@@ -74,11 +75,20 @@ class GitlabPostReceive
 
     queue = "#{config.redis_namespace}:queue:post_receive"
     msg = JSON.dump({ 'class' => 'PostReceive', 'args' => [@repo_path, @actor, changes], 'jid' => @jid  })
-    if system(*config.redis_command, 'rpush', queue, msg,
-              err: '/dev/null', out: '/dev/null')
-      return true
-    else
-      puts "GitLab: An unexpected error occurred (redis-cli returned #{$?.exitstatus})."
+
+    begin
+      result = Open3.popen2(*config.redis_command, '--pipe') do |stdin, stdout, wait_thr|
+        stdin.write("RPUSH '#{queue}' '#{msg}'")
+        stdin.close
+        wait_thr.value
+      end
+
+      return true if result == 0
+
+      puts "GitLab: An unexpected error occurred (redis-cli returned #{result.to_i})."
+      return false
+    rescue => e
+      puts "GitLab: An unexpected error occurred running redis-cli"
       return false
     end
   end

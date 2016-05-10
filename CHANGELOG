@@ -1,4 +1,5 @@
 v3.0.0
+  - Pipe RPUSH command to Redis via stdin to avoid overrunning command-line
   - Remove rm-tag command (Robert Schilling)
   - Remove create-branch and rm-branch commands (Robert Schilling)
   - Update PostReceive worker so it logs a unique JID in Sidekiq
