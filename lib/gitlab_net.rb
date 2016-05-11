@@ -1,12 +1,12 @@
 require 'net/http'
 require 'openssl'
 require 'json'
-require 'redis'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 require_relative 'gitlab_access'
 require_relative 'httpunix'
+require_relative 'vendor/redis'
 
 class GitlabNet
   class ApiUnreachableError < StandardError; end

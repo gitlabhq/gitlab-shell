@@ -2,7 +2,6 @@ require_relative 'gitlab_init'
 require_relative 'gitlab_net'
 require 'json'
 require 'base64'
-require 'redis'
 require 'securerandom'
 
 class GitlabPostReceive

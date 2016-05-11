@@ -37,7 +37,6 @@ GEM
       method_source (~> 0.8)
       slop (~> 3.3.1)
     rainbow (2.0.0)
-    redis (3.3.0)
     rest-client (1.7.2)
       mime-types (>= 1.16, < 3.0)
       netrc (~> 0.7)
@@ -78,7 +77,6 @@ DEPENDENCIES
   coveralls
   guard
   guard-rspec
-  redis (~> 3.3)
   rspec (~> 2.14.0)
   rubocop (= 0.28.0)
   vcr
