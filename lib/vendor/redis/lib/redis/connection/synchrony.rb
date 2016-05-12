@@ -1,6 +1,6 @@
-require_relative "command_helper"
-require_relative "registry"
-require_relative "../errors"
+require "redis/connection/command_helper"
+require "redis/connection/registry"
+require "redis/errors"
 require "em-synchrony"
 require "hiredis/reader"
 

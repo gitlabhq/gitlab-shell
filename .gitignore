@@ -8,4 +8,3 @@ coverage/
 .bundle
 tags
 .bundle/
-*.orig

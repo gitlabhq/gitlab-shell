@@ -1,4 +1,4 @@
-require_relative "hash_ring"
+require "redis/hash_ring"
 
 class Redis
   class Distributed

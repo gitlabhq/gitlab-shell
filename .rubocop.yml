@@ -964,7 +964,7 @@ AllCops:
     - 'bin/**/*'
     - 'lib/backup/**/*'
     - 'lib/tasks/**/*'
-    - 'lib/vendor/**/*'
     - 'lib/email_validator.rb'
     - 'lib/gitlab/upgrader.rb'
     - 'lib/gitlab/seeder.rb'
+    - 'lib/vendor/**/*'
