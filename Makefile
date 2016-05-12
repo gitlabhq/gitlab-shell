@@ -6,7 +6,6 @@ PWD=`pwd`
 all:
 
 update-redis:
-	cd lib
 	git clone https://github.com/redis/redis-rb.git $(REDIS_RB_TMP_DIR)
 	cd $(REDIS_RB_TMP_DIR); git checkout $(REDIS_RB_VERSION)
 	cd $(PWD)
