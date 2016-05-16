@@ -74,11 +74,12 @@ class GitlabPostReceive
 
     queue = "#{config.redis_namespace}:queue:post_receive"
     msg = JSON.dump({ 'class' => 'PostReceive', 'args' => [@repo_path, @actor, changes], 'jid' => @jid  })
-    if system(*config.redis_command, 'rpush', queue, msg,
-              err: '/dev/null', out: '/dev/null')
+
+    begin
+      GitlabNet.new.redis_client.rpush(queue, msg)
       return true
-    else
-      puts "GitLab: An unexpected error occurred (redis-cli returned #{$?.exitstatus})."
+    rescue => e
+      puts "GitLab: An unexpected error occurred in writing to Redis: #{e}"
       return false
     end
   end

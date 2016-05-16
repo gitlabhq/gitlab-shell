@@ -229,4 +229,58 @@ describe GitlabNet, vcr: true do
       store.should_receive(:add_path).with('test_path')
     end
   end
+
+  describe '#redis_client' do
+    let(:config) { double('config') }
+
+    context "with empty redis config" do
+      it 'returns default parameters' do
+        allow(gitlab_net).to receive(:config).and_return(config)
+        allow(config).to receive(:redis).and_return( {} )
+
+        expect_any_instance_of(Redis).to receive(:initialize).with({ host: '127.0.0.1',
+                                                                     port: 6379,
+                                                                     db: 0 }).and_call_original
+        gitlab_net.redis_client
+      end
+    end
+
+    context "with host and port" do
+      it 'uses the specified host and port' do
+        allow(gitlab_net).to receive(:config).and_return(config)
+        allow(config).to receive(:redis).and_return( { 'host' => 'localhost', 'port' => 1123 } )
+
+        expect_any_instance_of(Redis).to receive(:initialize).with({ host: 'localhost',
+                                                                     port: 1123,
+                                                                     db: 0 }).and_call_original
+        gitlab_net.redis_client
+      end
+    end
+
+    context "with password" do
+      it 'uses the specified host, port, and password' do
+        allow(gitlab_net).to receive(:config).and_return(config)
+        allow(config).to receive(:redis).and_return( { 'host' => 'localhost', 'port' => 1123, 'pass' => 'secret' } )
+
+        expect_any_instance_of(Redis).to receive(:initialize).with({ host: 'localhost',
+                                                                     port: 1123,
+                                                                     db: 0,
+                                                                     password: 'secret'}).and_call_original
+        gitlab_net.redis_client
+      end
+    end
+
+
+    context "with redis socket" do
+      let(:socket) { '/tmp/redis.socket' }
+
+      it 'uses the socket' do
+        allow(gitlab_net).to receive(:config).and_return(config)
+        allow(config).to receive(:redis).and_return( { 'socket' => socket })
+
+        expect_any_instance_of(Redis).to receive(:initialize).with({ path: socket, db: 0 }).and_call_original
+        gitlab_net.redis_client
+      end
+    end
+  end
 end
