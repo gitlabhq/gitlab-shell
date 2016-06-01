@@ -1,17 +1,17 @@
-FROM ruby:2.1.6
+FROM registry.access.redhat.com/rhscl/ruby-23-rhel7
 
 # sshd
-RUN apt-get update && apt-get install -y \
-     openssh-server \
-     libicu-dev
+USER root
+RUN yum install -y --setopt=tsflags=nodocs openssh-server libicu-devel && \
+    yum clean all
+
 RUN mkdir /var/run/sshd
 #RUN sed -i 's/LogLevel INFO/LogLevel VERBOSE/' /etc/ssh/sshd_config
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 
 # gems
-ENV GEM_HOME="/usr/local/lib/ruby/gems/2.1.0"
-RUN gem install --no-ri --no-rdoc \
-     bunny
+#ENV GEM_HOME="/usr/local/lib/ruby/gems/2.1.0"
+RUN ["bash", "-c", "gem install --no-ri --no-rdoc bunny"]
 
 # git user
 RUN groupadd -r git &&\
@@ -24,7 +24,7 @@ RUN groupadd -r git &&\
 USER git
 COPY . /home/git/gitlab-shell
 WORKDIR /home/git/gitlab-shell
-RUN ./bin/install
+RUN ["bash", "-c", "./bin/install"]
 
 COPY authorized_keys /home/git/.ssh/authorized_keys
 COPY dummy-redis-cli.sh /usr/bin/redis-cli
