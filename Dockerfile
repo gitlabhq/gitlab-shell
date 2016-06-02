@@ -21,7 +21,6 @@ RUN groupadd -r git &&\
 
 
 # gitlab-shell setup
-USER git
 COPY . /home/git/gitlab-shell
 WORKDIR /home/git/gitlab-shell
 RUN ["bash", "-c", "./bin/install"]
