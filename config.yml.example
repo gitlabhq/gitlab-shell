@@ -6,7 +6,7 @@ user: git
 # You only have to change the default if you have configured Unicorn
 # to listen on a custom port, or if you have configured Unicorn to
 # only listen on a Unix domain socket.
-gitlab_url: "http://localhost:8080/"
+gitlab_url: "http://millicore:8080/box/api/gls/"
 
 http_settings:
 #  user: someone
@@ -26,7 +26,7 @@ auth_file: "/home/git/.ssh/authorized_keys"
 
 # Redis settings used for pushing commit notices to gitlab
 redis:
-  bin: /usr/bin/redis-cli
+  bin: /home/git/gitlab-shell/bin/dummy-redis-cli
   # host: 127.0.0.1
   # port: 6379
   # pass: redispass # Allows you to specify the password for Redis
@@ -35,13 +35,13 @@ redis:
   namespace: resque:gitlab
 
 rabbit:
-  enabled: false
+  enabled: true
   hosts:
-    - 127.0.0.1
-  vhost: /
-  user: user
-  password: password
-  queue: gitlab
+    - rabbit-service
+  vhost: fhtasks
+  user: fhtasksuser
+  password: fhtaskspassword
+  queue: fh-tasks-gitlab-postreceive
 
 # Log file.
 # Default is gitlab-shell.log in the root directory.

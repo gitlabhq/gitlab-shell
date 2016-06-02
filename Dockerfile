@@ -25,8 +25,6 @@ WORKDIR /home/git/gitlab-shell
 RUN ["bash", "-c", "./bin/install"]
 
 COPY authorized_keys /home/git/.ssh/authorized_keys
-COPY dummy-redis-cli.sh /usr/bin/redis-cli
-
 
 USER root
 RUN chown -R git:git /home/git
