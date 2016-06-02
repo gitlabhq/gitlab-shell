@@ -6,11 +6,11 @@ RUN yum install -y --setopt=tsflags=nodocs openssh-server libicu-devel && \
     yum clean all && /usr/sbin/sshd-keygen
 
 RUN mkdir /var/run/sshd
-#RUN sed -i 's/LogLevel INFO/LogLevel VERBOSE/' /etc/ssh/sshd_config
+
+# TODO: is this needed? https://git.io/vrplM
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 
 # gems
-#ENV GEM_HOME="/usr/local/lib/ruby/gems/2.1.0"
 RUN ["bash", "-c", "gem install --no-ri --no-rdoc bunny"]
 
 # git user
@@ -18,7 +18,6 @@ RUN groupadd -r git &&\
      useradd -r -s /bin/bash -g git git && \
      mkdir --parent /home/git && \
      chown -R git:git /home/git
-
 
 # gitlab-shell setup
 COPY . /home/git/gitlab-shell
