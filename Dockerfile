@@ -11,7 +11,8 @@ RUN ["bash", "-c", "yum install -y --setopt=tsflags=nodocs openssh-server libicu
      useradd -r -s /bin/bash -g git git && \
      mkdir --parent /home/git"]
 
-# TODO: is this needed? https://git.io/vrplM
+# https://gitlab.com/gitlab-org/gitlab-ce/issues/3027
+# https://docs.docker.com/engine/examples/running_ssh_service/
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 
 # gitlab-shell setup
