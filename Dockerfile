@@ -22,11 +22,10 @@ RUN groupadd -r git &&\
 # gitlab-shell setup
 COPY . /home/git/gitlab-shell
 WORKDIR /home/git/gitlab-shell
-RUN ["bash", "-c", "./bin/install"]
+RUN ["bash", "-c", "cp config.yml.example config.yml && ./bin/install"]
 
 COPY authorized_keys /home/git/.ssh/authorized_keys
 
-USER root
 RUN chown -R git:git /home/git
 EXPOSE 22
 CMD [ "/usr/sbin/sshd", "-D" ]
