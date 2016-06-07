@@ -21,7 +21,9 @@ WORKDIR /home/git/gitlab-shell
 
 COPY authorized_keys /home/git/.ssh/authorized_keys
 
-RUN ["bash", "-c", "cp config.yml.example config.yml && \
+RUN ["bash", "-c", "mkdir ../gitlab-config && \
+                     cp config.yml.example ../gitlab-config/config.yml && \
+                     ln -s ../gitlab-config/config.yml && \
                      ./bin/install && \
                      chown -R git:git /home/git"]
 
