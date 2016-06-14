@@ -8,11 +8,12 @@ user: git
 # only listen on a Unix domain socket.
 gitlab_url: "http://millicore:8080/box/api/gls/"
 
+## If enabled gitlab-shell would use http protocol for push callback
 http_settings:
-#  user: someone
-#  password: somepass
-#  ca_file: /etc/ssl/cert.pem
-#  ca_path: /etc/pki/tls/certs
+  enabled: false
+  url: "http://testing.feedhenry.me"
+  # Gitlab millicore service key
+  servicekey: "SAMPLESERVICEKEY"
   self_signed_cert: false
 
 # Repositories path
@@ -34,6 +35,7 @@ redis:
   socket: /var/run/redis/redis.sock # Comment out this line if you want to use TCP
   namespace: resque:gitlab
 
+## If enabled gitlab-shell would use rabbitmq for push callback
 rabbit:
   enabled: true
   hosts:

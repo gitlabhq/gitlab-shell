@@ -61,6 +61,7 @@ DEPENDENCIES
   coveralls
   guard
   guard-rspec
+  rest-client
   rspec
   vcr
   webmock

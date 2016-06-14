@@ -2,6 +2,7 @@ require_relative 'gitlab_init'
 require_relative 'gitlab_logger'
 require 'json'
 require 'bunny'
+require 'rest-client'
 
 class GitlabPostReceive
   attr_reader :config, :repo_path, :changes
@@ -18,7 +19,9 @@ class GitlabPostReceive
     ENV['GL_ID'] = nil
 
     update_redis
+    update_http if config.http_settings['enabled']
     update_rabbit if config.rabbit['enabled']
+
   end
 
   protected
@@ -29,6 +32,17 @@ class GitlabPostReceive
     unless system(*config.redis_command, 'rpush', queue, msg, err: '/dev/null', out: '/dev/null')
       puts "GitLab: An unexpected error occurred (redis-cli returned #{$?.exitstatus})."
       exit 1
+    end
+  end
+  #note we will need to use somekind of key here
+  def update_http
+    begin
+      repo = @repo_path.gsub("#{config.repos_path}/", "")
+      msg = JSON.dump({'type' => 'post_receive', 'repo' => repo, 'repo_path' => @repo_path, 'actor' => @actor, 'changes' => @changes})
+      RestClient.post "#{config.http_settings['url']}/box/api/gitlab/post_receive", msg , :content_type => :json, :accept => :json, :'X-FH-AUTH-USER' => config.http_settings['servicekey']
+    rescue Exception => e
+      puts "an error occurred posting to millicore"
+      $logger.error { "Exception publishing post-receive message to http #{e.message} #{e.backtrace.inspect}" }
     end
   end
 
