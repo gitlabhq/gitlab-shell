@@ -28,4 +28,4 @@ RUN ["bash", "-c", "mkdir ../gitlab-config && \
                      chown -R git:git /home/git"]
 
 EXPOSE 22
-CMD [ "/usr/sbin/sshd", "-D" ]
+CMD ["/usr/sbin/sshd", "-D", "-e"]
