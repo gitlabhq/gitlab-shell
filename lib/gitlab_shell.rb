@@ -85,7 +85,7 @@ class GitlabShell
   end
 
   def verify_access
-    status = api.check_access(@git_access, @repo_name, @key_id, '_any')
+    status = api.check_access(@git_access, @repo_name, @key_id, '_any', 'ssh')
 
     raise AccessDeniedError, status.message unless status.allowed?
 
