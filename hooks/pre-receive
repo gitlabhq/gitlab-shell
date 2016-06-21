@@ -5,13 +5,11 @@
 
 refs = $stdin.read
 key_id  = ENV['GL_ID']
-protocol = ENV['PROTOCOL']
+protocol = ENV['PROTOCOL'] || 'http'
 repo_path = Dir.pwd
 
 require_relative '../lib/gitlab_custom_hook'
 require_relative '../lib/gitlab_access'
-
-protocol ||= 'http'
 
 if GitlabAccess.new(repo_path, key_id, refs, protocol).exec &&
     GitlabCustomHook.new.pre_receive(refs, repo_path)

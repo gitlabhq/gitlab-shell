@@ -131,7 +131,8 @@ class GitlabShell
       'PATH' => ENV['PATH'],
       'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
       'LANG' => ENV['LANG'],
-      'GL_ID' => @key_id
+      'GL_ID' => @key_id,
+      'PROTOCOL' => 'ssh'
     }
 
     if @config.git_annex_enabled?
