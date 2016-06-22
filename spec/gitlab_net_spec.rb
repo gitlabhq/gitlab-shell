@@ -130,6 +130,42 @@ describe GitlabNet, vcr: true do
       end
     end
 
+    context 'ssh access has been disabled' do
+      it 'should deny pull access for dev.gitlab.org' do
+        VCR.use_cassette('ssh-access-disabled') do
+          access = gitlab_net.check_access('git-receive-pack', 'gitlab/gitlabhq.git', 'key-2', changes, 'ssh')
+          access.allowed?.should be_false
+          access.message.should eq 'Git access over SSH is not allowed'
+        end
+      end
+
+      it 'should deny pull access for dev.gitlab.org' do
+        VCR.use_cassette('ssh-access-disabled') do
+          access = gitlab_net.check_access('git-receive-pack', 'gitlab/gitlabhq.git', 'key-2', changes, 'ssh')
+          access.allowed?.should be_false
+          access.message.should eq 'Git access over SSH is not allowed'
+        end
+      end
+    end
+
+    context 'http access has been disabled' do
+      it 'should deny pull access for dev.gitlab.org' do
+        VCR.use_cassette('http-access-disabled') do
+          access = gitlab_net.check_access('git-receive-pack', 'gitlab/gitlabhq.git', 'key-2', changes, 'http')
+          access.allowed?.should be_false
+          access.message.should eq 'Git access over HTTP is not allowed'
+        end
+      end
+
+      it 'should deny pull access for dev.gitlab.org' do
+        VCR.use_cassette('http-access-disabled') do
+          access = gitlab_net.check_access('git-receive-pack', 'gitlab/gitlabhq.git', 'key-2', changes, 'http')
+          access.allowed?.should be_false
+          access.message.should eq 'Git access over HTTP is not allowed'
+        end
+      end
+    end
+
     context 'ssh key without access to project' do
       it 'should deny pull access for dev.gitlab.org' do
         VCR.use_cassette("denied-pull") do
