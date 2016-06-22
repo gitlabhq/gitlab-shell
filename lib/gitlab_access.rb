@@ -11,7 +11,7 @@ class GitlabAccess
 
   attr_reader :config, :repo_path, :repo_name, :changes, :protocol
 
-  def initialize(repo_path, actor, changes, protocol = nil)
+  def initialize(repo_path, actor, changes, protocol)
     @config = GitlabConfig.new
     @repo_path = repo_path.strip
     @actor = actor
