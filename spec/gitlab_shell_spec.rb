@@ -22,7 +22,7 @@ describe GitlabShell do
   let(:api) do
     double(GitlabNet).tap do |api|
       api.stub(discover: { 'name' => 'John Doe' })
-      api.stub(check_access: GitAccessStatus.new(true))
+      api.stub(check_access: GitAccessStatus.new(true, 'ok'))
     end
   end
 
@@ -230,7 +230,7 @@ describe GitlabShell do
     end
 
     it "should disallow access and log the attempt if check_access returns false status" do
-      api.stub(check_access: GitAccessStatus.new(false))
+      api.stub(check_access: GitAccessStatus.new(false, 'denied'))
       message = "gitlab-shell: Access denied for git command <git-upload-pack gitlab-ci.git> "
       message << "by user with key #{key_id}."
       $logger.should_receive(:warn).with(message)
