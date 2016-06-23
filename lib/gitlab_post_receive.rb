@@ -73,7 +73,12 @@ class GitlabPostReceive
     changes = Base64.encode64(@changes)
 
     queue = "#{config.redis_namespace}:queue:post_receive"
-    msg = JSON.dump({ 'class' => 'PostReceive', 'args' => [@repo_path, @actor, changes], 'jid' => @jid  })
+    msg = JSON.dump({
+      'class' => 'PostReceive',
+      'args' => [@repo_path, @actor, changes],
+      'jid' => @jid,
+      'enqueued_at' => Time.now.to_f
+    })
 
     begin
       GitlabNet.new.redis_client.rpush(queue, msg)

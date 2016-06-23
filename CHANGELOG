@@ -1,3 +1,6 @@
+v3.0.1
+  - Update PostReceive worker to provide enqueued_at time.
+
 v3.0.0
   - Remove rm-tag command (Robert Schilling)
   - Remove create-branch and rm-branch commands (Robert Schilling)
