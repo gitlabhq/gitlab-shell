@@ -2,10 +2,6 @@
 
 require_relative '../lib/gitlab_init'
 
-#
-# GitLab shell, invoked from ~/.ssh/authorized_keys
-#
-
 config = GitlabConfig.new
 key_dir = File.dirname("#{config.auth_file}")
 

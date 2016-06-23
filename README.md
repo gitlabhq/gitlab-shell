@@ -86,3 +86,26 @@ List all keys:
 Remove all keys from authorized_keys file:
 
     ./bin/gitlab-keys clear
+
+## Docker image development and testing
+
+Development image name: gitlab-shell
+Change /mnt/src to repository dir.
+
+    # [Optional] Kill and cleanup all running container and image
+    docker kill gitlab
+    docker rm gitlab
+    docker rmi rhmap/gitlab-shell
+    
+    # Build image
+    docker build -t rhmap/gitlab-shell .
+
+    # Start container
+    docker run  --name=gitlab -p 8022:22 -v /mnt/src:/home/git/repositories rhmap/gitlab-shell
+    docker ps | grep gitlab
+
+    # See apache logs
+    docker logs -f gitlab
+
+    # Connect for debugging
+    docker exec -it gitlab bash
