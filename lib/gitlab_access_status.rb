@@ -1,10 +1,9 @@
 require 'json'
 
 class GitAccessStatus
-  attr_accessor :status, :message
-  alias_method :allowed?, :status
+  attr_reader :message
 
-  def initialize(status, message = '')
+  def initialize(status, message)
     @status = status
     @message = message
   end
@@ -14,7 +13,7 @@ class GitAccessStatus
     self.new(values["status"], values["message"])
   end
 
-  def to_json
-    { status: @status, message: @message }.to_json
+  def allowed?
+    @status
   end
 end
