@@ -13,10 +13,12 @@ describe GitlabPostReceive do
   let(:gitlab_post_receive) { GitlabPostReceive.new(repo_path, actor, wrongly_encoded_changes) }
   let(:message) { "test " * 10 + "message " * 10 }
   let(:redis_client) { double('redis_client') }
+  let(:enqueued_at) { Time.new(2016, 6, 23, 6, 59) }
 
   before do
     GitlabConfig.any_instance.stub(repos_path: repository_path)
     GitlabNet.any_instance.stub(broadcast_message: { "message" => message })
+    expect(Time).to receive(:now).and_return(enqueued_at)
   end
 
   describe "#exec" do
@@ -51,7 +53,7 @@ describe GitlabPostReceive do
     it "pushes a Sidekiq job onto the queue" do
       expect(redis_client).to receive(:rpush).with(
         'resque:gitlab:queue:post_receive',
-         %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}],"jid":"#{gitlab_post_receive.jid}"}/
+         %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}],"jid":"#{gitlab_post_receive.jid}","enqueued_at":#{enqueued_at.to_f}}/
       ).and_return(true)
 
       gitlab_post_receive.exec
