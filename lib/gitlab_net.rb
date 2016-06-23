@@ -1,11 +1,11 @@
 require 'net/http'
 require 'openssl'
 require 'json'
-require 'redis'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 require_relative 'gitlab_access'
+require_relative 'gitlab_redis'
 require_relative 'httpunix'
 
 class GitlabNet
