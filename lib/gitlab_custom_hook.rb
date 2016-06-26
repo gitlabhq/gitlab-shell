@@ -25,37 +25,24 @@ class GitlabCustomHook
   private
 
   def call_receive_hook(hook, changes)
-    # function  will return true if succesful
-    exit_status = false
+    # Prepare the hook subprocess. Attach a pipe to its stdin, and merge
+    # both its stdout and stderr into our own stdout.
+    stdin_reader, stdin_writer = IO.pipe
+    hook_pid = spawn(hook, in: stdin_reader, err: :out)
+    stdin_reader.close
 
-    # we combine both stdout and stderr as we don't know what stream
-    # will be used by the custom hook
-    Open3.popen2e(hook) do |stdin, stdout_stderr, wait_thr|
-      exit_status = true
-      stdin.sync = true
-
-      # in git, pre- and post- receive hooks may just exit without
-      # reading stdin. We catch the exception to avoid a broken pipe
-      # warning
-      begin
-        # inject all the changes as stdin to the hook
-        changes.lines do |line|
-          stdin.puts(line)
-        end
-      rescue Errno::EPIPE
-      end
-
-      # need to close stdin before reading stdout
-      stdin.close
-
-      unless wait_thr.value == 0
-        exit_status = false
-      end
-
-      stdout_stderr.each_line { |line| puts line }
+    # Submit changes to the hook via its stdin.
+    begin
+      IO.copy_stream(StringIO.new(changes), stdin_writer)
+    rescue Errno::EPIPE
+      # It is not an error if the hook does not consume all of its input.
     end
 
-    exit_status
+    # Close the pipe to let the hook know there is no further input.
+    stdin_writer.close
+
+    Process.wait(hook_pid)
+    $?.success?
   end
 
   def hook_file(hook_type, repo_path)
