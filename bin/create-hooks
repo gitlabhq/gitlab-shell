@@ -7,10 +7,14 @@
 require_relative '../lib/gitlab_init'
 require File.join(ROOT_PATH, 'lib', 'gitlab_projects')
 
-Dir["#{GitlabConfig.new.repos_path}/*/*.git"].each do |repo|
-  begin
-    GitlabProjects.create_hooks(repo)
-  rescue Errno::ENOENT
-    # The user must have deleted their repository. Ignore.
+repository_storage_paths = ARGV
+
+repository_storage_paths.each do |repo_path|
+  Dir["#{repo_path.chomp('/')}/*/*.git"].each do |repo|
+    begin
+      GitlabProjects.create_hooks(repo)
+    rescue Errno::ENOENT
+      # The user must have deleted their repository. Ignore.
+    end
   end
 end

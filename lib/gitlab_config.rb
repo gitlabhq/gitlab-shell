@@ -11,10 +11,6 @@ class GitlabConfig
     ENV['HOME']
   end
 
-  def repos_path
-    @config['repos_path'] ||= File.join(home, "repositories")
-  end
-
   def auth_file
     @config['auth_file'] ||= File.join(home, ".ssh/authorized_keys")
   end

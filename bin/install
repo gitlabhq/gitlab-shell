@@ -8,15 +8,19 @@ require_relative '../lib/gitlab_init'
 
 config = GitlabConfig.new
 key_dir = File.dirname("#{config.auth_file}")
+repository_storage_paths = ARGV
 
 commands = [
-  %W(mkdir -p #{config.repos_path}),
   %W(mkdir -p #{key_dir}),
   %W(chmod 700 #{key_dir}),
   %W(touch #{config.auth_file}),
   %W(chmod 600 #{config.auth_file}),
-  %W(chmod ug+rwX,o-rwx #{config.repos_path}),
 ]
+
+repository_storage_paths.each do |repository_storage_path|
+  commands << %W(mkdir -p #{repository_storage_path})
+  commands << %W(chmod ug+rwX,o-rwx #{repository_storage_path})
+end
 
 commands.each do |cmd|
   print "#{cmd.join(' ')}: "

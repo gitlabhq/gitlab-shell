@@ -22,7 +22,7 @@ describe GitlabShell do
   let(:api) do
     double(GitlabNet).tap do |api|
       api.stub(discover: { 'name' => 'John Doe' })
-      api.stub(check_access: GitAccessStatus.new(true, 'ok'))
+      api.stub(check_access: GitAccessStatus.new(true, 'ok', repo_path))
     end
   end
 
@@ -30,15 +30,17 @@ describe GitlabShell do
   let(:ssh_cmd) { nil }
   let(:tmp_repos_path) { File.join(ROOT_PATH, 'tmp', 'repositories') }
 
+  let(:repo_name) { 'gitlab-ci.git' }
+  let(:repo_path) { File.join(tmp_repos_path, repo_name) }
+
   before do
-    GitlabConfig.any_instance.stub(repos_path: tmp_repos_path, audit_usernames: false)
+    GitlabConfig.any_instance.stub(audit_usernames: false)
   end
 
   describe :initialize do
     let(:ssh_cmd) { 'git-receive-pack' }
 
     its(:key_id) { should == key_id }
-    its(:repos_path) { should == tmp_repos_path }
   end
 
   describe :parse_cmd do
@@ -55,6 +57,7 @@ describe GitlabShell do
       end
 
       context 'namespace' do
+        let(:repo_name) { 'dmitriy.zaporozhets/gitlab-ci.git' }
         let(:ssh_args) { %W(git-upload-pack dmitriy.zaporozhets/gitlab-ci.git) }
 
         before do
@@ -75,50 +78,24 @@ describe GitlabShell do
     end
 
     describe 'git-annex' do
-      let(:repo_path) { File.join(tmp_repos_path, 'dzaporozhets/gitlab.git') }
-
+      let(:repo_name) { 'dzaporozhets/gitlab.git' }
       let(:ssh_args) { %W(git-annex-shell inannex /~/dzaporozhets/gitlab.git SHA256E) }
 
       before do
         GitlabConfig.any_instance.stub(git_annex_enabled?: true)
-
-        # Create existing project
-        FileUtils.mkdir_p(repo_path)
-        cmd = %W(git --git-dir=#{repo_path} init --bare)
-        system(*cmd)
 
         subject.send :parse_cmd, ssh_args
       end
 
       its(:repo_name) { should == 'dzaporozhets/gitlab.git' }
       its(:git_cmd) { should == 'git-annex-shell' }
-
-      it 'should init git-annex' do
-        File.exists?(File.join(tmp_repos_path, 'dzaporozhets/gitlab.git/annex')).should be_true
-      end
-
-      context 'with git-annex-shell gcryptsetup' do
-        let(:ssh_args) { %W(git-annex-shell gcryptsetup /~/dzaporozhets/gitlab.git) }
-
-        it 'should not init git-annex' do
-          File.exists?(File.join(tmp_repos_path, 'dzaporozhets/gitlab.git/annex')).should be_false
-        end
-      end
-
-      context 'with git-annex and relative path without ~/' do
-        # Using a SSH URL on a custom port will generate /dzaporozhets/gitlab.git
-        let(:ssh_args) { %W(git-annex-shell inannex /dzaporozhets/gitlab.git SHA256E) }
-
-        it 'should init git-annex' do
-          File.exists?(File.join(tmp_repos_path, 'dzaporozhets/gitlab.git/annex')).should be_true
-        end
-      end
     end
   end
 
   describe :exec do
+
     context 'git-upload-pack' do
-      let(:ssh_cmd) { 'git-upload-pack gitlab-ci.git' }
+      let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
@@ -126,12 +103,12 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with("git-upload-pack", File.join(tmp_repos_path, 'gitlab-ci.git'))
+        subject.should_receive(:exec_cmd).with("git-upload-pack", repo_path)
       end
 
       it "should log the command execution" do
         message = "gitlab-shell: executing git command "
-        message << "<git-upload-pack #{File.join(tmp_repos_path, 'gitlab-ci.git')}> "
+        message << "<git-upload-pack #{repo_path}> "
         message << "for user with key #{key_id}."
         $logger.should_receive(:info).with(message)
       end
@@ -143,7 +120,7 @@ describe GitlabShell do
     end
 
     context 'git-receive-pack' do
-      let(:ssh_cmd) { 'git-receive-pack gitlab-ci.git' }
+      let(:ssh_cmd) { "git-receive-pack gitlab-ci.git" }
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
@@ -151,12 +128,12 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with("git-receive-pack", File.join(tmp_repos_path, 'gitlab-ci.git'))
+        subject.should_receive(:exec_cmd).with("git-receive-pack", repo_path)
       end
 
       it "should log the command execution" do
         message = "gitlab-shell: executing git command "
-        message << "<git-receive-pack #{File.join(tmp_repos_path, 'gitlab-ci.git')}> "
+        message << "<git-receive-pack #{repo_path}> "
         message << "for user with key #{key_id}."
         $logger.should_receive(:info).with(message)
       end
@@ -206,34 +183,93 @@ describe GitlabShell do
     end
 
     describe 'git-annex' do
-      let(:ssh_cmd) { 'git-annex-shell commit /~/gitlab-ci.git SHA256' }
+      let(:repo_name) { 'dzaporozhets/gitlab.git' }
 
       before do
         GitlabConfig.any_instance.stub(git_annex_enabled?: true)
       end
 
-      after { subject.exec(ssh_cmd) }
+      context 'initialization' do
+        let(:ssh_cmd) { "git-annex-shell inannex /~/gitlab-ci.git SHA256E" }
 
-      it "should execute the command" do
-        subject.should_receive(:exec_cmd).with("git-annex-shell", "commit", File.join(tmp_repos_path, 'gitlab-ci.git'), "SHA256")
+        before do
+          # Create existing project
+          FileUtils.mkdir_p(repo_path)
+          cmd = %W(git --git-dir=#{repo_path} init --bare)
+          system(*cmd)
+
+          subject.exec(ssh_cmd)
+        end
+
+        it 'should init git-annex' do
+          File.exists?(repo_path).should be_true
+        end
+
+        context 'with git-annex-shell gcryptsetup' do
+          let(:ssh_cmd) { "git-annex-shell gcryptsetup /~/dzaporozhets/gitlab.git" }
+
+          it 'should not init git-annex' do
+            File.exists?(File.join(tmp_repos_path, 'dzaporozhets/gitlab.git/annex')).should be_false
+          end
+        end
+
+        context 'with git-annex and relative path without ~/' do
+          # Using a SSH URL on a custom port will generate /dzaporozhets/gitlab.git
+          let(:ssh_cmd) { "git-annex-shell inannex dzaporozhets/gitlab.git SHA256E" }
+
+          it 'should init git-annex' do
+            File.exists?(File.join(tmp_repos_path, "dzaporozhets/gitlab.git/annex")).should be_true
+          end
+        end
+      end
+
+      context 'execution' do
+        let(:ssh_cmd) { "git-annex-shell commit /~/gitlab-ci.git SHA256" }
+
+        after { subject.exec(ssh_cmd) }
+
+        it "should execute the command" do
+          subject.should_receive(:exec_cmd).with("git-annex-shell", "commit", repo_path, "SHA256")
+        end
       end
     end
   end
 
   describe :validate_access do
-    let(:ssh_cmd) { 'git-upload-pack gitlab-ci.git' }
-    after { subject.exec(ssh_cmd) }
+    let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
 
-    it "should call api.check_access" do
-      api.should_receive(:check_access).
-        with('git-upload-pack', 'gitlab-ci.git', key_id, '_any')
+    describe 'check access with api' do
+      after { subject.exec(ssh_cmd) }
+
+      it "should call api.check_access" do
+        api.should_receive(:check_access).with('git-upload-pack', 'gitlab-ci.git', key_id, '_any')
+      end
+
+      it "should disallow access and log the attempt if check_access returns false status" do
+        api.stub(check_access: GitAccessStatus.new(false, 'denied', nil))
+        message = "gitlab-shell: Access denied for git command <git-upload-pack gitlab-ci.git> "
+        message << "by user with key #{key_id}."
+        $logger.should_receive(:warn).with(message)
+      end
     end
 
-    it "should disallow access and log the attempt if check_access returns false status" do
-      api.stub(check_access: GitAccessStatus.new(false, 'denied'))
-      message = "gitlab-shell: Access denied for git command <git-upload-pack gitlab-ci.git> "
-      message << "by user with key #{key_id}."
-      $logger.should_receive(:warn).with(message)
+    describe 'set the repository path' do
+      context 'with a correct path' do
+        before { subject.exec(ssh_cmd) }
+
+        its(:repo_path) { should == repo_path }
+      end
+
+      context "with a path that doesn't match an absolute path" do
+        before do
+          File.stub(:absolute_path) { 'y/gitlab-ci.git' }
+        end
+
+        it "refuses to assign the path" do
+          $stderr.should_receive(:puts).with("GitLab: Invalid repository path")
+          expect(subject.exec(ssh_cmd)).to be_false
+        end
+      end
     end
   end
 
@@ -261,13 +297,5 @@ describe GitlabShell do
     subject { shell.send :api }
 
     it { should be_a(GitlabNet) }
-  end
-
-  describe :escape_path do
-    let(:shell) { GitlabShell.new(key_id) }
-    before { File.stub(:absolute_path) { 'y' } }
-    subject { -> { shell.send(:escape_path, 'z') } }
-
-    it { should raise_error(GitlabShell::InvalidRepositoryPathError) }
   end
 end
