@@ -15,7 +15,7 @@ class GitlabAccess
     @config = GitlabConfig.new
     @repo_path = repo_path.strip
     @actor = actor
-    @repo_name = extract_repo_name(@repo_path.dup, config.repos_path.to_s)
+    @repo_name = extract_repo_name(@repo_path.dup)
     @changes = changes.lines
   end
 

@@ -59,21 +59,22 @@ describe GitlabProjects do
 
   describe :initialize do
     before do
-      argv('add-project', repo_name)
+      argv('add-project', tmp_repos_path, repo_name)
       @gl_projects = GitlabProjects.new
     end
 
     it { @gl_projects.project_name.should == repo_name }
+    it { @gl_projects.repos_path.should == tmp_repos_path }
+    it { @gl_projects.full_path.should == "#{tmp_repos_path}/gitlab-ci.git" }
     it { @gl_projects.instance_variable_get(:@command).should == 'add-project' }
-    it { @gl_projects.instance_variable_get(:@full_path).should == "#{GitlabConfig.new.repos_path}/gitlab-ci.git" }
   end
 
   describe :create_tag do
     let(:gl_projects_create) {
-      build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git')
+      build_gitlab_projects('import-project', tmp_repos_path, repo_name, 'https://github.com/randx/six.git')
     }
     context "lightweight tag" do
-      let(:gl_projects) { build_gitlab_projects('create-tag', repo_name, 'test_tag', 'master') }
+      let(:gl_projects) { build_gitlab_projects('create-tag', tmp_repos_path, repo_name, 'test_tag', 'master') }
 
       it "should create a tag" do
         gl_projects_create.exec
@@ -87,7 +88,7 @@ describe GitlabProjects do
       msg = 'some message'
       tag_name = 'test_annotated_tag'
 
-      let(:gl_projects) { build_gitlab_projects('create-tag', repo_name, tag_name, 'master', msg) }
+      let(:gl_projects) { build_gitlab_projects('create-tag', tmp_repos_path, repo_name, tag_name, 'master', msg) }
 
       it "should create an annotated tag" do
         gl_projects_create.exec
@@ -106,7 +107,7 @@ describe GitlabProjects do
   end
 
   describe :add_project do
-    let(:gl_projects) { build_gitlab_projects('add-project', repo_name) }
+    let(:gl_projects) { build_gitlab_projects('add-project', tmp_repos_path, repo_name) }
 
     it "should create a directory" do
       gl_projects.stub(system: true)
@@ -130,7 +131,7 @@ describe GitlabProjects do
 
   describe :list_projects do
     let(:gl_projects) do
-      build_gitlab_projects('add-project', "list_test/#{repo_name}")
+      build_gitlab_projects('add-project', tmp_repos_path, "list_test/#{repo_name}")
     end
 
     before do
@@ -145,7 +146,7 @@ describe GitlabProjects do
   end
 
   describe :mv_project do
-    let(:gl_projects) { build_gitlab_projects('mv-project', repo_name, 'repo.git') }
+    let(:gl_projects) { build_gitlab_projects('mv-project', tmp_repos_path, repo_name, 'repo.git') }
     let(:new_repo_path) { File.join(tmp_repos_path, 'repo.git') }
 
     before do
@@ -160,20 +161,20 @@ describe GitlabProjects do
     end
 
     it "should fail if no destination path is provided" do
-      incomplete = build_gitlab_projects('mv-project', repo_name)
+      incomplete = build_gitlab_projects('mv-project', tmp_repos_path, repo_name)
       $logger.should_receive(:error).with("mv-project failed: no destination path provided.")
       incomplete.exec.should be_false
     end
 
     it "should fail if the source path doesn't exist" do
-      bad_source = build_gitlab_projects('mv-project', 'bad-src.git', 'dest.git')
+      bad_source = build_gitlab_projects('mv-project', tmp_repos_path, 'bad-src.git', 'dest.git')
       $logger.should_receive(:error).with("mv-project failed: source path <#{tmp_repos_path}/bad-src.git> does not exist.")
       bad_source.exec.should be_false
     end
 
     it "should fail if the destination path already exists" do
       FileUtils.mkdir_p(File.join(tmp_repos_path, 'already-exists.git'))
-      bad_dest = build_gitlab_projects('mv-project', repo_name, 'already-exists.git')
+      bad_dest = build_gitlab_projects('mv-project', tmp_repos_path, repo_name, 'already-exists.git')
       message = "mv-project failed: destination path <#{tmp_repos_path}/already-exists.git> already exists."
       $logger.should_receive(:error).with(message)
       bad_dest.exec.should be_false
@@ -187,7 +188,7 @@ describe GitlabProjects do
   end
 
   describe :rm_project do
-    let(:gl_projects) { build_gitlab_projects('rm-project', repo_name) }
+    let(:gl_projects) { build_gitlab_projects('rm-project', tmp_repos_path, repo_name) }
 
     before do
       FileUtils.mkdir_p(tmp_repo_path)
@@ -207,7 +208,7 @@ describe GitlabProjects do
 
   describe :import_project do
     context 'success import' do
-      let(:gl_projects) { build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git') }
+      let(:gl_projects) { build_gitlab_projects('import-project', tmp_repos_path, repo_name, 'https://github.com/randx/six.git') }
 
       it { gl_projects.exec.should be_true }
 
@@ -224,7 +225,7 @@ describe GitlabProjects do
     end
 
     context 'already exists' do
-      let(:gl_projects) { build_gitlab_projects('import-project', repo_name, 'https://github.com/randx/six.git') }
+      let(:gl_projects) { build_gitlab_projects('import-project', tmp_repos_path, repo_name, 'https://github.com/randx/six.git') }
 
       it 'should import only once' do
         gl_projects.exec.should be_true
@@ -233,7 +234,7 @@ describe GitlabProjects do
     end
 
     context 'timeout' do
-      let(:gl_projects) { build_gitlab_projects('import-project', repo_name, 'https://github.com/gitlabhq/gitlabhq.git', '1') }
+      let(:gl_projects) { build_gitlab_projects('import-project', tmp_repos_path, repo_name, 'https://github.com/gitlabhq/gitlabhq.git', '1') }
 
       it { gl_projects.exec.should be_false }
 
@@ -253,15 +254,15 @@ describe GitlabProjects do
   describe :fork_project do
     let(:source_repo_name) { File.join('source-namespace', repo_name) }
     let(:dest_repo) { File.join(tmp_repos_path, 'forked-to-namespace', repo_name) }
-    let(:gl_projects_fork) { build_gitlab_projects('fork-project', source_repo_name, 'forked-to-namespace') }
-    let(:gl_projects_import) { build_gitlab_projects('import-project', source_repo_name, 'https://github.com/randx/six.git') }
+    let(:gl_projects_fork) { build_gitlab_projects('fork-project', tmp_repos_path, source_repo_name, 'forked-to-namespace') }
+    let(:gl_projects_import) { build_gitlab_projects('import-project', tmp_repos_path, source_repo_name, 'https://github.com/randx/six.git') }
 
     before do
       gl_projects_import.exec
     end
 
     it "should not fork without a destination namespace" do
-      missing_arg = build_gitlab_projects('fork-project', source_repo_name)
+      missing_arg = build_gitlab_projects('fork-project', tmp_repos_path, source_repo_name)
       $logger.should_receive(:error).with("fork-project failed: no destination namespace provided.")
       missing_arg.exec.should be_false
     end
@@ -304,13 +305,13 @@ describe GitlabProjects do
 
   describe :exec do
     it 'should puts message if unknown command arg' do
-      gitlab_projects = build_gitlab_projects('edit-project', repo_name)
+      gitlab_projects = build_gitlab_projects('edit-project', tmp_repos_path, repo_name)
       gitlab_projects.should_receive(:puts).with('not allowed')
       gitlab_projects.exec
     end
 
     it 'should log a warning for unknown commands' do
-      gitlab_projects = build_gitlab_projects('hurf-durf', repo_name)
+      gitlab_projects = build_gitlab_projects('hurf-durf', tmp_repos_path, repo_name)
       $logger.should_receive(:warn).with('Attempt to execute invalid gitlab-projects command "hurf-durf".')
       gitlab_projects.exec
     end
