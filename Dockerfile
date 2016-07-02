@@ -11,21 +11,30 @@ RUN ["bash", "-c", "yum install -y --setopt=tsflags=nodocs openssh-server libicu
      useradd -r -s /bin/bash -g git git && \
      mkdir --parent /home/git"]
 
-# https://gitlab.com/gitlab-org/gitlab-ce/issues/3027
-# https://docs.docker.com/engine/examples/running_ssh_service/
-RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
-
 # gitlab-shell setup
 COPY . /home/git/gitlab-shell
 WORKDIR /home/git/gitlab-shell
 
-COPY authorized_keys /home/git/.ssh/authorized_keys
 
-RUN ["bash", "-c", "mkdir ../gitlab-config && \
-                     cp config.yml.example ../gitlab-config/config.yml && \
-                     ln -s ../gitlab-config/config.yml && \
-                     ./bin/install && \
-                     chown -R git:git /home/git"]
+RUN mkdir /home/git/gitlab-config && \
+    ## Setup default config placeholder
+    cp config.yml.example ../gitlab-config/config.yml && \
+    ln -s /home/git/gitlab-config/config.yml && \
+    # PAM workarounds for docker and public key auth
+    sed -i \ 
+          # Disable processing of user uid. See: https://gitlab.com/gitlab-org/gitlab-ce/issues/3027
+          -e "s|session\s*required\s*pam_loginuid.so|session optional pam_loginuid.so|g" \
+          # Allow non root users to login: http://man7.org/linux/man-pages/man8/pam_nologin.8.html
+          -e "s|account\s*required\s*pam_nologin.so|#account optional pam_nologin.so|g" \
+          /etc/pam.d/sshd && \
+    # Security recommendations for sshd
+    sed -i \
+          -e "s|^[#]*GSSAPIAuthentication yes|GSSAPIAuthentication no|" \
+          -e "s|^[#]*ChallengeResponseAuthentication no|ChallengeResponseAuthentication no|" \
+          -e "s|^[#]*PasswordAuthentication yes|PasswordAuthentication no|" \
+          /etc/ssh/sshd_config && \
+    echo -e "UseDNS no \nAuthenticationMethods publickey" >> /etc/ssh/sshd_config && \
+    chmod -Rf +x /home/git/gitlab-shell/bin
 
 EXPOSE 22
-CMD ["/usr/sbin/sshd", "-D", "-e"]
+CMD ["bin/start.sh"]
