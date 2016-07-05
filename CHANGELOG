@@ -1,6 +1,8 @@
+v3.2.0
+  - Allow GitLab Shell to check for allowed access based on the used Git protocol
+
 v3.1.0
   - Refactor repository paths handling to allow multiple git mount points
-  - Allow GitLab Shell to check for allowed access based on the used Git protocol
 
 v3.0.1
   - Update PostReceive worker to provide enqueued_at time.
