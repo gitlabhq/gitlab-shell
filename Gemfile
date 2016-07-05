@@ -10,3 +10,4 @@ group :development do
 end
 
 gem 'bunny'
+gem 'rest-client'
