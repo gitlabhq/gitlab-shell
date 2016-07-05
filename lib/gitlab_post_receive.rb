@@ -82,10 +82,10 @@ class GitlabPostReceive
 
     begin
       GitlabNet.new.redis_client.rpush(queue, msg)
-      return true
+      true
     rescue => e
-      puts "GitLab: An unexpected error occurred in writing to Redis: #{e}"
-      return false
+      $stderr.puts "GitLab: An unexpected error occurred in writing to Redis: #{e}"
+      false
     end
   end
 end
