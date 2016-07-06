@@ -182,6 +182,7 @@ class GitlabShell
   private
 
   def repo_path=(repo_path)
+    raise ArgumentError, "Repository path not provided. Please make sure you're using GitLab v8.10 or later." unless repo_path
     raise InvalidRepositoryPathError if File.absolute_path(repo_path) != repo_path
 
     @repo_path = repo_path
