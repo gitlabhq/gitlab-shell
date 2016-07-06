@@ -8,6 +8,7 @@ class GitlabShell
   class InvalidRepositoryPathError < StandardError; end
 
   GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-annex-shell git-lfs-authenticate).freeze
+  GL_PROTOCOL = 'ssh'.freeze
 
   attr_accessor :key_id, :repo_name, :git_cmd
   attr_reader :repo_path
@@ -85,7 +86,7 @@ class GitlabShell
   end
 
   def verify_access
-    status = api.check_access(@git_access, @repo_name, @key_id, '_any')
+    status = api.check_access(@git_access, @repo_name, @key_id, '_any', GL_PROTOCOL)
 
     raise AccessDeniedError, status.message unless status.allowed?
 
@@ -131,7 +132,8 @@ class GitlabShell
       'PATH' => ENV['PATH'],
       'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
       'LANG' => ENV['LANG'],
-      'GL_ID' => @key_id
+      'GL_ID' => @key_id,
+      'GL_PROTOCOL' => GL_PROTOCOL
     }
 
     if @config.git_annex_enabled?

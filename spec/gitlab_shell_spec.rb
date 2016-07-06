@@ -242,7 +242,7 @@ describe GitlabShell do
       after { subject.exec(ssh_cmd) }
 
       it "should call api.check_access" do
-        api.should_receive(:check_access).with('git-upload-pack', 'gitlab-ci.git', key_id, '_any')
+        api.should_receive(:check_access).with('git-upload-pack', 'gitlab-ci.git', key_id, '_any', 'ssh')
       end
 
       it "should disallow access and log the attempt if check_access returns false status" do

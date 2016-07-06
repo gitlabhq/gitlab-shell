@@ -11,7 +11,7 @@ describe GitlabAccess do
     end
   end
   subject do
-    GitlabAccess.new(repo_path, 'key-123', 'wow').tap do |access|
+    GitlabAccess.new(repo_path, 'key-123', 'wow', 'ssh').tap do |access|
       access.stub(exec_cmd: :exec_called)
       access.stub(api: api)
     end
@@ -25,6 +25,7 @@ describe GitlabAccess do
     it { subject.repo_name.should == repo_name }
     it { subject.repo_path.should == repo_path }
     it { subject.changes.should == ['wow'] }
+    it { subject.protocol.should == 'ssh' }
   end
 
   describe "#exec" do

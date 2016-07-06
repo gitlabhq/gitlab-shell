@@ -14,7 +14,7 @@ class GitlabNet
   CHECK_TIMEOUT = 5
   READ_TIMEOUT = 300
 
-  def check_access(cmd, repo, actor, changes)
+  def check_access(cmd, repo, actor, changes, protocol)
     project_name = repo.gsub("'", "")
     project_name = project_name.gsub(/\.git\Z/, "")
     project_name = project_name.gsub(/\A\//, "")
@@ -24,6 +24,7 @@ class GitlabNet
       action: cmd,
       changes: changes,
       project: project_name,
+      protocol: protocol
     }
 
     if actor =~ /\Akey\-\d+\Z/
