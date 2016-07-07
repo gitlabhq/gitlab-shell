@@ -15,6 +15,7 @@ RUN ["bash", "-c", "yum install -y --setopt=tsflags=nodocs openssh-server libicu
 COPY . /home/git/gitlab-shell
 WORKDIR /home/git/gitlab-shell
 
+RUN ["bash", "-c", "bundle"]
 
 RUN mkdir /home/git/gitlab-config && \
     ## Setup default config placeholder
