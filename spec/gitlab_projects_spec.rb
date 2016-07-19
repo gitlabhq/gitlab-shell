@@ -205,6 +205,43 @@ describe GitlabProjects do
     end
   end
 
+  describe :mv_storage do
+    let(:alternative_storage_path) { File.join(ROOT_PATH, 'tmp', 'alternative') }
+    let(:gl_projects) { build_gitlab_projects('mv-storage', tmp_repos_path, repo_name, alternative_storage_path) }
+    let(:new_repo_path) { File.join(alternative_storage_path, repo_name) }
+
+    before do
+      FileUtils.mkdir_p(tmp_repo_path)
+      FileUtils.mkdir_p(alternative_storage_path)
+    end
+
+    after { FileUtils.rm_rf(alternative_storage_path) }
+
+    it "should rsync a repo directory" do
+      File.exists?(tmp_repo_path).should be_true
+      gl_projects.exec
+      File.exists?(new_repo_path).should be_true
+    end
+
+    it "should fail if no destination path is provided" do
+      incomplete = build_gitlab_projects('mv-storage', tmp_repos_path, repo_name)
+      $logger.should_receive(:error).with("mv-storage failed: no destination storage path provided.")
+      incomplete.exec.should be_false
+    end
+
+    it "should fail if the source path doesn't exist" do
+      bad_source = build_gitlab_projects('mv-storage', tmp_repos_path, 'bad-src.git', alternative_storage_path)
+      $logger.should_receive(:error).with("mv-storage failed: source path <#{tmp_repos_path}/bad-src.git> does not exist.")
+      bad_source.exec.should be_false
+    end
+
+    it "should log an mv-storage event" do
+      message = "Syncing project #{repo_name} from <#{tmp_repo_path}> to <#{new_repo_path}>."
+      $logger.should_receive(:info).with(message)
+      gl_projects.exec
+    end
+  end
+
   describe :import_project do
     context 'success import' do
       let(:gl_projects) { build_gitlab_projects('import-project', tmp_repos_path, repo_name, 'https://github.com/randx/six.git') }

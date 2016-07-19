@@ -1,3 +1,6 @@
+v3.3.0
+  - Add command to move repositories between repository storages
+
 v3.2.1
   - Allow gitlab-project's fork-project command to fork projects between different repository storages
 
