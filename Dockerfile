@@ -7,8 +7,8 @@ RUN ["bash", "-c", "yum install -y --setopt=tsflags=nodocs openssh-server libicu
      sshd-keygen && \
      mkdir /var/run/sshd && \
      gem install --no-ri --no-rdoc bunny && \
-     groupadd -r git && \
-     useradd -r -s /bin/bash -g git git && \
+     /usr/sbin/groupadd -g 48 git && \
+     useradd -r -s /bin/bash -u 48 -g 48 git && \
      mkdir --parent /home/git"]
 
 # gitlab-shell setup
@@ -22,7 +22,7 @@ RUN mkdir /home/git/gitlab-config && \
     cp config.yml.example ../gitlab-config/config.yml && \
     ln -s /home/git/gitlab-config/config.yml && \
     # PAM workarounds for docker and public key auth
-    sed -i \ 
+    sed -i \
           # Disable processing of user uid. See: https://gitlab.com/gitlab-org/gitlab-ce/issues/3027
           -e "s|session\s*required\s*pam_loginuid.so|session optional pam_loginuid.so|g" \
           # Allow non root users to login: http://man7.org/linux/man-pages/man8/pam_nologin.8.html
