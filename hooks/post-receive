@@ -4,11 +4,8 @@
 # will be processed properly.
 
 refs = $stdin.read
-key_id  = ENV['GL_ID']
+key_id  = ENV.delete('GL_ID')
 repo_path = Dir.pwd
-
-# reset GL_ID env since we already got its value
-ENV['GL_ID'] = nil
 
 require_relative '../lib/gitlab_custom_hook'
 require_relative '../lib/gitlab_post_receive'

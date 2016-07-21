@@ -6,7 +6,7 @@ unless ENV['SSH_CONNECTION']
 end
 
 key_id = /key-[0-9]+/.match(ARGV.join).to_s
-original_cmd = ENV['SSH_ORIGINAL_COMMAND']
+original_cmd = ENV.delete('SSH_ORIGINAL_COMMAND')
 
 require_relative '../lib/gitlab_init'
 
