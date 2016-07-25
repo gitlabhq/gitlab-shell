@@ -1,4 +1,5 @@
 v3.3.0
+  - Track ongoing push commands
   - Add command to move repositories between repository storages
 
 v3.2.1

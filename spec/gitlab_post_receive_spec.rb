@@ -25,6 +25,11 @@ describe GitlabPostReceive do
 
     before do
       allow_any_instance_of(GitlabNet).to receive(:redis_client).and_return(redis_client)
+      allow_any_instance_of(GitlabReferenceCounter).to receive(:redis_client).and_return(redis_client)
+      allow(redis_client).to receive(:get).and_return(1)
+      allow(redis_client).to receive(:incr).and_return(true)
+      allow(redis_client).to receive(:decr).and_return(0)
+      allow(redis_client).to receive(:rpush).and_return(true)
     end
 
     it "prints the broadcast message" do
@@ -57,6 +62,34 @@ describe GitlabPostReceive do
       ).and_return(true)
 
       gitlab_post_receive.exec
+    end
+
+    context 'reference counter' do
+      it 'decreases the reference counter for the project' do
+        expect_any_instance_of(GitlabReferenceCounter).to receive(:decrease).and_return(true)
+
+        gitlab_post_receive.exec
+      end
+
+      context "when the redis command succeeds" do
+        before do
+          allow(redis_client).to receive(:decr).and_return(0)
+        end
+
+        it "returns true" do
+          expect(gitlab_post_receive.exec).to eq(true)
+        end
+      end
+
+      context "when the redis command fails" do
+        before do
+          allow(redis_client).to receive(:decr).and_raise('Fail')
+        end
+
+        it "returns false" do
+          expect(gitlab_post_receive.exec).to eq(false)
+        end
+      end
     end
 
     context "when the redis command succeeds" do

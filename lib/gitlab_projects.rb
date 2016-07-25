@@ -4,6 +4,7 @@ require 'open3'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
+require_relative 'gitlab_reference_counter'
 
 class GitlabProjects
   GLOBAL_HOOKS_DIRECTORY = File.join(ROOT_PATH, 'hooks')
@@ -313,8 +314,13 @@ class GitlabProjects
     # contents of the directory, as opposed to copying the directory by name
     source_path = File.join(full_path, '')
 
-    $logger.info "Syncing project #{@project_name} from <#{full_path}> to <#{new_full_path}>."
-    system(*%W(rsync -a #{source_path} #{new_full_path}))
+    if wait_for_pushes
+      $logger.info "Syncing project #{@project_name} from <#{full_path}> to <#{new_full_path}>."
+      system(*%W(rsync -a --delete #{source_path} #{new_full_path}))
+    else
+      $logger.error "mv-storage failed: source path <#{full_path}> is waiting for pushes to finish."
+      false
+    end
   end
 
   def fork_project
@@ -360,5 +366,19 @@ class GitlabProjects
     end
     cmd = %W(git --git-dir=#{full_path} gc)
     system(*cmd)
+  end
+
+  def wait_for_pushes
+    # Try for 30 seconds, polling every 10
+    3.times do
+      return true if gitlab_reference_counter.value == 0
+      sleep 10
+    end
+
+    false
+  end
+
+  def gitlab_reference_counter
+    @gitlab_reference_counter ||= GitlabReferenceCounter.new(full_path)
   end
 end

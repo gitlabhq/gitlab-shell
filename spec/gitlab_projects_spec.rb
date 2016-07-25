@@ -213,6 +213,7 @@ describe GitlabProjects do
     before do
       FileUtils.mkdir_p(tmp_repo_path)
       FileUtils.mkdir_p(alternative_storage_path)
+      allow_any_instance_of(GitlabReferenceCounter).to receive(:value).and_return(0)
     end
 
     after { FileUtils.rm_rf(alternative_storage_path) }
@@ -233,6 +234,12 @@ describe GitlabProjects do
       bad_source = build_gitlab_projects('mv-storage', tmp_repos_path, 'bad-src.git', alternative_storage_path)
       $logger.should_receive(:error).with("mv-storage failed: source path <#{tmp_repos_path}/bad-src.git> does not exist.")
       bad_source.exec.should be_false
+    end
+
+    it "should fail if there are pushes ongoing" do
+      allow_any_instance_of(GitlabReferenceCounter).to receive(:value).and_return(1)
+      $logger.should_receive(:error).with("mv-storage failed: source path <#{tmp_repo_path}> is waiting for pushes to finish.")
+      gl_projects.exec.should be_false
     end
 
     it "should log an mv-storage event" do

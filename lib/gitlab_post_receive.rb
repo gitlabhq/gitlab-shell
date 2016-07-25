@@ -1,5 +1,6 @@
 require_relative 'gitlab_init'
 require_relative 'gitlab_net'
+require_relative 'gitlab_reference_counter'
 require 'json'
 require 'base64'
 require 'securerandom'
@@ -28,7 +29,7 @@ class GitlabPostReceive
       nil
     end
 
-    result
+    result && GitlabReferenceCounter.new(repo_path).decrease
   end
 
   protected
