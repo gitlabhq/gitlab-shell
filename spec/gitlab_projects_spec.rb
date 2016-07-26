@@ -3,7 +3,6 @@ require_relative '../lib/gitlab_projects'
 
 describe GitlabProjects do
   before do
-    GitlabConfig.any_instance.stub(repos_path: tmp_repos_path)
     FileUtils.mkdir_p(tmp_repos_path)
     $logger = double('logger').as_null_object
   end
@@ -254,15 +253,21 @@ describe GitlabProjects do
   describe :fork_project do
     let(:source_repo_name) { File.join('source-namespace', repo_name) }
     let(:dest_repo) { File.join(tmp_repos_path, 'forked-to-namespace', repo_name) }
-    let(:gl_projects_fork) { build_gitlab_projects('fork-project', tmp_repos_path, source_repo_name, 'forked-to-namespace') }
+    let(:gl_projects_fork) { build_gitlab_projects('fork-project', tmp_repos_path, source_repo_name, tmp_repos_path, 'forked-to-namespace') }
     let(:gl_projects_import) { build_gitlab_projects('import-project', tmp_repos_path, source_repo_name, 'https://github.com/randx/six.git') }
 
     before do
       gl_projects_import.exec
     end
 
-    it "should not fork without a destination namespace" do
+    it "should not fork without a source repository path" do
       missing_arg = build_gitlab_projects('fork-project', tmp_repos_path, source_repo_name)
+      $logger.should_receive(:error).with("fork-project failed: no destination repository path provided.")
+      missing_arg.exec.should be_false
+    end
+
+    it "should not fork without a destination namespace" do
+      missing_arg = build_gitlab_projects('fork-project', tmp_repos_path, source_repo_name, tmp_repos_path)
       $logger.should_receive(:error).with("fork-project failed: no destination namespace provided.")
       missing_arg.exec.should be_false
     end
@@ -301,6 +306,29 @@ describe GitlabProjects do
       FileUtils.mkdir_p(File.join(tmp_repos_path, 'forked-to-namespace'))
       gl_projects_fork.exec.should be_true
     end
+
+    context 'different storages' do
+      let(:alternative_repos_path) { File.join(ROOT_PATH, 'tmp', 'alternative') }
+      let(:dest_repo) { File.join(alternative_repos_path, 'forked-to-namespace', repo_name) }
+      let(:gl_projects_fork) { build_gitlab_projects('fork-project', tmp_repos_path, source_repo_name, alternative_repos_path, 'forked-to-namespace') }
+
+      before do
+        FileUtils.mkdir_p(alternative_repos_path)
+      end
+
+      after do
+        FileUtils.rm_rf(alternative_repos_path)
+      end
+
+      it "should fork the repo" do
+        # create destination namespace
+        FileUtils.mkdir_p(File.join(alternative_repos_path, 'forked-to-namespace'))
+        gl_projects_fork.exec.should be_true
+        File.exists?(dest_repo).should be_true
+        File.exists?(File.join(dest_repo, '/hooks/pre-receive')).should be_true
+        File.exists?(File.join(dest_repo, '/hooks/post-receive')).should be_true
+      end
+    end
   end
 
   describe :exec do
@@ -319,10 +347,7 @@ describe GitlabProjects do
 
   def build_gitlab_projects(*args)
     argv(*args)
-    gl_projects = GitlabProjects.new
-    gl_projects.stub(repos_path: tmp_repos_path)
-    gl_projects.stub(full_path: File.join(tmp_repos_path, gl_projects.project_name))
-    gl_projects
+    GitlabProjects.new
   end
 
   def argv(*args)

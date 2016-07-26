@@ -286,6 +286,13 @@ class GitlabProjects
   end
 
   def fork_project
+    destination_repos_path = ARGV.shift
+
+    unless destination_repos_path
+      $logger.error "fork-project failed: no destination repository path provided."
+      return false
+    end
+
     new_namespace = ARGV.shift
 
     # destination namespace must be provided
@@ -295,7 +302,7 @@ class GitlabProjects
     end
 
     # destination namespace must exist
-    namespaced_path = File.join(repos_path, new_namespace)
+    namespaced_path = File.join(destination_repos_path, new_namespace)
     unless File.exists?(namespaced_path)
       $logger.error "fork-project failed: destination namespace <#{namespaced_path}> does not exist."
       return false
