@@ -1,3 +1,6 @@
+v3.2.1
+  - Allow gitlab-project's fork-project command to fork projects between different repository storages
+
 v3.2.0
   - Allow GitLab Shell to check for allowed access based on the used Git protocol
   - Add an error message when using shell commands with incompatible GitLab versions
