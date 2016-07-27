@@ -4,6 +4,7 @@ require 'open3'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
+require_relative 'gitlab_reference_counter'
 
 class GitlabProjects
   GLOBAL_HOOKS_DIRECTORY = File.join(ROOT_PATH, 'hooks')
@@ -55,6 +56,7 @@ class GitlabProjects
     when 'list-projects'; puts list_projects
     when 'rm-project'; rm_project
     when 'mv-project'; mv_project
+    when 'mv-storage'; mv_storage
     when 'import-project'; import_project
     when 'fork-project'; fork_project
     when 'fetch-remote'; fetch_remote
@@ -285,6 +287,42 @@ class GitlabProjects
     FileUtils.mv(full_path, new_full_path)
   end
 
+  # Move repository from one storage path to another
+  #
+  # Wont work if target namespace directory does not exist in the new storage path
+  #
+  def mv_storage
+    new_storage = ARGV.shift
+
+    unless new_storage
+      $logger.error "mv-storage failed: no destination storage path provided."
+      return false
+    end
+
+    new_full_path = File.join(new_storage, project_name)
+
+    # verify that the source repo exists
+    unless File.exists?(full_path)
+      $logger.error "mv-storage failed: source path <#{full_path}> does not exist."
+      return false
+    end
+
+    # Make sure the destination directory exists
+    FileUtils.mkdir_p(new_full_path)
+
+    # Make sure the source path ends with a slash so that rsync copies the
+    # contents of the directory, as opposed to copying the directory by name
+    source_path = File.join(full_path, '')
+
+    if wait_for_pushes
+      $logger.info "Syncing project #{@project_name} from <#{full_path}> to <#{new_full_path}>."
+      system(*%W(rsync -a --delete #{source_path} #{new_full_path}))
+    else
+      $logger.error "mv-storage failed: source path <#{full_path}> is waiting for pushes to finish."
+      false
+    end
+  end
+
   def fork_project
     destination_repos_path = ARGV.shift
 
@@ -328,5 +366,19 @@ class GitlabProjects
     end
     cmd = %W(git --git-dir=#{full_path} gc)
     system(*cmd)
+  end
+
+  def wait_for_pushes
+    # Try for 30 seconds, polling every 10
+    3.times do
+      return true if gitlab_reference_counter.value == 0
+      sleep 10
+    end
+
+    false
+  end
+
+  def gitlab_reference_counter
+    @gitlab_reference_counter ||= GitlabReferenceCounter.new(full_path)
   end
 end
