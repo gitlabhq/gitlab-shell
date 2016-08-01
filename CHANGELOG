@@ -1,3 +1,6 @@
+v3.3.1
+  - Manage authorized_keys permissions continuously
+
 v3.3.0
   - Track ongoing push commands
   - Add command to move repositories between repository storages
