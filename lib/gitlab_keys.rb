@@ -34,7 +34,7 @@ class GitlabKeys
     lock do
       $logger.info "Adding key #{@key_id} => #{@key.inspect}"
       auth_line = @gitlab_key.key_line(@key_id, @key)
-      open(auth_file, 'a') { |file| file.puts(auth_line) }
+      open_auth_file('a') { |file| file.puts(auth_line) }
     end
     true
   end
@@ -54,7 +54,7 @@ class GitlabKeys
 
   def batch_add_keys
     lock(300) do # Allow 300 seconds (5 minutes) for batch_add_keys
-      open(auth_file, 'a') do |file|
+      open_auth_file('a') do |file|
         stdin.each_line do |input|
           tokens = input.strip.split("\t")
           abort("#{$0}: invalid input #{input.inspect}") unless tokens.count == 2
@@ -74,7 +74,7 @@ class GitlabKeys
   def rm_key
     lock do
       $logger.info "Removing key #{@key_id}"
-      open(auth_file, 'r+') do |f|
+      open_auth_file('r+') do |f|
         while line = f.gets do
           next unless line.start_with?("command=\"#{@gitlab_key.command(@key_id)}\"")
           f.seek(-line.length, IO::SEEK_CUR)
@@ -88,7 +88,7 @@ class GitlabKeys
   end
 
   def clear
-    open(auth_file, 'w') { |file| file.puts '# Managed by gitlab-shell' }
+    open_auth_file('w') { |file| file.puts '# Managed by gitlab-shell' }
     true
   end
 
@@ -106,6 +106,13 @@ class GitlabKeys
 
   def lock_file
     @lock_file ||= auth_file + '.lock'
+  end
+  
+  def open_auth_file(mode)
+    open(auth_file, mode, 0600) do |file|
+      file.chmod(0600)
+      yield file
+    end
   end
 end
 

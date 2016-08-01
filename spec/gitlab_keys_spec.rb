@@ -80,7 +80,7 @@ describe GitlabKeys do
 
     context "without file writing" do
       before do
-        gitlab_keys.should_receive(:open).and_yield(mock(:file, puts: nil))
+        gitlab_keys.should_receive(:open).and_yield(mock(:file, puts: nil, chmod: nil))
       end
 
       it "should log an add-key event" do
