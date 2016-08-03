@@ -21,6 +21,7 @@ class GitlabKeys
     when 'rm-key';  rm_key
     when 'list-keys'; puts list_keys
     when 'clear';  clear
+    when 'check-permissions'; check_permissions
     else
       $logger.warn "Attempt to execute invalid gitlab-keys command #{@command.inspect}."
       puts 'not allowed'
@@ -92,6 +93,18 @@ class GitlabKeys
     true
   end
 
+  def check_permissions
+    open_auth_file('r+') { true }
+  rescue => ex
+    puts "error: could not open #{auth_file}: #{ex}"
+    if File.exist?(auth_file)
+      system('ls', '-l', auth_file)
+    else
+      # Maybe the parent directory is not writable?
+      system('ls', '-ld', File.dirname(auth_file))
+    end
+    false
+  end
 
   def lock(timeout = 10)
     File.open(lock_file, "w+") do |f|
