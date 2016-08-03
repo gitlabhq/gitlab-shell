@@ -1,3 +1,6 @@
+v3.3.2
+  - Improve authorized_keys check
+
 v3.3.1
   - Manage authorized_keys permissions continuously
 
