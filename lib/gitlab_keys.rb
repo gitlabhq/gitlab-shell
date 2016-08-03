@@ -94,9 +94,9 @@ class GitlabKeys
   end
 
   def check_permissions
-    open_auth_file('r+') { return true }
-  rescue
-    puts "error: could not open #{auth_file}"
+    open_auth_file('r+') { true }
+  rescue => ex
+    puts "error: could not open #{auth_file}: #{ex}"
     if File.exist?(auth_file)
       system('ls', '-l', auth_file)
     else

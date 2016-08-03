@@ -15,7 +15,6 @@ describe GitlabKeys do
     it { gitlab_keys.instance_variable_get(:@key_id).should == 'key-741' }
   end
 
-
   describe :add_key do
     let(:gitlab_keys) { build_gitlab_keys('add-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E') }
 
@@ -145,6 +144,20 @@ describe GitlabKeys do
     end
   end
 
+  describe :check_permissions do
+    let(:gitlab_keys) { build_gitlab_keys('check-permissions') }
+
+    it 'returns true when the file can be opened' do
+      create_authorized_keys_fixture
+      expect(gitlab_keys.exec).to eq(true)
+    end
+
+    it 'returns false if opening raises an exception' do
+      gitlab_keys.should_receive(:open_auth_file).and_raise("imaginary error")
+      expect(gitlab_keys.exec).to eq(false)
+    end
+  end
+
   describe :exec do
     it 'add-key arg should execute add_key method' do
       gitlab_keys = build_gitlab_keys('add-key')
@@ -167,6 +180,12 @@ describe GitlabKeys do
     it 'clear arg should execute clear method' do
       gitlab_keys = build_gitlab_keys('clear')
       gitlab_keys.should_receive(:clear)
+      gitlab_keys.exec
+    end
+
+    it 'check-permissions arg should execute check_permissions method' do
+      gitlab_keys = build_gitlab_keys('check-permissions')
+      gitlab_keys.should_receive(:check_permissions)
       gitlab_keys.exec
     end
 
