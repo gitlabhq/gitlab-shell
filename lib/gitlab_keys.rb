@@ -6,12 +6,19 @@ require_relative 'gitlab_logger'
 class GitlabKeys
   attr_accessor :auth_file, :key
 
+  def self.command(key_id)
+    "#{ROOT_PATH}/bin/gitlab-shell #{key_id}"
+  end
+
+  def self.key_line(key_id, public_key)
+    "command=\"#{command(key_id)}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{public_key}"
+  end
+
   def initialize
     @command = ARGV.shift
     @key_id = ARGV.shift
     @key = ARGV.shift
     @auth_file = GitlabConfig.new.auth_file
-    @gitlab_key = GitlabKey.new
   end
 
   def exec
@@ -34,7 +41,7 @@ class GitlabKeys
   def add_key
     lock do
       $logger.info "Adding key #{@key_id} => #{@key.inspect}"
-      auth_line = @gitlab_key.key_line(@key_id, @key)
+      auth_line = self.class.key_line(@key_id, @key)
       open_auth_file('a') { |file| file.puts(auth_line) }
     end
     true
@@ -61,7 +68,7 @@ class GitlabKeys
           abort("#{$0}: invalid input #{input.inspect}") unless tokens.count == 2
           key_id, public_key = tokens
           $logger.info "Adding key #{key_id} => #{public_key.inspect}"
-          file.puts(@gitlab_key.key_line(key_id, public_key))
+          file.puts(self.class.key_line(key_id, public_key))
         end
       end
     end
@@ -77,7 +84,7 @@ class GitlabKeys
       $logger.info "Removing key #{@key_id}"
       open_auth_file('r+') do |f|
         while line = f.gets do
-          next unless line.start_with?("command=\"#{@gitlab_key.command(@key_id)}\"")
+          next unless line.start_with?("command=\"#{self.class.command(@key_id)}\"")
           f.seek(-line.length, IO::SEEK_CUR)
           # Overwrite the line with #'s. Because the 'line' variable contains
           # a terminating '\n', we write line.length - 1 '#' characters.
@@ -126,16 +133,5 @@ class GitlabKeys
       file.chmod(0600)
       yield file
     end
-  end
-end
-
-
-class GitlabKey
-  def command(key_id)
-    "#{ROOT_PATH}/bin/gitlab-shell #{key_id}"
-  end
-
-  def key_line(key_id, public_key)
-    "command=\"#{command(key_id)}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{public_key}"
   end
 end

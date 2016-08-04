@@ -32,4 +32,10 @@ end
 puts "\n"
 
 print "Send ping to redis server: "
-abort unless GitlabNet.new.redis_client.ping
+if GitlabNet.new.redis_client.ping
+  print 'OK'
+else
+  abort 'FAILED'
+end
+
+puts "\n"
