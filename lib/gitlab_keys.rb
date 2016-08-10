@@ -22,7 +22,8 @@ class GitlabKeys
   def initialize
     @command = ARGV.shift
     @key_id = ARGV.shift
-    @key = ARGV.shift
+    key = ARGV.shift
+    @key = key.dup if key
     @auth_file = GitlabConfig.new.auth_file
   end
 

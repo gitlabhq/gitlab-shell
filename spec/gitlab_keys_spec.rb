@@ -284,7 +284,7 @@ describe GitlabKeys do
 
   def argv(*args)
     args.each_with_index do |arg, i|
-      ARGV[i] = arg
+      ARGV[i] = arg.freeze
     end
   end
 
