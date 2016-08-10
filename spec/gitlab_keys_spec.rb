@@ -20,6 +20,7 @@ describe GitlabKeys do
 
   describe '.key_line' do
     let(:line) { %(command="#{ROOT_PATH}/bin/gitlab-shell key-741",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAAB3NzaDAxx2E) }
+
     it 'returns the key line' do
       expect(described_class.key_line('key-741', 'ssh-rsa AAAAB3NzaDAxx2E')).to eq(line)
     end
