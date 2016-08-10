@@ -183,6 +183,13 @@ describe GitlabKeys do
       gitlab_keys.should_receive(:open_auth_file).and_raise("imaginary error")
       expect(gitlab_keys.exec).to eq(false)
     end
+
+    it 'creates the keys file if it does not exist' do
+      create_authorized_keys_fixture
+      FileUtils.rm(tmp_authorized_keys_path)
+      expect(gitlab_keys.exec).to eq(true)
+      expect(File.exist?(tmp_authorized_keys_path)).to eq(true)
+    end
   end
 
   describe :exec do

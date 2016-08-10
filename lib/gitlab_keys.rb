@@ -106,7 +106,7 @@ class GitlabKeys
   end
 
   def check_permissions
-    open_auth_file('r+') { true }
+    open_auth_file(File::RDWR | File::CREAT) { true }
   rescue => ex
     puts "error: could not open #{auth_file}: #{ex}"
     if File.exist?(auth_file)
@@ -132,7 +132,7 @@ class GitlabKeys
   def lock_file
     @lock_file ||= auth_file + '.lock'
   end
-  
+
   def open_auth_file(mode)
     open(auth_file, mode, 0600) do |file|
       file.chmod(0600)
