@@ -4,13 +4,18 @@ require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 
 class GitlabKeys
+  class KeyError < StandardError ; end
+
   attr_accessor :auth_file, :key
 
   def self.command(key_id)
+    raise KeyError.new("Invalid key_id: #{key_id.inspect}") unless /\A[a-z0-9-]+\z/ =~ key_id
     "#{ROOT_PATH}/bin/gitlab-shell #{key_id}"
   end
 
   def self.key_line(key_id, public_key)
+    public_key.chomp!
+    raise KeyError.new("Invalid public_key: #{public_key.inspect}") if public_key.include?("\n")
     "command=\"#{command(key_id)}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{public_key}"
   end
 

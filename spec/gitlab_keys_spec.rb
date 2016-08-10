@@ -7,6 +7,33 @@ describe GitlabKeys do
     $logger = double('logger').as_null_object
   end
 
+  describe '.command' do
+    it 'returns the "command" part of the key line' do
+      command = "#{ROOT_PATH}/bin/gitlab-shell key-123"
+      expect(described_class.command('key-123')).to eq(command)
+    end
+
+    it 'raises KeyError on invalid input' do
+      expect { described_class.command("\nssh-rsa AAA") }.to raise_error(described_class::KeyError)
+    end
+  end
+
+  describe '.key_line' do
+    let(:line) { %(command="#{ROOT_PATH}/bin/gitlab-shell key-741",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAAB3NzaDAxx2E) }
+
+    it 'returns the key line' do
+      expect(described_class.key_line('key-741', 'ssh-rsa AAAAB3NzaDAxx2E')).to eq(line)
+    end
+
+    it 'silently removes a trailing newline' do
+      expect(described_class.key_line('key-741', "ssh-rsa AAAAB3NzaDAxx2E\n")).to eq(line)
+    end
+
+    it 'raises KeyError on invalid input' do
+      expect { described_class.key_line('key-741', "ssh-rsa AAA\nssh-rsa AAA") }.to raise_error(described_class::KeyError)
+    end
+  end
+
   describe :initialize do
     let(:gitlab_keys) { build_gitlab_keys('add-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E') }
 
