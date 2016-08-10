@@ -14,7 +14,7 @@ describe GitlabKeys do
     end
 
     it 'raises KeyError on invalid input' do
-      expect { described_class.command("\nssh-rsa AAA") }.to raise_error(GitlabKeys::KeyError)
+      expect { described_class.command("\nssh-rsa AAA") }.to raise_error(described_class::KeyError)
     end
   end
 
@@ -29,7 +29,7 @@ describe GitlabKeys do
     end
 
     it 'raises KeyError on invalid input' do
-      expect { described_class.key_line('key-741', "ssh-rsa AAA\nssh-rsa AAA") }.to raise_error(GitlabKeys::KeyError)
+      expect { described_class.key_line('key-741', "ssh-rsa AAA\nssh-rsa AAA") }.to raise_error(described_class::KeyError)
     end
   end
 

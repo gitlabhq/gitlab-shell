@@ -9,7 +9,7 @@ class GitlabKeys
   attr_accessor :auth_file, :key
 
   def self.command(key_id)
-    raise KeyError.new("Invalid key_id: #{key_id.inspect}") unless /\A[a-z0-9-]+\z/.match(key_id)
+    raise KeyError.new("Invalid key_id: #{key_id.inspect}") unless /\A[a-z0-9-]+\z/ =~ key_id
     "#{ROOT_PATH}/bin/gitlab-shell #{key_id}"
   end
 
