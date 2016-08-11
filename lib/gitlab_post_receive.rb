@@ -6,11 +6,14 @@ require 'base64'
 require 'securerandom'
 
 class GitlabPostReceive
+  include NamesHelper
+
   attr_reader :config, :repo_path, :changes, :jid
 
   def initialize(repo_path, actor, changes)
     @config = GitlabConfig.new
     @repo_path, @actor = repo_path.strip, actor
+    @repo_name = extract_repo_name(@repo_path.dup)
     @changes = changes
     @jid = SecureRandom.hex(12)
   end
@@ -19,12 +22,15 @@ class GitlabPostReceive
     result = update_redis
 
     begin
-      broadcast_message = GitlabNet.new.broadcast_message
+      broadcast_message = api.broadcast_message
 
       if broadcast_message.has_key?("message")
         puts
         print_broadcast_message(broadcast_message["message"])
       end
+
+      merge_request_urls = api.merge_request_urls(@repo_name, @changes)
+      print_merge_request_links(merge_request_urls)
     rescue GitlabNet::ApiUnreachableError
       nil
     end
@@ -33,6 +39,28 @@ class GitlabPostReceive
   end
 
   protected
+
+  def api
+    @api ||= GitlabNet.new
+  end
+
+  def print_merge_request_links(merge_request_urls)
+    return if merge_request_urls.empty?
+    puts
+    merge_request_urls.each { |mr| print_merge_request_link(mr) }
+  end
+
+  def print_merge_request_link(merge_request)
+    if merge_request["new_merge_request"]
+      message = "Create merge request for #{merge_request["branch_name"]}:"
+    else
+      message = "View merge request for #{merge_request["branch_name"]}:"
+    end
+
+    puts message
+    puts((" " * 2) + merge_request["url"])
+    puts
+  end
 
   def print_broadcast_message(message)
     # A standard terminal window is (at least) 80 characters wide.

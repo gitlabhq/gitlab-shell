@@ -54,6 +54,13 @@ class GitlabNet
     JSON.parse(resp.body) rescue {}
   end
 
+  def merge_request_urls(repo_name, changes)
+    changes = changes.join("\n") unless changes.kind_of?(String)
+    changes = changes.encode('UTF-8', 'ASCII', invalid: :replace, replace: '')
+    resp = get("#{host}/merge_request_urls?project=#{URI.escape(repo_name)}&changes=#{URI.escape(changes)}")
+    JSON.parse(resp.body) rescue []
+  end
+
   def check
     get("#{host}/check", read_timeout: CHECK_TIMEOUT)
   end

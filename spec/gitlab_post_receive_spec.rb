@@ -17,12 +17,12 @@ describe GitlabPostReceive do
 
   before do
     GitlabConfig.any_instance.stub(repos_path: repository_path)
-    GitlabNet.any_instance.stub(broadcast_message: { "message" => message })
+    GitlabNet.any_instance.stub(broadcast_message: { })
+    GitlabNet.any_instance.stub(:merge_request_urls).with(repo_name, wrongly_encoded_changes) { [] }
     expect(Time).to receive(:now).and_return(enqueued_at)
   end
 
   describe "#exec" do
-
     before do
       allow_any_instance_of(GitlabNet).to receive(:redis_client).and_return(redis_client)
       allow_any_instance_of(GitlabReferenceCounter).to receive(:redis_client).and_return(redis_client)
@@ -32,27 +32,107 @@ describe GitlabPostReceive do
       allow(redis_client).to receive(:rpush).and_return(true)
     end
 
-    it "prints the broadcast message" do
-      expect(redis_client).to receive(:rpush)
-      expect(gitlab_post_receive).to receive(:puts).ordered
-      expect(gitlab_post_receive).to receive(:puts).with(
-        "========================================================================"
-      ).ordered
-      expect(gitlab_post_receive).to receive(:puts).ordered
+    context 'Without broad cast message' do
+      context 'pushing new branch' do
+        before do
+          GitlabNet.any_instance.stub(:merge_request_urls).with(repo_name, wrongly_encoded_changes) do
+            [{
+              "branch_name" => "new_branch",
+              "url" => "http://localhost/dzaporozhets/gitlab-ci/merge_requests/new?merge_request%5Bsource_branch%5D=new_branch",
+              "new_merge_request" => true
+            }]
+          end
+        end
 
-      expect(gitlab_post_receive).to receive(:puts).with(
-        "   test test test test test test test test test test message message"
-      ).ordered
-      expect(gitlab_post_receive).to receive(:puts).with(
-        "    message message message message message message message message"
-      ).ordered
+        it "prints the new merge request url" do
+          expect(redis_client).to receive(:rpush)
 
-      expect(gitlab_post_receive).to receive(:puts).ordered
-      expect(gitlab_post_receive).to receive(:puts).with(
-        "========================================================================"
-      ).ordered
+          expect(gitlab_post_receive).to receive(:puts).ordered
+          expect(gitlab_post_receive).to receive(:puts).with(
+            "Create merge request for new_branch:"
+          ).ordered
+          expect(gitlab_post_receive).to receive(:puts).with(
+            "  http://localhost/dzaporozhets/gitlab-ci/merge_requests/new?merge_request%5Bsource_branch%5D=new_branch"
+          ).ordered
+          expect(gitlab_post_receive).to receive(:puts).ordered
 
-      gitlab_post_receive.exec
+          gitlab_post_receive.exec
+        end
+      end
+
+      context 'pushing existing branch with merge request created' do
+        before do
+          GitlabNet.any_instance.stub(:merge_request_urls).with(repo_name, wrongly_encoded_changes) do
+            [{
+              "branch_name" => "feature_branch",
+              "url" => "http://localhost/dzaporozhets/gitlab-ci/merge_requests/1",
+              "new_merge_request" => false
+            }]
+          end
+        end
+
+        it "prints the view merge request url" do
+          expect(redis_client).to receive(:rpush)
+
+          expect(gitlab_post_receive).to receive(:puts).ordered
+          expect(gitlab_post_receive).to receive(:puts).with(
+            "View merge request for feature_branch:"
+          ).ordered
+          expect(gitlab_post_receive).to receive(:puts).with(
+            "  http://localhost/dzaporozhets/gitlab-ci/merge_requests/1"
+          ).ordered
+          expect(gitlab_post_receive).to receive(:puts).ordered
+
+          gitlab_post_receive.exec
+        end
+      end
+    end
+
+    context 'show broadcast message and merge request link' do
+      before do
+        GitlabNet.any_instance.stub(:merge_request_urls).with(repo_name, wrongly_encoded_changes) do
+          [{
+            "branch_name" => "new_branch",
+            "url" => "http://localhost/dzaporozhets/gitlab-ci/merge_requests/new?merge_request%5Bsource_branch%5D=new_branch",
+            "new_merge_request" => true
+          }]
+        end
+        GitlabNet.any_instance.stub(broadcast_message: { "message" => message })
+      end
+
+      it 'prints the broadcast message and create new merge request link' do
+        expect(redis_client).to receive(:rpush)
+
+        expect(gitlab_post_receive).to receive(:puts).ordered
+        expect(gitlab_post_receive).to receive(:puts).with(
+          "========================================================================"
+        ).ordered
+        expect(gitlab_post_receive).to receive(:puts).ordered
+
+        expect(gitlab_post_receive).to receive(:puts).with(
+          "   test test test test test test test test test test message message"
+        ).ordered
+        expect(gitlab_post_receive).to receive(:puts).with(
+          "    message message message message message message message message"
+        ).ordered
+
+        expect(gitlab_post_receive).to receive(:puts).ordered
+        expect(gitlab_post_receive).to receive(:puts).with(
+          "========================================================================"
+        ).ordered
+
+        expect(gitlab_post_receive).to receive(:puts).ordered
+        expect(gitlab_post_receive).to receive(:puts).with(
+          "Create merge request for new_branch:"
+        ).ordered
+        expect(gitlab_post_receive).to receive(:puts).with(
+          "  http://localhost/dzaporozhets/gitlab-ci/merge_requests/new?merge_request%5Bsource_branch%5D=new_branch"
+        ).ordered
+        expect(gitlab_post_receive).to receive(:puts).ordered
+
+
+        gitlab_post_receive.exec
+      end
     end
 
     it "pushes a Sidekiq job onto the queue" do
