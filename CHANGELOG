@@ -1,3 +1,5 @@
+v2.1.0
+  - Piping log file output to stdout
 v2.0.0
   - Works with GitLab v7.3+
   - Replace raise with abort when checking path to prevent path exposure
