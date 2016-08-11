@@ -61,6 +61,12 @@ echo "source /opt/rh/rh-ruby23/enable" > /home/git/.bashrc
 ## Map PV repositories
 ln -sf $GIT_REPO_ROOT/repositories /home/git/repositories
 
+# Creating a pipe so that gitlab-shell processes can write into something that does not increase in size
+mkfifo /home/git/gitlab-shell/gitlab-shell.log
+# Tailing the pipe as this is the process that the docker container is logging to stdout. Otherwise, no logs would be visible to stdout as they execute
+# as other processes from the ssh commands from fh-scm
+tail -f /home/git/gitlab-shell/gitlab-shell.log &
+
 ### Setup permissions
 chown -R git:git /home/git
 chmod -R o-rwx /home/git
