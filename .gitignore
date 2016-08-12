@@ -4,3 +4,4 @@ tmp/*
 /*.log*
 authorized_keys.lock
 coverage/
+.idea
