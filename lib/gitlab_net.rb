@@ -81,6 +81,12 @@ class GitlabNet
       db: database
     }
 
+    if redis_config.has_key?('sentinels')
+      params[:sentinels] = redis_config['sentinels']
+                           .select { |s| s['host'] && s['port'] }
+                           .map { |s| { host: s['host'], port: s['port'] } }
+    end
+
     if redis_config.has_key?("socket")
       params = { path: redis_config['socket'], db: database }
     elsif redis_config.has_key?("pass")
