@@ -1,0 +1,12 @@
+redis:
+  bin: /usr/bin/redis-cli
+  host: 127.0.1.1
+  port: 6378
+  pass: secure
+  database: 1
+  socket: /var/run/redis/redis.sock
+  namespace: my:gitlab
+  sentinels:
+    -
+      host: 127.0.0.1
+      port: 26380
