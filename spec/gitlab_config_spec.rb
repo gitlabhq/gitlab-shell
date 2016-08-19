@@ -6,17 +6,8 @@ describe GitlabConfig do
 
   describe :redis do
     before do
-      config.instance_variable_set(:@config, YAML.load(<<eos
-redis:
-  bin: /usr/bin/redis-cli
-  host: 127.0.1.1
-  port: 6378
-  pass: secure
-  database: 1
-  socket: /var/run/redis/redis.sock
-  namespace: my:gitlab
-eos
-                                   ))
+      config_file = File.read('spec/fixtures/gitlab_config_redis.yml')
+      config.instance_variable_set(:@config, YAML.load(config_file))
     end
 
     it { config.redis['bin'].should eq('/usr/bin/redis-cli') }
@@ -26,6 +17,7 @@ eos
     it { config.redis['namespace'].should eq('my:gitlab') }
     it { config.redis['socket'].should eq('/var/run/redis/redis.sock') }
     it { config.redis['pass'].should eq('secure') }
+    it { config.redis['sentinels'].should eq([{ 'host' => '127.0.0.1', 'port' => 26380 }]) }
   end
 
   describe :gitlab_url do

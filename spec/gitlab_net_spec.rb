@@ -276,19 +276,7 @@ describe GitlabNet, vcr: true do
 
         expect_any_instance_of(Redis).to receive(:initialize).with({ host: '127.0.0.1',
                                                                      port: 6379,
-                                                                     db: 0 }).and_call_original
-        gitlab_net.redis_client
-      end
-    end
-
-    context "with host and port" do
-      it 'uses the specified host and port' do
-        allow(gitlab_net).to receive(:config).and_return(config)
-        allow(config).to receive(:redis).and_return( { 'host' => 'localhost', 'port' => 1123 } )
-
-        expect_any_instance_of(Redis).to receive(:initialize).with({ host: 'localhost',
-                                                                     port: 1123,
-                                                                     db: 0 }).and_call_original
+                                                                     db: 0 })
         gitlab_net.redis_client
       end
     end
@@ -301,7 +289,21 @@ describe GitlabNet, vcr: true do
         expect_any_instance_of(Redis).to receive(:initialize).with({ host: 'localhost',
                                                                      port: 1123,
                                                                      db: 0,
-                                                                     password: 'secret'}).and_call_original
+                                                                     password: 'secret'})
+        gitlab_net.redis_client
+      end
+    end
+
+    context "with sentinels" do
+      it 'uses the specified sentinels' do
+        allow(gitlab_net).to receive(:config).and_return(config)
+        allow(config).to receive(:redis).and_return({ 'host' => 'localhost', 'port' => 1123,
+                                                      'sentinels' => [{'host' => '127.0.0.1', 'port' => 26380}] })
+
+        expect_any_instance_of(Redis).to receive(:initialize).with({ host: 'localhost',
+                                                                     port: 1123,
+                                                                     db: 0,
+                                                                     sentinels: [{host: '127.0.0.1', port: 26380}] })
         gitlab_net.redis_client
       end
     end
@@ -314,7 +316,7 @@ describe GitlabNet, vcr: true do
         allow(gitlab_net).to receive(:config).and_return(config)
         allow(config).to receive(:redis).and_return( { 'socket' => socket })
 
-        expect_any_instance_of(Redis).to receive(:initialize).with({ path: socket, db: 0 }).and_call_original
+        expect_any_instance_of(Redis).to receive(:initialize).with({ path: socket, db: 0 })
         gitlab_net.redis_client
       end
     end

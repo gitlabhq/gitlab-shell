@@ -1,3 +1,6 @@
+v3.4.0
+  - Redis Sentinel support
+
 v3.3.3
   - Print URL for new or existing merge request after push
 
