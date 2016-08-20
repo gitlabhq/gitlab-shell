@@ -1,0 +1,42 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://dev.gitlab.org/api/v3/internal/two_factor_recovery_codes
+    body:
+      encoding: US-ASCII
+      string: username=user-1&secret_token=a123
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+      Content-Type:
+      - application/x-www-form-urlencoded
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Server:
+      - nginx
+      Date:
+      - Tue, 16 Aug 2016 22:10:11 GMT
+      Content-Type:
+      - application/json
+      Connection:
+      - keep-alive
+      Status:
+      - 200 OK
+      X-Request-Id:
+      - 4467029d-51c6-41bc-af5f-6da279dbb238
+      X-Runtime:
+      - '0.004589'
+    body:
+      encoding: UTF-8
+      string: '{ "success": true, "recovery_codes": ["f67c514de60c4953","41278385fc00c1e0"] }'
+    http_version:
+  recorded_at: Tue, 16 Aug 2016 22:10:11 GMT
+recorded_with: VCR 2.4.0

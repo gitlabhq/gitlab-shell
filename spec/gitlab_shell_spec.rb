@@ -23,6 +23,10 @@ describe GitlabShell do
     double(GitlabNet).tap do |api|
       api.stub(discover: { 'name' => 'John Doe' })
       api.stub(check_access: GitAccessStatus.new(true, 'ok', repo_path))
+      api.stub(two_factor_recovery_codes: {
+        'success' => true,
+        'recovery_codes' => ['f67c514de60c4953', '41278385fc00c1e0']
+      })
     end
   end
 
@@ -53,7 +57,7 @@ describe GitlabShell do
         end
 
         its(:repo_name) { should == 'gitlab-ci.git' }
-        its(:git_cmd) { should == 'git-upload-pack' }
+        its(:command) { should == 'git-upload-pack' }
       end
 
       context 'namespace' do
@@ -65,7 +69,7 @@ describe GitlabShell do
         end
 
         its(:repo_name) { should == 'dmitriy.zaporozhets/gitlab-ci.git' }
-        its(:git_cmd) { should == 'git-upload-pack' }
+        its(:command) { should == 'git-upload-pack' }
       end
 
       context 'with an invalid number of arguments' do
@@ -73,6 +77,24 @@ describe GitlabShell do
 
         it "should raise an DisallowedCommandError" do
           expect { subject.send :parse_cmd, ssh_args }.to raise_error(GitlabShell::DisallowedCommandError)
+        end
+      end
+
+      context 'with an API command' do
+        before do
+          subject.send :parse_cmd, ssh_args
+        end
+
+        context 'when generating recovery codes' do
+          let(:ssh_args) { %w(2fa_recovery_codes) }
+
+          it 'sets the correct command' do
+            expect(subject.command).to eq('2fa_recovery_codes')
+          end
+
+          it 'does not set repo name' do
+            expect(subject.repo_name).to be_nil
+          end
         end
       end
     end
@@ -88,7 +110,7 @@ describe GitlabShell do
       end
 
       its(:repo_name) { should == 'dzaporozhets/gitlab.git' }
-      its(:git_cmd) { should == 'git-annex-shell' }
+      its(:command) { should == 'git-annex-shell' }
     end
   end
 
@@ -230,6 +252,44 @@ describe GitlabShell do
 
         it "should execute the command" do
           subject.should_receive(:exec_cmd).with("git-annex-shell", "commit", repo_path, "SHA256")
+        end
+      end
+    end
+
+    context 'with an API command' do
+      before do
+        allow(subject).to receive(:continue?).and_return(true)
+      end
+
+      context 'when generating recovery codes' do
+        let(:ssh_cmd) { '2fa_recovery_codes' }
+        after do
+          subject.exec(ssh_cmd)
+        end
+
+        it 'does not call verify_access' do
+          expect(subject).not_to receive(:verify_access)
+        end
+
+        it 'calls the corresponding method' do
+          expect(subject).to receive(:api_2fa_recovery_codes)
+        end
+
+        it 'outputs recovery codes' do
+          expect($stdout).to receive(:puts)
+            .with(/f67c514de60c4953\n41278385fc00c1e0/)
+        end
+
+        context 'when the process is unsuccessful' do
+          it 'displays the error to the user' do
+            api.stub(two_factor_recovery_codes: {
+              'success' => false,
+              'message' => 'Could not find the given key'
+            })
+
+            expect($stdout).to receive(:puts)
+              .with(/Could not find the given key/)
+          end
         end
       end
     end

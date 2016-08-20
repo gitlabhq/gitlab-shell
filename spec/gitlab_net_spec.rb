@@ -106,6 +106,24 @@ describe GitlabNet, vcr: true do
     end
   end
 
+  describe '#two_factor_recovery_codes' do
+    it 'returns two factor recovery codes' do
+      VCR.use_cassette('two-factor-recovery-codes') do
+        result = gitlab_net.two_factor_recovery_codes('key-1')
+        expect(result['success']).to be_true
+        expect(result['recovery_codes']).to eq(['f67c514de60c4953','41278385fc00c1e0'])
+      end
+    end
+
+    it 'returns false when recovery codes cannot be generated' do
+      VCR.use_cassette('two-factor-recovery-codes-fail') do
+        result = gitlab_net.two_factor_recovery_codes('key-1')
+        expect(result['success']).to be_false
+        expect(result['message']).to eq('Could not find the given key')
+      end
+    end
+  end
+
   describe :check_access do
     context 'ssh key with access to project' do
       it 'should allow pull access for dev.gitlab.org' do

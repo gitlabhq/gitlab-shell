@@ -1,3 +1,6 @@
+v3.5.0
+  - Add option to recover 2FA via SSH
+
 v3.4.0
   - Redis Sentinel support
 
