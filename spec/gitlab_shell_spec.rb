@@ -36,6 +36,7 @@ describe GitlabShell do
 
   let(:repo_name) { 'gitlab-ci.git' }
   let(:repo_path) { File.join(tmp_repos_path, repo_name) }
+  let(:repo_http_path) { 'http://gitlab.dev/dzaporozhets/gitlab.git' }
 
   before do
     GitlabConfig.any_instance.stub(audit_usernames: false)
@@ -111,6 +112,19 @@ describe GitlabShell do
 
       its(:repo_name) { should == 'dzaporozhets/gitlab.git' }
       its(:command) { should == 'git-annex-shell' }
+    end
+
+    describe 'git-lfs' do
+      let(:repo_name) { 'dzaporozhets/gitlab.git' }
+      let(:ssh_args) { %W(git-lfs-authenticate dzaporozhets/gitlab.git download) }
+
+      before do
+        subject.send :parse_cmd, ssh_args
+      end
+
+      its(:repo_name) { should == 'dzaporozhets/gitlab.git' }
+      its(:command) { should == 'git-lfs-authenticate' }
+      its(:git_access) { should == 'git-upload-pack' }
     end
   end
 
@@ -306,7 +320,7 @@ describe GitlabShell do
       end
 
       it "should disallow access and log the attempt if check_access returns false status" do
-        api.stub(check_access: GitAccessStatus.new(false, 'denied', nil))
+        api.stub(check_access: GitAccessStatus.new(false, 'denied', nil, nil))
         message = "gitlab-shell: Access denied for git command <git-upload-pack gitlab-ci.git> "
         message << "by user with key #{key_id}."
         $logger.should_receive(:warn).with(message)

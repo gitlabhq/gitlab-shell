@@ -7,7 +7,7 @@ describe GitlabAccess do
   let(:repo_path)  { File.join(repository_path, repo_name) + ".git" }
   let(:api) do
     double(GitlabNet).tap do |api|
-      api.stub(check_access: GitAccessStatus.new(true, 'ok', '/home/git/repositories'))
+      api.stub(check_access: GitAccessStatus.new(true, 'ok', '/home/git/repositories', 'http://gitlab.dev/repo'))
     end
   end
   subject do
@@ -39,7 +39,7 @@ describe GitlabAccess do
     context "access is denied" do
 
       before do
-        api.stub(check_access: GitAccessStatus.new(false, 'denied', nil))
+        api.stub(check_access: GitAccessStatus.new(false, 'denied', nil, nil))
       end
 
       it "returns false" do

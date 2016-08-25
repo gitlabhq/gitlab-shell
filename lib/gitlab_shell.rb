@@ -1,4 +1,6 @@
 require 'shellwords'
+require 'base64'
+require 'json'
 
 require_relative 'gitlab_net'
 
@@ -11,7 +13,7 @@ class GitlabShell
   API_COMMANDS = %w(2fa_recovery_codes)
   GL_PROTOCOL = 'ssh'.freeze
 
-  attr_accessor :key_id, :repo_name, :command
+  attr_accessor :key_id, :repo_name, :command, :git_access, :repository_http_path
   attr_reader :repo_path
 
   def initialize(key_id)
@@ -94,6 +96,7 @@ class GitlabShell
     raise AccessDeniedError, status.message unless status.allowed?
 
     self.repo_path = status.repository_path
+    @repository_http_path = status.repository_http_path
   end
 
   def process_cmd(args)
@@ -117,6 +120,11 @@ class GitlabShell
 
       $logger.info "gitlab-shell: executing git-annex command <#{parsed_args.join(' ')}> for #{log_username}."
       exec_cmd(*parsed_args)
+
+    elsif @command == 'git-lfs-authenticate'
+      $logger.info "gitlab-shell: Processing LFS authentication for #{log_username}."
+      lfs_authenticate
+
     else
       $logger.info "gitlab-shell: executing git command <#{@command} #{repo_path}> for #{log_username}."
       exec_cmd(@command, repo_path)
@@ -182,6 +190,19 @@ class GitlabShell
   def gcryptsetup?(args)
     non_dashed = args.reject { |a| a.start_with?('-') }
     non_dashed[0, 2] == %w{git-annex-shell gcryptsetup}
+  end
+
+  def lfs_authenticate
+    return unless user
+
+    authorization = {
+      header: {
+        Authorization: "Basic #{Base64.strict_encode64("#{user['username']}:#{user['lfs_token']}")}"
+      },
+      href: "#{repository_http_path}/info/lfs/"
+    }
+
+    puts JSON.generate(authorization)
   end
 
   private
