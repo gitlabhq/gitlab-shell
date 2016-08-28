@@ -6,6 +6,7 @@ require 'json'
 
 class GitlabAccess
   class AccessDeniedError < StandardError; end
+  class MemoryLimitReachedError < StandardError; end
 
   include NamesHelper
 
@@ -24,6 +25,7 @@ class GitlabAccess
     status = api.check_access('git-receive-pack', @repo_name, @actor, @changes, @protocol)
 
     raise AccessDeniedError, status.message unless status.allowed?
+    raise MemoryLimitReachedError, status.memory_message if status.memory_limit?
 
     true
   rescue GitlabNet::ApiUnreachableError
@@ -31,6 +33,9 @@ class GitlabAccess
     false
   rescue AccessDeniedError => ex
     $stderr.puts "GitLab: #{ex.message}"
+    false
+  rescue MemoryLimitReachedError => ex
+    $stderr.puts "Gitlab: Project has reached the memory limit by: #{ex.message}MB please free some memory in Gitlab's UI to be able to push."
     false
   end
 
