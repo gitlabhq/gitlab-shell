@@ -1,8 +1,7 @@
 require 'shellwords'
-require 'base64'
-require 'json'
 
 require_relative 'gitlab_net'
+require_relative 'gitlab_lfs_authentication'
 
 class GitlabShell
   class AccessDeniedError < StandardError; end
@@ -195,14 +194,7 @@ class GitlabShell
   def lfs_authenticate
     return unless user
 
-    authorization = {
-      header: {
-        Authorization: "Basic #{Base64.strict_encode64("#{user['username']}:#{user['lfs_token']}")}"
-      },
-      href: "#{repository_http_path}/info/lfs/"
-    }
-
-    puts JSON.generate(authorization)
+    puts GitlabLfsAuthentication.new(user, repository_http_path).authenticate!
   end
 
   private
