@@ -126,6 +126,19 @@ describe GitlabShell do
       its(:command) { should == 'git-lfs-authenticate' }
       its(:git_access) { should == 'git-upload-pack' }
     end
+
+    describe 'git-lfs old clients' do
+      let(:repo_name) { 'dzaporozhets/gitlab.git' }
+      let(:ssh_args) { %W(git-lfs-authenticate dzaporozhets/gitlab.git download long_oid) }
+
+      before do
+        subject.send :parse_cmd, ssh_args
+      end
+
+      its(:repo_name) { should == 'dzaporozhets/gitlab.git' }
+      its(:git_cmd) { should == 'git-lfs-authenticate' }
+      its(:git_access) { should == 'git-upload-pack' }
+    end
   end
 
   describe :exec do
