@@ -2,17 +2,23 @@ require 'base64'
 require 'json'
 
 class GitlabLfsAuthentication
-  attr_accessor :user, :repository_http_path
+  attr_accessor :username, :lfs_token, :repository_http_path
 
-  def initialize(user, repository_http_path)
-    @user = user
+  def initialize(username, lfs_token, repository_http_path)
+    @username = username
+    @lfs_token = lfs_token
     @repository_http_path = repository_http_path
+  end
+
+  def self.build_from_json(json)
+    values = JSON.parse(json)
+    self.new(values['username'], values['lfs_token'], values['repository_http_path'])
   end
 
   def authenticate!
     authorization = {
       header: {
-        Authorization: "Basic #{Base64.strict_encode64("#{user['username']}:#{user['lfs_token']}")}"
+        Authorization: "Basic #{Base64.strict_encode64("#{username}:#{lfs_token}")}"
       },
       href: "#{repository_http_path}/info/lfs/"
     }

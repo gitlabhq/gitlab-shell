@@ -40,7 +40,7 @@ http_interactions:
       - '0.016934'
     body:
       encoding: UTF-8
-      string: '{"name":"Dmitriy Zaporozhets","username":"dzaporozhets","lfs_token":"wsnys8Zm8Jn7zyhHTAAK"}'
+      string: '{"name":"Dmitriy Zaporozhets","username":"dzaporozhets"}'
     http_version: 
   recorded_at: Wed, 03 Sep 2014 11:27:35 GMT
 recorded_with: VCR 2.4.0

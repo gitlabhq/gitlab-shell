@@ -1,7 +1,6 @@
 require 'shellwords'
 
 require_relative 'gitlab_net'
-require_relative 'gitlab_lfs_authentication'
 
 class GitlabShell
   class AccessDeniedError < StandardError; end
@@ -12,7 +11,7 @@ class GitlabShell
   API_COMMANDS = %w(2fa_recovery_codes)
   GL_PROTOCOL = 'ssh'.freeze
 
-  attr_accessor :key_id, :repo_name, :command, :git_access, :repository_http_path
+  attr_accessor :key_id, :repo_name, :command, :git_access
   attr_reader :repo_path
 
   def initialize(key_id)
@@ -95,7 +94,6 @@ class GitlabShell
     raise AccessDeniedError, status.message unless status.allowed?
 
     self.repo_path = status.repository_path
-    @repository_http_path = status.repository_http_path
   end
 
   def process_cmd(args)
@@ -192,9 +190,11 @@ class GitlabShell
   end
 
   def lfs_authenticate
-    return unless user
+    lfs_access = api.lfs_authenticate(@key_id, @repo_name)
 
-    puts GitlabLfsAuthentication.new(user, repository_http_path).authenticate!
+    return unless lfs_access
+
+    puts lfs_access.authenticate!
   end
 
   private

@@ -38,7 +38,6 @@ describe GitlabNet, vcr: true do
       VCR.use_cassette("discover-ok") do
         user = gitlab_net.discover('key-126')
         user['name'].should == 'Dmitriy Zaporozhets'
-        user['lfs_token'].should == 'wsnys8Zm8Jn7zyhHTAAK'
         user['username'].should == 'dzaporozhets'
       end
     end
@@ -54,6 +53,19 @@ describe GitlabNet, vcr: true do
       VCR.use_cassette("discover-ok") do
         Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
         expect { gitlab_net.discover('key-126') }.to raise_error(GitlabNet::ApiUnreachableError)
+      end
+    end
+  end
+
+  describe '#lfs_authenticate' do
+    context 'lfs authentication succeeded' do
+      it 'should return the correct data' do
+        VCR.use_cassette('lfs-authenticate-ok') do
+          lfs_access = gitlab_net.lfs_authenticate('key-126', 'gitlab/gitlabhq.git')
+          lfs_access.username.should == 'dzaporozhets'
+          lfs_access.lfs_token.should == 'wsnys8Zm8Jn7zyhHTAAK'
+          lfs_access.repository_http_path.should == 'http://gitlab.dev/gitlab/gitlabhq.git'
+        end
       end
     end
   end
@@ -132,7 +144,6 @@ describe GitlabNet, vcr: true do
         VCR.use_cassette("allowed-pull") do
           access = gitlab_net.check_access('git-receive-pack', 'gitlab/gitlabhq.git', 'key-126', changes, 'ssh')
           access.allowed?.should be_true
-          access.repository_http_path.should == 'http://gitlab.dev/gitlab/gitlabhq.git'
         end
       end
 

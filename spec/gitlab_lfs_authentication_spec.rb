@@ -5,11 +5,12 @@ describe GitlabLfsAuthentication do
   let(:user) { { 'username' => 'dzaporozhets', 'lfs_token' => 'wsnys8Zm8Jn7zyhHTAAK' } }
 
   subject do
-    GitlabLfsAuthentication.new(user, 'http://gitlab.dev/repo')
+    GitlabLfsAuthentication.new('dzaporozhets', 'wsnys8Zm8Jn7zyhHTAAK', 'http://gitlab.dev/repo')
   end
 
   describe '#initialize' do
-    it { subject.user.should == user }
+    it { subject.username.should == 'dzaporozhets' }
+    it { subject.lfs_token.should == 'wsnys8Zm8Jn7zyhHTAAK' }
     it { subject.repository_http_path.should == 'http://gitlab.dev/repo' }
   end
 
