@@ -8,9 +8,10 @@ class GitlabShell
   class InvalidRepositoryPathError < StandardError; end
 
   GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-annex-shell git-lfs-authenticate).freeze
+  API_COMMANDS = %w(2fa_recovery_codes)
   GL_PROTOCOL = 'ssh'.freeze
 
-  attr_accessor :key_id, :repo_name, :git_cmd
+  attr_accessor :key_id, :repo_name, :command
   attr_reader :repo_path
 
   def initialize(key_id)
@@ -30,7 +31,7 @@ class GitlabShell
     args = Shellwords.shellwords(origin_cmd)
     parse_cmd(args)
 
-    verify_access
+    verify_access if GIT_COMMANDS.include?(args.first)
 
     process_cmd(args)
 
@@ -58,12 +59,14 @@ class GitlabShell
   protected
 
   def parse_cmd(args)
-    @git_cmd = args.first
-    @git_access = @git_cmd
+    @command = args.first
+    @git_access = @command
 
-    raise DisallowedCommandError unless GIT_COMMANDS.include?(@git_cmd)
+    return if API_COMMANDS.include?(@command)
 
-    case @git_cmd
+    raise DisallowedCommandError unless GIT_COMMANDS.include?(@command)
+
+    case @command
     when 'git-annex-shell'
       raise DisallowedCommandError unless @config.git_annex_enabled?
 
@@ -94,7 +97,9 @@ class GitlabShell
   end
 
   def process_cmd(args)
-    if @git_cmd == 'git-annex-shell'
+    return self.send("api_#{@command}") if API_COMMANDS.include?(@command)
+
+    if @command == 'git-annex-shell'
       raise DisallowedCommandError unless @config.git_annex_enabled?
 
       # Make sure repository has git-annex enabled
@@ -113,8 +118,8 @@ class GitlabShell
       $logger.info "gitlab-shell: executing git-annex command <#{parsed_args.join(' ')}> for #{log_username}."
       exec_cmd(*parsed_args)
     else
-      $logger.info "gitlab-shell: executing git command <#{@git_cmd} #{repo_path}> for #{log_username}."
-      exec_cmd(@git_cmd, repo_path)
+      $logger.info "gitlab-shell: executing git command <#{@command} #{repo_path}> for #{log_username}."
+      exec_cmd(@command, repo_path)
     end
   end
 
@@ -180,6 +185,39 @@ class GitlabShell
   end
 
   private
+
+  def continue?(question)
+    puts "#{question} (yes/no)"
+    STDOUT.flush # Make sure the question gets output before we wait for input
+    continue = STDIN.gets.chomp
+    puts '' # Add a buffer in the output
+    continue == 'yes'
+  end
+
+  def api_2fa_recovery_codes
+    continue = continue?(
+      "Are you sure you want to generate new two-factor recovery codes?\n" \
+      "Any existing recovery codes you saved will be invalidated."
+    )
+
+    unless continue
+      puts 'New recovery codes have *not* been generated. Existing codes will remain valid.'
+      return
+    end
+
+    resp = api.two_factor_recovery_codes(key_id)
+    if resp['success']
+      codes = resp['recovery_codes'].join("\n")
+      puts "Your two-factor authentication recovery codes are:\n\n" \
+           "#{codes}\n\n" \
+           "During sign in, use one of the codes above when prompted for\n" \
+           "your two-factor code. Then, visit your Profile Settings and add\n" \
+           "a new device so you do not lose access to your account again."
+    else
+      puts "An error occurred while trying to generate new recovery codes.\n" \
+           "#{resp['message']}"
+    end
+  end
 
   def repo_path=(repo_path)
     raise ArgumentError, "Repository path not provided. Please make sure you're using GitLab v8.10 or later." unless repo_path

@@ -72,6 +72,15 @@ class GitlabNet
     nil
   end
 
+  def two_factor_recovery_codes(key)
+    key_id = key.gsub('key-', '')
+    resp = post("#{host}/two_factor_recovery_codes", key_id: key_id)
+
+    JSON.parse(resp.body) if resp.code == '200'
+  rescue
+    {}
+  end
+
   def redis_client
     redis_config = config.redis
     database = redis_config['database'] || 0
