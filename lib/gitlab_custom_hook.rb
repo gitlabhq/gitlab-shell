@@ -11,27 +11,37 @@ class GitlabCustomHook
   end
 
   def pre_receive(changes)
-    hook = hook_file('pre-receive', @repo_path)
-    return true if hook.nil?
-
-    GitlabMetrics.measure("pre-receive-hook") { call_receive_hook(hook, changes) }
+    GitlabMetrics.measure("pre-receive-hook") do
+      find_hooks('pre-receive').all? do |hook|
+        call_receive_hook(hook, changes)
+      end
+    end
   end
 
   def post_receive(changes)
-    hook = hook_file('post-receive', @repo_path)
-    return true if hook.nil?
-
-    GitlabMetrics.measure("post-receive-hook") { call_receive_hook(hook, changes) }
+    GitlabMetrics.measure("post-receive-hook") do
+      find_hooks('post-receive').all? do |hook|
+        call_receive_hook(hook, changes)
+      end
+    end
   end
 
   def update(ref_name, old_value, new_value)
-    hook = hook_file('update', @repo_path)
-    return true if hook.nil?
-
-    GitlabMetrics.measure("update-hook") { system(vars, hook, ref_name, old_value, new_value) }
+    GitlabMetrics.measure("update-hook") do
+      find_hooks('update').all? do |hook|
+        system(vars, hook, ref_name, old_value, new_value)
+      end
+    end
   end
 
   private
+
+  def find_hooks(hook_name)
+    [
+      hook_file(hook_name, @repo_path),
+      hook_file(hook_name, ROOT_PATH)
+    ].compact
+  end
 
   def call_receive_hook(hook, changes)
     # Prepare the hook subprocess. Attach a pipe to its stdin, and merge

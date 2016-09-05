@@ -9,6 +9,7 @@ new_value = ARGV[2]
 repo_path = Dir.pwd
 key_id    = ENV.delete('GL_ID')
 
+require_relative '../lib/gitlab_init'
 require_relative '../lib/gitlab_custom_hook'
 
 if GitlabCustomHook.new(repo_path, key_id).update(ref_name, old_value, new_value)
