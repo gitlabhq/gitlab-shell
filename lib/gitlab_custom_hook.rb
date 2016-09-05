@@ -56,6 +56,6 @@ class GitlabCustomHook
   def hook_file(hook_type, repo_path)
     hook_path = File.join(repo_path.strip, 'custom_hooks')
     hook_file = "#{hook_path}/#{hook_type}"
-    hook_file if File.exist?(hook_file)
+    hook_file if File.executable?(hook_file)
   end
 end
