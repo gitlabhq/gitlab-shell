@@ -6,7 +6,6 @@ RUN ["bash", "-c", "yum install -y --setopt=tsflags=nodocs openssh-server libicu
      yum clean all && \
      sshd-keygen && \
      mkdir /var/run/sshd && \
-     gem install --no-ri --no-rdoc bunny && \
      /usr/sbin/groupadd -g 48 git && \
      useradd -r -s /bin/bash -u 48 -g 48 git && \
      mkdir --parent /home/git"]
