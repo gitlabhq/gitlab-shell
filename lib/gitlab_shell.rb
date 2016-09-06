@@ -194,7 +194,7 @@ class GitlabShell
 
     return unless lfs_access
 
-    puts lfs_access.authenticate!
+    puts lfs_access.authentication_payload
   end
 
   private

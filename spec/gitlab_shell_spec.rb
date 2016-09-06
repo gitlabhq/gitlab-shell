@@ -135,7 +135,7 @@ describe GitlabShell do
       end
 
       its(:repo_name) { should == 'dzaporozhets/gitlab.git' }
-      its(:git_cmd) { should == 'git-lfs-authenticate' }
+      its(:command) { should == 'git-lfs-authenticate' }
       its(:git_access) { should == 'git-upload-pack' }
     end
   end

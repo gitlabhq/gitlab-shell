@@ -11,11 +11,11 @@ class GitlabLfsAuthentication
   end
 
   def self.build_from_json(json)
-    values = JSON.parse(json)
+    values = JSON.parse(json) rescue nil
     self.new(values['username'], values['lfs_token'], values['repository_http_path'])
   end
 
-  def authenticate!
+  def authentication_payload
     authorization = {
       header: {
         Authorization: "Basic #{Base64.strict_encode64("#{username}:#{lfs_token}")}"
