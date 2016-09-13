@@ -1,3 +1,6 @@
+v3.5.1
+  - Clear environment variables before running hooks
+
 v3.5.0
   - Add option to recover 2FA via SSH
 
