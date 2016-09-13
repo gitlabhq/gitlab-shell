@@ -20,9 +20,9 @@ echo "Initializing authorized_keys file"
 
 ##### Store authorized_keys on persisted volume for backup
 mkdir -p $GIT_REPO_ROOT/.ssh/ /home/git/.ssh/
-touch -a $GIT_REPO_ROOT/.ssh/authorized_keys 
+touch -a $GIT_REPO_ROOT/.ssh/authorized_keys
 
-ln -sf $GIT_REPO_ROOT/.ssh/authorized_keys $AUTHORIZED_KEYS_FILE  
+ln -sf $GIT_REPO_ROOT/.ssh/authorized_keys $AUTHORIZED_KEYS_FILE
 
 SSH_CMD_PREFIX='command="export GL_ID=key-gitlabshelladmin;if [ -n \"$SSH_ORIGINAL_COMMAND\" ]; then eval \"$SSH_ORIGINAL_COMMAND\";else exec \"$SHELL\"; fi" '
 
@@ -39,7 +39,7 @@ else
   fi
 fi
 
-PUB_KEY="repoadmin-id-rsa-pub" 
+PUB_KEY="repoadmin-id-rsa-pub"
 FILE_CONTENTS=`cat $SSH_SECRETS_DIR/$PUB_KEY`
 if grep -q "$FILE_CONTENTS" $AUTHORIZED_KEYS_FILE; then
   echo "$PUB_KEY key already exist in authorized_keys file."
@@ -71,7 +71,7 @@ echo "Starting tail of gitlab-shell log file to output all logs to stdout"
 
 ### Setup permissions
 chown -R git:git /home/git
-chmod -R o-rwx /home/git
+chmod -R o-rwx $GIT_REPO_ROOT
 chmod 700 $GIT_REPO_ROOT
 
 ## Enable non root ssh by removing nologin
