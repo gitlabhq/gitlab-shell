@@ -14,7 +14,10 @@ SSH_FOLDER=/home/git/.ssh
 AUTHORIZED_KEYS_FILE=$SSH_FOLDER/authorized_keys
 
 ## Mounted volume for git repositories
-GIT_REPO_ROOT=${GIT_REPO_ROOT:-/home/git/data}
+GIT_REPO_MOUNT=${GIT_REPO_MOUNT:-/home/git/data}
+
+## Path where git repositories are stored
+GIT_REPO_ROOT=${GIT_REPO_ROOT:-/home/git/data/gls}
 
 echo "Initializing authorized_keys file"
 
@@ -71,6 +74,7 @@ echo "Starting tail of gitlab-shell log file to output all logs to stdout"
 
 ### Setup permissions
 chown -R git:git /home/git
+chown root:root $GIT_REPO_MOUNT
 chmod -R o-rwx $GIT_REPO_ROOT
 chmod 700 $GIT_REPO_ROOT
 
