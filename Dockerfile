@@ -7,8 +7,7 @@ RUN ["bash", "-c", "yum install -y --setopt=tsflags=nodocs openssh-server libicu
      sshd-keygen && \
      mkdir /var/run/sshd && \
      /usr/sbin/groupadd -g 48 git && \
-     useradd -r -s /bin/bash -u 48 -g 48 git && \
-     mkdir --parent /home/git"]
+     useradd -r -m -s /bin/bash -u 48 -g 48 git"]
 
 # gitlab-shell setup
 COPY . /home/git/gitlab-shell
@@ -32,6 +31,7 @@ RUN mkdir /home/git/gitlab-config && \
           -e "s|^[#]*GSSAPIAuthentication yes|GSSAPIAuthentication no|" \
           -e "s|^[#]*ChallengeResponseAuthentication no|ChallengeResponseAuthentication no|" \
           -e "s|^[#]*PasswordAuthentication yes|PasswordAuthentication no|" \
+          -e "s|^[#]*StrictModes yes|StrictModes no|" \
           /etc/ssh/sshd_config && \
     echo -e "UseDNS no \nAuthenticationMethods publickey" >> /etc/ssh/sshd_config && \
     chmod -Rf +x /home/git/gitlab-shell/bin
