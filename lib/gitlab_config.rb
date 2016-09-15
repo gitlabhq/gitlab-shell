@@ -50,4 +50,8 @@ class GitlabConfig
   def git_annex_enabled?
     @config['git_annex_enabled'] ||= false
   end
+
+  def git_trace_log_file
+    @config['git_trace_log_file']
+  end
 end
