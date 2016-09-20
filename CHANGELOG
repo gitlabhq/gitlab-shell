@@ -1,6 +1,8 @@
+v3.6.0
+  - Added full support for `git-lfs-authenticate` to properly handle LFS requests and pass them on to Workhorse
+
 v3.5.0
   - Add option to recover 2FA via SSH
-  - Added full support for `git-lfs-authenticate` to properly handle LFS requests and pass them on to Workhorse
 
 v3.4.0
   - Redis Sentinel support
