@@ -6,6 +6,7 @@ require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 require_relative 'gitlab_access'
 require_relative 'gitlab_redis'
+require_relative 'gitlab_lfs_authentication'
 require_relative 'httpunix'
 
 class GitlabNet
@@ -15,15 +16,12 @@ class GitlabNet
   READ_TIMEOUT = 300
 
   def check_access(cmd, repo, actor, changes, protocol)
-    project_name = repo.gsub("'", "")
-    project_name = project_name.gsub(/\.git\Z/, "")
-    project_name = project_name.gsub(/\A\//, "")
     changes = changes.join("\n") unless changes.kind_of?(String)
 
     params = {
       action: cmd,
       changes: changes,
-      project: project_name,
+      project: project_name(repo),
       protocol: protocol
     }
 
@@ -47,6 +45,19 @@ class GitlabNet
     key_id = key.gsub("key-", "")
     resp = get("#{host}/discover?key_id=#{key_id}")
     JSON.parse(resp.body) rescue nil
+  end
+
+  def lfs_authenticate(key, repo)
+    params = {
+      project: project_name(repo),
+      key_id: key.gsub('key-', '')
+    }
+
+    resp = post("#{host}/lfs_authenticate", params)
+
+    if resp.code == '200'
+      GitlabLfsAuthentication.build_from_json(resp.body)
+    end
   end
 
   def broadcast_message
@@ -106,6 +117,12 @@ class GitlabNet
   end
 
   protected
+
+  def project_name(repo)
+    project_name = repo.gsub("'", "")
+    project_name = project_name.gsub(/\.git\Z/, "")
+    project_name.gsub(/\A\//, "")
+  end
 
   def config
     @config ||= GitlabConfig.new

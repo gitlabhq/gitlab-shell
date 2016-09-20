@@ -11,7 +11,7 @@ class GitlabShell
   API_COMMANDS = %w(2fa_recovery_codes)
   GL_PROTOCOL = 'ssh'.freeze
 
-  attr_accessor :key_id, :repo_name, :command
+  attr_accessor :key_id, :repo_name, :command, :git_access
   attr_reader :repo_path
 
   def initialize(key_id)
@@ -117,6 +117,11 @@ class GitlabShell
 
       $logger.info "gitlab-shell: executing git-annex command <#{parsed_args.join(' ')}> for #{log_username}."
       exec_cmd(*parsed_args)
+
+    elsif @command == 'git-lfs-authenticate'
+      $logger.info "gitlab-shell: Processing LFS authentication for #{log_username}."
+      lfs_authenticate
+
     else
       $logger.info "gitlab-shell: executing git command <#{@command} #{repo_path}> for #{log_username}."
       exec_cmd(@command, repo_path)
@@ -182,6 +187,14 @@ class GitlabShell
   def gcryptsetup?(args)
     non_dashed = args.reject { |a| a.start_with?('-') }
     non_dashed[0, 2] == %w{git-annex-shell gcryptsetup}
+  end
+
+  def lfs_authenticate
+    lfs_access = api.lfs_authenticate(@key_id, @repo_name)
+
+    return unless lfs_access
+
+    puts lfs_access.authentication_payload
   end
 
   private
