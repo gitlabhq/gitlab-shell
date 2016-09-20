@@ -1,3 +1,6 @@
+v3.6.1
+  - Set a low IO priority for storage moves to lower performance impact
+
 v3.6.0
   - Added full support for `git-lfs-authenticate` to properly handle LFS requests and pass them on to Workhorse
 
