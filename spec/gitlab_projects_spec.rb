@@ -212,6 +212,7 @@ describe GitlabProjects do
 
     before do
       FileUtils.mkdir_p(tmp_repo_path)
+      FileUtils.mkdir_p(File.join(tmp_repo_path, 'hooks')) # Add some contents to copy
       FileUtils.mkdir_p(alternative_storage_path)
       allow_any_instance_of(GitlabReferenceCounter).to receive(:value).and_return(0)
     end
@@ -222,6 +223,8 @@ describe GitlabProjects do
       File.exists?(tmp_repo_path).should be_true
       gl_projects.exec
       File.exists?(new_repo_path).should be_true
+      # Make sure the target directory isn't empty (i.e. contents were copied)
+      FileUtils.cd(new_repo_path) { Dir['**/*'].length.should_not be(0) }
     end
 
     it "should fail if no destination path is provided" do
