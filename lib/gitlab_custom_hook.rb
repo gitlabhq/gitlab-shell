@@ -46,8 +46,13 @@ class GitlabCustomHook
   end
 
   def hook_file(hook_type, repo_path)
-    hook_path = File.join(repo_path.strip, 'custom_hooks')
-    hook_file = "#{hook_path}/#{hook_type}"
-    hook_file if File.exist?(hook_file)
+    return nil if hook_type == nil
+    search_path = [repo_path, ROOT_PATH]
+    search_path.each do |hook_path|
+      next if hook_path == nil
+      hook_file = File.join(hook_path.strip, 'custom_hook', hook_type)
+      return hook_file if File.exist?(hook_file)
+    end
+    nil
   end
 end
