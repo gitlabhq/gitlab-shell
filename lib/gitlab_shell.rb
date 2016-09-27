@@ -1,4 +1,5 @@
 require 'shellwords'
+require 'pathname'
 
 require_relative 'gitlab_net'
 
@@ -150,6 +151,14 @@ class GitlabShell
       env.merge!({ 'GIT_ANNEX_SHELL_LIMITED' => '1' })
     end
 
+    if git_trace_available?
+      env.merge!({
+        'GIT_TRACE' => @config.git_trace_log_file,
+        'GIT_TRACE_PACKET' => @config.git_trace_log_file,
+        'GIT_TRACE_PERFORMANCE' => @config.git_trace_log_file,
+      })
+    end
+
     Kernel::exec(env, *args, unsetenv_others: true)
   end
 
@@ -229,6 +238,23 @@ class GitlabShell
     else
       puts "An error occurred while trying to generate new recovery codes.\n" \
            "#{resp['message']}"
+    end
+  end
+
+  def git_trace_available?
+    return false unless @config.git_trace_log_file
+
+    if Pathname(@config.git_trace_log_file).relative?
+      $logger.warn "gitlab-shell: is configured to trace git commands with #{@config.git_trace_log_file.inspect} but an absolute path needs to be provided"
+      return false
+    end
+
+    begin
+      File.open(@config.git_trace_log_file, 'a') { nil }
+      return true
+    rescue => ex
+      $logger.warn "gitlab-shell: is configured to trace git commands with #{@config.git_trace_log_file.inspect} but it's not possible to write in that path #{ex.message}"
+      return false
     end
   end
 

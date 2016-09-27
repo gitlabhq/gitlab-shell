@@ -361,7 +361,7 @@ describe GitlabShell do
 
   describe :exec_cmd do
     let(:shell) { GitlabShell.new(key_id) }
-    before { Kernel.stub!(:exec) }
+    before { Kernel.stub(:exec) }
 
     it "uses Kernel::exec method" do
       Kernel.should_receive(:exec).with(kind_of(Hash), 1, 2, unsetenv_others: true).once
@@ -375,6 +375,72 @@ describe GitlabShell do
     it "allows one argument if it is an array" do
       Kernel.should_receive(:exec).with(kind_of(Hash), [1, 2], unsetenv_others: true).once
       shell.send :exec_cmd, [1, 2]
+    end
+
+    context "when specifying a git_tracing log file" do
+      let(:git_trace_log_file) { '/tmp/git_trace_performance.log' }
+
+      before do
+        GitlabConfig.any_instance.stub(git_trace_log_file: git_trace_log_file)
+        shell
+      end
+
+      it "uses GIT_TRACE_PERFORMANCE" do
+        expected_hash = hash_including(
+          'GIT_TRACE' => git_trace_log_file,
+          'GIT_TRACE_PACKET' => git_trace_log_file,
+          'GIT_TRACE_PERFORMANCE' => git_trace_log_file
+        )
+        Kernel.should_receive(:exec).with(expected_hash, [1, 2], unsetenv_others: true).once
+
+        shell.send :exec_cmd, [1, 2]
+      end
+
+      context "when provides a relative path" do
+        let(:git_trace_log_file) { 'git_trace_performance.log' }
+
+        it "does not uses GIT_TRACE*" do
+          # If we try to use it we'll show a warning to the users
+          expected_hash = hash_excluding(
+            'GIT_TRACE', 'GIT_TRACE_PACKET', 'GIT_TRACE_PERFORMANCE'
+          )
+          Kernel.should_receive(:exec).with(expected_hash, [1, 2], unsetenv_others: true).once
+
+          shell.send :exec_cmd, [1, 2]
+        end
+
+        it "writes an entry on the log" do
+          expect($logger).to receive(:warn).
+            with("gitlab-shell: is configured to trace git commands with #{git_trace_log_file.inspect} but an absolute path needs to be provided")
+
+          Kernel.should_receive(:exec).with(kind_of(Hash), [1, 2], unsetenv_others: true).once
+          shell.send :exec_cmd, [1, 2]
+        end
+      end
+
+      context "when provides a file not writable" do
+        before do
+          expect(File).to receive(:open).with(git_trace_log_file, 'a').and_raise(Errno::EACCES)
+        end
+
+        it "does not uses GIT_TRACE*" do
+          # If we try to use it we'll show a warning to the users
+          expected_hash = hash_excluding(
+            'GIT_TRACE', 'GIT_TRACE_PACKET', 'GIT_TRACE_PERFORMANCE'
+          )
+          Kernel.should_receive(:exec).with(expected_hash, [1, 2], unsetenv_others: true).once
+
+          shell.send :exec_cmd, [1, 2]
+        end
+
+        it "writes an entry on the log" do
+          expect($logger).to receive(:warn).
+            with("gitlab-shell: is configured to trace git commands with #{git_trace_log_file.inspect} but it's not possible to write in that path Permission denied")
+
+          Kernel.should_receive(:exec).with(kind_of(Hash), [1, 2], unsetenv_others: true).once
+          shell.send :exec_cmd, [1, 2]
+        end
+      end
     end
   end
 
