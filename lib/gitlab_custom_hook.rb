@@ -1,6 +1,12 @@
 require 'open3'
 
 class GitlabCustomHook
+  attr_reader :vars
+
+  def initialize(key_id)
+    @vars = { 'GL_ID' => key_id }
+  end
+
   def pre_receive(changes, repo_path)
     hook = hook_file('pre-receive', repo_path)
     return true if hook.nil?
@@ -11,7 +17,7 @@ class GitlabCustomHook
   def post_receive(changes, repo_path)
     hook = hook_file('post-receive', repo_path)
     return true if hook.nil?
-    
+
     call_receive_hook(hook, changes)
   end
 
@@ -19,7 +25,7 @@ class GitlabCustomHook
     hook = hook_file('update', repo_path)
     return true if hook.nil?
 
-    system(hook, ref_name, old_value, new_value)
+    system(vars, hook, ref_name, old_value, new_value)
   end
 
   private
@@ -28,7 +34,7 @@ class GitlabCustomHook
     # Prepare the hook subprocess. Attach a pipe to its stdin, and merge
     # both its stdout and stderr into our own stdout.
     stdin_reader, stdin_writer = IO.pipe
-    hook_pid = spawn(hook, in: stdin_reader, err: :out)
+    hook_pid = spawn(vars, hook, in: stdin_reader, err: :out)
     stdin_reader.close
 
     # Submit changes to the hook via its stdin.
