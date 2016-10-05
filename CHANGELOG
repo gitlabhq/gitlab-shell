@@ -1,3 +1,6 @@
+v3.6.3
+  - Re-exposing GL_ID to custom hooks
+
 v3.6.2
   - Enable GIT_TRACE/GIT_TRACE_PACKET/GIT_TRACE_PERFORMANCE by providing the git_trace_log_file config key
 
