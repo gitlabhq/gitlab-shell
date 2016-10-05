@@ -227,6 +227,41 @@ describe GitlabProjects do
       FileUtils.cd(new_repo_path) { Dir['**/*'].length.should_not be(0) }
     end
 
+    it "should attempt rsync with ionice first" do
+      expect(gl_projects).to receive(:system).with(
+        'ionice -c2 -n7 rsync', '-a', '--delete', '--rsync-path="ionice -c2 -n7 rsync"',
+        "#{tmp_repo_path}/", new_repo_path
+      ).and_return(true)
+
+      gl_projects.exec.should be_true
+    end
+
+    it "should attempt rsync without ionice if with ionice fails" do
+      expect(gl_projects).to receive(:system).with(
+        'ionice -c2 -n7 rsync', '-a', '--delete', '--rsync-path="ionice -c2 -n7 rsync"',
+        "#{tmp_repo_path}/", new_repo_path
+      ).and_return(false)
+
+      expect(gl_projects).to receive(:system).with(
+        'rsync', '-a', '--delete', '--rsync-path="rsync"', "#{tmp_repo_path}/", new_repo_path
+      ).and_return(true)
+
+      gl_projects.exec.should be_true
+    end
+
+    it "should fail if both rsync attempts fail" do
+      expect(gl_projects).to receive(:system).with(
+        'ionice -c2 -n7 rsync', '-a', '--delete', '--rsync-path="ionice -c2 -n7 rsync"',
+        "#{tmp_repo_path}/", new_repo_path
+      ).and_return(false)
+
+      expect(gl_projects).to receive(:system).with(
+        'rsync', '-a', '--delete', '--rsync-path="rsync"', "#{tmp_repo_path}/", new_repo_path
+      ).and_return(false)
+
+      gl_projects.exec.should be_false
+    end
+
     it "should fail if no destination path is provided" do
       incomplete = build_gitlab_projects('mv-storage', tmp_repos_path, repo_name)
       $logger.should_receive(:error).with("mv-storage failed: no destination storage path provided.")

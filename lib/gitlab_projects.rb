@@ -321,7 +321,9 @@ class GitlabProjects
       rsync_path = 'ionice -c2 -n7 rsync'
       result = system(*%W(#{rsync_path} -a --delete --rsync-path="#{rsync_path}" #{source_path} #{new_full_path}))
 
-      unless result
+      if result
+        true
+      else
         # If the command fails with `ionice` (maybe because we're on a OS X
         # development machine), try again without `ionice`.
         rsync_path = 'rsync'
