@@ -1,4 +1,5 @@
 v3.6.4
+  - Fix rsync with ionice command building
   - Fix short circuit logic between rsync with and without ionice for storage migrations
 
 v3.6.3

@@ -318,16 +318,12 @@ class GitlabProjects
       $logger.info "Syncing project #{@project_name} from <#{full_path}> to <#{new_full_path}>."
 
       # Set a low IO priority with ionice to not choke the server on moves
-      rsync_path = 'ionice -c2 -n7 rsync'
-      result = system(*%W(#{rsync_path} -a --delete --rsync-path="#{rsync_path}" #{source_path} #{new_full_path}))
-
-      if result
+      if rsync(source_path, new_full_path, 'ionice -c2 -n7 rsync')
         true
       else
         # If the command fails with `ionice` (maybe because we're on a OS X
         # development machine), try again without `ionice`.
-        rsync_path = 'rsync'
-        system(*%W(#{rsync_path} -a --delete --rsync-path="#{rsync_path}" #{source_path} #{new_full_path}))
+        rsync(source_path, new_full_path)
       end
     else
       $logger.error "mv-storage failed: source path <#{full_path}> is waiting for pushes to finish."
@@ -392,5 +388,10 @@ class GitlabProjects
 
   def gitlab_reference_counter
     @gitlab_reference_counter ||= GitlabReferenceCounter.new(full_path)
+  end
+
+  def rsync(src, dest, rsync_path = 'rsync')
+    command = rsync_path.split + %W(-a --delete --rsync-path="#{rsync_path}" #{src} #{dest})
+    system(*command)
   end
 end

@@ -229,7 +229,7 @@ describe GitlabProjects do
 
     it "should attempt rsync with ionice first" do
       expect(gl_projects).to receive(:system).with(
-        'ionice -c2 -n7 rsync', '-a', '--delete', '--rsync-path="ionice -c2 -n7 rsync"',
+        'ionice', '-c2', '-n7', 'rsync', '-a', '--delete', '--rsync-path="ionice -c2 -n7 rsync"',
         "#{tmp_repo_path}/", new_repo_path
       ).and_return(true)
 
@@ -238,7 +238,7 @@ describe GitlabProjects do
 
     it "should attempt rsync without ionice if with ionice fails" do
       expect(gl_projects).to receive(:system).with(
-        'ionice -c2 -n7 rsync', '-a', '--delete', '--rsync-path="ionice -c2 -n7 rsync"',
+        'ionice', '-c2', '-n7', 'rsync', '-a', '--delete', '--rsync-path="ionice -c2 -n7 rsync"',
         "#{tmp_repo_path}/", new_repo_path
       ).and_return(false)
 
@@ -251,7 +251,7 @@ describe GitlabProjects do
 
     it "should fail if both rsync attempts fail" do
       expect(gl_projects).to receive(:system).with(
-        'ionice -c2 -n7 rsync', '-a', '--delete', '--rsync-path="ionice -c2 -n7 rsync"',
+        'ionice', '-c2', '-n7', 'rsync', '-a', '--delete', '--rsync-path="ionice -c2 -n7 rsync"',
         "#{tmp_repo_path}/", new_repo_path
       ).and_return(false)
 
