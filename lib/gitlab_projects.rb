@@ -4,6 +4,7 @@ require 'open3'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
+require_relative 'gitlab_metrics'
 require_relative 'gitlab_reference_counter'
 
 class GitlabProjects
@@ -50,24 +51,39 @@ class GitlabProjects
   end
 
   def exec
-    case @command
-    when 'create-tag'; create_tag
-    when 'add-project'; add_project
-    when 'list-projects'; puts list_projects
-    when 'rm-project'; rm_project
-    when 'mv-project'; mv_project
-    when 'mv-storage'; mv_storage
-    when 'import-project'; import_project
-    when 'fork-project'; fork_project
-    when 'fetch-remote'; fetch_remote
-    when 'push-branches'; push_branches
-    when 'delete-remote-branches'; delete_remote_branches
-    when 'list-remote-tags'; list_remote_tags
-    when 'gc'; gc
-    else
-      $logger.warn "Attempt to execute invalid gitlab-projects command #{@command.inspect}."
-      puts 'not allowed'
-      false
+    GitlabMetrics.measure("command-#{@command}") do
+      case @command
+      when 'create-tag';
+        create_tag
+      when 'add-project';
+        add_project
+      when 'list-projects';
+        puts list_projects
+      when 'rm-project';
+        rm_project
+      when 'mv-project';
+        mv_project
+      when 'mv-storage';
+        mv_storage
+      when 'import-project';
+        import_project
+      when 'fork-project';
+        fork_project
+      when 'fetch-remote';
+        fetch_remote
+      when 'push-branches';
+        push_branches
+      when 'delete-remote-branches';
+        delete_remote_branches
+      when 'list-remote-tags';
+        list_remote_tags
+      when 'gc';
+        gc
+      else
+        $logger.warn "Attempt to execute invalid gitlab-projects command #{@command.inspect}."
+        puts 'not allowed'
+        false
+      end
     end
   end
 

@@ -2,6 +2,7 @@ require 'shellwords'
 require 'pathname'
 
 require_relative 'gitlab_net'
+require_relative 'gitlab_metrics'
 
 class GitlabShell
   class AccessDeniedError < StandardError; end
@@ -32,7 +33,9 @@ class GitlabShell
     args = Shellwords.shellwords(origin_cmd)
     parse_cmd(args)
 
-    verify_access if GIT_COMMANDS.include?(args.first)
+    if GIT_COMMANDS.include?(args.first)
+      GitlabMetrics.measure('verify-access') { verify_access }
+    end
 
     process_cmd(args)
 
@@ -118,11 +121,11 @@ class GitlabShell
 
       $logger.info "gitlab-shell: executing git-annex command <#{parsed_args.join(' ')}> for #{log_username}."
       exec_cmd(*parsed_args)
-
     elsif @command == 'git-lfs-authenticate'
-      $logger.info "gitlab-shell: Processing LFS authentication for #{log_username}."
-      lfs_authenticate
-
+      GitlabMetrics.measure('lfs-authenticate') do
+        $logger.info "gitlab-shell: Processing LFS authentication for #{log_username}."
+        lfs_authenticate
+      end
     else
       $logger.info "gitlab-shell: executing git command <#{@command} #{repo_path}> for #{log_username}."
       exec_cmd(@command, repo_path)

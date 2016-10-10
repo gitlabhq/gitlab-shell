@@ -1,5 +1,6 @@
 v3.6.5
   - Test against ruby 2.3
+  - Instrument GitLab Shell and log metrics data to a file
 
 v3.6.4
   - Fix rsync with ionice command building
