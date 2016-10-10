@@ -1,4 +1,4 @@
-image: "ruby:2.2"
+image: "ruby:2.3"
 
 before_script:
   - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
@@ -8,7 +8,6 @@ before_script:
   - cp config.yml.example config.yml
   - bundle install
 
-#ruby 2.2
 rspec:
   script:
     - bundle exec rspec spec
@@ -25,9 +24,9 @@ rubocop:
   except:
     - tags
 
-#ruby 2.1
-rspec:ruby2.1:
-  image: ruby:2.1
+#ruby 2.2
+rspec:ruby2.2:
+  image: ruby:2.2
   script:
     - bundle exec rspec spec
   tags:
@@ -35,10 +34,11 @@ rspec:ruby2.1:
   except:
     - tags
 
-rubocop:ruby2.1:
+#ruby 2.1
+rspec:ruby2.1:
   image: ruby:2.1
   script:
-    - bundle exec rubocop
+    - bundle exec rspec spec
   tags:
     - ruby
   except:
