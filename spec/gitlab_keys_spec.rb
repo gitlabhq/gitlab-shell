@@ -53,7 +53,7 @@ describe GitlabKeys do
     end
 
     context "without file writing" do
-      before { gitlab_keys.stub(:open) }
+      before { allow(gitlab_keys).to receive(:open) }
       before { create_authorized_keys_fixture }
 
       it "should log an add-key event" do
@@ -106,7 +106,7 @@ describe GitlabKeys do
 
     context "without file writing" do
       before do
-        gitlab_keys.should_receive(:open).and_yield(mock(:file, puts: nil, chmod: nil))
+        gitlab_keys.should_receive(:open).and_yield(double(:file, puts: nil, chmod: nil))
       end
 
       it "should log an add-key event" do

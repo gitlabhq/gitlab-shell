@@ -2,6 +2,7 @@ require 'timeout'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
+require_relative 'gitlab_metrics'
 
 class GitlabKeys
   class KeyError < StandardError ; end
@@ -28,17 +29,25 @@ class GitlabKeys
   end
 
   def exec
-    case @command
-    when 'add-key'; add_key
-    when 'batch-add-keys'; batch_add_keys
-    when 'rm-key';  rm_key
-    when 'list-keys'; puts list_keys
-    when 'clear';  clear
-    when 'check-permissions'; check_permissions
-    else
-      $logger.warn "Attempt to execute invalid gitlab-keys command #{@command.inspect}."
-      puts 'not allowed'
-      false
+    GitlabMetrics.measure("command-#{@command}") do
+      case @command
+      when 'add-key';
+        add_key
+      when 'batch-add-keys';
+        batch_add_keys
+      when 'rm-key';
+        rm_key
+      when 'list-keys';
+        list_keys
+      when 'clear';
+        clear
+      when 'check-permissions';
+        check_permissions
+      else
+        $logger.warn "Attempt to execute invalid gitlab-keys command #{@command.inspect}."
+        puts 'not allowed'
+        false
+      end
     end
   end
 
