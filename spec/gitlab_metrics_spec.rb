@@ -2,22 +2,18 @@ require_relative 'spec_helper'
 require_relative '../lib/gitlab_metrics'
 
 describe GitlabMetrics do
-  describe '::measure' do
+  describe '.measure' do
     it 'returns the return value of the block' do
       val = described_class.measure('foo') { 10 }
 
       expect(val).to eq(10)
     end
 
-    it 'write in a file metrics data' do
-      result = nil
-      expect(described_class.logger).to receive(:debug) do |&b|
-        result = b.call
-      end
+    it 'writes the metrics data to a log file' do
+      expect(described_class.logger).to receive(:debug).
+        with(/metrics: name=\"foo\" wall_time=\d+ cpu_time=\d+/)
 
       described_class.measure('foo') { 10 }
-
-      expect(result).to match(/name=\"foo\" wall_time=\d+ cpu_time=\d+/)
     end
 
     it 'calls proper measure methods' do
