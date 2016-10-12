@@ -1,5 +1,6 @@
 require 'logger'
 require_relative 'gitlab_config'
+require_relative 'gitlab_logger'
 
 module GitlabMetrics
   module System
@@ -25,7 +26,7 @@ module GitlabMetrics
   end
 
   def self.logger
-    @logger ||= Logger.new(GitlabConfig.new.metrics_log_file)
+    $logger
   end
 
   # Measures the execution time of a block.
@@ -48,7 +49,7 @@ module GitlabMetrics
     real_time = System.monotonic_time - start_real
     cpu_time = System.cpu_time - start_cpu
 
-    logger.debug { "name=#{name.inspect} wall_time=#{real_time.inspect} cpu_time=#{cpu_time.inspect}" }
+    logger.debug("metrics: name=#{name.inspect} wall_time=#{real_time} cpu_time=#{cpu_time}")
 
     retval
   end
