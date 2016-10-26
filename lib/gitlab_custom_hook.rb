@@ -36,13 +36,6 @@ class GitlabCustomHook
 
   private
 
-  def find_hooks(hook_name)
-    [
-      hook_file(hook_name, @repo_path),
-      hook_file(hook_name, ROOT_PATH)
-    ].compact
-  end
-
   def call_receive_hook(hook, changes)
     # Prepare the hook subprocess. Attach a pipe to its stdin, and merge
     # both its stdout and stderr into our own stdout.
@@ -64,9 +57,42 @@ class GitlabCustomHook
     $?.success?
   end
 
-  def hook_file(hook_type, repo_path)
-    hook_path = File.join(repo_path.strip, 'custom_hooks')
-    hook_file = "#{hook_path}/#{hook_type}"
-    hook_file if File.executable?(hook_file)
+  # lookup hook files in this order:
+  #
+  # 1. <repository>.git/custom_hooks/<hook_name> - per project hook
+  # 2. <repository>.git/custom_hooks/<hook_name>.d/* - per project hooks
+  # 3. <repository>.git/hooks/<hook_name>.d/* - global hooks
+  #
+  def find_hooks(hook_name)
+    hook_files = []
+
+    # <repository>.git/custom_hooks/<hook_name>
+    hook_file = File.join(@repo_path, 'custom_hooks', hook_name)
+    hook_files.push(hook_file) if File.executable?(hook_file)
+
+    # <repository>.git/custom_hooks/<hook_name>.d/*
+    hook_path = File.join(@repo_path, 'custom_hooks', "#{hook_name}.d")
+    if Dir.exist?(hook_path)
+      hook_files += match_hook_files(hook_path)
+    end
+
+    # <repository>.git/hooks/<hook_name>.d/*
+    hook_path = File.join(@repo_path, 'hooks', "#{hook_name}.d")
+    if Dir.exist?(hook_path)
+      hook_files += match_hook_files(hook_path)
+    end
+
+    hook_files
+  end
+
+  # match files from path:
+  # 1. file must be executable
+  # 2. file must not match backup file
+  #
+  # the resulting list is sorted
+  def match_hook_files(path)
+    Dir["#{path}/*"].select do |f|
+      !f[/~$/] && File.executable?(f)
+    end.sort
   end
 end
