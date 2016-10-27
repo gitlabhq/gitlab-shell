@@ -9,19 +9,18 @@ class GitlabAccess
 
   include NamesHelper
 
-  attr_reader :config, :repo_path, :repo_name, :changes, :protocol
+  attr_reader :config, :repo_path, :changes, :protocol
 
   def initialize(repo_path, actor, changes, protocol)
     @config = GitlabConfig.new
     @repo_path = repo_path.strip
     @actor = actor
-    @repo_name = extract_repo_name(@repo_path.dup)
     @changes = changes.lines
     @protocol = protocol
   end
 
   def exec
-    status = api.check_access('git-receive-pack', @repo_name, @actor, @changes, @protocol)
+    status = api.check_access('git-receive-pack', @repo_path, @actor, @changes, @protocol)
 
     raise AccessDeniedError, status.message unless status.allowed?
 

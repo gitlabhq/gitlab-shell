@@ -13,7 +13,6 @@ class GitlabPostReceive
   def initialize(repo_path, actor, changes)
     @config = GitlabConfig.new
     @repo_path, @actor = repo_path.strip, actor
-    @repo_name = extract_repo_name(@repo_path.dup)
     @changes = changes
     @jid = SecureRandom.hex(12)
   end
@@ -29,7 +28,7 @@ class GitlabPostReceive
         print_broadcast_message(broadcast_message["message"])
       end
 
-      merge_request_urls = api.merge_request_urls(@repo_name, @changes)
+      merge_request_urls = api.merge_request_urls(@repo_path, @changes)
       print_merge_request_links(merge_request_urls)
     rescue GitlabNet::ApiUnreachableError
       nil
