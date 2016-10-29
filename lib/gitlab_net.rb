@@ -21,7 +21,7 @@ class GitlabNet
     params = {
       action: cmd,
       changes: changes,
-      project: project_name(repo),
+      project: sanitize_path(repo),
       protocol: protocol
     }
 
@@ -49,7 +49,7 @@ class GitlabNet
 
   def lfs_authenticate(key, repo)
     params = {
-      project: project_name(repo),
+      project: sanitize_path(repo),
       key_id: key.gsub('key-', '')
     }
 
@@ -65,10 +65,10 @@ class GitlabNet
     JSON.parse(resp.body) rescue {}
   end
 
-  def merge_request_urls(repo_name, changes)
+  def merge_request_urls(repo_path, changes)
     changes = changes.join("\n") unless changes.kind_of?(String)
     changes = changes.encode('UTF-8', 'ASCII', invalid: :replace, replace: '')
-    resp = get("#{host}/merge_request_urls?project=#{URI.escape(repo_name)}&changes=#{URI.escape(changes)}")
+    resp = get("#{host}/merge_request_urls?project=#{URI.escape(repo_path)}&changes=#{URI.escape(changes)}")
     JSON.parse(resp.body) rescue []
   end
 
@@ -118,10 +118,8 @@ class GitlabNet
 
   protected
 
-  def project_name(repo)
-    project_name = repo.gsub("'", "")
-    project_name = project_name.gsub(/\.git\Z/, "")
-    project_name.gsub(/\A\//, "")
+  def sanitize_path(repo)
+    repo.gsub("'", "")
   end
 
   def config

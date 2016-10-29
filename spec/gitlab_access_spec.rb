@@ -22,7 +22,6 @@ describe GitlabAccess do
   end
 
   describe :initialize do
-    it { subject.repo_name.should == repo_name }
     it { subject.repo_path.should == repo_path }
     it { subject.changes.should == ['wow'] }
     it { subject.protocol.should == 'ssh' }

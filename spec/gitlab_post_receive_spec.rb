@@ -18,7 +18,7 @@ describe GitlabPostReceive do
   before do
     GitlabConfig.any_instance.stub(repos_path: repository_path)
     GitlabNet.any_instance.stub(broadcast_message: { })
-    GitlabNet.any_instance.stub(:merge_request_urls).with(repo_name, wrongly_encoded_changes) { [] }
+    GitlabNet.any_instance.stub(:merge_request_urls).with(repo_path, wrongly_encoded_changes) { [] }
     expect(Time).to receive(:now).and_return(enqueued_at)
   end
 
@@ -35,7 +35,7 @@ describe GitlabPostReceive do
     context 'Without broad cast message' do
       context 'pushing new branch' do
         before do
-          GitlabNet.any_instance.stub(:merge_request_urls).with(repo_name, wrongly_encoded_changes) do
+          GitlabNet.any_instance.stub(:merge_request_urls).with(repo_path, wrongly_encoded_changes) do
             [{
               "branch_name" => "new_branch",
               "url" => "http://localhost/dzaporozhets/gitlab-ci/merge_requests/new?merge_request%5Bsource_branch%5D=new_branch",
@@ -62,7 +62,7 @@ describe GitlabPostReceive do
 
       context 'pushing existing branch with merge request created' do
         before do
-          GitlabNet.any_instance.stub(:merge_request_urls).with(repo_name, wrongly_encoded_changes) do
+          GitlabNet.any_instance.stub(:merge_request_urls).with(repo_path, wrongly_encoded_changes) do
             [{
               "branch_name" => "feature_branch",
               "url" => "http://localhost/dzaporozhets/gitlab-ci/merge_requests/1",
@@ -90,7 +90,7 @@ describe GitlabPostReceive do
 
     context 'show broadcast message and merge request link' do
       before do
-        GitlabNet.any_instance.stub(:merge_request_urls).with(repo_name, wrongly_encoded_changes) do
+        GitlabNet.any_instance.stub(:merge_request_urls).with(repo_path, wrongly_encoded_changes) do
           [{
             "branch_name" => "new_branch",
             "url" => "http://localhost/dzaporozhets/gitlab-ci/merge_requests/new?merge_request%5Bsource_branch%5D=new_branch",
