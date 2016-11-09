@@ -16,14 +16,34 @@ describe GitlabCustomHook do
 
   let(:gitlab_custom_hook) { GitlabCustomHook.new(tmp_repo_path, 'key_1') }
 
+  # setup paths
+  # <repository>.git/hooks/ - symlink to gitlab-shell/hooks global dir
+  # <repository>.git/hooks/<hook_name> - executed by git itself, this is gitlab-shell/hooks/<hook_name>
+  # <repository>.git/hooks/<hook_name>.d/* - global hooks: all executable files (minus editor backup files)
+  # <repository>.git/custom_hooks/<hook_name> - per project hook (this is already existing behavior)
+  # <repository>.git/custom_hooks/<hook_name>.d/* - per project hooks
+  #
+  # custom hooks are invoked in such way that first failure prevents other scripts being ran
+  # as global scripts are ran first, failing global skips repo hooks
+
   before do
+    FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks'))
+    FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks', 'update.d'))
+    FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks', 'pre-receive.d'))
+    FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks', 'post-receive.d'))
+
+    FileUtils.symlink(File.join(tmp_root_path, 'hooks'), File.join(tmp_repo_path, 'hooks'))
     FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks'))
-    FileUtils.mkdir_p(File.join(tmp_root_path, 'custom_hooks'))
+    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks', 'update.d'))
+    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks', 'pre-receive.d'))
+    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks', 'post-receive.d'))
   end
 
   after do
     FileUtils.rm_rf(File.join(tmp_repo_path, 'custom_hooks'))
-    FileUtils.rm_rf(File.join(tmp_root_path, 'custom_hooks'))
+    FileUtils.rm_rf(File.join(tmp_repo_path, 'hooks'))
+    FileUtils.rm_rf(File.join(tmp_repo_path, 'hooks.d'))
+    FileUtils.rm_rf(File.join(tmp_root_path, 'hooks'))
   end
 
   context 'with gl_id_test_hook' do
@@ -56,7 +76,6 @@ describe GitlabCustomHook do
 
   context "having no hooks" do
     it "returns true" do
-      stub_const("ROOT_PATH", tmp_root_path)
       expect(gitlab_custom_hook.pre_receive(changes)).to eq(true)
       expect(gitlab_custom_hook.update(ref_name, old_value, new_value)).to eq(true)
       expect(gitlab_custom_hook.post_receive(changes)).to eq(true)
@@ -65,11 +84,10 @@ describe GitlabCustomHook do
 
   context "having only ok repo hooks" do
     before do
-      create_hooks(tmp_repo_path, hook_ok)
+      create_repo_hooks(tmp_repo_path, hook_ok)
     end
 
     it "returns true" do
-      stub_const("ROOT_PATH", tmp_root_path)
       expect(gitlab_custom_hook.pre_receive(changes)).to eq(true)
       expect(gitlab_custom_hook.update(ref_name, old_value, new_value)).to eq(true)
       expect(gitlab_custom_hook.post_receive(changes)).to eq(true)
@@ -78,12 +96,11 @@ describe GitlabCustomHook do
 
   context "having both ok repo and global hooks" do
     before do
-      create_hooks(tmp_repo_path, hook_ok)
-      create_hooks(tmp_root_path, hook_ok)
+      create_repo_hooks(tmp_repo_path, hook_ok)
+      create_global_hooks_d(tmp_root_path, hook_ok)
     end
 
     it "returns true" do
-      stub_const("ROOT_PATH", tmp_root_path)
       expect(gitlab_custom_hook.pre_receive(changes)).to eq(true)
       expect(gitlab_custom_hook.update(ref_name, old_value, new_value)).to eq(true)
       expect(gitlab_custom_hook.post_receive(changes)).to eq(true)
@@ -92,29 +109,27 @@ describe GitlabCustomHook do
 
   context "having failing repo and ok global hooks" do
     before do
-      create_hooks(tmp_repo_path, hook_fail)
-      create_hooks(tmp_root_path, hook_ok)
+      create_repo_hooks_d(tmp_repo_path, hook_fail)
+      create_global_hooks_d(tmp_repo_path, hook_ok)
     end
 
     it "returns false" do
-      stub_const("ROOT_PATH", tmp_root_path)
       expect(gitlab_custom_hook.pre_receive(changes)).to eq(false)
       expect(gitlab_custom_hook.update(ref_name, old_value, new_value)).to eq(false)
       expect(gitlab_custom_hook.post_receive(changes)).to eq(false)
     end
 
-    it "only executes the repo hook" do
+    it "only executes the global hook" do
       expect(gitlab_custom_hook).to receive(:call_receive_hook)
-        .with(hook_path(tmp_repo_path, "pre-receive"), changes)
+        .with(hook_path(tmp_repo_path, "custom_hooks/pre-receive.d/hook"), changes)
         .and_call_original
       expect(gitlab_custom_hook).to receive(:system)
-        .with(vars, hook_path(tmp_repo_path, "update"), ref_name, old_value, new_value)
+        .with(vars, hook_path(tmp_repo_path, "custom_hooks/update.d/hook"), ref_name, old_value, new_value)
         .and_call_original
       expect(gitlab_custom_hook).to receive(:call_receive_hook)
-        .with(hook_path(tmp_repo_path, "post-receive"), changes)
+        .with(hook_path(tmp_repo_path, "custom_hooks/post-receive.d/hook"), changes)
         .and_call_original
 
-      stub_const("ROOT_PATH", tmp_root_path)
       gitlab_custom_hook.pre_receive(changes)
       gitlab_custom_hook.update(ref_name, old_value, new_value)
       gitlab_custom_hook.post_receive(changes)
@@ -123,12 +138,11 @@ describe GitlabCustomHook do
 
   context "having ok repo but failing global hooks" do
     before do
-      create_hooks(tmp_repo_path, hook_ok)
-      create_hooks(tmp_root_path, hook_fail)
+      create_repo_hooks_d(tmp_repo_path, hook_ok)
+      create_global_hooks_d(tmp_repo_path, hook_fail)
     end
 
     it "returns false" do
-      stub_const("ROOT_PATH", tmp_root_path)
       expect(gitlab_custom_hook.pre_receive(changes)).to eq(false)
       expect(gitlab_custom_hook.update(ref_name, old_value, new_value)).to eq(false)
       expect(gitlab_custom_hook.post_receive(changes)).to eq(false)
@@ -136,42 +150,61 @@ describe GitlabCustomHook do
 
     it "executes the relevant hooks" do
       expect(gitlab_custom_hook).to receive(:call_receive_hook)
-        .with(hook_path(tmp_repo_path, "pre-receive"), changes)
+        .with(hook_path(tmp_repo_path, "hooks/pre-receive.d/hook"), changes)
         .and_call_original
       expect(gitlab_custom_hook).to receive(:call_receive_hook)
-        .with(hook_path(tmp_root_path, "pre-receive"), changes)
+        .with(hook_path(tmp_repo_path, "custom_hooks/pre-receive.d/hook"), changes)
         .and_call_original
       expect(gitlab_custom_hook).to receive(:system)
-        .with(vars, hook_path(tmp_repo_path, "update"), ref_name, old_value, new_value)
+        .with(vars, hook_path(tmp_repo_path, "hooks/update.d/hook"), ref_name, old_value, new_value)
         .and_call_original
       expect(gitlab_custom_hook).to receive(:system)
-        .with(vars, hook_path(tmp_root_path, "update"), ref_name, old_value, new_value)
+        .with(vars, hook_path(tmp_repo_path, "custom_hooks/update.d/hook"), ref_name, old_value, new_value)
         .and_call_original
       expect(gitlab_custom_hook).to receive(:call_receive_hook)
-        .with(hook_path(tmp_repo_path, "post-receive"), changes)
+        .with(hook_path(tmp_repo_path, "hooks/post-receive.d/hook"), changes)
         .and_call_original
       expect(gitlab_custom_hook).to receive(:call_receive_hook)
-        .with(hook_path(tmp_root_path, "post-receive"), changes)
+        .with(hook_path(tmp_repo_path, "custom_hooks/post-receive.d/hook"), changes)
         .and_call_original
 
-      stub_const("ROOT_PATH", tmp_root_path)
       gitlab_custom_hook.pre_receive(changes)
       gitlab_custom_hook.update(ref_name, old_value, new_value)
       gitlab_custom_hook.post_receive(changes)
     end
   end
 
-  def hook_path(path, name)
-    File.join(path, 'custom_hooks', name)
+  def hook_path(repo_path, path)
+    File.join(repo_path, path.split('/'))
   end
 
-  def create_hook(path, name, which)
-    FileUtils.ln_sf(which, hook_path(path, name))
+  def create_hook(repo_path, path, which)
+    FileUtils.ln_sf(which, hook_path(repo_path, path))
   end
 
-  def create_hooks(path, which)
-    create_hook(path, 'pre-receive', which)
-    create_hook(path, 'update', which)
-    create_hook(path, 'post-receive', which)
+  def create_global_hooks(path, which)
+    # should not be tested, as the "global hooks" is gitlab-shell itself (gitlab-shell/hooks/<hook_name>)
+    raise "no method, this is gitlab-shell itself"
+  end
+
+  # global hooks multiplexed
+  def create_global_hooks_d(path, which)
+    create_hook(path, 'hooks/pre-receive.d/hook', which)
+    create_hook(path, 'hooks/update.d/hook', which)
+    create_hook(path, 'hooks/post-receive.d/hook', which)
+  end
+
+  # repo hooks
+  def create_repo_hooks(path, which)
+    create_hook(path, 'custom_hooks/pre-receive', which)
+    create_hook(path, 'custom_hooks/update', which)
+    create_hook(path, 'custom_hooks/post-receive', which)
+  end
+
+  # repo hooks multiplexed
+  def create_repo_hooks_d(path, which)
+    create_hook(path, 'custom_hooks/pre-receive.d/hook', which)
+    create_hook(path, 'custom_hooks/update.d/hook', which)
+    create_hook(path, 'custom_hooks/post-receive.d/hook', which)
   end
 end
