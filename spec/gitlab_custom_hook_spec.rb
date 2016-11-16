@@ -182,11 +182,6 @@ describe GitlabCustomHook do
     FileUtils.ln_sf(which, hook_path(repo_path, path))
   end
 
-  def create_global_hooks(path, which)
-    # should not be tested, as the "global hooks" is gitlab-shell itself (gitlab-shell/hooks/<hook_name>)
-    raise "no method, this is gitlab-shell itself"
-  end
-
   # global hooks multiplexed
   def create_global_hooks_d(path, which)
     create_hook(path, 'hooks/pre-receive.d/hook', which)
