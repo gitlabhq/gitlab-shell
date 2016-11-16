@@ -1,4 +1,5 @@
 require 'open3'
+require_relative 'gitlab_metrics'
 
 class GitlabCustomHook
   attr_reader :vars
@@ -11,21 +12,21 @@ class GitlabCustomHook
     hook = hook_file('pre-receive', repo_path)
     return true if hook.nil?
 
-    call_receive_hook(hook, changes)
+    GitlabMetrics.measure("pre-receive-hook") { call_receive_hook(hook, changes) }
   end
 
   def post_receive(changes, repo_path)
     hook = hook_file('post-receive', repo_path)
     return true if hook.nil?
 
-    call_receive_hook(hook, changes)
+    GitlabMetrics.measure("post-receive-hook") { call_receive_hook(hook, changes) }
   end
 
   def update(ref_name, old_value, new_value, repo_path)
     hook = hook_file('update', repo_path)
     return true if hook.nil?
 
-    system(vars, hook, ref_name, old_value, new_value)
+    GitlabMetrics.measure("update-hook") { system(vars, hook, ref_name, old_value, new_value) }
   end
 
   private
