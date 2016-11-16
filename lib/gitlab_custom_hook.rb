@@ -92,7 +92,7 @@ class GitlabCustomHook
   # the resulting list is sorted
   def match_hook_files(path)
     Dir["#{path}/*"].select do |f|
-      !f[/~$/] && File.executable?(f)
+      !f.end_with?('~') && File.executable?(f)
     end.sort
   end
 end
