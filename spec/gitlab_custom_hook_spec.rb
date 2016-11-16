@@ -82,7 +82,7 @@ describe GitlabCustomHook do
     end
   end
 
-  context "having only ok repo hooks" do
+  context "having only successful repo hooks" do
     before do
       create_repo_hooks(tmp_repo_path, hook_ok)
     end
@@ -94,7 +94,7 @@ describe GitlabCustomHook do
     end
   end
 
-  context "having both ok repo and global hooks" do
+  context "having both successful repo and global hooks" do
     before do
       create_repo_hooks(tmp_repo_path, hook_ok)
       create_global_hooks_d(tmp_root_path, hook_ok)
@@ -107,7 +107,7 @@ describe GitlabCustomHook do
     end
   end
 
-  context "having failing repo and ok global hooks" do
+  context "having failing repo and successful global hooks" do
     before do
       create_repo_hooks_d(tmp_repo_path, hook_fail)
       create_global_hooks_d(tmp_repo_path, hook_ok)
@@ -136,7 +136,7 @@ describe GitlabCustomHook do
     end
   end
 
-  context "having ok repo but failing global hooks" do
+  context "having successful repo but failing global hooks" do
     before do
       create_repo_hooks_d(tmp_repo_path, hook_ok)
       create_global_hooks_d(tmp_repo_path, hook_fail)
