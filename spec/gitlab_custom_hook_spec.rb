@@ -16,6 +16,35 @@ describe GitlabCustomHook do
 
   let(:gitlab_custom_hook) { GitlabCustomHook.new(tmp_repo_path, 'key_1') }
 
+  def hook_path(repo_path, path)
+    File.join(repo_path, path.split('/'))
+  end
+
+  def create_hook(repo_path, path, which)
+    FileUtils.ln_sf(which, hook_path(repo_path, path))
+  end
+
+  # global hooks multiplexed
+  def create_global_hooks_d(path, which)
+    create_hook(path, 'hooks/pre-receive.d/hook', which)
+    create_hook(path, 'hooks/update.d/hook', which)
+    create_hook(path, 'hooks/post-receive.d/hook', which)
+  end
+
+  # repo hooks
+  def create_repo_hooks(path, which)
+    create_hook(path, 'custom_hooks/pre-receive', which)
+    create_hook(path, 'custom_hooks/update', which)
+    create_hook(path, 'custom_hooks/post-receive', which)
+  end
+
+  # repo hooks multiplexed
+  def create_repo_hooks_d(path, which)
+    create_hook(path, 'custom_hooks/pre-receive.d/hook', which)
+    create_hook(path, 'custom_hooks/update.d/hook', which)
+    create_hook(path, 'custom_hooks/post-receive.d/hook', which)
+  end
+
   # setup paths
   # <repository>.git/hooks/ - symlink to gitlab-shell/hooks global dir
   # <repository>.git/hooks/<hook_name> - executed by git itself, this is gitlab-shell/hooks/<hook_name>
@@ -172,34 +201,5 @@ describe GitlabCustomHook do
       gitlab_custom_hook.update(ref_name, old_value, new_value)
       gitlab_custom_hook.post_receive(changes)
     end
-  end
-
-  def hook_path(repo_path, path)
-    File.join(repo_path, path.split('/'))
-  end
-
-  def create_hook(repo_path, path, which)
-    FileUtils.ln_sf(which, hook_path(repo_path, path))
-  end
-
-  # global hooks multiplexed
-  def create_global_hooks_d(path, which)
-    create_hook(path, 'hooks/pre-receive.d/hook', which)
-    create_hook(path, 'hooks/update.d/hook', which)
-    create_hook(path, 'hooks/post-receive.d/hook', which)
-  end
-
-  # repo hooks
-  def create_repo_hooks(path, which)
-    create_hook(path, 'custom_hooks/pre-receive', which)
-    create_hook(path, 'custom_hooks/update', which)
-    create_hook(path, 'custom_hooks/post-receive', which)
-  end
-
-  # repo hooks multiplexed
-  def create_repo_hooks_d(path, which)
-    create_hook(path, 'custom_hooks/pre-receive.d/hook', which)
-    create_hook(path, 'custom_hooks/update.d/hook', which)
-    create_hook(path, 'custom_hooks/post-receive.d/hook', which)
   end
 end
