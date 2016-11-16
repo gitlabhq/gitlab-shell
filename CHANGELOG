@@ -1,3 +1,6 @@
+v4.0.1
+  - Add instrumentation to push hooks
+
 v4.0.0
   - Use full repository path for API calls
 
