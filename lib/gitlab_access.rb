@@ -2,6 +2,7 @@ require_relative 'gitlab_init'
 require_relative 'gitlab_net'
 require_relative 'gitlab_access_status'
 require_relative 'names_helper'
+require_relative 'gitlab_metrics'
 require 'json'
 
 class GitlabAccess
@@ -20,7 +21,9 @@ class GitlabAccess
   end
 
   def exec
-    status = api.check_access('git-receive-pack', @repo_path, @actor, @changes, @protocol)
+    status = GitlabMetrics.measure('check-access:git-receive-pack') do
+      api.check_access('git-receive-pack', @repo_path, @actor, @changes, @protocol)
+    end
 
     raise AccessDeniedError, status.message unless status.allowed?
 

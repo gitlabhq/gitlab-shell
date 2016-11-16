@@ -1,6 +1,7 @@
 require_relative 'gitlab_init'
 require_relative 'gitlab_net'
 require_relative 'gitlab_reference_counter'
+require_relative 'gitlab_metrics'
 require 'json'
 require 'base64'
 require 'securerandom'
@@ -21,14 +22,18 @@ class GitlabPostReceive
     result = update_redis
 
     begin
-      broadcast_message = api.broadcast_message
+      broadcast_message = GitlabMetrics.measure("broadcast-message") do
+        api.broadcast_message
+      end
 
       if broadcast_message.has_key?("message")
         puts
         print_broadcast_message(broadcast_message["message"])
       end
 
-      merge_request_urls = api.merge_request_urls(@repo_path, @changes)
+      merge_request_urls = GitlabMetrics.measure("merge-request-urls") do
+        api.merge_request_urls(@repo_path, @changes)
+      end
       print_merge_request_links(merge_request_urls)
     rescue GitlabNet::ApiUnreachableError
       nil
