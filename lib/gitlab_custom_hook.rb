@@ -1,4 +1,5 @@
 require 'open3'
+require_relative 'gitlab_init'
 require_relative 'gitlab_metrics'
 
 class GitlabCustomHook
