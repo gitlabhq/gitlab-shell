@@ -8,7 +8,6 @@ key_id = ENV.delete('GL_ID')
 protocol = ENV.delete('GL_PROTOCOL')
 repo_path = Dir.pwd
 
-require_relative '../lib/gitlab_init'
 require_relative '../lib/gitlab_custom_hook'
 require_relative '../lib/gitlab_reference_counter'
 require_relative '../lib/gitlab_access'
