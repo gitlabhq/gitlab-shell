@@ -45,6 +45,13 @@ describe GitlabCustomHook do
     create_hook(path, 'custom_hooks/post-receive.d/hook', which)
   end
 
+  def cleanup_hook_setup
+    FileUtils.rm_rf(File.join(tmp_repo_path, 'custom_hooks'))
+    FileUtils.rm_rf(File.join(tmp_repo_path, 'hooks'))
+    FileUtils.rm_rf(File.join(tmp_repo_path, 'hooks.d'))
+    FileUtils.rm_rf(File.join(tmp_root_path, 'hooks'))
+  end
+
   # setup paths
   # <repository>.git/hooks/ - symlink to gitlab-shell/hooks global dir
   # <repository>.git/hooks/<hook_name> - executed by git itself, this is gitlab-shell/hooks/<hook_name>
@@ -56,6 +63,8 @@ describe GitlabCustomHook do
   # as global scripts are ran first, failing global skips repo hooks
 
   before do
+    cleanup_hook_setup
+
     FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks'))
     FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks', 'update.d'))
     FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks', 'pre-receive.d'))
@@ -69,10 +78,7 @@ describe GitlabCustomHook do
   end
 
   after do
-    FileUtils.rm_rf(File.join(tmp_repo_path, 'custom_hooks'))
-    FileUtils.rm_rf(File.join(tmp_repo_path, 'hooks'))
-    FileUtils.rm_rf(File.join(tmp_repo_path, 'hooks.d'))
-    FileUtils.rm_rf(File.join(tmp_root_path, 'hooks'))
+    cleanup_hook_setup
   end
 
   context 'with gl_id_test_hook' do
