@@ -72,15 +72,11 @@ class GitlabCustomHook
 
     # <repository>.git/custom_hooks/<hook_name>.d/*
     hook_path = File.join(@repo_path, 'custom_hooks', "#{hook_name}.d")
-    if Dir.exist?(hook_path)
-      hook_files += match_hook_files(hook_path)
-    end
+    hook_files += match_hook_files(hook_path)
 
     # <repository>.git/hooks/<hook_name>.d/*
     hook_path = File.join(@repo_path, 'hooks', "#{hook_name}.d")
-    if Dir.exist?(hook_path)
-      hook_files += match_hook_files(hook_path)
-    end
+    hook_files += match_hook_files(hook_path)
 
     hook_files
   end
@@ -91,6 +87,8 @@ class GitlabCustomHook
   #
   # the resulting list is sorted
   def match_hook_files(path)
+    return [] unless Dir.exist?(path)
+
     Dir["#{path}/*"].select do |f|
       !f.end_with?('~') && File.executable?(f)
     end.sort
