@@ -7,6 +7,7 @@ describe GitlabCustomHook do
   let(:tmp_root_path) { File.join(ROOT_PATH, 'tmp') }
   let(:hook_ok) { File.join(ROOT_PATH, 'spec', 'support', 'hook_ok') }
   let(:hook_fail) { File.join(ROOT_PATH, 'spec', 'support', 'hook_fail') }
+  let(:hook_gl_id) { File.join(ROOT_PATH, 'spec', 'support', 'gl_id_test_hook') }
 
   let(:vars) { {"GL_ID" => "key_1"} }
   let(:old_value) { "old-value" }
@@ -82,29 +83,26 @@ describe GitlabCustomHook do
   end
 
   context 'with gl_id_test_hook' do
-    let(:hook_path) { File.join(ROOT_PATH, 'spec/support/gl_id_test_hook') }
+    before do
+      create_repo_hooks(tmp_repo_path, hook_gl_id)
+      create_global_hooks_d(tmp_root_path, hook_gl_id)
+    end
 
     context 'pre_receive hook' do
       it 'passes GL_ID variable to hook' do
-        allow(gitlab_custom_hook).to receive(:hook_file).and_return(hook_path)
-
-        expect(gitlab_custom_hook.pre_receive(changes)).to be_true
+        expect(gitlab_custom_hook.pre_receive(changes)).to eq(true)
       end
     end
 
     context 'post_receive hook' do
       it 'passes GL_ID variable to hook' do
-        allow(gitlab_custom_hook).to receive(:hook_file).and_return(hook_path)
-
-        expect(gitlab_custom_hook.post_receive(changes)).to be_true
+        expect(gitlab_custom_hook.post_receive(changes)).to eq(true)
       end
     end
 
     context 'update hook' do
       it 'passes GL_ID variable to hook' do
-        allow(gitlab_custom_hook).to receive(:hook_file).and_return(hook_path)
-
-        expect(gitlab_custom_hook.update(ref_name, old_value, new_value)).to be_true
+        expect(gitlab_custom_hook.update(ref_name, old_value, new_value)).to eq(true)
       end
     end
   end
