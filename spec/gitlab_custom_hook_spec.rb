@@ -47,9 +47,7 @@ describe GitlabCustomHook do
   end
 
   def cleanup_hook_setup
-    FileUtils.rm_rf(File.join(tmp_repo_path, 'custom_hooks'))
-    FileUtils.rm_rf(File.join(tmp_repo_path, 'hooks'))
-    FileUtils.rm_rf(File.join(tmp_repo_path, 'hooks.d'))
+    FileUtils.rm_rf(File.join(tmp_repo_path))
     FileUtils.rm_rf(File.join(tmp_root_path, 'hooks'))
   end
 
@@ -66,16 +64,17 @@ describe GitlabCustomHook do
   before do
     cleanup_hook_setup
 
+    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks'))
+    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks', 'update.d'))
+    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks', 'pre-receive.d'))
+    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks', 'post-receive.d'))
+
     FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks'))
     FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks', 'update.d'))
     FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks', 'pre-receive.d'))
     FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks', 'post-receive.d'))
 
     FileUtils.symlink(File.join(tmp_root_path, 'hooks'), File.join(tmp_repo_path, 'hooks'))
-    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks'))
-    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks', 'update.d'))
-    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks', 'pre-receive.d'))
-    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks', 'post-receive.d'))
   end
 
   after do
