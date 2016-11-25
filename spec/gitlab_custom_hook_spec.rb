@@ -81,9 +81,32 @@ describe GitlabCustomHook do
     cleanup_hook_setup
   end
 
-  context 'with gl_id_test_hook' do
+  context 'with gl_id_test_hook as repo hook' do
     before do
       create_repo_hooks(hook_gl_id)
+    end
+
+    context 'pre_receive hook' do
+      it 'passes GL_ID variable to hook' do
+        expect(gitlab_custom_hook.pre_receive(changes)).to eq(true)
+      end
+    end
+
+    context 'post_receive hook' do
+      it 'passes GL_ID variable to hook' do
+        expect(gitlab_custom_hook.post_receive(changes)).to eq(true)
+      end
+    end
+
+    context 'update hook' do
+      it 'passes GL_ID variable to hook' do
+        expect(gitlab_custom_hook.update(ref_name, old_value, new_value)).to eq(true)
+      end
+    end
+  end
+
+  context 'with gl_id_test_hook as global hook' do
+    before do
       create_global_hooks_d(hook_gl_id)
     end
 
