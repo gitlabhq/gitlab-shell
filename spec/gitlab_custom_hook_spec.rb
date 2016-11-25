@@ -26,10 +26,10 @@ describe GitlabCustomHook do
   end
 
   # global hooks multiplexed
-  def create_global_hooks_d(which)
-    create_hook('hooks/pre-receive.d/hook', which)
-    create_hook('hooks/update.d/hook', which)
-    create_hook('hooks/post-receive.d/hook', which)
+  def create_global_hooks_d(which, hook_name = 'hook')
+    create_hook('hooks/pre-receive.d/' + hook_name, which)
+    create_hook('hooks/update.d/' + hook_name, which)
+    create_hook('hooks/post-receive.d/' + hook_name, which)
   end
 
   # repo hooks
@@ -40,15 +40,29 @@ describe GitlabCustomHook do
   end
 
   # repo hooks multiplexed
-  def create_repo_hooks_d(which)
-    create_hook('custom_hooks/pre-receive.d/hook', which)
-    create_hook('custom_hooks/update.d/hook', which)
-    create_hook('custom_hooks/post-receive.d/hook', which)
+  def create_repo_hooks_d(which, hook_name = 'hook')
+    create_hook('custom_hooks/pre-receive.d/' + hook_name, which)
+    create_hook('custom_hooks/update.d/' + hook_name, which)
+    create_hook('custom_hooks/post-receive.d/' + hook_name, which)
   end
 
   def cleanup_hook_setup
     FileUtils.rm_rf(File.join(tmp_repo_path))
     FileUtils.rm_rf(File.join(tmp_root_path, 'hooks'))
+  end
+
+  def expect_call_receive_hook(path)
+    expect(gitlab_custom_hook)
+      .to receive(:call_receive_hook)
+      .with(hook_path(path), changes)
+      .and_call_original
+  end
+
+  def expect_call_update_hook(path)
+    expect(gitlab_custom_hook)
+      .to receive(:system)
+      .with(vars, hook_path(path), ref_name, old_value, new_value)
+      .and_call_original
   end
 
   # setup paths
@@ -175,15 +189,9 @@ describe GitlabCustomHook do
     end
 
     it "only executes the global hook" do
-      expect(gitlab_custom_hook).to receive(:call_receive_hook)
-        .with(hook_path("custom_hooks/pre-receive.d/hook"), changes)
-        .and_call_original
-      expect(gitlab_custom_hook).to receive(:system)
-        .with(vars, hook_path("custom_hooks/update.d/hook"), ref_name, old_value, new_value)
-        .and_call_original
-      expect(gitlab_custom_hook).to receive(:call_receive_hook)
-        .with(hook_path("custom_hooks/post-receive.d/hook"), changes)
-        .and_call_original
+      expect_call_receive_hook("custom_hooks/pre-receive.d/hook")
+      expect_call_update_hook("custom_hooks/update.d/hook")
+      expect_call_receive_hook("custom_hooks/post-receive.d/hook")
 
       gitlab_custom_hook.pre_receive(changes)
       gitlab_custom_hook.update(ref_name, old_value, new_value)
@@ -204,24 +212,12 @@ describe GitlabCustomHook do
     end
 
     it "executes the relevant hooks" do
-      expect(gitlab_custom_hook).to receive(:call_receive_hook)
-        .with(hook_path("hooks/pre-receive.d/hook"), changes)
-        .and_call_original
-      expect(gitlab_custom_hook).to receive(:call_receive_hook)
-        .with(hook_path("custom_hooks/pre-receive.d/hook"), changes)
-        .and_call_original
-      expect(gitlab_custom_hook).to receive(:system)
-        .with(vars, hook_path("hooks/update.d/hook"), ref_name, old_value, new_value)
-        .and_call_original
-      expect(gitlab_custom_hook).to receive(:system)
-        .with(vars, hook_path("custom_hooks/update.d/hook"), ref_name, old_value, new_value)
-        .and_call_original
-      expect(gitlab_custom_hook).to receive(:call_receive_hook)
-        .with(hook_path("hooks/post-receive.d/hook"), changes)
-        .and_call_original
-      expect(gitlab_custom_hook).to receive(:call_receive_hook)
-        .with(hook_path("custom_hooks/post-receive.d/hook"), changes)
-        .and_call_original
+      expect_call_receive_hook("hooks/pre-receive.d/hook")
+      expect_call_receive_hook("custom_hooks/pre-receive.d/hook")
+      expect_call_update_hook("hooks/update.d/hook")
+      expect_call_update_hook("custom_hooks/update.d/hook")
+      expect_call_receive_hook("hooks/post-receive.d/hook")
+      expect_call_receive_hook("custom_hooks/post-receive.d/hook")
 
       gitlab_custom_hook.pre_receive(changes)
       gitlab_custom_hook.update(ref_name, old_value, new_value)
