@@ -224,4 +224,34 @@ describe GitlabCustomHook do
       gitlab_custom_hook.post_receive(changes)
     end
   end
+
+  context "executing hooks in expected order" do
+    before do
+      create_repo_hooks_d(hook_ok, '01-test')
+      create_repo_hooks_d(hook_ok, '02-test')
+      create_global_hooks_d(hook_ok, '03-test')
+      create_global_hooks_d(hook_ok, '04-test')
+    end
+
+    it "executes hooks in order" do
+      expect_call_receive_hook("custom_hooks/pre-receive.d/01-test").ordered
+      expect_call_receive_hook("custom_hooks/pre-receive.d/02-test").ordered
+      expect_call_receive_hook("hooks/pre-receive.d/03-test").ordered
+      expect_call_receive_hook("hooks/pre-receive.d/04-test").ordered
+
+      expect_call_update_hook("custom_hooks/update.d/01-test").ordered
+      expect_call_update_hook("custom_hooks/update.d/02-test").ordered
+      expect_call_update_hook("hooks/update.d/03-test").ordered
+      expect_call_update_hook("hooks/update.d/04-test").ordered
+
+      expect_call_receive_hook("custom_hooks/post-receive.d/01-test").ordered
+      expect_call_receive_hook("custom_hooks/post-receive.d/02-test").ordered
+      expect_call_receive_hook("hooks/post-receive.d/03-test").ordered
+      expect_call_receive_hook("hooks/post-receive.d/04-test").ordered
+
+      gitlab_custom_hook.pre_receive(changes)
+      gitlab_custom_hook.update(ref_name, old_value, new_value)
+      gitlab_custom_hook.post_receive(changes)
+    end
+  end
 end
