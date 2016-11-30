@@ -1,3 +1,5 @@
+v4.0.3
+  - Fetch repositories with `--prune` option by default
 v4.0.2
   - Fix gitlab_custom_hook dependencies
 
