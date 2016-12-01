@@ -205,6 +205,7 @@ class GitlabProjects
 
     $logger.info "Fetching remote #{@name} for project #{@project_name}."
     cmd = %W(git --git-dir=#{full_path} fetch #{@name})
+    cmd << '--prune'
     cmd << '--force' if forced
     cmd << tags_option
     pid = Process.spawn(*cmd)
