@@ -5,29 +5,33 @@ require_relative 'gitlab_metrics'
 class GitlabCustomHook
   attr_reader :vars
 
-  def initialize(key_id)
+  def initialize(repo_path, key_id)
+    @repo_path = repo_path
     @vars = { 'GL_ID' => key_id }
   end
 
-  def pre_receive(changes, repo_path)
-    hook = hook_file('pre-receive', repo_path)
-    return true if hook.nil?
-
-    GitlabMetrics.measure("pre-receive-hook") { call_receive_hook(hook, changes) }
+  def pre_receive(changes)
+    GitlabMetrics.measure("pre-receive-hook") do
+      find_hooks('pre-receive').all? do |hook|
+        call_receive_hook(hook, changes)
+      end
+    end
   end
 
-  def post_receive(changes, repo_path)
-    hook = hook_file('post-receive', repo_path)
-    return true if hook.nil?
-
-    GitlabMetrics.measure("post-receive-hook") { call_receive_hook(hook, changes) }
+  def post_receive(changes)
+    GitlabMetrics.measure("post-receive-hook") do
+      find_hooks('post-receive').all? do |hook|
+        call_receive_hook(hook, changes)
+      end
+    end
   end
 
-  def update(ref_name, old_value, new_value, repo_path)
-    hook = hook_file('update', repo_path)
-    return true if hook.nil?
-
-    GitlabMetrics.measure("update-hook") { system(vars, hook, ref_name, old_value, new_value) }
+  def update(ref_name, old_value, new_value)
+    GitlabMetrics.measure("update-hook") do
+      find_hooks('update').all? do |hook|
+        system(vars, hook, ref_name, old_value, new_value)
+      end
+    end
   end
 
   private
@@ -53,9 +57,40 @@ class GitlabCustomHook
     $?.success?
   end
 
-  def hook_file(hook_type, repo_path)
-    hook_path = File.join(repo_path.strip, 'custom_hooks')
-    hook_file = "#{hook_path}/#{hook_type}"
-    hook_file if File.exist?(hook_file)
+  # lookup hook files in this order:
+  #
+  # 1. <repository>.git/custom_hooks/<hook_name> - per project hook
+  # 2. <repository>.git/custom_hooks/<hook_name>.d/* - per project hooks
+  # 3. <repository>.git/hooks/<hook_name>.d/* - global hooks
+  #
+  def find_hooks(hook_name)
+    hook_files = []
+
+    # <repository>.git/custom_hooks/<hook_name>
+    hook_file = File.join(@repo_path, 'custom_hooks', hook_name)
+    hook_files.push(hook_file) if File.executable?(hook_file)
+
+    # <repository>.git/custom_hooks/<hook_name>.d/*
+    hook_path = File.join(@repo_path, 'custom_hooks', "#{hook_name}.d")
+    hook_files += match_hook_files(hook_path)
+
+    # <repository>.git/hooks/<hook_name>.d/*
+    hook_path = File.join(@repo_path, 'hooks', "#{hook_name}.d")
+    hook_files += match_hook_files(hook_path)
+
+    hook_files
+  end
+
+  # match files from path:
+  # 1. file must be executable
+  # 2. file must not match backup file
+  #
+  # the resulting list is sorted
+  def match_hook_files(path)
+    return [] unless Dir.exist?(path)
+
+    Dir["#{path}/*"].select do |f|
+      !f.end_with?('~') && File.executable?(f)
+    end.sort
   end
 end

@@ -81,6 +81,3 @@ DEPENDENCIES
   rubocop (= 0.28.0)
   vcr
   webmock
-
-BUNDLED WITH
-   1.11.2

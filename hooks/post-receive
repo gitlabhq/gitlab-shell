@@ -11,7 +11,7 @@ require_relative '../lib/gitlab_custom_hook'
 require_relative '../lib/gitlab_post_receive'
 
 if GitlabPostReceive.new(repo_path, key_id, refs).exec &&
-    GitlabCustomHook.new(key_id).post_receive(refs, repo_path)
+    GitlabCustomHook.new(repo_path, key_id).post_receive(refs)
   exit 0
 else
   exit 1

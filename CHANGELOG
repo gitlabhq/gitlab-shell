@@ -1,5 +1,9 @@
+v4.1.0
+  - Add support for global custom hooks and chained hook directories (Elan Ruusamäe, Dirk Hörner), !93, !89, #32
+
 v4.0.3
   - Fetch repositories with `--prune` option by default
+
 v4.0.2
   - Fix gitlab_custom_hook dependencies
 

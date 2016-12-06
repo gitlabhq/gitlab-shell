@@ -11,7 +11,7 @@ key_id    = ENV.delete('GL_ID')
 
 require_relative '../lib/gitlab_custom_hook'
 
-if GitlabCustomHook.new(key_id).update(ref_name, old_value, new_value, repo_path)
+if GitlabCustomHook.new(repo_path, key_id).update(ref_name, old_value, new_value)
   exit 0
 else
   exit 1

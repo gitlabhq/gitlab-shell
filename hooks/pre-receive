@@ -17,7 +17,7 @@ require_relative '../lib/gitlab_access'
 # other hand, we run GitlabPostReceive first because the push is already done
 # and we don't want to skip it if the custom hook fails.
 if GitlabAccess.new(repo_path, key_id, refs, protocol).exec &&
-    GitlabCustomHook.new(key_id).pre_receive(refs, repo_path) &&
+    GitlabCustomHook.new(repo_path, key_id).pre_receive(refs) &&
     GitlabReferenceCounter.new(repo_path).increase
   exit 0
 else
