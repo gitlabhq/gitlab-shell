@@ -15,14 +15,15 @@ class GitlabNet
   CHECK_TIMEOUT = 5
   READ_TIMEOUT = 300
 
-  def check_access(cmd, repo, actor, changes, protocol)
+  def check_access(cmd, repo, actor, changes, protocol, env: {})
     changes = changes.join("\n") unless changes.kind_of?(String)
 
     params = {
       action: cmd,
       changes: changes,
       project: sanitize_path(repo),
-      protocol: protocol
+      protocol: protocol,
+      env: env
     }
 
     if actor =~ /\Akey\-\d+\Z/
