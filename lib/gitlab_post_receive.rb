@@ -56,7 +56,7 @@ class GitlabPostReceive
 
   def print_merge_request_link(merge_request)
     if merge_request["new_merge_request"]
-      message = "Create merge request for #{merge_request["branch_name"]}:"
+      message = "To create a merge request for #{merge_request["branch_name"]}, visit:"
     else
       message = "View merge request for #{merge_request["branch_name"]}:"
     end

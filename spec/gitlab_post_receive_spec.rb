@@ -49,7 +49,7 @@ describe GitlabPostReceive do
 
           expect(gitlab_post_receive).to receive(:puts).ordered
           expect(gitlab_post_receive).to receive(:puts).with(
-            "Create merge request for new_branch:"
+            "To create a merge request for new_branch, visit:"
           ).ordered
           expect(gitlab_post_receive).to receive(:puts).with(
             "  http://localhost/dzaporozhets/gitlab-ci/merge_requests/new?merge_request%5Bsource_branch%5D=new_branch"
@@ -123,7 +123,7 @@ describe GitlabPostReceive do
 
         expect(gitlab_post_receive).to receive(:puts).ordered
         expect(gitlab_post_receive).to receive(:puts).with(
-          "Create merge request for new_branch:"
+          "To create a merge request for new_branch, visit:"
         ).ordered
         expect(gitlab_post_receive).to receive(:puts).with(
           "  http://localhost/dzaporozhets/gitlab-ci/merge_requests/new?merge_request%5Bsource_branch%5D=new_branch"
