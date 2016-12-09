@@ -3,13 +3,15 @@ require 'spec_helper'
 require 'gitlab_custom_hook'
 
 describe GitlabCustomHook do
-  let(:tmp_repo_path) { File.join(ROOT_PATH, 'tmp', 'repo.git') }
-  let(:tmp_root_path) { File.join(ROOT_PATH, 'tmp') }
-  let(:hook_ok) { File.join(ROOT_PATH, 'spec', 'support', 'hook_ok') }
-  let(:hook_fail) { File.join(ROOT_PATH, 'spec', 'support', 'hook_fail') }
-  let(:hook_gl_id) { File.join(ROOT_PATH, 'spec', 'support', 'gl_id_test_hook') }
+  let(:original_root_path) { ROOT_PATH }
+  let(:tmp_repo_path) { File.join(original_root_path, 'tmp', 'repo.git') }
+  let(:tmp_root_path) { File.join(original_root_path, 'tmp') }
+  let(:global_custom_hooks_path) { global_hook_path('custom_global_hooks') }
+  let(:hook_ok) { File.join(original_root_path, 'spec', 'support', 'hook_ok') }
+  let(:hook_fail) { File.join(original_root_path, 'spec', 'support', 'hook_fail') }
+  let(:hook_gl_id) { File.join(original_root_path, 'spec', 'support', 'gl_id_test_hook') }
 
-  let(:vars) { {"GL_ID" => "key_1"} }
+  let(:vars) { { "GL_ID" => "key_1" } }
   let(:old_value) { "old-value" }
   let(:new_value) { "new-value" }
   let(:ref_name) { "name/of/ref" }
@@ -19,6 +21,10 @@ describe GitlabCustomHook do
 
   def hook_path(path)
     File.join(tmp_repo_path, path.split('/'))
+  end
+
+  def global_hook_path(path)
+    File.join(tmp_root_path, path.split('/'))
   end
 
   def create_hook(path, which)
@@ -48,7 +54,9 @@ describe GitlabCustomHook do
 
   def cleanup_hook_setup
     FileUtils.rm_rf(File.join(tmp_repo_path))
+    FileUtils.rm_rf(File.join(global_custom_hooks_path))
     FileUtils.rm_rf(File.join(tmp_root_path, 'hooks'))
+    FileUtils.rm_f(File.join(tmp_root_path, 'config.yml'))
   end
 
   def expect_call_receive_hook(path)
@@ -79,16 +87,17 @@ describe GitlabCustomHook do
     cleanup_hook_setup
 
     FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks'))
-    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks', 'update.d'))
-    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks', 'pre-receive.d'))
-    FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks', 'post-receive.d'))
-
     FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks'))
-    FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks', 'update.d'))
-    FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks', 'pre-receive.d'))
-    FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks', 'post-receive.d'))
+
+    ['pre-receive', 'update', 'post-receive'].each do |hook|
+      FileUtils.mkdir_p(File.join(tmp_repo_path, 'custom_hooks', "#{hook}.d"))
+      FileUtils.mkdir_p(File.join(tmp_root_path, 'hooks', "#{hook}.d"))
+    end
 
     FileUtils.symlink(File.join(tmp_root_path, 'hooks'), File.join(tmp_repo_path, 'hooks'))
+    FileUtils.symlink(File.join(ROOT_PATH, 'config.yml.example'), File.join(tmp_root_path, 'config.yml'))
+
+    stub_const('ROOT_PATH', tmp_root_path)
   end
 
   after do
@@ -252,6 +261,35 @@ describe GitlabCustomHook do
       gitlab_custom_hook.pre_receive(changes)
       gitlab_custom_hook.update(ref_name, old_value, new_value)
       gitlab_custom_hook.post_receive(changes)
+    end
+  end
+
+  context "when the custom_hooks_dir config option is set" do
+    before do
+      allow(gitlab_custom_hook.config).to receive(:custom_hooks_dir).and_return(global_custom_hooks_path)
+
+      FileUtils.mkdir_p(File.join(global_custom_hooks_path, "pre-receive.d"))
+      FileUtils.ln_sf(hook_ok, File.join(global_custom_hooks_path, "pre-receive.d", "hook"))
+
+      create_global_hooks_d(hook_fail)
+    end
+
+    it "finds hooks in that directory" do
+      expect(gitlab_custom_hook)
+        .to receive(:call_receive_hook)
+        .with(global_hook_path("custom_global_hooks/pre-receive.d/hook"), changes)
+        .and_call_original
+
+      expect(gitlab_custom_hook.pre_receive(changes)).to eq(true)
+    end
+
+    it "does not execute hooks in the default location" do
+      expect(gitlab_custom_hook)
+        .not_to receive(:call_receive_hook)
+        .with("hooks/pre-receive.d/hook", changes)
+        .and_call_original
+
+      gitlab_custom_hook.pre_receive(changes)
     end
   end
 end

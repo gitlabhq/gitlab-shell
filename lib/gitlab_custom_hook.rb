@@ -3,11 +3,12 @@ require_relative 'gitlab_init'
 require_relative 'gitlab_metrics'
 
 class GitlabCustomHook
-  attr_reader :vars
+  attr_reader :vars, :config
 
   def initialize(repo_path, key_id)
     @repo_path = repo_path
     @vars = { 'GL_ID' => key_id }
+    @config = GitlabConfig.new
   end
 
   def pre_receive(changes)
@@ -67,16 +68,17 @@ class GitlabCustomHook
     hook_files = []
 
     # <repository>.git/custom_hooks/<hook_name>
-    hook_file = File.join(@repo_path, 'custom_hooks', hook_name)
-    hook_files.push(hook_file) if File.executable?(hook_file)
+    project_custom_hook_file = File.join(@repo_path, 'custom_hooks', hook_name)
+    hook_files.push(project_custom_hook_file) if File.executable?(project_custom_hook_file)
 
     # <repository>.git/custom_hooks/<hook_name>.d/*
-    hook_path = File.join(@repo_path, 'custom_hooks', "#{hook_name}.d")
-    hook_files += match_hook_files(hook_path)
+    project_custom_hooks_dir = File.join(@repo_path, 'custom_hooks', "#{hook_name}.d")
+    hook_files += match_hook_files(project_custom_hooks_dir)
 
-    # <repository>.git/hooks/<hook_name>.d/*
-    hook_path = File.join(@repo_path, 'hooks', "#{hook_name}.d")
-    hook_files += match_hook_files(hook_path)
+    # <repository>.git/hooks/<hook_name>.d/* OR <custom_hook_dir>/<hook_name>.d/*
+    global_custom_hooks_parent = config.custom_hooks_dir(default: File.join(@repo_path, 'hooks'))
+    global_custom_hooks_dir = File.join(global_custom_hooks_parent, "#{hook_name}.d")
+    hook_files += match_hook_files(global_custom_hooks_dir)
 
     hook_files
   end
