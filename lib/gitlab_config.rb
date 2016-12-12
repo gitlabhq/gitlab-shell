@@ -19,6 +19,13 @@ class GitlabConfig
     @config['secret_file'] ||= File.join(ROOT_PATH, '.gitlab_shell_secret')
   end
 
+  # Pass a default value because this is called from a repo's context; in which
+  # case, the repo's hooks directory should be the default.
+  #
+  def custom_hooks_dir(default: nil)
+    @config['custom_hooks_dir'] || default
+  end
+
   def gitlab_url
     (@config['gitlab_url'] ||= "http://localhost:8080").sub(%r{/*$}, '')
   end

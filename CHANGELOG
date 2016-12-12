@@ -1,5 +1,5 @@
 v4.1.0
-  - Add support for global custom hooks and chained hook directories (Elan Ruusamäe, Dirk Hörner), !93, !89, #32
+  - Add support for global custom hooks and chained hook directories (Elan Ruusamäe, Dirk Hörner), !113, !111, !93, !89, #32
   - Clear up text with merge request after new branch push (Lisanne Fellinger)
 
 v4.0.3
