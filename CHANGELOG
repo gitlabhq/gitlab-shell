@@ -1,3 +1,6 @@
+v4.1.1
+  - Send (a selection of) git environment variables while making the API call to `/allowed`, !112
+
 v4.1.0
   - Add support for global custom hooks and chained hook directories (Elan Ruusamäe, Dirk Hörner), !113, !111, !93, !89, #32
   - Clear up text with merge request after new branch push (Lisanne Fellinger)

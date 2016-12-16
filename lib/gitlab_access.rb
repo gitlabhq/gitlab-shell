@@ -22,7 +22,12 @@ class GitlabAccess
 
   def exec
     status = GitlabMetrics.measure('check-access:git-receive-pack') do
-      api.check_access('git-receive-pack', @repo_path, @actor, @changes, @protocol)
+      env = {
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES" => ENV["GIT_ALTERNATE_OBJECT_DIRECTORIES"],
+        "GIT_OBJECT_DIRECTORY" => ENV["GIT_OBJECT_DIRECTORY"]
+      }
+
+      api.check_access('git-receive-pack', @repo_path, @actor, @changes, @protocol, env: env.to_json)
     end
 
     raise AccessDeniedError, status.message unless status.allowed?
