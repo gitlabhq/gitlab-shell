@@ -13,7 +13,7 @@ class GitlabShell
   API_COMMANDS = %w(2fa_recovery_codes)
   GL_PROTOCOL = 'ssh'.freeze
 
-  attr_accessor :key_id, :repo_name, :command, :git_access
+  attr_accessor :key_id, :repo_name, :command, :git_access, :gitaly_address
   attr_reader :repo_path
 
   def initialize(key_id)
@@ -98,6 +98,7 @@ class GitlabShell
     raise AccessDeniedError, status.message unless status.allowed?
 
     self.repo_path = status.repository_path
+    self.gitaly_address = status.gitaly_address
   end
 
   def process_cmd(args)
@@ -126,9 +127,14 @@ class GitlabShell
         $logger.info "gitlab-shell: Processing LFS authentication for #{log_username}."
         lfs_authenticate
       end
-    else
+    end
+
+    if gitaly_address.nil?
       $logger.info "gitlab-shell: executing git command <#{@command} #{repo_path}> for #{log_username}."
       exec_cmd(@command, repo_path)
+    else
+      $logger.info "gitlab-shell: processing with gitaly <#{gitaly_address}> command: <#{@command}> repo: <#{repo_path}> for <#{log_username}>."
+      process_cmd_with_gitaly(@command, repo_path)
     end
   end
 
@@ -163,6 +169,10 @@ class GitlabShell
     end
 
     Kernel::exec(env, *args, unsetenv_others: true)
+  end
+
+  def process_cmd_with_gitaly(cmd, repo_path)
+    # To be implemented
   end
 
   def api
