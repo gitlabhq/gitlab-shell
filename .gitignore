@@ -10,3 +10,4 @@ tags
 .bundle/
 custom_hooks
 hooks/*.d
+/*.gem
