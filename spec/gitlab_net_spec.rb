@@ -16,19 +16,20 @@ describe GitlabNet, vcr: true do
     it 'should return 200 code for gitlab check' do
       VCR.use_cassette("check-ok") do
         result = gitlab_net.check
-        result.code.should == '200'
+        result.status.should == 200
       end
     end
 
     it 'adds the secret_token to request' do
       VCR.use_cassette("check-ok") do
-        Net::HTTP::Get.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
+        Excon::Connection.any_instance.should_receive(:request).with(hash_including(body: 'secret_token=a123')).
+          and_return(Excon::Response.new)
         gitlab_net.check
       end
     end
 
     it "raises an exception if the connection fails" do
-      Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
+      Excon::Connection.any_instance.stub(:request).and_raise(StandardError)
       expect { gitlab_net.check }.to raise_error(GitlabNet::ApiUnreachableError)
     end
   end
@@ -44,14 +45,15 @@ describe GitlabNet, vcr: true do
 
     it 'adds the secret_token to request' do
       VCR.use_cassette("discover-ok") do
-        Net::HTTP::Get.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
+        Excon::Connection.any_instance.should_receive(:request).with(hash_including(body: 'secret_token=a123')).
+          and_return(Excon::Response.new)
         gitlab_net.discover('key-126')
       end
     end
 
     it "raises an exception if the connection fails" do
       VCR.use_cassette("discover-ok") do
-        Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
+        Excon::Connection.any_instance.stub(:request).and_raise(StandardError)
         expect { gitlab_net.discover('key-126') }.to raise_error(GitlabNet::ApiUnreachableError)
       end
     end
@@ -149,7 +151,8 @@ describe GitlabNet, vcr: true do
 
       it 'adds the secret_token to the request' do
         VCR.use_cassette("allowed-pull") do
-          Net::HTTP::Post.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
+          Excon::Connection.any_instance.should_receive(:request).with(hash_including(body: 'secret_token=a123')).
+            and_return(Excon::Response.new)
           gitlab_net.check_access('git-receive-pack', 'gitlab/gitlabhq.git', 'key-126', changes, 'ssh')
         end
       end
@@ -222,7 +225,7 @@ describe GitlabNet, vcr: true do
     end
 
     it "raises an exception if the connection fails" do
-      Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
+      Excon::Connection.any_instance.stub(:request).and_raise(StandardError)
       expect {
         gitlab_net.check_access('git-upload-pack', 'gitlab/gitlabhq.git', 'user-1', changes, 'ssh')
       }.to raise_error(GitlabNet::ApiUnreachableError)
@@ -238,34 +241,13 @@ describe GitlabNet, vcr: true do
   end
 
   describe :http_client_for do
-    subject { gitlab_net.send :http_client_for, URI('https://localhost/') }
+    subject { gitlab_net.send(:http_client_for, 'https://localhost/').data }
     before do
       gitlab_net.stub :cert_store
       gitlab_net.send(:config).stub(:http_settings) { {'self_signed_cert' => true} }
     end
 
-    its(:verify_mode) { should eq(OpenSSL::SSL::VERIFY_NONE) }
-  end
-
-  describe :http_request_for do
-    let(:get) do
-      double(Net::HTTP::Get).tap do |get|
-        Net::HTTP::Get.stub(:new) { get }
-      end
-    end
-    let(:user) { 'user' }
-    let(:password) { 'password' }
-    let(:url) { URI 'http://localhost/' }
-    subject { gitlab_net.send :http_request_for, :get, url }
-
-    before do
-      gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
-      gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
-      get.should_receive(:basic_auth).with(user, password).once
-      get.should_receive(:set_form_data).with(hash_including(secret_token: 'a123')).once
-    end
-
-    it { should_not be_nil }
+    it { expect(subject[:ssl_verify_peer]).to eq(false) }
   end
 
   describe :cert_store do

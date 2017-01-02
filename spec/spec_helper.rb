@@ -10,9 +10,10 @@ end
 
 require 'vcr'
 require 'webmock'
+require_relative '../lib/gitlab_excon'
 
 VCR.configure do |c|
   c.cassette_library_dir = 'spec/vcr_cassettes'
-  c.hook_into :webmock
+  c.hook_into :excon
   c.configure_rspec_metadata!
 end

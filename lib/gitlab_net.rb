@@ -7,7 +7,8 @@ require_relative 'gitlab_logger'
 require_relative 'gitlab_access'
 require_relative 'gitlab_redis'
 require_relative 'gitlab_lfs_authentication'
-require_relative 'httpunix'
+require_relative 'gitlab_excon'
+
 
 class GitlabNet
   class ApiUnreachableError < StandardError; end
@@ -35,7 +36,7 @@ class GitlabNet
     url = "#{host}/allowed"
     resp = post(url, params)
 
-    if resp.code == '200'
+    if resp.status == 200
       GitAccessStatus.create_from_json(resp.body)
     else
       GitAccessStatus.new(false, 'API is not accessible', nil)
@@ -56,7 +57,7 @@ class GitlabNet
 
     resp = post("#{host}/lfs_authenticate", params)
 
-    if resp.code == '200'
+    if resp.status == 200
       GitlabLfsAuthentication.build_from_json(resp.body)
     end
   end
@@ -79,7 +80,7 @@ class GitlabNet
 
   def authorized_key(key)
     resp = get("#{host}/authorized_keys?key=#{URI.escape(key, '+/=')}")
-    JSON.parse(resp.body) if resp.code == "200"
+    JSON.parse(resp.body) if resp.code == 200
   rescue
     nil
   end
@@ -88,7 +89,7 @@ class GitlabNet
     key_id = key.gsub('key-', '')
     resp = post("#{host}/two_factor_recovery_codes", key_id: key_id)
 
-    JSON.parse(resp.body) if resp.code == '200'
+    JSON.parse(resp.body) if resp.status == 200
   rescue
     {}
   end
@@ -131,48 +132,42 @@ class GitlabNet
     "#{config.gitlab_url}/api/v3/internal"
   end
 
-  def http_client_for(uri, options={})
-    if uri.is_a?(URI::HTTPUNIX)
-      http = Net::HTTPUNIX.new(uri.hostname)
-    else
-      http = Net::HTTP.new(uri.host, uri.port)
-    end
-
-    http.read_timeout = options[:read_timeout] || read_timeout
-
-    if uri.is_a?(URI::HTTPS)
-      http.use_ssl = true
-      http.cert_store = cert_store
-      http.verify_mode = OpenSSL::SSL::VERIFY_NONE if config.http_settings['self_signed_cert']
-    end
-
-    http
-  end
-
-  def http_request_for(method, uri, params = {})
-    request_klass = method == :get ? Net::HTTP::Get : Net::HTTP::Post
-    request = request_klass.new(uri.request_uri)
+  def http_client_for(url)
+    excon_options = {}
 
     user = config.http_settings['user']
     password = config.http_settings['password']
-    request.basic_auth(user, password) if user && password
+    if user && password
+      excon_options[:user] = user
+      excon_options[:password] = password
+    end
 
-    request.set_form_data(params.merge(secret_token: secret_token))
-
-    request
+    uri = URI.parse(url)
+    if uri.scheme == 'http+unix'
+      excon_options[:socket] = URI.unescape(uri.host)
+      url.sub!('http+', '')
+      url.sub!(uri.host, '/')
+    else
+      excon_options[:ssl_verify_peer] = !config.http_settings['self_signed_cert']
+      excon_options[:ssl_cert_store] = cert_store
+    end
+    Excon.new(url, excon_options)
   end
 
   def request(method, url, params = {}, options={})
     $logger.debug "Performing #{method.to_s.upcase} #{url}"
 
-    uri = URI.parse(url)
-
-    http = http_client_for(uri, options)
-    request = http_request_for(method, uri, params)
+    http = http_client_for(url)
+    request_options = {
+      method: method,
+      read_timeout: options[:read_timeout] || read_timeout,
+      body: URI.encode_www_form(params.merge(secret_token: secret_token)),
+      headers: { "Content-Type" => "application/x-www-form-urlencoded" }
+    }
 
     begin
       start_time = Time.new
-      response = http.start { http.request(request) }
+      response = http.request(request_options)
     rescue => e
       $logger.warn "Failed to connect to internal API <#{method.to_s.upcase} #{url}>: #{e.inspect}"
       raise ApiUnreachableError
@@ -182,10 +177,10 @@ class GitlabNet
       end
     end
 
-    if response.code == "200"
-      $logger.debug "Received response #{response.code} => <#{response.body}>."
+    if response.status == 200
+      $logger.debug "Received response #{response.status} => <#{response.body}>."
     else
-      $logger.error "API call <#{method.to_s.upcase} #{url}> failed: #{response.code} => <#{response.body}>."
+      $logger.error "API call <#{method.to_s.upcase} #{url}> failed: #{response.status} => <#{response.body}>."
     end
 
     response
