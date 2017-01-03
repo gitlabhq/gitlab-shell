@@ -159,6 +159,12 @@ class GitlabNet
 
     request.set_form_data(params.merge(secret_token: secret_token))
 
+    if uri.is_a?(URI::HTTPUNIX)
+      # The HTTPUNIX HTTP client does not set a correct Host header. This can
+      # lead to 400 Bad Request responses.
+      request['Host'] = 'localhost'
+    end
+
     request
   end
 

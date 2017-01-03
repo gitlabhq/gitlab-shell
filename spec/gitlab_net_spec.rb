@@ -248,24 +248,37 @@ describe GitlabNet, vcr: true do
   end
 
   describe :http_request_for do
-    let(:get) do
-      double(Net::HTTP::Get).tap do |get|
-        Net::HTTP::Get.stub(:new) { get }
+    context 'with stub' do
+      let(:get) do
+        double(Net::HTTP::Get).tap do |get|
+          Net::HTTP::Get.stub(:new) { get }
+        end
+      end
+      let(:user) { 'user' }
+      let(:password) { 'password' }
+      let(:url) { URI 'http://localhost/' }
+      subject { gitlab_net.send :http_request_for, :get, url }
+  
+      before do
+        gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
+        gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
+        get.should_receive(:basic_auth).with(user, password).once
+        get.should_receive(:set_form_data).with(hash_including(secret_token: 'a123')).once
+      end
+  
+      it { should_not be_nil }
+    end
+
+    context 'Unix socket' do
+      it 'sets the Host header to "localhost"' do
+        gitlab_net = described_class.new
+        gitlab_net.should_receive(:secret_token).and_return('a123')
+
+        request = gitlab_net.send(:http_request_for, :get, URI('http+unix://%2Ffoo'))
+
+        expect(request['Host']).to eq('localhost')
       end
     end
-    let(:user) { 'user' }
-    let(:password) { 'password' }
-    let(:url) { URI 'http://localhost/' }
-    subject { gitlab_net.send :http_request_for, :get, url }
-
-    before do
-      gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
-      gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
-      get.should_receive(:basic_auth).with(user, password).once
-      get.should_receive(:set_form_data).with(hash_including(secret_token: 'a123')).once
-    end
-
-    it { should_not be_nil }
   end
 
   describe :cert_store do
