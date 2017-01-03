@@ -1,5 +1,6 @@
 require_relative 'gitlab_init'
 require_relative 'gitlab_net'
+require_relative 'gitaly_client'
 require_relative 'gitlab_reference_counter'
 require_relative 'gitlab_metrics'
 require 'json'
@@ -35,6 +36,8 @@ class GitlabPostReceive
         api.merge_request_urls(@repo_path, @changes)
       end
       print_merge_request_links(merge_request_urls)
+
+      result &&= notify_gitaly
     rescue HttpClient::ApiUnreachableError
       nil
     end
@@ -120,5 +123,22 @@ class GitlabPostReceive
       $stderr.puts "GitLab: An unexpected error occurred in writing to Redis: #{e}"
       false
     end
+  end
+
+  def notify_gitaly
+    return true unless gitaly_client
+
+    gitaly_client.notify_post_receive(repo_path)
+  end
+
+  def gitaly_client
+    unless defined?(@gitaly_client)
+      socket_path = api.gitaly_socket_path
+      @gitaly_client = socket_path && GitalyClient.new(socket_path)
+    end
+
+    @gitaly_client
+  rescue HttpClient::ApiUnreachableError
+    nil
   end
 end

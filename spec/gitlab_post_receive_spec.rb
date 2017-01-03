@@ -17,9 +17,10 @@ describe GitlabPostReceive do
 
   before do
     GitlabConfig.any_instance.stub(repos_path: repository_path)
+    GitlabNet.any_instance.stub(gitaly_socket_path: 'http+unix://%2Fpath%2Fto%2Fgitaly.socket')
     GitlabNet.any_instance.stub(broadcast_message: { })
     GitlabNet.any_instance.stub(:merge_request_urls).with(repo_path, wrongly_encoded_changes) { [] }
-    expect(Time).to receive(:now).and_return(enqueued_at)
+    allow(Time).to receive(:now).and_return(enqueued_at)
   end
 
   describe "#exec" do
@@ -47,6 +48,8 @@ describe GitlabPostReceive do
         it "prints the new merge request url" do
           expect(redis_client).to receive(:rpush)
 
+          expect_any_instance_of(GitalyClient).to receive(:notify_post_receive).with(repo_path)
+
           expect(gitlab_post_receive).to receive(:puts).ordered
           expect(gitlab_post_receive).to receive(:puts).with(
             "To create a merge request for new_branch, visit:"
@@ -73,6 +76,8 @@ describe GitlabPostReceive do
 
         it "prints the view merge request url" do
           expect(redis_client).to receive(:rpush)
+
+          expect_any_instance_of(GitalyClient).to receive(:notify_post_receive).with(repo_path)
 
           expect(gitlab_post_receive).to receive(:puts).ordered
           expect(gitlab_post_receive).to receive(:puts).with(
@@ -102,6 +107,8 @@ describe GitlabPostReceive do
 
       it 'prints the broadcast message and create new merge request link' do
         expect(redis_client).to receive(:rpush)
+
+        expect_any_instance_of(GitalyClient).to receive(:notify_post_receive).with(repo_path)
 
         expect(gitlab_post_receive).to receive(:puts).ordered
         expect(gitlab_post_receive).to receive(:puts).with(

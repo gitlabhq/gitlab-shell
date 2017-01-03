@@ -84,6 +84,20 @@ class GitlabNet < HttpClient
     {}
   end
 
+  def gitaly_socket_path
+    return @gitaly_socket_path if defined?(@gitaly_socket_path)
+
+    @gitaly_socket_path = begin
+      resp = get("#{host}/gitaly")
+
+      if resp.code == '200' && (socket_path = JSON.parse(resp.body)['socket_path'])
+        "http+unix://#{socket_path.gsub('/', '%2F')}"
+      else
+        nil
+      end
+    end
+  end
+
   def redis_client
     redis_config = config.redis
     database = redis_config['database'] || 0
