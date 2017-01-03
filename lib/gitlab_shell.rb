@@ -40,7 +40,7 @@ class GitlabShell
     process_cmd(args)
 
     true
-  rescue GitlabNet::ApiUnreachableError => ex
+  rescue HttpClient::ApiUnreachableError => ex
     $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
     false
   rescue AccessDeniedError => ex
@@ -174,7 +174,7 @@ class GitlabShell
 
     begin
       @user = api.discover(@key_id)
-    rescue GitlabNet::ApiUnreachableError
+    rescue HttpClient::ApiUnreachableError
       @user = nil
     end
   end

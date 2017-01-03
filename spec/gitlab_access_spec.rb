@@ -49,7 +49,7 @@ describe GitlabAccess do
     context "API connection fails" do
 
       before do
-        api.stub(:check_access).and_raise(GitlabNet::ApiUnreachableError)
+        api.stub(:check_access).and_raise(HttpClient::ApiUnreachableError)
       end
 
       it "returns false" do

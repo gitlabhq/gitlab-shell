@@ -15,7 +15,7 @@ begin
   else
     abort "FAILED. code: #{resp.code}"
   end
-rescue GitlabNet::ApiUnreachableError
+rescue HttpClient::ApiUnreachableError
   abort "FAILED: Failed to connect to internal API"
 end
 

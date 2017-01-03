@@ -35,7 +35,7 @@ class GitlabPostReceive
         api.merge_request_urls(@repo_path, @changes)
       end
       print_merge_request_links(merge_request_urls)
-    rescue GitlabNet::ApiUnreachableError
+    rescue HttpClient::ApiUnreachableError
       nil
     end
 

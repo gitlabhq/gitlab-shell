@@ -33,7 +33,7 @@ class GitlabAccess
     raise AccessDeniedError, status.message unless status.allowed?
 
     true
-  rescue GitlabNet::ApiUnreachableError
+  rescue HttpClient::ApiUnreachableError
     $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
     false
   rescue AccessDeniedError => ex

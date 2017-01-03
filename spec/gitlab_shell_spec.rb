@@ -217,7 +217,7 @@ describe GitlabShell do
       let(:ssh_cmd) { 'git-upload-pack gitlab-ci.git' }
 
       before {
-        api.stub(:check_access).and_raise(GitlabNet::ApiUnreachableError)
+        api.stub(:check_access).and_raise(HttpClient::ApiUnreachableError)
       }
       after { subject.exec(ssh_cmd) }
 
