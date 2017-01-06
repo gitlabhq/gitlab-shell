@@ -11,7 +11,8 @@ class GitalyClient < HttpClient
     url = "#{gitaly_url}/post-receive"
     params = { project: sanitize_path(repo_path) }
 
-    resp = post(url, params)
+    # NOTE: Consider being more permisive with gitaly once it's more robust
+    resp = post(url, params, read_timeout: 5)
 
     resp.code == '200'
   end

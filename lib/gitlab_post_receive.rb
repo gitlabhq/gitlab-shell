@@ -37,7 +37,8 @@ class GitlabPostReceive
       end
       print_merge_request_links(merge_request_urls)
 
-      result &&= notify_gitaly
+      # NOTE: Consider checking Gitaly's success once it's robust and mandatory
+      notify_gitaly
     rescue HttpClient::ApiUnreachableError
       nil
     end

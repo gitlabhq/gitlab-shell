@@ -91,8 +91,8 @@ class HttpClient
     request(:get, url, {}, options)
   end
 
-  def post(url, params)
-    request(:post, url, params)
+  def post(url, params, options = {})
+    request(:post, url, params, options)
   end
 
   def cert_store
