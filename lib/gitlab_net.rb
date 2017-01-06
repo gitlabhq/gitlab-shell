@@ -50,7 +50,8 @@ class GitlabNet
   end
 
   def http_client_for(url)
-    Net::HTTP.new(url.host, url.port).tap do |http|
+    # ensure that the proxy is not used
+    Net::HTTP.new(url.host, url.port, nil).tap do |http|
       if URI::HTTPS === url
         http.use_ssl = true
         http.cert_store = cert_store
