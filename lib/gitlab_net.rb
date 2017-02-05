@@ -93,6 +93,14 @@ class GitlabNet
     {}
   end
 
+  def notify_post_receive(repo_path)
+    resp = post("#{host}/notify_post_receive", repo_path: repo_path)
+
+    resp.code == '200'
+  rescue
+    false
+  end
+
   def redis_client
     redis_config = config.redis
     database = redis_config['database'] || 0

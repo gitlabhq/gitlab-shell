@@ -19,6 +19,7 @@ describe GitlabPostReceive do
     GitlabConfig.any_instance.stub(repos_path: repository_path)
     GitlabNet.any_instance.stub(broadcast_message: { })
     GitlabNet.any_instance.stub(:merge_request_urls).with(repo_path, wrongly_encoded_changes) { [] }
+    GitlabNet.any_instance.stub(notify_post_receive: true)
     expect(Time).to receive(:now).and_return(enqueued_at)
   end
 
@@ -169,6 +170,15 @@ describe GitlabPostReceive do
         it "returns false" do
           expect(gitlab_post_receive.exec).to eq(false)
         end
+      end
+    end
+
+    context 'post_receive notification' do
+      it 'calls the api to notify the execution of the hook' do
+        expect_any_instance_of(GitlabNet).to receive(:notify_post_receive).
+          with(repo_path)
+
+        gitlab_post_receive.exec
       end
     end
 
