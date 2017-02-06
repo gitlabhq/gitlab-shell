@@ -1,3 +1,6 @@
+v3.6.7
+  - Send (a selection of) git environment variables while making the API call to `/allowed`, !112
+
 v3.6.6
   - Re-use the default logger when logging metrics data
 
