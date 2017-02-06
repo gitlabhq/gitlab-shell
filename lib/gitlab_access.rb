@@ -26,7 +26,7 @@ class GitlabAccess
       "GIT_OBJECT_DIRECTORY" => ENV["GIT_OBJECT_DIRECTORY"]
     }
 
-    status = api.check_access('git-receive-pack', @repo_path, @actor, @changes, @protocol, env: env.to_json)
+    status = api.check_access('git-receive-pack', @repo_name, @actor, @changes, @protocol, env: env.to_json)
 
     raise AccessDeniedError, status.message unless status.allowed?
 
