@@ -1,0 +1,44 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: https://dev.gitlab.org/api/v4/internal/notify_post_receive
+    body:
+      encoding: US-ASCII
+      string: repo_path=%2Fpath%2Fto%2Fmy%2Frepo.git&secret_token=a123
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+      Content-Type:
+      - application/x-www-form-urlencoded
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Content-Length:
+      - '2'
+      Content-Type:
+      - application/json
+      Date:
+      - Fri, 10 Feb 2017 17:06:53 GMT
+      Etag:
+      - W/"99914b932bd37a50b983c5e7c90ae93b"
+      Vary:
+      - Origin
+      X-Request-Id:
+      - cfefede6-9400-4ca5-a61d-2a519405295c
+      X-Runtime:
+      - '20.623406'
+    body:
+      encoding: UTF-8
+      string: "{}"
+    http_version: 
+  recorded_at: Fri, 10 Feb 2017 17:06:53 GMT
+recorded_with: VCR 2.4.0
