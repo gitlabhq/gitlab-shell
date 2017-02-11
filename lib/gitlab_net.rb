@@ -151,13 +151,18 @@ class GitlabNet
 
   def http_request_for(method, uri, params = {})
     request_klass = method == :get ? Net::HTTP::Get : Net::HTTP::Post
+
+    params.merge!(secret_token: secret_token)
+
+    uri.query = URI.encode_www_form( params ) if method == :get
+
     request = request_klass.new(uri.request_uri)
 
     user = config.http_settings['user']
     password = config.http_settings['password']
     request.basic_auth(user, password) if user && password
 
-    request.set_form_data(params.merge(secret_token: secret_token))
+    request.set_form_data(params)
 
     request
   end
