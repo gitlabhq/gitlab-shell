@@ -8,7 +8,8 @@ describe GitlabNet, vcr: true do
   let(:changes) { ['0000000000000000000000000000000000000000 92d0970eefd7acb6d548878925ce2208cfe2d2ec refs/heads/branch4'] }
 
   before do
-    gitlab_net.stub(:host).and_return('https://dev.gitlab.org/api/v3/internal')
+    gitlab_net.stub(:host_v3).and_return('https://dev.gitlab.org/api/v3/internal')
+    gitlab_net.stub(:host).and_return('https://dev.gitlab.org/api/v4/internal')
     gitlab_net.stub(:secret_token).and_return('a123')
   end
 
@@ -138,6 +139,16 @@ describe GitlabNet, vcr: true do
     end
   end
 
+  describe '#notify_post_receive' do
+    let(:repo_path) { '/path/to/my/repo.git' }
+
+    it 'returns true if notification was succesful' do
+      VCR.use_cassette('notify-post-receive') do
+        expect(gitlab_net.notify_post_receive(repo_path)).to be_true
+      end
+    end
+  end
+
   describe :check_access do
     context 'ssh key with access to project' do
       it 'should allow pull access for dev.gitlab.org' do
@@ -234,6 +245,14 @@ describe GitlabNet, vcr: true do
     subject { net.send :host }
 
     it { should include(net.send(:config).gitlab_url) }
+    it("uses API version 4") { should include("api/v4") }
+  end
+
+  describe :host_v3 do
+    let(:net) { GitlabNet.new }
+    subject { net.send :host_v3 }
+
+    it { should include(net.send(:config).gitlab_url) }
     it("uses API version 3") { should include("api/v3") }
   end
 
@@ -258,14 +277,14 @@ describe GitlabNet, vcr: true do
       let(:password) { 'password' }
       let(:url) { URI 'http://localhost/' }
       subject { gitlab_net.send :http_request_for, :get, url }
-  
+
       before do
         gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
         gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
         get.should_receive(:basic_auth).with(user, password).once
         get.should_receive(:set_form_data).with(hash_including(secret_token: 'a123')).once
       end
-  
+
       it { should_not be_nil }
     end
 
