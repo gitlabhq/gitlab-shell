@@ -99,20 +99,6 @@ describe GitlabShell do
       end
     end
 
-    describe 'git-annex' do
-      let(:repo_name) { 'dzaporozhets/gitlab.git' }
-      let(:ssh_args) { %W(git-annex-shell inannex /~/dzaporozhets/gitlab.git SHA256E) }
-
-      before do
-        GitlabConfig.any_instance.stub(git_annex_enabled?: true)
-
-        subject.send :parse_cmd, ssh_args
-      end
-
-      its(:repo_name) { should == 'dzaporozhets/gitlab.git' }
-      its(:command) { should == 'git-annex-shell' }
-    end
-
     describe 'git-lfs' do
       let(:repo_name) { 'dzaporozhets/gitlab.git' }
       let(:ssh_args) { %W(git-lfs-authenticate dzaporozhets/gitlab.git download) }
@@ -227,58 +213,6 @@ describe GitlabShell do
 
       it "should not execute the command" do
         subject.should_not_receive(:exec_cmd)
-      end
-    end
-
-    describe 'git-annex' do
-      let(:repo_name) { 'dzaporozhets/gitlab.git' }
-
-      before do
-        GitlabConfig.any_instance.stub(git_annex_enabled?: true)
-      end
-
-      context 'initialization' do
-        let(:ssh_cmd) { "git-annex-shell inannex /~/gitlab-ci.git SHA256E" }
-
-        before do
-          # Create existing project
-          FileUtils.mkdir_p(repo_path)
-          cmd = %W(git --git-dir=#{repo_path} init --bare)
-          system(*cmd)
-
-          subject.exec(ssh_cmd)
-        end
-
-        it 'should init git-annex' do
-          File.exists?(repo_path).should be_true
-        end
-
-        context 'with git-annex-shell gcryptsetup' do
-          let(:ssh_cmd) { "git-annex-shell gcryptsetup /~/dzaporozhets/gitlab.git" }
-
-          it 'should not init git-annex' do
-            File.exists?(File.join(tmp_repos_path, 'dzaporozhets/gitlab.git/annex')).should be_false
-          end
-        end
-
-        context 'with git-annex and relative path without ~/' do
-          # Using a SSH URL on a custom port will generate /dzaporozhets/gitlab.git
-          let(:ssh_cmd) { "git-annex-shell inannex dzaporozhets/gitlab.git SHA256E" }
-
-          it 'should init git-annex' do
-            File.exists?(File.join(tmp_repos_path, "dzaporozhets/gitlab.git/annex")).should be_true
-          end
-        end
-      end
-
-      context 'execution' do
-        let(:ssh_cmd) { "git-annex-shell commit /~/gitlab-ci.git SHA256" }
-
-        after { subject.exec(ssh_cmd) }
-
-        it "should execute the command" do
-          subject.should_receive(:exec_cmd).with("git-annex-shell", "commit", repo_path, "SHA256")
-        end
       end
     end
 
