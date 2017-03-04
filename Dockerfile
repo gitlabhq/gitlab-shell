@@ -13,7 +13,8 @@ RUN adduser --system -s /bin/bash -u 1234321 -g 0 git && \
    chmod 664 /etc/passwd /etc/group && \
    chmod 775 /var/run && \
    mkdir -p /home/git/data/gls && \
-   chmod -R 775 /home/git
+   chmod -R 775 /home/git && \
+   chmod -R 775 /opt/app-root
   
 EXPOSE 2022
 # gitlab-shell setup
