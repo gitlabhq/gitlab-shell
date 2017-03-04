@@ -6,6 +6,10 @@
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 
 echo "Setting sshd LogLevel to $LOG_LEVEL"
+
+chmod -R o-rwx $GIT_REPO_ROOT
+chmod 700 $GIT_REPO_ROOT
+
 sed -i "s/#LogLevel INFO/LogLevel ${LOG_LEVEL:-INFO}/" /etc/ssh/sshd_config
 
 ### Setup keys
@@ -73,13 +77,10 @@ echo "Starting tail of gitlab-shell log file to output all logs to stdout"
 (tail -f /home/git/gitlab-shell/gitlab-shell.log ; echo "gitlab-shell logging stopped unexpectedly") &
 
 ### Setup permissions
-chown -R git:git /home/git
-chown root:root $GIT_REPO_MOUNT
 chmod -R o-rwx $GIT_REPO_ROOT
 chmod 700 $GIT_REPO_ROOT
 
 ## Enable non root ssh by removing nologin
-rm -f /run/nologin
 
 ## Run sshd deamon
 /usr/sbin/sshd -D -e
