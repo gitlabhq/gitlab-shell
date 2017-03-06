@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 
+set -e
+
 ## Container startup script
 
 ### Setup sshd configuration
 LOG_LEVEL=${LOG_LEVEL:-INFO}
 
 echo "Setting sshd LogLevel to $LOG_LEVEL"
-
-chmod -R o-rwx $GIT_REPO_ROOT
-chmod 700 $GIT_REPO_ROOT
 
 sed -i "s/#LogLevel INFO/LogLevel ${LOG_LEVEL:-INFO}/" /etc/ssh/sshd_config
 

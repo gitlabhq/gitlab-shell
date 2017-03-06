@@ -18,16 +18,15 @@ RUN adduser --system -s /bin/bash -u 1234321 -g 0 git && \
   
 EXPOSE 2022
 # gitlab-shell setup
-USER git
+USER root
 COPY . /home/git/gitlab-shell
 WORKDIR /home/git/gitlab-shell
 RUN ["bash", "-c", "bundle"]
-
 RUN mkdir /home/git/gitlab-config && \
     ## Setup default config placeholder
     cp config.yml.example ../gitlab-config/config.yml
     # PAM workarounds for docker and public key auth
-USER root    
+
 RUN sed -i \
           # Disable processing of user uid. See: https://gitlab.com/gitlab-org/gitlab-ce/issues/3027
           -e "s|session\s*required\s*pam_loginuid.so|session optional pam_loginuid.so|g" \
