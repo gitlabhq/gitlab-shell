@@ -9,7 +9,7 @@ class GitlabShell
   class DisallowedCommandError < StandardError; end
   class InvalidRepositoryPathError < StandardError; end
 
-  GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-annex-shell git-lfs-authenticate).freeze
+  GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-lfs-authenticate).freeze
   API_COMMANDS = %w(2fa_recovery_codes)
   GL_PROTOCOL = 'ssh'.freeze
 
@@ -71,10 +71,6 @@ class GitlabShell
     raise DisallowedCommandError unless GIT_COMMANDS.include?(@command)
 
     case @command
-    when 'git-annex-shell'
-      raise DisallowedCommandError unless @config.git_annex_enabled?
-
-      @repo_name = args[2].sub(/\A\/~\//, '')
     when 'git-lfs-authenticate'
       raise DisallowedCommandError unless args.count >= 2
       @repo_name = args[1]
@@ -103,25 +99,7 @@ class GitlabShell
   def process_cmd(args)
     return self.send("api_#{@command}") if API_COMMANDS.include?(@command)
 
-    if @command == 'git-annex-shell'
-      raise DisallowedCommandError unless @config.git_annex_enabled?
-
-      # Make sure repository has git-annex enabled
-      init_git_annex unless gcryptsetup?(args)
-
-      parsed_args =
-        args.map do |arg|
-          # use full repo path
-          if arg =~ /\A\/.*\.git\Z/
-            repo_path
-          else
-            arg
-          end
-        end
-
-      $logger.info "gitlab-shell: executing git-annex command <#{parsed_args.join(' ')}> for #{log_username}."
-      exec_cmd(*parsed_args)
-    elsif @command == 'git-lfs-authenticate'
+    if @command == 'git-lfs-authenticate'
       GitlabMetrics.measure('lfs-authenticate') do
         $logger.info "gitlab-shell: Processing LFS authentication for #{log_username}."
         lfs_authenticate
@@ -149,10 +127,6 @@ class GitlabShell
       'GL_ID' => @key_id,
       'GL_PROTOCOL' => GL_PROTOCOL
     }
-
-    if @config.git_annex_enabled?
-      env.merge!({ 'GIT_ANNEX_SHELL_LIMITED' => '1' })
-    end
 
     if git_trace_available?
       env.merge!({
@@ -186,19 +160,6 @@ class GitlabShell
   # User identifier to be used in log messages.
   def log_username
     @config.audit_usernames ? username : "user with key #{@key_id}"
-  end
-
-  def init_git_annex
-    unless File.exists?(File.join(repo_path, 'annex'))
-      cmd = %W(git --git-dir=#{repo_path} annex init "GitLab")
-      system(*cmd, err: '/dev/null', out: '/dev/null')
-      $logger.info "Enable git-annex for repository: #{repo_name}."
-    end
-  end
-
-  def gcryptsetup?(args)
-    non_dashed = args.reject { |a| a.start_with?('-') }
-    non_dashed[0, 2] == %w{git-annex-shell gcryptsetup}
   end
 
   def lfs_authenticate

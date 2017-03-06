@@ -1,3 +1,6 @@
+v5.0.0
+  - Remove support for git-annex
+
 v4.1.1
   - Send (a selection of) git environment variables while making the API call to `/allowed`, !112
 
