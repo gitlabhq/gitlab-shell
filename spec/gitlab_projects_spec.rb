@@ -287,6 +287,86 @@ describe GitlabProjects do
     end
   end
 
+  describe :push_branches do
+    let(:repos_path) { 'current/storage' }
+    let(:project_name) { 'project/path.git' }
+    let(:full_path) { File.join(repos_path, project_name) }
+    let(:remote_name) { 'new/storage' }
+    let(:pid) { 1234 }
+    let(:branch_name) { 'master' }
+    let(:cmd) { %W(git --git-dir=#{full_path} push -- #{remote_name} #{branch_name}) }
+    let(:gl_projects) { build_gitlab_projects('push-branches', repos_path, project_name, remote_name, '600', 'master') }
+
+    it 'executes the command' do
+      expect(Process).to receive(:spawn).with(*cmd).and_return(pid)
+      expect(Process).to receive(:wait).with(pid)
+
+      expect(gl_projects.exec).to be true
+    end
+
+    it 'raises timeout' do
+      expect(Timeout).to receive(:timeout).with(600).and_raise(Timeout::Error)
+      expect(Process).to receive(:spawn).with(*cmd).and_return(pid)
+      expect(Process).to receive(:wait)
+      expect(Process).to receive(:kill).with('KILL', pid)
+
+      expect(gl_projects.exec).to be false
+    end
+  end
+
+  describe :fetch_remote do
+    let(:repos_path) { 'current/storage' }
+    let(:project_name) { 'project.git' }
+    let(:full_path) { File.join(repos_path, project_name) }
+    let(:remote_name) { 'new/storage' }
+    let(:pid) { 1234 }
+    let(:branch_name) { 'master' }
+
+    describe 'with default args' do
+      let(:gl_projects) { build_gitlab_projects('fetch-remote', repos_path, project_name, remote_name, '600') }
+      let(:cmd) { %W(git --git-dir=#{full_path} fetch #{remote_name} --prune --quiet --tags) }
+
+      it 'executes the command' do
+        expect(Process).to receive(:spawn).with(*cmd).and_return(pid)
+        expect(Process).to receive(:wait).with(pid)
+
+        expect(gl_projects.exec).to be true
+      end
+
+      it 'raises timeout' do
+        expect(Timeout).to receive(:timeout).with(600).and_raise(Timeout::Error)
+        expect(Process).to receive(:spawn).with(*cmd).and_return(pid)
+        expect(Process).to receive(:wait)
+        expect(Process).to receive(:kill).with('KILL', pid)
+        expect(gl_projects.exec).to be false
+      end
+    end
+
+    describe 'with --force' do
+      let(:gl_projects) { build_gitlab_projects('fetch-remote', repos_path, project_name, remote_name, '600', '--force') }
+      let(:cmd) { %W(git --git-dir=#{full_path} fetch #{remote_name} --prune --quiet --force --tags) }
+
+      it 'executes the command with forced option' do
+        expect(Process).to receive(:spawn).with(*cmd).and_return(pid)
+        expect(Process).to receive(:wait).with(pid)
+
+        expect(gl_projects.exec).to be true
+      end
+    end
+
+    describe 'with --no-tags' do
+      let(:gl_projects) { build_gitlab_projects('fetch-remote', repos_path, project_name, remote_name, '600', '--no-tags') }
+      let(:cmd) { %W(git --git-dir=#{full_path} fetch #{remote_name} --prune --quiet --no-tags) }
+
+      it 'executes the command' do
+        expect(Process).to receive(:spawn).with(*cmd).and_return(pid)
+        expect(Process).to receive(:wait).with(pid)
+
+        expect(gl_projects.exec).to be true
+      end
+    end
+  end
+
   describe :import_project do
     context 'success import' do
       let(:gl_projects) { build_gitlab_projects('import-project', tmp_repos_path, repo_name, 'https://github.com/randx/six.git') }

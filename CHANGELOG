@@ -1,3 +1,6 @@
+v5.0.2
+  - Adds timeout option to push branches
+
 v5.0.1
   - Fetch repositories with `--quiet` option by default
 

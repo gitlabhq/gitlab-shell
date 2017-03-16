@@ -113,16 +113,21 @@ class GitlabProjects
   def push_branches
     remote_name = ARGV.shift
 
+    # timeout for push
+    timeout = (ARGV.shift || 120).to_i
+
     $logger.info "Pushing branches from #{full_path} to remote #{remote_name}: #{ARGV}"
     cmd = %W(git --git-dir=#{full_path} push -- #{remote_name}).concat(ARGV)
     pid = Process.spawn(*cmd)
 
     begin
-      Process.wait(pid)
+      Timeout.timeout(timeout) do
+        Process.wait(pid)
+      end
 
       $?.exitstatus.zero?
     rescue => exception
-      $logger.error "Pushing branches to remote #{remote_name} failed due to: #{exception.message}"
+      $logger.error "Pushing branches to remote #{remote_name} failed due to: #{exception.message}."
 
       Process.kill('KILL', pid)
       Process.wait
@@ -204,10 +209,8 @@ class GitlabProjects
     tags_option = ARGV.include?('--no-tags') ? '--no-tags' : '--tags'
 
     $logger.info "Fetching remote #{@name} for project #{@project_name}."
-    cmd = %W(git --git-dir=#{full_path} fetch #{@name})
-    cmd << '--prune'
+    cmd = %W(git --git-dir=#{full_path} fetch #{@name} --prune --quiet)
     cmd << '--force' if forced
-    cmd << '--quiet'
     cmd << tags_option
     pid = Process.spawn(*cmd)
 
@@ -217,8 +220,8 @@ class GitlabProjects
       end
 
       $?.exitstatus.zero?
-    rescue Timeout::Error
-      $logger.error "Fetching remote #{@name} for project #{@project_name} failed due to timeout."
+    rescue => exception
+      $logger.error "Fetching remote #{@name} for project #{@project_name} failed due to: #{exception.message}."
 
       Process.kill('KILL', pid)
       Process.wait
