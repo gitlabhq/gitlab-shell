@@ -207,6 +207,7 @@ class GitlabProjects
     cmd = %W(git --git-dir=#{full_path} fetch #{@name})
     cmd << '--prune'
     cmd << '--force' if forced
+    cmd << '--quiet'
     cmd << tags_option
     pid = Process.spawn(*cmd)
 
