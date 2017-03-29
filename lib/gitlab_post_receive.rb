@@ -122,5 +122,6 @@ class GitlabPostReceive
       $stderr.puts "GitLab: An unexpected error occurred in writing to Redis: #{e}"
       false
     end
+    true
   end
 end
