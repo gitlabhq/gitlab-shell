@@ -131,3 +131,24 @@ Remove all keys from authorized_keys file:
 ## Git LFS remark
 
 Starting with GitLab 8.12, GitLab supports Git LFS authentication through ssh.
+
+## Releasing a new version
+
+GitLab Shell is versioned by git tags, and the version used by the Rails
+application is stored in
+[`GITLAB_SHELL_VERSION`](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/GITLAB_SHELL_VERSION).
+
+For each version, there is a raw version and a tag version:
+
+- The **raw version** is the version number. For instance, `15.2.8`.
+- The **tag version** is the raw version prefixed with `v`. For instance, `v15.2.8`.
+
+To release a new version of GitLab Shell and have that version available to the
+Rails application:
+
+1. Update the [`CHANGELOG`](CHANGELOG) with the **tag version** and the
+   [`VERSION`](VERSION) file with the **raw version**.
+2. Add a new git tag with the **tag version**.
+3. Update `GITLAB_SHELL_VERSION` in the Rails application to the **raw
+   version**. (Note: this can be done as a separate MR to that, or in and MR
+   that will make use of the latest GitLab Shell changes.)
