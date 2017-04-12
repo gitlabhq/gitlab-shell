@@ -11,3 +11,5 @@ tags
 .bundle/
 custom_hooks
 hooks/*.d
+/go_build
+/bin/hello-world
