@@ -1,7 +1,7 @@
 image: "ruby:2.3"
 
 before_script:
-  - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+  - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin
   - apt update
   - apt install rsync -y
   - gem install --bindir /usr/local/bin bundler
@@ -43,3 +43,12 @@ rspec:ruby2.1:
     - ruby
   except:
     - tags
+
+compile:
+  # Image taken from gitlab-ce@59f81b4ff8
+  image: "dev.gitlab.org:5005/gitlab/gitlab-build-images:ruby-2.3.3-golang-1.8-git-2.7-phantomjs-2.1-node-7.1"
+  script:
+    - go version
+    - which go
+    - bin/compile
+

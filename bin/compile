@@ -6,20 +6,20 @@ require 'fileutils'
 require_relative '../lib/gitlab_init'
 
 GO_DIR = 'go'
-GOPATH = File.join(ROOT_PATH, 'go_build')
+BUILD_DIR = File.join(ROOT_PATH, 'go_build')
 GO_PACKAGE = File.join('gitlab.com/gitlab-org/gitlab-shell', GO_DIR)
 
 def main
-  FileUtils.rm_rf(GOPATH)
-  build_source_dir = File.join(GOPATH, 'src', GO_PACKAGE)
+  FileUtils.rm_rf(BUILD_DIR)
+  build_source_dir = File.join(BUILD_DIR, 'src', GO_PACKAGE)
   FileUtils.mkdir_p(build_source_dir)
   FileUtils.cp_r(File.join(ROOT_PATH, GO_DIR, '.'), build_source_dir)
   env = {
-    'GOPATH' => GOPATH,
+    'GOPATH' => BUILD_DIR,
     'GO15VENDOREXPERIMENT' => '1',
   }
   run!(env, %W[go install #{GO_PACKAGE}/cmd/...])
-  executables = Dir[File.join(GOPATH, 'bin', '*')]
+  executables = Dir[File.join(BUILD_DIR, 'bin', '*')]
   FileUtils.chmod(0755, executables)
   FileUtils.cp(executables, File.join(ROOT_PATH, 'bin'))
 end
