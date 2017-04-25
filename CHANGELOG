@@ -1,3 +1,6 @@
+v5.0.3
+  - Use recursive lookup for git repositories in the bin/create-hooks script
+
 v5.0.2
   - Adds timeout option to push branches
 
