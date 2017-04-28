@@ -10,6 +10,7 @@ class GitlabShell
   class InvalidRepositoryPathError < StandardError; end
 
   GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-lfs-authenticate).freeze
+  GITALY_MIGRATED_COMMANDS = %w(git-upload-pack git-receive-pack)
   API_COMMANDS = %w(2fa_recovery_codes)
   GL_PROTOCOL = 'ssh'.freeze
 
@@ -105,10 +106,29 @@ class GitlabShell
         $logger.info "gitlab-shell: Processing LFS authentication for #{log_username}."
         lfs_authenticate
       end
-    else
-      $logger.info "gitlab-shell: executing git command <#{@command} #{repo_path}> for #{log_username}."
-      exec_cmd(@command, repo_path)
+      return
     end
+
+    args = [@command, repo_path]
+
+    if GITALY_MIGRATED_COMMANDS.include?(args[0])
+      executable = args[0].sub('git', File.join(ROOT_PATH, 'bin/gitaly'))
+
+      gitaly_address = '' # would be returned by gitlab-rails internal API
+
+      # The entire gitaly_request hash should be built in gitlab-ce and passed
+      # on as-is. For now we build a fake one on the spot.
+      gitaly_request = JSON.dump({
+        'repository' => { 'path' => args[1] },
+        'gl_id' => @key_id,
+      })
+
+      args = [executable, gitaly_address, gitaly_request]
+    end
+
+    args_string = [File.basename(args[0]), *args[1, args.length]].join(' ')
+    $logger.info "gitlab-shell: executing git command <#{args_string}> for #{log_username}."
+    exec_cmd(*args)
   end
 
   # This method is not covered by Rspec because it ends the current Ruby process.
@@ -138,7 +158,7 @@ class GitlabShell
       })
     end
 
-    Kernel::exec(env, *args, unsetenv_others: true)
+    Kernel::exec(env, *args, unsetenv_others: true, chdir: ROOT_PATH)
   end
 
   def api

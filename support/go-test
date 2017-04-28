@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+
+require_relative 'go_build'
+include GoBuild
+
+def main
+  create_fresh_build_dir
+  run!(GO_ENV, %W[go test #{GO_PACKAGE}/...])
+  puts 'OK'
+end
+
+main
