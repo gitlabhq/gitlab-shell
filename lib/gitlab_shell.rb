@@ -13,7 +13,7 @@ class GitlabShell
   API_COMMANDS = %w(2fa_recovery_codes)
   GL_PROTOCOL = 'ssh'.freeze
 
-  attr_accessor :key_id, :repo_name, :command, :git_access
+  attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access
   attr_reader :repo_path
 
   def initialize(key_id)
@@ -89,11 +89,12 @@ class GitlabShell
   end
 
   def verify_access
-    status = api.check_access(@git_access, @repo_name, @key_id, '_any', GL_PROTOCOL)
+    status = api.check_access(@git_access, nil, @repo_name, @key_id, '_any', GL_PROTOCOL)
 
     raise AccessDeniedError, status.message unless status.allowed?
 
     self.repo_path = status.repository_path
+    @gl_repository = status.gl_repository
   end
 
   def process_cmd(args)
@@ -125,7 +126,8 @@ class GitlabShell
       'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
       'LANG' => ENV['LANG'],
       'GL_ID' => @key_id,
-      'GL_PROTOCOL' => GL_PROTOCOL
+      'GL_PROTOCOL' => GL_PROTOCOL,
+      'GL_REPOSITORY' => @gl_repository
     }
 
     if git_trace_available?

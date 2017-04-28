@@ -9,10 +9,11 @@ require 'securerandom'
 class GitlabPostReceive
   include NamesHelper
 
-  attr_reader :config, :repo_path, :changes, :jid
+  attr_reader :config, :gl_repository, :repo_path, :changes, :jid
 
-  def initialize(repo_path, actor, changes)
+  def initialize(gl_repository, repo_path, actor, changes)
     @config = GitlabConfig.new
+    @gl_repository = gl_repository
     @repo_path, @actor = repo_path.strip, actor
     @changes = changes
     @jid = SecureRandom.hex(12)
@@ -32,11 +33,11 @@ class GitlabPostReceive
       end
 
       merge_request_urls = GitlabMetrics.measure("merge-request-urls") do
-        api.merge_request_urls(@repo_path, @changes)
+        api.merge_request_urls(@gl_repository, @repo_path, @changes)
       end
       print_merge_request_links(merge_request_urls)
 
-      api.notify_post_receive(repo_path)
+      api.notify_post_receive(gl_repository, repo_path)
     rescue GitlabNet::ApiUnreachableError
       nil
     end
