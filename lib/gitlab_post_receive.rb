@@ -107,11 +107,14 @@ class GitlabPostReceive
   def update_redis
     # Encode changes as base64 so we don't run into trouble with non-UTF-8 input.
     changes = Base64.encode64(@changes)
+    # TODO: Change to `@gl_repository || @repo_path` in next release.
+    # See https://gitlab.com/gitlab-org/gitlab-shell/merge_requests/130#note_28747613
+    project_identifier = @repo_path
 
     queue = "#{config.redis_namespace}:queue:post_receive"
     msg = JSON.dump({
       'class' => 'PostReceive',
-      'args' => [@repo_path, @actor, changes],
+      'args' => [project_identifier, @actor, changes],
       'jid' => @jid,
       'enqueued_at' => Time.now.to_f
     })

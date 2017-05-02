@@ -27,7 +27,6 @@ class GitlabNet
       env: env
     }
 
-
     if actor =~ /\Akey\-\d+\Z/
       params.merge!(key_id: actor.gsub("key-", ""))
     elsif actor =~ /\Auser\-\d+\Z/
