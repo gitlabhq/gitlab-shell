@@ -1,3 +1,6 @@
+v5.0.4
+  - Handle GL_REPOSITORY env variable and use it in API calls and Sidekiq enqueuing
+
 v5.0.3
   - Use recursive lookup for git repositories in the bin/create-hooks script
 
