@@ -52,3 +52,4 @@ go:
     - which go
     - bin/compile
     - support/go-test
+    - support/go-format check
