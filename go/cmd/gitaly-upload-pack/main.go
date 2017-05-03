@@ -16,15 +16,15 @@ func init() {
 
 func main() {
 	if err := handler.Prepare(); err != nil {
-		logger.Fatal(err)
+		logger.Fatal("preparation failed", err)
 	}
 
 	var request pb.SSHUploadPackRequest
 	if err := json.Unmarshal([]byte(os.Args[2]), &request); err != nil {
-		logger.Fatal(err)
+		logger.Fatal("unmarshaling request json failed", err)
 	}
 
 	if err := handler.UploadPack(os.Args[1], &request); err != nil {
-		logger.Fatal(err)
+		logger.Fatal("upload-pack failed", err)
 	}
 }

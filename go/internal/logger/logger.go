@@ -31,24 +31,26 @@ func Configure(cfg *config.Config) error {
 	return err
 }
 
-func logPrint(msg ...interface{}) {
+func logPrint(msg string, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	if logWriter == nil {
-		bootstrapLogPrint(msg...)
+		bootstrapLogPrint(msg, err)
 		return
 	}
 
 	// Emulate the existing log format of gitlab-shell
 	t := time.Now().Format("2006-01-02T15:04:05.999999")
-	prefix := fmt.Sprintf("E, [%s #%d] ERROR -- : %s: ", t, pid, ProgName)
-	fmt.Fprintln(logWriter, append([]interface{}{prefix}, msg...)...)
+	prefix := fmt.Sprintf("E, [%s #%d] ERROR -- : %s:", t, pid, ProgName)
+	fmt.Fprintf(logWriter, "%s %s: %v\n", prefix, msg, err)
 }
 
-func Fatal(msg ...interface{}) {
-	logPrint(msg...)
-	fmt.Fprintf(os.Stderr, "%s: fatal error\n", ProgName)
+func Fatal(msg string, err error) {
+	logPrint(msg, err)
+	// We don't show the error to the end user because it can leak
+	// information that is private to the GitLab server.
+	fmt.Fprintf(os.Stderr, "%s: fatal: %s\n", ProgName, msg)
 	os.Exit(1)
 }
 
@@ -57,7 +59,7 @@ func Fatal(msg ...interface{}) {
 // function attemps to log to syslog.
 //
 // We assume the logging mutex is already locked.
-func bootstrapLogPrint(msg ...interface{}) {
+func bootstrapLogPrint(msg string, err error) {
 	if bootstrapLogger == nil {
 		var err error
 		bootstrapLogger, err = syslog.NewLogger(syslog.LOG_ERR|syslog.LOG_USER, 0)
@@ -67,6 +69,5 @@ func bootstrapLogPrint(msg ...interface{}) {
 		}
 	}
 
-	args := append([]interface{}{ProgName + ":"}, msg...)
-	bootstrapLogger.Print(args)
+	bootstrapLogger.Print(ProgName+":", msg+":", err)
 }
