@@ -44,7 +44,7 @@ class HTTPUNIXServer < WEBrick::HTTPServer
 end
 
 def tmp_socket_path
-  File.join(ROOT_PATH, 'tmp', 'socket')
+  'tmp/test-socket'
 end
 
 describe Net::HTTPUNIX do
