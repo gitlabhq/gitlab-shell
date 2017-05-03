@@ -158,6 +158,7 @@ class GitlabShell
       })
     end
 
+    # We use 'chdir: ROOT_PATH' to let the next executable know where config.yml is.
     Kernel::exec(env, *args, unsetenv_others: true, chdir: ROOT_PATH)
   end
 
