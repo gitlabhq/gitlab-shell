@@ -10,7 +10,10 @@ class GitlabShell
   class InvalidRepositoryPathError < StandardError; end
 
   GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-lfs-authenticate).freeze
-  GITALY_MIGRATED_COMMANDS = %w(git-upload-pack git-receive-pack)
+  GITALY_MIGRATED_COMMANDS = {
+    'git-upload-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-upload-pack'),
+    'git-receive-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-receive-pack'),
+  }
   API_COMMANDS = %w(2fa_recovery_codes)
   GL_PROTOCOL = 'ssh'.freeze
 
@@ -109,26 +112,27 @@ class GitlabShell
       return
     end
 
-    args = [@command, repo_path]
+    executable = @command
+    args = [repo_path]
 
-    if GITALY_MIGRATED_COMMANDS.include?(args[0])
-      executable = args[0].sub('git', File.join(ROOT_PATH, 'bin/gitaly'))
+    if GITALY_MIGRATED_COMMANDS.has_key?(executable)
+      executable = GITALY_MIGRATED_COMMANDS[executable]
 
       gitaly_address = '' # would be returned by gitlab-rails internal API
 
       # The entire gitaly_request hash should be built in gitlab-ce and passed
       # on as-is. For now we build a fake one on the spot.
       gitaly_request = JSON.dump({
-        'repository' => { 'path' => args[1] },
+        'repository' => { 'path' => repo_path },
         'gl_id' => @key_id,
       })
 
-      args = [executable, gitaly_address, gitaly_request]
+      args = [gitaly_address, gitaly_request]
     end
 
-    args_string = [File.basename(args[0]), *args[1, args.length]].join(' ')
+    args_string = [File.basename(executable), *args].join(' ')
     $logger.info "gitlab-shell: executing git command <#{args_string}> for #{log_username}."
-    exec_cmd(*args)
+    exec_cmd(executable, *args)
   end
 
   # This method is not covered by Rspec because it ends the current Ruby process.
