@@ -22,7 +22,7 @@ describe GitlabShell do
   let(:api) do
     double(GitlabNet).tap do |api|
       api.stub(discover: { 'name' => 'John Doe' })
-      api.stub(check_access: GitAccessStatus.new(true, 'ok', repo_path))
+      api.stub(check_access: GitAccessStatus.new(true, 'ok', gl_repository, repo_path))
       api.stub(two_factor_recovery_codes: {
         'success' => true,
         'recovery_codes' => ['f67c514de60c4953', '41278385fc00c1e0']
@@ -36,6 +36,7 @@ describe GitlabShell do
 
   let(:repo_name) { 'gitlab-ci.git' }
   let(:repo_path) { File.join(tmp_repos_path, repo_name) }
+  let(:gl_repository) { 'project-1' }
 
   before do
     GitlabConfig.any_instance.stub(audit_usernames: false)
@@ -262,11 +263,11 @@ describe GitlabShell do
       after { subject.exec(ssh_cmd) }
 
       it "should call api.check_access" do
-        api.should_receive(:check_access).with('git-upload-pack', 'gitlab-ci.git', key_id, '_any', 'ssh')
+        api.should_receive(:check_access).with('git-upload-pack', nil, 'gitlab-ci.git', key_id, '_any', 'ssh')
       end
 
       it "should disallow access and log the attempt if check_access returns false status" do
-        api.stub(check_access: GitAccessStatus.new(false, 'denied', nil))
+        api.stub(check_access: GitAccessStatus.new(false, 'denied', nil, nil))
         message = "gitlab-shell: Access denied for git command <git-upload-pack gitlab-ci.git> "
         message << "by user with key #{key_id}."
         $logger.should_receive(:warn).with(message)
@@ -295,10 +296,24 @@ describe GitlabShell do
 
   describe :exec_cmd do
     let(:shell) { GitlabShell.new(key_id) }
-    before { Kernel.stub(:exec) }
+    let(:env) do
+      {
+        'HOME' => ENV['HOME'],
+        'PATH' => ENV['PATH'],
+        'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
+        'LANG' => ENV['LANG'],
+        'GL_ID' => key_id,
+        'GL_PROTOCOL' => 'ssh',
+        'GL_REPOSITORY' => gl_repository
+      }
+    end
+    before do
+      Kernel.stub(:exec)
+      shell.gl_repository = gl_repository
+    end
 
     it "uses Kernel::exec method" do
-      Kernel.should_receive(:exec).with(kind_of(Hash), 1, 2, unsetenv_others: true).once
+      Kernel.should_receive(:exec).with(env, 1, 2, unsetenv_others: true).once
       shell.send :exec_cmd, 1, 2
     end
 
@@ -307,7 +322,7 @@ describe GitlabShell do
     end
 
     it "allows one argument if it is an array" do
-      Kernel.should_receive(:exec).with(kind_of(Hash), [1, 2], unsetenv_others: true).once
+      Kernel.should_receive(:exec).with(env, [1, 2], unsetenv_others: true).once
       shell.send :exec_cmd, [1, 2]
     end
 
@@ -347,7 +362,7 @@ describe GitlabShell do
           expect($logger).to receive(:warn).
             with("gitlab-shell: is configured to trace git commands with #{git_trace_log_file.inspect} but an absolute path needs to be provided")
 
-          Kernel.should_receive(:exec).with(kind_of(Hash), [1, 2], unsetenv_others: true).once
+          Kernel.should_receive(:exec).with(env, [1, 2], unsetenv_others: true).once
           shell.send :exec_cmd, [1, 2]
         end
       end
@@ -371,7 +386,7 @@ describe GitlabShell do
           expect($logger).to receive(:warn).
             with("gitlab-shell: is configured to trace git commands with #{git_trace_log_file.inspect} but it's not possible to write in that path Permission denied")
 
-          Kernel.should_receive(:exec).with(kind_of(Hash), [1, 2], unsetenv_others: true).once
+          Kernel.should_receive(:exec).with(env, [1, 2], unsetenv_others: true).once
           shell.send :exec_cmd, [1, 2]
         end
       end

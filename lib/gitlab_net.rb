@@ -15,12 +15,13 @@ class GitlabNet
   CHECK_TIMEOUT = 5
   READ_TIMEOUT = 300
 
-  def check_access(cmd, repo, actor, changes, protocol, env: {})
+  def check_access(cmd, gl_repository, repo, actor, changes, protocol, env: {})
     changes = changes.join("\n") unless changes.kind_of?(String)
 
     params = {
       action: cmd,
       changes: changes,
+      gl_repository: gl_repository,
       project: sanitize_path(repo),
       protocol: protocol,
       env: env
@@ -38,7 +39,7 @@ class GitlabNet
     if resp.code == '200'
       GitAccessStatus.create_from_json(resp.body)
     else
-      GitAccessStatus.new(false, 'API is not accessible', nil)
+      GitAccessStatus.new(false, 'API is not accessible', nil, nil)
     end
   end
 
@@ -66,10 +67,12 @@ class GitlabNet
     JSON.parse(resp.body) rescue {}
   end
 
-  def merge_request_urls(repo_path, changes)
+  def merge_request_urls(gl_repository, repo_path, changes)
     changes = changes.join("\n") unless changes.kind_of?(String)
     changes = changes.encode('UTF-8', 'ASCII', invalid: :replace, replace: '')
-    resp = get("#{host_v3}/merge_request_urls?project=#{URI.escape(repo_path)}&changes=#{URI.escape(changes)}")
+    url = "#{host_v3}/merge_request_urls?project=#{URI.escape(repo_path)}&changes=#{URI.escape(changes)}"
+    url += "&gl_repository=#{URI.escape(gl_repository)}" if gl_repository
+    resp = get(url)
     JSON.parse(resp.body) rescue []
   end
 
@@ -93,8 +96,9 @@ class GitlabNet
     {}
   end
 
-  def notify_post_receive(repo_path)
-    resp = post("#{host}/notify_post_receive", repo_path: repo_path)
+  def notify_post_receive(gl_repository, repo_path)
+    params = { gl_repository: gl_repository, project: repo_path }
+    resp = post("#{host}/notify_post_receive", params)
 
     resp.code == '200'
   rescue

@@ -6,10 +6,12 @@ require_relative '../lib/gitlab_access_status'
 describe GitlabNet, vcr: true do
   let(:gitlab_net) { GitlabNet.new }
   let(:changes) { ['0000000000000000000000000000000000000000 92d0970eefd7acb6d548878925ce2208cfe2d2ec refs/heads/branch4'] }
+  let(:host_v3) { 'https://dev.gitlab.org/api/v3/internal' }
+  let(:host) { 'https://dev.gitlab.org/api/v4/internal' }
 
   before do
-    gitlab_net.stub(:host_v3).and_return('https://dev.gitlab.org/api/v3/internal')
-    gitlab_net.stub(:host).and_return('https://dev.gitlab.org/api/v4/internal')
+    gitlab_net.stub(:host_v3).and_return(host_v3)
+    gitlab_net.stub(:host).and_return(host)
     gitlab_net.stub(:secret_token).and_return('a123')
   end
 
@@ -91,6 +93,25 @@ describe GitlabNet, vcr: true do
     end
   end
 
+  describe :merge_request_urls do
+    let(:gl_repository) { "project-1" }
+    let(:repo_path) { "/path/to/my/repo.git" }
+    let(:changes) { "123456 789012 refs/heads/test\n654321 210987 refs/tags/tag" }
+    let(:encoded_changes) { "123456%20789012%20refs/heads/test%0A654321%20210987%20refs/tags/tag" }
+
+    it "sends the given arguments as encoded URL parameters" do
+      gitlab_net.should_receive(:get).with("#{host_v3}/merge_request_urls?project=#{repo_path}&changes=#{encoded_changes}&gl_repository=#{gl_repository}")
+
+      gitlab_net.merge_request_urls(gl_repository, repo_path, changes)
+    end
+
+    it "omits the gl_repository parameter if it's nil" do
+      gitlab_net.should_receive(:get).with("#{host_v3}/merge_request_urls?project=#{repo_path}&changes=#{encoded_changes}")
+
+      gitlab_net.merge_request_urls(nil, repo_path, changes)
+    end
+  end
+
   describe :authorized_key do
     let (:ssh_key) { "AAAAB3NzaC1yc2EAAAADAQABAAACAQDPKPqqnqQ9PDFw65cO7iHXrKw6ucSZg8Bd2CZ150Yy1YRDPJOWeRNCnddS+M/Lk" }
 
@@ -140,20 +161,31 @@ describe GitlabNet, vcr: true do
   end
 
   describe '#notify_post_receive' do
+    let(:gl_repository) { 'project-1' }
     let(:repo_path) { '/path/to/my/repo.git' }
+    let(:params) do
+      { gl_repository: gl_repository, project: repo_path }
+    end
+
+    it 'sets the arguments as form parameters' do
+      VCR.use_cassette('notify-post-receive') do
+        Net::HTTP::Post.any_instance.should_receive(:set_form_data).with(hash_including(params))
+        gitlab_net.notify_post_receive(gl_repository, repo_path)
+      end
+    end
 
     it 'returns true if notification was succesful' do
       VCR.use_cassette('notify-post-receive') do
-        expect(gitlab_net.notify_post_receive(repo_path)).to be_true
+        expect(gitlab_net.notify_post_receive(gl_repository, repo_path)).to be_true
       end
     end
   end
 
   describe :check_access do
-    context 'ssh key with access to project' do
+    context 'ssh key with access nil, to project' do
       it 'should allow pull access for dev.gitlab.org' do
         VCR.use_cassette("allowed-pull") do
-          access = gitlab_net.check_access('git-receive-pack', 'gitlab/gitlabhq.git', 'key-126', changes, 'ssh')
+          access = gitlab_net.check_access('git-receive-pack', nil, 'gitlab/gitlabhq.git', 'key-126', changes, 'ssh')
           access.allowed?.should be_true
         end
       end
@@ -161,13 +193,13 @@ describe GitlabNet, vcr: true do
       it 'adds the secret_token to the request' do
         VCR.use_cassette("allowed-pull") do
           Net::HTTP::Post.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: 'a123'))
-          gitlab_net.check_access('git-receive-pack', 'gitlab/gitlabhq.git', 'key-126', changes, 'ssh')
+          gitlab_net.check_access('git-receive-pack', nil, 'gitlab/gitlabhq.git', 'key-126', changes, 'ssh')
         end
       end
 
       it 'should allow push access for dev.gitlab.org' do
         VCR.use_cassette("allowed-push") do
-          access = gitlab_net.check_access('git-upload-pack', 'gitlab/gitlabhq.git', 'key-126', changes, 'ssh')
+          access = gitlab_net.check_access('git-upload-pack', nil, 'gitlab/gitlabhq.git', 'key-126', changes, 'ssh')
           access.allowed?.should be_true
         end
       end
@@ -176,7 +208,7 @@ describe GitlabNet, vcr: true do
     context 'ssh access has been disabled' do
       it 'should deny pull access for dev.gitlab.org' do
         VCR.use_cassette('ssh-access-disabled') do
-          access = gitlab_net.check_access('git-receive-pack', 'gitlab/gitlabhq.git', 'key-2', changes, 'ssh')
+          access = gitlab_net.check_access('git-receive-pack', nil, 'gitlab/gitlabhq.git', 'key-2', changes, 'ssh')
           access.allowed?.should be_false
           access.message.should eq 'Git access over SSH is not allowed'
         end
@@ -184,7 +216,7 @@ describe GitlabNet, vcr: true do
 
       it 'should deny pull access for dev.gitlab.org' do
         VCR.use_cassette('ssh-access-disabled') do
-          access = gitlab_net.check_access('git-receive-pack', 'gitlab/gitlabhq.git', 'key-2', changes, 'ssh')
+          access = gitlab_net.check_access('git-receive-pack', nil, 'gitlab/gitlabhq.git', 'key-2', changes, 'ssh')
           access.allowed?.should be_false
           access.message.should eq 'Git access over SSH is not allowed'
         end
@@ -194,7 +226,7 @@ describe GitlabNet, vcr: true do
     context 'http access has been disabled' do
       it 'should deny pull access for dev.gitlab.org' do
         VCR.use_cassette('http-access-disabled') do
-          access = gitlab_net.check_access('git-receive-pack', 'gitlab/gitlabhq.git', 'key-2', changes, 'http')
+          access = gitlab_net.check_access('git-receive-pack', nil, 'gitlab/gitlabhq.git', 'key-2', changes, 'http')
           access.allowed?.should be_false
           access.message.should eq 'Git access over HTTP is not allowed'
         end
@@ -202,7 +234,7 @@ describe GitlabNet, vcr: true do
 
       it 'should deny pull access for dev.gitlab.org' do
         VCR.use_cassette('http-access-disabled') do
-          access = gitlab_net.check_access('git-receive-pack', 'gitlab/gitlabhq.git', 'key-2', changes, 'http')
+          access = gitlab_net.check_access('git-receive-pack', nil, 'gitlab/gitlabhq.git', 'key-2', changes, 'http')
           access.allowed?.should be_false
           access.message.should eq 'Git access over HTTP is not allowed'
         end
@@ -212,21 +244,21 @@ describe GitlabNet, vcr: true do
     context 'ssh key without access to project' do
       it 'should deny pull access for dev.gitlab.org' do
         VCR.use_cassette("denied-pull") do
-          access = gitlab_net.check_access('git-receive-pack', 'gitlab/gitlabhq.git', 'key-2', changes, 'ssh')
+          access = gitlab_net.check_access('git-receive-pack', nil, 'gitlab/gitlabhq.git', 'key-2', changes, 'ssh')
           access.allowed?.should be_false
         end
       end
 
       it 'should deny push access for dev.gitlab.org' do
         VCR.use_cassette("denied-push") do
-          access = gitlab_net.check_access('git-upload-pack', 'gitlab/gitlabhq.git', 'key-2', changes, 'ssh')
+          access = gitlab_net.check_access('git-upload-pack', nil, 'gitlab/gitlabhq.git', 'key-2', changes, 'ssh')
           access.allowed?.should be_false
         end
       end
 
       it 'should deny push access for dev.gitlab.org (with user)' do
         VCR.use_cassette("denied-push-with-user") do
-          access = gitlab_net.check_access('git-upload-pack', 'gitlab/gitlabhq.git', 'user-1', changes, 'ssh')
+          access = gitlab_net.check_access('git-upload-pack', nil, 'gitlab/gitlabhq.git', 'user-1', changes, 'ssh')
           access.allowed?.should be_false
         end
       end
@@ -235,7 +267,7 @@ describe GitlabNet, vcr: true do
     it "raises an exception if the connection fails" do
       Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
       expect {
-        gitlab_net.check_access('git-upload-pack', 'gitlab/gitlabhq.git', 'user-1', changes, 'ssh')
+        gitlab_net.check_access('git-upload-pack', nil, 'gitlab/gitlabhq.git', 'user-1', changes, 'ssh')
       }.to raise_error(GitlabNet::ApiUnreachableError)
     end
   end
