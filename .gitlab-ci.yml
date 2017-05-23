@@ -44,11 +44,12 @@ rspec:ruby2.1:
   except:
     - tags
 
-compile:
+go:
   # Image taken from gitlab-ce@59f81b4ff8
   image: "dev.gitlab.org:5005/gitlab/gitlab-build-images:ruby-2.3.3-golang-1.8-git-2.7-phantomjs-2.1-node-7.1"
   script:
     - go version
     - which go
     - bin/compile
-
+    - support/go-test
+    - support/go-format check

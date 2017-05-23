@@ -128,6 +128,7 @@ describe GitlabShell do
   end
 
   describe :exec do
+    let(:gitaly_message) { JSON.dump({ 'repository' => { 'path' => repo_path }, 'gl_id' => key_id }) }
 
     context 'git-upload-pack' do
       let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
@@ -138,12 +139,12 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with("git-upload-pack", repo_path)
+        subject.should_receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-upload-pack"), '', gitaly_message)
       end
 
       it "should log the command execution" do
         message = "gitlab-shell: executing git command "
-        message << "<git-upload-pack #{repo_path}> "
+        message << "<gitaly-upload-pack  #{gitaly_message}> "
         message << "for user with key #{key_id}."
         $logger.should_receive(:info).with(message)
       end
@@ -163,12 +164,12 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with("git-receive-pack", repo_path)
+        subject.should_receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-receive-pack"), '', gitaly_message)
       end
 
       it "should log the command execution" do
         message = "gitlab-shell: executing git command "
-        message << "<git-receive-pack #{repo_path}> "
+        message << "<gitaly-receive-pack  #{gitaly_message}> "
         message << "for user with key #{key_id}."
         $logger.should_receive(:info).with(message)
       end
@@ -307,13 +308,14 @@ describe GitlabShell do
         'GL_REPOSITORY' => gl_repository
       }
     end
+    let(:exec_options) { { unsetenv_others: true, chdir: ROOT_PATH } }
     before do
       Kernel.stub(:exec)
       shell.gl_repository = gl_repository
     end
 
     it "uses Kernel::exec method" do
-      Kernel.should_receive(:exec).with(env, 1, 2, unsetenv_others: true).once
+      Kernel.should_receive(:exec).with(env, 1, 2, exec_options).once
       shell.send :exec_cmd, 1, 2
     end
 
@@ -322,7 +324,7 @@ describe GitlabShell do
     end
 
     it "allows one argument if it is an array" do
-      Kernel.should_receive(:exec).with(env, [1, 2], unsetenv_others: true).once
+      Kernel.should_receive(:exec).with(env, [1, 2], exec_options).once
       shell.send :exec_cmd, [1, 2]
     end
 
@@ -340,7 +342,7 @@ describe GitlabShell do
           'GIT_TRACE_PACKET' => git_trace_log_file,
           'GIT_TRACE_PERFORMANCE' => git_trace_log_file
         )
-        Kernel.should_receive(:exec).with(expected_hash, [1, 2], unsetenv_others: true).once
+        Kernel.should_receive(:exec).with(expected_hash, [1, 2], exec_options).once
 
         shell.send :exec_cmd, [1, 2]
       end
@@ -353,7 +355,7 @@ describe GitlabShell do
           expected_hash = hash_excluding(
             'GIT_TRACE', 'GIT_TRACE_PACKET', 'GIT_TRACE_PERFORMANCE'
           )
-          Kernel.should_receive(:exec).with(expected_hash, [1, 2], unsetenv_others: true).once
+          Kernel.should_receive(:exec).with(expected_hash, [1, 2], exec_options).once
 
           shell.send :exec_cmd, [1, 2]
         end
@@ -362,7 +364,7 @@ describe GitlabShell do
           expect($logger).to receive(:warn).
             with("gitlab-shell: is configured to trace git commands with #{git_trace_log_file.inspect} but an absolute path needs to be provided")
 
-          Kernel.should_receive(:exec).with(env, [1, 2], unsetenv_others: true).once
+          Kernel.should_receive(:exec).with(env, [1, 2], exec_options).once
           shell.send :exec_cmd, [1, 2]
         end
       end
@@ -377,7 +379,7 @@ describe GitlabShell do
           expected_hash = hash_excluding(
             'GIT_TRACE', 'GIT_TRACE_PACKET', 'GIT_TRACE_PERFORMANCE'
           )
-          Kernel.should_receive(:exec).with(expected_hash, [1, 2], unsetenv_others: true).once
+          Kernel.should_receive(:exec).with(expected_hash, [1, 2], exec_options).once
 
           shell.send :exec_cmd, [1, 2]
         end
@@ -386,7 +388,7 @@ describe GitlabShell do
           expect($logger).to receive(:warn).
             with("gitlab-shell: is configured to trace git commands with #{git_trace_log_file.inspect} but it's not possible to write in that path Permission denied")
 
-          Kernel.should_receive(:exec).with(env, [1, 2], unsetenv_others: true).once
+          Kernel.should_receive(:exec).with(env, [1, 2], exec_options).once
           shell.send :exec_cmd, [1, 2]
         end
       end

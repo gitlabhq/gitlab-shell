@@ -208,6 +208,12 @@
 			"path": "google.golang.org/grpc/transport",
 			"revision": "6d158dbf32084eac5fc0b9ea6f1feed214290ec6",
 			"revisionTime": "2017-04-12T06:39:30Z"
+		},
+		{
+			"checksumSHA1": "fALlQNY1fM99NesfLJ50KguWsio=",
+			"path": "gopkg.in/yaml.v2",
+			"revision": "cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b",
+			"revisionTime": "2017-04-07T17:21:22Z"
 		}
 	],
 	"rootPath": "gitlab.com/gitlab-org/gitlab-shell/go"

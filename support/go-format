@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+
+def main(check)
+  go_files = Dir['go/**/*.go'].reject { |p| p.start_with?('go/vendor/') }
+  cmd = %w[gofmt -s -l]
+  cmd << '-w' unless check
+  cmd += go_files
+  output = IO.popen(cmd, 'r') { |io| io.read }
+  $stdout.write(output)
+  abort 'gofmt failed' unless $?.success?
+  if check && output.lines.any? { |l| l != "\n" }
+    abort "\nPlease run #{$0} to fix formatting"
+  end
+end
+
+main(ARGV.first == 'check')
