@@ -1,3 +1,6 @@
+v5.0.5
+  - Use gl_repository if present when enqueing Sidekiq PostReceive jobs
+
 v5.0.4
   - Handle GL_REPOSITORY env variable and use it in API calls and Sidekiq enqueuing
 

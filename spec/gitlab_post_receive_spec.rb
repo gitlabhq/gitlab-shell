@@ -137,13 +137,28 @@ describe GitlabPostReceive do
       end
     end
 
-    it "pushes a Sidekiq job onto the queue" do
-      expect(redis_client).to receive(:rpush).with(
-        'resque:gitlab:queue:post_receive',
-         %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}],"jid":"#{gitlab_post_receive.jid}","enqueued_at":#{enqueued_at.to_f}}/
-      ).and_return(true)
+    context 'Sidekiq jobs' do
+      it "pushes a Sidekiq job onto the queue" do
+        expect(redis_client).to receive(:rpush).with(
+          'resque:gitlab:queue:post_receive',
+           %Q/{"class":"PostReceive","args":["#{gl_repository}","#{actor}",#{base64_changes.inspect}],"jid":"#{gitlab_post_receive.jid}","enqueued_at":#{enqueued_at.to_f}}/
+        ).and_return(true)
 
-      gitlab_post_receive.exec
+        gitlab_post_receive.exec
+      end
+
+      context 'when gl_repository is nil' do
+        let(:gl_repository) { nil }
+
+        it "pushes a Sidekiq job with the repository path" do
+          expect(redis_client).to receive(:rpush).with(
+            'resque:gitlab:queue:post_receive',
+             %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}],"jid":"#{gitlab_post_receive.jid}","enqueued_at":#{enqueued_at.to_f}}/
+          ).and_return(true)
+
+          gitlab_post_receive.exec
+        end
+      end
     end
 
     context 'reference counter' do
