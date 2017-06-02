@@ -37,6 +37,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"math"
@@ -47,9 +48,7 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/stats"
-	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/transport"
 )
 
@@ -141,7 +140,6 @@ type callInfo struct {
 	failFast  bool
 	headerMD  metadata.MD
 	trailerMD metadata.MD
-	peer      *peer.Peer
 	traceInfo traceInfo // in trace.go
 }
 
@@ -185,22 +183,12 @@ func Trailer(md *metadata.MD) CallOption {
 	})
 }
 
-// Peer returns a CallOption that retrieves peer information for a
-// unary RPC.
-func Peer(peer *peer.Peer) CallOption {
-	return afterCall(func(c *callInfo) {
-		if c.peer != nil {
-			*peer = *c.peer
-		}
-	})
-}
-
 // FailFast configures the action to take when an RPC is attempted on broken
 // connections or unreachable servers. If failfast is true, the RPC will fail
 // immediately. Otherwise, the RPC client will block the call until a
 // connection is available (or the call is canceled or times out) and will retry
 // the call if it fails due to a transient error. Please refer to
-// https://github.com/grpc/grpc/blob/master/doc/fail_fast.md. Note: failFast is default to true.
+// https://github.com/grpc/grpc/blob/master/doc/fail_fast.md
 func FailFast(failFast bool) CallOption {
 	return beforeCall(func(c *callInfo) error {
 		c.failFast = failFast
@@ -372,57 +360,88 @@ func recv(p *parser, c Codec, s *transport.Stream, dc Decompressor, m interface{
 	return nil
 }
 
+// rpcError defines the status from an RPC.
+type rpcError struct {
+	code codes.Code
+	desc string
+}
+
+func (e *rpcError) Error() string {
+	return fmt.Sprintf("rpc error: code = %d desc = %s", e.code, e.desc)
+}
+
 // Code returns the error code for err if it was produced by the rpc system.
 // Otherwise, it returns codes.Unknown.
-//
-// Deprecated; use status.FromError and Code method instead.
 func Code(err error) codes.Code {
-	if s, ok := status.FromError(err); ok {
-		return s.Code()
+	if err == nil {
+		return codes.OK
+	}
+	if e, ok := err.(*rpcError); ok {
+		return e.code
 	}
 	return codes.Unknown
 }
 
 // ErrorDesc returns the error description of err if it was produced by the rpc system.
 // Otherwise, it returns err.Error() or empty string when err is nil.
-//
-// Deprecated; use status.FromError and Message method instead.
 func ErrorDesc(err error) string {
-	if s, ok := status.FromError(err); ok {
-		return s.Message()
+	if err == nil {
+		return ""
+	}
+	if e, ok := err.(*rpcError); ok {
+		return e.desc
 	}
 	return err.Error()
 }
 
 // Errorf returns an error containing an error code and a description;
 // Errorf returns nil if c is OK.
-//
-// Deprecated; use status.Errorf instead.
 func Errorf(c codes.Code, format string, a ...interface{}) error {
-	return status.Errorf(c, format, a...)
+	if c == codes.OK {
+		return nil
+	}
+	return &rpcError{
+		code: c,
+		desc: fmt.Sprintf(format, a...),
+	}
 }
 
-// toRPCErr converts an error into an error from the status package.
+// toRPCErr converts an error into a rpcError.
 func toRPCErr(err error) error {
-	if _, ok := status.FromError(err); ok {
-		return err
-	}
 	switch e := err.(type) {
+	case *rpcError:
+		return err
 	case transport.StreamError:
-		return status.Error(e.Code, e.Desc)
+		return &rpcError{
+			code: e.Code,
+			desc: e.Desc,
+		}
 	case transport.ConnectionError:
-		return status.Error(codes.Internal, e.Desc)
+		return &rpcError{
+			code: codes.Internal,
+			desc: e.Desc,
+		}
 	default:
 		switch err {
 		case context.DeadlineExceeded:
-			return status.Error(codes.DeadlineExceeded, err.Error())
+			return &rpcError{
+				code: codes.DeadlineExceeded,
+				desc: err.Error(),
+			}
 		case context.Canceled:
-			return status.Error(codes.Canceled, err.Error())
+			return &rpcError{
+				code: codes.Canceled,
+				desc: err.Error(),
+			}
 		case ErrClientConnClosing:
-			return status.Error(codes.FailedPrecondition, err.Error())
+			return &rpcError{
+				code: codes.FailedPrecondition,
+				desc: err.Error(),
+			}
 		}
+
 	}
-	return status.Error(codes.Unknown, err.Error())
+	return Errorf(codes.Unknown, "%v", err)
 }
 
 // convertCode converts a standard Go error into its canonical code. Note that
@@ -467,17 +486,17 @@ type MethodConfig struct {
 	// then the other will be used.  If neither is set, then the RPC has no deadline.
 	Timeout time.Duration
 	// MaxReqSize is the maximum allowed payload size for an individual request in a
-	// stream (client->server) in bytes. The size which is measured is the serialized
-	// payload after per-message compression (but before stream compression) in bytes.
-	// The actual value used is the minumum of the value specified here and the value set
-	// by the application via the gRPC client API. If either one is not set, then the other
-	// will be used.  If neither is set, then the built-in default is used.
+	// stream (client->server) in bytes. The size which is measured is the serialized,
+	// uncompressed payload in bytes. The actual value used is the minumum of the value
+	// specified here and the value set by the application via the gRPC client API. If
+	// either one is not set, then the other will be used.  If neither is set, then the
+	// built-in default is used.
 	// TODO: support this.
-	MaxReqSize uint32
+	MaxReqSize uint64
 	// MaxRespSize is the maximum allowed payload size for an individual response in a
 	// stream (server->client) in bytes.
 	// TODO: support this.
-	MaxRespSize uint32
+	MaxRespSize uint64
 }
 
 // ServiceConfig is provided by the service provider and contains parameters for how
@@ -498,6 +517,3 @@ type ServiceConfig struct {
 // requires a synchronised update of grpc-go and protoc-gen-go. This constant
 // should not be referenced from any other code.
 const SupportPackageIsVersion4 = true
-
-// Version is the current grpc version.
-const Version = "1.3.0-dev"
