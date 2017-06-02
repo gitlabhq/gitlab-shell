@@ -148,9 +148,13 @@ class GitlabShell
   def user
     return @user if defined?(@user)
 
-    begin
-      @user = api.discover(@key_id)
-    rescue GitlabNet::ApiUnreachableError
+    if File.file?(@config.secret_file)
+      begin
+        @user = api.discover(@key_id)
+      rescue GitlabNet::ApiUnreachableError
+        @user = nil
+      end
+    else
       @user = nil
     end
   end
