@@ -148,6 +148,7 @@ describe GitlabShell do
       end
 
       it "should use usernames if configured to do so" do
+        expect(File).to receive(:file?).and_return(true)
         GitlabConfig.any_instance.stub(audit_usernames: true)
         $logger.should_receive(:info) { |msg| msg.should =~ /for John Doe/ }
       end
@@ -195,6 +196,7 @@ describe GitlabShell do
       after { subject.exec(nil) }
 
       it "should call api.discover" do
+        expect(File).to receive(:file?).and_return(true)
         api.should_receive(:discover).with(key_id)
       end
     end

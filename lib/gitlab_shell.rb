@@ -125,6 +125,8 @@ class GitlabShell
       'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
       'LANG' => ENV['LANG'],
       'GL_ID' => @key_id,
+      'GL_USERNAME' => username,
+      'GL_LOGIN' => login,
       'GL_PROTOCOL' => GL_PROTOCOL
     }
 
@@ -146,15 +148,23 @@ class GitlabShell
   def user
     return @user if defined?(@user)
 
-    begin
-      @user = api.discover(@key_id)
-    rescue GitlabNet::ApiUnreachableError
+    if File.file?(@config.secret_file)
+      begin
+        @user = api.discover(@key_id)
+      rescue GitlabNet::ApiUnreachableError
+        @user = nil
+      end
+    else
       @user = nil
     end
   end
 
   def username
     user && user['name'] || 'Anonymous'
+  end
+
+  def login
+    user && user['username'] || 'anonymous'
   end
 
   # User identifier to be used in log messages.
