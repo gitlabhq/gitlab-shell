@@ -192,10 +192,10 @@ describe GitlabShell do
     end
 
     context 'no command' do
-      expect(File).to receive(:file?).and_return(true)
       after { subject.exec(nil) }
 
       it "should call api.discover" do
+        expect(File).to receive(:file?).and_return(true)
         api.should_receive(:discover).with(key_id)
       end
     end
