@@ -22,7 +22,7 @@ http_settings:
 #  password: somepass
 #  ca_file: /etc/ssl/cert.pem
 #  ca_path: /etc/pki/tls/certs
-  self_signed_cert: false
+  self_signed_cert: true
 
 # File used as authorized_keys for gitlab user
 auth_file: "/home/git/.ssh/authorized_keys"
