@@ -6,11 +6,9 @@ require_relative '../lib/gitlab_access_status'
 describe GitlabNet, vcr: true do
   let(:gitlab_net) { GitlabNet.new }
   let(:changes) { ['0000000000000000000000000000000000000000 92d0970eefd7acb6d548878925ce2208cfe2d2ec refs/heads/branch4'] }
-  let(:host_v3) { 'https://dev.gitlab.org/api/v3/internal' }
   let(:host) { 'https://dev.gitlab.org/api/v4/internal' }
 
   before do
-    gitlab_net.stub(:host_v3).and_return(host_v3)
     gitlab_net.stub(:host).and_return(host)
     gitlab_net.stub(:secret_token).and_return('a123')
   end
@@ -100,13 +98,13 @@ describe GitlabNet, vcr: true do
     let(:encoded_changes) { "123456%20789012%20refs/heads/test%0A654321%20210987%20refs/tags/tag" }
 
     it "sends the given arguments as encoded URL parameters" do
-      gitlab_net.should_receive(:get).with("#{host_v3}/merge_request_urls?project=#{repo_path}&changes=#{encoded_changes}&gl_repository=#{gl_repository}")
+      gitlab_net.should_receive(:get).with("#{host}/merge_request_urls?project=#{repo_path}&changes=#{encoded_changes}&gl_repository=#{gl_repository}")
 
       gitlab_net.merge_request_urls(gl_repository, repo_path, changes)
     end
 
     it "omits the gl_repository parameter if it's nil" do
-      gitlab_net.should_receive(:get).with("#{host_v3}/merge_request_urls?project=#{repo_path}&changes=#{encoded_changes}")
+      gitlab_net.should_receive(:get).with("#{host}/merge_request_urls?project=#{repo_path}&changes=#{encoded_changes}")
 
       gitlab_net.merge_request_urls(nil, repo_path, changes)
     end
@@ -278,14 +276,6 @@ describe GitlabNet, vcr: true do
 
     it { should include(net.send(:config).gitlab_url) }
     it("uses API version 4") { should include("api/v4") }
-  end
-
-  describe :host_v3 do
-    let(:net) { GitlabNet.new }
-    subject { net.send :host_v3 }
-
-    it { should include(net.send(:config).gitlab_url) }
-    it("uses API version 3") { should include("api/v3") }
   end
 
   describe :http_client_for do

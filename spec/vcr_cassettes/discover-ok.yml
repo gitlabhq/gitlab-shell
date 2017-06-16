@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: get
-    uri: https://dev.gitlab.org/api/v3/internal/discover?key_id=126
+    uri: https://dev.gitlab.org/api/v4/internal/discover?key_id=126
     body:
       encoding: US-ASCII
       string: secret_token=a123

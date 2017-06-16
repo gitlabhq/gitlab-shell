@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: get
-    uri: https://dev.gitlab.org/api/v3/internal/broadcast_message
+    uri: https://dev.gitlab.org/api/v4/internal/broadcast_message
     body:
       encoding: US-ASCII
       string: secret_token=a123

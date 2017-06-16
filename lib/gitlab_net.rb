@@ -33,7 +33,7 @@ class GitlabNet
       params.merge!(user_id: actor.gsub("user-", ""))
     end
 
-    url = "#{host_v3}/allowed"
+    url = "#{host}/allowed"
     resp = post(url, params)
 
     if resp.code == '200'
@@ -45,7 +45,7 @@ class GitlabNet
 
   def discover(key)
     key_id = key.gsub("key-", "")
-    resp = get("#{host_v3}/discover?key_id=#{key_id}")
+    resp = get("#{host}/discover?key_id=#{key_id}")
     JSON.parse(resp.body) rescue nil
   end
 
@@ -55,7 +55,7 @@ class GitlabNet
       key_id: key.gsub('key-', '')
     }
 
-    resp = post("#{host_v3}/lfs_authenticate", params)
+    resp = post("#{host}/lfs_authenticate", params)
 
     if resp.code == '200'
       GitlabLfsAuthentication.build_from_json(resp.body)
@@ -63,25 +63,25 @@ class GitlabNet
   end
 
   def broadcast_message
-    resp = get("#{host_v3}/broadcast_message")
+    resp = get("#{host}/broadcast_message")
     JSON.parse(resp.body) rescue {}
   end
 
   def merge_request_urls(gl_repository, repo_path, changes)
     changes = changes.join("\n") unless changes.kind_of?(String)
     changes = changes.encode('UTF-8', 'ASCII', invalid: :replace, replace: '')
-    url = "#{host_v3}/merge_request_urls?project=#{URI.escape(repo_path)}&changes=#{URI.escape(changes)}"
+    url = "#{host}/merge_request_urls?project=#{URI.escape(repo_path)}&changes=#{URI.escape(changes)}"
     url += "&gl_repository=#{URI.escape(gl_repository)}" if gl_repository
     resp = get(url)
     JSON.parse(resp.body) rescue []
   end
 
   def check
-    get("#{host_v3}/check", read_timeout: CHECK_TIMEOUT)
+    get("#{host}/check", read_timeout: CHECK_TIMEOUT)
   end
 
   def authorized_key(key)
-    resp = get("#{host_v3}/authorized_keys?key=#{URI.escape(key, '+/=')}")
+    resp = get("#{host}/authorized_keys?key=#{URI.escape(key, '+/=')}")
     JSON.parse(resp.body) if resp.code == "200"
   rescue
     nil
@@ -89,7 +89,7 @@ class GitlabNet
 
   def two_factor_recovery_codes(key)
     key_id = key.gsub('key-', '')
-    resp = post("#{host_v3}/two_factor_recovery_codes", key_id: key_id)
+    resp = post("#{host}/two_factor_recovery_codes", key_id: key_id)
 
     JSON.parse(resp.body) if resp.code == '200'
   rescue
@@ -137,10 +137,6 @@ class GitlabNet
 
   def config
     @config ||= GitlabConfig.new
-  end
-
-  def host_v3
-    "#{config.gitlab_url}/api/v3/internal"
   end
 
   def host

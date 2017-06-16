@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: post
-    uri: https://dev.gitlab.org/api/v3/internal/lfs_authenticate
+    uri: https://dev.gitlab.org/api/v4/internal/lfs_authenticate
     body:
       encoding: US-ASCII
       string: project=gitlab%2Fgitlabhq&key_id=126&secret_token=a123

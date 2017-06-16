@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: post
-    uri: https://dev.gitlab.org/api/v3/internal/allowed
+    uri: https://dev.gitlab.org/api/v4/internal/allowed
     body:
       encoding: US-ASCII
       string: action=git-receive-pack&changes=0000000000000000000000000000000000000000+92d0970eefd7acb6d548878925ce2208cfe2d2ec+refs%2Fheads%2Fbranch4&project=gitlab%2Fgitlabhq&key_id=2&secret_token=a123
