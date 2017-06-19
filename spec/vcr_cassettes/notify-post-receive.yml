@@ -5,7 +5,7 @@ http_interactions:
     uri: https://dev.gitlab.org/api/v4/internal/notify_post_receive
     body:
       encoding: US-ASCII
-      string: gl_repository=project-1&repo_path=%2Fpath%2Fto%2Fmy%2Frepo.git&secret_token=a123
+      string: gl_repository=project-1&secret_token=a123
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
