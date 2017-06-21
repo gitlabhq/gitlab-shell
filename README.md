@@ -164,3 +164,6 @@ running and have next data:
 1. gitlab-org/gitlab-test project.
 2. SSH key with access to the project and ID 1 that belongs to Administrator.
 3. SSH key without access to the project and ID 2.
+
+You also need to modify `secret` variable at `spec/gitlab_net_spec.rb` so tests 
+can connect to your local instance.

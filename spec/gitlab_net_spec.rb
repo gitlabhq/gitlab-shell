@@ -10,10 +10,11 @@ describe GitlabNet, vcr: true do
   let(:project) { 'gitlab-org/gitlab-test.git' }
   let(:key) { 'key-1' }
   let(:key2) { 'key-2' }
-  let(:secret) { gitlab_net.send(:secret_token) }
+  let(:secret) { "0a3938d9d95d807e94d937af3a4fbbea\n" }
 
   before do
     gitlab_net.stub(:host).and_return(host)
+    gitlab_net.stub(:secret_token).and_return(secret)
   end
 
   describe :check do
