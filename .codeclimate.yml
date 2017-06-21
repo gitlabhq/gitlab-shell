@@ -1,0 +1,19 @@
+---
+engines:
+  bundler-audit:
+    enabled: true
+  duplication:
+    enabled: true
+    config:
+      languages:
+      - ruby
+  fixme:
+    enabled: true
+  rubocop:
+    enabled: true
+exclude_paths:
+- spec/
+- lib/vendor/
+- go/vendor/
+- tmp/
+- coverage/
