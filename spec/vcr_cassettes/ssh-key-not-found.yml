@@ -2,10 +2,10 @@
 http_interactions:
 - request:
     method: get
-    uri: https://dev.gitlab.org/api/v4/internal/authorized_keys?key=whatever
+    uri: http://localhost:3000/api/v4/internal/authorized_keys?key=whatever
     body:
       encoding: US-ASCII
-      string: secret_token=a123
+      string: secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -20,31 +20,25 @@ http_interactions:
       code: 404
       message: Not Found
     headers:
-      Server:
-      - nginx
-      Date:
-      - Mon, 07 Mar 2016 12:09:59 GMT
-      Content-Type:
-      - text/html; charset=utf-8
-      Connection:
-      - keep-alive
       Cache-Control:
       - no-cache
-      Set-Cookie:
-      - _gitlab_session=a924e63729e538c9efe10fa8338077d7; path=/; expires=Mon, 14
-        Mar 2016 12:09:59 -0000; secure; HttpOnly
-      Status:
-      - 404 Not Found
-      X-Content-Type-Options:
-      - nosniff
+      Content-Length:
+      - '31'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 21 Jun 2017 12:15:09 GMT
+      Vary:
+      - Origin
       X-Frame-Options:
       - SAMEORIGIN
       X-Request-Id:
-      - 275ad011-515f-4239-80be-e537fd7c9086
+      - c829f804-616e-4046-9b70-cc6a2a559166
       X-Runtime:
-      - '2.169401'
-      X-Xss-Protection:
-      - 1; mode=block
+      - '0.281120'
+    body:
+      encoding: UTF-8
+      string: '{"message":"404 Key Not Found"}'
     http_version: 
-  recorded_at: Mon, 07 Mar 2016 12:10:00 GMT
+  recorded_at: Wed, 21 Jun 2017 12:15:09 GMT
 recorded_with: VCR 2.4.0

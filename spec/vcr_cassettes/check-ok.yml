@@ -2,10 +2,10 @@
 http_interactions:
 - request:
     method: get
-    uri: https://dev.gitlab.org/api/v4/internal/check
+    uri: http://localhost:3000/api/v4/internal/check
     body:
       encoding: US-ASCII
-      string: secret_token=a123
+      string: secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -13,34 +13,34 @@ http_interactions:
       - "*/*"
       User-Agent:
       - Ruby
+      Content-Type:
+      - application/x-www-form-urlencoded
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.1.19
-      Date:
-      - Wed, 03 Sep 2014 11:27:35 GMT
-      Content-Type:
-      - application/json
-      Content-Length:
-      - '72'
-      Connection:
-      - keep-alive
-      Status:
-      - 200 OK
-      Etag:
-      - '"23ee74bf6981b57b9d0e0d8a91f3ec1b"'
       Cache-Control:
       - max-age=0, private, must-revalidate
+      Content-Length:
+      - '72'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 21 Jun 2017 10:44:49 GMT
+      Etag:
+      - W/"e1b00c927355c31ffb83b0800821cdbd"
+      Vary:
+      - Origin
+      X-Frame-Options:
+      - SAMEORIGIN
       X-Request-Id:
-      - c389e282-4d7b-4041-9aed-336e5b007424
+      - 19d8b75c-45d1-4b8b-9e47-2fda86f98187
       X-Runtime:
-      - '0.958718'
+      - '0.245482'
     body:
       encoding: UTF-8
-      string: '{"api_version":"v4","gitlab_version":"7.3.0.pre","gitlab_rev":"e8f1331"}'
+      string: '{"api_version":"v4","gitlab_version":"9.3.0-pre","gitlab_rev":"8f537e5"}'
     http_version: 
-  recorded_at: Wed, 03 Sep 2014 11:27:35 GMT
+  recorded_at: Wed, 21 Jun 2017 10:44:49 GMT
 recorded_with: VCR 2.4.0

@@ -2,10 +2,10 @@
 http_interactions:
 - request:
     method: post
-    uri: https://dev.gitlab.org/api/v4/internal/two_factor_recovery_codes
+    uri: http://localhost:3000/api/v4/internal/two_factor_recovery_codes
     body:
       encoding: US-ASCII
-      string: username=user-1&secret_token=a123
+      string: key_id=1&secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -20,23 +20,27 @@ http_interactions:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx
-      Date:
-      - Tue, 16 Aug 2016 22:10:11 GMT
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Content-Length:
+      - '225'
       Content-Type:
       - application/json
-      Connection:
-      - keep-alive
-      Status:
-      - 200 OK
+      Date:
+      - Wed, 21 Jun 2017 12:31:42 GMT
+      Etag:
+      - W/"087adad20960d665d59e7e4ca02efd28"
+      Vary:
+      - Origin
+      X-Frame-Options:
+      - SAMEORIGIN
       X-Request-Id:
-      - 4467029d-51c6-41bc-af5f-6da279dbb238
+      - a0e1c950-83a7-4fed-afb0-bfb01d104795
       X-Runtime:
-      - '0.004589'
+      - '1.378088'
     body:
       encoding: UTF-8
-      string: '{ "success": true, "recovery_codes": ["f67c514de60c4953","41278385fc00c1e0"] }'
-    http_version:
-  recorded_at: Tue, 16 Aug 2016 22:10:11 GMT
+      string: '{"success":true,"recovery_codes":["f67c514de60c4953","41278385fc00c1e0"]}'
+    http_version: 
+  recorded_at: Wed, 21 Jun 2017 12:31:42 GMT
 recorded_with: VCR 2.4.0

@@ -1,11 +1,11 @@
 ---
 http_interactions:
 - request:
-    method: get
-    uri: http://localhost:3000/api/v4/internal/discover?key_id=1
+    method: post
+    uri: http://localhost:3000/api/v4/internal/allowed
     body:
       encoding: US-ASCII
-      string: secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
+      string: action=git-upload-pack&changes=0000000000000000000000000000000000000000+92d0970eefd7acb6d548878925ce2208cfe2d2ec+refs%2Fheads%2Fbranch4&gl_repository&project=gitlab-org%2Fgitlab-test.git&protocol=ssh&env=%7B%7D&key_id=2&secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -23,24 +23,24 @@ http_interactions:
       Cache-Control:
       - max-age=0, private, must-revalidate
       Content-Length:
-      - '42'
+      - '63'
       Content-Type:
       - application/json
       Date:
-      - Wed, 21 Jun 2017 10:44:49 GMT
+      - Wed, 21 Jun 2017 12:24:04 GMT
       Etag:
-      - W/"63b4ab301951bea83c4fc398eba8e307"
+      - W/"76a32010244f80700d5e1ba8a55d094c"
       Vary:
       - Origin
       X-Frame-Options:
       - SAMEORIGIN
       X-Request-Id:
-      - dc11b8d4-1972-417b-8305-2c35c849405c
+      - 8ce54f29-9ed0-46e5-aedb-37edaa3d52da
       X-Runtime:
-      - '0.230170'
+      - '0.228256'
     body:
       encoding: UTF-8
-      string: '{"name":"Administrator","username":"root"}'
+      string: '{"status":false,"message":"Git access over SSH is not allowed"}'
     http_version: 
-  recorded_at: Wed, 21 Jun 2017 10:44:49 GMT
+  recorded_at: Wed, 21 Jun 2017 12:24:04 GMT
 recorded_with: VCR 2.4.0

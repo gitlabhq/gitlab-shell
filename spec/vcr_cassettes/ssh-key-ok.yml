@@ -2,10 +2,10 @@
 http_interactions:
 - request:
     method: get
-    uri: https://dev.gitlab.org/api/v4/internal/authorized_keys?key=AAAAB3NzaC1yc2EAAAADAQABAAACAQDPKPqqnqQ9PDFw65cO7iHXrKw6ucSZg8Bd2CZ150Yy1YRDPJOWeRNCnddS+M/Lk
+    uri: http://localhost:3000/api/v4/internal/authorized_keys?key=rsa-key
     body:
       encoding: US-ASCII
-      string: secret_token=a123
+      string: secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -20,21 +20,28 @@ http_interactions:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.1.19
-      Date:
-      - Wed, 03 Sep 2014 11:27:35 GMT
-      Content-Type:
-      - application/json
-      Connection:
-      - keep-alive
-      Status:
-      - 200 OK
       Cache-Control:
       - max-age=0, private, must-revalidate
+      Content-Length:
+      - '686'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 21 Jun 2017 12:16:41 GMT
+      Etag:
+      - W/"18dfce1367306a2dda6aaf8b1e7795a8"
+      Vary:
+      - Origin
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Request-Id:
+      - 839ab67c-7b72-44e0-916e-ca4f68c25604
+      X-Runtime:
+      - '9.070282'
     body:
       encoding: UTF-8
-      string: '{"id":2, "title":"some key title", "key":"ssh-rsa a-made=up-rsa-key dummy@gitlab.com", "created_at":"2016-03-04T18:27:36.959Z"}'
+      string: '{"id":99,"title":"untitled","key":"ssh-rsa rsa-key
+        dummy@gitlab.com","created_at":"2017-06-21T09:50:07.150Z","can_push":false}'
     http_version: 
-  recorded_at: Mon, 07 Mar 2016 12:10:00 GMT
+  recorded_at: Wed, 21 Jun 2017 12:16:41 GMT
 recorded_with: VCR 2.4.0
