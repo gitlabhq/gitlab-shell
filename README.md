@@ -155,3 +155,15 @@ Rails application:
 3. Update `GITLAB_SHELL_VERSION` in the Rails application to the **raw
    version**. (Note: this can be done as a separate MR to that, or in and MR
    that will make use of the latest GitLab Shell changes.)
+
+## Updating VCR fixtures
+
+In order to generate new VCR fixtures you need to have a local GitLab instance 
+running and have next data: 
+
+1. gitlab-org/gitlab-test project.
+2. SSH key with access to the project and ID 1 that belongs to Administrator.
+3. SSH key without access to the project and ID 2.
+
+You also need to modify `secret` variable at `spec/gitlab_net_spec.rb` so tests 
+can connect to your local instance.

@@ -2,10 +2,10 @@
 http_interactions:
 - request:
     method: post
-    uri: https://dev.gitlab.org/api/v4/internal/notify_post_receive
+    uri: http://localhost:3000/api/v4/internal/notify_post_receive
     body:
       encoding: US-ASCII
-      string: gl_repository=project-1&secret_token=a123
+      string: gl_repository=project-1&project=%2Fpath%2Fto%2Fmy%2Frepo.git&secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -23,22 +23,24 @@ http_interactions:
       Cache-Control:
       - max-age=0, private, must-revalidate
       Content-Length:
-      - '2'
+      - '3'
       Content-Type:
       - application/json
       Date:
-      - Fri, 28 Apr 2017 20:07:14 GMT
+      - Wed, 21 Jun 2017 12:47:48 GMT
       Etag:
-      - W/"99914b932bd37a50b983c5e7c90ae93b"
+      - W/"3644a684f98ea8fe223c713b77189a77"
       Vary:
       - Origin
+      X-Frame-Options:
+      - SAMEORIGIN
       X-Request-Id:
-      - 404a3fa8-28ca-40d6-acbb-7923c7fbf342
+      - 407b184d-d6cf-43db-93fa-3f2d97112948
       X-Runtime:
-      - '3.988681'
+      - '6.626186'
     body:
       encoding: UTF-8
-      string: "{}"
+      string: '200'
     http_version: 
-  recorded_at: Fri, 28 Apr 2017 20:07:14 GMT
+  recorded_at: Wed, 21 Jun 2017 12:47:48 GMT
 recorded_with: VCR 2.4.0

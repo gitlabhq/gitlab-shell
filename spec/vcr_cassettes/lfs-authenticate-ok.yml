@@ -2,10 +2,10 @@
 http_interactions:
 - request:
     method: post
-    uri: https://dev.gitlab.org/api/v3/internal/lfs_authenticate
+    uri: http://localhost:3000/api/v4/internal/lfs_authenticate
     body:
       encoding: US-ASCII
-      string: project=gitlab%2Fgitlabhq&key_id=126&secret_token=a123
+      string: project=gitlab-org%2Fgitlab-test.git&key_id=1&secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -13,34 +13,34 @@ http_interactions:
       - "*/*"
       User-Agent:
       - Ruby
+      Content-Type:
+      - application/x-www-form-urlencoded
   response:
     status:
       code: 200
       message: OK
     headers:
-      Server:
-      - nginx/1.1.19
-      Date:
-      - Wed, 03 Sep 2014 11:27:35 GMT
-      Content-Type:
-      - application/json
-      Content-Length:
-      - '56'
-      Connection:
-      - keep-alive
-      Status:
-      - 200 OK
-      Etag:
-      - '"1d75c1cf3d4bfa4d2b7bb6a0bcfd7f55"'
       Cache-Control:
       - max-age=0, private, must-revalidate
+      Content-Length:
+      - '158'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 21 Jun 2017 10:44:50 GMT
+      Etag:
+      - W/"0a8ccf1603566e521c169d5e43c86cd2"
+      Vary:
+      - Origin
+      X-Frame-Options:
+      - SAMEORIGIN
       X-Request-Id:
-      - ef4513ae-0424-4941-8be0-b5a3a7b4bf12
+      - d82d6071-1868-4a37-b026-65ab37f96f2f
       X-Runtime:
-      - '0.016934'
+      - '0.331056'
     body:
       encoding: UTF-8
-      string: '{"username":"dzaporozhets","lfs_token":"wsnys8Zm8Jn7zyhHTAAK","repository_http_path":"http://gitlab.dev/gitlab/gitlabhq.git"}'
-    http_version:
-  recorded_at: Wed, 03 Sep 2014 11:27:35 GMT
+      string: '{"username":"root","lfs_token":"Hyzhyde_wLUeyUQsR3tHGTG8eNocVQm4ssioTEsBSdb6KwCSzQ","repository_http_path":"http://localhost:3000/gitlab-org/gitlab-test.git"}'
+    http_version: 
+  recorded_at: Wed, 21 Jun 2017 10:44:50 GMT
 recorded_with: VCR 2.4.0
