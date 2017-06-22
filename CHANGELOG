@@ -1,5 +1,6 @@
 v5.0.6
   - Remove old `project` parameter, use `gl_repository` instead
+  - Use v4 of the GitLab REST API
 
 v5.0.5
   - Use gl_repository if present when enqueing Sidekiq PostReceive jobs
