@@ -17,7 +17,7 @@ class GitlabShell
   API_COMMANDS = %w(2fa_recovery_codes)
   GL_PROTOCOL = 'ssh'.freeze
 
-  attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access
+  attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access, :repository, :gitaly_address
   attr_reader :repo_path
 
   def initialize(key_id)
@@ -99,6 +99,7 @@ class GitlabShell
 
     self.repo_path = status.repository_path
     @gl_repository = status.gl_repository
+    @gitaly = status.gitaly
   end
 
   def process_cmd(args)
@@ -115,15 +116,16 @@ class GitlabShell
     executable = @command
     args = [repo_path]
 
-    if GITALY_MIGRATED_COMMANDS.has_key?(executable)
+    if GITALY_MIGRATED_COMMANDS.has_key?(executable) && @gitaly
       executable = GITALY_MIGRATED_COMMANDS[executable]
 
-      gitaly_address = '' # would be returned by gitlab-rails internal API
+      gitaly_address = @gitaly['address']
 
       # The entire gitaly_request hash should be built in gitlab-ce and passed
       # on as-is. For now we build a fake one on the spot.
       gitaly_request = JSON.dump({
-        'repository' => { 'path' => repo_path },
+        'repository' => @gitaly['repository'],
+        'gl_repository' => @gl_repository,
         'gl_id' => @key_id,
       })
 
@@ -153,6 +155,11 @@ class GitlabShell
       'GL_PROTOCOL' => GL_PROTOCOL,
       'GL_REPOSITORY' => @gl_repository
     }
+    if @gitaly && @gitaly.has?('token')
+      env.merge!({
+        'GITALY_TOKEN' => @gitaly['token']
+      })
+    end
 
     if git_trace_available?
       env.merge!({

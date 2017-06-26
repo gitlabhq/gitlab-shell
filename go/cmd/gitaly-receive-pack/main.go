@@ -29,7 +29,9 @@ func main() {
 		logger.Fatal("unmarshaling request json failed", err)
 	}
 
-	if err := handler.ReceivePack(os.Args[1], &request); err != nil {
+	code, err := handler.ReceivePack(os.Args[1], &request)
+	if err != nil {
 		logger.Fatal("receive-pack failed", err)
 	}
+	os.Exit(int(code))
 }
