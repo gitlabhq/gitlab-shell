@@ -80,6 +80,23 @@ describe GitlabKeys do
     end
   end
 
+  describe :list_key_ids do
+    let(:gitlab_keys) { build_gitlab_keys('list-key-ids') }
+    before do
+      create_authorized_keys_fixture(
+        existing_content:
+          "key-1\tssh-dsa AAA\nkey-2\tssh-rsa BBB\nkey-3\tssh-rsa CCC\nkey-9000\tssh-rsa DDD\n"
+      )
+    end
+
+    it 'outputs the key IDs, separated by newlines' do
+      output = capture_stdout do
+        gitlab_keys.send(:list_key_ids)
+      end
+      output.should match "1\n2\n3\n9000"
+    end
+  end
+
   describe :batch_add_keys do
     let(:gitlab_keys) { build_gitlab_keys('batch-add-keys') }
     let(:fake_stdin) { StringIO.new("key-12\tssh-dsa ASDFASGADG\nkey-123\tssh-rsa GFDGDFSGSDFG\n", 'r') }
@@ -288,9 +305,9 @@ describe GitlabKeys do
     end
   end
 
-  def create_authorized_keys_fixture
+  def create_authorized_keys_fixture(existing_content: 'existing content')
     FileUtils.mkdir_p(File.dirname(tmp_authorized_keys_path))
-    open(tmp_authorized_keys_path, 'w') { |file| file.puts('existing content') }
+    open(tmp_authorized_keys_path, 'w') { |file| file.puts(existing_content) }
     gitlab_keys.stub(auth_file: tmp_authorized_keys_path)
   end
 
@@ -300,5 +317,14 @@ describe GitlabKeys do
 
   def tmp_lock_file_path
     tmp_authorized_keys_path + '.lock'
+  end
+
+  def capture_stdout(&blk)
+    old = $stdout
+    $stdout = fake = StringIO.new
+    blk.call
+    fake.string
+  ensure
+    $stdout = old
   end
 end

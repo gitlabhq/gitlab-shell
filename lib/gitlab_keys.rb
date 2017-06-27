@@ -39,6 +39,8 @@ class GitlabKeys
         rm_key
       when 'list-keys';
         list_keys
+      when 'list-key-ids';
+        list_key_ids
       when 'clear';
         clear
       when 'check-permissions';
@@ -73,6 +75,17 @@ class GitlabKeys
       keys << "#{matches[1]} #{matches[2]}\n" unless matches.nil?
     end
     keys
+  end
+
+  def list_key_ids
+    $logger.info 'Listing all key IDs'
+    open_auth_file('r') do |f|
+      f.each_line do |line|
+        matchd = line.match(/key-(\d+)/)
+        next unless matchd
+        puts matchd[1]
+      end
+    end
   end
 
   def batch_add_keys
