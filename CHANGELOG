@@ -1,3 +1,6 @@
+v5.1.0
+  - Add `gitlab-keys list-key-ids` subcommand for iterating over key IDs to find keys that should be deleted
+
 v5.0.6
   - Remove old `project` parameter, use `gl_repository` instead
   - Use v4 of the GitLab REST API
