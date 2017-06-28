@@ -177,6 +177,23 @@ describe GitlabKeys do
         gitlab_keys.send(:rm_key).should be_true
       end
     end
+
+    context 'without key content' do
+      let(:gitlab_keys) { build_gitlab_keys('rm-key', 'key-741') }
+
+      it "removes the right line by key ID" do
+        create_authorized_keys_fixture
+        other_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell key-742\",options ssh-rsa AAAAB3NzaDAxx2E"
+        delete_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell key-741\",options ssh-rsa AAAAB3NzaDAxx2E"
+        open(tmp_authorized_keys_path, 'a') do |auth_file|
+          auth_file.puts delete_line
+          auth_file.puts other_line
+        end
+        gitlab_keys.send :rm_key
+        erased_line = delete_line.gsub(/./, '#')
+        File.read(tmp_authorized_keys_path).should == "existing content\n#{erased_line}\n#{other_line}\n"
+      end
+    end
   end
 
   describe :clear do
