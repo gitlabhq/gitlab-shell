@@ -33,11 +33,11 @@ class GitlabPostReceive
       end
 
       merge_request_urls = GitlabMetrics.measure("merge-request-urls") do
-        api.merge_request_urls(gl_repository, changes)
+        api.merge_request_urls(@gl_repository, @repo_path, @changes)
       end
       print_merge_request_links(merge_request_urls)
 
-      api.notify_post_receive(gl_repository)
+      api.notify_post_receive(gl_repository, repo_path)
     rescue GitlabNet::ApiUnreachableError
       nil
     end
@@ -107,11 +107,14 @@ class GitlabPostReceive
   def update_redis
     # Encode changes as base64 so we don't run into trouble with non-UTF-8 input.
     changes = Base64.encode64(@changes)
+    # TODO: Change to `@gl_repository` in next release.
+    # See https://gitlab.com/gitlab-org/gitlab-shell/merge_requests/130#note_28747613
+    project_identifier = @gl_repository || @repo_path
 
     queue = "#{config.redis_namespace}:queue:post_receive"
     msg = JSON.dump({
       'class' => 'PostReceive',
-      'args' => [@gl_repository, @actor, changes],
+      'args' => [project_identifier, @actor, changes],
       'jid' => @jid,
       'enqueued_at' => Time.now.to_f
     })
