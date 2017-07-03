@@ -67,13 +67,11 @@ class GitlabNet
     JSON.parse(resp.body) rescue {}
   end
 
-  def merge_request_urls(gl_repository, changes)
+  def merge_request_urls(gl_repository, repo_path, changes)
     changes = changes.join("\n") unless changes.kind_of?(String)
     changes = changes.encode('UTF-8', 'ASCII', invalid: :replace, replace: '')
-    url = "#{host}/merge_request_urls?" \
-      "gl_repository=#{URI.escape(gl_repository)}&" \
-      "changes=#{URI.escape(changes)}"
-
+    url = "#{host}/merge_request_urls?project=#{URI.escape(repo_path)}&changes=#{URI.escape(changes)}"
+    url += "&gl_repository=#{URI.escape(gl_repository)}" if gl_repository
     resp = get(url)
     JSON.parse(resp.body) rescue []
   end
@@ -98,8 +96,9 @@ class GitlabNet
     {}
   end
 
-  def notify_post_receive(gl_repository)
-    resp = post("#{host}/notify_post_receive", gl_repository: gl_repository)
+  def notify_post_receive(gl_repository, repo_path)
+    params = { gl_repository: gl_repository, project: repo_path }
+    resp = post("#{host}/notify_post_receive", params)
 
     resp.code == '200'
   rescue
