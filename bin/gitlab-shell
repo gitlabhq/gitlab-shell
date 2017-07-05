@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby --disable-gems
+#!/usr/bin/env ruby
 
 unless ENV['SSH_CONNECTION']
   puts "Only ssh allowed"
