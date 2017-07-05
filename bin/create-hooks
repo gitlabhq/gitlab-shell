@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby --disable-gems
+#!/usr/bin/env ruby
 
 # Recreate GitLab hooks in the Git repositories managed by GitLab.
 #
