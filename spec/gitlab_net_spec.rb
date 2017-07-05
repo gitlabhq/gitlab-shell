@@ -97,20 +97,13 @@ describe GitlabNet, vcr: true do
 
   describe :merge_request_urls do
     let(:gl_repository) { "project-1" }
-    let(:repo_path) { "/path/to/my/repo.git" }
     let(:changes) { "123456 789012 refs/heads/test\n654321 210987 refs/tags/tag" }
     let(:encoded_changes) { "123456%20789012%20refs/heads/test%0A654321%20210987%20refs/tags/tag" }
 
     it "sends the given arguments as encoded URL parameters" do
-      gitlab_net.should_receive(:get).with("#{host}/merge_request_urls?project=#{repo_path}&changes=#{encoded_changes}&gl_repository=#{gl_repository}")
+      gitlab_net.should_receive(:get).with("#{host}/merge_request_urls?gl_repository=#{gl_repository}&changes=#{encoded_changes}")
 
-      gitlab_net.merge_request_urls(gl_repository, repo_path, changes)
-    end
-
-    it "omits the gl_repository parameter if it's nil" do
-      gitlab_net.should_receive(:get).with("#{host}/merge_request_urls?project=#{repo_path}&changes=#{encoded_changes}")
-
-      gitlab_net.merge_request_urls(nil, repo_path, changes)
+      gitlab_net.merge_request_urls(gl_repository, changes)
     end
   end
 
@@ -165,21 +158,20 @@ describe GitlabNet, vcr: true do
 
   describe '#notify_post_receive' do
     let(:gl_repository) { 'project-1' }
-    let(:repo_path) { '/path/to/my/repo.git' }
     let(:params) do
-      { gl_repository: gl_repository, project: repo_path }
+      { gl_repository: gl_repository }
     end
 
     it 'sets the arguments as form parameters' do
       VCR.use_cassette('notify-post-receive') do
         Net::HTTP::Post.any_instance.should_receive(:set_form_data).with(hash_including(params))
-        gitlab_net.notify_post_receive(gl_repository, repo_path)
+        gitlab_net.notify_post_receive(gl_repository)
       end
     end
 
     it 'returns true if notification was succesful' do
       VCR.use_cassette('notify-post-receive') do
-        expect(gitlab_net.notify_post_receive(gl_repository, repo_path)).to be_true
+        expect(gitlab_net.notify_post_receive(gl_repository)).to be_true
       end
     end
   end

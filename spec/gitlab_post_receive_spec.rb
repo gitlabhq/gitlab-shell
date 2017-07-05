@@ -19,7 +19,7 @@ describe GitlabPostReceive do
   before do
     GitlabConfig.any_instance.stub(repos_path: repository_path)
     GitlabNet.any_instance.stub(broadcast_message: { })
-    GitlabNet.any_instance.stub(:merge_request_urls).with(gl_repository, repo_path, wrongly_encoded_changes) { [] }
+    GitlabNet.any_instance.stub(:merge_request_urls).with(gl_repository, wrongly_encoded_changes) { [] }
     GitlabNet.any_instance.stub(notify_post_receive: true)
     expect(Time).to receive(:now).and_return(enqueued_at)
   end
@@ -37,7 +37,7 @@ describe GitlabPostReceive do
     context 'Without broad cast message' do
       context 'pushing new branch' do
         before do
-          GitlabNet.any_instance.stub(:merge_request_urls).with(gl_repository, repo_path, wrongly_encoded_changes) do
+          GitlabNet.any_instance.stub(:merge_request_urls).with(gl_repository, wrongly_encoded_changes) do
             [{
               "branch_name" => "new_branch",
               "url" => "http://localhost/dzaporozhets/gitlab-ci/merge_requests/new?merge_request%5Bsource_branch%5D=new_branch",
@@ -64,7 +64,7 @@ describe GitlabPostReceive do
 
       context 'pushing existing branch with merge request created' do
         before do
-          GitlabNet.any_instance.stub(:merge_request_urls).with(gl_repository, repo_path, wrongly_encoded_changes) do
+          GitlabNet.any_instance.stub(:merge_request_urls).with(gl_repository, wrongly_encoded_changes) do
             [{
               "branch_name" => "feature_branch",
               "url" => "http://localhost/dzaporozhets/gitlab-ci/merge_requests/1",
@@ -92,7 +92,7 @@ describe GitlabPostReceive do
 
     context 'show broadcast message and merge request link' do
       before do
-        GitlabNet.any_instance.stub(:merge_request_urls).with(gl_repository, repo_path, wrongly_encoded_changes) do
+        GitlabNet.any_instance.stub(:merge_request_urls).with(gl_repository, wrongly_encoded_changes) do
           [{
             "branch_name" => "new_branch",
             "url" => "http://localhost/dzaporozhets/gitlab-ci/merge_requests/new?merge_request%5Bsource_branch%5D=new_branch",
@@ -146,19 +146,6 @@ describe GitlabPostReceive do
 
         gitlab_post_receive.exec
       end
-
-      context 'when gl_repository is nil' do
-        let(:gl_repository) { nil }
-
-        it "pushes a Sidekiq job with the repository path" do
-          expect(redis_client).to receive(:rpush).with(
-            'resque:gitlab:queue:post_receive',
-             %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}],"jid":"#{gitlab_post_receive.jid}","enqueued_at":#{enqueued_at.to_f}}/
-          ).and_return(true)
-
-          gitlab_post_receive.exec
-        end
-      end
     end
 
     context 'reference counter' do
@@ -192,7 +179,7 @@ describe GitlabPostReceive do
     context 'post_receive notification' do
       it 'calls the api to notify the execution of the hook' do
         expect_any_instance_of(GitlabNet).to receive(:notify_post_receive).
-          with(gl_repository, repo_path)
+          with(gl_repository)
 
         gitlab_post_receive.exec
       end
