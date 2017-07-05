@@ -1,3 +1,6 @@
+v5.2.0
+  - Disable RubyGems to increase performance
+
 v5.1.1
   - Revert "Remove old `project` parameter, use `gl_repository` instead"
 
