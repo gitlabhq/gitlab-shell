@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/usr/bin/env ruby --disable-gems
 
 #
 # GitLab shell authorized_keys. Query GitLab API to get the authorized command for a given ssh key fingerprint
