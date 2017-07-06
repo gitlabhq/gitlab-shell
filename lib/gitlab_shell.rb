@@ -17,7 +17,7 @@ class GitlabShell
   API_COMMANDS = %w(2fa_recovery_codes)
   GL_PROTOCOL = 'ssh'.freeze
 
-  attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access, :repository, :gitaly_address
+  attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access
   attr_reader :repo_path
 
   def initialize(key_id)
