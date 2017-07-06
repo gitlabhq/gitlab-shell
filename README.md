@@ -66,7 +66,7 @@ make
 sudo make install
 ```
 
-To install gitlab-shell you also need a Go compiler version 1.5 or newer. https://golang.org/dl/
+To install gitlab-shell you also need a Go compiler version 1.7 or newer. https://golang.org/dl/
 
 ## Setup
 
