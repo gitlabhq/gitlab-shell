@@ -1,3 +1,6 @@
+v5.2.1
+  - Revert changes in v5.2.0
+
 v5.2.0
   - Disable RubyGems to increase performance
 
