@@ -133,7 +133,7 @@ class GitlabShell
     end
 
     args_string = [File.basename(executable), *args].join(' ')
-    GitlabMetrics.meature(File.basename(executable)) do
+    GitlabMetrics.measure(File.basename(executable)) do
       $logger.info "gitlab-shell: executing git command <#{args_string}> for #{log_username}."
       exec_cmd(executable, *args)
     end
