@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"io"
 
 	"google.golang.org/grpc"
@@ -31,30 +30,11 @@ func UploadPack(ctx context.Context, conn *grpc.ClientConn, stdin io.Reader, std
 		return stream.Send(&pb.SSHUploadPackRequest{Stdin: p})
 	})
 
-	errC := make(chan error, 1)
-
-	go func() {
+	return streamHandler(func() (stdoutStderrResponse, error) {
+		return stream.Recv()
+	}, func(errC chan error) {
 		_, errRecv := io.Copy(inWriter, stdin)
 		stream.CloseSend()
 		errC <- errRecv
-	}()
-
-	exitStatus, errRecv := recvStdoutStderrStream(func() (stdoutStderrResponse, error) {
-		return stream.Recv()
 	}, stdout, stderr)
-
-	if errRecv != nil {
-		return exitStatus, errRecv
-	}
-
-	select {
-	case errSend := <-errC:
-		if errSend != nil {
-			// This should not happen
-			errSend = fmt.Errorf("stdin send error: %v", errSend)
-		}
-		return exitStatus, errSend
-	default:
-		return exitStatus, nil
-	}
 }
