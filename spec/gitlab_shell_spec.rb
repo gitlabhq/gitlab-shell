@@ -153,7 +153,7 @@ describe GitlabShell do
 
       it "should use usernames if configured to do so" do
         GitlabConfig.any_instance.stub(audit_usernames: true)
-        $logger.should_receive(:info) { |msg| msg.should =~ /for John Doe/ }
+        $logger.should_receive(:info).with(/for John Doe/)
       end
     end
 
@@ -229,7 +229,7 @@ describe GitlabShell do
 
       it "should use usernames if configured to do so" do
         GitlabConfig.any_instance.stub(audit_usernames: true)
-        $logger.should_receive(:info) { |msg| msg.should =~ /for John Doe/ }
+        $logger.should_receive(:info).with(/for John Doe/)
       end
     end
 
