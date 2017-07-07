@@ -41,7 +41,7 @@ func (x FindLocalBranchesRequest_SortBy) String() string {
 	return proto.EnumName(FindLocalBranchesRequest_SortBy_name, int32(x))
 }
 func (FindLocalBranchesRequest_SortBy) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor3, []int{8, 0}
+	return fileDescriptor5, []int{8, 0}
 }
 
 type FindDefaultBranchNameRequest struct {
@@ -51,7 +51,7 @@ type FindDefaultBranchNameRequest struct {
 func (m *FindDefaultBranchNameRequest) Reset()                    { *m = FindDefaultBranchNameRequest{} }
 func (m *FindDefaultBranchNameRequest) String() string            { return proto.CompactTextString(m) }
 func (*FindDefaultBranchNameRequest) ProtoMessage()               {}
-func (*FindDefaultBranchNameRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{0} }
+func (*FindDefaultBranchNameRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{0} }
 
 func (m *FindDefaultBranchNameRequest) GetRepository() *Repository {
 	if m != nil {
@@ -67,7 +67,7 @@ type FindDefaultBranchNameResponse struct {
 func (m *FindDefaultBranchNameResponse) Reset()                    { *m = FindDefaultBranchNameResponse{} }
 func (m *FindDefaultBranchNameResponse) String() string            { return proto.CompactTextString(m) }
 func (*FindDefaultBranchNameResponse) ProtoMessage()               {}
-func (*FindDefaultBranchNameResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{1} }
+func (*FindDefaultBranchNameResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{1} }
 
 func (m *FindDefaultBranchNameResponse) GetName() []byte {
 	if m != nil {
@@ -83,7 +83,7 @@ type FindAllBranchNamesRequest struct {
 func (m *FindAllBranchNamesRequest) Reset()                    { *m = FindAllBranchNamesRequest{} }
 func (m *FindAllBranchNamesRequest) String() string            { return proto.CompactTextString(m) }
 func (*FindAllBranchNamesRequest) ProtoMessage()               {}
-func (*FindAllBranchNamesRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{2} }
+func (*FindAllBranchNamesRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{2} }
 
 func (m *FindAllBranchNamesRequest) GetRepository() *Repository {
 	if m != nil {
@@ -99,7 +99,7 @@ type FindAllBranchNamesResponse struct {
 func (m *FindAllBranchNamesResponse) Reset()                    { *m = FindAllBranchNamesResponse{} }
 func (m *FindAllBranchNamesResponse) String() string            { return proto.CompactTextString(m) }
 func (*FindAllBranchNamesResponse) ProtoMessage()               {}
-func (*FindAllBranchNamesResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{3} }
+func (*FindAllBranchNamesResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{3} }
 
 func (m *FindAllBranchNamesResponse) GetNames() [][]byte {
 	if m != nil {
@@ -115,7 +115,7 @@ type FindAllTagNamesRequest struct {
 func (m *FindAllTagNamesRequest) Reset()                    { *m = FindAllTagNamesRequest{} }
 func (m *FindAllTagNamesRequest) String() string            { return proto.CompactTextString(m) }
 func (*FindAllTagNamesRequest) ProtoMessage()               {}
-func (*FindAllTagNamesRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{4} }
+func (*FindAllTagNamesRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{4} }
 
 func (m *FindAllTagNamesRequest) GetRepository() *Repository {
 	if m != nil {
@@ -131,7 +131,7 @@ type FindAllTagNamesResponse struct {
 func (m *FindAllTagNamesResponse) Reset()                    { *m = FindAllTagNamesResponse{} }
 func (m *FindAllTagNamesResponse) String() string            { return proto.CompactTextString(m) }
 func (*FindAllTagNamesResponse) ProtoMessage()               {}
-func (*FindAllTagNamesResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{5} }
+func (*FindAllTagNamesResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{5} }
 
 func (m *FindAllTagNamesResponse) GetNames() [][]byte {
 	if m != nil {
@@ -151,7 +151,7 @@ type FindRefNameRequest struct {
 func (m *FindRefNameRequest) Reset()                    { *m = FindRefNameRequest{} }
 func (m *FindRefNameRequest) String() string            { return proto.CompactTextString(m) }
 func (*FindRefNameRequest) ProtoMessage()               {}
-func (*FindRefNameRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{6} }
+func (*FindRefNameRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{6} }
 
 func (m *FindRefNameRequest) GetRepository() *Repository {
 	if m != nil {
@@ -182,7 +182,7 @@ type FindRefNameResponse struct {
 func (m *FindRefNameResponse) Reset()                    { *m = FindRefNameResponse{} }
 func (m *FindRefNameResponse) String() string            { return proto.CompactTextString(m) }
 func (*FindRefNameResponse) ProtoMessage()               {}
-func (*FindRefNameResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{7} }
+func (*FindRefNameResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{7} }
 
 func (m *FindRefNameResponse) GetName() []byte {
 	if m != nil {
@@ -199,7 +199,7 @@ type FindLocalBranchesRequest struct {
 func (m *FindLocalBranchesRequest) Reset()                    { *m = FindLocalBranchesRequest{} }
 func (m *FindLocalBranchesRequest) String() string            { return proto.CompactTextString(m) }
 func (*FindLocalBranchesRequest) ProtoMessage()               {}
-func (*FindLocalBranchesRequest) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{8} }
+func (*FindLocalBranchesRequest) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{8} }
 
 func (m *FindLocalBranchesRequest) GetRepository() *Repository {
 	if m != nil {
@@ -222,7 +222,7 @@ type FindLocalBranchesResponse struct {
 func (m *FindLocalBranchesResponse) Reset()                    { *m = FindLocalBranchesResponse{} }
 func (m *FindLocalBranchesResponse) String() string            { return proto.CompactTextString(m) }
 func (*FindLocalBranchesResponse) ProtoMessage()               {}
-func (*FindLocalBranchesResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{9} }
+func (*FindLocalBranchesResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{9} }
 
 func (m *FindLocalBranchesResponse) GetBranches() []*FindLocalBranchResponse {
 	if m != nil {
@@ -242,7 +242,7 @@ type FindLocalBranchResponse struct {
 func (m *FindLocalBranchResponse) Reset()                    { *m = FindLocalBranchResponse{} }
 func (m *FindLocalBranchResponse) String() string            { return proto.CompactTextString(m) }
 func (*FindLocalBranchResponse) ProtoMessage()               {}
-func (*FindLocalBranchResponse) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{10} }
+func (*FindLocalBranchResponse) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{10} }
 
 func (m *FindLocalBranchResponse) GetName() []byte {
 	if m != nil {
@@ -288,7 +288,7 @@ type FindLocalBranchCommitAuthor struct {
 func (m *FindLocalBranchCommitAuthor) Reset()                    { *m = FindLocalBranchCommitAuthor{} }
 func (m *FindLocalBranchCommitAuthor) String() string            { return proto.CompactTextString(m) }
 func (*FindLocalBranchCommitAuthor) ProtoMessage()               {}
-func (*FindLocalBranchCommitAuthor) Descriptor() ([]byte, []int) { return fileDescriptor3, []int{11} }
+func (*FindLocalBranchCommitAuthor) Descriptor() ([]byte, []int) { return fileDescriptor5, []int{11} }
 
 func (m *FindLocalBranchCommitAuthor) GetName() []byte {
 	if m != nil {
@@ -335,41 +335,41 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for Ref service
+// Client API for RefService service
 
-type RefClient interface {
+type RefServiceClient interface {
 	FindDefaultBranchName(ctx context.Context, in *FindDefaultBranchNameRequest, opts ...grpc.CallOption) (*FindDefaultBranchNameResponse, error)
-	FindAllBranchNames(ctx context.Context, in *FindAllBranchNamesRequest, opts ...grpc.CallOption) (Ref_FindAllBranchNamesClient, error)
-	FindAllTagNames(ctx context.Context, in *FindAllTagNamesRequest, opts ...grpc.CallOption) (Ref_FindAllTagNamesClient, error)
+	FindAllBranchNames(ctx context.Context, in *FindAllBranchNamesRequest, opts ...grpc.CallOption) (RefService_FindAllBranchNamesClient, error)
+	FindAllTagNames(ctx context.Context, in *FindAllTagNamesRequest, opts ...grpc.CallOption) (RefService_FindAllTagNamesClient, error)
 	// Find a Ref matching the given constraints. Response may be empty.
 	FindRefName(ctx context.Context, in *FindRefNameRequest, opts ...grpc.CallOption) (*FindRefNameResponse, error)
 	// Return a stream so we can divide the response in chunks of branches
-	FindLocalBranches(ctx context.Context, in *FindLocalBranchesRequest, opts ...grpc.CallOption) (Ref_FindLocalBranchesClient, error)
+	FindLocalBranches(ctx context.Context, in *FindLocalBranchesRequest, opts ...grpc.CallOption) (RefService_FindLocalBranchesClient, error)
 }
 
-type refClient struct {
+type refServiceClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewRefClient(cc *grpc.ClientConn) RefClient {
-	return &refClient{cc}
+func NewRefServiceClient(cc *grpc.ClientConn) RefServiceClient {
+	return &refServiceClient{cc}
 }
 
-func (c *refClient) FindDefaultBranchName(ctx context.Context, in *FindDefaultBranchNameRequest, opts ...grpc.CallOption) (*FindDefaultBranchNameResponse, error) {
+func (c *refServiceClient) FindDefaultBranchName(ctx context.Context, in *FindDefaultBranchNameRequest, opts ...grpc.CallOption) (*FindDefaultBranchNameResponse, error) {
 	out := new(FindDefaultBranchNameResponse)
-	err := grpc.Invoke(ctx, "/gitaly.Ref/FindDefaultBranchName", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/gitaly.RefService/FindDefaultBranchName", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *refClient) FindAllBranchNames(ctx context.Context, in *FindAllBranchNamesRequest, opts ...grpc.CallOption) (Ref_FindAllBranchNamesClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_Ref_serviceDesc.Streams[0], c.cc, "/gitaly.Ref/FindAllBranchNames", opts...)
+func (c *refServiceClient) FindAllBranchNames(ctx context.Context, in *FindAllBranchNamesRequest, opts ...grpc.CallOption) (RefService_FindAllBranchNamesClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RefService_serviceDesc.Streams[0], c.cc, "/gitaly.RefService/FindAllBranchNames", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &refFindAllBranchNamesClient{stream}
+	x := &refServiceFindAllBranchNamesClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -379,16 +379,16 @@ func (c *refClient) FindAllBranchNames(ctx context.Context, in *FindAllBranchNam
 	return x, nil
 }
 
-type Ref_FindAllBranchNamesClient interface {
+type RefService_FindAllBranchNamesClient interface {
 	Recv() (*FindAllBranchNamesResponse, error)
 	grpc.ClientStream
 }
 
-type refFindAllBranchNamesClient struct {
+type refServiceFindAllBranchNamesClient struct {
 	grpc.ClientStream
 }
 
-func (x *refFindAllBranchNamesClient) Recv() (*FindAllBranchNamesResponse, error) {
+func (x *refServiceFindAllBranchNamesClient) Recv() (*FindAllBranchNamesResponse, error) {
 	m := new(FindAllBranchNamesResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -396,12 +396,12 @@ func (x *refFindAllBranchNamesClient) Recv() (*FindAllBranchNamesResponse, error
 	return m, nil
 }
 
-func (c *refClient) FindAllTagNames(ctx context.Context, in *FindAllTagNamesRequest, opts ...grpc.CallOption) (Ref_FindAllTagNamesClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_Ref_serviceDesc.Streams[1], c.cc, "/gitaly.Ref/FindAllTagNames", opts...)
+func (c *refServiceClient) FindAllTagNames(ctx context.Context, in *FindAllTagNamesRequest, opts ...grpc.CallOption) (RefService_FindAllTagNamesClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RefService_serviceDesc.Streams[1], c.cc, "/gitaly.RefService/FindAllTagNames", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &refFindAllTagNamesClient{stream}
+	x := &refServiceFindAllTagNamesClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -411,16 +411,16 @@ func (c *refClient) FindAllTagNames(ctx context.Context, in *FindAllTagNamesRequ
 	return x, nil
 }
 
-type Ref_FindAllTagNamesClient interface {
+type RefService_FindAllTagNamesClient interface {
 	Recv() (*FindAllTagNamesResponse, error)
 	grpc.ClientStream
 }
 
-type refFindAllTagNamesClient struct {
+type refServiceFindAllTagNamesClient struct {
 	grpc.ClientStream
 }
 
-func (x *refFindAllTagNamesClient) Recv() (*FindAllTagNamesResponse, error) {
+func (x *refServiceFindAllTagNamesClient) Recv() (*FindAllTagNamesResponse, error) {
 	m := new(FindAllTagNamesResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -428,21 +428,21 @@ func (x *refFindAllTagNamesClient) Recv() (*FindAllTagNamesResponse, error) {
 	return m, nil
 }
 
-func (c *refClient) FindRefName(ctx context.Context, in *FindRefNameRequest, opts ...grpc.CallOption) (*FindRefNameResponse, error) {
+func (c *refServiceClient) FindRefName(ctx context.Context, in *FindRefNameRequest, opts ...grpc.CallOption) (*FindRefNameResponse, error) {
 	out := new(FindRefNameResponse)
-	err := grpc.Invoke(ctx, "/gitaly.Ref/FindRefName", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/gitaly.RefService/FindRefName", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *refClient) FindLocalBranches(ctx context.Context, in *FindLocalBranchesRequest, opts ...grpc.CallOption) (Ref_FindLocalBranchesClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_Ref_serviceDesc.Streams[2], c.cc, "/gitaly.Ref/FindLocalBranches", opts...)
+func (c *refServiceClient) FindLocalBranches(ctx context.Context, in *FindLocalBranchesRequest, opts ...grpc.CallOption) (RefService_FindLocalBranchesClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RefService_serviceDesc.Streams[2], c.cc, "/gitaly.RefService/FindLocalBranches", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &refFindLocalBranchesClient{stream}
+	x := &refServiceFindLocalBranchesClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -452,16 +452,16 @@ func (c *refClient) FindLocalBranches(ctx context.Context, in *FindLocalBranches
 	return x, nil
 }
 
-type Ref_FindLocalBranchesClient interface {
+type RefService_FindLocalBranchesClient interface {
 	Recv() (*FindLocalBranchesResponse, error)
 	grpc.ClientStream
 }
 
-type refFindLocalBranchesClient struct {
+type refServiceFindLocalBranchesClient struct {
 	grpc.ClientStream
 }
 
-func (x *refFindLocalBranchesClient) Recv() (*FindLocalBranchesResponse, error) {
+func (x *refServiceFindLocalBranchesClient) Recv() (*FindLocalBranchesResponse, error) {
 	m := new(FindLocalBranchesResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -469,195 +469,195 @@ func (x *refFindLocalBranchesClient) Recv() (*FindLocalBranchesResponse, error) 
 	return m, nil
 }
 
-// Server API for Ref service
+// Server API for RefService service
 
-type RefServer interface {
+type RefServiceServer interface {
 	FindDefaultBranchName(context.Context, *FindDefaultBranchNameRequest) (*FindDefaultBranchNameResponse, error)
-	FindAllBranchNames(*FindAllBranchNamesRequest, Ref_FindAllBranchNamesServer) error
-	FindAllTagNames(*FindAllTagNamesRequest, Ref_FindAllTagNamesServer) error
+	FindAllBranchNames(*FindAllBranchNamesRequest, RefService_FindAllBranchNamesServer) error
+	FindAllTagNames(*FindAllTagNamesRequest, RefService_FindAllTagNamesServer) error
 	// Find a Ref matching the given constraints. Response may be empty.
 	FindRefName(context.Context, *FindRefNameRequest) (*FindRefNameResponse, error)
 	// Return a stream so we can divide the response in chunks of branches
-	FindLocalBranches(*FindLocalBranchesRequest, Ref_FindLocalBranchesServer) error
+	FindLocalBranches(*FindLocalBranchesRequest, RefService_FindLocalBranchesServer) error
 }
 
-func RegisterRefServer(s *grpc.Server, srv RefServer) {
-	s.RegisterService(&_Ref_serviceDesc, srv)
+func RegisterRefServiceServer(s *grpc.Server, srv RefServiceServer) {
+	s.RegisterService(&_RefService_serviceDesc, srv)
 }
 
-func _Ref_FindDefaultBranchName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RefService_FindDefaultBranchName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FindDefaultBranchNameRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RefServer).FindDefaultBranchName(ctx, in)
+		return srv.(RefServiceServer).FindDefaultBranchName(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gitaly.Ref/FindDefaultBranchName",
+		FullMethod: "/gitaly.RefService/FindDefaultBranchName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RefServer).FindDefaultBranchName(ctx, req.(*FindDefaultBranchNameRequest))
+		return srv.(RefServiceServer).FindDefaultBranchName(ctx, req.(*FindDefaultBranchNameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Ref_FindAllBranchNames_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _RefService_FindAllBranchNames_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(FindAllBranchNamesRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(RefServer).FindAllBranchNames(m, &refFindAllBranchNamesServer{stream})
+	return srv.(RefServiceServer).FindAllBranchNames(m, &refServiceFindAllBranchNamesServer{stream})
 }
 
-type Ref_FindAllBranchNamesServer interface {
+type RefService_FindAllBranchNamesServer interface {
 	Send(*FindAllBranchNamesResponse) error
 	grpc.ServerStream
 }
 
-type refFindAllBranchNamesServer struct {
+type refServiceFindAllBranchNamesServer struct {
 	grpc.ServerStream
 }
 
-func (x *refFindAllBranchNamesServer) Send(m *FindAllBranchNamesResponse) error {
+func (x *refServiceFindAllBranchNamesServer) Send(m *FindAllBranchNamesResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _Ref_FindAllTagNames_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _RefService_FindAllTagNames_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(FindAllTagNamesRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(RefServer).FindAllTagNames(m, &refFindAllTagNamesServer{stream})
+	return srv.(RefServiceServer).FindAllTagNames(m, &refServiceFindAllTagNamesServer{stream})
 }
 
-type Ref_FindAllTagNamesServer interface {
+type RefService_FindAllTagNamesServer interface {
 	Send(*FindAllTagNamesResponse) error
 	grpc.ServerStream
 }
 
-type refFindAllTagNamesServer struct {
+type refServiceFindAllTagNamesServer struct {
 	grpc.ServerStream
 }
 
-func (x *refFindAllTagNamesServer) Send(m *FindAllTagNamesResponse) error {
+func (x *refServiceFindAllTagNamesServer) Send(m *FindAllTagNamesResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _Ref_FindRefName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RefService_FindRefName_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FindRefNameRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RefServer).FindRefName(ctx, in)
+		return srv.(RefServiceServer).FindRefName(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gitaly.Ref/FindRefName",
+		FullMethod: "/gitaly.RefService/FindRefName",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RefServer).FindRefName(ctx, req.(*FindRefNameRequest))
+		return srv.(RefServiceServer).FindRefName(ctx, req.(*FindRefNameRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Ref_FindLocalBranches_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _RefService_FindLocalBranches_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(FindLocalBranchesRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(RefServer).FindLocalBranches(m, &refFindLocalBranchesServer{stream})
+	return srv.(RefServiceServer).FindLocalBranches(m, &refServiceFindLocalBranchesServer{stream})
 }
 
-type Ref_FindLocalBranchesServer interface {
+type RefService_FindLocalBranchesServer interface {
 	Send(*FindLocalBranchesResponse) error
 	grpc.ServerStream
 }
 
-type refFindLocalBranchesServer struct {
+type refServiceFindLocalBranchesServer struct {
 	grpc.ServerStream
 }
 
-func (x *refFindLocalBranchesServer) Send(m *FindLocalBranchesResponse) error {
+func (x *refServiceFindLocalBranchesServer) Send(m *FindLocalBranchesResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-var _Ref_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "gitaly.Ref",
-	HandlerType: (*RefServer)(nil),
+var _RefService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "gitaly.RefService",
+	HandlerType: (*RefServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "FindDefaultBranchName",
-			Handler:    _Ref_FindDefaultBranchName_Handler,
+			Handler:    _RefService_FindDefaultBranchName_Handler,
 		},
 		{
 			MethodName: "FindRefName",
-			Handler:    _Ref_FindRefName_Handler,
+			Handler:    _RefService_FindRefName_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "FindAllBranchNames",
-			Handler:       _Ref_FindAllBranchNames_Handler,
+			Handler:       _RefService_FindAllBranchNames_Handler,
 			ServerStreams: true,
 		},
 		{
 			StreamName:    "FindAllTagNames",
-			Handler:       _Ref_FindAllTagNames_Handler,
+			Handler:       _RefService_FindAllTagNames_Handler,
 			ServerStreams: true,
 		},
 		{
 			StreamName:    "FindLocalBranches",
-			Handler:       _Ref_FindLocalBranches_Handler,
+			Handler:       _RefService_FindLocalBranches_Handler,
 			ServerStreams: true,
 		},
 	},
 	Metadata: "ref.proto",
 }
 
-func init() { proto.RegisterFile("ref.proto", fileDescriptor3) }
+func init() { proto.RegisterFile("ref.proto", fileDescriptor5) }
 
-var fileDescriptor3 = []byte{
-	// 615 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0x51, 0x73, 0xd2, 0x4c,
-	0x14, 0x6d, 0x0a, 0xe5, 0x6b, 0x2f, 0xf9, 0x5a, 0x5c, 0x6b, 0x8d, 0x41, 0x85, 0x46, 0x3b, 0xe2,
-	0x4b, 0x70, 0xd2, 0xf1, 0xc9, 0x17, 0x29, 0xe0, 0xd4, 0x99, 0x8a, 0xce, 0x82, 0x8e, 0x0f, 0xce,
-	0x30, 0x0b, 0x6c, 0x20, 0x4e, 0xc2, 0x62, 0xb2, 0x8c, 0xf2, 0xe0, 0x2f, 0xf0, 0x87, 0xf9, 0xe6,
-	0x6f, 0x72, 0xd8, 0x4d, 0x68, 0xa0, 0x49, 0xea, 0x0c, 0x4f, 0xe1, 0xde, 0x3d, 0xe7, 0xde, 0xbb,
-	0xf7, 0xb0, 0x07, 0x0e, 0x7c, 0x6a, 0x9b, 0x33, 0x9f, 0x71, 0x86, 0x0a, 0x63, 0x87, 0x13, 0x77,
-	0xa1, 0xab, 0xc1, 0x84, 0xf8, 0x74, 0x24, 0xb3, 0x7a, 0x65, 0xcc, 0xd8, 0xd8, 0xa5, 0x75, 0x11,
-	0x0d, 0xe6, 0x76, 0x9d, 0x3b, 0x1e, 0x0d, 0x38, 0xf1, 0x66, 0x12, 0x60, 0x60, 0x78, 0xf8, 0xc6,
-	0x99, 0x8e, 0x5a, 0xd4, 0x26, 0x73, 0x97, 0x5f, 0xf8, 0x64, 0x3a, 0x9c, 0x74, 0x88, 0x47, 0x31,
-	0xfd, 0x36, 0xa7, 0x01, 0x47, 0x16, 0x80, 0x4f, 0x67, 0x2c, 0x70, 0x38, 0xf3, 0x17, 0x9a, 0x52,
-	0x55, 0x6a, 0x45, 0x0b, 0x99, 0xb2, 0x97, 0x89, 0x57, 0x27, 0x38, 0x86, 0x32, 0xce, 0xe1, 0x51,
-	0x4a, 0xcd, 0x60, 0xc6, 0xa6, 0x01, 0x45, 0x08, 0xf2, 0x53, 0xe2, 0x51, 0x51, 0x4e, 0xc5, 0xe2,
-	0xb7, 0xf1, 0x1e, 0x1e, 0x2c, 0x49, 0x0d, 0xd7, 0xbd, 0x26, 0x04, 0xdb, 0x4c, 0x61, 0x81, 0x9e,
-	0x54, 0x30, 0x1c, 0xe1, 0x18, 0xf6, 0x96, 0x6d, 0x03, 0x4d, 0xa9, 0xe6, 0x6a, 0x2a, 0x96, 0x81,
-	0x71, 0x05, 0x27, 0x21, 0xa7, 0x47, 0xc6, 0x5b, 0x4f, 0x50, 0x87, 0xfb, 0x37, 0xaa, 0x65, 0xb6,
-	0xff, 0x09, 0x68, 0x49, 0xc0, 0xd4, 0xde, 0x52, 0x02, 0x54, 0x86, 0x83, 0x21, 0xf3, 0x3c, 0x87,
-	0xf7, 0x9d, 0x91, 0xb6, 0x5b, 0x55, 0x6a, 0x07, 0x78, 0x5f, 0x26, 0xde, 0x8e, 0xd0, 0x09, 0x14,
-	0x66, 0x3e, 0xb5, 0x9d, 0x1f, 0x5a, 0x4e, 0x08, 0x10, 0x46, 0xc6, 0x73, 0xb8, 0xbb, 0xd6, 0x3e,
-	0x43, 0xad, 0xdf, 0x0a, 0x68, 0x4b, 0xec, 0x15, 0x1b, 0x92, 0x70, 0xbf, 0x5b, 0xed, 0x0a, 0xbd,
-	0x86, 0xff, 0x02, 0xe6, 0xf3, 0xfe, 0x60, 0x21, 0xc6, 0x3d, 0xb4, 0x9e, 0x45, 0x84, 0xb4, 0x36,
-	0x66, 0x97, 0xf9, 0xfc, 0x62, 0x81, 0x0b, 0x81, 0xf8, 0x1a, 0x2f, 0xa1, 0x20, 0x33, 0x68, 0x1f,
-	0xf2, 0x9d, 0xc6, 0xbb, 0x76, 0x69, 0x07, 0x1d, 0x41, 0xf1, 0xe3, 0x87, 0x56, 0xa3, 0xd7, 0x6e,
-	0xf5, 0x1b, 0xdd, 0x66, 0x49, 0x41, 0x25, 0x50, 0xa3, 0x44, 0xab, 0xdd, 0x6d, 0x96, 0x76, 0x8d,
-	0xcf, 0xf2, 0x7f, 0xb7, 0xd1, 0x21, 0xbc, 0xfa, 0x2b, 0xd8, 0x1f, 0x84, 0x39, 0xa1, 0x54, 0xd1,
-	0xaa, 0xa4, 0x8c, 0x15, 0x51, 0xf0, 0x8a, 0x60, 0xfc, 0xda, 0x95, 0xfa, 0x27, 0xa0, 0x92, 0x76,
-	0x9a, 0xad, 0xd9, 0x19, 0x1c, 0x86, 0x87, 0xc1, 0x7c, 0xf0, 0x95, 0x0e, 0x79, 0xa8, 0xdd, 0xff,
-	0x32, 0xdb, 0x95, 0x49, 0x74, 0x09, 0x61, 0xa2, 0x4f, 0xe6, 0x7c, 0xc2, 0x7c, 0x2d, 0x2f, 0xb6,
-	0xff, 0x24, 0x65, 0xea, 0xa6, 0xc0, 0x36, 0x04, 0x14, 0xab, 0xc3, 0x58, 0x84, 0x3a, 0x50, 0x0a,
-	0x2b, 0xc9, 0x0f, 0xa7, 0xbe, 0xb6, 0xf7, 0xef, 0xc5, 0x8e, 0x24, 0xab, 0x19, 0x71, 0x8d, 0xef,
-	0x50, 0xce, 0xc0, 0x27, 0x2e, 0xe4, 0x18, 0xf6, 0xa8, 0x47, 0x1c, 0x57, 0x2c, 0x43, 0xc5, 0x32,
-	0x40, 0x26, 0xe4, 0x47, 0x84, 0x53, 0x71, 0xff, 0xa2, 0xa5, 0x9b, 0xd2, 0xe1, 0xcc, 0xc8, 0xe1,
-	0xcc, 0x5e, 0xe4, 0x70, 0x58, 0xe0, 0xac, 0x3f, 0x39, 0xc8, 0x61, 0x6a, 0x23, 0x1b, 0xee, 0x25,
-	0xba, 0x12, 0x7a, 0x1a, 0xbf, 0x4f, 0x9a, 0x11, 0xea, 0x67, 0xb7, 0xa0, 0xa4, 0xb0, 0xc6, 0x0e,
-	0xea, 0xcb, 0x47, 0xbc, 0xee, 0x3b, 0xe8, 0x34, 0x4e, 0x4f, 0x34, 0x39, 0xdd, 0xc8, 0x82, 0x44,
-	0xe5, 0x5f, 0x28, 0xe8, 0x13, 0x1c, 0x6d, 0xd8, 0x0a, 0x7a, 0xbc, 0x41, 0xdd, 0x70, 0x2f, 0xbd,
-	0x92, 0x7a, 0x1e, 0xab, 0x7b, 0x09, 0xc5, 0xd8, 0xf3, 0x47, 0x7a, 0x9c, 0xb3, 0x6e, 0x49, 0x7a,
-	0x39, 0xf1, 0x6c, 0xb5, 0x82, 0x2f, 0x70, 0xe7, 0xc6, 0x9b, 0x42, 0xd5, 0xdb, 0x1e, 0xb4, 0x7e,
-	0x9a, 0x81, 0xb8, 0x9e, 0x73, 0x50, 0x10, 0x52, 0x9f, 0xff, 0x0d, 0x00, 0x00, 0xff, 0xff, 0x2c,
-	0xc7, 0x33, 0x9b, 0xfd, 0x06, 0x00, 0x00,
+var fileDescriptor5 = []byte{
+	// 620 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x54, 0xc1, 0x6e, 0xd3, 0x40,
+	0x10, 0xad, 0xdb, 0x34, 0xb4, 0x13, 0xd3, 0x86, 0xa5, 0x14, 0xe3, 0x02, 0x4d, 0x0d, 0x15, 0xe5,
+	0xe2, 0x22, 0x57, 0x9c, 0xb8, 0x90, 0x26, 0x45, 0x45, 0x2a, 0x05, 0x6d, 0x02, 0xe2, 0x80, 0x14,
+	0x6d, 0x9c, 0x75, 0x62, 0x64, 0x67, 0xc3, 0x7a, 0x03, 0xe4, 0xc0, 0x17, 0xf0, 0x61, 0x7c, 0x01,
+	0xff, 0x83, 0xb2, 0x6b, 0xa7, 0x4e, 0x6a, 0xbb, 0x48, 0x39, 0x39, 0x33, 0xfb, 0xde, 0xcc, 0xec,
+	0xbc, 0xec, 0x83, 0x4d, 0x4e, 0x3d, 0x7b, 0xc4, 0x99, 0x60, 0xa8, 0xdc, 0xf7, 0x05, 0x09, 0x26,
+	0xa6, 0x1e, 0x0d, 0x08, 0xa7, 0x3d, 0x95, 0x35, 0xf7, 0xfb, 0x8c, 0xf5, 0x03, 0x7a, 0x2c, 0xa3,
+	0xee, 0xd8, 0x3b, 0x16, 0x7e, 0x48, 0x23, 0x41, 0xc2, 0x91, 0x02, 0x58, 0x18, 0x1e, 0xbe, 0xf1,
+	0x87, 0xbd, 0x26, 0xf5, 0xc8, 0x38, 0x10, 0xa7, 0x9c, 0x0c, 0xdd, 0xc1, 0x25, 0x09, 0x29, 0xa6,
+	0xdf, 0xc6, 0x34, 0x12, 0xc8, 0x01, 0xe0, 0x74, 0xc4, 0x22, 0x5f, 0x30, 0x3e, 0x31, 0xb4, 0x9a,
+	0x76, 0x54, 0x71, 0x90, 0xad, 0x7a, 0xd9, 0x78, 0x76, 0x82, 0x53, 0x28, 0xeb, 0x04, 0x1e, 0xe5,
+	0xd4, 0x8c, 0x46, 0x6c, 0x18, 0x51, 0x84, 0xa0, 0x34, 0x24, 0x21, 0x95, 0xe5, 0x74, 0x2c, 0x7f,
+	0x5b, 0xef, 0xe1, 0xc1, 0x94, 0x54, 0x0f, 0x82, 0x2b, 0x42, 0xb4, 0xcc, 0x14, 0x0e, 0x98, 0x59,
+	0x05, 0xe3, 0x11, 0x76, 0x60, 0x7d, 0xda, 0x36, 0x32, 0xb4, 0xda, 0xda, 0x91, 0x8e, 0x55, 0x60,
+	0x5d, 0xc0, 0x6e, 0xcc, 0x69, 0x93, 0xfe, 0xd2, 0x13, 0x1c, 0xc3, 0xfd, 0x6b, 0xd5, 0x0a, 0xdb,
+	0xff, 0x02, 0x34, 0x25, 0x60, 0xea, 0x2d, 0x29, 0x01, 0xda, 0x83, 0x4d, 0x97, 0x85, 0xa1, 0x2f,
+	0x3a, 0x7e, 0xcf, 0x58, 0xad, 0x69, 0x47, 0x9b, 0x78, 0x43, 0x25, 0xde, 0xf6, 0xd0, 0x2e, 0x94,
+	0x47, 0x9c, 0x7a, 0xfe, 0x4f, 0x63, 0x4d, 0x0a, 0x10, 0x47, 0xd6, 0x73, 0xb8, 0x3b, 0xd7, 0xbe,
+	0x40, 0xad, 0x3f, 0x1a, 0x18, 0x53, 0xec, 0x05, 0x73, 0x49, 0xbc, 0xdf, 0xa5, 0x76, 0x85, 0x5e,
+	0xc3, 0xad, 0x88, 0x71, 0xd1, 0xe9, 0x4e, 0xe4, 0xb8, 0x5b, 0xce, 0xb3, 0x84, 0x90, 0xd7, 0xc6,
+	0x6e, 0x31, 0x2e, 0x4e, 0x27, 0xb8, 0x1c, 0xc9, 0xaf, 0xf5, 0x12, 0xca, 0x2a, 0x83, 0x36, 0xa0,
+	0x74, 0x59, 0x7f, 0x77, 0x56, 0x5d, 0x41, 0xdb, 0x50, 0xf9, 0xf8, 0xa1, 0x59, 0x6f, 0x9f, 0x35,
+	0x3b, 0xf5, 0x56, 0xa3, 0xaa, 0xa1, 0x2a, 0xe8, 0x49, 0xa2, 0x79, 0xd6, 0x6a, 0x54, 0x57, 0xad,
+	0xcf, 0xea, 0x7f, 0xb7, 0xd0, 0x21, 0xbe, 0xfa, 0x2b, 0xd8, 0xe8, 0xc6, 0x39, 0xa9, 0x54, 0xc5,
+	0xd9, 0xcf, 0x19, 0x2b, 0xa1, 0xe0, 0x19, 0xc1, 0xfa, 0xbd, 0xaa, 0xf4, 0xcf, 0x40, 0x65, 0xed,
+	0xb4, 0x58, 0xb3, 0x43, 0xd8, 0x8a, 0x0f, 0xa3, 0x71, 0xf7, 0x2b, 0x75, 0x45, 0xac, 0xdd, 0x6d,
+	0x95, 0x6d, 0xa9, 0x24, 0x3a, 0x87, 0x38, 0xd1, 0x21, 0x63, 0x31, 0x60, 0xdc, 0x28, 0xc9, 0xed,
+	0x3f, 0xc9, 0x99, 0xba, 0x21, 0xb1, 0x75, 0x09, 0xc5, 0xba, 0x9b, 0x8a, 0xd0, 0x25, 0x54, 0xe3,
+	0x4a, 0xea, 0x23, 0x28, 0x37, 0xd6, 0xff, 0xbf, 0xd8, 0xb6, 0x62, 0x35, 0x12, 0xae, 0xf5, 0x03,
+	0xf6, 0x0a, 0xf0, 0x99, 0x0b, 0xd9, 0x81, 0x75, 0x1a, 0x12, 0x3f, 0x90, 0xcb, 0xd0, 0xb1, 0x0a,
+	0x90, 0x0d, 0xa5, 0x1e, 0x11, 0x54, 0xde, 0xbf, 0xe2, 0x98, 0xb6, 0x72, 0x38, 0x3b, 0x71, 0x38,
+	0xbb, 0x9d, 0x38, 0x1c, 0x96, 0x38, 0xe7, 0xef, 0x1a, 0x00, 0xa6, 0x5e, 0x8b, 0xf2, 0xef, 0xbe,
+	0x4b, 0x91, 0x07, 0xf7, 0x32, 0xcd, 0x09, 0x3d, 0x4d, 0x5f, 0x2b, 0xcf, 0x0f, 0xcd, 0xc3, 0x1b,
+	0x50, 0x4a, 0x5f, 0x6b, 0x05, 0x75, 0xd4, 0x5b, 0x9e, 0xb7, 0x1f, 0x74, 0x90, 0xa6, 0x67, 0x7a,
+	0x9d, 0x69, 0x15, 0x41, 0x92, 0xf2, 0x2f, 0x34, 0xf4, 0x09, 0xb6, 0x17, 0xdc, 0x05, 0x3d, 0x5e,
+	0xa0, 0x2e, 0x98, 0x98, 0xb9, 0x9f, 0x7b, 0x9e, 0xaa, 0x7b, 0x0e, 0x95, 0x94, 0x0b, 0x20, 0x33,
+	0xcd, 0x99, 0x77, 0x26, 0x73, 0x2f, 0xf3, 0x6c, 0xb6, 0x82, 0x2f, 0x70, 0xe7, 0xda, 0xd3, 0x42,
+	0xb5, 0x9b, 0xde, 0xb5, 0x79, 0x50, 0x80, 0xb8, 0x9a, 0xb3, 0x5b, 0x96, 0x8a, 0x9f, 0xfc, 0x0b,
+	0x00, 0x00, 0xff, 0xff, 0xaa, 0x36, 0x2a, 0x93, 0x04, 0x07, 0x00, 0x00,
 }

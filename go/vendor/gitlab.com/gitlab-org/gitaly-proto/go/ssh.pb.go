@@ -27,7 +27,7 @@ type SSHUploadPackRequest struct {
 func (m *SSHUploadPackRequest) Reset()                    { *m = SSHUploadPackRequest{} }
 func (m *SSHUploadPackRequest) String() string            { return proto.CompactTextString(m) }
 func (*SSHUploadPackRequest) ProtoMessage()               {}
-func (*SSHUploadPackRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0} }
+func (*SSHUploadPackRequest) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{0} }
 
 func (m *SSHUploadPackRequest) GetRepository() *Repository {
 	if m != nil {
@@ -56,7 +56,7 @@ type SSHUploadPackResponse struct {
 func (m *SSHUploadPackResponse) Reset()                    { *m = SSHUploadPackResponse{} }
 func (m *SSHUploadPackResponse) String() string            { return proto.CompactTextString(m) }
 func (*SSHUploadPackResponse) ProtoMessage()               {}
-func (*SSHUploadPackResponse) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{1} }
+func (*SSHUploadPackResponse) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{1} }
 
 func (m *SSHUploadPackResponse) GetStdout() []byte {
 	if m != nil {
@@ -93,7 +93,7 @@ type SSHReceivePackRequest struct {
 func (m *SSHReceivePackRequest) Reset()                    { *m = SSHReceivePackRequest{} }
 func (m *SSHReceivePackRequest) String() string            { return proto.CompactTextString(m) }
 func (*SSHReceivePackRequest) ProtoMessage()               {}
-func (*SSHReceivePackRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{2} }
+func (*SSHReceivePackRequest) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{2} }
 
 func (m *SSHReceivePackRequest) GetRepository() *Repository {
 	if m != nil {
@@ -136,7 +136,7 @@ type SSHReceivePackResponse struct {
 func (m *SSHReceivePackResponse) Reset()                    { *m = SSHReceivePackResponse{} }
 func (m *SSHReceivePackResponse) String() string            { return proto.CompactTextString(m) }
 func (*SSHReceivePackResponse) ProtoMessage()               {}
-func (*SSHReceivePackResponse) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{3} }
+func (*SSHReceivePackResponse) Descriptor() ([]byte, []int) { return fileDescriptor9, []int{3} }
 
 func (m *SSHReceivePackResponse) GetStdout() []byte {
 	if m != nil {
@@ -174,47 +174,47 @@ var _ grpc.ClientConn
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion4
 
-// Client API for SSH service
+// Client API for SSHService service
 
-type SSHClient interface {
+type SSHServiceClient interface {
 	// To forward 'git upload-pack' to Gitaly for SSH sessions
-	SSHUploadPack(ctx context.Context, opts ...grpc.CallOption) (SSH_SSHUploadPackClient, error)
+	SSHUploadPack(ctx context.Context, opts ...grpc.CallOption) (SSHService_SSHUploadPackClient, error)
 	// To forward 'git receive-pack' to Gitaly for SSH sessions
-	SSHReceivePack(ctx context.Context, opts ...grpc.CallOption) (SSH_SSHReceivePackClient, error)
+	SSHReceivePack(ctx context.Context, opts ...grpc.CallOption) (SSHService_SSHReceivePackClient, error)
 }
 
-type sSHClient struct {
+type sSHServiceClient struct {
 	cc *grpc.ClientConn
 }
 
-func NewSSHClient(cc *grpc.ClientConn) SSHClient {
-	return &sSHClient{cc}
+func NewSSHServiceClient(cc *grpc.ClientConn) SSHServiceClient {
+	return &sSHServiceClient{cc}
 }
 
-func (c *sSHClient) SSHUploadPack(ctx context.Context, opts ...grpc.CallOption) (SSH_SSHUploadPackClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_SSH_serviceDesc.Streams[0], c.cc, "/gitaly.SSH/SSHUploadPack", opts...)
+func (c *sSHServiceClient) SSHUploadPack(ctx context.Context, opts ...grpc.CallOption) (SSHService_SSHUploadPackClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_SSHService_serviceDesc.Streams[0], c.cc, "/gitaly.SSHService/SSHUploadPack", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &sSHSSHUploadPackClient{stream}
+	x := &sSHServiceSSHUploadPackClient{stream}
 	return x, nil
 }
 
-type SSH_SSHUploadPackClient interface {
+type SSHService_SSHUploadPackClient interface {
 	Send(*SSHUploadPackRequest) error
 	Recv() (*SSHUploadPackResponse, error)
 	grpc.ClientStream
 }
 
-type sSHSSHUploadPackClient struct {
+type sSHServiceSSHUploadPackClient struct {
 	grpc.ClientStream
 }
 
-func (x *sSHSSHUploadPackClient) Send(m *SSHUploadPackRequest) error {
+func (x *sSHServiceSSHUploadPackClient) Send(m *SSHUploadPackRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *sSHSSHUploadPackClient) Recv() (*SSHUploadPackResponse, error) {
+func (x *sSHServiceSSHUploadPackClient) Recv() (*SSHUploadPackResponse, error) {
 	m := new(SSHUploadPackResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -222,30 +222,30 @@ func (x *sSHSSHUploadPackClient) Recv() (*SSHUploadPackResponse, error) {
 	return m, nil
 }
 
-func (c *sSHClient) SSHReceivePack(ctx context.Context, opts ...grpc.CallOption) (SSH_SSHReceivePackClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_SSH_serviceDesc.Streams[1], c.cc, "/gitaly.SSH/SSHReceivePack", opts...)
+func (c *sSHServiceClient) SSHReceivePack(ctx context.Context, opts ...grpc.CallOption) (SSHService_SSHReceivePackClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_SSHService_serviceDesc.Streams[1], c.cc, "/gitaly.SSHService/SSHReceivePack", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &sSHSSHReceivePackClient{stream}
+	x := &sSHServiceSSHReceivePackClient{stream}
 	return x, nil
 }
 
-type SSH_SSHReceivePackClient interface {
+type SSHService_SSHReceivePackClient interface {
 	Send(*SSHReceivePackRequest) error
 	Recv() (*SSHReceivePackResponse, error)
 	grpc.ClientStream
 }
 
-type sSHSSHReceivePackClient struct {
+type sSHServiceSSHReceivePackClient struct {
 	grpc.ClientStream
 }
 
-func (x *sSHSSHReceivePackClient) Send(m *SSHReceivePackRequest) error {
+func (x *sSHServiceSSHReceivePackClient) Send(m *SSHReceivePackRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *sSHSSHReceivePackClient) Recv() (*SSHReceivePackResponse, error) {
+func (x *sSHServiceSSHReceivePackClient) Recv() (*SSHReceivePackResponse, error) {
 	m := new(SSHReceivePackResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -253,38 +253,38 @@ func (x *sSHSSHReceivePackClient) Recv() (*SSHReceivePackResponse, error) {
 	return m, nil
 }
 
-// Server API for SSH service
+// Server API for SSHService service
 
-type SSHServer interface {
+type SSHServiceServer interface {
 	// To forward 'git upload-pack' to Gitaly for SSH sessions
-	SSHUploadPack(SSH_SSHUploadPackServer) error
+	SSHUploadPack(SSHService_SSHUploadPackServer) error
 	// To forward 'git receive-pack' to Gitaly for SSH sessions
-	SSHReceivePack(SSH_SSHReceivePackServer) error
+	SSHReceivePack(SSHService_SSHReceivePackServer) error
 }
 
-func RegisterSSHServer(s *grpc.Server, srv SSHServer) {
-	s.RegisterService(&_SSH_serviceDesc, srv)
+func RegisterSSHServiceServer(s *grpc.Server, srv SSHServiceServer) {
+	s.RegisterService(&_SSHService_serviceDesc, srv)
 }
 
-func _SSH_SSHUploadPack_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(SSHServer).SSHUploadPack(&sSHSSHUploadPackServer{stream})
+func _SSHService_SSHUploadPack_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SSHServiceServer).SSHUploadPack(&sSHServiceSSHUploadPackServer{stream})
 }
 
-type SSH_SSHUploadPackServer interface {
+type SSHService_SSHUploadPackServer interface {
 	Send(*SSHUploadPackResponse) error
 	Recv() (*SSHUploadPackRequest, error)
 	grpc.ServerStream
 }
 
-type sSHSSHUploadPackServer struct {
+type sSHServiceSSHUploadPackServer struct {
 	grpc.ServerStream
 }
 
-func (x *sSHSSHUploadPackServer) Send(m *SSHUploadPackResponse) error {
+func (x *sSHServiceSSHUploadPackServer) Send(m *SSHUploadPackResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *sSHSSHUploadPackServer) Recv() (*SSHUploadPackRequest, error) {
+func (x *sSHServiceSSHUploadPackServer) Recv() (*SSHUploadPackRequest, error) {
 	m := new(SSHUploadPackRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -292,25 +292,25 @@ func (x *sSHSSHUploadPackServer) Recv() (*SSHUploadPackRequest, error) {
 	return m, nil
 }
 
-func _SSH_SSHReceivePack_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(SSHServer).SSHReceivePack(&sSHSSHReceivePackServer{stream})
+func _SSHService_SSHReceivePack_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SSHServiceServer).SSHReceivePack(&sSHServiceSSHReceivePackServer{stream})
 }
 
-type SSH_SSHReceivePackServer interface {
+type SSHService_SSHReceivePackServer interface {
 	Send(*SSHReceivePackResponse) error
 	Recv() (*SSHReceivePackRequest, error)
 	grpc.ServerStream
 }
 
-type sSHSSHReceivePackServer struct {
+type sSHServiceSSHReceivePackServer struct {
 	grpc.ServerStream
 }
 
-func (x *sSHSSHReceivePackServer) Send(m *SSHReceivePackResponse) error {
+func (x *sSHServiceSSHReceivePackServer) Send(m *SSHReceivePackResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *sSHSSHReceivePackServer) Recv() (*SSHReceivePackRequest, error) {
+func (x *sSHServiceSSHReceivePackServer) Recv() (*SSHReceivePackRequest, error) {
 	m := new(SSHReceivePackRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -318,20 +318,20 @@ func (x *sSHSSHReceivePackServer) Recv() (*SSHReceivePackRequest, error) {
 	return m, nil
 }
 
-var _SSH_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "gitaly.SSH",
-	HandlerType: (*SSHServer)(nil),
+var _SSHService_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "gitaly.SSHService",
+	HandlerType: (*SSHServiceServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "SSHUploadPack",
-			Handler:       _SSH_SSHUploadPack_Handler,
+			Handler:       _SSHService_SSHUploadPack_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
 		{
 			StreamName:    "SSHReceivePack",
-			Handler:       _SSH_SSHReceivePack_Handler,
+			Handler:       _SSHService_SSHReceivePack_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
@@ -339,27 +339,28 @@ var _SSH_serviceDesc = grpc.ServiceDesc{
 	Metadata: "ssh.proto",
 }
 
-func init() { proto.RegisterFile("ssh.proto", fileDescriptor6) }
+func init() { proto.RegisterFile("ssh.proto", fileDescriptor9) }
 
-var fileDescriptor6 = []byte{
-	// 304 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x52, 0xcd, 0x4e, 0xf3, 0x30,
-	0x10, 0xfc, 0xfc, 0xf5, 0x47, 0xea, 0x36, 0xe5, 0xb0, 0x94, 0xaa, 0x8a, 0x00, 0x55, 0xe1, 0x92,
-	0x53, 0x84, 0xd2, 0x67, 0x40, 0x2a, 0x37, 0xe4, 0xa8, 0xe7, 0x10, 0x6a, 0x2b, 0xb5, 0xb0, 0xea,
-	0x60, 0x3b, 0xa8, 0x95, 0xe0, 0x49, 0x78, 0x09, 0x1e, 0x11, 0xc9, 0x09, 0x25, 0x29, 0xf4, 0x08,
-	0xb7, 0xcc, 0x4e, 0x76, 0x66, 0xd6, 0xbb, 0x30, 0x30, 0x66, 0x1d, 0x15, 0x5a, 0x59, 0x85, 0xfd,
-	0x5c, 0xd8, 0x4c, 0xee, 0x7c, 0xcf, 0xac, 0x33, 0xcd, 0x59, 0x55, 0x0d, 0xee, 0x61, 0x9c, 0x24,
-	0x8b, 0x65, 0x21, 0x55, 0xc6, 0xee, 0xb2, 0xd5, 0x23, 0xe5, 0x4f, 0x25, 0x37, 0x16, 0x63, 0x00,
-	0xcd, 0x0b, 0x65, 0x84, 0x55, 0x7a, 0x37, 0x25, 0x33, 0x12, 0x0e, 0x63, 0x8c, 0x2a, 0x89, 0x88,
-	0xee, 0x19, 0xda, 0xf8, 0x0b, 0xc7, 0xd0, 0x33, 0x96, 0x89, 0xcd, 0xf4, 0xff, 0x8c, 0x84, 0x1e,
-	0xad, 0x40, 0xf0, 0x02, 0x67, 0x07, 0x0e, 0xa6, 0x50, 0x1b, 0xc3, 0x71, 0x02, 0x7d, 0x63, 0x99,
-	0x2a, 0xad, 0x93, 0xf7, 0x68, 0x8d, 0xea, 0x3a, 0xd7, 0xba, 0xd6, 0xa9, 0x11, 0xce, 0x61, 0xc8,
-	0xb7, 0xc2, 0xa6, 0xc6, 0x66, 0xb6, 0x34, 0xd3, 0x4e, 0x3b, 0xd3, 0xcd, 0x56, 0xd8, 0xc4, 0x31,
-	0x14, 0xf8, 0xfe, 0x3b, 0x78, 0x23, 0xce, 0x9e, 0xf2, 0x15, 0x17, 0xcf, 0xfc, 0x57, 0x26, 0xc4,
-	0x53, 0xe8, 0xe5, 0x32, 0x15, 0xcc, 0x45, 0x1a, 0xd0, 0x6e, 0x2e, 0x6f, 0x19, 0x5e, 0xc1, 0x28,
-	0x97, 0x69, 0xc3, 0xa1, 0xeb, 0x48, 0x2f, 0x97, 0x5f, 0xda, 0xc1, 0x2b, 0x4c, 0x0e, 0xc3, 0xfd,
-	0xe1, 0xe3, 0xc4, 0xef, 0x04, 0x3a, 0x49, 0xb2, 0x40, 0x0a, 0xa3, 0xd6, 0x8a, 0xf0, 0xfc, 0xb3,
-	0xf1, 0xa7, 0xdb, 0xf0, 0x2f, 0x8e, 0xb0, 0x55, 0xf4, 0xe0, 0x5f, 0x48, 0xae, 0x09, 0x2e, 0xe1,
-	0xa4, 0x3d, 0x1a, 0x36, 0xdb, 0xbe, 0xef, 0xc3, 0xbf, 0x3c, 0x46, 0x37, 0x65, 0x1f, 0xfa, 0xee,
-	0x6c, 0xe7, 0x1f, 0x01, 0x00, 0x00, 0xff, 0xff, 0xa3, 0x3d, 0xb9, 0xce, 0xd9, 0x02, 0x00, 0x00,
+var fileDescriptor9 = []byte{
+	// 307 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x52, 0xcf, 0x4e, 0x32, 0x31,
+	0x10, 0xff, 0xfa, 0x09, 0x24, 0x0c, 0x8b, 0x87, 0x11, 0x09, 0x21, 0x6a, 0xc8, 0x7a, 0xe1, 0x44,
+	0x0c, 0x3c, 0x83, 0x09, 0xde, 0x4c, 0x1b, 0xce, 0xb8, 0xd2, 0xc9, 0xd2, 0xd8, 0xd0, 0xb5, 0x2d,
+	0x04, 0x12, 0x7d, 0x12, 0x1f, 0xc4, 0xd7, 0x33, 0xe9, 0xae, 0xb8, 0x8b, 0x72, 0xd4, 0xdb, 0xce,
+	0xfc, 0x76, 0x7e, 0x7f, 0x3a, 0x03, 0x4d, 0xe7, 0x96, 0xa3, 0xcc, 0x1a, 0x6f, 0xb0, 0x91, 0x2a,
+	0x9f, 0xe8, 0x5d, 0x3f, 0x72, 0xcb, 0xc4, 0x92, 0xcc, 0xbb, 0xf1, 0x03, 0x74, 0x84, 0x98, 0xce,
+	0x32, 0x6d, 0x12, 0x79, 0x9f, 0x2c, 0x9e, 0x38, 0x3d, 0xaf, 0xc9, 0x79, 0x1c, 0x03, 0x58, 0xca,
+	0x8c, 0x53, 0xde, 0xd8, 0x5d, 0x8f, 0x0d, 0xd8, 0xb0, 0x35, 0xc6, 0x51, 0x4e, 0x31, 0xe2, 0x7b,
+	0x84, 0x97, 0xfe, 0xc2, 0x0e, 0xd4, 0x9d, 0x97, 0x6a, 0xd5, 0xfb, 0x3f, 0x60, 0xc3, 0x88, 0xe7,
+	0x45, 0xfc, 0x02, 0xe7, 0x07, 0x0a, 0x2e, 0x33, 0x2b, 0x47, 0xd8, 0x85, 0x86, 0xf3, 0xd2, 0xac,
+	0x7d, 0xa0, 0x8f, 0x78, 0x51, 0x15, 0x7d, 0xb2, 0xb6, 0xe0, 0x29, 0x2a, 0x9c, 0x40, 0x8b, 0xb6,
+	0xca, 0xcf, 0x9d, 0x4f, 0xfc, 0xda, 0xf5, 0x4e, 0xaa, 0x9e, 0x6e, 0xb7, 0xca, 0x8b, 0x80, 0x70,
+	0xa0, 0xfd, 0x77, 0xfc, 0xc6, 0x82, 0x3c, 0xa7, 0x05, 0xa9, 0x0d, 0xfd, 0x4a, 0x42, 0x3c, 0x83,
+	0x7a, 0xaa, 0xe7, 0x4a, 0x06, 0x4b, 0x4d, 0x5e, 0x4b, 0xf5, 0x9d, 0xc4, 0x6b, 0x68, 0xa7, 0x7a,
+	0x5e, 0x52, 0xa8, 0x05, 0x30, 0x4a, 0xf5, 0x17, 0x77, 0xfc, 0x0a, 0xdd, 0x43, 0x73, 0x7f, 0xf8,
+	0x38, 0xe3, 0x77, 0x06, 0x20, 0xc4, 0x54, 0x90, 0xdd, 0xa8, 0x05, 0x21, 0x87, 0x76, 0x65, 0x53,
+	0x78, 0xf1, 0x39, 0xff, 0xd3, 0x89, 0xf4, 0x2f, 0x8f, 0xa0, 0x79, 0x82, 0xf8, 0xdf, 0x90, 0xdd,
+	0x30, 0x9c, 0xc1, 0x69, 0x35, 0x21, 0x96, 0xc7, 0xbe, 0xaf, 0xa5, 0x7f, 0x75, 0x0c, 0x2e, 0xd3,
+	0x3e, 0x36, 0xc2, 0xf5, 0x4e, 0x3e, 0x02, 0x00, 0x00, 0xff, 0xff, 0x79, 0x5b, 0x32, 0x2b, 0xe0,
+	0x02, 0x00, 0x00,
 }
