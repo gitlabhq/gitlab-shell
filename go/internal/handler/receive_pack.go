@@ -14,7 +14,7 @@ import (
 
 func ReceivePack(gitalyAddress string, request *pb.SSHReceivePackRequest) (int32, error) {
 	if gitalyAddress == "" {
-		return -1, fmt.Errorf("no gitaly_address given")
+		return 0, fmt.Errorf("no gitaly_address given")
 	}
 
 	connOpts := client.DefaultDialOpts
@@ -24,11 +24,11 @@ func ReceivePack(gitalyAddress string, request *pb.SSHReceivePackRequest) (int32
 
 	conn, err := client.Dial(gitalyAddress, connOpts)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 	defer conn.Close()
 
-	ctx, cancel := context.WithCancel(context.TODO())
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	return client.ReceivePack(ctx, conn, os.Stdin, os.Stdout, os.Stderr, request)
 }
