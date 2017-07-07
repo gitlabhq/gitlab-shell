@@ -157,7 +157,7 @@ class GitlabShell
       'GL_PROTOCOL' => GL_PROTOCOL,
       'GL_REPOSITORY' => @gl_repository
     }
-    if @gitaly && @gitaly.has?('token')
+    if @gitaly && @gitaly.include?('token')
       env.merge!({
         'GITALY_TOKEN' => @gitaly['token']
       })
