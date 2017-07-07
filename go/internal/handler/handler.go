@@ -5,6 +5,10 @@ import (
 	"os/exec"
 	"syscall"
 
+	"google.golang.org/grpc"
+
+	"gitlab.com/gitlab-org/gitaly/auth"
+	"gitlab.com/gitlab-org/gitaly/client"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/logger"
 )
@@ -35,4 +39,13 @@ func execCommand(command string, args ...string) error {
 
 	args = append([]string{binPath}, args...)
 	return syscall.Exec(binPath, args, os.Environ())
+}
+
+func dialOpts() []grpc.DialOption {
+	connOpts := client.DefaultDialOpts
+	if token := os.Getenv("GITALY_TOKEN"); token != "" {
+		connOpts = append(client.DefaultDialOpts, grpc.WithPerRPCCredentials(gitalyauth.RPCCredentials(token)))
+	}
+
+	return connOpts
 }

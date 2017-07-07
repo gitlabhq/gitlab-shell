@@ -19,10 +19,12 @@ describe GitlabShell do
     end
   end
 
+  let(:gitaly_check_access) { GitAccessStatus.new(true, 'ok', gl_repository, repo_path, { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' })}
+
   let(:api) do
     double(GitlabNet).tap do |api|
       api.stub(discover: { 'name' => 'John Doe' })
-      api.stub(check_access: GitAccessStatus.new(true, 'ok', gl_repository, repo_path))
+      api.stub(check_access: GitAccessStatus.new(true, 'ok', gl_repository, repo_path, nil))
       api.stub(two_factor_recovery_codes: {
         'success' => true,
         'recovery_codes' => ['f67c514de60c4953', '41278385fc00c1e0']
@@ -128,7 +130,7 @@ describe GitlabShell do
   end
 
   describe :exec do
-    let(:gitaly_message) { JSON.dump({ 'repository' => { 'path' => repo_path }, 'gl_id' => key_id }) }
+    let(:gitaly_message) { JSON.dump({ 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' }, 'gl_repository' => gl_repository , 'gl_id' => key_id}) }
 
     context 'git-upload-pack' do
       let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
@@ -139,12 +141,40 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-upload-pack"), '', gitaly_message)
+        subject.should_receive(:exec_cmd).with('git-upload-pack', repo_path)
       end
 
       it "should log the command execution" do
         message = "gitlab-shell: executing git command "
-        message << "<gitaly-upload-pack  #{gitaly_message}> "
+        message << "<git-upload-pack #{repo_path}> "
+        message << "for user with key #{key_id}."
+        $logger.should_receive(:info).with(message)
+      end
+
+      it "should use usernames if configured to do so" do
+        GitlabConfig.any_instance.stub(audit_usernames: true)
+        $logger.should_receive(:info).with(/for John Doe/)
+      end
+    end
+
+    context 'gitaly-upload-pack' do
+      let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
+      before {
+        api.stub(check_access: gitaly_check_access)
+      }
+      after { subject.exec(ssh_cmd) }
+
+      it "should process the command" do
+        subject.should_receive(:process_cmd).with(%W(git-upload-pack gitlab-ci.git))
+      end
+
+      it "should execute the command" do
+        subject.should_receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-upload-pack"), 'unix:gitaly.socket', gitaly_message)
+      end
+
+      it "should log the command execution" do
+        message = "gitlab-shell: executing git command "
+        message << "<gitaly-upload-pack unix:gitaly.socket #{gitaly_message}> "
         message << "for user with key #{key_id}."
         $logger.should_receive(:info).with(message)
       end
@@ -164,14 +194,42 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-receive-pack"), '', gitaly_message)
+        subject.should_receive(:exec_cmd).with('git-receive-pack', repo_path)
       end
 
       it "should log the command execution" do
         message = "gitlab-shell: executing git command "
-        message << "<gitaly-receive-pack  #{gitaly_message}> "
+        message << "<git-receive-pack #{repo_path}> "
         message << "for user with key #{key_id}."
         $logger.should_receive(:info).with(message)
+      end
+    end
+
+    context 'gitaly-receive-pack' do
+      let(:ssh_cmd) { "git-receive-pack gitlab-ci.git" }
+      before {
+        api.stub(check_access: gitaly_check_access)
+      }
+      after { subject.exec(ssh_cmd) }
+
+      it "should process the command" do
+        subject.should_receive(:process_cmd).with(%W(git-receive-pack gitlab-ci.git))
+      end
+
+      it "should execute the command" do
+        subject.should_receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-receive-pack"), 'unix:gitaly.socket', gitaly_message)
+      end
+
+      it "should log the command execution" do
+        message = "gitlab-shell: executing git command "
+        message << "<gitaly-receive-pack unix:gitaly.socket #{gitaly_message}> "
+        message << "for user with key #{key_id}."
+        $logger.should_receive(:info).with(message)
+      end
+
+      it "should use usernames if configured to do so" do
+        GitlabConfig.any_instance.stub(audit_usernames: true)
+        $logger.should_receive(:info).with(/for John Doe/)
       end
     end
 
@@ -268,7 +326,7 @@ describe GitlabShell do
       end
 
       it "should disallow access and log the attempt if check_access returns false status" do
-        api.stub(check_access: GitAccessStatus.new(false, 'denied', nil, nil))
+        api.stub(check_access: GitAccessStatus.new(false, 'denied', nil, nil, nil))
         message = "gitlab-shell: Access denied for git command <git-upload-pack gitlab-ci.git> "
         message << "by user with key #{key_id}."
         $logger.should_receive(:warn).with(message)

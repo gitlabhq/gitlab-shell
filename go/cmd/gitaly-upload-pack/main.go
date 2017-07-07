@@ -29,7 +29,9 @@ func main() {
 		logger.Fatal("unmarshaling request json failed", err)
 	}
 
-	if err := handler.UploadPack(os.Args[1], &request); err != nil {
+	code, err := handler.UploadPack(os.Args[1], &request)
+	if err != nil {
 		logger.Fatal("upload-pack failed", err)
 	}
+	os.Exit(int(code))
 }
