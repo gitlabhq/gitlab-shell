@@ -156,9 +156,7 @@ class GitlabShell
       'GL_REPOSITORY' => @gl_repository
     }
     if @gitaly && @gitaly.include?('token')
-      env.merge!({
-        'GITALY_TOKEN' => @gitaly['token']
-      })
+      env['GITALY_TOKEN'] = @gitaly['token']
     end
 
     if git_trace_available?
