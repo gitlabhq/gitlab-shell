@@ -133,10 +133,8 @@ class GitlabShell
     end
 
     args_string = [File.basename(executable), *args].join(' ')
-    GitlabMetrics.measure(File.basename(executable)) do
-      $logger.info "gitlab-shell: executing git command <#{args_string}> for #{log_username}."
-      exec_cmd(executable, *args)
-    end
+    $logger.info "gitlab-shell: executing git command <#{args_string}> for #{log_username}."
+    exec_cmd(executable, *args)
   end
 
   # This method is not covered by Rspec because it ends the current Ruby process.
