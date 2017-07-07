@@ -41,7 +41,7 @@ func execCommand(command string, args ...string) error {
 	return syscall.Exec(binPath, args, os.Environ())
 }
 
-func dialOpts(token string) []grpc.DialOption {
+func dialOpts() []grpc.DialOption {
 	connOpts := client.DefaultDialOpts
 	if token := os.Getenv("GITALY_TOKEN"); token != "" {
 		connOpts = append(client.DefaultDialOpts, grpc.WithPerRPCCredentials(gitalyauth.RPCCredentials(token)))

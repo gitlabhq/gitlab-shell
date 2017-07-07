@@ -14,7 +14,7 @@ func ReceivePack(gitalyAddress string, request *pb.SSHReceivePackRequest) (int32
 		return 0, fmt.Errorf("no gitaly_address given")
 	}
 
-	conn, err := client.Dial(gitalyAddress, dialOpts(os.Getenv("GITALY_TOKEN")))
+	conn, err := client.Dial(gitalyAddress, dialOpts())
 	if err != nil {
 		return 0, err
 	}
