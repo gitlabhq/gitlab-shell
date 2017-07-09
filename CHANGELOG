@@ -1,3 +1,6 @@
+v5.3.0
+  - Add ability to have git-receive-pack and git-upload-pack to go over Gitaly
+
 v5.2.1
   - Revert changes in v5.2.0
 
