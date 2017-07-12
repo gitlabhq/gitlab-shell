@@ -73,7 +73,14 @@ class GitlabNet
     url = "#{host}/merge_request_urls?project=#{URI.escape(repo_path)}&changes=#{URI.escape(changes)}"
     url += "&gl_repository=#{URI.escape(gl_repository)}" if gl_repository
     resp = get(url)
-    JSON.parse(resp.body) rescue []
+
+    if resp.code == '200'
+      JSON.parse(resp.body)
+    else
+      []
+    end
+  rescue
+    []
   end
 
   def check

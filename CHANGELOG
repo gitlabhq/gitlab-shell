@@ -1,3 +1,6 @@
+v5.3.1
+  - Gracefully handle internal API errors when getting merge request URLs
+
 v5.3.0
   - Add ability to have git-receive-pack and git-upload-pack to go over Gitaly
 
