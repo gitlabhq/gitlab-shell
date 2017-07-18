@@ -49,9 +49,103 @@ func (m *RepositoryExistsResponse) GetExists() bool {
 	return false
 }
 
+type RepackIncrementalRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+}
+
+func (m *RepackIncrementalRequest) Reset()                    { *m = RepackIncrementalRequest{} }
+func (m *RepackIncrementalRequest) String() string            { return proto.CompactTextString(m) }
+func (*RepackIncrementalRequest) ProtoMessage()               {}
+func (*RepackIncrementalRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{2} }
+
+func (m *RepackIncrementalRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+type RepackIncrementalResponse struct {
+}
+
+func (m *RepackIncrementalResponse) Reset()                    { *m = RepackIncrementalResponse{} }
+func (m *RepackIncrementalResponse) String() string            { return proto.CompactTextString(m) }
+func (*RepackIncrementalResponse) ProtoMessage()               {}
+func (*RepackIncrementalResponse) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{3} }
+
+type RepackFullRequest struct {
+	Repository   *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	CreateBitmap bool        `protobuf:"varint,2,opt,name=create_bitmap,json=createBitmap" json:"create_bitmap,omitempty"`
+}
+
+func (m *RepackFullRequest) Reset()                    { *m = RepackFullRequest{} }
+func (m *RepackFullRequest) String() string            { return proto.CompactTextString(m) }
+func (*RepackFullRequest) ProtoMessage()               {}
+func (*RepackFullRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{4} }
+
+func (m *RepackFullRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *RepackFullRequest) GetCreateBitmap() bool {
+	if m != nil {
+		return m.CreateBitmap
+	}
+	return false
+}
+
+type RepackFullResponse struct {
+}
+
+func (m *RepackFullResponse) Reset()                    { *m = RepackFullResponse{} }
+func (m *RepackFullResponse) String() string            { return proto.CompactTextString(m) }
+func (*RepackFullResponse) ProtoMessage()               {}
+func (*RepackFullResponse) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{5} }
+
+type GarbageCollectRequest struct {
+	Repository   *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	CreateBitmap bool        `protobuf:"varint,2,opt,name=create_bitmap,json=createBitmap" json:"create_bitmap,omitempty"`
+}
+
+func (m *GarbageCollectRequest) Reset()                    { *m = GarbageCollectRequest{} }
+func (m *GarbageCollectRequest) String() string            { return proto.CompactTextString(m) }
+func (*GarbageCollectRequest) ProtoMessage()               {}
+func (*GarbageCollectRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{6} }
+
+func (m *GarbageCollectRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *GarbageCollectRequest) GetCreateBitmap() bool {
+	if m != nil {
+		return m.CreateBitmap
+	}
+	return false
+}
+
+type GarbageCollectResponse struct {
+}
+
+func (m *GarbageCollectResponse) Reset()                    { *m = GarbageCollectResponse{} }
+func (m *GarbageCollectResponse) String() string            { return proto.CompactTextString(m) }
+func (*GarbageCollectResponse) ProtoMessage()               {}
+func (*GarbageCollectResponse) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{7} }
+
 func init() {
 	proto.RegisterType((*RepositoryExistsRequest)(nil), "gitaly.RepositoryExistsRequest")
 	proto.RegisterType((*RepositoryExistsResponse)(nil), "gitaly.RepositoryExistsResponse")
+	proto.RegisterType((*RepackIncrementalRequest)(nil), "gitaly.RepackIncrementalRequest")
+	proto.RegisterType((*RepackIncrementalResponse)(nil), "gitaly.RepackIncrementalResponse")
+	proto.RegisterType((*RepackFullRequest)(nil), "gitaly.RepackFullRequest")
+	proto.RegisterType((*RepackFullResponse)(nil), "gitaly.RepackFullResponse")
+	proto.RegisterType((*GarbageCollectRequest)(nil), "gitaly.GarbageCollectRequest")
+	proto.RegisterType((*GarbageCollectResponse)(nil), "gitaly.GarbageCollectResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -66,6 +160,9 @@ const _ = grpc.SupportPackageIsVersion4
 
 type RepositoryServiceClient interface {
 	Exists(ctx context.Context, in *RepositoryExistsRequest, opts ...grpc.CallOption) (*RepositoryExistsResponse, error)
+	RepackIncremental(ctx context.Context, in *RepackIncrementalRequest, opts ...grpc.CallOption) (*RepackIncrementalResponse, error)
+	RepackFull(ctx context.Context, in *RepackFullRequest, opts ...grpc.CallOption) (*RepackFullResponse, error)
+	GarbageCollect(ctx context.Context, in *GarbageCollectRequest, opts ...grpc.CallOption) (*GarbageCollectResponse, error)
 }
 
 type repositoryServiceClient struct {
@@ -85,10 +182,40 @@ func (c *repositoryServiceClient) Exists(ctx context.Context, in *RepositoryExis
 	return out, nil
 }
 
+func (c *repositoryServiceClient) RepackIncremental(ctx context.Context, in *RepackIncrementalRequest, opts ...grpc.CallOption) (*RepackIncrementalResponse, error) {
+	out := new(RepackIncrementalResponse)
+	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/RepackIncremental", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryServiceClient) RepackFull(ctx context.Context, in *RepackFullRequest, opts ...grpc.CallOption) (*RepackFullResponse, error) {
+	out := new(RepackFullResponse)
+	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/RepackFull", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryServiceClient) GarbageCollect(ctx context.Context, in *GarbageCollectRequest, opts ...grpc.CallOption) (*GarbageCollectResponse, error) {
+	out := new(GarbageCollectResponse)
+	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/GarbageCollect", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for RepositoryService service
 
 type RepositoryServiceServer interface {
 	Exists(context.Context, *RepositoryExistsRequest) (*RepositoryExistsResponse, error)
+	RepackIncremental(context.Context, *RepackIncrementalRequest) (*RepackIncrementalResponse, error)
+	RepackFull(context.Context, *RepackFullRequest) (*RepackFullResponse, error)
+	GarbageCollect(context.Context, *GarbageCollectRequest) (*GarbageCollectResponse, error)
 }
 
 func RegisterRepositoryServiceServer(s *grpc.Server, srv RepositoryServiceServer) {
@@ -113,6 +240,60 @@ func _RepositoryService_Exists_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RepositoryService_RepackIncremental_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RepackIncrementalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).RepackIncremental(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitaly.RepositoryService/RepackIncremental",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).RepackIncremental(ctx, req.(*RepackIncrementalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RepositoryService_RepackFull_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RepackFullRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).RepackFull(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitaly.RepositoryService/RepackFull",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).RepackFull(ctx, req.(*RepackFullRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RepositoryService_GarbageCollect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GarbageCollectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).GarbageCollect(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitaly.RepositoryService/GarbageCollect",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).GarbageCollect(ctx, req.(*GarbageCollectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _RepositoryService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gitaly.RepositoryService",
 	HandlerType: (*RepositoryServiceServer)(nil),
@@ -120,6 +301,18 @@ var _RepositoryService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Exists",
 			Handler:    _RepositoryService_Exists_Handler,
+		},
+		{
+			MethodName: "RepackIncremental",
+			Handler:    _RepositoryService_RepackIncremental_Handler,
+		},
+		{
+			MethodName: "RepackFull",
+			Handler:    _RepositoryService_RepackFull_Handler,
+		},
+		{
+			MethodName: "GarbageCollect",
+			Handler:    _RepositoryService_GarbageCollect_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -129,16 +322,26 @@ var _RepositoryService_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("repository-service.proto", fileDescriptor6) }
 
 var fileDescriptor6 = []byte{
-	// 172 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x28, 0x4a, 0x2d, 0xc8,
-	0x2f, 0xce, 0x2c, 0xc9, 0x2f, 0xaa, 0xd4, 0x2d, 0x4e, 0x2d, 0x2a, 0xcb, 0x4c, 0x4e, 0xd5, 0x2b,
-	0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x4b, 0xcf, 0x2c, 0x49, 0xcc, 0xa9, 0x94, 0xe2, 0x29, 0xce,
-	0x48, 0x2c, 0x4a, 0x4d, 0x81, 0x88, 0x2a, 0xf9, 0x72, 0x89, 0x07, 0xc1, 0x75, 0xb8, 0x56, 0x64,
-	0x16, 0x97, 0x14, 0x07, 0xa5, 0x16, 0x96, 0xa6, 0x16, 0x97, 0x08, 0x19, 0x71, 0x71, 0x21, 0x0c,
-	0x93, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x36, 0x12, 0xd2, 0x83, 0x98, 0xa2, 0x87, 0xd0, 0x14, 0x84,
-	0xa4, 0x4a, 0xc9, 0x88, 0x4b, 0x02, 0xd3, 0xb8, 0xe2, 0x82, 0xfc, 0xbc, 0xe2, 0x54, 0x21, 0x31,
-	0x2e, 0xb6, 0x54, 0xb0, 0x08, 0xd8, 0x2c, 0x8e, 0x20, 0x28, 0xcf, 0x28, 0x89, 0x4b, 0x10, 0xa1,
-	0x27, 0x18, 0xe2, 0x66, 0x21, 0x5f, 0x2e, 0x36, 0x88, 0x76, 0x21, 0x79, 0x4c, 0x2b, 0x51, 0xdc,
-	0x29, 0xa5, 0x80, 0x5b, 0x01, 0xc4, 0x66, 0x25, 0x86, 0x24, 0x36, 0xb0, 0x6f, 0x8d, 0x01, 0x01,
-	0x00, 0x00, 0xff, 0xff, 0x7e, 0xc1, 0x7d, 0x44, 0x1f, 0x01, 0x00, 0x00,
+	// 323 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x93, 0xcd, 0x4e, 0xeb, 0x30,
+	0x10, 0x85, 0x6f, 0xbb, 0x88, 0xae, 0x86, 0x82, 0xc4, 0x08, 0x4a, 0x6a, 0x04, 0x94, 0xb0, 0x61,
+	0x43, 0x17, 0xe1, 0x0d, 0x40, 0x05, 0xb1, 0x28, 0x12, 0x61, 0xc7, 0x06, 0xb9, 0x61, 0x54, 0x22,
+	0xdc, 0x38, 0xd8, 0x2e, 0xa2, 0x6f, 0xca, 0xe3, 0x20, 0xd9, 0xf9, 0xa5, 0x29, 0x9b, 0x8a, 0x65,
+	0xc6, 0x73, 0xbe, 0x39, 0x9e, 0xe3, 0x80, 0xaf, 0x28, 0x93, 0x3a, 0x31, 0x52, 0x2d, 0x2f, 0x34,
+	0xa9, 0x8f, 0x24, 0xa6, 0x51, 0xa6, 0xa4, 0x91, 0xe8, 0xcd, 0x12, 0xc3, 0xc5, 0x92, 0xf5, 0xf4,
+	0x2b, 0x57, 0xf4, 0xe2, 0xaa, 0xc1, 0x04, 0x0e, 0xa2, 0x52, 0x31, 0xfe, 0x4c, 0xb4, 0xd1, 0x11,
+	0xbd, 0x2f, 0x48, 0x1b, 0x0c, 0x01, 0x2a, 0x98, 0xdf, 0x19, 0x76, 0xce, 0xb7, 0x42, 0x1c, 0x39,
+	0xca, 0xa8, 0x12, 0x45, 0xb5, 0xae, 0x20, 0x04, 0x7f, 0x15, 0xa7, 0x33, 0x99, 0x6a, 0xc2, 0x3e,
+	0x78, 0x64, 0x2b, 0x96, 0xf5, 0x3f, 0xca, 0xbf, 0x82, 0x7b, 0xab, 0xe1, 0xf1, 0xdb, 0x5d, 0x1a,
+	0x2b, 0x9a, 0x53, 0x6a, 0xb8, 0xd8, 0xc4, 0xc3, 0x21, 0x0c, 0x5a, 0x78, 0xce, 0x44, 0x20, 0x60,
+	0xd7, 0x1d, 0xde, 0x2c, 0xc4, 0x26, 0x53, 0xf0, 0x0c, 0xb6, 0x63, 0x45, 0xdc, 0xd0, 0xf3, 0x34,
+	0x31, 0x73, 0x9e, 0xf9, 0x5d, 0x7b, 0xa9, 0x9e, 0x2b, 0x5e, 0xd9, 0x5a, 0xb0, 0x07, 0x58, 0x9f,
+	0x96, 0x7b, 0xc8, 0x60, 0xff, 0x96, 0xab, 0x29, 0x9f, 0xd1, 0xb5, 0x14, 0x82, 0x62, 0xf3, 0xe7,
+	0x3e, 0x7c, 0xe8, 0xff, 0x9c, 0xe8, 0xbc, 0x84, 0x5f, 0x5d, 0xbb, 0x90, 0x9c, 0xf6, 0xe8, 0x5e,
+	0x0c, 0x4e, 0xc0, 0x73, 0xe1, 0xe1, 0xc9, 0xea, 0xf8, 0xc6, 0x2b, 0x61, 0xc3, 0xf5, 0x0d, 0xf9,
+	0x75, 0xff, 0xe1, 0x53, 0xb1, 0xf4, 0x5a, 0x22, 0x58, 0x17, 0xb6, 0x86, 0xcf, 0x4e, 0x7f, 0xe9,
+	0x28, 0xd9, 0x63, 0x80, 0x6a, 0xc5, 0x38, 0x68, 0x4a, 0x6a, 0x21, 0x33, 0xd6, 0x76, 0x54, 0x62,
+	0x1e, 0x60, 0xa7, 0xb9, 0x21, 0x3c, 0x2a, 0xfa, 0x5b, 0xb3, 0x62, 0xc7, 0xeb, 0x8e, 0x0b, 0xe4,
+	0xd4, 0xb3, 0x7f, 0xd8, 0xe5, 0x77, 0x00, 0x00, 0x00, 0xff, 0xff, 0x80, 0xc6, 0x53, 0xd9, 0x93,
+	0x03, 0x00, 0x00,
 }

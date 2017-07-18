@@ -21,29 +21,37 @@
 			"revisionTime": "2017-03-31T03:19:02Z"
 		},
 		{
-			"checksumSHA1": "FPNHA80Wu9QTcNcjbuw0kdLOg5Q=",
+			"checksumSHA1": "dTfc2UncJV8JxRznLbc0itGp8SI=",
 			"path": "gitlab.com/gitlab-org/gitaly-proto/go",
-			"revision": "e73c809c669748d0f49e257a249c4c12b59f7968",
-			"revisionTime": "2017-07-07T12:10:40Z",
+			"revision": "c7790557c271c6e082c9e7cfa9e63380a7643dcf",
+			"revisionTime": "2017-07-14T18:05:40Z",
 			"tree": true,
-			"version": "v0.14.0",
-			"versionExact": "v0.14.0"
+			"version": "v0.17.0",
+			"versionExact": "v0.17.0"
 		},
 		{
 			"checksumSHA1": "dUHJbKas746n5fLzlwxHb6FOCxs=",
 			"path": "gitlab.com/gitlab-org/gitaly/auth",
-			"revision": "e4f8d3d14cc3fe673cb511fb4d0189b68a158ccd",
-			"revisionTime": "2017-06-30T12:58:40Z",
-			"version": "v0.14.0",
-			"versionExact": "v0.14.0"
+			"revision": "421641a7cd5a5d7edd8008a8089acbe9335b7f3d",
+			"revisionTime": "2017-07-18T12:50:12Z",
+			"version": "v0.21.2",
+			"versionExact": "v0.21.2"
 		},
 		{
-			"checksumSHA1": "Z/BteCm3WErBI8bBmSN9gD+3EbU=",
+			"checksumSHA1": "qlzYmQ21XX/voiKWHDWUZ3lybGQ=",
 			"path": "gitlab.com/gitlab-org/gitaly/client",
-			"revision": "e4f8d3d14cc3fe673cb511fb4d0189b68a158ccd",
-			"revisionTime": "2017-06-30T12:58:40Z",
-			"version": "v0.14.0",
-			"versionExact": "v0.14.0"
+			"revision": "421641a7cd5a5d7edd8008a8089acbe9335b7f3d",
+			"revisionTime": "2017-07-18T12:50:12Z",
+			"version": "v0.21.2",
+			"versionExact": "v0.21.2"
+		},
+		{
+			"checksumSHA1": "mifcYH0qXpoPkX5KzXoM3mterWQ=",
+			"path": "gitlab.com/gitlab-org/gitaly/streamio",
+			"revision": "421641a7cd5a5d7edd8008a8089acbe9335b7f3d",
+			"revisionTime": "2017-07-18T12:50:12Z",
+			"version": "v0.21.2",
+			"versionExact": "v0.21.2"
 		},
 		{
 			"checksumSHA1": "Y+HGqEkYM15ir+J93MEaHdyFy0c=",
@@ -230,6 +238,11 @@
 			"path": "gopkg.in/yaml.v2",
 			"revision": "cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b",
 			"revisionTime": "2017-04-07T17:21:22Z"
+		},
+		{
+			"path": "vendor/gitlab.com/gitlab-org/gitaly/streamio",
+			"revision": "v0.21.2",
+			"version": "v0.21.2"
 		}
 	],
 	"rootPath": "gitlab.com/gitlab-org/gitlab-shell/go"
