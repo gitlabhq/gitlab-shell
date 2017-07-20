@@ -3,12 +3,12 @@ package client
 import (
 	"io"
 
-	"google.golang.org/grpc"
-
-	"golang.org/x/net/context"
+	"gitlab.com/gitlab-org/gitaly/streamio"
 
 	pb "gitlab.com/gitlab-org/gitaly-proto/go"
-	pbhelper "gitlab.com/gitlab-org/gitaly-proto/go/helper"
+
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 )
 
 // ReceivePack proxies an SSH git-receive-pack (git push) session to Gitaly
@@ -16,7 +16,7 @@ func ReceivePack(ctx context.Context, conn *grpc.ClientConn, stdin io.Reader, st
 	ctx2, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	ssh := pb.NewSSHClient(conn)
+	ssh := pb.NewSSHServiceClient(conn)
 	stream, err := ssh.SSHReceivePack(ctx2)
 	if err != nil {
 		return 0, err
@@ -26,7 +26,7 @@ func ReceivePack(ctx context.Context, conn *grpc.ClientConn, stdin io.Reader, st
 		return 0, err
 	}
 
-	inWriter := pbhelper.NewSendWriter(func(p []byte) error {
+	inWriter := streamio.NewWriter(func(p []byte) error {
 		return stream.Send(&pb.SSHReceivePackRequest{Stdin: p})
 	})
 

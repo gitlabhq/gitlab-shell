@@ -1,3 +1,6 @@
+v5.4.0
+  - Update Gitaly vendoring to use new RPC calls instead of old deprecated ones
+
 v5.3.1
   - Gracefully handle internal API errors when getting merge request URLs
 

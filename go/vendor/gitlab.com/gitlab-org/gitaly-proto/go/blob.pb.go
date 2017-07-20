@@ -19,6 +19,8 @@ It is generated from these files:
 It has these top-level messages:
 	GetBlobRequest
 	GetBlobResponse
+	CommitStatsRequest
+	CommitStatsResponse
 	CommitIsAncestorRequest
 	CommitIsAncestorResponse
 	TreeEntryRequest
@@ -27,6 +29,13 @@ It has these top-level messages:
 	CommitsBetweenResponse
 	CountCommitsRequest
 	CountCommitsResponse
+	TreeEntry
+	GetTreeEntriesRequest
+	GetTreeEntriesResponse
+	ListFilesRequest
+	ListFilesResponse
+	FindCommitRequest
+	FindCommitResponse
 	CommitDiffRequest
 	CommitDiffResponse
 	CommitDeltaRequest
@@ -48,6 +57,12 @@ It has these top-level messages:
 	FindLocalBranchCommitAuthor
 	RepositoryExistsRequest
 	RepositoryExistsResponse
+	RepackIncrementalRequest
+	RepackIncrementalResponse
+	RepackFullRequest
+	RepackFullResponse
+	GarbageCollectRequest
+	GarbageCollectResponse
 	Repository
 	GitCommit
 	CommitAuthor

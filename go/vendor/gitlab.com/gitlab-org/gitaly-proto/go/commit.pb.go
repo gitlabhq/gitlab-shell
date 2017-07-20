@@ -43,7 +43,88 @@ func (x TreeEntryResponse_ObjectType) String() string {
 	return proto.EnumName(TreeEntryResponse_ObjectType_name, int32(x))
 }
 func (TreeEntryResponse_ObjectType) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor1, []int{3, 0}
+	return fileDescriptor1, []int{5, 0}
+}
+
+type TreeEntry_EntryType int32
+
+const (
+	TreeEntry_BLOB   TreeEntry_EntryType = 0
+	TreeEntry_TREE   TreeEntry_EntryType = 1
+	TreeEntry_COMMIT TreeEntry_EntryType = 3
+)
+
+var TreeEntry_EntryType_name = map[int32]string{
+	0: "BLOB",
+	1: "TREE",
+	3: "COMMIT",
+}
+var TreeEntry_EntryType_value = map[string]int32{
+	"BLOB":   0,
+	"TREE":   1,
+	"COMMIT": 3,
+}
+
+func (x TreeEntry_EntryType) String() string {
+	return proto.EnumName(TreeEntry_EntryType_name, int32(x))
+}
+func (TreeEntry_EntryType) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{10, 0} }
+
+type CommitStatsRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	Revision   []byte      `protobuf:"bytes,2,opt,name=revision,proto3" json:"revision,omitempty"`
+}
+
+func (m *CommitStatsRequest) Reset()                    { *m = CommitStatsRequest{} }
+func (m *CommitStatsRequest) String() string            { return proto.CompactTextString(m) }
+func (*CommitStatsRequest) ProtoMessage()               {}
+func (*CommitStatsRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+
+func (m *CommitStatsRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *CommitStatsRequest) GetRevision() []byte {
+	if m != nil {
+		return m.Revision
+	}
+	return nil
+}
+
+type CommitStatsResponse struct {
+	// OID is the commit. Empty means not found
+	Oid       string `protobuf:"bytes,1,opt,name=oid" json:"oid,omitempty"`
+	Additions int32  `protobuf:"varint,2,opt,name=additions" json:"additions,omitempty"`
+	Deletions int32  `protobuf:"varint,3,opt,name=deletions" json:"deletions,omitempty"`
+}
+
+func (m *CommitStatsResponse) Reset()                    { *m = CommitStatsResponse{} }
+func (m *CommitStatsResponse) String() string            { return proto.CompactTextString(m) }
+func (*CommitStatsResponse) ProtoMessage()               {}
+func (*CommitStatsResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+
+func (m *CommitStatsResponse) GetOid() string {
+	if m != nil {
+		return m.Oid
+	}
+	return ""
+}
+
+func (m *CommitStatsResponse) GetAdditions() int32 {
+	if m != nil {
+		return m.Additions
+	}
+	return 0
+}
+
+func (m *CommitStatsResponse) GetDeletions() int32 {
+	if m != nil {
+		return m.Deletions
+	}
+	return 0
 }
 
 type CommitIsAncestorRequest struct {
@@ -55,7 +136,7 @@ type CommitIsAncestorRequest struct {
 func (m *CommitIsAncestorRequest) Reset()                    { *m = CommitIsAncestorRequest{} }
 func (m *CommitIsAncestorRequest) String() string            { return proto.CompactTextString(m) }
 func (*CommitIsAncestorRequest) ProtoMessage()               {}
-func (*CommitIsAncestorRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
+func (*CommitIsAncestorRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
 
 func (m *CommitIsAncestorRequest) GetRepository() *Repository {
 	if m != nil {
@@ -85,7 +166,7 @@ type CommitIsAncestorResponse struct {
 func (m *CommitIsAncestorResponse) Reset()                    { *m = CommitIsAncestorResponse{} }
 func (m *CommitIsAncestorResponse) String() string            { return proto.CompactTextString(m) }
 func (*CommitIsAncestorResponse) ProtoMessage()               {}
-func (*CommitIsAncestorResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
+func (*CommitIsAncestorResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
 
 func (m *CommitIsAncestorResponse) GetValue() bool {
 	if m != nil {
@@ -106,7 +187,7 @@ type TreeEntryRequest struct {
 func (m *TreeEntryRequest) Reset()                    { *m = TreeEntryRequest{} }
 func (m *TreeEntryRequest) String() string            { return proto.CompactTextString(m) }
 func (*TreeEntryRequest) ProtoMessage()               {}
-func (*TreeEntryRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
+func (*TreeEntryRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
 
 func (m *TreeEntryRequest) GetRepository() *Repository {
 	if m != nil {
@@ -150,7 +231,7 @@ type TreeEntryResponse struct {
 func (m *TreeEntryResponse) Reset()                    { *m = TreeEntryResponse{} }
 func (m *TreeEntryResponse) String() string            { return proto.CompactTextString(m) }
 func (*TreeEntryResponse) ProtoMessage()               {}
-func (*TreeEntryResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
+func (*TreeEntryResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
 
 func (m *TreeEntryResponse) GetType() TreeEntryResponse_ObjectType {
 	if m != nil {
@@ -196,7 +277,7 @@ type CommitsBetweenRequest struct {
 func (m *CommitsBetweenRequest) Reset()                    { *m = CommitsBetweenRequest{} }
 func (m *CommitsBetweenRequest) String() string            { return proto.CompactTextString(m) }
 func (*CommitsBetweenRequest) ProtoMessage()               {}
-func (*CommitsBetweenRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
+func (*CommitsBetweenRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{6} }
 
 func (m *CommitsBetweenRequest) GetRepository() *Repository {
 	if m != nil {
@@ -226,7 +307,7 @@ type CommitsBetweenResponse struct {
 func (m *CommitsBetweenResponse) Reset()                    { *m = CommitsBetweenResponse{} }
 func (m *CommitsBetweenResponse) String() string            { return proto.CompactTextString(m) }
 func (*CommitsBetweenResponse) ProtoMessage()               {}
-func (*CommitsBetweenResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
+func (*CommitsBetweenResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{7} }
 
 func (m *CommitsBetweenResponse) GetCommits() []*GitCommit {
 	if m != nil {
@@ -243,7 +324,7 @@ type CountCommitsRequest struct {
 func (m *CountCommitsRequest) Reset()                    { *m = CountCommitsRequest{} }
 func (m *CountCommitsRequest) String() string            { return proto.CompactTextString(m) }
 func (*CountCommitsRequest) ProtoMessage()               {}
-func (*CountCommitsRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{6} }
+func (*CountCommitsRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{8} }
 
 func (m *CountCommitsRequest) GetRepository() *Repository {
 	if m != nil {
@@ -266,7 +347,7 @@ type CountCommitsResponse struct {
 func (m *CountCommitsResponse) Reset()                    { *m = CountCommitsResponse{} }
 func (m *CountCommitsResponse) String() string            { return proto.CompactTextString(m) }
 func (*CountCommitsResponse) ProtoMessage()               {}
-func (*CountCommitsResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{7} }
+func (*CountCommitsResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{9} }
 
 func (m *CountCommitsResponse) GetCount() int32 {
 	if m != nil {
@@ -275,7 +356,201 @@ func (m *CountCommitsResponse) GetCount() int32 {
 	return 0
 }
 
+type TreeEntry struct {
+	// OID of the object this tree entry points to
+	Oid string `protobuf:"bytes,1,opt,name=oid" json:"oid,omitempty"`
+	// OID of the tree attached to commit_oid
+	RootOid string `protobuf:"bytes,2,opt,name=root_oid,json=rootOid" json:"root_oid,omitempty"`
+	// Path relative to repository root
+	Path []byte              `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
+	Type TreeEntry_EntryType `protobuf:"varint,4,opt,name=type,enum=gitaly.TreeEntry_EntryType" json:"type,omitempty"`
+	// File mode e.g. 0644
+	Mode int32 `protobuf:"varint,5,opt,name=mode" json:"mode,omitempty"`
+	// The commit object via which this entry was retrieved
+	CommitOid string `protobuf:"bytes,6,opt,name=commit_oid,json=commitOid" json:"commit_oid,omitempty"`
+}
+
+func (m *TreeEntry) Reset()                    { *m = TreeEntry{} }
+func (m *TreeEntry) String() string            { return proto.CompactTextString(m) }
+func (*TreeEntry) ProtoMessage()               {}
+func (*TreeEntry) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{10} }
+
+func (m *TreeEntry) GetOid() string {
+	if m != nil {
+		return m.Oid
+	}
+	return ""
+}
+
+func (m *TreeEntry) GetRootOid() string {
+	if m != nil {
+		return m.RootOid
+	}
+	return ""
+}
+
+func (m *TreeEntry) GetPath() []byte {
+	if m != nil {
+		return m.Path
+	}
+	return nil
+}
+
+func (m *TreeEntry) GetType() TreeEntry_EntryType {
+	if m != nil {
+		return m.Type
+	}
+	return TreeEntry_BLOB
+}
+
+func (m *TreeEntry) GetMode() int32 {
+	if m != nil {
+		return m.Mode
+	}
+	return 0
+}
+
+func (m *TreeEntry) GetCommitOid() string {
+	if m != nil {
+		return m.CommitOid
+	}
+	return ""
+}
+
+type GetTreeEntriesRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	Revision   []byte      `protobuf:"bytes,2,opt,name=revision,proto3" json:"revision,omitempty"`
+	Path       []byte      `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
+}
+
+func (m *GetTreeEntriesRequest) Reset()                    { *m = GetTreeEntriesRequest{} }
+func (m *GetTreeEntriesRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetTreeEntriesRequest) ProtoMessage()               {}
+func (*GetTreeEntriesRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{11} }
+
+func (m *GetTreeEntriesRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *GetTreeEntriesRequest) GetRevision() []byte {
+	if m != nil {
+		return m.Revision
+	}
+	return nil
+}
+
+func (m *GetTreeEntriesRequest) GetPath() []byte {
+	if m != nil {
+		return m.Path
+	}
+	return nil
+}
+
+type GetTreeEntriesResponse struct {
+	Entries []*TreeEntry `protobuf:"bytes,1,rep,name=entries" json:"entries,omitempty"`
+}
+
+func (m *GetTreeEntriesResponse) Reset()                    { *m = GetTreeEntriesResponse{} }
+func (m *GetTreeEntriesResponse) String() string            { return proto.CompactTextString(m) }
+func (*GetTreeEntriesResponse) ProtoMessage()               {}
+func (*GetTreeEntriesResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{12} }
+
+func (m *GetTreeEntriesResponse) GetEntries() []*TreeEntry {
+	if m != nil {
+		return m.Entries
+	}
+	return nil
+}
+
+type ListFilesRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	Revision   []byte      `protobuf:"bytes,2,opt,name=revision,proto3" json:"revision,omitempty"`
+}
+
+func (m *ListFilesRequest) Reset()                    { *m = ListFilesRequest{} }
+func (m *ListFilesRequest) String() string            { return proto.CompactTextString(m) }
+func (*ListFilesRequest) ProtoMessage()               {}
+func (*ListFilesRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{13} }
+
+func (m *ListFilesRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *ListFilesRequest) GetRevision() []byte {
+	if m != nil {
+		return m.Revision
+	}
+	return nil
+}
+
+// A single 'page' of the paginated response
+type ListFilesResponse struct {
+	// Remember to force encoding utf-8 on the client side
+	Paths [][]byte `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
+}
+
+func (m *ListFilesResponse) Reset()                    { *m = ListFilesResponse{} }
+func (m *ListFilesResponse) String() string            { return proto.CompactTextString(m) }
+func (*ListFilesResponse) ProtoMessage()               {}
+func (*ListFilesResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{14} }
+
+func (m *ListFilesResponse) GetPaths() [][]byte {
+	if m != nil {
+		return m.Paths
+	}
+	return nil
+}
+
+type FindCommitRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	Revision   []byte      `protobuf:"bytes,2,opt,name=revision,proto3" json:"revision,omitempty"`
+}
+
+func (m *FindCommitRequest) Reset()                    { *m = FindCommitRequest{} }
+func (m *FindCommitRequest) String() string            { return proto.CompactTextString(m) }
+func (*FindCommitRequest) ProtoMessage()               {}
+func (*FindCommitRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{15} }
+
+func (m *FindCommitRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *FindCommitRequest) GetRevision() []byte {
+	if m != nil {
+		return m.Revision
+	}
+	return nil
+}
+
+type FindCommitResponse struct {
+	// commit is nil when the commit was not found
+	Commit *GitCommit `protobuf:"bytes,1,opt,name=commit" json:"commit,omitempty"`
+}
+
+func (m *FindCommitResponse) Reset()                    { *m = FindCommitResponse{} }
+func (m *FindCommitResponse) String() string            { return proto.CompactTextString(m) }
+func (*FindCommitResponse) ProtoMessage()               {}
+func (*FindCommitResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{16} }
+
+func (m *FindCommitResponse) GetCommit() *GitCommit {
+	if m != nil {
+		return m.Commit
+	}
+	return nil
+}
+
 func init() {
+	proto.RegisterType((*CommitStatsRequest)(nil), "gitaly.CommitStatsRequest")
+	proto.RegisterType((*CommitStatsResponse)(nil), "gitaly.CommitStatsResponse")
 	proto.RegisterType((*CommitIsAncestorRequest)(nil), "gitaly.CommitIsAncestorRequest")
 	proto.RegisterType((*CommitIsAncestorResponse)(nil), "gitaly.CommitIsAncestorResponse")
 	proto.RegisterType((*TreeEntryRequest)(nil), "gitaly.TreeEntryRequest")
@@ -284,7 +559,15 @@ func init() {
 	proto.RegisterType((*CommitsBetweenResponse)(nil), "gitaly.CommitsBetweenResponse")
 	proto.RegisterType((*CountCommitsRequest)(nil), "gitaly.CountCommitsRequest")
 	proto.RegisterType((*CountCommitsResponse)(nil), "gitaly.CountCommitsResponse")
+	proto.RegisterType((*TreeEntry)(nil), "gitaly.TreeEntry")
+	proto.RegisterType((*GetTreeEntriesRequest)(nil), "gitaly.GetTreeEntriesRequest")
+	proto.RegisterType((*GetTreeEntriesResponse)(nil), "gitaly.GetTreeEntriesResponse")
+	proto.RegisterType((*ListFilesRequest)(nil), "gitaly.ListFilesRequest")
+	proto.RegisterType((*ListFilesResponse)(nil), "gitaly.ListFilesResponse")
+	proto.RegisterType((*FindCommitRequest)(nil), "gitaly.FindCommitRequest")
+	proto.RegisterType((*FindCommitResponse)(nil), "gitaly.FindCommitResponse")
 	proto.RegisterEnum("gitaly.TreeEntryResponse_ObjectType", TreeEntryResponse_ObjectType_name, TreeEntryResponse_ObjectType_value)
+	proto.RegisterEnum("gitaly.TreeEntry_EntryType", TreeEntry_EntryType_name, TreeEntry_EntryType_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -302,6 +585,10 @@ type CommitServiceClient interface {
 	TreeEntry(ctx context.Context, in *TreeEntryRequest, opts ...grpc.CallOption) (CommitService_TreeEntryClient, error)
 	CommitsBetween(ctx context.Context, in *CommitsBetweenRequest, opts ...grpc.CallOption) (CommitService_CommitsBetweenClient, error)
 	CountCommits(ctx context.Context, in *CountCommitsRequest, opts ...grpc.CallOption) (*CountCommitsResponse, error)
+	GetTreeEntries(ctx context.Context, in *GetTreeEntriesRequest, opts ...grpc.CallOption) (CommitService_GetTreeEntriesClient, error)
+	ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (CommitService_ListFilesClient, error)
+	FindCommit(ctx context.Context, in *FindCommitRequest, opts ...grpc.CallOption) (*FindCommitResponse, error)
+	CommitStats(ctx context.Context, in *CommitStatsRequest, opts ...grpc.CallOption) (*CommitStatsResponse, error)
 }
 
 type commitServiceClient struct {
@@ -394,6 +681,88 @@ func (c *commitServiceClient) CountCommits(ctx context.Context, in *CountCommits
 	return out, nil
 }
 
+func (c *commitServiceClient) GetTreeEntries(ctx context.Context, in *GetTreeEntriesRequest, opts ...grpc.CallOption) (CommitService_GetTreeEntriesClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_CommitService_serviceDesc.Streams[2], c.cc, "/gitaly.CommitService/GetTreeEntries", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &commitServiceGetTreeEntriesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type CommitService_GetTreeEntriesClient interface {
+	Recv() (*GetTreeEntriesResponse, error)
+	grpc.ClientStream
+}
+
+type commitServiceGetTreeEntriesClient struct {
+	grpc.ClientStream
+}
+
+func (x *commitServiceGetTreeEntriesClient) Recv() (*GetTreeEntriesResponse, error) {
+	m := new(GetTreeEntriesResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *commitServiceClient) ListFiles(ctx context.Context, in *ListFilesRequest, opts ...grpc.CallOption) (CommitService_ListFilesClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_CommitService_serviceDesc.Streams[3], c.cc, "/gitaly.CommitService/ListFiles", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &commitServiceListFilesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type CommitService_ListFilesClient interface {
+	Recv() (*ListFilesResponse, error)
+	grpc.ClientStream
+}
+
+type commitServiceListFilesClient struct {
+	grpc.ClientStream
+}
+
+func (x *commitServiceListFilesClient) Recv() (*ListFilesResponse, error) {
+	m := new(ListFilesResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *commitServiceClient) FindCommit(ctx context.Context, in *FindCommitRequest, opts ...grpc.CallOption) (*FindCommitResponse, error) {
+	out := new(FindCommitResponse)
+	err := grpc.Invoke(ctx, "/gitaly.CommitService/FindCommit", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *commitServiceClient) CommitStats(ctx context.Context, in *CommitStatsRequest, opts ...grpc.CallOption) (*CommitStatsResponse, error) {
+	out := new(CommitStatsResponse)
+	err := grpc.Invoke(ctx, "/gitaly.CommitService/CommitStats", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for CommitService service
 
 type CommitServiceServer interface {
@@ -401,6 +770,10 @@ type CommitServiceServer interface {
 	TreeEntry(*TreeEntryRequest, CommitService_TreeEntryServer) error
 	CommitsBetween(*CommitsBetweenRequest, CommitService_CommitsBetweenServer) error
 	CountCommits(context.Context, *CountCommitsRequest) (*CountCommitsResponse, error)
+	GetTreeEntries(*GetTreeEntriesRequest, CommitService_GetTreeEntriesServer) error
+	ListFiles(*ListFilesRequest, CommitService_ListFilesServer) error
+	FindCommit(context.Context, *FindCommitRequest) (*FindCommitResponse, error)
+	CommitStats(context.Context, *CommitStatsRequest) (*CommitStatsResponse, error)
 }
 
 func RegisterCommitServiceServer(s *grpc.Server, srv CommitServiceServer) {
@@ -485,6 +858,84 @@ func _CommitService_CountCommits_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CommitService_GetTreeEntries_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetTreeEntriesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CommitServiceServer).GetTreeEntries(m, &commitServiceGetTreeEntriesServer{stream})
+}
+
+type CommitService_GetTreeEntriesServer interface {
+	Send(*GetTreeEntriesResponse) error
+	grpc.ServerStream
+}
+
+type commitServiceGetTreeEntriesServer struct {
+	grpc.ServerStream
+}
+
+func (x *commitServiceGetTreeEntriesServer) Send(m *GetTreeEntriesResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _CommitService_ListFiles_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ListFilesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CommitServiceServer).ListFiles(m, &commitServiceListFilesServer{stream})
+}
+
+type CommitService_ListFilesServer interface {
+	Send(*ListFilesResponse) error
+	grpc.ServerStream
+}
+
+type commitServiceListFilesServer struct {
+	grpc.ServerStream
+}
+
+func (x *commitServiceListFilesServer) Send(m *ListFilesResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _CommitService_FindCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindCommitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommitServiceServer).FindCommit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitaly.CommitService/FindCommit",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommitServiceServer).FindCommit(ctx, req.(*FindCommitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CommitService_CommitStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CommitStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CommitServiceServer).CommitStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitaly.CommitService/CommitStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CommitServiceServer).CommitStats(ctx, req.(*CommitStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _CommitService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gitaly.CommitService",
 	HandlerType: (*CommitServiceServer)(nil),
@@ -496,6 +947,14 @@ var _CommitService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CountCommits",
 			Handler:    _CommitService_CountCommits_Handler,
+		},
+		{
+			MethodName: "FindCommit",
+			Handler:    _CommitService_FindCommit_Handler,
+		},
+		{
+			MethodName: "CommitStats",
+			Handler:    _CommitService_CommitStats_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -509,6 +968,16 @@ var _CommitService_serviceDesc = grpc.ServiceDesc{
 			Handler:       _CommitService_CommitsBetween_Handler,
 			ServerStreams: true,
 		},
+		{
+			StreamName:    "GetTreeEntries",
+			Handler:       _CommitService_GetTreeEntries_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ListFiles",
+			Handler:       _CommitService_ListFiles_Handler,
+			ServerStreams: true,
+		},
 	},
 	Metadata: "commit.proto",
 }
@@ -516,39 +985,56 @@ var _CommitService_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("commit.proto", fileDescriptor1) }
 
 var fileDescriptor1 = []byte{
-	// 532 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x94, 0x5b, 0x6b, 0x13, 0x41,
-	0x14, 0xc7, 0xbb, 0xd9, 0xdc, 0x7a, 0x12, 0xc3, 0xf6, 0x58, 0x75, 0x1b, 0x2f, 0x0d, 0x83, 0x0f,
-	0x01, 0x25, 0x94, 0x88, 0xe0, 0x6b, 0x13, 0x43, 0x09, 0x5a, 0x02, 0xd3, 0x80, 0x8f, 0xb2, 0xdd,
-	0x1d, 0xcd, 0x48, 0xb2, 0xb3, 0xce, 0x4c, 0x22, 0xf1, 0x1b, 0x08, 0x7e, 0x38, 0xf1, 0x13, 0xc9,
-	0xce, 0xec, 0xe6, 0xda, 0x3c, 0x15, 0xdf, 0xce, 0x6d, 0xce, 0xf9, 0x71, 0xce, 0x7f, 0x17, 0xea,
-	0xa1, 0x98, 0xcd, 0xb8, 0xee, 0x24, 0x52, 0x68, 0x81, 0xe5, 0xaf, 0x5c, 0x07, 0xd3, 0x65, 0xb3,
-	0xae, 0x26, 0x81, 0x64, 0x91, 0x8d, 0x92, 0x5f, 0x0e, 0x3c, 0xe9, 0x9b, 0xb2, 0xa1, 0xba, 0x8c,
-	0x43, 0xa6, 0xb4, 0x90, 0x94, 0x7d, 0x9f, 0x33, 0xa5, 0xb1, 0x0b, 0x20, 0x59, 0x22, 0x14, 0xd7,
-	0x42, 0x2e, 0x7d, 0xa7, 0xe5, 0xb4, 0x6b, 0x5d, 0xec, 0xd8, 0x36, 0x1d, 0xba, 0xca, 0xd0, 0x8d,
-	0x2a, 0x3c, 0x87, 0x5a, 0x90, 0xb5, 0xf9, 0xcc, 0x23, 0xbf, 0xd0, 0x72, 0xda, 0xc7, 0x14, 0xf2,
-	0xd0, 0x30, 0xc2, 0x33, 0xa8, 0x86, 0x13, 0x3e, 0x8d, 0xd2, 0xac, 0x6b, 0xb2, 0x15, 0xe3, 0x0f,
-	0x23, 0x72, 0x01, 0xfe, 0x3e, 0x8a, 0x4a, 0x44, 0xac, 0x18, 0x9e, 0x42, 0x69, 0x11, 0x4c, 0xe7,
-	0xcc, 0x60, 0x54, 0xa9, 0x75, 0xc8, 0x6f, 0x07, 0xbc, 0xb1, 0x64, 0x6c, 0x10, 0x6b, 0xb9, 0xbc,
-	0x0f, 0x76, 0x13, 0xaa, 0x92, 0x2d, 0xb8, 0xe2, 0x22, 0x36, 0xcc, 0x75, 0xba, 0xf2, 0x11, 0xa1,
-	0x98, 0x04, 0x7a, 0x62, 0x68, 0xeb, 0xd4, 0xd8, 0x29, 0xce, 0x94, 0xcf, 0xb8, 0xf6, 0x8b, 0x2d,
-	0xa7, 0xed, 0x52, 0xeb, 0x90, 0xbf, 0x0e, 0x9c, 0x6c, 0xe0, 0x64, 0xe8, 0xef, 0xa0, 0xa8, 0x97,
-	0x89, 0x25, 0x6f, 0x74, 0x5f, 0xe6, 0x24, 0x7b, 0x85, 0x9d, 0xd1, 0xed, 0x37, 0x16, 0xea, 0xf1,
-	0x32, 0x61, 0xd4, 0xbc, 0x40, 0x0f, 0x5c, 0xb1, 0x5a, 0x62, 0x6a, 0xa6, 0x2c, 0x8a, 0xff, 0x64,
-	0x86, 0xc5, 0xa5, 0xc6, 0x4e, 0x63, 0x33, 0x11, 0x31, 0x83, 0x52, 0xa2, 0xc6, 0x4e, 0x63, 0x51,
-	0xa0, 0x03, 0xbf, 0x64, 0x99, 0x53, 0x9b, 0xbc, 0x05, 0x58, 0x4f, 0x40, 0x80, 0x72, 0x7f, 0x74,
-	0x7d, 0x3d, 0x1c, 0x7b, 0x47, 0x58, 0x85, 0x62, 0xef, 0xe3, 0xa8, 0xe7, 0x39, 0xa9, 0x35, 0xa6,
-	0x83, 0x81, 0x57, 0xc0, 0x0a, 0xb8, 0xe3, 0xcb, 0x2b, 0xcf, 0x25, 0x02, 0x1e, 0xd9, 0xab, 0xa8,
-	0x1e, 0xd3, 0x3f, 0x18, 0x8b, 0xef, 0xb3, 0x67, 0x84, 0xe2, 0x17, 0x29, 0x66, 0xd9, 0x8e, 0x8d,
-	0x8d, 0x0d, 0x28, 0x68, 0x91, 0x6d, 0xb7, 0xa0, 0x05, 0x19, 0xc0, 0xe3, 0xdd, 0x81, 0xd9, 0x26,
-	0x5f, 0x41, 0xc5, 0x4a, 0x5a, 0xf9, 0x4e, 0xcb, 0x6d, 0xd7, 0xba, 0x27, 0xf9, 0xb8, 0x2b, 0xae,
-	0xed, 0x1b, 0x9a, 0x57, 0x10, 0x06, 0x0f, 0xfb, 0x62, 0x1e, 0x67, 0x71, 0xf5, 0x9f, 0xd4, 0x41,
-	0x5e, 0xc3, 0xe9, 0xf6, 0x98, 0xb5, 0x60, 0xc3, 0x34, 0x6e, 0x46, 0x94, 0xa8, 0x75, 0xba, 0x7f,
-	0x0a, 0xf0, 0xc0, 0x56, 0xde, 0x30, 0xb9, 0xe0, 0x21, 0xc3, 0x4f, 0xe0, 0xed, 0x8a, 0x1e, 0xcf,
-	0x73, 0x9e, 0x03, 0x5f, 0x66, 0xb3, 0x75, 0xb8, 0xc0, 0x8e, 0x27, 0x47, 0xf8, 0x1e, 0x8e, 0x57,
-	0x12, 0x43, 0xff, 0x0e, 0xd5, 0xd9, 0x56, 0x67, 0x07, 0xf5, 0x48, 0x8e, 0x2e, 0x1c, 0xbc, 0x81,
-	0xc6, 0xf6, 0x31, 0xf0, 0xf9, 0xf6, 0xec, 0x1d, 0x55, 0x34, 0x5f, 0x1c, 0x4a, 0x6f, 0x34, 0xfd,
-	0x00, 0xf5, 0xcd, 0x9d, 0xe1, 0xd3, 0xf5, 0x9b, 0xbd, 0x83, 0x35, 0x9f, 0xdd, 0x9d, 0xcc, 0xdb,
-	0xdd, 0x96, 0xcd, 0x8f, 0xec, 0xcd, 0xbf, 0x00, 0x00, 0x00, 0xff, 0xff, 0x64, 0xef, 0x2c, 0x85,
-	0xee, 0x04, 0x00, 0x00,
+	// 807 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xbc, 0x56, 0xdd, 0x6e, 0xda, 0x4a,
+	0x10, 0xc6, 0xd8, 0xfc, 0x0d, 0x1c, 0x64, 0xf6, 0x24, 0xe7, 0x10, 0x27, 0x39, 0x41, 0xab, 0x73,
+	0x41, 0x94, 0x8a, 0x46, 0x54, 0x95, 0x7a, 0x57, 0xe5, 0x87, 0xa4, 0xa8, 0x89, 0x90, 0x36, 0x48,
+	0xbd, 0x8c, 0x1c, 0x7b, 0xdb, 0x6c, 0x05, 0x5e, 0x6a, 0x6f, 0x52, 0xd1, 0x3e, 0x41, 0xa5, 0x3e,
+	0x5d, 0xef, 0xfb, 0x26, 0xbd, 0xa8, 0xbc, 0xeb, 0x3f, 0xc0, 0x5c, 0x45, 0xf4, 0x06, 0xed, 0xce,
+	0x8c, 0xe7, 0xfb, 0x76, 0xf6, 0x9b, 0x61, 0xa1, 0xe1, 0xf0, 0xe9, 0x94, 0x89, 0xde, 0xcc, 0xe7,
+	0x82, 0xa3, 0xf2, 0x07, 0x26, 0xec, 0xc9, 0xdc, 0x6a, 0x04, 0xf7, 0xb6, 0x4f, 0x5d, 0x65, 0xc5,
+	0x2e, 0xa0, 0x33, 0x19, 0x75, 0x23, 0x6c, 0x11, 0x10, 0xfa, 0xe9, 0x81, 0x06, 0x02, 0xf5, 0x01,
+	0x7c, 0x3a, 0xe3, 0x01, 0x13, 0xdc, 0x9f, 0xb7, 0xb5, 0x8e, 0xd6, 0xad, 0xf7, 0x51, 0x4f, 0x25,
+	0xe8, 0x91, 0xc4, 0x43, 0x32, 0x51, 0xc8, 0x82, 0xaa, 0x4f, 0x1f, 0x59, 0xc0, 0xb8, 0xd7, 0x2e,
+	0x76, 0xb4, 0x6e, 0x83, 0x24, 0x7b, 0xec, 0xc0, 0xdf, 0x0b, 0x28, 0xc1, 0x8c, 0x7b, 0x01, 0x45,
+	0x26, 0xe8, 0x9c, 0xb9, 0x32, 0x7f, 0x8d, 0x84, 0x4b, 0xb4, 0x07, 0x35, 0xdb, 0x75, 0x99, 0x60,
+	0xdc, 0x0b, 0x64, 0x96, 0x12, 0x49, 0x0d, 0xa1, 0xd7, 0xa5, 0x13, 0xaa, 0xbc, 0xba, 0xf2, 0x26,
+	0x06, 0xfc, 0x4d, 0x83, 0x7f, 0x15, 0xca, 0x30, 0x38, 0xf1, 0x1c, 0x1a, 0x08, 0xee, 0x3f, 0xe5,
+	0x40, 0x07, 0x50, 0xb7, 0xa3, 0x34, 0xb7, 0xcc, 0x95, 0x6c, 0x6a, 0x04, 0x62, 0xd3, 0xd0, 0x45,
+	0x3b, 0x50, 0x75, 0xee, 0xd9, 0xc4, 0x0d, 0xbd, 0xba, 0xf4, 0x56, 0xe4, 0x7e, 0xe8, 0xe2, 0x63,
+	0x68, 0xaf, 0x52, 0x89, 0x4e, 0xbd, 0x05, 0xa5, 0x47, 0x7b, 0xf2, 0x40, 0x25, 0x8d, 0x2a, 0x51,
+	0x1b, 0xfc, 0x5d, 0x03, 0x73, 0xec, 0x53, 0x3a, 0xf0, 0x84, 0x3f, 0xdf, 0xd0, 0x3d, 0x20, 0x04,
+	0xc6, 0xcc, 0x16, 0xf7, 0x92, 0x6d, 0x83, 0xc8, 0x75, 0x48, 0x67, 0xc2, 0xa6, 0x4c, 0xb4, 0x8d,
+	0x8e, 0xd6, 0xd5, 0x89, 0xda, 0xe0, 0x1f, 0x1a, 0xb4, 0x32, 0x74, 0x22, 0xea, 0xaf, 0xc0, 0x10,
+	0xf3, 0x99, 0x62, 0xde, 0xec, 0xff, 0x1f, 0x33, 0x59, 0x09, 0xec, 0x8d, 0xee, 0x3e, 0x52, 0x47,
+	0x8c, 0xe7, 0x33, 0x4a, 0xe4, 0x17, 0xf1, 0x55, 0x17, 0xd3, 0xab, 0x46, 0x60, 0x04, 0xec, 0x0b,
+	0x95, 0x5c, 0x74, 0x22, 0xd7, 0xa1, 0x6d, 0xca, 0x5d, 0x2a, 0xa9, 0x94, 0x88, 0x5c, 0x87, 0x36,
+	0xd7, 0x16, 0x76, 0xbb, 0xa4, 0x38, 0x87, 0x6b, 0xfc, 0x12, 0x20, 0x45, 0x40, 0x00, 0xe5, 0xb3,
+	0xd1, 0xf5, 0xf5, 0x70, 0x6c, 0x16, 0x50, 0x15, 0x8c, 0xd3, 0xab, 0xd1, 0xa9, 0xa9, 0x85, 0xab,
+	0x31, 0x19, 0x0c, 0xcc, 0x22, 0xaa, 0x80, 0x3e, 0x3e, 0xb9, 0x34, 0x75, 0xcc, 0x61, 0x5b, 0xdd,
+	0x4a, 0x70, 0x4a, 0xc5, 0x67, 0x4a, 0xbd, 0xa7, 0xd4, 0x19, 0x81, 0xf1, 0xde, 0xe7, 0xd3, 0xa8,
+	0xc6, 0x72, 0x8d, 0x9a, 0x50, 0x14, 0x3c, 0xaa, 0x6e, 0x51, 0x70, 0x3c, 0x80, 0x7f, 0x96, 0x01,
+	0xa3, 0x4a, 0x1e, 0x41, 0x45, 0x75, 0x67, 0xd0, 0xd6, 0x3a, 0x7a, 0xb7, 0xde, 0x6f, 0xc5, 0x70,
+	0x97, 0x4c, 0xa8, 0x6f, 0x48, 0x1c, 0x81, 0x69, 0xd8, 0x3e, 0x0f, 0x5e, 0x64, 0xdf, 0x58, 0x97,
+	0x3e, 0x83, 0xad, 0x45, 0x98, 0x54, 0xb0, 0x4e, 0x68, 0x97, 0x10, 0x25, 0xa2, 0x36, 0xf8, 0xa7,
+	0x06, 0xb5, 0xe4, 0xe2, 0x73, 0x5a, 0x79, 0x07, 0xaa, 0x3e, 0xe7, 0xe2, 0x36, 0xbd, 0xf6, 0x4a,
+	0xb8, 0x1f, 0xa9, 0xab, 0x5f, 0x91, 0xe1, 0xf3, 0x48, 0x5a, 0x86, 0x94, 0xd6, 0xee, 0x8a, 0xb4,
+	0x7a, 0xf2, 0x37, 0xa3, 0xa8, 0x58, 0x2b, 0xa5, 0x8c, 0x56, 0xf6, 0x01, 0x54, 0xcd, 0x24, 0x6a,
+	0x59, 0xa2, 0xd6, 0x94, 0x65, 0xc4, 0x5c, 0x7c, 0x04, 0xb5, 0x24, 0x4b, 0xa2, 0x94, 0x42, 0xa2,
+	0x14, 0x2d, 0xa3, 0x24, 0x1d, 0x7f, 0x85, 0xed, 0x4b, 0x2a, 0x62, 0x7c, 0x46, 0x83, 0x3f, 0xd8,
+	0x94, 0xa1, 0x70, 0x96, 0xc1, 0x53, 0xe1, 0x50, 0x65, 0x5a, 0x16, 0x4e, 0xda, 0x85, 0x71, 0x04,
+	0xbe, 0x03, 0xf3, 0x8a, 0x05, 0xe2, 0x82, 0x4d, 0x36, 0x46, 0x1f, 0x1f, 0x42, 0x2b, 0x83, 0x91,
+	0x4a, 0x26, 0x3c, 0x87, 0xe2, 0xd8, 0x20, 0x6a, 0x83, 0x1d, 0x68, 0x5d, 0x30, 0xcf, 0x8d, 0xe4,
+	0xbd, 0x21, 0x3e, 0xaf, 0x01, 0x65, 0x41, 0x22, 0x42, 0x87, 0x50, 0x56, 0x3a, 0x88, 0x10, 0x72,
+	0xda, 0x2d, 0x0a, 0xe8, 0xff, 0x32, 0xe0, 0xaf, 0xe8, 0xdf, 0x8a, 0xfa, 0x8f, 0xcc, 0xa1, 0xe8,
+	0x1d, 0x98, 0xcb, 0xd3, 0x1c, 0x1d, 0xc4, 0x09, 0xd6, 0xfc, 0xe5, 0x58, 0x9d, 0xf5, 0x01, 0x8a,
+	0x13, 0x2e, 0xa0, 0xf3, 0x6c, 0x0b, 0xb5, 0x73, 0xc6, 0xa9, 0x4a, 0xb5, 0xb3, 0x76, 0xd0, 0xe2,
+	0xc2, 0xb1, 0x86, 0x6e, 0xa0, 0xb9, 0x38, 0x65, 0xd0, 0xfe, 0x22, 0xf6, 0xd2, 0xb8, 0xb3, 0xfe,
+	0x5b, 0xe7, 0xce, 0x24, 0x7d, 0x0b, 0x8d, 0xec, 0x30, 0x40, 0xbb, 0xe9, 0x37, 0x2b, 0x93, 0xc8,
+	0xda, 0xcb, 0x77, 0x26, 0xe7, 0xbc, 0x81, 0xe6, 0xa2, 0x9c, 0x53, 0x86, 0xb9, 0x3d, 0x96, 0x32,
+	0xcc, 0xef, 0x02, 0xc9, 0xf0, 0x1c, 0x6a, 0x89, 0xf0, 0xd2, 0xe2, 0x2d, 0xeb, 0x3d, 0x2d, 0xde,
+	0x8a, 0x4a, 0x65, 0x96, 0x01, 0x40, 0x2a, 0x17, 0x94, 0x04, 0xaf, 0xe8, 0xd4, 0xb2, 0xf2, 0x5c,
+	0xc9, 0x09, 0xdf, 0x40, 0x3d, 0xf3, 0xc2, 0x41, 0xd6, 0x62, 0x85, 0xb3, 0x8f, 0x2b, 0x6b, 0x37,
+	0xd7, 0x17, 0x67, 0xba, 0x2b, 0xcb, 0x87, 0xd9, 0x8b, 0xdf, 0x01, 0x00, 0x00, 0xff, 0xff, 0xdc,
+	0x23, 0x27, 0xce, 0xbe, 0x09, 0x00, 0x00,
 }
