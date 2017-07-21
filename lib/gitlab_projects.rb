@@ -5,7 +5,6 @@ require 'open3'
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 require_relative 'gitlab_metrics'
-require_relative 'gitlab_reference_counter'
 
 class GitlabProjects
   GLOBAL_HOOKS_DIRECTORY = File.join(ROOT_PATH, 'hooks')
@@ -408,7 +407,12 @@ class GitlabProjects
   end
 
   def gitlab_reference_counter
-    @gitlab_reference_counter ||= GitlabReferenceCounter.new(full_path)
+    @gitlab_reference_counter ||= begin
+      # Defer loading because this pulls in gitlab_net, which takes 100-200 ms
+      # to load
+      require_relative 'gitlab_reference_counter'
+      GitlabReferenceCounter.new(full_path)
+    end
   end
 
   def rsync(src, dest, rsync_path = 'rsync')
