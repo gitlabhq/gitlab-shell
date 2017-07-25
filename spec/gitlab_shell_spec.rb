@@ -19,7 +19,7 @@ describe GitlabShell do
     end
   end
 
-  let(:gitaly_check_access) { GitAccessStatus.new(true, 'ok', gl_repository, repo_path, { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' })}
+  let(:gitaly_check_access) { GitAccessStatus.new(true, 'ok', gl_repository, repo_path, { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' }) }
 
   let(:api) do
     double(GitlabNet).tap do |api|
@@ -384,6 +384,20 @@ describe GitlabShell do
     it "allows one argument if it is an array" do
       Kernel.should_receive(:exec).with(env, [1, 2], exec_options).once
       shell.send :exec_cmd, [1, 2]
+    end
+
+    context "when show_all_refs is enabled" do
+      before { shell.show_all_refs = true }
+
+      it 'sets local git parameters' do
+        expected_hash = hash_including(
+          'GIT_CONFIG_PARAMETERS' => "'transfer.hideRefs=!refs'"
+        )
+
+        Kernel.should_receive(:exec).with(expected_hash, [1, 2], exec_options).once
+
+        shell.send :exec_cmd, [1, 2]
+      end
     end
 
     context "when specifying a git_tracing log file" do
