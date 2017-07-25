@@ -3,7 +3,7 @@ require 'json'
 class GitAccessStatus
   attr_reader :message, :gl_repository, :repository_path, :gitaly, :geo_node
 
-  def initialize(status, message, gl_repository, repository_path, gitaly, geo_node)
+  def initialize(status, message, gl_repository, repository_path, gitaly, geo_node = false)
     @status = status
     @message = message
     @gl_repository = gl_repository

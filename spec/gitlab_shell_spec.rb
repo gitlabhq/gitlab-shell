@@ -19,12 +19,12 @@ describe GitlabShell do
     end
   end
 
-  let(:gitaly_check_access) { GitAccessStatus.new(true, 'ok', gl_repository, repo_path, { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' }, false) }
+  let(:gitaly_check_access) { GitAccessStatus.new(true, 'ok', gl_repository, repo_path, { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' }) }
 
   let(:api) do
     double(GitlabNet).tap do |api|
       api.stub(discover: { 'name' => 'John Doe' })
-      api.stub(check_access: GitAccessStatus.new(true, 'ok', gl_repository, repo_path, nil, false))
+      api.stub(check_access: GitAccessStatus.new(true, 'ok', gl_repository, repo_path, nil))
       api.stub(two_factor_recovery_codes: {
         'success' => true,
         'recovery_codes' => ['f67c514de60c4953', '41278385fc00c1e0']
@@ -326,7 +326,7 @@ describe GitlabShell do
       end
 
       it "should disallow access and log the attempt if check_access returns false status" do
-        api.stub(check_access: GitAccessStatus.new(false, 'denied', nil, nil, nil, false))
+        api.stub(check_access: GitAccessStatus.new(false, 'denied', nil, nil, nil))
         message = "gitlab-shell: Access denied for git command <git-upload-pack gitlab-ci.git> "
         message << "by user with key #{key_id}."
         $logger.should_receive(:warn).with(message)

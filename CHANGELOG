@@ -1,3 +1,6 @@
+v5.5.0
+  - Support unhiding of all references for Geo nodes
+
 v5.4.0
   - Update Gitaly vendoring to use new RPC calls instead of old deprecated ones
 
