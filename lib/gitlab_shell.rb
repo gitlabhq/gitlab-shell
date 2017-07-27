@@ -16,6 +16,9 @@ class GitlabShell
   }
   API_COMMANDS = %w(2fa_recovery_codes)
   GL_PROTOCOL = 'ssh'.freeze
+  # We have to use a negative transfer.hideRefs since this is the only way
+  # to undo an already set parameter: https://www.spinics.net/lists/git/msg256772.html
+  GIT_CONFIG_SHOW_ALL_REFS = "transfer.hideRefs=!refs".freeze
 
   attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access, :show_all_refs
   attr_reader :repo_path
@@ -124,13 +127,15 @@ class GitlabShell
 
       # The entire gitaly_request hash should be built in gitlab-ce and passed
       # on as-is. For now we build a fake one on the spot.
-      gitaly_request = JSON.dump({
+      gitaly_request = {
         'repository' => @gitaly['repository'],
         'gl_repository' => @gl_repository,
-        'gl_id' => @key_id,
-      })
+        'gl_id' => @key_id
+      }
 
-      args = [gitaly_address, gitaly_request]
+      gitaly_request['git_config_options'] = [GIT_CONFIG_SHOW_ALL_REFS] if @show_all_refs
+
+      args = [gitaly_address, JSON.dump(gitaly_request)]
     end
 
     args_string = [File.basename(executable), *args].join(' ')
@@ -160,9 +165,7 @@ class GitlabShell
       env['GITALY_TOKEN'] = @gitaly['token']
     end
 
-    # We have to use a negative transfer.hideRefs since this is the only way
-    # to undo an already set parameter: https://www.spinics.net/lists/git/msg256772.html
-    env['GIT_CONFIG_PARAMETERS'] = "'transfer.hideRefs=!refs'" if @show_all_refs
+    env['GIT_CONFIG_PARAMETERS'] = "'#{GIT_CONFIG_SHOW_ALL_REFS}'" if @show_all_refs
 
     if git_trace_available?
       env.merge!({

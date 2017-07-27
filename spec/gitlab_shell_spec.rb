@@ -157,6 +157,18 @@ describe GitlabShell do
       end
     end
 
+    context 'gitaly-upload-pack with GeoNode' do
+      let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
+      let(:gitaly_check_access_with_geo) { GitAccessStatus.new(true, 'ok', gl_repository, repo_path, { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' }, true) }
+      let(:gitaly_message_with_all_refs) { JSON.dump({ 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' }, 'gl_repository' => gl_repository , 'gl_id' => key_id, 'git_config_options' => [GitlabShell::GIT_CONFIG_SHOW_ALL_REFS]}) }
+      before { api.stub(check_access: gitaly_check_access_with_geo) }
+      after { subject.exec(ssh_cmd) }
+
+      it "should execute the command with unhiding refs" do
+        subject.should_receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-upload-pack"), 'unix:gitaly.socket', gitaly_message_with_all_refs)
+      end
+    end
+
     context 'gitaly-upload-pack' do
       let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
       before {
