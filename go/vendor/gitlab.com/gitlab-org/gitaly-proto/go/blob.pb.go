@@ -40,6 +40,8 @@ It has these top-level messages:
 	FindAllCommitsResponse
 	CommitLanguagesRequest
 	CommitLanguagesResponse
+	RawBlameRequest
+	RawBlameResponse
 	CommitDiffRequest
 	CommitDiffResponse
 	CommitDeltaRequest
@@ -61,6 +63,8 @@ It has these top-level messages:
 	FindLocalBranchCommitAuthor
 	FindAllBranchesRequest
 	FindAllBranchesResponse
+	FindAllTagsRequest
+	FindAllTagsResponse
 	RepositoryExistsRequest
 	RepositoryExistsResponse
 	RepackIncrementalRequest
