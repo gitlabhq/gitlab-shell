@@ -1,3 +1,6 @@
+v.5.6.0
+  - SSH authentication support
+
 v5.5.0
   - Support unhiding of all references for Geo nodes
 
