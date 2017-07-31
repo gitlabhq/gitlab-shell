@@ -211,20 +211,23 @@ class GitlabProjects
     cmd = %W(git --git-dir=#{full_path} fetch #{@name} --prune --quiet)
     cmd << '--force' if forced
     cmd << tags_option
-    pid = Process.spawn(*cmd)
 
-    begin
-      Timeout.timeout(timeout) do
-        Process.wait(pid)
+    setup_ssh_auth do |env|
+      pid = Process.spawn(env, *cmd)
+
+      begin
+        _, status = Timeout.timeout(timeout) do
+          Process.wait2(pid)
+        end
+
+        status.success?
+      rescue => exception
+        $logger.error "Fetching remote #{@name} for project #{@project_name} failed due to: #{exception.message}."
+
+        Process.kill('KILL', pid)
+        Process.wait
+        false
       end
-
-      $?.exitstatus.zero?
-    rescue => exception
-      $logger.error "Fetching remote #{@name} for project #{@project_name} failed due to: #{exception.message}."
-
-      Process.kill('KILL', pid)
-      Process.wait
-      false
     end
   end
 
@@ -404,6 +407,59 @@ class GitlabProjects
     end
 
     false
+  end
+
+  # Builds a small shell script that can be used to execute SSH with a set of
+  # custom options.
+  #
+  # Options are expanded as `'-oKey="Value"'`, so SSH will correctly interpret
+  # paths with spaces in them. We trust the user not to embed single or double
+  # quotes in the key or value.
+  def custom_ssh_script(options = {})
+    args = options.map { |k, v| "'-o#{k}=\"#{v}\"'" }.join(' ')
+
+    [
+      "#!/bin/sh",
+      "exec ssh #{args} \"$@\""
+    ].join("\n")
+  end
+
+  # Known hosts data and private keys can be passed to gitlab-shell in the
+  # environment. If present, this method puts them into temporary files, writes
+  # a script that can substitute as `ssh`, setting the options to respect those
+  # files, and yields: { "GIT_SSH" => "/tmp/myScript" }
+  def setup_ssh_auth
+    options = {}
+
+    if ENV.key?('GITLAB_SHELL_SSH_KEY')
+      key_file = Tempfile.new('gitlab-shell-key-file', mode: 0o400)
+      key_file.write(ENV['GITLAB_SHELL_SSH_KEY'])
+      key_file.close
+
+      options['IdentityFile'] = key_file.path
+      options['IdentitiesOnly'] = true
+    end
+
+    if ENV.key?('GITLAB_SHELL_KNOWN_HOSTS')
+      known_hosts_file = Tempfile.new('gitlab-shell-known-hosts', mode: 0o400)
+      known_hosts_file.write(ENV['GITLAB_SHELL_KNOWN_HOSTS'])
+      known_hosts_file.close
+
+      options['StrictHostKeyChecking'] = true
+      options['UserKnownHostsFile'] = known_hosts_file.path
+    end
+
+    return yield({}) if options.empty?
+
+    script = Tempfile.new('gitlab-shell-ssh-wrapper', mode: 0o755)
+    script.write(custom_ssh_script(options))
+    script.close
+
+    yield('GIT_SSH' => script.path)
+  ensure
+    key_file.close! unless key_file.nil?
+    known_hosts_file.close! unless known_hosts_file.nil?
+    script.close! unless script.nil?
   end
 
   def gitlab_reference_counter

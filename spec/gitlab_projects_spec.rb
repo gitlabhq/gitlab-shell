@@ -1,5 +1,6 @@
 require_relative 'spec_helper'
 require_relative '../lib/gitlab_projects'
+require_relative '../lib/gitlab_reference_counter'
 
 describe GitlabProjects do
   before do
@@ -322,33 +323,55 @@ describe GitlabProjects do
     let(:pid) { 1234 }
     let(:branch_name) { 'master' }
 
+    def stub_spawn(*args, wait: true, success: true)
+      expect(Process).to receive(:spawn).with(*args).and_return(pid)
+      expect(Process).to receive(:wait2).with(pid).and_return([pid, double(success?: success)]) if wait
+    end
+
+    def stub_env(args = {})
+      original = ENV.to_h
+      args.each { |k, v| ENV[k] = v }
+      yield
+    ensure
+      ENV.replace(original)
+    end
+
+    def stub_tempfile(name, *args)
+      file = StringIO.new
+      allow(file).to receive(:close!)
+      allow(file).to receive(:path).and_return(name)
+
+      expect(Tempfile).to receive(:new).with(*args).and_return(file)
+
+      file
+    end
+
     describe 'with default args' do
       let(:gl_projects) { build_gitlab_projects('fetch-remote', repos_path, project_name, remote_name, '600') }
       let(:cmd) { %W(git --git-dir=#{full_path} fetch #{remote_name} --prune --quiet --tags) }
 
       it 'executes the command' do
-        expect(Process).to receive(:spawn).with(*cmd).and_return(pid)
-        expect(Process).to receive(:wait).with(pid)
+        stub_spawn({}, *cmd)
 
         expect(gl_projects.exec).to be true
       end
 
       it 'raises timeout' do
+        stub_spawn({}, *cmd, wait: false)
         expect(Timeout).to receive(:timeout).with(600).and_raise(Timeout::Error)
-        expect(Process).to receive(:spawn).with(*cmd).and_return(pid)
-        expect(Process).to receive(:wait)
         expect(Process).to receive(:kill).with('KILL', pid)
+
         expect(gl_projects.exec).to be false
       end
     end
 
     describe 'with --force' do
       let(:gl_projects) { build_gitlab_projects('fetch-remote', repos_path, project_name, remote_name, '600', '--force') }
+      let(:env) { {} }
       let(:cmd) { %W(git --git-dir=#{full_path} fetch #{remote_name} --prune --quiet --force --tags) }
 
       it 'executes the command with forced option' do
-        expect(Process).to receive(:spawn).with(*cmd).and_return(pid)
-        expect(Process).to receive(:wait).with(pid)
+        stub_spawn({}, *cmd)
 
         expect(gl_projects.exec).to be true
       end
@@ -359,10 +382,51 @@ describe GitlabProjects do
       let(:cmd) { %W(git --git-dir=#{full_path} fetch #{remote_name} --prune --quiet --no-tags) }
 
       it 'executes the command' do
-        expect(Process).to receive(:spawn).with(*cmd).and_return(pid)
-        expect(Process).to receive(:wait).with(pid)
+        stub_spawn({}, *cmd)
 
         expect(gl_projects.exec).to be true
+      end
+    end
+
+    describe 'with GITLAB_SHELL_SSH_KEY' do
+      let(:gl_projects) { build_gitlab_projects('fetch-remote', repos_path, project_name, remote_name, '600') }
+      let(:cmd) { %W(git --git-dir=#{full_path} fetch #{remote_name} --prune --quiet --tags) }
+
+      around(:each) do |example|
+        stub_env('GITLAB_SHELL_SSH_KEY' => 'SSH KEY') { example.run }
+      end
+
+      it 'sets GIT_SSH to a custom script' do
+        script = stub_tempfile('scriptFile', 'gitlab-shell-ssh-wrapper', mode: 0755)
+        key = stub_tempfile('/tmp files/keyFile', 'gitlab-shell-key-file', mode: 0400)
+
+        stub_spawn({ 'GIT_SSH' => 'scriptFile' }, *cmd)
+
+        expect(gl_projects.exec).to be true
+
+        expect(script.string).to eq("#!/bin/sh\nexec ssh '-oIdentityFile=\"/tmp files/keyFile\"' '-oIdentitiesOnly=\"true\"' \"$@\"")
+        expect(key.string).to eq('SSH KEY')
+      end
+    end
+
+    describe 'with GITLAB_SHELL_KNOWN_HOSTS' do
+      let(:gl_projects) { build_gitlab_projects('fetch-remote', repos_path, project_name, remote_name, '600') }
+      let(:cmd) { %W(git --git-dir=#{full_path} fetch #{remote_name} --prune --quiet --tags) }
+
+      around(:each) do |example|
+        stub_env('GITLAB_SHELL_KNOWN_HOSTS' => 'KNOWN HOSTS') { example.run }
+      end
+
+      it 'sets GIT_SSH to a custom script' do
+        script = stub_tempfile('scriptFile', 'gitlab-shell-ssh-wrapper', mode: 0755)
+        key = stub_tempfile('/tmp files/knownHosts', 'gitlab-shell-known-hosts', mode: 0400)
+
+        stub_spawn({ 'GIT_SSH' => 'scriptFile' }, *cmd)
+
+        expect(gl_projects.exec).to be true
+
+        expect(script.string).to eq("#!/bin/sh\nexec ssh '-oStrictHostKeyChecking=\"true\"' '-oUserKnownHostsFile=\"/tmp files/knownHosts\"' \"$@\"")
+        expect(key.string).to eq('KNOWN HOSTS')
       end
     end
   end
