@@ -433,26 +433,29 @@ class GitlabProjects
     options = {}
 
     if ENV.key?('GITLAB_SHELL_SSH_KEY')
-      key_file = Tempfile.new('gitlab-shell-key-file', mode: 0o400)
+      key_file = Tempfile.new('gitlab-shell-key-file')
+      key_file.chmod(0o400)
       key_file.write(ENV['GITLAB_SHELL_SSH_KEY'])
       key_file.close
 
       options['IdentityFile'] = key_file.path
-      options['IdentitiesOnly'] = true
+      options['IdentitiesOnly'] = 'yes'
     end
 
     if ENV.key?('GITLAB_SHELL_KNOWN_HOSTS')
-      known_hosts_file = Tempfile.new('gitlab-shell-known-hosts', mode: 0o400)
+      known_hosts_file = Tempfile.new('gitlab-shell-known-hosts')
+      known_hosts_file.chmod(0o400)
       known_hosts_file.write(ENV['GITLAB_SHELL_KNOWN_HOSTS'])
       known_hosts_file.close
 
-      options['StrictHostKeyChecking'] = true
+      options['StrictHostKeyChecking'] = 'yes'
       options['UserKnownHostsFile'] = known_hosts_file.path
     end
 
     return yield({}) if options.empty?
 
-    script = Tempfile.new('gitlab-shell-ssh-wrapper', mode: 0o755)
+    script = Tempfile.new('gitlab-shell-ssh-wrapper')
+    script.chmod(0o755)
     script.write(custom_ssh_script(options))
     script.close
 
