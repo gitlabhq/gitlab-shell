@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'tempfile'
 require 'timeout'
 require 'open3'
 
