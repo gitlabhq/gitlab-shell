@@ -336,12 +336,15 @@ describe GitlabProjects do
       ENV.replace(original)
     end
 
-    def stub_tempfile(name, *args)
+    def stub_tempfile(name, filename, opts = {})
+      chmod = opts.delete(:chmod)
       file = StringIO.new
+
       allow(file).to receive(:close!)
       allow(file).to receive(:path).and_return(name)
 
-      expect(Tempfile).to receive(:new).with(*args).and_return(file)
+      expect(Tempfile).to receive(:new).with(filename).and_return(file)
+      expect(file).to receive(:chmod).with(chmod) if chmod
 
       file
     end
@@ -397,14 +400,14 @@ describe GitlabProjects do
       end
 
       it 'sets GIT_SSH to a custom script' do
-        script = stub_tempfile('scriptFile', 'gitlab-shell-ssh-wrapper', mode: 0755)
-        key = stub_tempfile('/tmp files/keyFile', 'gitlab-shell-key-file', mode: 0400)
+        script = stub_tempfile('scriptFile', 'gitlab-shell-ssh-wrapper', chmod: 0o755)
+        key = stub_tempfile('/tmp files/keyFile', 'gitlab-shell-key-file', chmod: 0o400)
 
         stub_spawn({ 'GIT_SSH' => 'scriptFile' }, *cmd)
 
         expect(gl_projects.exec).to be true
 
-        expect(script.string).to eq("#!/bin/sh\nexec ssh '-oIdentityFile=\"/tmp files/keyFile\"' '-oIdentitiesOnly=\"true\"' \"$@\"")
+        expect(script.string).to eq("#!/bin/sh\nexec ssh '-oIdentityFile=\"/tmp files/keyFile\"' '-oIdentitiesOnly=\"yes\"' \"$@\"")
         expect(key.string).to eq('SSH KEY')
       end
     end
@@ -418,14 +421,14 @@ describe GitlabProjects do
       end
 
       it 'sets GIT_SSH to a custom script' do
-        script = stub_tempfile('scriptFile', 'gitlab-shell-ssh-wrapper', mode: 0755)
-        key = stub_tempfile('/tmp files/knownHosts', 'gitlab-shell-known-hosts', mode: 0400)
+        script = stub_tempfile('scriptFile', 'gitlab-shell-ssh-wrapper', chmod: 0o755)
+        key = stub_tempfile('/tmp files/knownHosts', 'gitlab-shell-known-hosts', chmod: 0o400)
 
         stub_spawn({ 'GIT_SSH' => 'scriptFile' }, *cmd)
 
         expect(gl_projects.exec).to be true
 
-        expect(script.string).to eq("#!/bin/sh\nexec ssh '-oStrictHostKeyChecking=\"true\"' '-oUserKnownHostsFile=\"/tmp files/knownHosts\"' \"$@\"")
+        expect(script.string).to eq("#!/bin/sh\nexec ssh '-oStrictHostKeyChecking=\"yes\"' '-oUserKnownHostsFile=\"/tmp files/knownHosts\"' \"$@\"")
         expect(key.string).to eq('KNOWN HOSTS')
       end
     end
