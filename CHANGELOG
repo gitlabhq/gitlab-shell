@@ -1,3 +1,7 @@
+v 5.6.1
+  - Fix setting permissions of SSH key tempfiles
+  - Fix a missing constant error when using SSH authentication
+
 v.5.6.0
   - SSH authentication support
 
