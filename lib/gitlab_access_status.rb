@@ -1,12 +1,13 @@
 require 'json'
 
 class GitAccessStatus
-  attr_reader :message, :gl_repository, :repository_path, :gitaly, :geo_node
+  attr_reader :message, :gl_repository, :gl_username, :repository_path, :gitaly, :geo_node
 
-  def initialize(status, message, gl_repository, repository_path, gitaly, geo_node = false)
+  def initialize(status, message, gl_repository:, gl_username:, repository_path:, gitaly:, geo_node:)
     @status = status
     @message = message
     @gl_repository = gl_repository
+    @gl_username = gl_username
     @repository_path = repository_path
     @gitaly = gitaly
     @geo_node = geo_node
@@ -16,10 +17,11 @@ class GitAccessStatus
     values = JSON.parse(json)
     self.new(values["status"],
              values["message"],
-             values["gl_repository"],
-             values["repository_path"],
-             values["gitaly"],
-             values["geo_node"])
+             gl_repository: values["gl_repository"],
+             gl_username: values["gl_username"],
+             repository_path: values["repository_path"],
+             gitaly: values["gitaly"],
+             geo_node: values["geo_node"])
   end
 
   def allowed?

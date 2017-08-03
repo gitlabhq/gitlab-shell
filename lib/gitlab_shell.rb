@@ -20,7 +20,7 @@ class GitlabShell
   # to undo an already set parameter: https://www.spinics.net/lists/git/msg256772.html
   GIT_CONFIG_SHOW_ALL_REFS = "transfer.hideRefs=!refs".freeze
 
-  attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access, :show_all_refs
+  attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access, :show_all_refs, :username
   attr_reader :repo_path
 
   def initialize(key_id)
@@ -113,6 +113,7 @@ class GitlabShell
     @gl_repository = status.gl_repository
     @gitaly = status.gitaly
     @show_all_refs = status.geo_node
+    @username = status.gl_username
   end
 
   def process_cmd(args)
@@ -139,7 +140,8 @@ class GitlabShell
       gitaly_request = {
         'repository' => @gitaly['repository'],
         'gl_repository' => @gl_repository,
-        'gl_id' => @key_id
+        'gl_id' => @key_id,
+        'gl_username' => @username
       }
 
       gitaly_request['git_config_options'] = [GIT_CONFIG_SHOW_ALL_REFS] if @show_all_refs
@@ -168,7 +170,8 @@ class GitlabShell
       'LANG' => ENV['LANG'],
       'GL_ID' => @key_id,
       'GL_PROTOCOL' => GL_PROTOCOL,
-      'GL_REPOSITORY' => @gl_repository
+      'GL_REPOSITORY' => @gl_repository,
+      'GL_USERNAME' => @username
     }
     if @gitaly && @gitaly.include?('token')
       env['GITALY_TOKEN'] = @gitaly['token']

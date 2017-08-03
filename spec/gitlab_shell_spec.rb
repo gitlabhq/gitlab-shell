@@ -19,12 +19,28 @@ describe GitlabShell do
     end
   end
 
-  let(:gitaly_check_access) { GitAccessStatus.new(true, 'ok', gl_repository, repo_path, { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' }) }
+  let(:gitaly_check_access) { GitAccessStatus.new(
+    true,
+    'ok',
+    gl_repository: gl_repository,
+    gl_username: gl_username,
+    repository_path: repo_path,
+    gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' },
+    geo_node: false
+  )
+  }
 
   let(:api) do
     double(GitlabNet).tap do |api|
       api.stub(discover: { 'name' => 'John Doe' })
-      api.stub(check_access: GitAccessStatus.new(true, 'ok', gl_repository, repo_path, nil))
+      api.stub(check_access: GitAccessStatus.new(
+                true,
+                'ok',
+                gl_repository: gl_repository,
+                gl_username: gl_username,
+                repository_path: repo_path,
+                gitaly: nil,
+                geo_node: nil))
       api.stub(two_factor_recovery_codes: {
         'success' => true,
         'recovery_codes' => ['f67c514de60c4953', '41278385fc00c1e0']
@@ -39,6 +55,7 @@ describe GitlabShell do
   let(:repo_name) { 'gitlab-ci.git' }
   let(:repo_path) { File.join(tmp_repos_path, repo_name) }
   let(:gl_repository) { 'project-1' }
+  let(:gl_username) { 'testuser' }
 
   before do
     GitlabConfig.any_instance.stub(audit_usernames: false)
@@ -130,7 +147,7 @@ describe GitlabShell do
   end
 
   describe :exec do
-    let(:gitaly_message) { JSON.dump({ 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' }, 'gl_repository' => gl_repository , 'gl_id' => key_id}) }
+    let(:gitaly_message) { JSON.dump({ 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' }, 'gl_repository' => gl_repository, 'gl_id' => key_id, 'gl_username' => gl_username}) }
 
     shared_examples_for 'upload-pack' do |command|
       let(:ssh_cmd) { "#{command} gitlab-ci.git" }
@@ -167,8 +184,15 @@ describe GitlabShell do
 
     context 'gitaly-upload-pack with GeoNode' do
       let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
-      let(:gitaly_check_access_with_geo) { GitAccessStatus.new(true, 'ok', gl_repository, repo_path, { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' }, true) }
-      let(:gitaly_message_with_all_refs) { JSON.dump({ 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' }, 'gl_repository' => gl_repository , 'gl_id' => key_id, 'git_config_options' => [GitlabShell::GIT_CONFIG_SHOW_ALL_REFS]}) }
+      let(:gitaly_check_access_with_geo) { GitAccessStatus.new(
+        true,
+        'ok',
+        gl_repository: gl_repository,
+        gl_username: gl_username,
+        repository_path: repo_path,
+        gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' },
+        geo_node: true) }
+      let(:gitaly_message_with_all_refs) { JSON.dump({ 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' }, 'gl_repository' => gl_repository , 'gl_id' => key_id, 'gl_username' => gl_username, 'git_config_options' => [GitlabShell::GIT_CONFIG_SHOW_ALL_REFS]}) }
       before { api.stub(check_access: gitaly_check_access_with_geo) }
       after { subject.exec(ssh_cmd) }
 
@@ -346,7 +370,14 @@ describe GitlabShell do
       end
 
       it "should disallow access and log the attempt if check_access returns false status" do
-        api.stub(check_access: GitAccessStatus.new(false, 'denied', nil, nil, nil))
+        api.stub(check_access: GitAccessStatus.new(
+                  false,
+                  'denied',
+                  gl_repository: nil,
+                  gl_username: nil,
+                  repository_path: nil,
+                  gitaly: nil,
+                  geo_node: nil))
         message = "gitlab-shell: Access denied for git command <git-upload-pack gitlab-ci.git> "
         message << "by user with key #{key_id}."
         $logger.should_receive(:warn).with(message)
@@ -383,13 +414,15 @@ describe GitlabShell do
         'LANG' => ENV['LANG'],
         'GL_ID' => key_id,
         'GL_PROTOCOL' => 'ssh',
-        'GL_REPOSITORY' => gl_repository
+        'GL_REPOSITORY' => gl_repository,
+        'GL_USERNAME' => 'testuser'
       }
     end
     let(:exec_options) { { unsetenv_others: true, chdir: ROOT_PATH } }
     before do
       Kernel.stub(:exec)
       shell.gl_repository = gl_repository
+      shell.username = gl_username
     end
 
     it "uses Kernel::exec method" do

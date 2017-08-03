@@ -40,7 +40,13 @@ class GitlabNet
     if resp.code == '200'
       GitAccessStatus.create_from_json(resp.body)
     else
-      GitAccessStatus.new(false, 'API is not accessible', nil, nil, nil)
+      GitAccessStatus.new(false,
+                          'API is not accessible',
+                          gl_repository: nil,
+                          gl_username: nil,
+                          repository_path: nil,
+                          gitaly: nil,
+                          geo_node: false)
     end
   end
 
