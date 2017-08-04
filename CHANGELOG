@@ -1,3 +1,6 @@
+v5.7.0
+  - Support unhiding of all refs via Gitaly
+
 v5.6.2
   - Bump redis-rb library to 3.3.3
 
