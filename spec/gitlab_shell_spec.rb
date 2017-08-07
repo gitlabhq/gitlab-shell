@@ -132,8 +132,8 @@ describe GitlabShell do
   describe :exec do
     let(:gitaly_message) { JSON.dump({ 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' }, 'gl_repository' => gl_repository , 'gl_id' => key_id}) }
 
-    context 'git-upload-pack' do
-      let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
+    shared_examples_for 'upload-pack' do |command|
+      let(:ssh_cmd) { "#{command} gitlab-ci.git" }
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
@@ -155,6 +155,14 @@ describe GitlabShell do
         GitlabConfig.any_instance.stub(audit_usernames: true)
         $logger.should_receive(:info).with(/for John Doe/)
       end
+    end
+
+    context 'git-upload-pack' do
+      it_behaves_like 'upload-pack', 'git-upload-pack'
+    end
+
+    context 'git upload-pack' do
+      it_behaves_like 'upload-pack', 'git upload-pack'
     end
 
     context 'gitaly-upload-pack with GeoNode' do
