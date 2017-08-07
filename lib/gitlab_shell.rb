@@ -35,7 +35,7 @@ class GitlabShell
     end
 
     args = Shellwords.shellwords(origin_cmd)
-    parse_cmd(args)
+    args = parse_cmd(args)
 
     if GIT_COMMANDS.include?(args.first)
       GitlabMetrics.measure('verify-access') { verify_access }
@@ -67,10 +67,17 @@ class GitlabShell
   protected
 
   def parse_cmd(args)
-    @command = args.first
+    # Handle Git for Windows 2.14 using "git upload-pack" instead of git-upload-pack
+    if args.length == 3 && args.first == 'git'
+      @command = "git-#{args[1]}"
+      args = [@command, args.last]
+    else
+      @command = args.first
+    end
+
     @git_access = @command
 
-    return if API_COMMANDS.include?(@command)
+    return args if API_COMMANDS.include?(@command)
 
     raise DisallowedCommandError unless GIT_COMMANDS.include?(@command)
 
@@ -90,6 +97,8 @@ class GitlabShell
       raise DisallowedCommandError unless args.count == 2
       @repo_name = args.last
     end
+
+    args
   end
 
   def verify_access
