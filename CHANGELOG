@@ -1,3 +1,6 @@
+v5.8.0
+  - Fix SSH support for Git for Windows v2.14
+
 v5.7.0
   - Support unhiding of all refs via Gitaly
 
