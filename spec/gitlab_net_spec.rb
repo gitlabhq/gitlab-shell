@@ -174,8 +174,9 @@ describe GitlabNet, vcr: true do
   describe '#post_receive' do
     let(:gl_repository) { "project-1" }
     let(:changes) { "123456 789012 refs/heads/test\n654321 210987 refs/tags/tag" }
+    let(:push_opts) { ["ci-skip", "something unexpected"] }
     let(:params) do
-      { gl_repository: gl_repository, identifier: key, changes: changes }
+      { gl_repository: gl_repository, identifier: key, changes: changes, :"push_opts[]" => push_opts }
     end
     let(:merge_request_urls) do
       [{
@@ -185,7 +186,7 @@ describe GitlabNet, vcr: true do
       }]
     end
 
-    subject { gitlab_net.post_receive(gl_repository, key, changes) }
+    subject { gitlab_net.post_receive(gl_repository, key, changes, push_opts) }
 
     it 'sends the correct parameters' do
       expect_any_instance_of(Net::HTTP::Post).to receive(:set_form_data).with(hash_including(params))
