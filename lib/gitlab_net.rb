@@ -11,6 +11,7 @@ require_relative 'httpunix'
 
 class GitlabNet
   class ApiUnreachableError < StandardError; end
+  class NotFound < StandardError; end
 
   CHECK_TIMEOUT = 5
   READ_TIMEOUT = 300
@@ -110,6 +111,19 @@ class GitlabNet
     resp.code == '200'
   rescue
     false
+  end
+
+  def post_receive(gl_repository, identifier, changes)
+    params = {
+      gl_repository: gl_repository,
+      identifier: identifier,
+      changes: changes
+    }
+    resp = post("#{host}/post_receive", params)
+
+    raise NotFound if resp.code == '404'
+
+    JSON.parse(resp.body) if resp.code == '200'
   end
 
   def redis_client

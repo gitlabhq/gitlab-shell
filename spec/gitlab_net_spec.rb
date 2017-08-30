@@ -126,6 +126,46 @@ describe GitlabNet, vcr: true do
     end
   end
 
+  describe :post_receive do
+    let(:gl_repository) { "project-1" }
+    let(:changes) { "123456 789012 refs/heads/test\n654321 210987 refs/tags/tag" }
+    let(:params) do
+      { gl_repository: gl_repository, identifier: key, changes: changes }
+    end
+    let(:merge_request_urls) do
+      [{
+        "branch_name" => "test",
+        "url" => "http://localhost:3000/gitlab-org/gitlab-test/merge_requests/7",
+        "new_merge_request" => false
+      }]
+    end
+
+    subject { gitlab_net.post_receive(gl_repository, key, changes) }
+
+    it 'sends the correct parameters' do
+      Net::HTTP::Post.any_instance.should_receive(:set_form_data).with(hash_including(params))
+
+
+      VCR.use_cassette("post-receive") do
+        subject
+      end
+    end
+
+    it 'calls /internal/post-receive' do
+      VCR.use_cassette("post-receive") do
+        expect(subject['merge_request_urls']).to eq(merge_request_urls)
+        expect(subject['broadcast_message']).to eq('Message')
+        expect(subject['reference_counter_decreased']).to eq(true)
+      end
+    end
+
+    it 'throws a NotFound error when post-receive is not available' do
+      VCR.use_cassette("post-receive-not-found") do
+        expect { subject }.to raise_error(GitlabNet::NotFound)
+      end
+    end
+  end
+
   describe :authorized_key do
     let (:ssh_key) { "rsa-key" }
 

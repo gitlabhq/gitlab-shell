@@ -20,29 +20,20 @@ class GitlabPostReceive
   end
 
   def exec
-    result = update_redis
-
-    begin
-      broadcast_message = GitlabMetrics.measure("broadcast-message") do
-        api.broadcast_message
-      end
-
-      if broadcast_message.has_key?("message")
-        puts
-        print_broadcast_message(broadcast_message["message"])
-      end
-
-      merge_request_urls = GitlabMetrics.measure("merge-request-urls") do
-        api.merge_request_urls(@gl_repository, @repo_path, @changes)
-      end
-      print_merge_request_links(merge_request_urls)
-
-      api.notify_post_receive(gl_repository, repo_path)
-    rescue GitlabNet::ApiUnreachableError
-      nil
+    response = GitlabMetrics.measure("post-receive") do
+      api.post_receive(gl_repository, @actor, changes)
     end
 
-    result && GitlabReferenceCounter.new(repo_path).decrease
+    return false unless response
+
+    print_broadcast_message(response['broadcast_message']) if response['broadcast_message']
+    print_merge_request_links(response['merge_request_urls']) if response['merge_request_urls']
+
+    response['reference_counter_decreased']
+  rescue GitlabNet::ApiUnreachableError
+    false
+  rescue GitlabNet::NotFound
+    fallback_post_receive
   end
 
   protected
@@ -89,6 +80,7 @@ class GitlabPostReceive
     # message.scan returns a nested array of capture groups, so flatten.
     lines = message.scan(/(.{,#{text_width}})(?:\s|$)/)[0...-1].flatten
 
+    puts
     puts "=" * total_width
     puts
 
@@ -126,5 +118,32 @@ class GitlabPostReceive
       $stderr.puts "GitLab: An unexpected error occurred in writing to Redis: #{e}"
       false
     end
+  end
+
+  private
+
+  def fallback_post_receive
+    result = update_redis
+
+    begin
+      broadcast_message = GitlabMetrics.measure("broadcast-message") do
+        api.broadcast_message
+      end
+
+      if broadcast_message.has_key?("message")
+        print_broadcast_message(broadcast_message["message"])
+      end
+
+      merge_request_urls = GitlabMetrics.measure("merge-request-urls") do
+        api.merge_request_urls(@gl_repository, @repo_path, @changes)
+      end
+      print_merge_request_links(merge_request_urls)
+
+      api.notify_post_receive(gl_repository, repo_path)
+    rescue GitlabNet::ApiUnreachableError
+      nil
+    end
+
+    result && GitlabReferenceCounter.new(repo_path).decrease
   end
 end
