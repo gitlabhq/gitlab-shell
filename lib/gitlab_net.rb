@@ -126,6 +126,14 @@ class GitlabNet
     JSON.parse(resp.body) if resp.code == '200'
   end
 
+  def pre_receive(gl_repository)
+    resp = post("#{host}/pre_receive", gl_repository: gl_repository)
+
+    raise NotFound if resp.code == '404'
+
+    JSON.parse(resp.body) if resp.code == '200'
+  end
+
   def redis_client
     redis_config = config.redis
     database = redis_config['database'] || 0

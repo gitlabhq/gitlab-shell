@@ -1,4 +1,5 @@
 v5.9.0
+  - Support new /internal/pre-receive API endpoint for post-receive operations
   - Support new /internal/post-receive API endpoint for post-receive operations
   - Support `redis` field on /internal/check API endpoint
 
