@@ -3,6 +3,17 @@
 require_relative '../lib/gitlab_init'
 require_relative '../lib/gitlab_net'
 
+def ping_redis
+  print "Send ping to redis server: "
+  if GitlabNet.new.redis_client.ping
+    print 'OK'
+  else
+    abort 'FAILED'
+  end
+
+  puts "\n"
+end
+
 #
 # GitLab shell check task
 #
@@ -10,10 +21,24 @@ require_relative '../lib/gitlab_net'
 print "Check GitLab API access: "
 begin
   resp = GitlabNet.new.check
-  if resp.code == "200"
-    print 'OK'
-  else
+
+  if resp.code != "200"
     abort "FAILED. code: #{resp.code}"
+  end
+
+  puts 'OK'
+
+  check_values = JSON.parse(resp.body)
+
+  if check_values.key?('redis')
+    print 'Redis available via internal API: '
+    if check_values['redis']
+      puts 'OK'
+    else
+      abort 'FAILED'
+    end
+  else
+    ping_redis
   end
 rescue GitlabNet::ApiUnreachableError
   abort "FAILED: Failed to connect to internal API"
@@ -29,13 +54,4 @@ if system(File.dirname(__FILE__) + '/gitlab-keys', 'check-permissions')
 else
   abort "FAILED"
 end
-puts "\n"
-
-print "Send ping to redis server: "
-if GitlabNet.new.redis_client.ping
-  print 'OK'
-else
-  abort 'FAILED'
-end
-
 puts "\n"

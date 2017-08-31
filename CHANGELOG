@@ -1,5 +1,6 @@
 v5.9.0
   - Support new /internal/post-receive API endpoint for post-receive operations
+  - Support `redis` field on /internal/check API endpoint
 
 v5.8.1
   - Support old versions of ruby without monotonic clock
