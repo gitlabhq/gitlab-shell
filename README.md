@@ -167,3 +167,11 @@ running and have next data:
 
 You also need to modify `secret` variable at `spec/gitlab_net_spec.rb` so tests 
 can connect to your local instance.
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## License
+
+See [LICENSE](./LICENSE).
