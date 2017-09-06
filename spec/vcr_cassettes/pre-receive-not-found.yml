@@ -1,0 +1,42 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: http://localhost:3000/api/v4/internal/pre_receive
+    body:
+      encoding: US-ASCII
+      string: gl_repository=project-1&secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+      Content-Type:
+      - application/x-www-form-urlencoded
+  response:
+    status:
+      code: 404
+      message: Not Found
+    headers:
+      Cache-Control:
+      - no-cache
+      Content-Length:
+      - '25'
+      Content-Type:
+      - application/json
+      Date:
+      - Thu, 31 Aug 2017 16:41:13 GMT
+      Vary:
+      - Origin
+      X-Request-Id:
+      - 0b845e9a-5417-488d-bc5a-07d8c585b2da
+      X-Runtime:
+      - '0.295361'
+    body:
+      encoding: UTF-8
+      string: '{"error":"404 Not Found"}'
+    http_version: 
+  recorded_at: Thu, 31 Aug 2017 16:41:13 GMT
+recorded_with: VCR 2.4.0

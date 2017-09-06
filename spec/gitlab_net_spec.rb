@@ -126,6 +126,32 @@ describe GitlabNet, vcr: true do
     end
   end
 
+  describe :pre_receive do
+    let(:gl_repository) { "project-1" }
+    let(:params) { { gl_repository: gl_repository } }
+
+    subject { gitlab_net.pre_receive(gl_repository) }
+
+    it 'sends the correct parameters and returns the request body parsed' do
+      Net::HTTP::Post.any_instance.should_receive(:set_form_data)
+        .with(hash_including(params))
+
+      VCR.use_cassette("pre-receive") { subject }
+    end
+
+    it 'calls /internal/pre-receive' do
+      VCR.use_cassette("pre-receive") do
+        expect(subject['reference_counter_increased']).to be(true)
+      end
+    end
+
+    it 'throws a NotFound error when pre-receive is not available' do
+      VCR.use_cassette("pre-receive-not-found") do
+        expect { subject }.to raise_error(GitlabNet::NotFound)
+      end
+    end
+  end
+
   describe :post_receive do
     let(:gl_repository) { "project-1" }
     let(:changes) { "123456 789012 refs/heads/test\n654321 210987 refs/tags/tag" }
