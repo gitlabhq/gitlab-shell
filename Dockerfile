@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/rhscl/ruby-23-rhel7
+FROM registry.access.redhat.com/rhscl/ruby-23-rhel7:latest
 USER root
 # sshd
 RUN ["bash", "-c", "yum install -y --setopt=tsflags=nodocs openssh-server ed libicu-devel && \
