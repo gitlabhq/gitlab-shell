@@ -313,6 +313,18 @@ describe GitlabProjects do
 
       expect(gl_projects.exec).to be false
     end
+
+    context 'with --force' do
+      let(:cmd) { %W(git --git-dir=#{full_path} push --force -- #{remote_name} #{branch_name}) }
+      let(:gl_projects) { build_gitlab_projects('push-branches', repos_path, project_name, remote_name, '600', '--force', 'master') }
+
+      it 'executes the command' do
+        expect(Process).to receive(:spawn).with(*cmd).and_return(pid)
+        expect(Process).to receive(:wait).with(pid)
+
+        expect(gl_projects.exec).to be true
+      end
+    end
   end
 
   describe :fetch_remote do

@@ -1,3 +1,6 @@
+v5.9.1
+  - Adds --force option to push branches
+
 v5.9.0
   - Support new /internal/pre-receive API endpoint for post-receive operations
   - Support new /internal/post-receive API endpoint for post-receive operations

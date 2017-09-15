@@ -116,8 +116,13 @@ class GitlabProjects
     # timeout for push
     timeout = (ARGV.shift || 120).to_i
 
+    # push with --force?
+    forced = ARGV.delete('--force') if ARGV.include?('--force')
+
     $logger.info "Pushing branches from #{full_path} to remote #{remote_name}: #{ARGV}"
-    cmd = %W(git --git-dir=#{full_path} push -- #{remote_name}).concat(ARGV)
+    cmd = %W(git --git-dir=#{full_path} push)
+    cmd << forced if forced
+    cmd += %W(-- #{remote_name}).concat(ARGV)
     pid = Process.spawn(*cmd)
 
     begin
