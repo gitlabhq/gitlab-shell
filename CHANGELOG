@@ -1,3 +1,6 @@
+v5.9.2
+  - Fix pre-receive error when gitlab doesn't have /internal/pre_receive (!169)
+
 v5.9.1
   - Adds --force option to push branches
 
