@@ -1,3 +1,6 @@
+v5.9.3
+  - Expose GitLab username to hooks in `GL_USERNAME` environment variable
+
 v5.9.2
   - Fix pre-receive error when gitlab doesn't have /internal/pre_receive (!169)
 
