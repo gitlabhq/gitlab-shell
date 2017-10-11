@@ -198,6 +198,8 @@ class GitlabNet
 
   def http_request_for(method, uri, params = {})
     request_klass = method == :get ? Net::HTTP::Get : Net::HTTP::Post
+    if method == :get      
+        uri.query = URI.encode_www_form(secret_token: secret_token) + "&" + (uri.query || "")
     request = request_klass.new(uri.request_uri)
 
     user = config.http_settings['user']
