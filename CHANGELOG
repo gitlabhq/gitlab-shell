@@ -1,3 +1,6 @@
+v5.9.4
+  - Add relative git object dir envvars to check access request
+
 v5.9.3
   - Expose GitLab username to hooks in `GL_USERNAME` environment variable
 

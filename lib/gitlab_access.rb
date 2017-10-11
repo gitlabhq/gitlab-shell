@@ -3,6 +3,7 @@ require_relative 'gitlab_net'
 require_relative 'gitlab_access_status'
 require_relative 'names_helper'
 require_relative 'gitlab_metrics'
+require_relative 'object_dirs_helper'
 require 'json'
 
 class GitlabAccess
@@ -23,12 +24,7 @@ class GitlabAccess
 
   def exec
     status = GitlabMetrics.measure('check-access:git-receive-pack') do
-      env = {
-        "GIT_ALTERNATE_OBJECT_DIRECTORIES" => ENV["GIT_ALTERNATE_OBJECT_DIRECTORIES"],
-        "GIT_OBJECT_DIRECTORY" => ENV["GIT_OBJECT_DIRECTORY"]
-      }
-
-      api.check_access('git-receive-pack', @gl_repository, @repo_path, @actor, @changes, @protocol, env: env.to_json)
+      api.check_access('git-receive-pack', @gl_repository, @repo_path, @actor, @changes, @protocol, env: ObjectDirsHelper.all_attributes.to_json)
     end
 
     raise AccessDeniedError, status.message unless status.allowed?
