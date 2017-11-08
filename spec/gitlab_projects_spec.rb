@@ -450,16 +450,19 @@ describe GitlabProjects do
     context 'success import' do
       let(:gl_projects) { build_gitlab_projects('import-project', tmp_repos_path, repo_name, 'https://github.com/randx/six.git') }
 
-      it { gl_projects.exec.should be_true }
+      it { expect(gl_projects.exec).to be true }
 
-      it "should import a repo" do
+      it "imports a repo" do
         gl_projects.exec
-        File.exists?(File.join(tmp_repo_path, 'HEAD')).should be_true
+
+        expect(File.exists?(File.join(tmp_repo_path, 'HEAD'))).to be true
       end
 
-      it "should log an import-project event" do
+      it "logs an import-project event" do
         message = "Importing project #{repo_name} from <https://github.com/randx/six.git> to <#{tmp_repo_path}>."
-        $logger.should_receive(:info).with(message)
+
+        expect($logger).to receive(:info).with(message)
+
         gl_projects.exec
       end
     end
@@ -467,26 +470,37 @@ describe GitlabProjects do
     context 'already exists' do
       let(:gl_projects) { build_gitlab_projects('import-project', tmp_repos_path, repo_name, 'https://github.com/randx/six.git') }
 
-      it 'should import only once' do
-        gl_projects.exec.should be_true
-        gl_projects.exec.should be_false
+      it 'imports only once' do
+        expect(gl_projects.exec).to be true
+        expect(gl_projects.exec).to be false
       end
     end
 
     context 'timeout' do
       let(:gl_projects) { build_gitlab_projects('import-project', tmp_repos_path, repo_name, 'https://github.com/gitlabhq/gitlabhq.git', '1') }
 
-      it { gl_projects.exec.should be_false }
+      it { expect(gl_projects.exec).to be false }
 
-      it "should not import a repo" do
+      it "does not import a repo" do
         gl_projects.exec
-        File.exists?(File.join(tmp_repo_path, 'HEAD')).should be_false
+
+        expect(File.exists?(File.join(tmp_repo_path, 'HEAD'))).to be false
       end
 
-      it "should log an import-project event" do
+      it "logs an import-project event" do
         message = "Importing project #{repo_name} from <https://github.com/gitlabhq/gitlabhq.git> failed due to timeout."
-        $logger.should_receive(:error).with(message)
+
+        expect($logger).to receive(:error).with(message)
+
         gl_projects.exec
+      end
+    end
+
+    context 'single-branch' do
+      let(:gl_projects) { build_gitlab_projects('import-project', tmp_repos_path, repo_name, 'https://github.com/randx/six.git', '--single-branch') }
+
+      it "imports repo" do
+        expect(gl_projects.exec).to be true
       end
     end
   end

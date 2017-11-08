@@ -252,11 +252,16 @@ class GitlabProjects
     @source = ARGV.shift
     masked_source = mask_password_in_url(@source)
 
+    # clone with --single-branch ?
+    single_branch = ARGV.delete('--single-branch') if ARGV.include?('--single-branch')
+
     # timeout for clone
     timeout = (ARGV.shift || 120).to_i
-    $logger.info "Importing project #{@project_name} from <#{masked_source}> to <#{full_path}>."
-    cmd = %W(git clone --bare -- #{@source} #{full_path})
 
+    $logger.info "Importing project #{@project_name} from <#{masked_source}> to <#{full_path}>."
+    cmd = %W(git clone --bare)
+    cmd << single_branch if single_branch
+    cmd += %W(-- #{@source} #{full_path})
     pid = Process.spawn(*cmd)
 
     begin
