@@ -206,6 +206,30 @@ describe GitlabPostReceive do
           expect(gitlab_post_receive.exec).to eq(true)
         end
       end
+
+      context 'when redirected message available' do
+        let(:message) do
+          <<-MSG
+          Project 'foo/bar' was moved to 'foo/baz'.
+
+          Please update your Git remote:
+
+            git remote set-url origin http://localhost:3000/foo/baz.git
+          MSG
+        end
+        let(:response) do
+          { 
+            'reference_counter_decreased' => true,
+            'redirected_message' => message
+          } 
+        end
+
+        it 'prints redirected message' do
+          expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
+          assert_redirected_message_printed(gitlab_post_receive)
+          expect(gitlab_post_receive.exec).to eq(true)
+        end
+      end
     end
   end
 
@@ -251,5 +275,16 @@ describe GitlabPostReceive do
     expect(gitlab_post_receive).to receive(:puts).with(
       "========================================================================"
     ).ordered
+  end
+  
+  def assert_redirected_message_printed(gitlab_post_receive)
+    message = <<-MSG
+          Project 'foo/bar' was moved to 'foo/baz'.
+
+          Please update your Git remote:
+
+            git remote set-url origin http://localhost:3000/foo/baz.git
+          MSG
+    expect(gitlab_post_receive).to receive(:puts).with(message).ordered
   end
 end
