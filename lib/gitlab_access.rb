@@ -1,15 +1,12 @@
 require_relative 'gitlab_init'
 require_relative 'gitlab_net'
 require_relative 'gitlab_access_status'
-require_relative 'names_helper'
 require_relative 'gitlab_metrics'
 require_relative 'object_dirs_helper'
 require 'json'
 
 class GitlabAccess
   class AccessDeniedError < StandardError; end
-
-  include NamesHelper
 
   attr_reader :config, :gl_repository, :repo_path, :changes, :protocol
 
