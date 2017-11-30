@@ -69,6 +69,8 @@ class GitlabProjects
         import_project
       when 'fork-project';
         fork_project
+      when 'fork-repository';
+        fork_repository
       when 'fetch-remote';
         fetch_remote
       when 'push-branches';
@@ -360,6 +362,35 @@ class GitlabProjects
     end
   end
 
+  def fork_repository
+    from_path = full_path
+
+    new_repos_path = ARGV.shift
+    new_full_path = ARGV.shift
+
+    unless new_repos_path && new_full_path
+      $logger.error "fork-repository failed: no destination repository path provided."
+      return false
+    end
+
+    to_path = File.join(new_repos_path, new_full_path)
+
+    # The repository cannot already exist
+    if File.exists?(to_path)
+      $logger.error "fork-repository failed: destination repository <#{to_path}> already exists."
+      return false
+    end
+
+    # Ensure the namepsace / hashed storage directory exists
+    FileUtils.mkdir_p(File.dirname(to_path), mode: 0770)
+
+    $logger.info "Forking repository from <#{from_path}> to <#{to_path}>."
+    cmd = %W(git clone --bare -- #{from_path} #{to_path})
+    system(*cmd) && self.class.create_hooks(to_path)
+  end
+
+  # DEPRECATED in favour of fork_repository, which takes a source and destination
+  # repository path and so can work with hashed storage. Remove in v6.0.0
   def fork_project
     destination_repos_path = ARGV.shift
 

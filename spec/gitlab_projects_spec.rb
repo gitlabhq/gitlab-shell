@@ -491,6 +491,74 @@ describe GitlabProjects do
     end
   end
 
+  describe :fork_repository do
+    let(:source_repos_path) { tmp_repos_path }
+    let(:dest_repos_path) { tmp_repos_path }
+    let(:source_repo_name) { File.join('source-namespace', repo_name) }
+    let(:dest_repo_name) { File.join('@hashed', 'aa', 'bb', 'xyz.git') }
+    let(:dest_repo) { File.join(dest_repos_path, dest_repo_name) }
+    let(:dest_namespace) { File.dirname(dest_repo) }
+    let(:gl_repo_fork) { build_gitlab_projects('fork-repository', source_repos_path, source_repo_name, dest_repos_path, dest_repo_name) }
+    let(:gl_projects_import) { build_gitlab_projects('import-project', source_repos_path, source_repo_name, 'https://gitlab.com/gitlab-org/gitlab-test.git') }
+
+    before do
+      FileUtils.mkdir_p(dest_repos_path)
+      gl_projects_import.exec
+    end
+
+    after do
+      FileUtils.rm_rf(dest_repos_path)
+    end
+
+    it "should not fork without a source repository path" do
+      missing_arg = build_gitlab_projects('fork-repository', tmp_repos_path, source_repo_name)
+      expect($logger).to receive(:error).with("fork-repository failed: no destination repository path provided.")
+      expect(missing_arg.exec).to be_false
+    end
+
+    it "should not fork without a destination repository path" do
+      missing_arg = build_gitlab_projects('fork-repository', tmp_repos_path, source_repo_name, tmp_repos_path)
+      $logger.should_receive(:error).with("fork-repository failed: no destination repository path provided.")
+      expect(missing_arg.exec).to be_false
+    end
+
+    it "should fork the repository" do
+      expect(gl_repo_fork.exec).to be_true
+      expect(File.exists?(dest_repo)).to be_true
+      expect(File.exists?(File.join(dest_repo, 'hooks', 'pre-receive'))).to be_true
+      expect(File.exists?(File.join(dest_repo, 'hooks', 'post-receive'))).to be_true
+    end
+
+    it "should not fork if a project of the same name already exists" do
+      # create a fake project at the intended destination
+      FileUtils.mkdir_p(dest_repo)
+
+      # trying to fork again should fail as the repo already exists
+      message = "fork-repository failed: destination repository <#{dest_repo}> already exists."
+      expect($logger).to receive(:error).with(message)
+      expect(gl_repo_fork.exec).to be_false
+    end
+
+    it "should log a fork-project event" do
+      message = "Forking repository from <#{File.join(tmp_repos_path, source_repo_name)}> to <#{dest_repo}>."
+      expect($logger).to receive(:info).with(message)
+
+      expect(gl_repo_fork.exec).to be_true
+    end
+
+    context 'different storages' do
+      let(:dest_repos_path) { File.join(ROOT_PATH, 'tmp', 'alternative') }
+
+      it "should fork the repo" do
+        expect(gl_repo_fork.exec).to be_true
+        expect(File.exists?(dest_repo)).to be_true
+        expect(File.exists?(File.join(dest_repo, 'hooks', 'pre-receive'))).to be_true
+        expect(File.exists?(File.join(dest_repo, 'hooks', 'post-receive'))).to be_true
+      end
+    end
+  end
+
+
   describe :fork_project do
     let(:source_repo_name) { File.join('source-namespace', repo_name) }
     let(:dest_repo) { File.join(tmp_repos_path, 'forked-to-namespace', repo_name) }
