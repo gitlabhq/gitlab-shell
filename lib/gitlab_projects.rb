@@ -385,7 +385,7 @@ class GitlabProjects
     FileUtils.mkdir_p(File.dirname(to_path), mode: 0770)
 
     $logger.info "Forking repository from <#{from_path}> to <#{to_path}>."
-    cmd = %W(git clone --bare -- #{from_path} #{to_path})
+    cmd = %W(git clone --bare --no-local -- #{from_path} #{to_path})
     system(*cmd) && self.class.create_hooks(to_path)
   end
 
@@ -422,7 +422,7 @@ class GitlabProjects
     end
 
     $logger.info "Forking project from <#{full_path}> to <#{full_destination_path}>."
-    cmd = %W(git clone --bare -- #{full_path} #{full_destination_path})
+    cmd = %W(git clone --bare --no-local -- #{full_path} #{full_destination_path})
     system(*cmd) && self.class.create_hooks(full_destination_path)
   end
 
