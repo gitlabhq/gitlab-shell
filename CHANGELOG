@@ -1,3 +1,6 @@
+v5.10.2
+  - Print redirection message when pushing into renamed project
+
 v5.10.1
   - Use 'git clone --no-local' when creating a fork (!176)
 
