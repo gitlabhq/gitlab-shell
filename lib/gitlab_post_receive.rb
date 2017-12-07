@@ -25,9 +25,9 @@ class GitlabPostReceive
     end
 
     return false unless response
-
     print_broadcast_message(response['broadcast_message']) if response['broadcast_message']
     print_merge_request_links(response['merge_request_urls']) if response['merge_request_urls']
+    puts response['redirected_message'] if response['redirected_message']
 
     response['reference_counter_decreased']
   rescue GitlabNet::ApiUnreachableError
