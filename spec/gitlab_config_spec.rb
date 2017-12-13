@@ -10,7 +10,6 @@ describe GitlabConfig do
       config.instance_variable_set(:@config, YAML.load(config_file))
     end
 
-    it { config.redis['bin'].should eq('/usr/bin/redis-cli') }
     it { config.redis['host'].should eq('127.0.1.1') }
     it { config.redis['port'].should eq(6378) }
     it { config.redis['database'].should eq(1) }

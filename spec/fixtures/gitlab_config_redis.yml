@@ -1,5 +1,4 @@
 redis:
-  bin: /usr/bin/redis-cli
   host: 127.0.1.1
   port: 6378
   pass: secure
