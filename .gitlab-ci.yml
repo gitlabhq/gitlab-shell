@@ -10,7 +10,7 @@ before_script:
 
 rspec:
   script:
-    - bundle exec rspec spec
+    - bundle exec rspec -f d spec
   tags:
     - ruby
   except:
@@ -28,7 +28,7 @@ rubocop:
 rspec:ruby2.2:
   image: ruby:2.2
   script:
-    - bundle exec rspec spec
+    - bundle exec rspec -f d spec
   tags:
     - ruby
   except:
@@ -38,7 +38,7 @@ rspec:ruby2.2:
 rspec:ruby2.1:
   image: ruby:2.1
   script:
-    - bundle exec rspec spec
+    - bundle exec rspec -f d spec
   tags:
     - ruby
   except:
