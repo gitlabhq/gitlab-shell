@@ -57,6 +57,9 @@ class GitlabProjects
         create_tag
       when 'add-project';
         add_project
+      when 'create-hooks';
+        # To avoid confusion with self.class.create_hooks
+        create_project_hooks
       when 'list-projects';
         puts list_projects
       when 'rm-project';
@@ -180,6 +183,10 @@ class GitlabProjects
     FileUtils.mkdir_p(full_path, mode: 0770)
     cmd = %W(git --git-dir=#{full_path} init --bare)
     system(*cmd) && self.class.create_hooks(full_path)
+  end
+
+  def create_project_hooks
+    self.class.create_hooks(full_path)
   end
 
   def list_projects

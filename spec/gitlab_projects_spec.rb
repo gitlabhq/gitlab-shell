@@ -55,6 +55,21 @@ describe GitlabProjects do
 
       it { File.readlink(hooks_dir).should == target_hooks_dir }
     end
+
+    context 'with command-line arguments' do
+      before do
+        FileUtils.mkdir_p repo_path
+        argv('create-hooks', tmp_repos_path, 'hook-test.git')
+        gl_projects = GitlabProjects.new
+        gl_projects.exec
+      end
+
+      after do
+        FileUtils.rm_f(repo_path)
+      end
+
+      it { File.readlink(hooks_dir).should == target_hooks_dir }
+    end
   end
 
   describe :initialize do
