@@ -1,3 +1,6 @@
+v6.0.0
+  - Remove support unhiding of all references for Geo nodes
+
 v5.11.0
   - Introduce a more-complete implementation of bin/authorized_keys (!178)
 

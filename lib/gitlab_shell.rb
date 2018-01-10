@@ -16,11 +16,8 @@ class GitlabShell
   }
   API_COMMANDS = %w(2fa_recovery_codes)
   GL_PROTOCOL = 'ssh'.freeze
-  # We have to use a negative transfer.hideRefs since this is the only way
-  # to undo an already set parameter: https://www.spinics.net/lists/git/msg256772.html
-  GIT_CONFIG_SHOW_ALL_REFS = "transfer.hideRefs=!refs".freeze
 
-  attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access, :show_all_refs, :username
+  attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access, :username
   attr_reader :repo_path
 
   def initialize(key_id)
@@ -112,7 +109,6 @@ class GitlabShell
     self.repo_path = status.repository_path
     @gl_repository = status.gl_repository
     @gitaly = status.gitaly
-    @show_all_refs = status.geo_node
     @username = status.gl_username
   end
 
@@ -144,8 +140,6 @@ class GitlabShell
         'gl_username' => @username
       }
 
-      gitaly_request['git_config_options'] = [GIT_CONFIG_SHOW_ALL_REFS] if @show_all_refs
-
       args = [gitaly_address, JSON.dump(gitaly_request)]
     end
 
@@ -176,8 +170,6 @@ class GitlabShell
     if @gitaly && @gitaly.include?('token')
       env['GITALY_TOKEN'] = @gitaly['token']
     end
-
-    env['GIT_CONFIG_PARAMETERS'] = "'#{GIT_CONFIG_SHOW_ALL_REFS}'" if @show_all_refs
 
     if git_trace_available?
       env.merge!({
