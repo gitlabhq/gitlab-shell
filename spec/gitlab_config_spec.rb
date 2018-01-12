@@ -4,21 +4,6 @@ require_relative '../lib/gitlab_config'
 describe GitlabConfig do
   let(:config) { GitlabConfig.new }
 
-  describe :redis do
-    before do
-      config_file = File.read('spec/fixtures/gitlab_config_redis.yml')
-      config.instance_variable_set(:@config, YAML.load(config_file))
-    end
-
-    it { config.redis['host'].should eq('127.0.1.1') }
-    it { config.redis['port'].should eq(6378) }
-    it { config.redis['database'].should eq(1) }
-    it { config.redis['namespace'].should eq('my:gitlab') }
-    it { config.redis['socket'].should eq('/var/run/redis/redis.sock') }
-    it { config.redis['pass'].should eq('secure') }
-    it { config.redis['sentinels'].should eq([{ 'host' => '127.0.0.1', 'port' => 26380 }]) }
-  end
-
   describe :gitlab_url do
     let(:url) { 'http://test.com' }
     subject { config.gitlab_url }

@@ -13,7 +13,6 @@ describe GitlabPostReceive do
   let(:gl_repository) { "project-1" }
   let(:gitlab_post_receive) { GitlabPostReceive.new(gl_repository, repo_path, actor, wrongly_encoded_changes) }
   let(:broadcast_message) { "test " * 10 + "message " * 10 }
-  let(:redis_client) { double('redis_client') }
   let(:enqueued_at) { Time.new(2016, 6, 23, 6, 59) }
   let(:new_merge_request_urls) do
     [{
@@ -36,199 +35,53 @@ describe GitlabPostReceive do
   end
 
   describe "#exec" do
-    context 'when the new post_receive API endpoint is not available' do
-      before do
-        GitlabNet.any_instance.stub(broadcast_message: { })
-        GitlabNet.any_instance.stub(:merge_request_urls).with(gl_repository, repo_path, wrongly_encoded_changes) { [] }
-        GitlabNet.any_instance.stub(notify_post_receive: true)
+    let(:response) { { 'reference_counter_decreased' => true } }
 
-        allow_any_instance_of(GitlabNet).to receive(:post_receive).and_raise(GitlabNet::NotFound)
-        allow_any_instance_of(GitlabNet).to receive(:redis_client).and_return(redis_client)
-        allow_any_instance_of(GitlabReferenceCounter).to receive(:redis_client).and_return(redis_client)
-        allow(redis_client).to receive(:get).and_return(1)
-        allow(redis_client).to receive(:incr).and_return(true)
-        allow(redis_client).to receive(:decr).and_return(0)
-        allow(redis_client).to receive(:rpush).and_return(true)
-        expect(Time).to receive(:now).and_return(enqueued_at)
-      end
+    it 'calls the api to notify the execution of the hook' do
+      expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
 
-      context 'Without broad cast message' do
-        context 'pushing new branch' do
-          before do
-            GitlabNet.any_instance.stub(:merge_request_urls).with(gl_repository, repo_path, wrongly_encoded_changes) do
-              new_merge_request_urls
-            end
-          end
-
-          it "prints the new merge request url" do
-            assert_new_mr_printed(gitlab_post_receive)
-
-            gitlab_post_receive.exec
-          end
-        end
-
-        context 'pushing existing branch with merge request created' do
-          before do
-            GitlabNet.any_instance.stub(:merge_request_urls).with(gl_repository, repo_path, wrongly_encoded_changes) do
-              existing_merge_request_urls
-            end
-          end
-
-          it "prints the view merge request url" do
-            assert_existing_mr_printed(gitlab_post_receive)
-
-            gitlab_post_receive.exec
-          end
-        end
-      end
-
-      context 'show broadcast message and merge request link' do
-        before do
-          GitlabNet.any_instance.stub(:merge_request_urls).with(gl_repository, repo_path, wrongly_encoded_changes) do
-            new_merge_request_urls
-          end
-          GitlabNet.any_instance.stub(broadcast_message: { "message" => broadcast_message })
-        end
-
-        it 'prints the broadcast message and create new merge request link' do
-          assert_broadcast_message_printed(gitlab_post_receive)
-          assert_new_mr_printed(gitlab_post_receive)
-
-          gitlab_post_receive.exec
-        end
-      end
-
-      context 'Sidekiq jobs' do
-        it "pushes a Sidekiq job onto the queue" do
-          expect(redis_client).to receive(:rpush).with(
-            'resque:gitlab:queue:post_receive',
-            %Q/{"class":"PostReceive","args":["#{gl_repository}","#{actor}",#{base64_changes.inspect}],"jid":"#{gitlab_post_receive.jid}","enqueued_at":#{enqueued_at.to_f}}/
-          ).and_return(true)
-
-          gitlab_post_receive.exec
-        end
-
-        context 'when gl_repository is nil' do
-          let(:gl_repository) { nil }
-
-          it "pushes a Sidekiq job with the repository path" do
-            expect(redis_client).to receive(:rpush).with(
-              'resque:gitlab:queue:post_receive',
-              %Q/{"class":"PostReceive","args":["#{repo_path}","#{actor}",#{base64_changes.inspect}],"jid":"#{gitlab_post_receive.jid}","enqueued_at":#{enqueued_at.to_f}}/
-            ).and_return(true)
-
-            gitlab_post_receive.exec
-          end
-        end
-      end
-
-      context 'reference counter' do
-        it 'decreases the reference counter for the project' do
-          expect_any_instance_of(GitlabReferenceCounter).to receive(:decrease).and_return(true)
-
-          gitlab_post_receive.exec
-        end
-
-        context "when the redis command succeeds" do
-          before do
-            allow(redis_client).to receive(:decr).and_return(0)
-          end
-
-          it "returns true" do
-            expect(gitlab_post_receive.exec).to eq(true)
-          end
-        end
-
-        context "when the redis command fails" do
-          before do
-            allow(redis_client).to receive(:decr).and_raise('Fail')
-          end
-
-          it "returns false" do
-            expect(gitlab_post_receive.exec).to eq(false)
-          end
-        end
-      end
-
-      context 'post_receive notification' do
-        it 'calls the api to notify the execution of the hook' do
-          expect_any_instance_of(GitlabNet).to receive(:notify_post_receive).
-            with(gl_repository, repo_path)
-
-          gitlab_post_receive.exec
-        end
-      end
-
-      context "when the redis command succeeds" do
-        before do
-          allow(redis_client).to receive(:rpush).and_return(true)
-        end
-
-        it "returns true" do
-          expect(gitlab_post_receive.exec).to eq(true)
-        end
-      end
-
-      context "when the redis command fails" do
-        before do
-          allow(redis_client).to receive(:rpush).and_raise('Fail')
-        end
-
-        it "returns false" do
-          expect(gitlab_post_receive.exec).to eq(false)
-        end
-      end
+      expect(gitlab_post_receive.exec).to eq(true)
     end
 
-    context 'when the new post_receive API endpoint is available' do
-      let(:response) { { 'reference_counter_decreased' => true } }
+    context 'merge request urls and broadcast messages' do
+      let(:response) do
+        {
+          'reference_counter_decreased' => true,
+          'merge_request_urls' => new_merge_request_urls,
+          'broadcast_message' => broadcast_message
+        }
+      end
 
-      it 'calls the api to notify the execution of the hook' do
+      it 'prints the merge request urls and broadcast message' do
         expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
+        assert_broadcast_message_printed(gitlab_post_receive)
+        assert_new_mr_printed(gitlab_post_receive)
 
         expect(gitlab_post_receive.exec).to eq(true)
       end
+    end
 
-      context 'merge request urls and broadcast messages' do
-        let(:response) do
-          {
-            'reference_counter_decreased' => true,
-            'merge_request_urls' => new_merge_request_urls,
-            'broadcast_message' => broadcast_message
-          }
-        end
-
-        it 'prints the merge request urls and broadcast message' do
-          expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
-          assert_broadcast_message_printed(gitlab_post_receive)
-          assert_new_mr_printed(gitlab_post_receive)
-
-          expect(gitlab_post_receive.exec).to eq(true)
-        end
-      end
-
-      context 'when redirected message available' do
-        let(:message) do
-          <<-MSG
+    context 'when redirected message available' do
+      let(:message) do
+        <<-MSG
           Project 'foo/bar' was moved to 'foo/baz'.
 
           Please update your Git remote:
 
             git remote set-url origin http://localhost:3000/foo/baz.git
-          MSG
-        end
-        let(:response) do
-          { 
-            'reference_counter_decreased' => true,
-            'redirected_message' => message
-          } 
-        end
+        MSG
+      end
+      let(:response) do
+        { 
+          'reference_counter_decreased' => true,
+          'redirected_message' => message
+        } 
+      end
 
-        it 'prints redirected message' do
-          expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
-          assert_redirected_message_printed(gitlab_post_receive)
-          expect(gitlab_post_receive.exec).to eq(true)
-        end
+      it 'prints redirected message' do
+        expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
+        assert_redirected_message_printed(gitlab_post_receive)
+        expect(gitlab_post_receive.exec).to eq(true)
       end
     end
   end
