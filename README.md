@@ -77,41 +77,6 @@ To install gitlab-shell you also need a Go compiler version 1.8 or newer. https:
 
     ./bin/check
 
-## Repos
-
-Add repo:
-
-    ./bin/gitlab-projects add-project gitlab/gitlab-ci.git
-
-Remove repo:
-
-    ./bin/gitlab-projects rm-project gitlab/gitlab-ci.git
-
-List repos:
-
-    ./bin/gitlab-projects list-projects
-
-Import repo:
-
-    # Default timeout is 2 minutes
-    ./bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git
-
-    # Override timeout in seconds
-    ./bin/gitlab-projects import-project randx/six.git https://github.com/randx/six.git 90
-
-Fork repo:
-
-    ./bin/gitlab-projects fork-project gitlab/gitlab-ci.git randx
-
-Create tag (lightweight & annotated):
-
-    ./bin/gitlab-projects create-tag gitlab/gitlab-ci.git v3.0.0 3-0-stable
-    ./bin/gitlab-projects create-tag gitlab/gitlab-ci.git v3.0.0 3-0-stable 'annotated message goes here'
-
-Gc repo:
-
-    ./bin/gitlab-projects gc gitlab/gitlab-ci.git
-
 ## Keys
 
 Add key:
