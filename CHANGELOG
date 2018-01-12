@@ -1,5 +1,7 @@
 v6.0.0
-  - Remove support unhiding of all references for Geo nodes
+  - Remove bin/gitlab_projects (!180)
+  - Remove direct redis integration (!181)
+  - Remove support unhiding of all references for Geo nodes (!179)
 
 v5.11.0
   - Introduce a more-complete implementation of bin/authorized_keys (!178)
