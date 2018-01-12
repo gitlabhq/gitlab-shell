@@ -25,8 +25,7 @@ describe GitlabShell do
     gl_repository: gl_repository,
     gl_username: gl_username,
     repository_path: repo_path,
-    gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' },
-    geo_node: false
+    gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' }
   )
   }
 
@@ -39,8 +38,7 @@ describe GitlabShell do
                 gl_repository: gl_repository,
                 gl_username: gl_username,
                 repository_path: repo_path,
-                gitaly: nil,
-                geo_node: nil))
+                gitaly: nil))
       api.stub(two_factor_recovery_codes: {
         'success' => true,
         'recovery_codes' => ['f67c514de60c4953', '41278385fc00c1e0']
@@ -180,25 +178,6 @@ describe GitlabShell do
 
     context 'git upload-pack' do
       it_behaves_like 'upload-pack', 'git upload-pack'
-    end
-
-    context 'gitaly-upload-pack with GeoNode' do
-      let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
-      let(:gitaly_check_access_with_geo) { GitAccessStatus.new(
-        true,
-        'ok',
-        gl_repository: gl_repository,
-        gl_username: gl_username,
-        repository_path: repo_path,
-        gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' },
-        geo_node: true) }
-      let(:gitaly_message_with_all_refs) { JSON.dump({ 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' }, 'gl_repository' => gl_repository , 'gl_id' => key_id, 'gl_username' => gl_username, 'git_config_options' => [GitlabShell::GIT_CONFIG_SHOW_ALL_REFS]}) }
-      before { api.stub(check_access: gitaly_check_access_with_geo) }
-      after { subject.exec(ssh_cmd) }
-
-      it "should execute the command with unhiding refs" do
-        subject.should_receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-upload-pack"), 'unix:gitaly.socket', gitaly_message_with_all_refs)
-      end
     end
 
     context 'gitaly-upload-pack' do
@@ -376,8 +355,7 @@ describe GitlabShell do
                   gl_repository: nil,
                   gl_username: nil,
                   repository_path: nil,
-                  gitaly: nil,
-                  geo_node: nil))
+                  gitaly: nil))
         message = "gitlab-shell: Access denied for git command <git-upload-pack gitlab-ci.git> "
         message << "by user with key #{key_id}."
         $logger.should_receive(:warn).with(message)
@@ -437,20 +415,6 @@ describe GitlabShell do
     it "allows one argument if it is an array" do
       Kernel.should_receive(:exec).with(env, [1, 2], exec_options).once
       shell.send :exec_cmd, [1, 2]
-    end
-
-    context "when show_all_refs is enabled" do
-      before { shell.show_all_refs = true }
-
-      it 'sets local git parameters' do
-        expected_hash = hash_including(
-          'GIT_CONFIG_PARAMETERS' => "'transfer.hideRefs=!refs'"
-        )
-
-        Kernel.should_receive(:exec).with(expected_hash, [1, 2], exec_options).once
-
-        shell.send :exec_cmd, [1, 2]
-      end
     end
 
     context "when specifying a git_tracing log file" do

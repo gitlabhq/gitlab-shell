@@ -44,8 +44,7 @@ class GitlabNet
                           gl_repository: nil,
                           gl_username: nil,
                           repository_path: nil,
-                          gitaly: nil,
-                          geo_node: false)
+                          gitaly: nil)
     end
   end
 

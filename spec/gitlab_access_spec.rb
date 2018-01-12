@@ -12,8 +12,7 @@ describe GitlabAccess do
                                                  gl_repository: 'project-1',
                                                  gl_username: 'testuser',
                                                  repository_path: '/home/git/repositories',
-                                                 gitaly: nil,
-                                                 geo_node: nil))
+                                                 gitaly: nil))
     end
   end
   subject do
@@ -50,8 +49,7 @@ describe GitlabAccess do
                   gl_repository: nil,
                   gl_username: nil,
                   repository_path: nil,
-                  gitaly: nil,
-                  geo_node: nil
+                  gitaly: nil
                 ))
       end
 
