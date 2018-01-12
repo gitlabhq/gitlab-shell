@@ -1,6 +1,5 @@
 require_relative 'gitlab_init'
 require_relative 'gitlab_net'
-require_relative 'gitlab_reference_counter'
 require_relative 'gitlab_metrics'
 require 'json'
 require 'base64'
@@ -32,8 +31,6 @@ class GitlabPostReceive
     response['reference_counter_decreased']
   rescue GitlabNet::ApiUnreachableError
     false
-  rescue GitlabNet::NotFound
-    fallback_post_receive
   end
 
   protected
@@ -94,56 +91,5 @@ class GitlabPostReceive
 
     puts
     puts "=" * total_width
-  end
-
-  def update_redis
-    # Encode changes as base64 so we don't run into trouble with non-UTF-8 input.
-    changes = Base64.encode64(@changes)
-    # TODO: Change to `@gl_repository` in next release.
-    # See https://gitlab.com/gitlab-org/gitlab-shell/merge_requests/130#note_28747613
-    project_identifier = @gl_repository || @repo_path
-
-    queue = "#{config.redis_namespace}:queue:post_receive"
-    msg = JSON.dump({
-      'class' => 'PostReceive',
-      'args' => [project_identifier, @actor, changes],
-      'jid' => @jid,
-      'enqueued_at' => Time.now.to_f
-    })
-
-    begin
-      GitlabNet.new.redis_client.rpush(queue, msg)
-      true
-    rescue => e
-      $stderr.puts "GitLab: An unexpected error occurred in writing to Redis: #{e}"
-      false
-    end
-  end
-
-  private
-
-  def fallback_post_receive
-    result = update_redis
-
-    begin
-      broadcast_message = GitlabMetrics.measure("broadcast-message") do
-        api.broadcast_message
-      end
-
-      if broadcast_message.has_key?("message")
-        print_broadcast_message(broadcast_message["message"])
-      end
-
-      merge_request_urls = GitlabMetrics.measure("merge-request-urls") do
-        api.merge_request_urls(@gl_repository, @repo_path, @changes)
-      end
-      print_merge_request_links(merge_request_urls)
-
-      api.notify_post_receive(gl_repository, repo_path)
-    rescue GitlabNet::ApiUnreachableError
-      nil
-    end
-
-    result && GitlabReferenceCounter.new(repo_path).decrease
   end
 end

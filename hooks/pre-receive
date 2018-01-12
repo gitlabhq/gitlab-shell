@@ -13,8 +13,6 @@ def increase_reference_counter(gl_repository, repo_path)
   result = GitlabNet.new.pre_receive(gl_repository)
 
   result['reference_counter_increased']
-rescue GitlabNet::NotFound
-  GitlabReferenceCounter.new(repo_path).increase
 end
 
 require_relative '../lib/gitlab_custom_hook'
