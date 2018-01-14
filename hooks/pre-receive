@@ -16,7 +16,6 @@ def increase_reference_counter(gl_repository, repo_path)
 end
 
 require_relative '../lib/gitlab_custom_hook'
-require_relative '../lib/gitlab_reference_counter'
 require_relative '../lib/gitlab_access'
 require_relative '../lib/gitlab_net'
 
