@@ -1,3 +1,6 @@
+v6.0.1
+  - Fix git push by removing a bad require in the pre-receive hook (!183)
+
 v6.0.0
   - Remove bin/gitlab_projects (!180)
   - Remove direct redis integration (!181)
