@@ -24,7 +24,7 @@ type PostReceiveRequest struct {
 func (m *PostReceiveRequest) Reset()                    { *m = PostReceiveRequest{} }
 func (m *PostReceiveRequest) String() string            { return proto.CompactTextString(m) }
 func (*PostReceiveRequest) ProtoMessage()               {}
-func (*PostReceiveRequest) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{0} }
+func (*PostReceiveRequest) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{0} }
 
 func (m *PostReceiveRequest) GetRepository() *Repository {
 	if m != nil {
@@ -39,7 +39,7 @@ type PostReceiveResponse struct {
 func (m *PostReceiveResponse) Reset()                    { *m = PostReceiveResponse{} }
 func (m *PostReceiveResponse) String() string            { return proto.CompactTextString(m) }
 func (*PostReceiveResponse) ProtoMessage()               {}
-func (*PostReceiveResponse) Descriptor() ([]byte, []int) { return fileDescriptor4, []int{1} }
+func (*PostReceiveResponse) Descriptor() ([]byte, []int) { return fileDescriptor6, []int{1} }
 
 func init() {
 	proto.RegisterType((*PostReceiveRequest)(nil), "gitaly.PostReceiveRequest")
@@ -118,9 +118,9 @@ var _NotificationService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "notifications.proto",
 }
 
-func init() { proto.RegisterFile("notifications.proto", fileDescriptor4) }
+func init() { proto.RegisterFile("notifications.proto", fileDescriptor6) }
 
-var fileDescriptor4 = []byte{
+var fileDescriptor6 = []byte{
 	// 170 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0xce, 0xcb, 0x2f, 0xc9,
 	0x4c, 0xcb, 0x4c, 0x4e, 0x2c, 0xc9, 0xcc, 0xcf, 0x2b, 0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17,
