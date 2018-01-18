@@ -23,8 +23,8 @@ func Dial(rawAddress string, connOpts []grpc.DialOption) (*grpc.ClientConn, erro
 	}
 
 	connOpts = append(connOpts,
-		grpc.WithDialer(func(a string, _ time.Duration) (net.Conn, error) {
-			return net.Dial(network, a)
+		grpc.WithDialer(func(a string, timeout time.Duration) (net.Conn, error) {
+			return net.DialTimeout(network, a, timeout)
 		}))
 	conn, err := grpc.Dial(addr, connOpts...)
 	if err != nil {

@@ -33,37 +33,37 @@
 			"revisionTime": "2017-03-31T03:19:02Z"
 		},
 		{
-			"checksumSHA1": "C7Yd+5V4a/75li7OdslnLdTgqLI=",
+			"checksumSHA1": "8Gc1ZcO7WxXstNzyePjwG90SBSU=",
 			"path": "gitlab.com/gitlab-org/gitaly-proto/go",
-			"revision": "60534539c0c8ed6396bf4fd9d7f35a68e1cd6734",
-			"revisionTime": "2017-07-28T19:21:39Z",
+			"revision": "f62abc80cb25363bf51a4f89f02654ca2f722dc8",
+			"revisionTime": "2018-01-17T16:23:27Z",
 			"tree": true,
-			"version": "v0.23.0",
-			"versionExact": "v0.23.0"
+			"version": "v0.75.0",
+			"versionExact": "v0.75.0"
 		},
 		{
 			"checksumSHA1": "dUHJbKas746n5fLzlwxHb6FOCxs=",
 			"path": "gitlab.com/gitlab-org/gitaly/auth",
-			"revision": "421641a7cd5a5d7edd8008a8089acbe9335b7f3d",
-			"revisionTime": "2017-07-18T12:50:12Z",
-			"version": "v0.21.2",
-			"versionExact": "v0.21.2"
+			"revision": "95a198aef54c42fd8e84c62acc63f0cd620864b3",
+			"revisionTime": "2018-01-18T11:33:00Z",
+			"version": "v0.71.0",
+			"versionExact": "v0.71.0"
 		},
 		{
-			"checksumSHA1": "qlzYmQ21XX/voiKWHDWUZ3lybGQ=",
+			"checksumSHA1": "s53Qjro9ZHX0DV2tCYQXLO2FHqI=",
 			"path": "gitlab.com/gitlab-org/gitaly/client",
-			"revision": "421641a7cd5a5d7edd8008a8089acbe9335b7f3d",
-			"revisionTime": "2017-07-18T12:50:12Z",
-			"version": "v0.21.2",
-			"versionExact": "v0.21.2"
+			"revision": "95a198aef54c42fd8e84c62acc63f0cd620864b3",
+			"revisionTime": "2018-01-18T11:33:00Z",
+			"version": "v0.71.0",
+			"versionExact": "v0.71.0"
 		},
 		{
 			"checksumSHA1": "mifcYH0qXpoPkX5KzXoM3mterWQ=",
 			"path": "gitlab.com/gitlab-org/gitaly/streamio",
-			"revision": "421641a7cd5a5d7edd8008a8089acbe9335b7f3d",
-			"revisionTime": "2017-07-18T12:50:12Z",
-			"version": "v0.21.2",
-			"versionExact": "v0.21.2"
+			"revision": "95a198aef54c42fd8e84c62acc63f0cd620864b3",
+			"revisionTime": "2018-01-18T11:33:00Z",
+			"version": "v0.71.0",
+			"versionExact": "v0.71.0"
 		},
 		{
 			"checksumSHA1": "Y+HGqEkYM15ir+J93MEaHdyFy0c=",
