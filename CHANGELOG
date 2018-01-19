@@ -1,3 +1,7 @@
+v6.0.2
+  - Use grpc-go 1.9.1 (!184)
+  - Update gitaly-proto and gitaly libs (!185)
+
 v6.0.1
   - Fix git push by removing a bad require in the pre-receive hook (!183)
 
