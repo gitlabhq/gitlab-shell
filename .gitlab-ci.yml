@@ -73,6 +73,7 @@ codeclimate:
     paths: [codeclimate.json]
 
 sast:
+  before_script: []
   image: registry.gitlab.com/gitlab-org/gl-sast:latest
   script:
     - /app/bin/run .
