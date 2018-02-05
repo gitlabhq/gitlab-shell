@@ -1,12 +1,7 @@
 ROOT_PATH = File.expand_path(File.join(File.dirname(__FILE__), ".."))
 
-if ENV['COVERALLS']
-  require 'coveralls'
-  Coveralls.wear!
-else
-  require 'simplecov'
-  SimpleCov.start
-end
+require 'simplecov'
+SimpleCov.start
 
 require 'vcr'
 require 'webmock'
