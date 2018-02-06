@@ -1,3 +1,6 @@
+v6.0.3
+  - Print new project information in post-receive
+
 v6.0.2
   - Use grpc-go 1.9.1 (!184)
   - Update gitaly-proto and gitaly libs (!185)

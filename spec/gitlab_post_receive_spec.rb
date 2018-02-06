@@ -62,16 +62,7 @@ describe GitlabPostReceive do
     end
 
     context 'when redirected message available' do
-      let(:message) do
-        <<~MSG
-          Project 'foo/bar' was moved to 'foo/baz'.
-
-          Please update your Git remote:
-
-            git remote set-url origin http://localhost:3000/foo/baz.git
-        MSG
-      end
-
+      let(:message) { "This is a redirected message" }
       let(:response) do
         {
           'reference_counter_decreased' => true,
@@ -86,20 +77,7 @@ describe GitlabPostReceive do
       end
 
       context 'when project created message is available' do
-        let(:message) do
-          <<~MSG
-
-          The private project foo/bar was successfully created.
-
-          To configure the remote, run:
-            git remote add origin http://localhost:3000/foo/bar.git
-
-          To view the project, visit:
-            http://localhost:3000/foo/bar
-
-          MSG
-        end
-
+        let(:message) { "This is a created project message" }
         let(:response) do
           {
             'reference_counter_decreased' => true,
@@ -163,29 +141,10 @@ describe GitlabPostReceive do
   end
 
   def assert_redirected_message_printed(gitlab_post_receive)
-    message = <<~MSG
-          Project 'foo/bar' was moved to 'foo/baz'.
-
-          Please update your Git remote:
-
-            git remote set-url origin http://localhost:3000/foo/baz.git
-          MSG
-    expect(gitlab_post_receive).to receive(:puts).with(message).ordered
+    expect(gitlab_post_receive).to receive(:puts).with("This is a redirected message")
   end
 
   def assert_project_created_message_printed(gitlab_post_receive)
-    message = <<~MSG
-
-          The private project foo/bar was successfully created.
-
-          To configure the remote, run:
-            git remote add origin http://localhost:3000/foo/bar.git
-
-          To view the project, visit:
-            http://localhost:3000/foo/bar
-
-          MSG
-
-    expect(gitlab_post_receive).to receive(:puts).with(message).ordered
+    expect(gitlab_post_receive).to receive(:puts).with("This is a created project message")
   end
 end
