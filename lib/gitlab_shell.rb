@@ -4,7 +4,7 @@ require 'pathname'
 require_relative 'gitlab_net'
 require_relative 'gitlab_metrics'
 
-class GitlabShell
+class GitlabShell # rubocop:disable Metrics/ClassLength
   class AccessDeniedError < StandardError; end
   class DisallowedCommandError < StandardError; end
   class InvalidRepositoryPathError < StandardError; end
@@ -12,9 +12,9 @@ class GitlabShell
   GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-lfs-authenticate).freeze
   GITALY_MIGRATED_COMMANDS = {
     'git-upload-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-upload-pack'),
-    'git-receive-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-receive-pack'),
-  }
-  API_COMMANDS = %w(2fa_recovery_codes)
+    'git-receive-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-receive-pack')
+  }.freeze
+  API_COMMANDS = %w(2fa_recovery_codes).freeze
   GL_PROTOCOL = 'ssh'.freeze
 
   attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access, :username
@@ -44,7 +44,7 @@ class GitlabShell
     process_cmd(args)
 
     true
-  rescue GitlabNet::ApiUnreachableError => ex
+  rescue GitlabNet::ApiUnreachableError
     $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
     false
   rescue AccessDeniedError => ex
@@ -53,13 +53,13 @@ class GitlabShell
 
     $stderr.puts "GitLab: #{ex.message}"
     false
-  rescue DisallowedCommandError => ex
+  rescue DisallowedCommandError
     message = "gitlab-shell: Attempt to execute disallowed command <#{origin_cmd}> by #{log_username}."
     $logger.warn message
 
     $stderr.puts "GitLab: Disallowed command"
     false
-  rescue InvalidRepositoryPathError => ex
+  rescue InvalidRepositoryPathError
     $stderr.puts "GitLab: Invalid repository path"
     false
   end
@@ -113,7 +113,7 @@ class GitlabShell
   end
 
   def process_cmd(args)
-    return self.send("api_#{@command}") if API_COMMANDS.include?(@command)
+    return send("api_#{@command}") if API_COMMANDS.include?(@command)
 
     if @command == 'git-lfs-authenticate'
       GitlabMetrics.measure('lfs-authenticate') do
@@ -126,7 +126,7 @@ class GitlabShell
     executable = @command
     args = [repo_path]
 
-    if GITALY_MIGRATED_COMMANDS.has_key?(executable) && @gitaly
+    if GITALY_MIGRATED_COMMANDS.key?(executable) && @gitaly
       executable = GITALY_MIGRATED_COMMANDS[executable]
 
       gitaly_address = @gitaly['address']
@@ -172,15 +172,15 @@ class GitlabShell
     end
 
     if git_trace_available?
-      env.merge!({
+      env.merge!(
         'GIT_TRACE' => @config.git_trace_log_file,
         'GIT_TRACE_PACKET' => @config.git_trace_log_file,
-        'GIT_TRACE_PERFORMANCE' => @config.git_trace_log_file,
-      })
+        'GIT_TRACE_PERFORMANCE' => @config.git_trace_log_file
+      )
     end
 
     # We use 'chdir: ROOT_PATH' to let the next executable know where config.yml is.
-    Kernel::exec(env, *args, unsetenv_others: true, chdir: ROOT_PATH)
+    Kernel.exec(env, *args, unsetenv_others: true, chdir: ROOT_PATH)
   end
 
   def api

@@ -2,7 +2,7 @@ require 'logger'
 
 require_relative 'gitlab_config'
 
-def convert_log_level log_level
+def convert_log_level(log_level)
   Logger.const_get(log_level.upcase)
 rescue NameError
   $stderr.puts "WARNING: Unrecognized log level #{log_level.inspect}."

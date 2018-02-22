@@ -6,14 +6,14 @@ require 'fileutils'
 require_relative '../lib/gitlab_init'
 
 module GoBuild
-  GO_DIR = 'go'
+  GO_DIR = 'go'.freeze
   BUILD_DIR = File.join(ROOT_PATH, 'go_build')
   GO_PACKAGE = File.join('gitlab.com/gitlab-org/gitlab-shell', GO_DIR)
 
   GO_ENV = {
     'GOPATH' => BUILD_DIR,
-    'GO15VENDOREXPERIMENT' => '1',
-  }
+    'GO15VENDOREXPERIMENT' => '1'
+  }.freeze
 
   def create_fresh_build_dir
     FileUtils.rm_rf(BUILD_DIR)
@@ -25,8 +25,8 @@ module GoBuild
   def run!(env, cmd)
     raise "env must be a hash" unless env.is_a?(Hash)
     raise "cmd must be an array" unless cmd.is_a?(Array)
-  
-    if !system(env, *cmd)
+
+    unless system(env, *cmd)
       abort "command failed: #{env.inspect} #{cmd.join(' ')}"
     end
   end

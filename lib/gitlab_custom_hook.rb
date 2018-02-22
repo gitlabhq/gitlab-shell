@@ -47,7 +47,7 @@ class GitlabCustomHook
     # Submit changes to the hook via its stdin.
     begin
       IO.copy_stream(StringIO.new(changes), stdin_writer)
-    rescue Errno::EPIPE
+    rescue Errno::EPIPE # rubocop:disable Lint/HandleExceptions
       # It is not an error if the hook does not consume all of its input.
     end
 

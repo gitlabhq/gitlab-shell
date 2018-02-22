@@ -14,12 +14,12 @@ class GitAccessStatus
 
   def self.create_from_json(json)
     values = JSON.parse(json)
-    self.new(values["status"],
-             values["message"],
-             gl_repository: values["gl_repository"],
-             gl_username: values["gl_username"],
-             repository_path: values["repository_path"],
-             gitaly: values["gitaly"])
+    new(values["status"],
+        values["message"],
+        gl_repository: values["gl_repository"],
+        gl_username: values["gl_username"],
+        repository_path: values["repository_path"],
+        gitaly: values["gitaly"])
   end
 
   def allowed?

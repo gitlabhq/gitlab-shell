@@ -4,7 +4,7 @@
 # will be processed properly.
 
 refs = $stdin.read
-key_id  = ENV.delete('GL_ID')
+key_id = ENV.delete('GL_ID')
 gl_repository = ENV.delete('GL_REPOSITORY')
 repo_path = Dir.pwd
 

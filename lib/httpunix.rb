@@ -11,7 +11,7 @@ module URI
   class HTTPUNIX < HTTP
     def hostname
       # decode %XX from path to file
-      v = self.host
+      v = host
       URI.decode(v)
     end
 
@@ -30,9 +30,9 @@ end
 # - Net::HTTP::connect
 module Net
   class HTTPUNIX < HTTP
-    def initialize(socketpath, port=nil)
+    def initialize(socketpath, port = nil)
       super(socketpath, port)
-      @port    = nil    # HTTP will set it to default - override back -> set DEFAULT_PORT
+      @port = nil # HTTP will set it to default - override back -> set DEFAULT_PORT
     end
 
     # override to prevent ":<port>" being appended to HTTP_HOST
