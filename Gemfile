@@ -7,5 +7,5 @@ group :development, :test do
   gem 'guard'
   gem 'guard-rspec'
   gem 'vcr'
-  gem 'rubocop', '0.28.0', require: false
+  gem 'rubocop', '0.49.1', require: false
 end
