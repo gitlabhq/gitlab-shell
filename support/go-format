@@ -5,7 +5,7 @@ def main(check)
   cmd = %w[gofmt -s -l]
   cmd << '-w' unless check
   cmd += go_files
-  output = IO.popen(cmd, 'r') { |io| io.read }
+  output = IO.popen(cmd, 'r', &:read)
   $stdout.write(output)
   abort 'gofmt failed' unless $?.success?
   if check && output.lines.any? { |l| l != "\n" }

@@ -8,7 +8,7 @@ require_relative 'gitlab_access'
 require_relative 'gitlab_lfs_authentication'
 require_relative 'httpunix'
 
-class GitlabNet
+class GitlabNet # rubocop:disable Metrics/ClassLength
   class ApiUnreachableError < StandardError; end
   class NotFound < StandardError; end
 
@@ -16,7 +16,7 @@ class GitlabNet
   READ_TIMEOUT = 300
 
   def check_access(cmd, gl_repository, repo, actor, changes, protocol, env: {})
-    changes = changes.join("\n") unless changes.kind_of?(String)
+    changes = changes.join("\n") unless changes.is_a?(String)
 
     params = {
       action: cmd,
@@ -73,7 +73,7 @@ class GitlabNet
   end
 
   def merge_request_urls(gl_repository, repo_path, changes)
-    changes = changes.join("\n") unless changes.kind_of?(String)
+    changes = changes.join("\n") unless changes.is_a?(String)
     changes = changes.encode('UTF-8', 'ASCII', invalid: :replace, replace: '')
     url = "#{host}/merge_request_urls?project=#{URI.escape(repo_path)}&changes=#{URI.escape(changes)}"
     url += "&gl_repository=#{URI.escape(gl_repository)}" if gl_repository
@@ -152,7 +152,7 @@ class GitlabNet
     "#{config.gitlab_url}/api/v4/internal"
   end
 
-  def http_client_for(uri, options={})
+  def http_client_for(uri, options = {})
     http = if uri.is_a?(URI::HTTPUNIX)
              Net::HTTPUNIX.new(uri.hostname)
            else
@@ -189,7 +189,7 @@ class GitlabNet
     request
   end
 
-  def request(method, url, params = {}, options={})
+  def request(method, url, params = {}, options = {})
     $logger.debug "Performing #{method.to_s.upcase} #{url}"
 
     uri = URI.parse(url)
@@ -205,7 +205,7 @@ class GitlabNet
       raise ApiUnreachableError
     ensure
       $logger.info do
-        sprintf('%s %s %0.5f', method.to_s.upcase, url, Time.new - start_time)
+        sprintf('%s %s %0.5f', method.to_s.upcase, url, Time.new - start_time) # rubocop:disable Style/FormatString
       end
     end
 
@@ -218,7 +218,7 @@ class GitlabNet
     response
   end
 
-  def get(url, options={})
+  def get(url, options = {})
     request(:get, url, {}, options)
   end
 
@@ -231,13 +231,11 @@ class GitlabNet
       store = OpenSSL::X509::Store.new
       store.set_default_paths
 
-      if ca_file = config.http_settings['ca_file']
-        store.add_file(ca_file)
-      end
+      ca_file = config.http_settings['ca_file']
+      store.add_file(ca_file) if ca_file
 
-      if ca_path = config.http_settings['ca_path']
-        store.add_path(ca_path)
-      end
+      ca_path = config.http_settings['ca_path']
+      store.add_path(ca_path) if ca_path
 
       store
     end

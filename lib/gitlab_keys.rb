@@ -4,19 +4,26 @@ require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 require_relative 'gitlab_metrics'
 
-class GitlabKeys
-  class KeyError < StandardError ; end
+class GitlabKeys # rubocop:disable Metrics/ClassLength
+  class KeyError < StandardError; end
 
   attr_accessor :auth_file, :key
 
   def self.command(key_id)
-    raise KeyError.new("Invalid key_id: #{key_id.inspect}") unless /\A[a-z0-9-]+\z/ =~ key_id
+    unless /\A[a-z0-9-]+\z/ =~ key_id
+      raise KeyError, "Invalid key_id: #{key_id.inspect}"
+    end
+
     "#{ROOT_PATH}/bin/gitlab-shell #{key_id}"
   end
 
   def self.key_line(key_id, public_key)
     public_key.chomp!
-    raise KeyError.new("Invalid public_key: #{public_key.inspect}") if public_key.include?("\n")
+
+    if public_key.include?("\n")
+      raise KeyError, "Invalid public_key: #{public_key.inspect}"
+    end
+
     "command=\"#{command(key_id)}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{public_key}"
   end
 
@@ -31,19 +38,19 @@ class GitlabKeys
   def exec
     GitlabMetrics.measure("command-#{@command}") do
       case @command
-      when 'add-key';
+      when 'add-key'
         add_key
-      when 'batch-add-keys';
+      when 'batch-add-keys'
         batch_add_keys
-      when 'rm-key';
+      when 'rm-key'
         rm_key
-      when 'list-keys';
+      when 'list-keys'
         list_keys
-      when 'list-key-ids';
+      when 'list-key-ids'
         list_key_ids
-      when 'clear';
+      when 'clear'
         clear
-      when 'check-permissions';
+      when 'check-permissions'
         check_permissions
       else
         $logger.warn "Attempt to execute invalid gitlab-keys command #{@command.inspect}."
@@ -111,7 +118,7 @@ class GitlabKeys
     lock do
       $logger.info "Removing key #{@key_id}"
       open_auth_file('r+') do |f|
-        while line = f.gets do
+        while line = f.gets # rubocop:disable Style/AssignmentInCondition
           next unless line.start_with?("command=\"#{self.class.command(@key_id)}\"")
           f.seek(-line.length, IO::SEEK_CUR)
           # Overwrite the line with #'s. Because the 'line' variable contains
@@ -145,7 +152,7 @@ class GitlabKeys
     File.open(lock_file, "w+") do |f|
       begin
         f.flock File::LOCK_EX
-        Timeout::timeout(timeout) { yield }
+        Timeout.timeout(timeout) { yield }
       ensure
         f.flock File::LOCK_UN
       end

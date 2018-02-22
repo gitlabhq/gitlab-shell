@@ -12,7 +12,7 @@ module GoBuild
 
   GO_ENV = {
     'GOPATH' => BUILD_DIR,
-    'GO15VENDOREXPERIMENT' => '1',
+    'GO15VENDOREXPERIMENT' => '1'
   }.freeze
 
   def create_fresh_build_dir
@@ -26,7 +26,7 @@ module GoBuild
     raise "env must be a hash" unless env.is_a?(Hash)
     raise "cmd must be an array" unless cmd.is_a?(Array)
 
-    if !system(env, *cmd)
+    unless system(env, *cmd)
       abort "command failed: #{env.inspect} #{cmd.join(' ')}"
     end
   end
