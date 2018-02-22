@@ -28,9 +28,9 @@ class GitlabNet
     }
 
     if actor =~ /\Akey\-\d+\Z/
-      params.merge!(key_id: actor.gsub("key-", ""))
+      params[:key_id] = actor.gsub("key-", "")
     elsif actor =~ /\Auser\-\d+\Z/
-      params.merge!(user_id: actor.gsub("user-", ""))
+      params[:user_id] = actor.gsub("user-", "")
     end
 
     url = "#{host}/allowed"
@@ -141,7 +141,7 @@ class GitlabNet
   protected
 
   def sanitize_path(repo)
-    repo.gsub("'", "")
+    repo.delete("'")
   end
 
   def config
@@ -153,11 +153,11 @@ class GitlabNet
   end
 
   def http_client_for(uri, options={})
-    if uri.is_a?(URI::HTTPUNIX)
-      http = Net::HTTPUNIX.new(uri.hostname)
-    else
-      http = Net::HTTP.new(uri.host, uri.port)
-    end
+    http = if uri.is_a?(URI::HTTPUNIX)
+             Net::HTTPUNIX.new(uri.hostname)
+           else
+             Net::HTTP.new(uri.host, uri.port)
+           end
 
     http.read_timeout = options[:read_timeout] || read_timeout
 

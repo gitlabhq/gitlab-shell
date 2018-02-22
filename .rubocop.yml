@@ -76,14 +76,6 @@ Style/BlockEndNewline:
   Description: 'Put end statement of multiline block on its own line.'
   Enabled: true
 
-Style/Blocks:
-  Description: >-
-                Avoid using {...} for multi-line blocks (multiline chaining is
-                always ugly).
-                Prefer {...} over do...end for single-line blocks.
-  StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#single-line-blocks'
-  Enabled: true
-
 Style/BracesAroundHashParameters:
   Description: 'Enforce braces style around hash parameters.'
   Enabled: false
@@ -152,7 +144,7 @@ Style/DefWithParentheses:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#method-parens'
   Enabled: false
 
-Style/DeprecatedHashMethods:
+Style/PreferredHashMethods:
   Description: 'Checks for use of deprecated Hash methods.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#hash-key'
   Enabled: false
@@ -326,7 +318,7 @@ Style/LineEndConcatenation:
                  line end.
   Enabled: false
 
-Style/MethodCallParentheses:
+Style/MethodCallWithoutArgsParentheses:
   Description: 'Do not use parentheses for method calls with no arguments.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#no-args-no-parens'
   Enabled: false
@@ -528,7 +520,7 @@ Style/SingleLineMethods:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#no-single-line-methods'
   Enabled: false
 
-Style/SingleSpaceBeforeFirstArg:
+Layout/SpaceBeforeFirstArg:
   Description: >-
                  Checks that exactly one space is used between a method name
                  and the first argument for method calls without parentheses.
@@ -544,7 +536,7 @@ Style/SpaceAfterComma:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#spaces-operators'
   Enabled: false
 
-Style/SpaceAfterControlKeyword:
+Layout/SpaceAroundKeyword:
   Description: 'Use spaces after if/elsif/unless/while/until/case/when.'
   Enabled: false
 
@@ -605,7 +597,7 @@ Style/SpaceAroundOperators:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#spaces-operators'
   Enabled: false
 
-Style/SpaceBeforeModifierKeyword:
+Layout/SpaceAroundKeyword:
   Description: 'Put a space before the modifier keyword.'
   Enabled: false
 
@@ -659,7 +651,7 @@ Style/TrailingBlankLines:
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#newline-eof'
   Enabled: true
 
-Style/TrailingComma:
+Style/TrailingCommaInLiteral:
   Description: 'Checks for trailing comma in parameter lists and literals.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#no-trailing-array-commas'
   Enabled: false
@@ -688,11 +680,6 @@ Style/UnneededCapitalW:
 Style/UnneededPercentQ:
   Description: 'Checks for %q/%Q when single quotes or double quotes would do.'
   StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#percent-q'
-  Enabled: false
-
-Style/UnneededPercentX:
-  Description: 'Checks for %x when `` would do.'
-  StyleGuide: 'https://github.com/bbatsov/ruby-style-guide#percent-x'
   Enabled: false
 
 Style/VariableInterpolation:
@@ -896,7 +883,7 @@ Lint/ShadowingOuterLocalVariable:
                  for block arguments or block local variables.
   Enabled: false
 
-Lint/SpaceBeforeFirstArg:
+Layout/SpaceBeforeFirstArg:
   Description: >-
                  Put a space between a method name and the first argument
                  in a method call without parentheses.
@@ -968,3 +955,4 @@ AllCops:
     - 'lib/gitlab/upgrader.rb'
     - 'lib/gitlab/seeder.rb'
     - 'lib/vendor/**/*'
+    - 'Guardfile'

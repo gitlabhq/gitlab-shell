@@ -157,8 +157,8 @@ class GitlabKeys
   end
 
   def open_auth_file(mode)
-    open(auth_file, mode, 0600) do |file|
-      file.chmod(0600)
+    open(auth_file, mode, 0o600) do |file|
+      file.chmod(0o600)
       yield file
     end
   end

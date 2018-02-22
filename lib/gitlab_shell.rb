@@ -13,8 +13,8 @@ class GitlabShell
   GITALY_MIGRATED_COMMANDS = {
     'git-upload-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-upload-pack'),
     'git-receive-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-receive-pack'),
-  }
-  API_COMMANDS = %w(2fa_recovery_codes)
+  }.freeze
+  API_COMMANDS = %w(2fa_recovery_codes).freeze
   GL_PROTOCOL = 'ssh'.freeze
 
   attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access, :username

@@ -32,7 +32,7 @@ module Net
   class HTTPUNIX < HTTP
     def initialize(socketpath, port=nil)
       super(socketpath, port)
-      @port    = nil    # HTTP will set it to default - override back -> set DEFAULT_PORT
+      @port = nil # HTTP will set it to default - override back -> set DEFAULT_PORT
     end
 
     # override to prevent ":<port>" being appended to HTTP_HOST

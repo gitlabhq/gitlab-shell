@@ -13,7 +13,8 @@ class GitlabPostReceive
   def initialize(gl_repository, repo_path, actor, changes)
     @config = GitlabConfig.new
     @gl_repository = gl_repository
-    @repo_path, @actor = repo_path.strip, actor
+    @repo_path = repo_path.strip
+    @actor = actor
     @changes = changes
     @jid = SecureRandom.hex(12)
   end
@@ -47,11 +48,12 @@ class GitlabPostReceive
   end
 
   def print_merge_request_link(merge_request)
-    if merge_request["new_merge_request"]
-      message = "To create a merge request for #{merge_request["branch_name"]}, visit:"
-    else
-      message = "View merge request for #{merge_request["branch_name"]}:"
-    end
+    message =
+      if merge_request["new_merge_request"]
+        "To create a merge request for #{merge_request["branch_name"]}, visit:"
+      else
+        "View merge request for #{merge_request["branch_name"]}:"
+      end
 
     puts message
     puts((" " * 2) + merge_request["url"])
@@ -64,7 +66,7 @@ class GitlabPostReceive
 
     # Git prefixes remote messages with "remote: ", so this width is subtracted
     # from the width available to us.
-    total_width -= "remote: ".length
+    total_width -= "remote: ".length # rubocop:disable Performance/FixedSize
 
     # Our centered text shouldn't start or end right at the edge of the window,
     # so we add some horizontal padding: 2 chars on either side.
