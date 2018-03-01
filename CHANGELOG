@@ -1,3 +1,6 @@
+v6.0.4
+  - Don't delete GL_REPOSITORY environment variable from post-receive hook (!191)
+
 v6.0.3
   - Print new project information in post-receive
 
