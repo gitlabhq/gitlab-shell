@@ -12,6 +12,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
   GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-lfs-authenticate).freeze
   GITALY_MIGRATED_COMMANDS = {
     'git-upload-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-upload-pack'),
+    'git-upload-archive' => File.join(ROOT_PATH, 'bin', 'gitaly-upload-archive'),
     'git-receive-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-receive-pack')
   }.freeze
   API_COMMANDS = %w(2fa_recovery_codes).freeze

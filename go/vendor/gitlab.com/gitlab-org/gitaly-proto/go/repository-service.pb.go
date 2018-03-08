@@ -43,7 +43,7 @@ func (x GetArchiveRequest_Format) String() string {
 	return proto.EnumName(GetArchiveRequest_Format_name, int32(x))
 }
 func (GetArchiveRequest_Format) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor10, []int{18, 0}
+	return fileDescriptor10, []int{16, 0}
 }
 
 type RepositoryExistsRequest struct {
@@ -78,38 +78,6 @@ func (m *RepositoryExistsResponse) GetExists() bool {
 	return false
 }
 
-type RepositoryIsEmptyRequest struct {
-	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
-}
-
-func (m *RepositoryIsEmptyRequest) Reset()                    { *m = RepositoryIsEmptyRequest{} }
-func (m *RepositoryIsEmptyRequest) String() string            { return proto.CompactTextString(m) }
-func (*RepositoryIsEmptyRequest) ProtoMessage()               {}
-func (*RepositoryIsEmptyRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{2} }
-
-func (m *RepositoryIsEmptyRequest) GetRepository() *Repository {
-	if m != nil {
-		return m.Repository
-	}
-	return nil
-}
-
-type RepositoryIsEmptyResponse struct {
-	IsEmpty bool `protobuf:"varint,1,opt,name=is_empty,json=isEmpty" json:"is_empty,omitempty"`
-}
-
-func (m *RepositoryIsEmptyResponse) Reset()                    { *m = RepositoryIsEmptyResponse{} }
-func (m *RepositoryIsEmptyResponse) String() string            { return proto.CompactTextString(m) }
-func (*RepositoryIsEmptyResponse) ProtoMessage()               {}
-func (*RepositoryIsEmptyResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{3} }
-
-func (m *RepositoryIsEmptyResponse) GetIsEmpty() bool {
-	if m != nil {
-		return m.IsEmpty
-	}
-	return false
-}
-
 type RepackIncrementalRequest struct {
 	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
 }
@@ -117,7 +85,7 @@ type RepackIncrementalRequest struct {
 func (m *RepackIncrementalRequest) Reset()                    { *m = RepackIncrementalRequest{} }
 func (m *RepackIncrementalRequest) String() string            { return proto.CompactTextString(m) }
 func (*RepackIncrementalRequest) ProtoMessage()               {}
-func (*RepackIncrementalRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{4} }
+func (*RepackIncrementalRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{2} }
 
 func (m *RepackIncrementalRequest) GetRepository() *Repository {
 	if m != nil {
@@ -132,7 +100,7 @@ type RepackIncrementalResponse struct {
 func (m *RepackIncrementalResponse) Reset()                    { *m = RepackIncrementalResponse{} }
 func (m *RepackIncrementalResponse) String() string            { return proto.CompactTextString(m) }
 func (*RepackIncrementalResponse) ProtoMessage()               {}
-func (*RepackIncrementalResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{5} }
+func (*RepackIncrementalResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{3} }
 
 type RepackFullRequest struct {
 	Repository   *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
@@ -142,7 +110,7 @@ type RepackFullRequest struct {
 func (m *RepackFullRequest) Reset()                    { *m = RepackFullRequest{} }
 func (m *RepackFullRequest) String() string            { return proto.CompactTextString(m) }
 func (*RepackFullRequest) ProtoMessage()               {}
-func (*RepackFullRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{6} }
+func (*RepackFullRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{4} }
 
 func (m *RepackFullRequest) GetRepository() *Repository {
 	if m != nil {
@@ -164,7 +132,7 @@ type RepackFullResponse struct {
 func (m *RepackFullResponse) Reset()                    { *m = RepackFullResponse{} }
 func (m *RepackFullResponse) String() string            { return proto.CompactTextString(m) }
 func (*RepackFullResponse) ProtoMessage()               {}
-func (*RepackFullResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{7} }
+func (*RepackFullResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{5} }
 
 type GarbageCollectRequest struct {
 	Repository   *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
@@ -174,7 +142,7 @@ type GarbageCollectRequest struct {
 func (m *GarbageCollectRequest) Reset()                    { *m = GarbageCollectRequest{} }
 func (m *GarbageCollectRequest) String() string            { return proto.CompactTextString(m) }
 func (*GarbageCollectRequest) ProtoMessage()               {}
-func (*GarbageCollectRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{8} }
+func (*GarbageCollectRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{6} }
 
 func (m *GarbageCollectRequest) GetRepository() *Repository {
 	if m != nil {
@@ -196,7 +164,7 @@ type GarbageCollectResponse struct {
 func (m *GarbageCollectResponse) Reset()                    { *m = GarbageCollectResponse{} }
 func (m *GarbageCollectResponse) String() string            { return proto.CompactTextString(m) }
 func (*GarbageCollectResponse) ProtoMessage()               {}
-func (*GarbageCollectResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{9} }
+func (*GarbageCollectResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{7} }
 
 type RepositorySizeRequest struct {
 	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
@@ -205,7 +173,7 @@ type RepositorySizeRequest struct {
 func (m *RepositorySizeRequest) Reset()                    { *m = RepositorySizeRequest{} }
 func (m *RepositorySizeRequest) String() string            { return proto.CompactTextString(m) }
 func (*RepositorySizeRequest) ProtoMessage()               {}
-func (*RepositorySizeRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{10} }
+func (*RepositorySizeRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{8} }
 
 func (m *RepositorySizeRequest) GetRepository() *Repository {
 	if m != nil {
@@ -222,7 +190,7 @@ type RepositorySizeResponse struct {
 func (m *RepositorySizeResponse) Reset()                    { *m = RepositorySizeResponse{} }
 func (m *RepositorySizeResponse) String() string            { return proto.CompactTextString(m) }
 func (*RepositorySizeResponse) ProtoMessage()               {}
-func (*RepositorySizeResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{11} }
+func (*RepositorySizeResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{9} }
 
 func (m *RepositorySizeResponse) GetSize() int64 {
 	if m != nil {
@@ -239,7 +207,7 @@ type ApplyGitattributesRequest struct {
 func (m *ApplyGitattributesRequest) Reset()                    { *m = ApplyGitattributesRequest{} }
 func (m *ApplyGitattributesRequest) String() string            { return proto.CompactTextString(m) }
 func (*ApplyGitattributesRequest) ProtoMessage()               {}
-func (*ApplyGitattributesRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{12} }
+func (*ApplyGitattributesRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{10} }
 
 func (m *ApplyGitattributesRequest) GetRepository() *Repository {
 	if m != nil {
@@ -261,7 +229,7 @@ type ApplyGitattributesResponse struct {
 func (m *ApplyGitattributesResponse) Reset()                    { *m = ApplyGitattributesResponse{} }
 func (m *ApplyGitattributesResponse) String() string            { return proto.CompactTextString(m) }
 func (*ApplyGitattributesResponse) ProtoMessage()               {}
-func (*ApplyGitattributesResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{13} }
+func (*ApplyGitattributesResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{11} }
 
 type FetchRemoteRequest struct {
 	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
@@ -271,12 +239,13 @@ type FetchRemoteRequest struct {
 	Timeout    int32       `protobuf:"varint,5,opt,name=timeout" json:"timeout,omitempty"`
 	SshKey     string      `protobuf:"bytes,6,opt,name=ssh_key,json=sshKey" json:"ssh_key,omitempty"`
 	KnownHosts string      `protobuf:"bytes,7,opt,name=known_hosts,json=knownHosts" json:"known_hosts,omitempty"`
+	NoPrune    bool        `protobuf:"varint,9,opt,name=no_prune,json=noPrune" json:"no_prune,omitempty"`
 }
 
 func (m *FetchRemoteRequest) Reset()                    { *m = FetchRemoteRequest{} }
 func (m *FetchRemoteRequest) String() string            { return proto.CompactTextString(m) }
 func (*FetchRemoteRequest) ProtoMessage()               {}
-func (*FetchRemoteRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{14} }
+func (*FetchRemoteRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{12} }
 
 func (m *FetchRemoteRequest) GetRepository() *Repository {
 	if m != nil {
@@ -327,13 +296,20 @@ func (m *FetchRemoteRequest) GetKnownHosts() string {
 	return ""
 }
 
+func (m *FetchRemoteRequest) GetNoPrune() bool {
+	if m != nil {
+		return m.NoPrune
+	}
+	return false
+}
+
 type FetchRemoteResponse struct {
 }
 
 func (m *FetchRemoteResponse) Reset()                    { *m = FetchRemoteResponse{} }
 func (m *FetchRemoteResponse) String() string            { return proto.CompactTextString(m) }
 func (*FetchRemoteResponse) ProtoMessage()               {}
-func (*FetchRemoteResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{15} }
+func (*FetchRemoteResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{13} }
 
 type CreateRepositoryRequest struct {
 	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
@@ -342,7 +318,7 @@ type CreateRepositoryRequest struct {
 func (m *CreateRepositoryRequest) Reset()                    { *m = CreateRepositoryRequest{} }
 func (m *CreateRepositoryRequest) String() string            { return proto.CompactTextString(m) }
 func (*CreateRepositoryRequest) ProtoMessage()               {}
-func (*CreateRepositoryRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{16} }
+func (*CreateRepositoryRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{14} }
 
 func (m *CreateRepositoryRequest) GetRepository() *Repository {
 	if m != nil {
@@ -357,7 +333,7 @@ type CreateRepositoryResponse struct {
 func (m *CreateRepositoryResponse) Reset()                    { *m = CreateRepositoryResponse{} }
 func (m *CreateRepositoryResponse) String() string            { return proto.CompactTextString(m) }
 func (*CreateRepositoryResponse) ProtoMessage()               {}
-func (*CreateRepositoryResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{17} }
+func (*CreateRepositoryResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{15} }
 
 type GetArchiveRequest struct {
 	Repository *Repository              `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
@@ -369,7 +345,7 @@ type GetArchiveRequest struct {
 func (m *GetArchiveRequest) Reset()                    { *m = GetArchiveRequest{} }
 func (m *GetArchiveRequest) String() string            { return proto.CompactTextString(m) }
 func (*GetArchiveRequest) ProtoMessage()               {}
-func (*GetArchiveRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{18} }
+func (*GetArchiveRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{16} }
 
 func (m *GetArchiveRequest) GetRepository() *Repository {
 	if m != nil {
@@ -406,7 +382,7 @@ type GetArchiveResponse struct {
 func (m *GetArchiveResponse) Reset()                    { *m = GetArchiveResponse{} }
 func (m *GetArchiveResponse) String() string            { return proto.CompactTextString(m) }
 func (*GetArchiveResponse) ProtoMessage()               {}
-func (*GetArchiveResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{19} }
+func (*GetArchiveResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{17} }
 
 func (m *GetArchiveResponse) GetData() []byte {
 	if m != nil {
@@ -422,7 +398,7 @@ type HasLocalBranchesRequest struct {
 func (m *HasLocalBranchesRequest) Reset()                    { *m = HasLocalBranchesRequest{} }
 func (m *HasLocalBranchesRequest) String() string            { return proto.CompactTextString(m) }
 func (*HasLocalBranchesRequest) ProtoMessage()               {}
-func (*HasLocalBranchesRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{20} }
+func (*HasLocalBranchesRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{18} }
 
 func (m *HasLocalBranchesRequest) GetRepository() *Repository {
 	if m != nil {
@@ -438,7 +414,7 @@ type HasLocalBranchesResponse struct {
 func (m *HasLocalBranchesResponse) Reset()                    { *m = HasLocalBranchesResponse{} }
 func (m *HasLocalBranchesResponse) String() string            { return proto.CompactTextString(m) }
 func (*HasLocalBranchesResponse) ProtoMessage()               {}
-func (*HasLocalBranchesResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{21} }
+func (*HasLocalBranchesResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{19} }
 
 func (m *HasLocalBranchesResponse) GetValue() bool {
 	if m != nil {
@@ -457,7 +433,7 @@ type FetchSourceBranchRequest struct {
 func (m *FetchSourceBranchRequest) Reset()                    { *m = FetchSourceBranchRequest{} }
 func (m *FetchSourceBranchRequest) String() string            { return proto.CompactTextString(m) }
 func (*FetchSourceBranchRequest) ProtoMessage()               {}
-func (*FetchSourceBranchRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{22} }
+func (*FetchSourceBranchRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{20} }
 
 func (m *FetchSourceBranchRequest) GetRepository() *Repository {
 	if m != nil {
@@ -494,7 +470,7 @@ type FetchSourceBranchResponse struct {
 func (m *FetchSourceBranchResponse) Reset()                    { *m = FetchSourceBranchResponse{} }
 func (m *FetchSourceBranchResponse) String() string            { return proto.CompactTextString(m) }
 func (*FetchSourceBranchResponse) ProtoMessage()               {}
-func (*FetchSourceBranchResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{23} }
+func (*FetchSourceBranchResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{21} }
 
 func (m *FetchSourceBranchResponse) GetResult() bool {
 	if m != nil {
@@ -510,7 +486,7 @@ type FsckRequest struct {
 func (m *FsckRequest) Reset()                    { *m = FsckRequest{} }
 func (m *FsckRequest) String() string            { return proto.CompactTextString(m) }
 func (*FsckRequest) ProtoMessage()               {}
-func (*FsckRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{24} }
+func (*FsckRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{22} }
 
 func (m *FsckRequest) GetRepository() *Repository {
 	if m != nil {
@@ -526,7 +502,7 @@ type FsckResponse struct {
 func (m *FsckResponse) Reset()                    { *m = FsckResponse{} }
 func (m *FsckResponse) String() string            { return proto.CompactTextString(m) }
 func (*FsckResponse) ProtoMessage()               {}
-func (*FsckResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{25} }
+func (*FsckResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{23} }
 
 func (m *FsckResponse) GetError() []byte {
 	if m != nil {
@@ -547,7 +523,7 @@ type WriteRefRequest struct {
 func (m *WriteRefRequest) Reset()                    { *m = WriteRefRequest{} }
 func (m *WriteRefRequest) String() string            { return proto.CompactTextString(m) }
 func (*WriteRefRequest) ProtoMessage()               {}
-func (*WriteRefRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{26} }
+func (*WriteRefRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{24} }
 
 func (m *WriteRefRequest) GetRepository() *Repository {
 	if m != nil {
@@ -598,7 +574,7 @@ type WriteRefResponse struct {
 func (m *WriteRefResponse) Reset()                    { *m = WriteRefResponse{} }
 func (m *WriteRefResponse) String() string            { return proto.CompactTextString(m) }
 func (*WriteRefResponse) ProtoMessage()               {}
-func (*WriteRefResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{27} }
+func (*WriteRefResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{25} }
 
 func (m *WriteRefResponse) GetError() []byte {
 	if m != nil {
@@ -618,7 +594,7 @@ type FindMergeBaseRequest struct {
 func (m *FindMergeBaseRequest) Reset()                    { *m = FindMergeBaseRequest{} }
 func (m *FindMergeBaseRequest) String() string            { return proto.CompactTextString(m) }
 func (*FindMergeBaseRequest) ProtoMessage()               {}
-func (*FindMergeBaseRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{28} }
+func (*FindMergeBaseRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{26} }
 
 func (m *FindMergeBaseRequest) GetRepository() *Repository {
 	if m != nil {
@@ -641,7 +617,7 @@ type FindMergeBaseResponse struct {
 func (m *FindMergeBaseResponse) Reset()                    { *m = FindMergeBaseResponse{} }
 func (m *FindMergeBaseResponse) String() string            { return proto.CompactTextString(m) }
 func (*FindMergeBaseResponse) ProtoMessage()               {}
-func (*FindMergeBaseResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{29} }
+func (*FindMergeBaseResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{27} }
 
 func (m *FindMergeBaseResponse) GetBase() string {
 	if m != nil {
@@ -658,7 +634,7 @@ type CreateForkRequest struct {
 func (m *CreateForkRequest) Reset()                    { *m = CreateForkRequest{} }
 func (m *CreateForkRequest) String() string            { return proto.CompactTextString(m) }
 func (*CreateForkRequest) ProtoMessage()               {}
-func (*CreateForkRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{30} }
+func (*CreateForkRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{28} }
 
 func (m *CreateForkRequest) GetRepository() *Repository {
 	if m != nil {
@@ -680,7 +656,7 @@ type CreateForkResponse struct {
 func (m *CreateForkResponse) Reset()                    { *m = CreateForkResponse{} }
 func (m *CreateForkResponse) String() string            { return proto.CompactTextString(m) }
 func (*CreateForkResponse) ProtoMessage()               {}
-func (*CreateForkResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{31} }
+func (*CreateForkResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{29} }
 
 type IsRebaseInProgressRequest struct {
 	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
@@ -690,7 +666,7 @@ type IsRebaseInProgressRequest struct {
 func (m *IsRebaseInProgressRequest) Reset()                    { *m = IsRebaseInProgressRequest{} }
 func (m *IsRebaseInProgressRequest) String() string            { return proto.CompactTextString(m) }
 func (*IsRebaseInProgressRequest) ProtoMessage()               {}
-func (*IsRebaseInProgressRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{32} }
+func (*IsRebaseInProgressRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{30} }
 
 func (m *IsRebaseInProgressRequest) GetRepository() *Repository {
 	if m != nil {
@@ -713,9 +689,49 @@ type IsRebaseInProgressResponse struct {
 func (m *IsRebaseInProgressResponse) Reset()                    { *m = IsRebaseInProgressResponse{} }
 func (m *IsRebaseInProgressResponse) String() string            { return proto.CompactTextString(m) }
 func (*IsRebaseInProgressResponse) ProtoMessage()               {}
-func (*IsRebaseInProgressResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{33} }
+func (*IsRebaseInProgressResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{31} }
 
 func (m *IsRebaseInProgressResponse) GetInProgress() bool {
+	if m != nil {
+		return m.InProgress
+	}
+	return false
+}
+
+type IsSquashInProgressRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	SquashId   string      `protobuf:"bytes,2,opt,name=squash_id,json=squashId" json:"squash_id,omitempty"`
+}
+
+func (m *IsSquashInProgressRequest) Reset()                    { *m = IsSquashInProgressRequest{} }
+func (m *IsSquashInProgressRequest) String() string            { return proto.CompactTextString(m) }
+func (*IsSquashInProgressRequest) ProtoMessage()               {}
+func (*IsSquashInProgressRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{32} }
+
+func (m *IsSquashInProgressRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *IsSquashInProgressRequest) GetSquashId() string {
+	if m != nil {
+		return m.SquashId
+	}
+	return ""
+}
+
+type IsSquashInProgressResponse struct {
+	InProgress bool `protobuf:"varint,1,opt,name=in_progress,json=inProgress" json:"in_progress,omitempty"`
+}
+
+func (m *IsSquashInProgressResponse) Reset()                    { *m = IsSquashInProgressResponse{} }
+func (m *IsSquashInProgressResponse) String() string            { return proto.CompactTextString(m) }
+func (*IsSquashInProgressResponse) ProtoMessage()               {}
+func (*IsSquashInProgressResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{33} }
+
+func (m *IsSquashInProgressResponse) GetInProgress() bool {
 	if m != nil {
 		return m.InProgress
 	}
@@ -758,11 +774,150 @@ func (*CreateRepositoryFromURLResponse) Descriptor() ([]byte, []int) {
 	return fileDescriptor10, []int{35}
 }
 
+type CreateBundleRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+}
+
+func (m *CreateBundleRequest) Reset()                    { *m = CreateBundleRequest{} }
+func (m *CreateBundleRequest) String() string            { return proto.CompactTextString(m) }
+func (*CreateBundleRequest) ProtoMessage()               {}
+func (*CreateBundleRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{36} }
+
+func (m *CreateBundleRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+type CreateBundleResponse struct {
+	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+}
+
+func (m *CreateBundleResponse) Reset()                    { *m = CreateBundleResponse{} }
+func (m *CreateBundleResponse) String() string            { return proto.CompactTextString(m) }
+func (*CreateBundleResponse) ProtoMessage()               {}
+func (*CreateBundleResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{37} }
+
+func (m *CreateBundleResponse) GetData() []byte {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
+type WriteConfigRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	FullPath   string      `protobuf:"bytes,2,opt,name=full_path,json=fullPath" json:"full_path,omitempty"`
+}
+
+func (m *WriteConfigRequest) Reset()                    { *m = WriteConfigRequest{} }
+func (m *WriteConfigRequest) String() string            { return proto.CompactTextString(m) }
+func (*WriteConfigRequest) ProtoMessage()               {}
+func (*WriteConfigRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{38} }
+
+func (m *WriteConfigRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *WriteConfigRequest) GetFullPath() string {
+	if m != nil {
+		return m.FullPath
+	}
+	return ""
+}
+
+type WriteConfigResponse struct {
+	Error []byte `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (m *WriteConfigResponse) Reset()                    { *m = WriteConfigResponse{} }
+func (m *WriteConfigResponse) String() string            { return proto.CompactTextString(m) }
+func (*WriteConfigResponse) ProtoMessage()               {}
+func (*WriteConfigResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{39} }
+
+func (m *WriteConfigResponse) GetError() []byte {
+	if m != nil {
+		return m.Error
+	}
+	return nil
+}
+
+type CreateRepositoryFromBundleRequest struct {
+	// Only available on the first message
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	Data       []byte      `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+}
+
+func (m *CreateRepositoryFromBundleRequest) Reset()         { *m = CreateRepositoryFromBundleRequest{} }
+func (m *CreateRepositoryFromBundleRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateRepositoryFromBundleRequest) ProtoMessage()    {}
+func (*CreateRepositoryFromBundleRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor10, []int{40}
+}
+
+func (m *CreateRepositoryFromBundleRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *CreateRepositoryFromBundleRequest) GetData() []byte {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
+type CreateRepositoryFromBundleResponse struct {
+}
+
+func (m *CreateRepositoryFromBundleResponse) Reset()         { *m = CreateRepositoryFromBundleResponse{} }
+func (m *CreateRepositoryFromBundleResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateRepositoryFromBundleResponse) ProtoMessage()    {}
+func (*CreateRepositoryFromBundleResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor10, []int{41}
+}
+
+type FindLicenseRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+}
+
+func (m *FindLicenseRequest) Reset()                    { *m = FindLicenseRequest{} }
+func (m *FindLicenseRequest) String() string            { return proto.CompactTextString(m) }
+func (*FindLicenseRequest) ProtoMessage()               {}
+func (*FindLicenseRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{42} }
+
+func (m *FindLicenseRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+type FindLicenseResponse struct {
+	LicenseShortName string `protobuf:"bytes,1,opt,name=license_short_name,json=licenseShortName" json:"license_short_name,omitempty"`
+}
+
+func (m *FindLicenseResponse) Reset()                    { *m = FindLicenseResponse{} }
+func (m *FindLicenseResponse) String() string            { return proto.CompactTextString(m) }
+func (*FindLicenseResponse) ProtoMessage()               {}
+func (*FindLicenseResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{43} }
+
+func (m *FindLicenseResponse) GetLicenseShortName() string {
+	if m != nil {
+		return m.LicenseShortName
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*RepositoryExistsRequest)(nil), "gitaly.RepositoryExistsRequest")
 	proto.RegisterType((*RepositoryExistsResponse)(nil), "gitaly.RepositoryExistsResponse")
-	proto.RegisterType((*RepositoryIsEmptyRequest)(nil), "gitaly.RepositoryIsEmptyRequest")
-	proto.RegisterType((*RepositoryIsEmptyResponse)(nil), "gitaly.RepositoryIsEmptyResponse")
 	proto.RegisterType((*RepackIncrementalRequest)(nil), "gitaly.RepackIncrementalRequest")
 	proto.RegisterType((*RepackIncrementalResponse)(nil), "gitaly.RepackIncrementalResponse")
 	proto.RegisterType((*RepackFullRequest)(nil), "gitaly.RepackFullRequest")
@@ -793,8 +948,18 @@ func init() {
 	proto.RegisterType((*CreateForkResponse)(nil), "gitaly.CreateForkResponse")
 	proto.RegisterType((*IsRebaseInProgressRequest)(nil), "gitaly.IsRebaseInProgressRequest")
 	proto.RegisterType((*IsRebaseInProgressResponse)(nil), "gitaly.IsRebaseInProgressResponse")
+	proto.RegisterType((*IsSquashInProgressRequest)(nil), "gitaly.IsSquashInProgressRequest")
+	proto.RegisterType((*IsSquashInProgressResponse)(nil), "gitaly.IsSquashInProgressResponse")
 	proto.RegisterType((*CreateRepositoryFromURLRequest)(nil), "gitaly.CreateRepositoryFromURLRequest")
 	proto.RegisterType((*CreateRepositoryFromURLResponse)(nil), "gitaly.CreateRepositoryFromURLResponse")
+	proto.RegisterType((*CreateBundleRequest)(nil), "gitaly.CreateBundleRequest")
+	proto.RegisterType((*CreateBundleResponse)(nil), "gitaly.CreateBundleResponse")
+	proto.RegisterType((*WriteConfigRequest)(nil), "gitaly.WriteConfigRequest")
+	proto.RegisterType((*WriteConfigResponse)(nil), "gitaly.WriteConfigResponse")
+	proto.RegisterType((*CreateRepositoryFromBundleRequest)(nil), "gitaly.CreateRepositoryFromBundleRequest")
+	proto.RegisterType((*CreateRepositoryFromBundleResponse)(nil), "gitaly.CreateRepositoryFromBundleResponse")
+	proto.RegisterType((*FindLicenseRequest)(nil), "gitaly.FindLicenseRequest")
+	proto.RegisterType((*FindLicenseResponse)(nil), "gitaly.FindLicenseResponse")
 	proto.RegisterEnum("gitaly.GetArchiveRequest_Format", GetArchiveRequest_Format_name, GetArchiveRequest_Format_value)
 }
 
@@ -810,7 +975,6 @@ const _ = grpc.SupportPackageIsVersion4
 
 type RepositoryServiceClient interface {
 	RepositoryExists(ctx context.Context, in *RepositoryExistsRequest, opts ...grpc.CallOption) (*RepositoryExistsResponse, error)
-	RepositoryIsEmpty(ctx context.Context, in *RepositoryIsEmptyRequest, opts ...grpc.CallOption) (*RepositoryIsEmptyResponse, error)
 	RepackIncremental(ctx context.Context, in *RepackIncrementalRequest, opts ...grpc.CallOption) (*RepackIncrementalResponse, error)
 	RepackFull(ctx context.Context, in *RepackFullRequest, opts ...grpc.CallOption) (*RepackFullResponse, error)
 	GarbageCollect(ctx context.Context, in *GarbageCollectRequest, opts ...grpc.CallOption) (*GarbageCollectResponse, error)
@@ -826,7 +990,12 @@ type RepositoryServiceClient interface {
 	FindMergeBase(ctx context.Context, in *FindMergeBaseRequest, opts ...grpc.CallOption) (*FindMergeBaseResponse, error)
 	CreateFork(ctx context.Context, in *CreateForkRequest, opts ...grpc.CallOption) (*CreateForkResponse, error)
 	IsRebaseInProgress(ctx context.Context, in *IsRebaseInProgressRequest, opts ...grpc.CallOption) (*IsRebaseInProgressResponse, error)
+	IsSquashInProgress(ctx context.Context, in *IsSquashInProgressRequest, opts ...grpc.CallOption) (*IsSquashInProgressResponse, error)
 	CreateRepositoryFromURL(ctx context.Context, in *CreateRepositoryFromURLRequest, opts ...grpc.CallOption) (*CreateRepositoryFromURLResponse, error)
+	CreateBundle(ctx context.Context, in *CreateBundleRequest, opts ...grpc.CallOption) (RepositoryService_CreateBundleClient, error)
+	CreateRepositoryFromBundle(ctx context.Context, opts ...grpc.CallOption) (RepositoryService_CreateRepositoryFromBundleClient, error)
+	WriteConfig(ctx context.Context, in *WriteConfigRequest, opts ...grpc.CallOption) (*WriteConfigResponse, error)
+	FindLicense(ctx context.Context, in *FindLicenseRequest, opts ...grpc.CallOption) (*FindLicenseResponse, error)
 }
 
 type repositoryServiceClient struct {
@@ -840,15 +1009,6 @@ func NewRepositoryServiceClient(cc *grpc.ClientConn) RepositoryServiceClient {
 func (c *repositoryServiceClient) RepositoryExists(ctx context.Context, in *RepositoryExistsRequest, opts ...grpc.CallOption) (*RepositoryExistsResponse, error) {
 	out := new(RepositoryExistsResponse)
 	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/RepositoryExists", in, out, c.cc, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *repositoryServiceClient) RepositoryIsEmpty(ctx context.Context, in *RepositoryIsEmptyRequest, opts ...grpc.CallOption) (*RepositoryIsEmptyResponse, error) {
-	out := new(RepositoryIsEmptyResponse)
-	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/RepositoryIsEmpty", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1013,9 +1173,102 @@ func (c *repositoryServiceClient) IsRebaseInProgress(ctx context.Context, in *Is
 	return out, nil
 }
 
+func (c *repositoryServiceClient) IsSquashInProgress(ctx context.Context, in *IsSquashInProgressRequest, opts ...grpc.CallOption) (*IsSquashInProgressResponse, error) {
+	out := new(IsSquashInProgressResponse)
+	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/IsSquashInProgress", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *repositoryServiceClient) CreateRepositoryFromURL(ctx context.Context, in *CreateRepositoryFromURLRequest, opts ...grpc.CallOption) (*CreateRepositoryFromURLResponse, error) {
 	out := new(CreateRepositoryFromURLResponse)
 	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/CreateRepositoryFromURL", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryServiceClient) CreateBundle(ctx context.Context, in *CreateBundleRequest, opts ...grpc.CallOption) (RepositoryService_CreateBundleClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RepositoryService_serviceDesc.Streams[1], c.cc, "/gitaly.RepositoryService/CreateBundle", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &repositoryServiceCreateBundleClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type RepositoryService_CreateBundleClient interface {
+	Recv() (*CreateBundleResponse, error)
+	grpc.ClientStream
+}
+
+type repositoryServiceCreateBundleClient struct {
+	grpc.ClientStream
+}
+
+func (x *repositoryServiceCreateBundleClient) Recv() (*CreateBundleResponse, error) {
+	m := new(CreateBundleResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *repositoryServiceClient) CreateRepositoryFromBundle(ctx context.Context, opts ...grpc.CallOption) (RepositoryService_CreateRepositoryFromBundleClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RepositoryService_serviceDesc.Streams[2], c.cc, "/gitaly.RepositoryService/CreateRepositoryFromBundle", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &repositoryServiceCreateRepositoryFromBundleClient{stream}
+	return x, nil
+}
+
+type RepositoryService_CreateRepositoryFromBundleClient interface {
+	Send(*CreateRepositoryFromBundleRequest) error
+	CloseAndRecv() (*CreateRepositoryFromBundleResponse, error)
+	grpc.ClientStream
+}
+
+type repositoryServiceCreateRepositoryFromBundleClient struct {
+	grpc.ClientStream
+}
+
+func (x *repositoryServiceCreateRepositoryFromBundleClient) Send(m *CreateRepositoryFromBundleRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *repositoryServiceCreateRepositoryFromBundleClient) CloseAndRecv() (*CreateRepositoryFromBundleResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(CreateRepositoryFromBundleResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *repositoryServiceClient) WriteConfig(ctx context.Context, in *WriteConfigRequest, opts ...grpc.CallOption) (*WriteConfigResponse, error) {
+	out := new(WriteConfigResponse)
+	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/WriteConfig", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryServiceClient) FindLicense(ctx context.Context, in *FindLicenseRequest, opts ...grpc.CallOption) (*FindLicenseResponse, error) {
+	out := new(FindLicenseResponse)
+	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/FindLicense", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1026,7 +1279,6 @@ func (c *repositoryServiceClient) CreateRepositoryFromURL(ctx context.Context, i
 
 type RepositoryServiceServer interface {
 	RepositoryExists(context.Context, *RepositoryExistsRequest) (*RepositoryExistsResponse, error)
-	RepositoryIsEmpty(context.Context, *RepositoryIsEmptyRequest) (*RepositoryIsEmptyResponse, error)
 	RepackIncremental(context.Context, *RepackIncrementalRequest) (*RepackIncrementalResponse, error)
 	RepackFull(context.Context, *RepackFullRequest) (*RepackFullResponse, error)
 	GarbageCollect(context.Context, *GarbageCollectRequest) (*GarbageCollectResponse, error)
@@ -1042,7 +1294,12 @@ type RepositoryServiceServer interface {
 	FindMergeBase(context.Context, *FindMergeBaseRequest) (*FindMergeBaseResponse, error)
 	CreateFork(context.Context, *CreateForkRequest) (*CreateForkResponse, error)
 	IsRebaseInProgress(context.Context, *IsRebaseInProgressRequest) (*IsRebaseInProgressResponse, error)
+	IsSquashInProgress(context.Context, *IsSquashInProgressRequest) (*IsSquashInProgressResponse, error)
 	CreateRepositoryFromURL(context.Context, *CreateRepositoryFromURLRequest) (*CreateRepositoryFromURLResponse, error)
+	CreateBundle(*CreateBundleRequest, RepositoryService_CreateBundleServer) error
+	CreateRepositoryFromBundle(RepositoryService_CreateRepositoryFromBundleServer) error
+	WriteConfig(context.Context, *WriteConfigRequest) (*WriteConfigResponse, error)
+	FindLicense(context.Context, *FindLicenseRequest) (*FindLicenseResponse, error)
 }
 
 func RegisterRepositoryServiceServer(s *grpc.Server, srv RepositoryServiceServer) {
@@ -1063,24 +1320,6 @@ func _RepositoryService_RepositoryExists_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RepositoryServiceServer).RepositoryExists(ctx, req.(*RepositoryExistsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RepositoryService_RepositoryIsEmpty_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RepositoryIsEmptyRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RepositoryServiceServer).RepositoryIsEmpty(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/gitaly.RepositoryService/RepositoryIsEmpty",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RepositoryServiceServer).RepositoryIsEmpty(ctx, req.(*RepositoryIsEmptyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1358,6 +1597,24 @@ func _RepositoryService_IsRebaseInProgress_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RepositoryService_IsSquashInProgress_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IsSquashInProgressRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).IsSquashInProgress(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitaly.RepositoryService/IsSquashInProgress",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).IsSquashInProgress(ctx, req.(*IsSquashInProgressRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _RepositoryService_CreateRepositoryFromURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateRepositoryFromURLRequest)
 	if err := dec(in); err != nil {
@@ -1376,6 +1633,89 @@ func _RepositoryService_CreateRepositoryFromURL_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RepositoryService_CreateBundle_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(CreateBundleRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RepositoryServiceServer).CreateBundle(m, &repositoryServiceCreateBundleServer{stream})
+}
+
+type RepositoryService_CreateBundleServer interface {
+	Send(*CreateBundleResponse) error
+	grpc.ServerStream
+}
+
+type repositoryServiceCreateBundleServer struct {
+	grpc.ServerStream
+}
+
+func (x *repositoryServiceCreateBundleServer) Send(m *CreateBundleResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _RepositoryService_CreateRepositoryFromBundle_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RepositoryServiceServer).CreateRepositoryFromBundle(&repositoryServiceCreateRepositoryFromBundleServer{stream})
+}
+
+type RepositoryService_CreateRepositoryFromBundleServer interface {
+	SendAndClose(*CreateRepositoryFromBundleResponse) error
+	Recv() (*CreateRepositoryFromBundleRequest, error)
+	grpc.ServerStream
+}
+
+type repositoryServiceCreateRepositoryFromBundleServer struct {
+	grpc.ServerStream
+}
+
+func (x *repositoryServiceCreateRepositoryFromBundleServer) SendAndClose(m *CreateRepositoryFromBundleResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *repositoryServiceCreateRepositoryFromBundleServer) Recv() (*CreateRepositoryFromBundleRequest, error) {
+	m := new(CreateRepositoryFromBundleRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _RepositoryService_WriteConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(WriteConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).WriteConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitaly.RepositoryService/WriteConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).WriteConfig(ctx, req.(*WriteConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RepositoryService_FindLicense_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FindLicenseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).FindLicense(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitaly.RepositoryService/FindLicense",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).FindLicense(ctx, req.(*FindLicenseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _RepositoryService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gitaly.RepositoryService",
 	HandlerType: (*RepositoryServiceServer)(nil),
@@ -1383,10 +1723,6 @@ var _RepositoryService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RepositoryExists",
 			Handler:    _RepositoryService_RepositoryExists_Handler,
-		},
-		{
-			MethodName: "RepositoryIsEmpty",
-			Handler:    _RepositoryService_RepositoryIsEmpty_Handler,
 		},
 		{
 			MethodName: "RepackIncremental",
@@ -1445,8 +1781,20 @@ var _RepositoryService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _RepositoryService_IsRebaseInProgress_Handler,
 		},
 		{
+			MethodName: "IsSquashInProgress",
+			Handler:    _RepositoryService_IsSquashInProgress_Handler,
+		},
+		{
 			MethodName: "CreateRepositoryFromURL",
 			Handler:    _RepositoryService_CreateRepositoryFromURL_Handler,
+		},
+		{
+			MethodName: "WriteConfig",
+			Handler:    _RepositoryService_WriteConfig_Handler,
+		},
+		{
+			MethodName: "FindLicense",
+			Handler:    _RepositoryService_FindLicense_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -1455,6 +1803,16 @@ var _RepositoryService_serviceDesc = grpc.ServiceDesc{
 			Handler:       _RepositoryService_GetArchive_Handler,
 			ServerStreams: true,
 		},
+		{
+			StreamName:    "CreateBundle",
+			Handler:       _RepositoryService_CreateBundle_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "CreateRepositoryFromBundle",
+			Handler:       _RepositoryService_CreateRepositoryFromBundle_Handler,
+			ClientStreams: true,
+		},
 	},
 	Metadata: "repository-service.proto",
 }
@@ -1462,84 +1820,97 @@ var _RepositoryService_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("repository-service.proto", fileDescriptor10) }
 
 var fileDescriptor10 = []byte{
-	// 1250 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x58, 0xdd, 0x6e, 0xdb, 0x36,
-	0x14, 0xb6, 0xe3, 0xc6, 0x49, 0x8e, 0xdd, 0xce, 0x61, 0x9d, 0x46, 0x56, 0x7f, 0x92, 0x72, 0xc3,
-	0x16, 0x60, 0x5b, 0x50, 0x38, 0xc0, 0xb0, 0x9b, 0xa1, 0x48, 0x8a, 0x3a, 0x35, 0xfa, 0x83, 0x4e,
-	0xed, 0x50, 0x20, 0xc0, 0x60, 0xc8, 0x32, 0x6d, 0x0b, 0x96, 0x45, 0x8f, 0xa4, 0xb3, 0xba, 0x4f,
-	0xb0, 0xe7, 0xda, 0x2b, 0xec, 0x11, 0x76, 0xd9, 0x97, 0x18, 0x44, 0xd2, 0xa2, 0x64, 0x49, 0xd9,
-	0x85, 0x30, 0xec, 0x4e, 0x3c, 0x24, 0xbf, 0x73, 0x78, 0x7e, 0x3f, 0x1b, 0x2c, 0x46, 0x16, 0x94,
-	0xfb, 0x82, 0xb2, 0xd5, 0xf7, 0x9c, 0xb0, 0x6b, 0xdf, 0x23, 0xa7, 0x0b, 0x46, 0x05, 0x45, 0xf5,
-	0x89, 0x2f, 0xdc, 0x60, 0x65, 0x37, 0xf9, 0xd4, 0x65, 0x64, 0xa4, 0xa4, 0xf8, 0x35, 0x1c, 0x3a,
-	0xf1, 0x8d, 0xe7, 0x1f, 0x7d, 0x2e, 0xb8, 0x43, 0x7e, 0x5b, 0x12, 0x2e, 0x50, 0x17, 0xc0, 0x80,
-	0x59, 0xd5, 0xe3, 0xea, 0x49, 0xa3, 0x8b, 0x4e, 0x15, 0xca, 0xa9, 0xb9, 0xe4, 0x24, 0x4e, 0xe1,
-	0x2e, 0x58, 0x59, 0x38, 0xbe, 0xa0, 0x21, 0x27, 0xe8, 0x1e, 0xd4, 0x89, 0x94, 0x48, 0xac, 0x5d,
-	0x47, 0xaf, 0xf0, 0x9b, 0xe4, 0x9d, 0x3e, 0x7f, 0x3e, 0x5f, 0x88, 0x55, 0x19, 0x1b, 0x7e, 0x80,
-	0x4e, 0x0e, 0x9e, 0x36, 0xa2, 0x03, 0xbb, 0x3e, 0x1f, 0x90, 0x48, 0xa6, 0xcd, 0xd8, 0xf1, 0xd5,
-	0x11, 0x6d, 0x87, 0xeb, 0xcd, 0xfa, 0xa1, 0xc7, 0xc8, 0x9c, 0x84, 0xc2, 0x0d, 0xca, 0xd8, 0x71,
-	0x5f, 0xda, 0xb1, 0x89, 0xa7, 0xec, 0xc0, 0x01, 0xec, 0xab, 0xcd, 0xde, 0x32, 0x28, 0xa3, 0x05,
-	0x7d, 0x09, 0xb7, 0x3d, 0x46, 0x5c, 0x41, 0x06, 0x43, 0x5f, 0xcc, 0xdd, 0x85, 0xb5, 0x25, 0x5f,
-	0xd5, 0x54, 0xc2, 0x0b, 0x29, 0xc3, 0x6d, 0x40, 0x49, 0x6d, 0xda, 0x86, 0x05, 0x1c, 0x5c, 0xba,
-	0x6c, 0xe8, 0x4e, 0xc8, 0x33, 0x1a, 0x04, 0xc4, 0x13, 0xff, 0xb9, 0x1d, 0x16, 0xdc, 0xdb, 0xd4,
-	0xa8, 0x6d, 0x79, 0x09, 0x07, 0x06, 0xf8, 0x9d, 0xff, 0x89, 0x94, 0xf1, 0xfc, 0x77, 0x70, 0x6f,
-	0x13, 0x4c, 0x87, 0x1f, 0xc1, 0x2d, 0xee, 0x7f, 0x22, 0x12, 0xa7, 0xe6, 0xc8, 0x6f, 0x3c, 0x83,
-	0xce, 0xf9, 0x62, 0x11, 0xac, 0x2e, 0x7d, 0xe1, 0x0a, 0xc1, 0xfc, 0xe1, 0x52, 0x90, 0x32, 0x45,
-	0x80, 0x6c, 0xd8, 0x65, 0xe4, 0xda, 0xe7, 0x3e, 0x0d, 0xa5, 0x17, 0x9a, 0x4e, 0xbc, 0xc6, 0x0f,
-	0xc0, 0xce, 0x53, 0xa6, 0xbd, 0xf0, 0x77, 0x15, 0x50, 0x8f, 0x08, 0x6f, 0xea, 0x90, 0x39, 0x15,
-	0x65, 0x7c, 0x10, 0x55, 0x1b, 0x93, 0x20, 0xd2, 0x84, 0x3d, 0x47, 0xaf, 0x50, 0x1b, 0xb6, 0xc7,
-	0x94, 0x79, 0xc4, 0xaa, 0xc9, 0xf8, 0xa8, 0x05, 0x3a, 0x84, 0x9d, 0x90, 0x0e, 0x84, 0x3b, 0xe1,
-	0xd6, 0x2d, 0x55, 0x9c, 0x21, 0x7d, 0xef, 0x4e, 0x38, 0xb2, 0x60, 0x47, 0xf8, 0x73, 0x42, 0x97,
-	0xc2, 0xda, 0x3e, 0xae, 0x9e, 0x6c, 0x3b, 0xeb, 0x65, 0x74, 0x85, 0xf3, 0xe9, 0x60, 0x46, 0x56,
-	0x56, 0x5d, 0x69, 0xe0, 0x7c, 0xfa, 0x92, 0xac, 0xd0, 0x11, 0x34, 0x66, 0x21, 0xfd, 0x3d, 0x1c,
-	0x4c, 0x69, 0x54, 0xec, 0x3b, 0x72, 0x13, 0xa4, 0xe8, 0x45, 0x24, 0xc1, 0x07, 0x70, 0x37, 0xf5,
-	0x48, 0xfd, 0xf8, 0xd7, 0x70, 0xf8, 0x4c, 0x26, 0x4b, 0xe2, 0x45, 0x25, 0x92, 0xc0, 0x06, 0x2b,
-	0x0b, 0xa7, 0x55, 0x7d, 0xae, 0xc2, 0xfe, 0x25, 0x11, 0xe7, 0xcc, 0x9b, 0xfa, 0xd7, 0xa5, 0xdc,
-	0x7c, 0x1f, 0xf6, 0x3c, 0x3a, 0x9f, 0xfb, 0x62, 0xe0, 0x8f, 0xb4, 0xa7, 0x77, 0x95, 0xa0, 0x3f,
-	0x8a, 0x62, 0xb0, 0x60, 0x64, 0xec, 0x7f, 0x94, 0xce, 0xde, 0x73, 0xf4, 0x0a, 0xfd, 0x08, 0xf5,
-	0x31, 0x65, 0x73, 0x57, 0x48, 0x67, 0xdf, 0xe9, 0x1e, 0xaf, 0x95, 0x64, 0x6c, 0x3a, 0xed, 0xc9,
-	0x73, 0x8e, 0x3e, 0x8f, 0xcf, 0xa0, 0xae, 0x24, 0x68, 0x07, 0x6a, 0x57, 0xfd, 0xb7, 0xad, 0x4a,
-	0xf4, 0xf1, 0xfe, 0xdc, 0x69, 0x55, 0x11, 0x40, 0xfd, 0xfd, 0xb9, 0x33, 0xb8, 0xbc, 0x6a, 0x6d,
-	0xa1, 0x06, 0xec, 0x44, 0xdf, 0x17, 0x57, 0xdd, 0x56, 0x0d, 0x9f, 0x00, 0x4a, 0x02, 0x9b, 0x52,
-	0x18, 0xb9, 0xc2, 0x95, 0xef, 0x6c, 0x3a, 0xf2, 0x3b, 0x0a, 0xc1, 0x0b, 0x97, 0xbf, 0xa2, 0x9e,
-	0x1b, 0x5c, 0x30, 0x37, 0xf4, 0xa6, 0xa5, 0x0a, 0x01, 0x3f, 0x01, 0x2b, 0x0b, 0xa7, 0xd5, 0xb7,
-	0x61, 0xfb, 0xda, 0x0d, 0x96, 0x44, 0x77, 0x61, 0xb5, 0xc0, 0x7f, 0x55, 0xc1, 0x92, 0xb9, 0xf1,
-	0x8e, 0x2e, 0x99, 0x47, 0xd4, 0xad, 0x32, 0xf1, 0x79, 0x0a, 0xfb, 0x5c, 0x42, 0x0d, 0x12, 0x57,
-	0xb7, 0x0a, 0xaf, 0xb6, 0xd4, 0x61, 0x27, 0xd5, 0xd7, 0x34, 0xc0, 0x50, 0x1a, 0x23, 0x43, 0xd9,
-	0x74, 0x9a, 0x3c, 0x61, 0x20, 0x7a, 0x08, 0x20, 0x5c, 0x36, 0x21, 0x62, 0xc0, 0xc8, 0x58, 0x06,
-	0xb5, 0xe9, 0xec, 0x29, 0x89, 0x43, 0xc6, 0xf8, 0x0c, 0x3a, 0x39, 0x8f, 0x32, 0x63, 0x91, 0x11,
-	0xbe, 0x0c, 0xc4, 0x7a, 0x2c, 0xaa, 0x15, 0x3e, 0x87, 0x46, 0x8f, 0x7b, 0xb3, 0x32, 0xfe, 0xff,
-	0x0a, 0x9a, 0x0a, 0xc2, 0xf8, 0x9c, 0x30, 0x46, 0x99, 0x8e, 0xb9, 0x5a, 0xe0, 0x3f, 0xab, 0xf0,
-	0xc5, 0x07, 0xe6, 0x47, 0x85, 0x32, 0x2e, 0xe3, 0xea, 0x16, 0xd4, 0xa2, 0xd7, 0xab, 0x8e, 0x17,
-	0x7d, 0xa6, 0x1a, 0x61, 0x2d, 0xdd, 0x08, 0xd1, 0x63, 0x68, 0xd2, 0x60, 0x34, 0x88, 0xf7, 0x95,
-	0xd3, 0x1a, 0x34, 0x18, 0x39, 0xeb, 0x23, 0x71, 0xab, 0xda, 0x4e, 0xb6, 0xaa, 0x36, 0x6c, 0xf3,
-	0x29, 0x09, 0x02, 0xd9, 0x75, 0x76, 0x1d, 0xb5, 0xc0, 0x27, 0xd0, 0x32, 0x6f, 0xb8, 0xf1, 0xb9,
-	0x53, 0x68, 0xf7, 0xfc, 0x70, 0xf4, 0x9a, 0xb0, 0x09, 0xb9, 0x70, 0x79, 0xa9, 0xea, 0x7f, 0x00,
-	0x7b, 0xeb, 0x07, 0x70, 0x6b, 0xeb, 0xb8, 0x16, 0x85, 0x3d, 0x16, 0xe0, 0x6f, 0xe1, 0x60, 0x43,
-	0x93, 0x29, 0xbd, 0xa1, 0xcb, 0x55, 0xea, 0xef, 0x39, 0xf2, 0x1b, 0xff, 0x51, 0x85, 0x7d, 0xd5,
-	0xaf, 0x7a, 0x94, 0xcd, 0xfe, 0xcf, 0x94, 0x8f, 0xd8, 0x42, 0xd2, 0x92, 0x98, 0xb1, 0x74, 0xfa,
-	0xdc, 0x21, 0x91, 0xb1, 0xfd, 0xf0, 0x2d, 0xa3, 0x13, 0x46, 0x38, 0x2f, 0xd9, 0x3a, 0x99, 0x84,
-	0x4b, 0xb4, 0x4e, 0x25, 0xe8, 0x8f, 0xf0, 0x4f, 0x60, 0xe7, 0x69, 0xd3, 0x0e, 0x3c, 0x82, 0x86,
-	0x1f, 0x0e, 0x16, 0x5a, 0xac, 0x0b, 0x07, 0xfc, 0xf8, 0x20, 0x1e, 0xc3, 0xa3, 0xcd, 0xe6, 0xdf,
-	0x63, 0x74, 0xfe, 0x8b, 0xf3, 0xaa, 0x64, 0x86, 0x2f, 0x59, 0xa0, 0x6d, 0x8d, 0x3e, 0xf1, 0x63,
-	0x38, 0x2a, 0xd4, 0xa3, 0x6c, 0xed, 0x7e, 0x6e, 0x48, 0xaa, 0xb7, 0x66, 0x23, 0x8a, 0x93, 0xa3,
-	0x0f, 0xd0, 0xda, 0x24, 0xca, 0xe8, 0x28, 0xab, 0x3e, 0xc5, 0xc8, 0xed, 0xe3, 0xe2, 0x03, 0x3a,
-	0x48, 0x15, 0x74, 0x95, 0xd4, 0xa6, 0xd9, 0x2f, 0xca, 0xb9, 0x98, 0x26, 0xda, 0xf6, 0xe3, 0x1b,
-	0x4e, 0x6c, 0x60, 0xa7, 0x19, 0x6d, 0x0a, 0x3b, 0x97, 0x3c, 0xa7, 0xb0, 0x0b, 0xe8, 0x70, 0x05,
-	0x3d, 0x07, 0x30, 0x14, 0x15, 0x75, 0xd2, 0x57, 0x12, 0x24, 0xd9, 0xb6, 0xf3, 0xb6, 0x62, 0x98,
-	0x9f, 0xe1, 0x4e, 0x9a, 0x61, 0xa2, 0x87, 0xf1, 0x70, 0xcd, 0xe3, 0xba, 0xf6, 0xa3, 0xa2, 0xed,
-	0x24, 0x64, 0x9a, 0x4d, 0x1a, 0xc8, 0x5c, 0xca, 0x6a, 0x20, 0xf3, 0x49, 0x28, 0xae, 0xa0, 0x5f,
-	0x01, 0x65, 0x59, 0x20, 0x8a, 0xfd, 0x54, 0x48, 0x47, 0x6d, 0x7c, 0xd3, 0x91, 0x18, 0xfe, 0x05,
-	0x34, 0x12, 0x04, 0x0b, 0xc5, 0x1e, 0xcb, 0x52, 0x4b, 0xfb, 0x7e, 0xee, 0x5e, 0x8c, 0xf4, 0x01,
-	0x5a, 0x9b, 0xf9, 0x6d, 0xd2, 0xb4, 0x80, 0xad, 0x99, 0x34, 0x2d, 0xe4, 0x5f, 0x15, 0x74, 0x09,
-	0x60, 0x38, 0x89, 0x09, 0x77, 0x86, 0x00, 0x99, 0x70, 0x67, 0x29, 0x0c, 0xae, 0x3c, 0xa9, 0x46,
-	0x16, 0x6e, 0x72, 0x0c, 0x63, 0x61, 0x01, 0x99, 0x31, 0x16, 0x16, 0xd1, 0x13, 0x95, 0xec, 0x99,
-	0xa1, 0x6d, 0x92, 0xbd, 0x88, 0xa4, 0x98, 0x64, 0x2f, 0x9c, 0xf8, 0xb8, 0x82, 0xce, 0xe0, 0x56,
-	0x34, 0x98, 0xd1, 0xdd, 0xf8, 0xb0, 0x99, 0xf4, 0x76, 0x3b, 0x2d, 0x8c, 0x2f, 0x3d, 0x85, 0xdd,
-	0xf5, 0x88, 0x43, 0x87, 0xeb, 0x33, 0x1b, 0x83, 0xdb, 0xb6, 0xb2, 0x1b, 0x31, 0xc0, 0x1b, 0xb8,
-	0x9d, 0x9a, 0x47, 0xe8, 0x41, 0xac, 0x29, 0x67, 0x20, 0xda, 0x0f, 0x0b, 0x76, 0x93, 0x25, 0x6b,
-	0xe6, 0x84, 0x89, 0x61, 0x66, 0x8a, 0x99, 0x18, 0xe6, 0x8c, 0x15, 0x59, 0x0c, 0xd9, 0x56, 0x6f,
-	0x8a, 0xa1, 0x70, 0xe8, 0x98, 0x62, 0x28, 0x9e, 0x14, 0xb8, 0x82, 0x82, 0xec, 0xcf, 0x0a, 0xdd,
-	0xa2, 0xd1, 0xd7, 0x45, 0x89, 0x9a, 0x9e, 0x15, 0xf6, 0x37, 0xff, 0x7a, 0x6e, 0xad, 0x6d, 0x58,
-	0x97, 0x7f, 0xab, 0x9c, 0xfd, 0x13, 0x00, 0x00, 0xff, 0xff, 0xef, 0x87, 0x20, 0x75, 0x88, 0x11,
+	// 1458 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x58, 0x5f, 0x6f, 0xdb, 0xb6,
+	0x16, 0xb7, 0xf3, 0xd7, 0x3e, 0x71, 0x7b, 0x1d, 0x26, 0x69, 0x14, 0x25, 0x6d, 0x12, 0xde, 0xe2,
+	0xde, 0xdc, 0xb6, 0x37, 0x28, 0x92, 0x97, 0xbd, 0x0c, 0x45, 0x12, 0x34, 0x7f, 0xd6, 0xa6, 0xc8,
+	0x94, 0x0e, 0x05, 0x02, 0x0c, 0x82, 0x22, 0xd3, 0xb6, 0x60, 0x59, 0x74, 0x49, 0x3a, 0x6d, 0xfa,
+	0xbc, 0x87, 0x7d, 0xae, 0x3d, 0xee, 0x75, 0x1f, 0x63, 0x5f, 0x62, 0x10, 0x29, 0x89, 0x92, 0x25,
+	0x79, 0x05, 0xb4, 0x61, 0x6f, 0xe2, 0x21, 0xf9, 0x3b, 0x87, 0xe7, 0xf0, 0x1c, 0xfe, 0x8e, 0xc0,
+	0x60, 0x64, 0x44, 0xb9, 0x27, 0x28, 0xbb, 0xff, 0x3f, 0x27, 0xec, 0xce, 0x73, 0xc9, 0xfe, 0x88,
+	0x51, 0x41, 0xd1, 0x42, 0xcf, 0x13, 0x8e, 0x7f, 0x6f, 0xb6, 0x78, 0xdf, 0x61, 0xa4, 0xa3, 0xa4,
+	0xf8, 0x12, 0xd6, 0xad, 0x64, 0xc7, 0xeb, 0xcf, 0x1e, 0x17, 0xdc, 0x22, 0x1f, 0xc7, 0x84, 0x0b,
+	0x74, 0x00, 0xa0, 0xc1, 0x8c, 0xfa, 0x4e, 0x7d, 0x6f, 0xe9, 0x00, 0xed, 0x2b, 0x94, 0x7d, 0xbd,
+	0xc9, 0x4a, 0xad, 0xc2, 0x07, 0x60, 0xe4, 0xe1, 0xf8, 0x88, 0x06, 0x9c, 0xa0, 0x47, 0xb0, 0x40,
+	0xa4, 0x44, 0x62, 0x35, 0xac, 0x68, 0x84, 0xdf, 0xc9, 0x3d, 0x8e, 0x3b, 0xb8, 0x08, 0x5c, 0x46,
+	0x86, 0x24, 0x10, 0x8e, 0x5f, 0xc5, 0x86, 0x4d, 0xd8, 0x28, 0xc0, 0x53, 0x46, 0x60, 0x1f, 0x96,
+	0xd5, 0xe4, 0xe9, 0xd8, 0xaf, 0xa2, 0x05, 0xfd, 0x1b, 0x1e, 0xb8, 0x8c, 0x38, 0x82, 0xd8, 0xb7,
+	0x9e, 0x18, 0x3a, 0x23, 0x63, 0x46, 0x1e, 0xaa, 0xa5, 0x84, 0xc7, 0x52, 0x86, 0x57, 0x01, 0xa5,
+	0xb5, 0x45, 0x36, 0x8c, 0x60, 0xed, 0xcc, 0x61, 0xb7, 0x4e, 0x8f, 0x9c, 0x50, 0xdf, 0x27, 0xae,
+	0xf8, 0xdb, 0xed, 0x30, 0xe0, 0xd1, 0xa4, 0xc6, 0xc8, 0x96, 0x37, 0xb0, 0xa6, 0x81, 0xaf, 0xbd,
+	0x2f, 0xa4, 0x8a, 0xe7, 0x5f, 0xc0, 0xa3, 0x49, 0xb0, 0x28, 0xf6, 0x08, 0xe6, 0xb8, 0xf7, 0x85,
+	0x48, 0x9c, 0x59, 0x4b, 0x7e, 0xe3, 0x01, 0x6c, 0x1c, 0x8d, 0x46, 0xfe, 0xfd, 0x99, 0x27, 0x1c,
+	0x21, 0x98, 0x77, 0x3b, 0x16, 0xa4, 0xca, 0xe5, 0x43, 0x26, 0x34, 0x18, 0xb9, 0xf3, 0xb8, 0x47,
+	0x03, 0xe9, 0x85, 0x96, 0x95, 0x8c, 0xf1, 0x16, 0x98, 0x45, 0xca, 0x22, 0x2f, 0xfc, 0x34, 0x03,
+	0xe8, 0x94, 0x08, 0xb7, 0x6f, 0x91, 0x21, 0x15, 0x55, 0x7c, 0x10, 0xde, 0x72, 0x26, 0x41, 0xa4,
+	0x09, 0x4d, 0x2b, 0x1a, 0xa1, 0x55, 0x98, 0xef, 0x52, 0xe6, 0x12, 0x63, 0x56, 0xc6, 0x47, 0x0d,
+	0xd0, 0x3a, 0x2c, 0x06, 0xd4, 0x16, 0x4e, 0x8f, 0x1b, 0x73, 0x2a, 0x29, 0x02, 0xfa, 0xde, 0xe9,
+	0x71, 0x64, 0xc0, 0xa2, 0xf0, 0x86, 0x84, 0x8e, 0x85, 0x31, 0xbf, 0x53, 0xdf, 0x9b, 0xb7, 0xe2,
+	0x61, 0xb8, 0x85, 0xf3, 0xbe, 0x3d, 0x20, 0xf7, 0xc6, 0x82, 0xd2, 0xc0, 0x79, 0xff, 0x0d, 0xb9,
+	0x47, 0xdb, 0xb0, 0x34, 0x08, 0xe8, 0xa7, 0xc0, 0xee, 0xd3, 0x30, 0xc9, 0x16, 0xe5, 0x24, 0x48,
+	0xd1, 0x79, 0x28, 0x41, 0x1b, 0xd0, 0x08, 0xa8, 0x3d, 0x62, 0xe3, 0x80, 0x18, 0x4d, 0xa9, 0x6d,
+	0x31, 0xa0, 0x57, 0xe1, 0xf0, 0xbb, 0xb9, 0x46, 0xa3, 0xdd, 0xc4, 0x6b, 0xb0, 0x92, 0xf1, 0x42,
+	0xe4, 0x9d, 0x4b, 0x58, 0x3f, 0x91, 0xb7, 0x29, 0x75, 0xe4, 0x0a, 0xb7, 0xc4, 0x04, 0x23, 0x0f,
+	0x17, 0xa9, 0xfa, 0xbd, 0x0e, 0xcb, 0x67, 0x44, 0x1c, 0x31, 0xb7, 0xef, 0xdd, 0x55, 0x8a, 0xc3,
+	0x26, 0x34, 0x5d, 0x3a, 0x1c, 0x7a, 0xc2, 0xf6, 0x3a, 0x51, 0x28, 0x1a, 0x4a, 0x70, 0xd1, 0x09,
+	0x83, 0x34, 0x62, 0xa4, 0xeb, 0x7d, 0x96, 0xd1, 0x68, 0x5a, 0xd1, 0x08, 0x7d, 0x03, 0x0b, 0x5d,
+	0xca, 0x86, 0x8e, 0x90, 0xd1, 0x78, 0x78, 0xb0, 0x13, 0x2b, 0xc9, 0xd9, 0xb4, 0x7f, 0x2a, 0xd7,
+	0x59, 0xd1, 0x7a, 0x7c, 0x08, 0x0b, 0x4a, 0x82, 0x16, 0x61, 0xf6, 0xe6, 0xe2, 0xaa, 0x5d, 0x0b,
+	0x3f, 0xde, 0x1f, 0x59, 0xed, 0x3a, 0x02, 0x58, 0x78, 0x7f, 0x64, 0xd9, 0x67, 0x37, 0xed, 0x19,
+	0xb4, 0x04, 0x8b, 0xe1, 0xf7, 0xf1, 0xcd, 0x41, 0x7b, 0x16, 0xef, 0x01, 0x4a, 0x03, 0xeb, 0x5c,
+	0xe9, 0x38, 0xc2, 0x91, 0xe7, 0x6c, 0x59, 0xf2, 0x3b, 0x0c, 0xc1, 0xb9, 0xc3, 0xdf, 0x52, 0xd7,
+	0xf1, 0x8f, 0x99, 0x13, 0xb8, 0xfd, 0x4a, 0x99, 0x82, 0x5f, 0x82, 0x91, 0x87, 0x8b, 0xd4, 0xaf,
+	0xc2, 0xfc, 0x9d, 0xe3, 0x8f, 0x49, 0x54, 0xa5, 0xd5, 0x00, 0xff, 0x56, 0x07, 0x43, 0xde, 0x8d,
+	0x6b, 0x3a, 0x66, 0x2e, 0x51, 0xbb, 0xaa, 0xc4, 0xe7, 0x15, 0x2c, 0x73, 0x09, 0x65, 0xa7, 0xb6,
+	0xce, 0x94, 0x6e, 0x6d, 0xab, 0xc5, 0x56, 0xa6, 0xf0, 0x45, 0x00, 0xb7, 0xd2, 0x18, 0x19, 0xca,
+	0x96, 0xd5, 0xe2, 0x29, 0x03, 0xd1, 0x63, 0x00, 0xe1, 0xb0, 0x1e, 0x11, 0x36, 0x23, 0x5d, 0x19,
+	0xd4, 0x96, 0xd5, 0x54, 0x12, 0x8b, 0x74, 0xf1, 0x21, 0x6c, 0x14, 0x1c, 0x4a, 0xbf, 0x57, 0x8c,
+	0xf0, 0xb1, 0x2f, 0xe2, 0xf7, 0x4a, 0x8d, 0xf0, 0x11, 0x2c, 0x9d, 0x72, 0x77, 0x50, 0xc5, 0xff,
+	0x4f, 0xa1, 0xa5, 0x20, 0xb4, 0xcf, 0x09, 0x63, 0x94, 0x45, 0x31, 0x57, 0x03, 0xfc, 0x4b, 0x1d,
+	0xfe, 0xf5, 0x81, 0x79, 0x61, 0xa2, 0x74, 0xab, 0xb8, 0xba, 0x0d, 0xb3, 0xe1, 0xe9, 0x55, 0x49,
+	0x0c, 0x3f, 0x33, 0x95, 0x72, 0x36, 0x5b, 0x29, 0xd1, 0x2e, 0xb4, 0xa8, 0xdf, 0xb1, 0x93, 0x79,
+	0xe5, 0xb4, 0x25, 0xea, 0x77, 0xac, 0x78, 0x49, 0x52, 0xcb, 0xe6, 0xd3, 0xb5, 0x6c, 0x15, 0xe6,
+	0x79, 0x9f, 0xf8, 0xbe, 0x2c, 0x4b, 0x0d, 0x4b, 0x0d, 0xf0, 0x1e, 0xb4, 0xf5, 0x19, 0xa6, 0x1e,
+	0xb7, 0x0f, 0xab, 0xa7, 0x5e, 0xd0, 0xb9, 0x24, 0xac, 0x47, 0x8e, 0x1d, 0x5e, 0x29, 0xfb, 0xb7,
+	0xa0, 0x19, 0x1f, 0x80, 0x1b, 0x33, 0x3b, 0xb3, 0x61, 0xd8, 0x13, 0x01, 0x7e, 0x0e, 0x6b, 0x13,
+	0x9a, 0x74, 0xea, 0xdd, 0x3a, 0x5c, 0x5d, 0xfd, 0xa6, 0x25, 0xbf, 0xf1, 0xcf, 0x75, 0x58, 0x56,
+	0xf5, 0xea, 0x94, 0xb2, 0xc1, 0x3f, 0x79, 0xe5, 0x43, 0x3a, 0x91, 0xb6, 0x24, 0xa1, 0x34, 0x1b,
+	0x17, 0xdc, 0x22, 0xa1, 0xb1, 0x17, 0xc1, 0x15, 0xa3, 0x3d, 0x46, 0x38, 0xaf, 0x58, 0x3a, 0x99,
+	0x84, 0x4b, 0x95, 0x4e, 0x25, 0xb8, 0xe8, 0xe0, 0x6f, 0xc1, 0x2c, 0xd2, 0x16, 0x39, 0x70, 0x1b,
+	0x96, 0xbc, 0xc0, 0x1e, 0x45, 0xe2, 0x28, 0x71, 0xc0, 0x4b, 0x16, 0x2a, 0x63, 0xaf, 0x3f, 0x8e,
+	0x1d, 0xde, 0xff, 0xcb, 0x8c, 0xe5, 0x12, 0x2e, 0x65, 0xac, 0x12, 0xc4, 0xc6, 0xe6, 0xb5, 0x7d,
+	0xad, 0xb1, 0x5d, 0x78, 0x32, 0xf9, 0x52, 0x9d, 0x32, 0x3a, 0xfc, 0xc1, 0x7a, 0x5b, 0x31, 0x1d,
+	0xc7, 0xcc, 0x8f, 0x6c, 0x0d, 0x3f, 0xf1, 0x2e, 0x6c, 0x97, 0xea, 0x89, 0x82, 0x7c, 0x01, 0x2b,
+	0x6a, 0xc9, 0xf1, 0x38, 0xe8, 0xf8, 0x95, 0x58, 0xda, 0x33, 0x58, 0xcd, 0x42, 0x4d, 0x79, 0x77,
+	0x08, 0x20, 0x99, 0xbd, 0x27, 0x34, 0xe8, 0x7a, 0xbd, 0x8a, 0x71, 0xea, 0x8e, 0x7d, 0xdf, 0x1e,
+	0x39, 0xa2, 0x1f, 0xc7, 0x29, 0x14, 0x5c, 0x39, 0xa2, 0x8f, 0x9f, 0xc3, 0x4a, 0x46, 0xcd, 0xd4,
+	0x3a, 0x31, 0x80, 0xdd, 0x22, 0x6f, 0x55, 0x76, 0x4c, 0xe2, 0x80, 0x99, 0x94, 0x03, 0x9e, 0x02,
+	0x9e, 0xa6, 0x2c, 0x8a, 0xce, 0x39, 0xa0, 0xb0, 0xa0, 0xbc, 0xf5, 0x5c, 0x12, 0x54, 0x2a, 0x5c,
+	0xf8, 0x04, 0x56, 0x32, 0x48, 0x91, 0x27, 0x5e, 0x00, 0xf2, 0x95, 0xc8, 0xe6, 0x7d, 0xca, 0x84,
+	0x1d, 0x38, 0xc3, 0xb8, 0x4c, 0xb5, 0xa3, 0x99, 0xeb, 0x70, 0xe2, 0x9d, 0x33, 0x24, 0x07, 0xbf,
+	0x3e, 0x94, 0x5d, 0x4e, 0x4c, 0xc4, 0x55, 0x1b, 0x88, 0x3e, 0x40, 0x7b, 0xb2, 0x37, 0x43, 0xdb,
+	0x79, 0x73, 0x32, 0x4d, 0xa0, 0xb9, 0x53, 0xbe, 0x20, 0x3a, 0x7b, 0x0d, 0xdd, 0xc4, 0x3d, 0x55,
+	0xaa, 0xe1, 0x42, 0xe9, 0x8d, 0x85, 0xbd, 0x9d, 0xb9, 0x3b, 0x65, 0x45, 0x82, 0xfd, 0x1a, 0x40,
+	0x77, 0x50, 0x68, 0x23, 0xbb, 0x25, 0xd5, 0xc3, 0x99, 0x66, 0xd1, 0x54, 0x02, 0xf3, 0x3d, 0x3c,
+	0xcc, 0x36, 0x40, 0xe8, 0x71, 0x42, 0xed, 0x8a, 0x5a, 0x31, 0xf3, 0x49, 0xd9, 0x74, 0x1a, 0x32,
+	0xdb, 0xec, 0x68, 0xc8, 0xc2, 0x8e, 0x4a, 0x43, 0x16, 0xf7, 0x48, 0xb8, 0x86, 0x7e, 0x04, 0x94,
+	0x6f, 0x52, 0x50, 0xe2, 0xa7, 0xd2, 0x6e, 0xc9, 0xc4, 0xd3, 0x96, 0x24, 0xf0, 0xe7, 0xb0, 0x94,
+	0xa2, 0xf7, 0x28, 0xf1, 0x58, 0xbe, 0xf3, 0x31, 0x37, 0x0b, 0xe7, 0x12, 0xa4, 0x0f, 0xd0, 0x9e,
+	0xcc, 0x0a, 0x7d, 0x95, 0x4a, 0x7a, 0x05, 0x7d, 0x95, 0x4a, 0xd9, 0x7f, 0x0d, 0x9d, 0x01, 0x68,
+	0x46, 0xac, 0xc3, 0x9d, 0xa3, 0xdf, 0x3a, 0xdc, 0x79, 0x02, 0x8d, 0x6b, 0x2f, 0xeb, 0xa1, 0x85,
+	0x93, 0x0c, 0x57, 0x5b, 0x58, 0x42, 0xa5, 0xb5, 0x85, 0x65, 0xe4, 0x58, 0x5d, 0xf6, 0x1c, 0x65,
+	0xd4, 0x97, 0xbd, 0x8c, 0x22, 0xeb, 0xcb, 0x5e, 0xca, 0x37, 0x71, 0x0d, 0x1d, 0xc2, 0x5c, 0x48,
+	0x0b, 0xd1, 0x4a, 0xb2, 0x58, 0xf3, 0x4c, 0x73, 0x35, 0x2b, 0x4c, 0x36, 0xbd, 0x82, 0x46, 0x4c,
+	0xb0, 0xd0, 0x7a, 0xbc, 0x66, 0x82, 0x36, 0x9a, 0x46, 0x7e, 0x22, 0x01, 0x78, 0x07, 0x0f, 0x32,
+	0x6c, 0x08, 0x6d, 0x25, 0x9a, 0x0a, 0xe8, 0x98, 0xf9, 0xb8, 0x64, 0x36, 0x9d, 0xb2, 0x9a, 0xa5,
+	0xe8, 0x18, 0xe6, 0x38, 0x94, 0x8e, 0x61, 0x01, 0xa9, 0x91, 0xc9, 0x90, 0x27, 0x1a, 0x3a, 0x19,
+	0x4a, 0x29, 0x8f, 0x4e, 0x86, 0x72, 0x9e, 0x12, 0xc3, 0x4f, 0x52, 0x83, 0x34, 0x7c, 0x09, 0x49,
+	0x49, 0xc3, 0x97, 0x31, 0x0b, 0x5c, 0x43, 0x7e, 0xbe, 0x67, 0x8e, 0x9e, 0x74, 0xf4, 0x9f, 0xb2,
+	0x3c, 0xc8, 0x72, 0x0b, 0xf3, 0xbf, 0x7f, 0xba, 0x2e, 0xd1, 0x76, 0x09, 0xad, 0xf4, 0x93, 0x8e,
+	0x36, 0xb3, 0x5b, 0x33, 0x4f, 0xa3, 0xb9, 0x55, 0x3c, 0x99, 0x4a, 0x9e, 0x4f, 0x60, 0x96, 0x3f,
+	0x7a, 0xe8, 0x7f, 0xd3, 0xec, 0xca, 0xaa, 0x7a, 0xf6, 0x35, 0x4b, 0x63, 0xc5, 0x7b, 0xf5, 0xb0,
+	0x42, 0xa5, 0x78, 0x80, 0xae, 0x50, 0x79, 0x0e, 0xa2, 0x2b, 0x54, 0x01, 0x71, 0x88, 0x6a, 0x9d,
+	0x7e, 0x47, 0x53, 0xb5, 0x2e, 0xf7, 0x4c, 0xa7, 0x6a, 0x5d, 0xfe, 0xe1, 0xc5, 0xb5, 0xdb, 0x05,
+	0xf9, 0xa3, 0xf4, 0xf0, 0x8f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x46, 0x1f, 0xcc, 0xb0, 0x5a, 0x15,
 	0x00, 0x00,
 }

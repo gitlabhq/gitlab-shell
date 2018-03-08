@@ -252,6 +252,61 @@ describe GitlabShell do
       end
     end
 
+    shared_examples_for 'upload-archive' do |command|
+      let(:ssh_cmd) { "#{command} gitlab-ci.git" }
+      let(:exec_cmd_params) { ['git-upload-archive', repo_path] }
+      let(:exec_cmd_log_params) { exec_cmd_params }
+
+      after { subject.exec(ssh_cmd) }
+
+      it "should process the command" do
+        subject.should_receive(:process_cmd).with(%W(git-upload-archive gitlab-ci.git))
+      end
+
+      it "should execute the command" do
+        subject.should_receive(:exec_cmd).with(*exec_cmd_params)
+      end
+
+      it "should log the command execution" do
+        message = "executing git command"
+        user_string = "user with key #{key_id}"
+        $logger.should_receive(:info).with(message, command: exec_cmd_log_params.join(' '), user: user_string)
+      end
+
+      it "should use usernames if configured to do so" do
+        GitlabConfig.any_instance.stub(audit_usernames: true)
+        $logger.should_receive(:info).with("executing git command", hash_including(user: 'John Doe'))
+      end
+    end
+
+    context 'git-upload-archive' do
+      it_behaves_like 'upload-archive', 'git-upload-archive'
+    end
+
+    context 'git upload-archive' do
+      it_behaves_like 'upload-archive', 'git upload-archive'
+    end
+
+    context 'gitaly-upload-archive' do
+      before do
+        api.stub(check_access: gitaly_check_access)
+      end
+
+      it_behaves_like 'upload-archive', 'git-upload-archive' do
+        let(:gitaly_executable) { "gitaly-upload-archive" }
+        let(:exec_cmd_params) do
+          [
+            File.join(ROOT_PATH, "bin", gitaly_executable),
+            'unix:gitaly.socket',
+            gitaly_message
+          ]
+        end
+        let(:exec_cmd_log_params) do
+          [gitaly_executable, 'unix:gitaly.socket', gitaly_message]
+        end
+      end
+    end
+
     context 'arbitrary command' do
       let(:ssh_cmd) { 'arbitrary command' }
       after { subject.exec(ssh_cmd) }
