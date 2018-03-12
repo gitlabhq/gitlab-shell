@@ -2,8 +2,6 @@ image: "ruby:2.3"
 
 before_script:
   - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin
-  - apt update
-  - apt install rsync -y
   - gem install --bindir /usr/local/bin bundler
   - cp config.yml.example config.yml
   - bundle install
