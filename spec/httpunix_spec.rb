@@ -15,7 +15,9 @@ end
 
 describe Net::HTTPUNIX do
   def tmp_socket_path
-    File.join(ROOT_PATH, 'tmp/test-socket')
+    # This has to be a relative path shorter than 100 bytes due to
+    # limitations in how Unix sockets work.
+    'tmp/test-socket'
   end
 
   before(:all) do
