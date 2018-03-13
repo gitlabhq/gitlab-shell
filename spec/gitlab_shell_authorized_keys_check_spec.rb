@@ -1,21 +1,27 @@
 require_relative 'spec_helper'
 
 describe 'bin/gitlab-shell-authorized-keys-check' do
-  def config_path
-    File.join(ROOT_PATH, 'config.yml')
+  def original_root_path
+    ROOT_PATH
   end
 
-  def tmp_config_path
-    config_path + ".#{$$}"
+  def tmp_root_path
+    @tmp_root_path ||= File.realpath(Dir.mktmpdir)
+  end
+
+  def config_path
+    File.join(tmp_root_path, 'config.yml')
   end
 
   def tmp_socket_path
-    File.join(ROOT_PATH, 'tmp', 'gitlab-shell-authorized-keys-check-socket')
+    # This has to be a relative path shorter than 100 bytes due to
+    # limitations in how Unix sockets work.
+    'tmp/gitlab-shell-authorized-keys-check-socket'
   end
 
   before(:all) do
     FileUtils.mkdir_p(File.dirname(tmp_socket_path))
-    FileUtils.touch(File.join(ROOT_PATH, '.gitlab_shell_secret'))
+    FileUtils.touch(File.join(tmp_root_path, '.gitlab_shell_secret'))
 
     @server = HTTPUNIXServer.new(BindAddress: tmp_socket_path)
     @server.mount_proc('/api/v4/internal/authorized_keys') do |req, res|
@@ -33,21 +39,23 @@ describe 'bin/gitlab-shell-authorized-keys-check' do
     sleep(0.1) while @webrick_thread.alive? && @server.status != :Running
     raise "Couldn't start stub GitlabNet server" unless @server.status == :Running
 
-    FileUtils.mv(config_path, tmp_config_path) if File.exist?(config_path)
     File.open(config_path, 'w') do |f|
       f.write("---\ngitlab_url: http+unix://#{CGI.escape(tmp_socket_path)}\n")
     end
+
+    copy_dirs = ['bin', 'lib']
+    FileUtils.rm_rf(copy_dirs.map { |d| File.join(tmp_root_path, d) })
+    FileUtils.cp_r(copy_dirs, tmp_root_path)
   end
 
   after(:all) do
     @server.shutdown if @server
     @webrick_thread.join if @webrick_thread
-    FileUtils.rm_f(config_path)
-    FileUtils.mv(tmp_config_path, config_path) if File.exist?(tmp_config_path)
+    FileUtils.rm_rf(tmp_root_path)
   end
 
-  let(:gitlab_shell_path) { File.join(ROOT_PATH, 'bin', 'gitlab-shell') }
-  let(:authorized_keys_check_path) { File.join(ROOT_PATH, 'bin', 'gitlab-shell-authorized-keys-check') }
+  let(:gitlab_shell_path) { File.join(tmp_root_path, 'bin', 'gitlab-shell') }
+  let(:authorized_keys_check_path) { File.join(tmp_root_path, 'bin', 'gitlab-shell-authorized-keys-check') }
 
   it 'succeeds when a valid key is given' do
     output, status = run!
