@@ -95,16 +95,20 @@ describe GitlabKeys do
     end
   end
 
-  describe :list_keys do
-    let(:gitlab_keys) do
-      build_gitlab_keys('add-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E')
+  describe ':list_keys' do
+    let(:gitlab_keys) { build_gitlab_keys('list_keys') }
+    let(:key_data) { "%s\n%s\n" % [described_class.key_line('key-741', 'ssh-rsa AAAAB3NzaDAxx2E'), described_class.key_line('key-742', 'ssh-rsa AAAAB3NzaDAxx2E')] }
+    let(:key_output) { "key-741 AAAAB3NzaDAxx2E\nkey-742 AAAAB3NzaDAxx2E\n" }
+
+    before do
+      create_authorized_keys_fixture(
+        existing_content:
+          key_data
+        )
     end
 
-    it 'adds a key and lists it' do
-      create_authorized_keys_fixture
-      gitlab_keys.send :add_key
-      auth_line1 = 'key-741 AAAAB3NzaDAxx2E'
-      expect(gitlab_keys.send(:list_keys)).to eq("#{auth_line1}\n")
+    it 'outputs the keys with IDs, separated by newlines' do
+      expect { gitlab_keys.send(:list_keys) }.to output(key_output).to_stdout
     end
   end
 
