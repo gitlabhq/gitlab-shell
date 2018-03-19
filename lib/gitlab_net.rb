@@ -190,7 +190,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   end
 
   def request(method, url, params = {}, options = {})
-    $logger.debug "Performing #{method.to_s.upcase} #{url}"
+    $logger.debug('Performing request', method: method.to_s.upcase, url: url)
 
     uri = URI.parse(url)
 
@@ -201,18 +201,16 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
       start_time = Time.new
       response = http.start { http.request(request) }
     rescue => e
-      $logger.warn "Failed to connect to internal API <#{method.to_s.upcase} #{url}>: #{e.inspect}"
+      $logger.warn('Failed to connect to internal API', method: method.to_s.upcase, url: url, error: e)
       raise ApiUnreachableError
     ensure
-      $logger.info do
-        sprintf('%s %s %0.5f', method.to_s.upcase, url, Time.new - start_time) # rubocop:disable Style/FormatString
-      end
+      $logger.info('finished HTTP request', method: method.to_s.upcase, url: url, duration: Time.new - start_time)
     end
 
     if response.code == "200"
-      $logger.debug "Received response #{response.code} => <#{response.body}>."
+      $logger.debug('Received response', code: response.code, body: response.body)
     else
-      $logger.error "API call <#{method.to_s.upcase} #{url}> failed: #{response.code} => <#{response.body}>."
+      $logger.error('API call failed', method: method.to_s.upcase, url: url, code: response.code, body: response.body)
     end
 
     response

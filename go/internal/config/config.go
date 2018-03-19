@@ -5,7 +5,7 @@ import (
 	"os"
 	"path"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -14,8 +14,9 @@ const (
 )
 
 type Config struct {
-	RootDir string
-	LogFile string `yaml:"log_file"`
+	RootDir   string
+	LogFile   string `yaml:"log_file"`
+	LogFormat string `yaml:"log_format"`
 }
 
 func New() (*Config, error) {
@@ -51,6 +52,10 @@ func parseConfig(configBytes []byte, cfg *Config) error {
 
 	if len(cfg.LogFile) > 0 && cfg.LogFile[0] != '/' {
 		cfg.LogFile = path.Join(cfg.RootDir, cfg.LogFile)
+	}
+
+	if cfg.LogFormat == "" {
+		cfg.LogFormat = "text"
 	}
 
 	return nil

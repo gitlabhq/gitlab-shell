@@ -42,6 +42,9 @@ auth_file: "/home/git/.ssh/authorized_keys"
 # Log level. INFO by default
 log_level: INFO
 
+# Log format. 'text' by default
+# log_format: json
+
 # Audit usernames.
 # Set to true to see real usernames in the logs instead of key ids, which is easier to follow, but
 # incurs an extra API call on every gitlab-shell command.

@@ -24,4 +24,12 @@ describe GitlabConfig do
 
     it("returns false by default") { should eq(false) }
   end
+
+  describe :log_format do
+    subject { config.log_format }
+
+    it 'returns "text" by default' do
+      should eq('text')
+    end
+  end
 end

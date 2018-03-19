@@ -53,7 +53,7 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
       when 'check-permissions'
         check_permissions
       else
-        $logger.warn "Attempt to execute invalid gitlab-keys command #{@command.inspect}."
+        $logger.warn('Attempt to execute invalid gitlab-keys command', command: @command.inspect)
         puts 'not allowed'
         false
       end
@@ -64,7 +64,7 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
 
   def add_key
     lock do
-      $logger.info "Adding key #{@key_id} => #{@key.inspect}"
+      $logger.info('Adding key', key_id: @key_id, public_key: @key)
       auth_line = self.class.key_line(@key_id, @key)
       open_auth_file('a') { |file| file.puts(auth_line) }
     end
@@ -102,7 +102,7 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
           tokens = input.strip.split("\t")
           abort("#{$0}: invalid input #{input.inspect}") unless tokens.count == 2
           key_id, public_key = tokens
-          $logger.info "Adding key #{key_id} => #{public_key.inspect}"
+          $logger.info('Adding key', key_id: key_id, public_key: public_key)
           file.puts(self.class.key_line(key_id, public_key))
         end
       end
@@ -116,7 +116,7 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
 
   def rm_key
     lock do
-      $logger.info "Removing key #{@key_id}"
+      $logger.info('Removing key', key_id: @key_id)
       open_auth_file('r+') do |f|
         while line = f.gets # rubocop:disable Style/AssignmentInCondition
           next unless line.start_with?("command=\"#{self.class.command(@key_id)}\"")

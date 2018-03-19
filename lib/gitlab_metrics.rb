@@ -1,4 +1,3 @@
-require 'logger'
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 
@@ -53,7 +52,7 @@ module GitlabMetrics
     real_time = System.monotonic_time - start_real
     cpu_time = System.cpu_time - start_cpu
 
-    logger.debug("metrics: name=#{name.inspect} wall_time=#{real_time} cpu_time=#{cpu_time}")
+    logger.debug('metrics', name: name, wall_time: real_time, cpu_time: cpu_time)
 
     retval
   end

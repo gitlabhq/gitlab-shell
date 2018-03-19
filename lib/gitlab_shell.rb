@@ -48,14 +48,12 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
     false
   rescue AccessDeniedError => ex
-    message = "gitlab-shell: Access denied for git command <#{origin_cmd}> by #{log_username}."
-    $logger.warn message
+    $logger.warn('Access denied', command: origin_cmd, user: log_username)
 
     $stderr.puts "GitLab: #{ex.message}"
     false
   rescue DisallowedCommandError
-    message = "gitlab-shell: Attempt to execute disallowed command <#{origin_cmd}> by #{log_username}."
-    $logger.warn message
+    $logger.warn('Denied disallowed command', command: origin_cmd, user: log_username)
 
     $stderr.puts "GitLab: Disallowed command"
     false
@@ -117,7 +115,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
     if @command == 'git-lfs-authenticate'
       GitlabMetrics.measure('lfs-authenticate') do
-        $logger.info "gitlab-shell: Processing LFS authentication for #{log_username}."
+        $logger.info('Processing LFS authentication', user: log_username)
         lfs_authenticate
       end
       return
@@ -144,7 +142,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     end
 
     args_string = [File.basename(executable), *args].join(' ')
-    $logger.info "gitlab-shell: executing git command <#{args_string}> for #{log_username}."
+    $logger.info('executing git command', command: args_string, user: log_username)
     exec_cmd(executable, *args)
   end
 
@@ -253,7 +251,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     return false unless @config.git_trace_log_file
 
     if Pathname(@config.git_trace_log_file).relative?
-      $logger.warn "gitlab-shell: is configured to trace git commands with #{@config.git_trace_log_file.inspect} but an absolute path needs to be provided"
+      $logger.warn('git trace log path must be absolute, ignoring', git_trace_log_file: @config.git_trace_log_file)
       return false
     end
 
@@ -261,7 +259,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       File.open(@config.git_trace_log_file, 'a') { nil }
       return true
     rescue => ex
-      $logger.warn "gitlab-shell: is configured to trace git commands with #{@config.git_trace_log_file.inspect} but it's not possible to write in that path #{ex.message}"
+      $logger.warn('Failed to open git trace log file', git_trace_log_file: @config.git_trace_log_file, error: ex.to_s)
       return false
     end
   end
