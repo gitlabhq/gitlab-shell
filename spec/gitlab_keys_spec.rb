@@ -57,7 +57,7 @@ describe GitlabKeys do
       before { create_authorized_keys_fixture }
 
       it "should log an add-key event" do
-        $logger.should_receive(:info).with('Adding key key-741 => "ssh-rsa AAAAB3NzaDAxx2E"')
+        $logger.should_receive(:info).with("Adding key", {:key_id=>"key-741", :public_key=>"ssh-rsa AAAAB3NzaDAxx2E"})
         gitlab_keys.send :add_key
       end
 
@@ -127,8 +127,8 @@ describe GitlabKeys do
       end
 
       it "should log an add-key event" do
-        $logger.should_receive(:info).with('Adding key key-12 => "ssh-dsa ASDFASGADG"')
-        $logger.should_receive(:info).with('Adding key key-123 => "ssh-rsa GFDGDFSGSDFG"')
+        $logger.should_receive(:info).with("Adding key", key_id: 'key-12', public_key: "ssh-dsa ASDFASGADG")
+        $logger.should_receive(:info).with("Adding key", key_id: 'key-123', public_key: "ssh-rsa GFDGDFSGSDFG")
         gitlab_keys.send :batch_add_keys
       end
 
@@ -169,7 +169,7 @@ describe GitlabKeys do
       end
 
       it "should log an rm-key event" do
-        $logger.should_receive(:info).with('Removing key key-741')
+        $logger.should_receive(:info).with("Removing key", key_id: "key-741")
         gitlab_keys.send :rm_key
       end
 
@@ -266,7 +266,7 @@ describe GitlabKeys do
     it 'should log a warning on unknown commands' do
       gitlab_keys = build_gitlab_keys('nooope')
       gitlab_keys.stub(puts: nil)
-      $logger.should_receive(:warn).with('Attempt to execute invalid gitlab-keys command "nooope".')
+      $logger.should_receive(:warn).with("Attempt to execute invalid gitlab-keys command", command: '"nooope"')
       gitlab_keys.exec
     end
   end

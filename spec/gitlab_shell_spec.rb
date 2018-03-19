@@ -160,15 +160,14 @@ describe GitlabShell do
       end
 
       it "should log the command execution" do
-        message = "gitlab-shell: executing git command "
-        message << "<git-upload-pack #{repo_path}> "
-        message << "for user with key #{key_id}."
-        $logger.should_receive(:info).with(message)
+        message = "executing git command"
+        user_string = "user with key #{key_id}"
+        $logger.should_receive(:info).with(message, command: "git-upload-pack #{repo_path}", user: user_string)
       end
 
       it "should use usernames if configured to do so" do
         GitlabConfig.any_instance.stub(audit_usernames: true)
-        $logger.should_receive(:info).with(/for John Doe/)
+        $logger.should_receive(:info).with("executing git command", hash_including(user: 'John Doe'))
       end
     end
 
@@ -196,15 +195,14 @@ describe GitlabShell do
       end
 
       it "should log the command execution" do
-        message = "gitlab-shell: executing git command "
-        message << "<gitaly-upload-pack unix:gitaly.socket #{gitaly_message}> "
-        message << "for user with key #{key_id}."
-        $logger.should_receive(:info).with(message)
+        message = "executing git command"
+        user_string = "user with key #{key_id}"
+        $logger.should_receive(:info).with(message, command: "gitaly-upload-pack unix:gitaly.socket #{gitaly_message}", user: user_string)
       end
 
       it "should use usernames if configured to do so" do
         GitlabConfig.any_instance.stub(audit_usernames: true)
-        $logger.should_receive(:info) { |msg| msg.should =~ /for John Doe/ }
+        $logger.should_receive(:info).with("executing git command", hash_including(user: 'John Doe'))
       end
     end
 
@@ -221,10 +219,9 @@ describe GitlabShell do
       end
 
       it "should log the command execution" do
-        message = "gitlab-shell: executing git command "
-        message << "<git-receive-pack #{repo_path}> "
-        message << "for user with key #{key_id}."
-        $logger.should_receive(:info).with(message)
+        message = "executing git command"
+        user_string = "user with key #{key_id}"
+        $logger.should_receive(:info).with(message, command: "git-receive-pack #{repo_path}", user: user_string)
       end
     end
 
@@ -244,15 +241,14 @@ describe GitlabShell do
       end
 
       it "should log the command execution" do
-        message = "gitlab-shell: executing git command "
-        message << "<gitaly-receive-pack unix:gitaly.socket #{gitaly_message}> "
-        message << "for user with key #{key_id}."
-        $logger.should_receive(:info).with(message)
+        message = "executing git command"
+        user_string = "user with key #{key_id}"
+        $logger.should_receive(:info).with(message, command: "gitaly-receive-pack unix:gitaly.socket #{gitaly_message}", user: user_string)
       end
 
       it "should use usernames if configured to do so" do
         GitlabConfig.any_instance.stub(audit_usernames: true)
-        $logger.should_receive(:info).with(/for John Doe/)
+        $logger.should_receive(:info).with("executing git command", hash_including(user: 'John Doe'))
       end
     end
 
@@ -269,8 +265,9 @@ describe GitlabShell do
       end
 
       it "should log the attempt" do
-        message = "gitlab-shell: Attempt to execute disallowed command <arbitrary command> by user with key #{key_id}."
-        $logger.should_receive(:warn).with(message)
+        message = 'Denied disallowed command'
+        user_string = "user with key #{key_id}"
+        $logger.should_receive(:warn).with(message, command: 'arbitrary command', user: user_string)
       end
     end
 
@@ -356,9 +353,9 @@ describe GitlabShell do
                   gl_username: nil,
                   repository_path: nil,
                   gitaly: nil))
-        message = "gitlab-shell: Access denied for git command <git-upload-pack gitlab-ci.git> "
-        message << "by user with key #{key_id}."
-        $logger.should_receive(:warn).with(message)
+        message = 'Access denied'
+        user_string = "user with key #{key_id}"
+        $logger.should_receive(:warn).with(message, command: 'git-upload-pack gitlab-ci.git', user: user_string)
       end
     end
 
@@ -450,8 +447,10 @@ describe GitlabShell do
         end
 
         it "writes an entry on the log" do
+          message = 'git trace log path must be absolute, ignoring'
+
           expect($logger).to receive(:warn).
-            with("gitlab-shell: is configured to trace git commands with #{git_trace_log_file.inspect} but an absolute path needs to be provided")
+            with(message, git_trace_log_file: git_trace_log_file)
 
           Kernel.should_receive(:exec).with(env, [1, 2], exec_options).once
           shell.send :exec_cmd, [1, 2]
@@ -474,8 +473,11 @@ describe GitlabShell do
         end
 
         it "writes an entry on the log" do
+          message = 'Failed to open git trace log file'
+          error = 'Permission denied'
+
           expect($logger).to receive(:warn).
-            with("gitlab-shell: is configured to trace git commands with #{git_trace_log_file.inspect} but it's not possible to write in that path Permission denied")
+            with(message, git_trace_log_file: git_trace_log_file, error: error)
 
           Kernel.should_receive(:exec).with(env, [1, 2], exec_options).once
           shell.send :exec_cmd, [1, 2]

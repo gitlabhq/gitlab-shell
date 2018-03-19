@@ -1,4 +1,6 @@
+require 'json'
 require 'logger'
+require 'time'
 
 require_relative 'gitlab_config'
 
@@ -10,7 +12,97 @@ rescue NameError
   Logger::INFO
 end
 
+class GitlabLogger
+  # Emulate the quoting logic of logrus
+  # https://github.com/sirupsen/logrus/blob/v1.0.5/text_formatter.go#L143-L156
+  SHOULD_QUOTE = /[^a-zA-Z0-9\-._\/@^+]/
+
+  LEVELS = {
+    Logger::INFO => 'info'.freeze,
+    Logger::DEBUG => 'debug'.freeze,
+    Logger::WARN => 'warn'.freeze
+  }.freeze
+
+  def initialize(level, path, log_format)
+    @level = level
+    @log_file = File.open(path, 'ab')
+    @log_format = log_format
+  end
+
+  def info(message, data = {})
+    log_at(Logger::INFO, message, data)
+  end
+
+  def debug(message, data = {})
+    log_at(Logger::DEBUG, message, data)
+  end
+
+  def warn(message, data = {})
+    log_at(Logger::WARN, message, data)
+  end
+
+  private
+
+  attr_reader :log_file, :log_format
+
+  def log_at(level, message, data)
+    return unless @level <= level
+
+    data[:pid] = pid
+    data[:level] = LEVELS[level]
+    data[:msg] = message
+
+    # Use RFC3339 to match logrus in the Go parts of gitlab-shell
+    data[:time] = time_now.to_datetime.rfc3339
+
+    case log_format
+    when 'json'
+      log_file.puts format_json(data)
+    else
+      log_file.puts format_text(data)
+    end
+  end
+
+  def pid
+    Process.pid
+  end
+
+  def time_now
+    Time.now
+  end
+
+  def format_text(data)
+    # We start the line with these fields to match the behavior of logrus
+    result = [
+      format_key_value(:time, data.delete(:time)),
+      format_key_value(:level, data.delete(:level)),
+      format_key_value(:msg, data.delete(:msg))
+    ]
+
+    data.sort.each { |k, v| result << format_key_value(k, v) }
+    result.join(' ')
+  end
+
+  def format_key_value(key, value)
+    value_string = value.to_s
+    value_string = value_string.inspect if SHOULD_QUOTE =~ value_string
+
+    "#{key}=#{value_string}"
+  end
+
+  def format_json(data)
+    data.each do |key, value|
+      next unless value.is_a?(String)
+
+      value = value.dup.force_encoding('utf-8')
+      value = value.inspect unless value.valid_encoding?
+      data[key] = value.freeze
+    end
+
+    data.to_json
+  end
+end
+
 config = GitlabConfig.new
 
-$logger = Logger.new(config.log_file)
-$logger.level = convert_log_level(config.log_level)
+$logger = GitlabLogger.new(convert_log_level(config.log_level), config.log_file, config.log_format)

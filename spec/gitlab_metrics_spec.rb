@@ -11,7 +11,7 @@ describe GitlabMetrics do
 
     it 'writes the metrics data to a log file' do
       expect(described_class.logger).to receive(:debug).
-        with(/metrics: name=\"foo\" wall_time=\d+ cpu_time=\d+/)
+        with('metrics', a_metrics_log_message('foo'))
 
       described_class.measure('foo') { 10 }
     end
@@ -22,5 +22,15 @@ describe GitlabMetrics do
 
       described_class.measure('foo') { 10 }
     end
+  end
+end
+
+RSpec::Matchers.define :a_metrics_log_message do |x|
+  match do |actual|
+    [
+      actual.fetch(:name) == x,
+      actual.fetch(:wall_time).is_a?(Numeric),
+      actual.fetch(:cpu_time).is_a?(Numeric),
+    ].all?
   end
 end

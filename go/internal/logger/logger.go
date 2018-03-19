@@ -3,18 +3,19 @@ package logger
 import (
 	"fmt"
 	"io"
-	"log"
+	golog "log"
 	"log/syslog"
 	"os"
 	"sync"
-	"time"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
 	logWriter       io.Writer
-	bootstrapLogger *log.Logger
+	bootstrapLogger *golog.Logger
 	pid             int
 	mutex           sync.Mutex
 	ProgName        string
@@ -28,7 +29,16 @@ func Configure(cfg *config.Config) error {
 
 	var err error
 	logWriter, err = os.OpenFile(cfg.LogFile, os.O_WRONLY|os.O_APPEND, 0)
-	return err
+	if err != nil {
+		return err
+	}
+
+	log.SetOutput(logWriter)
+	if cfg.LogFormat == "json" {
+		log.SetFormatter(&log.JSONFormatter{})
+	}
+
+	return nil
 }
 
 func logPrint(msg string, err error) {
@@ -40,10 +50,9 @@ func logPrint(msg string, err error) {
 		return
 	}
 
-	// Emulate the existing log format of gitlab-shell
-	t := time.Now().Format("2006-01-02T15:04:05.999999")
-	prefix := fmt.Sprintf("E, [%s #%d] ERROR -- : %s:", t, pid, ProgName)
-	fmt.Fprintf(logWriter, "%s %s: %v\n", prefix, msg, err)
+	log.WithError(err).WithFields(log.Fields{
+		"pid": pid,
+	}).Error(msg)
 }
 
 func Fatal(msg string, err error) {

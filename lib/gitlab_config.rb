@@ -42,6 +42,10 @@ class GitlabConfig
     @config['log_level'] ||= 'INFO'
   end
 
+  def log_format
+    @config['log_format'] ||= 'text'
+  end
+
   def audit_usernames
     @config['audit_usernames'] ||= false
   end
