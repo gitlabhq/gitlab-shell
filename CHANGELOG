@@ -1,3 +1,6 @@
+v7.1.0
+  - Migrate `git-upload-archive` to gitaly
+
 v7.0.0
   - Switch to structured logging (!193)
 

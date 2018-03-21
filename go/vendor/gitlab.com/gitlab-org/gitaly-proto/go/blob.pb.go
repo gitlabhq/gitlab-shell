@@ -16,6 +16,7 @@ It is generated from these files:
 	ref.proto
 	remote.proto
 	repository-service.proto
+	server.proto
 	shared.proto
 	smarthttp.proto
 	ssh.proto
@@ -29,6 +30,10 @@ It has these top-level messages:
 	LFSPointer
 	GetLFSPointersRequest
 	GetLFSPointersResponse
+	GetNewLFSPointersRequest
+	GetNewLFSPointersResponse
+	GetAllLFSPointersRequest
+	GetAllLFSPointersResponse
 	CommitStatsRequest
 	CommitStatsResponse
 	CommitIsAncestorRequest
@@ -64,6 +69,8 @@ It has these top-level messages:
 	FilterShasWithSignaturesResponse
 	ExtractCommitSignatureRequest
 	ExtractCommitSignatureResponse
+	GetCommitSignaturesRequest
+	GetCommitSignaturesResponse
 	ListConflictFilesRequest
 	ConflictFileHeader
 	ConflictFile
@@ -116,6 +123,8 @@ It has these top-level messages:
 	UserCommitFilesResponse
 	UserRebaseRequest
 	UserRebaseResponse
+	UserSquashRequest
+	UserSquashResponse
 	FindDefaultBranchNameRequest
 	FindDefaultBranchNameResponse
 	FindAllBranchNamesRequest
@@ -156,8 +165,6 @@ It has these top-level messages:
 	UpdateRemoteMirrorResponse
 	RepositoryExistsRequest
 	RepositoryExistsResponse
-	RepositoryIsEmptyRequest
-	RepositoryIsEmptyResponse
 	RepackIncrementalRequest
 	RepackIncrementalResponse
 	RepackFullRequest
@@ -188,8 +195,20 @@ It has these top-level messages:
 	CreateForkResponse
 	IsRebaseInProgressRequest
 	IsRebaseInProgressResponse
+	IsSquashInProgressRequest
+	IsSquashInProgressResponse
 	CreateRepositoryFromURLRequest
 	CreateRepositoryFromURLResponse
+	CreateBundleRequest
+	CreateBundleResponse
+	WriteConfigRequest
+	WriteConfigResponse
+	CreateRepositoryFromBundleRequest
+	CreateRepositoryFromBundleResponse
+	FindLicenseRequest
+	FindLicenseResponse
+	ServerInfoRequest
+	ServerInfoResponse
 	Repository
 	GitCommit
 	CommitAuthor
@@ -207,6 +226,8 @@ It has these top-level messages:
 	SSHUploadPackResponse
 	SSHReceivePackRequest
 	SSHReceivePackResponse
+	SSHUploadArchiveRequest
+	SSHUploadArchiveResponse
 	WikiCommitDetails
 	WikiPageVersion
 	WikiPage
@@ -224,6 +245,8 @@ It has these top-level messages:
 	WikiFindFileResponse
 	WikiGetAllPagesRequest
 	WikiGetAllPagesResponse
+	WikiGetFormattedDataRequest
+	WikiGetFormattedDataResponse
 */
 package gitaly
 
@@ -318,8 +341,8 @@ func (m *GetBlobResponse) GetOid() string {
 
 type GetBlobsRequest struct {
 	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
-	// Object IDs (SHA1) of the blobs we want to get
-	Oids []string `protobuf:"bytes,2,rep,name=oids" json:"oids,omitempty"`
+	// Revision/Path pairs of the blobs we want to get.
+	RevisionPaths []*GetBlobsRequest_RevisionPath `protobuf:"bytes,2,rep,name=revision_paths,json=revisionPaths" json:"revision_paths,omitempty"`
 	// Maximum number of bytes we want to receive. Use '-1' to get the full blobs no matter how big.
 	Limit int64 `protobuf:"varint,3,opt,name=limit" json:"limit,omitempty"`
 }
@@ -336,9 +359,9 @@ func (m *GetBlobsRequest) GetRepository() *Repository {
 	return nil
 }
 
-func (m *GetBlobsRequest) GetOids() []string {
+func (m *GetBlobsRequest) GetRevisionPaths() []*GetBlobsRequest_RevisionPath {
 	if m != nil {
-		return m.Oids
+		return m.RevisionPaths
 	}
 	return nil
 }
@@ -350,13 +373,41 @@ func (m *GetBlobsRequest) GetLimit() int64 {
 	return 0
 }
 
+type GetBlobsRequest_RevisionPath struct {
+	Revision string `protobuf:"bytes,1,opt,name=revision" json:"revision,omitempty"`
+	Path     []byte `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+}
+
+func (m *GetBlobsRequest_RevisionPath) Reset()                    { *m = GetBlobsRequest_RevisionPath{} }
+func (m *GetBlobsRequest_RevisionPath) String() string            { return proto.CompactTextString(m) }
+func (*GetBlobsRequest_RevisionPath) ProtoMessage()               {}
+func (*GetBlobsRequest_RevisionPath) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2, 0} }
+
+func (m *GetBlobsRequest_RevisionPath) GetRevision() string {
+	if m != nil {
+		return m.Revision
+	}
+	return ""
+}
+
+func (m *GetBlobsRequest_RevisionPath) GetPath() []byte {
+	if m != nil {
+		return m.Path
+	}
+	return nil
+}
+
 type GetBlobsResponse struct {
 	// Blob size; present only on the first message per blob
 	Size int64 `protobuf:"varint,1,opt,name=size" json:"size,omitempty"`
-	// Chunk of blob data
+	// Chunk of blob data, could span over multiple messages.
 	Data []byte `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 	// Object ID of the current blob. Only present on the first message per blob. Empty if no blob was found.
-	Oid string `protobuf:"bytes,3,opt,name=oid" json:"oid,omitempty"`
+	Oid         string `protobuf:"bytes,3,opt,name=oid" json:"oid,omitempty"`
+	IsSubmodule bool   `protobuf:"varint,4,opt,name=is_submodule,json=isSubmodule" json:"is_submodule,omitempty"`
+	Mode        int32  `protobuf:"varint,5,opt,name=mode" json:"mode,omitempty"`
+	Revision    string `protobuf:"bytes,6,opt,name=revision" json:"revision,omitempty"`
+	Path        []byte `protobuf:"bytes,7,opt,name=path,proto3" json:"path,omitempty"`
 }
 
 func (m *GetBlobsResponse) Reset()                    { *m = GetBlobsResponse{} }
@@ -383,6 +434,34 @@ func (m *GetBlobsResponse) GetOid() string {
 		return m.Oid
 	}
 	return ""
+}
+
+func (m *GetBlobsResponse) GetIsSubmodule() bool {
+	if m != nil {
+		return m.IsSubmodule
+	}
+	return false
+}
+
+func (m *GetBlobsResponse) GetMode() int32 {
+	if m != nil {
+		return m.Mode
+	}
+	return 0
+}
+
+func (m *GetBlobsResponse) GetRevision() string {
+	if m != nil {
+		return m.Revision
+	}
+	return ""
+}
+
+func (m *GetBlobsResponse) GetPath() []byte {
+	if m != nil {
+		return m.Path
+	}
+	return nil
 }
 
 type LFSPointer struct {
@@ -457,14 +536,124 @@ func (m *GetLFSPointersResponse) GetLfsPointers() []*LFSPointer {
 	return nil
 }
 
+type GetNewLFSPointersRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	Revision   []byte      `protobuf:"bytes,2,opt,name=revision,proto3" json:"revision,omitempty"`
+	Limit      int32       `protobuf:"varint,3,opt,name=limit" json:"limit,omitempty"`
+	// Note: When `not_in_all` is true, `not_in_refs` is ignored
+	NotInAll  bool     `protobuf:"varint,4,opt,name=not_in_all,json=notInAll" json:"not_in_all,omitempty"`
+	NotInRefs [][]byte `protobuf:"bytes,5,rep,name=not_in_refs,json=notInRefs,proto3" json:"not_in_refs,omitempty"`
+}
+
+func (m *GetNewLFSPointersRequest) Reset()                    { *m = GetNewLFSPointersRequest{} }
+func (m *GetNewLFSPointersRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetNewLFSPointersRequest) ProtoMessage()               {}
+func (*GetNewLFSPointersRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
+
+func (m *GetNewLFSPointersRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *GetNewLFSPointersRequest) GetRevision() []byte {
+	if m != nil {
+		return m.Revision
+	}
+	return nil
+}
+
+func (m *GetNewLFSPointersRequest) GetLimit() int32 {
+	if m != nil {
+		return m.Limit
+	}
+	return 0
+}
+
+func (m *GetNewLFSPointersRequest) GetNotInAll() bool {
+	if m != nil {
+		return m.NotInAll
+	}
+	return false
+}
+
+func (m *GetNewLFSPointersRequest) GetNotInRefs() [][]byte {
+	if m != nil {
+		return m.NotInRefs
+	}
+	return nil
+}
+
+type GetNewLFSPointersResponse struct {
+	LfsPointers []*LFSPointer `protobuf:"bytes,1,rep,name=lfs_pointers,json=lfsPointers" json:"lfs_pointers,omitempty"`
+}
+
+func (m *GetNewLFSPointersResponse) Reset()                    { *m = GetNewLFSPointersResponse{} }
+func (m *GetNewLFSPointersResponse) String() string            { return proto.CompactTextString(m) }
+func (*GetNewLFSPointersResponse) ProtoMessage()               {}
+func (*GetNewLFSPointersResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
+
+func (m *GetNewLFSPointersResponse) GetLfsPointers() []*LFSPointer {
+	if m != nil {
+		return m.LfsPointers
+	}
+	return nil
+}
+
+type GetAllLFSPointersRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	Revision   []byte      `protobuf:"bytes,2,opt,name=revision,proto3" json:"revision,omitempty"`
+}
+
+func (m *GetAllLFSPointersRequest) Reset()                    { *m = GetAllLFSPointersRequest{} }
+func (m *GetAllLFSPointersRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetAllLFSPointersRequest) ProtoMessage()               {}
+func (*GetAllLFSPointersRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9} }
+
+func (m *GetAllLFSPointersRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *GetAllLFSPointersRequest) GetRevision() []byte {
+	if m != nil {
+		return m.Revision
+	}
+	return nil
+}
+
+type GetAllLFSPointersResponse struct {
+	LfsPointers []*LFSPointer `protobuf:"bytes,1,rep,name=lfs_pointers,json=lfsPointers" json:"lfs_pointers,omitempty"`
+}
+
+func (m *GetAllLFSPointersResponse) Reset()                    { *m = GetAllLFSPointersResponse{} }
+func (m *GetAllLFSPointersResponse) String() string            { return proto.CompactTextString(m) }
+func (*GetAllLFSPointersResponse) ProtoMessage()               {}
+func (*GetAllLFSPointersResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
+
+func (m *GetAllLFSPointersResponse) GetLfsPointers() []*LFSPointer {
+	if m != nil {
+		return m.LfsPointers
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*GetBlobRequest)(nil), "gitaly.GetBlobRequest")
 	proto.RegisterType((*GetBlobResponse)(nil), "gitaly.GetBlobResponse")
 	proto.RegisterType((*GetBlobsRequest)(nil), "gitaly.GetBlobsRequest")
+	proto.RegisterType((*GetBlobsRequest_RevisionPath)(nil), "gitaly.GetBlobsRequest.RevisionPath")
 	proto.RegisterType((*GetBlobsResponse)(nil), "gitaly.GetBlobsResponse")
 	proto.RegisterType((*LFSPointer)(nil), "gitaly.LFSPointer")
 	proto.RegisterType((*GetLFSPointersRequest)(nil), "gitaly.GetLFSPointersRequest")
 	proto.RegisterType((*GetLFSPointersResponse)(nil), "gitaly.GetLFSPointersResponse")
+	proto.RegisterType((*GetNewLFSPointersRequest)(nil), "gitaly.GetNewLFSPointersRequest")
+	proto.RegisterType((*GetNewLFSPointersResponse)(nil), "gitaly.GetNewLFSPointersResponse")
+	proto.RegisterType((*GetAllLFSPointersRequest)(nil), "gitaly.GetAllLFSPointersRequest")
+	proto.RegisterType((*GetAllLFSPointersResponse)(nil), "gitaly.GetAllLFSPointersResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -482,12 +671,10 @@ type BlobServiceClient interface {
 	// ID. We use a stream to return a chunked arbitrarily large binary
 	// response
 	GetBlob(ctx context.Context, in *GetBlobRequest, opts ...grpc.CallOption) (BlobService_GetBlobClient, error)
-	// GetBlobsBySHA returns the contents of a blob objects referenced by their object
-	// ID. We use a stream to return a chunked arbitrarily large binary response.
-	// The blobs are sent in a continous stream, the caller is responsible for spliting
-	// them up into multiple blobs by their object IDs.
 	GetBlobs(ctx context.Context, in *GetBlobsRequest, opts ...grpc.CallOption) (BlobService_GetBlobsClient, error)
 	GetLFSPointers(ctx context.Context, in *GetLFSPointersRequest, opts ...grpc.CallOption) (BlobService_GetLFSPointersClient, error)
+	GetNewLFSPointers(ctx context.Context, in *GetNewLFSPointersRequest, opts ...grpc.CallOption) (BlobService_GetNewLFSPointersClient, error)
+	GetAllLFSPointers(ctx context.Context, in *GetAllLFSPointersRequest, opts ...grpc.CallOption) (BlobService_GetAllLFSPointersClient, error)
 }
 
 type blobServiceClient struct {
@@ -594,6 +781,70 @@ func (x *blobServiceGetLFSPointersClient) Recv() (*GetLFSPointersResponse, error
 	return m, nil
 }
 
+func (c *blobServiceClient) GetNewLFSPointers(ctx context.Context, in *GetNewLFSPointersRequest, opts ...grpc.CallOption) (BlobService_GetNewLFSPointersClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_BlobService_serviceDesc.Streams[3], c.cc, "/gitaly.BlobService/GetNewLFSPointers", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &blobServiceGetNewLFSPointersClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type BlobService_GetNewLFSPointersClient interface {
+	Recv() (*GetNewLFSPointersResponse, error)
+	grpc.ClientStream
+}
+
+type blobServiceGetNewLFSPointersClient struct {
+	grpc.ClientStream
+}
+
+func (x *blobServiceGetNewLFSPointersClient) Recv() (*GetNewLFSPointersResponse, error) {
+	m := new(GetNewLFSPointersResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *blobServiceClient) GetAllLFSPointers(ctx context.Context, in *GetAllLFSPointersRequest, opts ...grpc.CallOption) (BlobService_GetAllLFSPointersClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_BlobService_serviceDesc.Streams[4], c.cc, "/gitaly.BlobService/GetAllLFSPointers", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &blobServiceGetAllLFSPointersClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type BlobService_GetAllLFSPointersClient interface {
+	Recv() (*GetAllLFSPointersResponse, error)
+	grpc.ClientStream
+}
+
+type blobServiceGetAllLFSPointersClient struct {
+	grpc.ClientStream
+}
+
+func (x *blobServiceGetAllLFSPointersClient) Recv() (*GetAllLFSPointersResponse, error) {
+	m := new(GetAllLFSPointersResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // Server API for BlobService service
 
 type BlobServiceServer interface {
@@ -601,12 +852,10 @@ type BlobServiceServer interface {
 	// ID. We use a stream to return a chunked arbitrarily large binary
 	// response
 	GetBlob(*GetBlobRequest, BlobService_GetBlobServer) error
-	// GetBlobsBySHA returns the contents of a blob objects referenced by their object
-	// ID. We use a stream to return a chunked arbitrarily large binary response.
-	// The blobs are sent in a continous stream, the caller is responsible for spliting
-	// them up into multiple blobs by their object IDs.
 	GetBlobs(*GetBlobsRequest, BlobService_GetBlobsServer) error
 	GetLFSPointers(*GetLFSPointersRequest, BlobService_GetLFSPointersServer) error
+	GetNewLFSPointers(*GetNewLFSPointersRequest, BlobService_GetNewLFSPointersServer) error
+	GetAllLFSPointers(*GetAllLFSPointersRequest, BlobService_GetAllLFSPointersServer) error
 }
 
 func RegisterBlobServiceServer(s *grpc.Server, srv BlobServiceServer) {
@@ -676,6 +925,48 @@ func (x *blobServiceGetLFSPointersServer) Send(m *GetLFSPointersResponse) error 
 	return x.ServerStream.SendMsg(m)
 }
 
+func _BlobService_GetNewLFSPointers_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetNewLFSPointersRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(BlobServiceServer).GetNewLFSPointers(m, &blobServiceGetNewLFSPointersServer{stream})
+}
+
+type BlobService_GetNewLFSPointersServer interface {
+	Send(*GetNewLFSPointersResponse) error
+	grpc.ServerStream
+}
+
+type blobServiceGetNewLFSPointersServer struct {
+	grpc.ServerStream
+}
+
+func (x *blobServiceGetNewLFSPointersServer) Send(m *GetNewLFSPointersResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _BlobService_GetAllLFSPointers_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetAllLFSPointersRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(BlobServiceServer).GetAllLFSPointers(m, &blobServiceGetAllLFSPointersServer{stream})
+}
+
+type BlobService_GetAllLFSPointersServer interface {
+	Send(*GetAllLFSPointersResponse) error
+	grpc.ServerStream
+}
+
+type blobServiceGetAllLFSPointersServer struct {
+	grpc.ServerStream
+}
+
+func (x *blobServiceGetAllLFSPointersServer) Send(m *GetAllLFSPointersResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 var _BlobService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gitaly.BlobService",
 	HandlerType: (*BlobServiceServer)(nil),
@@ -696,6 +987,16 @@ var _BlobService_serviceDesc = grpc.ServiceDesc{
 			Handler:       _BlobService_GetLFSPointers_Handler,
 			ServerStreams: true,
 		},
+		{
+			StreamName:    "GetNewLFSPointers",
+			Handler:       _BlobService_GetNewLFSPointers_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetAllLFSPointers",
+			Handler:       _BlobService_GetAllLFSPointers_Handler,
+			ServerStreams: true,
+		},
 	},
 	Metadata: "blob.proto",
 }
@@ -703,28 +1004,41 @@ var _BlobService_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("blob.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 353 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xa4, 0x53, 0xcd, 0x4e, 0xe3, 0x30,
-	0x10, 0x5e, 0xd7, 0xdd, 0xfe, 0x4c, 0xab, 0xdd, 0x6a, 0xb4, 0x5b, 0x42, 0x24, 0x50, 0x94, 0x53,
-	0x4e, 0x15, 0x2a, 0xe2, 0x8a, 0x04, 0x87, 0x56, 0x88, 0x4a, 0x20, 0xf7, 0x01, 0xaa, 0x84, 0xb8,
-	0x60, 0xc9, 0xd4, 0x21, 0x36, 0x48, 0xe5, 0x7d, 0x79, 0x0f, 0x14, 0xa7, 0xf9, 0xa1, 0x55, 0x4f,
-	0xb9, 0x8d, 0x67, 0xe6, 0xfb, 0xc9, 0x17, 0x1b, 0x20, 0x92, 0x2a, 0x9a, 0x24, 0xa9, 0x32, 0x0a,
-	0x3b, 0xcf, 0xc2, 0x84, 0x72, 0xeb, 0x0e, 0xf5, 0x4b, 0x98, 0xf2, 0x38, 0xef, 0xfa, 0x12, 0xfe,
-	0xcc, 0xb9, 0xb9, 0x95, 0x2a, 0x62, 0xfc, 0xed, 0x9d, 0x6b, 0x83, 0x53, 0x80, 0x94, 0x27, 0x4a,
-	0x0b, 0xa3, 0xd2, 0xad, 0x43, 0x3c, 0x12, 0x0c, 0xa6, 0x38, 0xc9, 0xc1, 0x13, 0x56, 0x4e, 0x58,
-	0x6d, 0x0b, 0x47, 0x40, 0x95, 0x88, 0x9d, 0x96, 0x47, 0x82, 0x3e, 0xcb, 0x4a, 0xfc, 0x07, 0xbf,
-	0xa5, 0x78, 0x15, 0xc6, 0xa1, 0x1e, 0x09, 0x28, 0xcb, 0x0f, 0xfe, 0x3d, 0xfc, 0x2d, 0xd5, 0x74,
-	0xa2, 0x36, 0x9a, 0x23, 0x42, 0x5b, 0x8b, 0x4f, 0x6e, 0x85, 0x28, 0xb3, 0x75, 0xd6, 0x8b, 0x43,
-	0x13, 0x5a, 0xbe, 0x21, 0xb3, 0x75, 0x21, 0x41, 0x4b, 0x09, 0x5f, 0x95, 0x64, 0xba, 0x89, 0x77,
-	0x84, 0xb6, 0x12, 0xb1, 0x76, 0x5a, 0x1e, 0x0d, 0xfa, 0xcc, 0xd6, 0x47, 0xdc, 0x2f, 0x60, 0x54,
-	0x09, 0x36, 0xb6, 0x3f, 0x03, 0x58, 0xcc, 0x96, 0x8f, 0x4a, 0x6c, 0x0c, 0x4f, 0x1b, 0xf0, 0xac,
-	0xe1, 0xff, 0x9c, 0x9b, 0x8a, 0xaa, 0x51, 0x18, 0xa7, 0xd0, 0xcb, 0xae, 0xcc, 0xaa, 0x0a, 0xa4,
-	0x9b, 0x9d, 0xef, 0x62, 0xed, 0x3f, 0xc0, 0x78, 0x5f, 0x67, 0x97, 0xc1, 0x15, 0x0c, 0xe5, 0x5a,
-	0xaf, 0x92, 0x5d, 0xdf, 0x21, 0x1e, 0xad, 0x4b, 0x55, 0x10, 0x36, 0x90, 0x6b, 0x5d, 0xc0, 0xa7,
-	0x5f, 0x04, 0x06, 0x59, 0x98, 0x4b, 0x9e, 0x7e, 0x88, 0x27, 0x8e, 0xd7, 0xd0, 0xdd, 0xc5, 0x8b,
-	0xe3, 0x02, 0xfb, 0xf3, 0x6e, 0xba, 0x27, 0x07, 0xfd, 0xdc, 0x82, 0xff, 0xeb, 0x82, 0xe0, 0x0d,
-	0xf4, 0x8a, 0xdf, 0x83, 0xfb, 0x8b, 0x45, 0x28, 0xae, 0x73, 0x38, 0xa8, 0x51, 0x2c, 0xed, 0x6b,
-	0xa8, 0x7d, 0x23, 0x9e, 0xd5, 0xf6, 0x0f, 0x33, 0x76, 0xcf, 0x8f, 0x8d, 0x2b, 0xd2, 0xa8, 0x63,
-	0x5f, 0xda, 0xe5, 0x77, 0x00, 0x00, 0x00, 0xff, 0xff, 0xeb, 0x6b, 0x28, 0x11, 0x8d, 0x03, 0x00,
-	0x00,
+	// 572 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xb4, 0x55, 0xcd, 0x6e, 0xd3, 0x40,
+	0x10, 0x66, 0xeb, 0xe6, 0x6f, 0x6c, 0x4a, 0x59, 0x41, 0xeb, 0x5a, 0x50, 0xb9, 0x16, 0x07, 0x9f,
+	0x22, 0x14, 0xc4, 0xb5, 0x52, 0x38, 0x34, 0xaa, 0x8a, 0xa0, 0xda, 0x5c, 0x91, 0x2c, 0x07, 0x6f,
+	0xc8, 0xa2, 0x8d, 0x37, 0x78, 0x37, 0x45, 0xe5, 0x6d, 0x78, 0x06, 0xee, 0x3c, 0x0f, 0x8f, 0x81,
+	0xbc, 0xfe, 0xc9, 0xe6, 0x8f, 0x8b, 0xe9, 0x6d, 0x76, 0x66, 0xe7, 0x9b, 0x6f, 0xe6, 0x9b, 0xb5,
+	0x01, 0x26, 0x5c, 0x4c, 0xfa, 0x8b, 0x4c, 0x28, 0x81, 0xdb, 0x5f, 0x98, 0x8a, 0xf9, 0xbd, 0xe7,
+	0xc8, 0x59, 0x9c, 0xd1, 0xa4, 0xf0, 0x06, 0x1c, 0x8e, 0x46, 0x54, 0xbd, 0xe3, 0x62, 0x42, 0xe8,
+	0xb7, 0x25, 0x95, 0x0a, 0x0f, 0x00, 0x32, 0xba, 0x10, 0x92, 0x29, 0x91, 0xdd, 0xbb, 0xc8, 0x47,
+	0xa1, 0x3d, 0xc0, 0xfd, 0x22, 0xb9, 0x4f, 0xea, 0x08, 0x31, 0x6e, 0xe1, 0x63, 0xb0, 0x04, 0x4b,
+	0xdc, 0x03, 0x1f, 0x85, 0x3d, 0x92, 0x9b, 0xf8, 0x19, 0xb4, 0x38, 0x9b, 0x33, 0xe5, 0x5a, 0x3e,
+	0x0a, 0x2d, 0x52, 0x1c, 0x82, 0x1b, 0x78, 0x52, 0x57, 0x93, 0x0b, 0x91, 0x4a, 0x8a, 0x31, 0x1c,
+	0x4a, 0xf6, 0x83, 0xea, 0x42, 0x16, 0xd1, 0x76, 0xee, 0x4b, 0x62, 0x15, 0x6b, 0x3c, 0x87, 0x68,
+	0xbb, 0x2a, 0x61, 0xd5, 0x25, 0x82, 0x3f, 0xa8, 0x46, 0x93, 0x4d, 0xc8, 0xdf, 0xc0, 0x51, 0x46,
+	0xef, 0x98, 0x64, 0x22, 0x8d, 0x16, 0xb1, 0x9a, 0x49, 0xf7, 0xc0, 0xb7, 0x42, 0x7b, 0xf0, 0xaa,
+	0xca, 0xdb, 0x28, 0xd2, 0x27, 0xe5, 0xed, 0xdb, 0x58, 0xcd, 0xc8, 0xe3, 0xcc, 0x38, 0xc9, 0xdd,
+	0x7d, 0x7b, 0x97, 0xe0, 0x98, 0x49, 0xd8, 0x83, 0x6e, 0x95, 0xa6, 0x49, 0xf6, 0x48, 0x7d, 0xce,
+	0x9b, 0xcf, 0x59, 0x54, 0xcd, 0xe7, 0x76, 0xf0, 0x0b, 0xc1, 0xf1, 0x8a, 0x45, 0xd3, 0xc9, 0xe1,
+	0x0b, 0x70, 0x98, 0x8c, 0xe4, 0x72, 0x32, 0x17, 0xc9, 0x92, 0x53, 0xf7, 0xd0, 0x47, 0x61, 0x97,
+	0xd8, 0x4c, 0x8e, 0x2b, 0x57, 0x0e, 0x34, 0x17, 0x09, 0x75, 0x5b, 0x3e, 0x0a, 0x5b, 0x44, 0xdb,
+	0x6b, 0xac, 0xdb, 0x7b, 0x58, 0x77, 0x0c, 0xd6, 0x57, 0x00, 0xef, 0xaf, 0xc6, 0xb7, 0x82, 0xa5,
+	0x8a, 0x66, 0x0d, 0x84, 0x9e, 0xc2, 0xf3, 0x11, 0x55, 0x2b, 0xa8, 0x46, 0x6a, 0x9f, 0x41, 0x37,
+	0x7f, 0x14, 0x11, 0x4b, 0x0a, 0x9d, 0x7b, 0xa4, 0x93, 0x9f, 0xaf, 0x13, 0x19, 0x7c, 0x84, 0x93,
+	0xcd, 0x3a, 0xe5, 0xa8, 0xdf, 0x82, 0xc3, 0xa7, 0x32, 0x5a, 0x94, 0x7e, 0x17, 0xe9, 0x05, 0xa9,
+	0x4b, 0xad, 0x52, 0x88, 0xcd, 0xa7, 0xb2, 0x4a, 0x0f, 0x7e, 0x23, 0x70, 0x47, 0x54, 0x7d, 0xa0,
+	0xdf, 0xff, 0x13, 0x79, 0x53, 0x81, 0x62, 0x66, 0x2b, 0x05, 0xd6, 0x36, 0xaf, 0x55, 0x6e, 0x1e,
+	0x7e, 0x01, 0x90, 0x0a, 0x15, 0xb1, 0x34, 0x8a, 0x39, 0x2f, 0x85, 0xee, 0xa6, 0x42, 0x5d, 0xa7,
+	0x43, 0xce, 0xf1, 0x39, 0xd8, 0x65, 0x34, 0xa3, 0x53, 0xe9, 0xb6, 0x7c, 0x2b, 0x74, 0x48, 0x4f,
+	0x87, 0x09, 0x9d, 0xca, 0x80, 0xc0, 0xd9, 0x0e, 0xfe, 0xcd, 0x86, 0xf2, 0x55, 0xcf, 0x64, 0xc8,
+	0xf9, 0xc3, 0xcf, 0xa4, 0xe4, 0xbf, 0x59, 0xab, 0x11, 0xff, 0xc1, 0x4f, 0x0b, 0xec, 0xfc, 0x21,
+	0x8e, 0x69, 0x76, 0xc7, 0x3e, 0x53, 0x7c, 0x09, 0x9d, 0xf2, 0x69, 0xe2, 0x93, 0x8d, 0x2f, 0x46,
+	0xd9, 0x96, 0x77, 0xba, 0xe5, 0x2f, 0x28, 0x04, 0x8f, 0x5e, 0x23, 0x3c, 0x84, 0x6e, 0xf5, 0xb4,
+	0xf1, 0xe9, 0x9e, 0x4f, 0x8e, 0xe7, 0x6e, 0x07, 0x0c, 0x88, 0xb1, 0xfe, 0x88, 0x1b, 0x3d, 0xe2,
+	0x97, 0xc6, 0xfd, 0xed, 0x39, 0x7b, 0xe7, 0xfb, 0xc2, 0x06, 0xe8, 0x27, 0x78, 0xba, 0xa5, 0x3d,
+	0xf6, 0x8d, 0xc4, 0x9d, 0x6b, 0xed, 0x5d, 0xfc, 0xe3, 0xc6, 0x16, 0xfa, 0xba, 0x32, 0x6b, 0xe8,
+	0x3b, 0x17, 0x64, 0x0d, 0x7d, 0xb7, 0xac, 0x39, 0xfa, 0xa4, 0xad, 0x7f, 0x6e, 0x6f, 0xfe, 0x06,
+	0x00, 0x00, 0xff, 0xff, 0x7a, 0x21, 0xd1, 0xac, 0x00, 0x07, 0x00, 0x00,
 }
