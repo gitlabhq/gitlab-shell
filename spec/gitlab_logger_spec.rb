@@ -1,5 +1,6 @@
 require_relative 'spec_helper'
 require_relative '../lib/gitlab_logger'
+require 'securerandom'
 
 describe :convert_log_level do
   subject { convert_log_level :extreme }
@@ -110,6 +111,17 @@ describe GitlabLogger do
       subject.info("hello\x80world")
 
       expect(JSON.parse(first_line)).to include('msg' => '"hello\x80world"')
+    end
+  end
+
+  describe 'log flushing' do
+    it 'logs get written even when calling Kernel.exec' do
+      msg = SecureRandom.hex(12)
+      test_logger_status = system('bin/test-logger', msg)
+      expect(test_logger_status).to eq(true)
+
+      grep_status = system('grep', '-q', '-e', msg, GitlabConfig.new.log_file)
+      expect(grep_status).to eq(true)
     end
   end
 end

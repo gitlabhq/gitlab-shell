@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+# The purpose of this executable is to test that gitlab-shell logging
+# works correctly in combination with Kernel.exec.
+
+require_relative '../lib/gitlab_init'
+require_relative '../lib/gitlab_logger'
+
+$logger.info(ARGV.first)
+Kernel.exec('true')
