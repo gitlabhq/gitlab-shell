@@ -25,7 +25,13 @@ class GitlabLogger
 
   def initialize(level, path, log_format)
     @level = level
+
     @log_file = File.open(path, 'ab')
+    # By default Ruby will buffer writes. This is a problem when we exec
+    # into a new command before Ruby flushed its buffers. Setting 'sync' to
+    # true disables Ruby's buffering.
+    @log_file.sync = true
+
     @log_format = log_format
   end
 

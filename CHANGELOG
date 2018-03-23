@@ -1,3 +1,6 @@
+v7.1.1
+  - Flush log file after every write (!199)
+
 v7.1.0
   - Migrate `git-upload-archive` to gitaly
 
