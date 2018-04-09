@@ -38,6 +38,24 @@ describe GitlabLogger do
     end
   end
 
+  describe '#error' do
+    context 'when the log level is too high' do
+      let(:level) { Logger::FATAL }
+
+      it 'does nothing' do
+        subject.info('hello world')
+
+        expect(output.string).to eq('')
+      end
+    end
+
+    it 'logs data' do
+      subject.error('hello world', foo: 'bar')
+
+      expect(first_line).to eq('time="1973-11-29T21:33:09+00:00" level=error msg="hello world" foo=bar pid=1234')
+    end
+  end
+
   describe '#info' do
     context 'when the log level is too high' do
       let(:level) { Logger::ERROR }
