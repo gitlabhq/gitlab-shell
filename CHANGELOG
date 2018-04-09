@@ -1,3 +1,6 @@
+v7.1.2
+  - Add missing GitlabLogger#error method (!200)
+
 v7.1.1
   - Flush log file after every write (!199)
 

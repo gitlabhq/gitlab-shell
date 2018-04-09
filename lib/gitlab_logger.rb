@@ -20,7 +20,8 @@ class GitlabLogger
   LEVELS = {
     Logger::INFO => 'info'.freeze,
     Logger::DEBUG => 'debug'.freeze,
-    Logger::WARN => 'warn'.freeze
+    Logger::WARN => 'warn'.freeze,
+    Logger::ERROR => 'error'.freeze
   }.freeze
 
   def initialize(level, path, log_format)
@@ -45,6 +46,10 @@ class GitlabLogger
 
   def warn(message, data = {})
     log_at(Logger::WARN, message, data)
+  end
+
+  def error(message, data = {})
+    log_at(Logger::ERROR, message, data)
   end
 
   private
