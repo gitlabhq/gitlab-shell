@@ -19,15 +19,15 @@ describe GitlabShell do
     end
   end
 
-  let(:gitaly_check_access) { GitAccessStatus.new(
-    true,
-    'ok',
-    gl_repository: gl_repository,
-    gl_username: gl_username,
-    repository_path: repo_path,
-    gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' }
-  )
-  }
+  let(:gitaly_check_access) do
+    GitAccessStatus.new(
+      true,
+      'ok',
+      gl_repository: gl_repository,
+      gl_username: gl_username,
+      gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' }
+    )
+  end
 
   let(:api) do
     double(GitlabNet).tap do |api|
@@ -37,7 +37,6 @@ describe GitlabShell do
                 'ok',
                 gl_repository: gl_repository,
                 gl_username: gl_username,
-                repository_path: repo_path,
                 gitaly: nil))
       api.stub(two_factor_recovery_codes: {
         'success' => true,
@@ -51,7 +50,6 @@ describe GitlabShell do
   let(:tmp_repos_path) { File.join(ROOT_PATH, 'tmp', 'repositories') }
 
   let(:repo_name) { 'gitlab-ci.git' }
-  let(:repo_path) { File.join(tmp_repos_path, repo_name) }
   let(:gl_repository) { 'project-1' }
   let(:gl_username) { 'testuser' }
 
@@ -171,14 +169,6 @@ describe GitlabShell do
       end
     end
 
-    context 'git-upload-pack' do
-      it_behaves_like 'upload-pack', 'git-upload-pack'
-    end
-
-    context 'git upload-pack' do
-      it_behaves_like 'upload-pack', 'git upload-pack'
-    end
-
     context 'gitaly-upload-pack' do
       let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
       before {
@@ -203,25 +193,6 @@ describe GitlabShell do
       it "should use usernames if configured to do so" do
         GitlabConfig.any_instance.stub(audit_usernames: true)
         $logger.should_receive(:info).with("executing git command", hash_including(user: 'John Doe'))
-      end
-    end
-
-    context 'git-receive-pack' do
-      let(:ssh_cmd) { "git-receive-pack gitlab-ci.git" }
-      after { subject.exec(ssh_cmd) }
-
-      it "should process the command" do
-        subject.should_receive(:process_cmd).with(%W(git-receive-pack gitlab-ci.git))
-      end
-
-      it "should execute the command" do
-        subject.should_receive(:exec_cmd).with('git-receive-pack', repo_path)
-      end
-
-      it "should log the command execution" do
-        message = "executing git command"
-        user_string = "user with key #{key_id}"
-        $logger.should_receive(:info).with(message, command: "git-receive-pack #{repo_path}", user: user_string)
       end
     end
 
@@ -254,7 +225,7 @@ describe GitlabShell do
 
     shared_examples_for 'upload-archive' do |command|
       let(:ssh_cmd) { "#{command} gitlab-ci.git" }
-      let(:exec_cmd_params) { ['git-upload-archive', repo_path] }
+      let(:exec_cmd_params) { ['git-upload-archive'] }
       let(:exec_cmd_log_params) { exec_cmd_params }
 
       after { subject.exec(ssh_cmd) }
@@ -277,14 +248,6 @@ describe GitlabShell do
         GitlabConfig.any_instance.stub(audit_usernames: true)
         $logger.should_receive(:info).with("executing git command", hash_including(user: 'John Doe'))
       end
-    end
-
-    context 'git-upload-archive' do
-      it_behaves_like 'upload-archive', 'git-upload-archive'
-    end
-
-    context 'git upload-archive' do
-      it_behaves_like 'upload-archive', 'git upload-archive'
     end
 
     context 'gitaly-upload-archive' do
@@ -406,30 +369,11 @@ describe GitlabShell do
                   'denied',
                   gl_repository: nil,
                   gl_username: nil,
-                  repository_path: nil,
                   gitaly: nil))
+
         message = 'Access denied'
         user_string = "user with key #{key_id}"
         $logger.should_receive(:warn).with(message, command: 'git-upload-pack gitlab-ci.git', user: user_string)
-      end
-    end
-
-    describe 'set the repository path' do
-      context 'with a correct path' do
-        before { subject.exec(ssh_cmd) }
-
-        its(:repo_path) { should == repo_path }
-      end
-
-      context "with a path that doesn't match an absolute path" do
-        before do
-          File.stub(:absolute_path) { 'y/gitlab-ci.git' }
-        end
-
-        it "refuses to assign the path" do
-          $stderr.should_receive(:puts).with("GitLab: Invalid repository path")
-          expect(subject.exec(ssh_cmd)).to be_false
-        end
       end
     end
   end

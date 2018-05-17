@@ -19,7 +19,6 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
   GL_PROTOCOL = 'ssh'.freeze
 
   attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access, :username
-  attr_reader :repo_path
 
   def initialize(key_id)
     @key_id = key_id
@@ -105,7 +104,6 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
     raise AccessDeniedError, status.message unless status.allowed?
 
-    self.repo_path = status.repository_path
     @gl_repository = status.gl_repository
     @gitaly = status.gitaly
     @username = status.gl_username
@@ -123,7 +121,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     end
 
     executable = @command
-    args = [repo_path]
+    args = []
 
     if GITALY_MIGRATED_COMMANDS.key?(executable) && @gitaly
       executable = GITALY_MIGRATED_COMMANDS[executable]
@@ -263,12 +261,5 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       $logger.warn('Failed to open git trace log file', git_trace_log_file: @config.git_trace_log_file, error: ex.to_s)
       return false
     end
-  end
-
-  def repo_path=(repo_path)
-    raise ArgumentError, "Repository path not provided. Please make sure you're using GitLab v8.10 or later." unless repo_path
-    raise InvalidRepositoryPathError if File.absolute_path(repo_path) != repo_path
-
-    @repo_path = repo_path
   end
 end

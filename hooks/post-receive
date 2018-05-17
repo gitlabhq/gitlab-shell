@@ -6,13 +6,12 @@
 refs = $stdin.read
 key_id = ENV.delete('GL_ID')
 gl_repository = ENV['GL_REPOSITORY']
-repo_path = Dir.pwd
 
 require_relative '../lib/gitlab_custom_hook'
 require_relative '../lib/gitlab_post_receive'
 
-if GitlabPostReceive.new(gl_repository, repo_path, key_id, refs).exec &&
-    GitlabCustomHook.new(repo_path, key_id).post_receive(refs)
+if GitlabPostReceive.new(gl_repository, key_id, refs).exec &&
+    GitlabCustomHook.new(Dir.pwd, key_id).post_receive(refs)
   exit 0
 else
   exit 1

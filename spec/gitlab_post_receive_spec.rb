@@ -3,15 +3,13 @@ require 'spec_helper'
 require 'gitlab_post_receive'
 
 describe GitlabPostReceive do
-  let(:repository_path) { "/home/git/repositories" }
   let(:repo_name) { 'dzaporozhets/gitlab-ci' }
   let(:actor) { 'key-123' }
   let(:changes) { "123456 789012 refs/heads/tést\n654321 210987 refs/tags/tag" }
   let(:wrongly_encoded_changes) { changes.encode("ISO-8859-1").force_encoding("UTF-8") }
   let(:base64_changes) { Base64.encode64(wrongly_encoded_changes) }
-  let(:repo_path) { File.join(repository_path, repo_name) + ".git" }
   let(:gl_repository) { "project-1" }
-  let(:gitlab_post_receive) { GitlabPostReceive.new(gl_repository, repo_path, actor, wrongly_encoded_changes) }
+  let(:gitlab_post_receive) { GitlabPostReceive.new(gl_repository, actor, wrongly_encoded_changes) }
   let(:broadcast_message) { "test " * 10 + "message " * 10 }
   let(:enqueued_at) { Time.new(2016, 6, 23, 6, 59) }
   let(:new_merge_request_urls) do
@@ -31,7 +29,6 @@ describe GitlabPostReceive do
 
   before do
     $logger = double('logger').as_null_object # Global vars are bad
-    GitlabConfig.any_instance.stub(repos_path: repository_path)
   end
 
   describe "#exec" do

@@ -8,12 +8,11 @@ require 'securerandom'
 class GitlabPostReceive
   include NamesHelper
 
-  attr_reader :config, :gl_repository, :repo_path, :changes, :jid
+  attr_reader :config, :gl_repository, :changes, :jid
 
-  def initialize(gl_repository, repo_path, actor, changes)
+  def initialize(gl_repository, actor, changes)
     @config = GitlabConfig.new
     @gl_repository = gl_repository
-    @repo_path = repo_path.strip
     @actor = actor
     @changes = changes
     @jid = SecureRandom.hex(12)

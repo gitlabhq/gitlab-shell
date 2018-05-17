@@ -15,14 +15,13 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   CHECK_TIMEOUT = 5
   READ_TIMEOUT = 300
 
-  def check_access(cmd, gl_repository, repo, actor, changes, protocol, env: {})
+  def check_access(cmd, gl_repository, actor, changes, protocol, env: {})
     changes = changes.join("\n") unless changes.is_a?(String)
 
     params = {
       action: cmd,
       changes: changes,
       gl_repository: gl_repository,
-      project: sanitize_path(repo),
       protocol: protocol,
       env: env
     }
@@ -43,7 +42,6 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
                           'API is not accessible',
                           gl_repository: nil,
                           gl_username: nil,
-                          repository_path: nil,
                           gitaly: nil)
     end
   end
@@ -72,11 +70,10 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     JSON.parse(resp.body) rescue {}
   end
 
-  def merge_request_urls(gl_repository, repo_path, changes)
+  def merge_request_urls(gl_repository, changes)
     changes = changes.join("\n") unless changes.is_a?(String)
     changes = changes.encode('UTF-8', 'ASCII', invalid: :replace, replace: '')
-    url = "#{host}/merge_request_urls?project=#{URI.escape(repo_path)}&changes=#{URI.escape(changes)}"
-    url += "&gl_repository=#{URI.escape(gl_repository)}" if gl_repository
+    url = "#{host}/merge_request_urls?changes=#{URI.escape(changes)}&gl_repository=#{URI.escape(gl_repository)}"
     resp = get(url)
 
     if resp.code == '200'
