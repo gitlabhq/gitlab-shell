@@ -31,7 +31,7 @@ describe GitlabShell do
 
   let(:api) do
     double(GitlabNet).tap do |api|
-      api.stub(discover: { 'name' => 'John Doe' })
+      api.stub(discover: { 'name' => 'John Doe', 'username' => 'testuser' })
       api.stub(check_access: GitAccessStatus.new(
                 true,
                 'ok',

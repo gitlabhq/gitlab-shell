@@ -196,8 +196,14 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     end
   end
 
+  def username_from_discover
+    return nil unless user && user['username']
+
+    "@#{user['username']}"
+  end
+
   def username
-    @username ||= user && user['username'] || 'Anonymous'
+    @username ||= username_from_discover || 'Anonymous'
   end
 
   # User identifier to be used in log messages.
