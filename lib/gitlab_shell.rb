@@ -18,7 +18,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
   API_COMMANDS = %w(2fa_recovery_codes).freeze
   GL_PROTOCOL = 'ssh'.freeze
 
-  attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access, :username
+  attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access
   attr_reader :repo_path
 
   def initialize(key_id)
@@ -196,8 +196,14 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     end
   end
 
+  def username_from_discover
+    return nil unless user && user['username']
+
+    "@#{user['username']}"
+  end
+
   def username
-    user && user['name'] || 'Anonymous'
+    @username ||= username_from_discover || 'Anonymous'
   end
 
   # User identifier to be used in log messages.

@@ -31,7 +31,7 @@ describe GitlabShell do
 
   let(:api) do
     double(GitlabNet).tap do |api|
-      api.stub(discover: { 'name' => 'John Doe' })
+      api.stub(discover: { 'name' => 'John Doe', 'username' => 'testuser' })
       api.stub(check_access: GitAccessStatus.new(
                 true,
                 'ok',
@@ -167,7 +167,7 @@ describe GitlabShell do
 
       it "should use usernames if configured to do so" do
         GitlabConfig.any_instance.stub(audit_usernames: true)
-        $logger.should_receive(:info).with("executing git command", hash_including(user: 'John Doe'))
+        $logger.should_receive(:info).with("executing git command", hash_including(user: 'testuser'))
       end
     end
 
@@ -202,7 +202,7 @@ describe GitlabShell do
 
       it "should use usernames if configured to do so" do
         GitlabConfig.any_instance.stub(audit_usernames: true)
-        $logger.should_receive(:info).with("executing git command", hash_including(user: 'John Doe'))
+        $logger.should_receive(:info).with("executing git command", hash_including(user: 'testuser'))
       end
     end
 
@@ -248,7 +248,7 @@ describe GitlabShell do
 
       it "should use usernames if configured to do so" do
         GitlabConfig.any_instance.stub(audit_usernames: true)
-        $logger.should_receive(:info).with("executing git command", hash_including(user: 'John Doe'))
+        $logger.should_receive(:info).with("executing git command", hash_including(user: 'testuser'))
       end
     end
 
@@ -275,7 +275,7 @@ describe GitlabShell do
 
       it "should use usernames if configured to do so" do
         GitlabConfig.any_instance.stub(audit_usernames: true)
-        $logger.should_receive(:info).with("executing git command", hash_including(user: 'John Doe'))
+        $logger.should_receive(:info).with("executing git command", hash_including(user: 'testuser'))
       end
     end
 
@@ -452,7 +452,7 @@ describe GitlabShell do
     before do
       Kernel.stub(:exec)
       shell.gl_repository = gl_repository
-      shell.username = gl_username
+      shell.instance_variable_set(:@username, gl_username)
     end
 
     it "uses Kernel::exec method" do
