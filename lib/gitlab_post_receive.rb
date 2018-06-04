@@ -75,10 +75,14 @@ class GitlabPostReceive
     # Automatically wrap message at text_width (= 68) characters:
     # Splits the message up into the longest possible chunks matching
     # "<between 0 and text_width characters><space or end-of-line>".
-    # The last result is always an empty string (0 chars and the end-of-line),
-    # so drop that.
-    # message.scan returns a nested array of capture groups, so flatten.
-    lines = message.scan(/(.{,#{text_width}})(?:\s|$)/)[0...-1].flatten
+
+    msg_start_idx = 0
+    lines = []
+    while msg_start_idx < message.length
+      parsed_line = parse_broadcast_msg(message[msg_start_idx..-1], text_width)
+      msg_start_idx += parsed_line.length
+      lines.push(parsed_line.strip)
+    end
 
     puts
     puts "=" * total_width
@@ -94,5 +98,23 @@ class GitlabPostReceive
 
     puts
     puts "=" * total_width
+  end
+
+  private
+
+  def parse_broadcast_msg(msg, text_length)
+    msg ||= ""
+    # just return msg if shorter than or equal to text length
+    return msg if msg.length <= text_length
+
+    # search for word break shorter than text length
+    truncate_to_space = msg.match(/\A(.{,#{text_length}})(?=\s|$)(\s*)/).to_s
+
+    if truncate_to_space.empty?
+      # search for word break longer than text length
+      truncate_to_space = msg.match(/\A\S+/).to_s
+    end
+
+    truncate_to_space
   end
 end
