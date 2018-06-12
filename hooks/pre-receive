@@ -12,7 +12,7 @@ gl_repository = ENV['GL_REPOSITORY']
 def increase_reference_counter(gl_repository, repo_path)
   result = GitlabNet.new.pre_receive(gl_repository)
 
-  result['reference_counter_increased']
+  result && result['reference_counter_increased']
 end
 
 require_relative '../lib/gitlab_custom_hook'
