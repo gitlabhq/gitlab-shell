@@ -10,6 +10,7 @@ describe GitlabAccess do
       api.stub(check_access: GitAccessStatus.new(true,
                                                  'ok',
                                                  gl_repository: 'project-1',
+                                                 gl_id: 'user-123',
                                                  gl_username: 'testuser',
                                                  repository_path: '/home/git/repositories',
                                                  gitaly: nil))
@@ -47,6 +48,7 @@ describe GitlabAccess do
                   false,
                   'denied',
                   gl_repository: nil,
+                  gl_id: nil,
                   gl_username: nil,
                   repository_path: nil,
                   gitaly: nil

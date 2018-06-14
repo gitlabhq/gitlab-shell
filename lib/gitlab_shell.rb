@@ -18,11 +18,16 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
   API_COMMANDS = %w(2fa_recovery_codes).freeze
   GL_PROTOCOL = 'ssh'.freeze
 
-  attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access
+  attr_accessor :gl_id, :gl_repository, :repo_name, :command, :git_access
   attr_reader :repo_path
 
-  def initialize(key_id)
-    @key_id = key_id
+  def initialize(who)
+    who_sym, = GitlabNet.parse_who(who)
+    if who_sym == :username
+      @who = who
+    else
+      @gl_id = who
+    end
     @config = GitlabConfig.new
   end
 
@@ -40,6 +45,12 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
     if GIT_COMMANDS.include?(args.first)
       GitlabMetrics.measure('verify-access') { verify_access }
+    elsif !defined?(@gl_id)
+      # We're processing an API command like 2fa_recovery_codes, but
+      # don't have a @gl_id yet, that means we're in the "username"
+      # mode and need to materialize it, calling the "user" method
+      # will do that and call the /discover method.
+      user
     end
 
     process_cmd(args)
@@ -101,7 +112,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
   end
 
   def verify_access
-    status = api.check_access(@git_access, nil, @repo_name, @key_id, '_any', GL_PROTOCOL)
+    status = api.check_access(@git_access, nil, @repo_name, @who || @gl_id, '_any', GL_PROTOCOL)
 
     raise AccessDeniedError, status.message unless status.allowed?
 
@@ -109,6 +120,9 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     @gl_repository = status.gl_repository
     @gitaly = status.gitaly
     @username = status.gl_username
+    if defined?(@who)
+      @gl_id = status.gl_id
+    end
   end
 
   def process_cmd(args)
@@ -135,7 +149,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       gitaly_request = {
         'repository' => @gitaly['repository'],
         'gl_repository' => @gl_repository,
-        'gl_id' => @key_id,
+        'gl_id' => @gl_id,
         'gl_username' => @username
       }
 
@@ -161,7 +175,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       'PATH' => ENV['PATH'],
       'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
       'LANG' => ENV['LANG'],
-      'GL_ID' => @key_id,
+      'GL_ID' => @gl_id,
       'GL_PROTOCOL' => GL_PROTOCOL,
       'GL_REPOSITORY' => @gl_repository,
       'GL_USERNAME' => @username
@@ -190,7 +204,12 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     return @user if defined?(@user)
 
     begin
-      @user = api.discover(@key_id)
+      if defined?(@who)
+        @user = api.discover(@who)
+        @gl_id = "user-#{@user['id']}"
+      else
+        @user = api.discover(@gl_id)
+      end
     rescue GitlabNet::ApiUnreachableError
       @user = nil
     end
@@ -208,11 +227,11 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
   # User identifier to be used in log messages.
   def log_username
-    @config.audit_usernames ? username : "user with key #{@key_id}"
+    @config.audit_usernames ? username : "user with id #{@gl_id}"
   end
 
   def lfs_authenticate
-    lfs_access = api.lfs_authenticate(@key_id, @repo_name)
+    lfs_access = api.lfs_authenticate(@gl_id, @repo_name)
 
     return unless lfs_access
 
@@ -240,7 +259,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       return
     end
 
-    resp = api.two_factor_recovery_codes(key_id)
+    resp = api.two_factor_recovery_codes(@gl_id)
     if resp['success']
       codes = resp['recovery_codes'].join("\n")
       puts "Your two-factor authentication recovery codes are:\n\n" \

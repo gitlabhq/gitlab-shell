@@ -17,7 +17,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
 
   CHECK_TIMEOUT = 5
 
-  def check_access(cmd, gl_repository, repo, actor, changes, protocol, env: {})
+  def check_access(cmd, gl_repository, repo, who, changes, protocol, env: {})
     changes = changes.join("\n") unless changes.is_a?(String)
 
     params = {
@@ -29,11 +29,8 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
       env: env
     }
 
-    if actor =~ /\Akey\-\d+\Z/
-      params[:key_id] = actor.gsub("key-", "")
-    elsif actor =~ /\Auser\-\d+\Z/
-      params[:user_id] = actor.gsub("user-", "")
-    end
+    who_sym, _, who_v = self.class.parse_who(who)
+    params[who_sym] = who_v
 
     url = "#{internal_api_endpoint}/allowed"
     resp = post(url, params)
@@ -44,23 +41,37 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
       GitAccessStatus.new(false,
                           'API is not accessible',
                           gl_repository: nil,
+                          gl_id: nil,
                           gl_username: nil,
                           repository_path: nil,
                           gitaly: nil)
     end
   end
 
-  def discover(key)
-    key_id = key.gsub("key-", "")
-    resp = get("#{internal_api_endpoint}/discover?key_id=#{key_id}")
+  def discover(who)
+    _, who_k, who_v = self.class.parse_who(who)
+
+    resp = get("#{internal_api_endpoint}/discover?#{who_k}=#{who_v}")
+
     JSON.parse(resp.body) rescue nil
   end
 
-  def lfs_authenticate(key, repo)
-    params = {
-      project: sanitize_path(repo),
-      key_id: key.gsub('key-', '')
-    }
+  def lfs_authenticate(gl_id, repo)
+    id_sym, _, id = self.class.parse_who(gl_id)
+
+    if id_sym == :key_id
+      params = {
+        project: sanitize_path(repo),
+        key_id: id
+      }
+    elsif id_sym == :user_id
+      params = {
+        project: sanitize_path(repo),
+        user_id: id
+      }
+    else
+      raise ArgumentError, "lfs_authenticate() got unsupported GL_ID='#{gl_id}'!"
+    end
 
     resp = post("#{internal_api_endpoint}/lfs_authenticate", params)
 
@@ -101,9 +112,10 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     nil
   end
 
-  def two_factor_recovery_codes(key)
-    key_id = key.gsub('key-', '')
-    resp = post("#{internal_api_endpoint}/two_factor_recovery_codes", key_id: key_id)
+  def two_factor_recovery_codes(gl_id)
+    id_sym, _, id = self.class.parse_who(gl_id)
+
+    resp = post("#{internal_api_endpoint}/two_factor_recovery_codes", id_sym => id)
 
     JSON.parse(resp.body) if resp.code == '200'
   rescue
@@ -138,6 +150,22 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     raise NotFound if resp.code == '404'
 
     JSON.parse(resp.body) if resp.code == '200'
+  end
+
+  def self.parse_who(who)
+    if who.start_with?("key-")
+      value = who.gsub("key-", "")
+      raise ArgumentError, "who='#{who}' is invalid!" unless value =~ /\A[0-9]+\z/
+      [:key_id, 'key_id', value]
+    elsif who.start_with?("user-")
+      value = who.gsub("user-", "")
+      raise ArgumentError, "who='#{who}' is invalid!" unless value =~ /\A[0-9]+\z/
+      [:user_id, 'user_id', value]
+    elsif who.start_with?("username-")
+      [:username, 'username', who.gsub("username-", "")]
+    else
+      raise ArgumentError, "who='#{who}' is invalid!"
+    end
   end
 
   protected
