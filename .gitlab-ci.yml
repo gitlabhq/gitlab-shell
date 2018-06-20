@@ -53,9 +53,13 @@ rspec:ruby2.1:
     - support/go-test
     - support/go-format check
 
-go:1.8:
+go:1.9:
   <<: *go_definition
-  image: golang:1.8
+  image: golang:1.9
+
+go:1.10:
+  <<: *go_definition
+  image: golang:1.10
 
 codequality:
   image: docker:stable
