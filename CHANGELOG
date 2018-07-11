@@ -1,3 +1,6 @@
+v7.1.5
+  - Fix a NoMethodError in the pre-receive hook (!206)
+
 v7.1.4
   - Don't truncate long strings in broadcast message (!202)
 
