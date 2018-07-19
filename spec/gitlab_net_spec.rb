@@ -353,6 +353,14 @@ describe GitlabNet, vcr: true do
     end
   end
 
+  describe :base_api_endpoint do
+    let(:net) { GitlabNet.new }
+    subject { net.send :base_api_endpoint }
+
+    it { should include(net.send(:config).gitlab_url) }
+    it("uses API version 4") { should end_with("api/v4") }
+  end
+
   describe :host do
     let(:net) { GitlabNet.new }
     subject { net.send :host }

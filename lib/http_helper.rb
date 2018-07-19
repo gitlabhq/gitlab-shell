@@ -7,8 +7,12 @@ module HTTPHelper
     @config ||= GitlabConfig.new
   end
 
+  def base_api_endpoint
+    "#{config.gitlab_url}/api/v4"
+  end
+
   def host
-    "#{config.gitlab_url}/api/v4/internal"
+    "#{base_api_endpoint}/internal"
   end
 
   def http_client_for(uri, options = {})
