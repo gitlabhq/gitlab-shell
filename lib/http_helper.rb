@@ -33,15 +33,19 @@ module HTTPHelper
     http
   end
 
-  def http_request_for(method, uri, params = {})
+  def http_request_for(method, uri, params: {}, headers: {}, options: {})
     request_klass = method == :get ? Net::HTTP::Get : Net::HTTP::Post
-    request = request_klass.new(uri.request_uri)
+    request = request_klass.new(uri.request_uri, headers)
 
     user = config.http_settings['user']
     password = config.http_settings['password']
     request.basic_auth(user, password) if user && password
 
-    request.set_form_data(params.merge(secret_token: secret_token))
+    if options[:json]
+      request.body = options[:json].merge(secret_token: secret_token).to_json
+    else
+      request.set_form_data(params.merge(secret_token: secret_token))
+    end
 
     if uri.is_a?(URI::HTTPUNIX)
       # The HTTPUNIX HTTP client does not set a correct Host header. This can
@@ -52,13 +56,15 @@ module HTTPHelper
     request
   end
 
-  def request(method, url, params = {}, options = {})
+  def request(method, url, params: {}, headers: {}, options: {})
     $logger.debug('Performing request', method: method.to_s.upcase, url: url)
 
     uri = URI.parse(url)
-
     http = http_client_for(uri, options)
-    request = http_request_for(method, uri, params)
+    request = http_request_for(method, uri,
+                               params: params,
+                               headers: headers,
+                               options: options)
 
     begin
       start_time = Time.new
@@ -79,12 +85,12 @@ module HTTPHelper
     response
   end
 
-  def get(url, options = {})
-    request(:get, url, {}, options)
+  def get(url, headers: {}, options: {})
+    request(:get, url, headers: headers, options: options)
   end
 
-  def post(url, params)
-    request(:post, url, params)
+  def post(url, params, headers: {}, options: {})
+    request(:post, url, params: params, headers: headers, options: options)
   end
 
   def cert_store

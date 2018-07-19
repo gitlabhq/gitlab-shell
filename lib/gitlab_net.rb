@@ -91,7 +91,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   end
 
   def check
-    get("#{internal_api_endpoint}/check", read_timeout: CHECK_TIMEOUT)
+    get("#{internal_api_endpoint}/check", options: { read_timeout: CHECK_TIMEOUT })
   end
 
   def authorized_key(key)

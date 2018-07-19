@@ -5,6 +5,7 @@ require_relative '../lib/gitlab_access_status'
 describe GitlabNet, vcr: true do
   let(:gitlab_net) { GitlabNet.new }
   let(:changes) { ['0000000000000000000000000000000000000000 92d0970eefd7acb6d548878925ce2208cfe2d2ec refs/heads/branch4'] }
+  let(:base_api_endpoint) { 'http://localhost:3000/api/v4' }
   let(:internal_api_endpoint) { 'http://localhost:3000/api/v4/internal' }
   let(:project) { 'gitlab-org/gitlab-test.git' }
   let(:key) { 'key-1' }
@@ -12,7 +13,7 @@ describe GitlabNet, vcr: true do
   let(:secret) { "0a3938d9d95d807e94d937af3a4fbbea\n" }
 
   before do
-    gitlab_net.stub(:internal_api_endpoint).and_return(internal_api_endpoint)
+    gitlab_net.stub(:base_api_endpoint).and_return(base_api_endpoint)
     gitlab_net.stub(:secret_token).and_return(secret)
   end
 
@@ -381,24 +382,72 @@ describe GitlabNet, vcr: true do
 
   describe :http_request_for do
     context 'with stub' do
-      let(:get) do
-        double(Net::HTTP::Get).tap do |get|
-          Net::HTTP::Get.stub(:new) { get }
-        end
-      end
+      let(:get) { double(Net::HTTP::Get) }
       let(:user) { 'user' }
       let(:password) { 'password' }
       let(:url) { URI 'http://localhost/' }
-      subject { gitlab_net.send :http_request_for, :get, url }
+      let(:params) { { 'key1' => 'value1' } }
+      let(:headers) { { 'Content-Type' => 'application/json'} }
+      let(:options) { { json: { 'key2' => 'value2' } } }
 
-      before do
-        gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
-        gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
-        get.should_receive(:basic_auth).with(user, password).once
-        get.should_receive(:set_form_data).with(hash_including(secret_token: secret)).once
+      context 'with no params, options or headers' do
+        subject { gitlab_net.send :http_request_for, :get, url }
+
+        before do
+          gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
+          gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
+          Net::HTTP::Get.should_receive(:new).with('/', {}).and_return(get)
+          get.should_receive(:basic_auth).with(user, password).once
+          get.should_receive(:set_form_data).with(hash_including(secret_token: secret)).once
+        end
+
+        it { should_not be_nil }
       end
 
-      it { should_not be_nil }
+      context 'with params' do
+        subject { gitlab_net.send :http_request_for, :get, url, params: params, headers: headers }
+
+        before do
+          gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
+          gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
+          Net::HTTP::Get.should_receive(:new).with('/', headers).and_return(get)
+          get.should_receive(:basic_auth).with(user, password).once
+          get.should_receive(:set_form_data).with({ 'key1' => 'value1', secret_token: secret }).once
+        end
+
+        it { should_not be_nil }
+      end
+
+      context 'with headers' do
+        subject { gitlab_net.send :http_request_for, :get, url, headers: headers }
+
+        before do
+          gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
+          gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
+          Net::HTTP::Get.should_receive(:new).with('/', headers).and_return(get)
+          get.should_receive(:basic_auth).with(user, password).once
+          get.should_receive(:set_form_data).with(hash_including(secret_token: secret)).once
+        end
+
+        it { should_not be_nil }
+      end
+
+      context 'with options' do
+        context 'with json' do
+          subject { gitlab_net.send :http_request_for, :get, url, options: options }
+
+          before do
+            gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
+            gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
+            Net::HTTP::Get.should_receive(:new).with('/', {}).and_return(get)
+            get.should_receive(:basic_auth).with(user, password).once
+            get.should_receive(:body=).with({ 'key2' => 'value2', secret_token: secret }.to_json).once
+            get.should_not_receive(:set_form_data)
+          end
+
+          it { should_not be_nil }
+        end
+      end
     end
 
     context 'Unix socket' do
