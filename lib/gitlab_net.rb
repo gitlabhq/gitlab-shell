@@ -35,7 +35,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
       params[:user_id] = actor.gsub("user-", "")
     end
 
-    url = "#{host}/allowed"
+    url = "#{internal_api_endpoint}/allowed"
     resp = post(url, params)
 
     if resp.code == '200'
@@ -52,7 +52,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
 
   def discover(key)
     key_id = key.gsub("key-", "")
-    resp = get("#{host}/discover?key_id=#{key_id}")
+    resp = get("#{internal_api_endpoint}/discover?key_id=#{key_id}")
     JSON.parse(resp.body) rescue nil
   end
 
@@ -62,7 +62,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
       key_id: key.gsub('key-', '')
     }
 
-    resp = post("#{host}/lfs_authenticate", params)
+    resp = post("#{internal_api_endpoint}/lfs_authenticate", params)
 
     if resp.code == '200'
       GitlabLfsAuthentication.build_from_json(resp.body)
@@ -70,14 +70,14 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   end
 
   def broadcast_message
-    resp = get("#{host}/broadcast_message")
+    resp = get("#{internal_api_endpoint}/broadcast_message")
     JSON.parse(resp.body) rescue {}
   end
 
   def merge_request_urls(gl_repository, repo_path, changes)
     changes = changes.join("\n") unless changes.is_a?(String)
     changes = changes.encode('UTF-8', 'ASCII', invalid: :replace, replace: '')
-    url = "#{host}/merge_request_urls?project=#{URI.escape(repo_path)}&changes=#{URI.escape(changes)}"
+    url = "#{internal_api_endpoint}/merge_request_urls?project=#{URI.escape(repo_path)}&changes=#{URI.escape(changes)}"
     url += "&gl_repository=#{URI.escape(gl_repository)}" if gl_repository
     resp = get(url)
 
@@ -91,11 +91,11 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   end
 
   def check
-    get("#{host}/check", read_timeout: CHECK_TIMEOUT)
+    get("#{internal_api_endpoint}/check", read_timeout: CHECK_TIMEOUT)
   end
 
   def authorized_key(key)
-    resp = get("#{host}/authorized_keys?key=#{URI.escape(key, '+/=')}")
+    resp = get("#{internal_api_endpoint}/authorized_keys?key=#{URI.escape(key, '+/=')}")
     JSON.parse(resp.body) if resp.code == "200"
   rescue
     nil
@@ -103,7 +103,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
 
   def two_factor_recovery_codes(key)
     key_id = key.gsub('key-', '')
-    resp = post("#{host}/two_factor_recovery_codes", key_id: key_id)
+    resp = post("#{internal_api_endpoint}/two_factor_recovery_codes", key_id: key_id)
 
     JSON.parse(resp.body) if resp.code == '200'
   rescue
@@ -112,7 +112,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
 
   def notify_post_receive(gl_repository, repo_path)
     params = { gl_repository: gl_repository, project: repo_path }
-    resp = post("#{host}/notify_post_receive", params)
+    resp = post("#{internal_api_endpoint}/notify_post_receive", params)
 
     resp.code == '200'
   rescue
@@ -125,7 +125,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
       identifier: identifier,
       changes: changes
     }
-    resp = post("#{host}/post_receive", params)
+    resp = post("#{internal_api_endpoint}/post_receive", params)
 
     raise NotFound if resp.code == '404'
 
@@ -133,7 +133,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   end
 
   def pre_receive(gl_repository)
-    resp = post("#{host}/pre_receive", gl_repository: gl_repository)
+    resp = post("#{internal_api_endpoint}/pre_receive", gl_repository: gl_repository)
 
     raise NotFound if resp.code == '404'
 

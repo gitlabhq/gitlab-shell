@@ -11,7 +11,7 @@ module HTTPHelper
     "#{config.gitlab_url}/api/v4"
   end
 
-  def host
+  def internal_api_endpoint
     "#{base_api_endpoint}/internal"
   end
 

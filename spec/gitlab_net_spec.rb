@@ -5,14 +5,14 @@ require_relative '../lib/gitlab_access_status'
 describe GitlabNet, vcr: true do
   let(:gitlab_net) { GitlabNet.new }
   let(:changes) { ['0000000000000000000000000000000000000000 92d0970eefd7acb6d548878925ce2208cfe2d2ec refs/heads/branch4'] }
-  let(:host) { 'http://localhost:3000/api/v4/internal' }
+  let(:internal_api_endpoint) { 'http://localhost:3000/api/v4/internal' }
   let(:project) { 'gitlab-org/gitlab-test.git' }
   let(:key) { 'key-1' }
   let(:key2) { 'key-2' }
   let(:secret) { "0a3938d9d95d807e94d937af3a4fbbea\n" }
 
   before do
-    gitlab_net.stub(:host).and_return(host)
+    gitlab_net.stub(:internal_api_endpoint).and_return(internal_api_endpoint)
     gitlab_net.stub(:secret_token).and_return(secret)
   end
 
@@ -68,7 +68,7 @@ describe GitlabNet, vcr: true do
           lfs_access = gitlab_net.lfs_authenticate(key, project)
           lfs_access.username.should == 'root'
           lfs_access.lfs_token.should == 'Hyzhyde_wLUeyUQsR3tHGTG8eNocVQm4ssioTEsBSdb6KwCSzQ'
-          lfs_access.repository_http_path.should == URI.join(host.sub('api/v4', ''), project).to_s
+          lfs_access.repository_http_path.should == URI.join(internal_api_endpoint.sub('api/v4', ''), project).to_s
         end
       end
     end
@@ -100,13 +100,13 @@ describe GitlabNet, vcr: true do
     let(:encoded_changes) { "123456%20789012%20refs/heads/test%0A654321%20210987%20refs/tags/tag" }
 
     it "sends the given arguments as encoded URL parameters" do
-      gitlab_net.should_receive(:get).with("#{host}/merge_request_urls?project=#{project}&changes=#{encoded_changes}&gl_repository=#{gl_repository}")
+      gitlab_net.should_receive(:get).with("#{internal_api_endpoint}/merge_request_urls?project=#{project}&changes=#{encoded_changes}&gl_repository=#{gl_repository}")
 
       gitlab_net.merge_request_urls(gl_repository, project, changes)
     end
 
     it "omits the gl_repository parameter if it's nil" do
-      gitlab_net.should_receive(:get).with("#{host}/merge_request_urls?project=#{project}&changes=#{encoded_changes}")
+      gitlab_net.should_receive(:get).with("#{internal_api_endpoint}/merge_request_urls?project=#{project}&changes=#{encoded_changes}")
 
       gitlab_net.merge_request_urls(nil, project, changes)
     end
@@ -361,12 +361,12 @@ describe GitlabNet, vcr: true do
     it("uses API version 4") { should end_with("api/v4") }
   end
 
-  describe :host do
+  describe :internal_api_endpoint do
     let(:net) { GitlabNet.new }
-    subject { net.send :host }
+    subject { net.send :internal_api_endpoint }
 
     it { should include(net.send(:config).gitlab_url) }
-    it("uses API version 4") { should include("api/v4") }
+    it("uses API version 4") { should end_with("api/v4/internal") }
   end
 
   describe :http_client_for do
