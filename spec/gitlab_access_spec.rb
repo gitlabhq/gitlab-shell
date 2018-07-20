@@ -36,7 +36,7 @@ describe GitlabAccess do
     context "access is granted" do
 
       it "returns true" do
-        expect(subject.exec).to be_true
+        expect(subject.exec).to be_truthy
       end
     end
 
@@ -54,7 +54,7 @@ describe GitlabAccess do
       end
 
       it "returns false" do
-        expect(subject.exec).to be_false
+        expect(subject.exec).to be_falsey
       end
     end
 
@@ -65,7 +65,7 @@ describe GitlabAccess do
       end
 
       it "returns false" do
-        expect(subject.exec).to be_false
+        expect(subject.exec).to be_falsey
       end
     end
   end
