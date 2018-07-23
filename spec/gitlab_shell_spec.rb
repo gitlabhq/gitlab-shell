@@ -4,6 +4,7 @@ require_relative '../lib/gitlab_access_status'
 
 describe GitlabShell do
   before do
+    $logger = double('logger').as_null_object
     FileUtils.mkdir_p(tmp_repos_path)
   end
 
@@ -428,7 +429,7 @@ describe GitlabShell do
 
         it "refuses to assign the path" do
           $stderr.should_receive(:puts).with("GitLab: Invalid repository path")
-          expect(subject.exec(ssh_cmd)).to be_false
+          expect(subject.exec(ssh_cmd)).to be_falsey
         end
       end
     end

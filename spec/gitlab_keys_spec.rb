@@ -62,7 +62,7 @@ describe GitlabKeys do
       end
 
       it "should return true" do
-        gitlab_keys.send(:add_key).should be_true
+        gitlab_keys.send(:add_key).should be_truthy
       end
     end
   end
@@ -133,7 +133,7 @@ describe GitlabKeys do
       end
 
       it "should return true" do
-        gitlab_keys.send(:batch_add_keys).should be_true
+        gitlab_keys.send(:batch_add_keys).should be_truthy
       end
     end
   end
@@ -174,7 +174,7 @@ describe GitlabKeys do
       end
 
       it "should return true" do
-        gitlab_keys.send(:rm_key).should be_true
+        gitlab_keys.send(:rm_key).should be_truthy
       end
     end
 
@@ -201,7 +201,7 @@ describe GitlabKeys do
 
     it "should return true" do
       gitlab_keys.stub(:open)
-      gitlab_keys.send(:clear).should be_true
+      gitlab_keys.send(:clear).should be_truthy
     end
   end
 

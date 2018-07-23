@@ -3,6 +3,10 @@ require_relative '../lib/gitlab_metrics'
 
 describe GitlabMetrics do
   describe '.measure' do
+    before do
+      $logger = double('logger').as_null_object
+    end
+
     it 'returns the return value of the block' do
       val = described_class.measure('foo') { 10 }
 
@@ -10,7 +14,7 @@ describe GitlabMetrics do
     end
 
     it 'writes the metrics data to a log file' do
-      expect(described_class.logger).to receive(:debug).
+      expect($logger).to receive(:debug).
         with('metrics', a_metrics_log_message('foo'))
 
       described_class.measure('foo') { 10 }

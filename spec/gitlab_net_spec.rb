@@ -3,20 +3,22 @@ require_relative '../lib/gitlab_net'
 require_relative '../lib/gitlab_access_status'
 
 describe GitlabNet, vcr: true do
-  let(:gitlab_net) { GitlabNet.new }
+  let(:gitlab_net) { described_class.new }
   let(:changes) { ['0000000000000000000000000000000000000000 92d0970eefd7acb6d548878925ce2208cfe2d2ec refs/heads/branch4'] }
-  let(:host) { 'http://localhost:3000/api/v4/internal' }
+  let(:base_api_endpoint) { 'http://localhost:3000/api/v4' }
+  let(:internal_api_endpoint) { 'http://localhost:3000/api/v4/internal' }
   let(:project) { 'gitlab-org/gitlab-test.git' }
   let(:key) { 'key-1' }
   let(:key2) { 'key-2' }
   let(:secret) { "0a3938d9d95d807e94d937af3a4fbbea\n" }
 
   before do
-    gitlab_net.stub(:host).and_return(host)
+    $logger = double('logger').as_null_object
+    gitlab_net.stub(:base_api_endpoint).and_return(base_api_endpoint)
     gitlab_net.stub(:secret_token).and_return(secret)
   end
 
-  describe :check do
+  describe '#check' do
     it 'should return 200 code for gitlab check' do
       VCR.use_cassette("check-ok") do
         result = gitlab_net.check
@@ -37,7 +39,7 @@ describe GitlabNet, vcr: true do
     end
   end
 
-  describe :discover do
+  describe '#discover' do
     it 'should return user has based on key id' do
       VCR.use_cassette("discover-ok") do
         user = gitlab_net.discover(key)
@@ -68,13 +70,13 @@ describe GitlabNet, vcr: true do
           lfs_access = gitlab_net.lfs_authenticate(key, project)
           lfs_access.username.should == 'root'
           lfs_access.lfs_token.should == 'Hyzhyde_wLUeyUQsR3tHGTG8eNocVQm4ssioTEsBSdb6KwCSzQ'
-          lfs_access.repository_http_path.should == URI.join(host.sub('api/v4', ''), project).to_s
+          lfs_access.repository_http_path.should == URI.join(internal_api_endpoint.sub('api/v4', ''), project).to_s
         end
       end
     end
   end
 
-  describe :broadcast_message do
+  describe '#broadcast_message' do
     context "broadcast message exists" do
       it 'should return message' do
         VCR.use_cassette("broadcast_message-ok") do
@@ -94,19 +96,19 @@ describe GitlabNet, vcr: true do
     end
   end
 
-  describe :merge_request_urls do
+  describe '#merge_request_urls' do
     let(:gl_repository) { "project-1" }
     let(:changes) { "123456 789012 refs/heads/test\n654321 210987 refs/tags/tag" }
     let(:encoded_changes) { "123456%20789012%20refs/heads/test%0A654321%20210987%20refs/tags/tag" }
 
     it "sends the given arguments as encoded URL parameters" do
-      gitlab_net.should_receive(:get).with("#{host}/merge_request_urls?project=#{project}&changes=#{encoded_changes}&gl_repository=#{gl_repository}")
+      gitlab_net.should_receive(:get).with("#{internal_api_endpoint}/merge_request_urls?project=#{project}&changes=#{encoded_changes}&gl_repository=#{gl_repository}")
 
       gitlab_net.merge_request_urls(gl_repository, project, changes)
     end
 
     it "omits the gl_repository parameter if it's nil" do
-      gitlab_net.should_receive(:get).with("#{host}/merge_request_urls?project=#{project}&changes=#{encoded_changes}")
+      gitlab_net.should_receive(:get).with("#{internal_api_endpoint}/merge_request_urls?project=#{project}&changes=#{encoded_changes}")
 
       gitlab_net.merge_request_urls(nil, project, changes)
     end
@@ -126,7 +128,7 @@ describe GitlabNet, vcr: true do
     end
   end
 
-  describe :pre_receive do
+  describe '#pre_receive' do
     let(:gl_repository) { "project-1" }
     let(:params) { { gl_repository: gl_repository } }
 
@@ -152,7 +154,7 @@ describe GitlabNet, vcr: true do
     end
   end
 
-  describe :post_receive do
+  describe '#post_receive' do
     let(:gl_repository) { "project-1" }
     let(:changes) { "123456 789012 refs/heads/test\n654321 210987 refs/tags/tag" }
     let(:params) do
@@ -192,7 +194,7 @@ describe GitlabNet, vcr: true do
     end
   end
 
-  describe :authorized_key do
+  describe '#authorized_key' do
     let (:ssh_key) { "rsa-key" }
 
     it "should return nil when the resource is not implemented" do
@@ -227,7 +229,7 @@ describe GitlabNet, vcr: true do
     it 'returns two factor recovery codes' do
       VCR.use_cassette('two-factor-recovery-codes') do
         result = gitlab_net.two_factor_recovery_codes(key)
-        expect(result['success']).to be_true
+        expect(result['success']).to be_truthy
         expect(result['recovery_codes']).to eq(['f67c514de60c4953','41278385fc00c1e0'])
       end
     end
@@ -235,7 +237,7 @@ describe GitlabNet, vcr: true do
     it 'returns false when recovery codes cannot be generated' do
       VCR.use_cassette('two-factor-recovery-codes-fail') do
         result = gitlab_net.two_factor_recovery_codes('key-777')
-        expect(result['success']).to be_false
+        expect(result['success']).to be_falsey
         expect(result['message']).to eq('Could not find the given key')
       end
     end
@@ -257,17 +259,17 @@ describe GitlabNet, vcr: true do
 
     it 'returns true if notification was succesful' do
       VCR.use_cassette('notify-post-receive') do
-        expect(gitlab_net.notify_post_receive(gl_repository, repo_path)).to be_true
+        expect(gitlab_net.notify_post_receive(gl_repository, repo_path)).to be_truthy
       end
     end
   end
 
-  describe :check_access do
+  describe '#check_access' do
     context 'ssh key with access nil, to project' do
       it 'should allow pull access for host' do
         VCR.use_cassette("allowed-pull") do
           access = gitlab_net.check_access('git-receive-pack', nil, project, key, changes, 'ssh')
-          access.allowed?.should be_true
+          access.allowed?.should be_truthy
         end
       end
 
@@ -281,7 +283,7 @@ describe GitlabNet, vcr: true do
       it 'should allow push access for host' do
         VCR.use_cassette("allowed-push") do
           access = gitlab_net.check_access('git-upload-pack', nil, project, key, changes, 'ssh')
-          access.allowed?.should be_true
+          access.allowed?.should be_truthy
         end
       end
     end
@@ -290,7 +292,7 @@ describe GitlabNet, vcr: true do
       it 'should deny pull access for host' do
         VCR.use_cassette('ssh-pull-disabled') do
           access = gitlab_net.check_access('git-upload-pack', nil, project, key, changes, 'ssh')
-          access.allowed?.should be_false
+          access.allowed?.should be_falsey
           access.message.should eq 'Git access over SSH is not allowed'
         end
       end
@@ -298,7 +300,7 @@ describe GitlabNet, vcr: true do
       it 'should deny push access for host' do
         VCR.use_cassette('ssh-push-disabled') do
           access = gitlab_net.check_access('git-receive-pack', nil, project, key, changes, 'ssh')
-          access.allowed?.should be_false
+          access.allowed?.should be_falsey
           access.message.should eq 'Git access over SSH is not allowed'
         end
       end
@@ -308,7 +310,7 @@ describe GitlabNet, vcr: true do
       it 'should deny pull access for host' do
         VCR.use_cassette('http-pull-disabled') do
           access = gitlab_net.check_access('git-upload-pack', nil, project, key, changes, 'http')
-          access.allowed?.should be_false
+          access.allowed?.should be_falsey
           access.message.should eq 'Pulling over HTTP is not allowed.'
         end
       end
@@ -316,7 +318,7 @@ describe GitlabNet, vcr: true do
       it 'should deny push access for host' do
         VCR.use_cassette("http-push-disabled") do
           access = gitlab_net.check_access('git-receive-pack', nil, project, key, changes, 'http')
-          access.allowed?.should be_false
+          access.allowed?.should be_falsey
           access.message.should eq 'Pushing over HTTP is not allowed.'
         end
       end
@@ -326,21 +328,21 @@ describe GitlabNet, vcr: true do
       it 'should deny pull access for host' do
         VCR.use_cassette("ssh-pull-project-denied") do
           access = gitlab_net.check_access('git-receive-pack', nil, project, key2, changes, 'ssh')
-          access.allowed?.should be_false
+          access.allowed?.should be_falsey
         end
       end
 
       it 'should deny push access for host' do
         VCR.use_cassette("ssh-push-project-denied") do
           access = gitlab_net.check_access('git-upload-pack', nil, project, key2, changes, 'ssh')
-          access.allowed?.should be_false
+          access.allowed?.should be_falsey
         end
       end
 
       it 'should deny push access for host (with user)' do
         VCR.use_cassette("ssh-push-project-denied-with-user") do
           access = gitlab_net.check_access('git-upload-pack', nil, project, 'user-2', changes, 'ssh')
-          access.allowed?.should be_false
+          access.allowed?.should be_falsey
         end
       end
     end
@@ -353,16 +355,27 @@ describe GitlabNet, vcr: true do
     end
   end
 
-  describe :host do
-    let(:net) { GitlabNet.new }
-    subject { net.send :host }
+  describe '#base_api_endpoint' do
+    let(:net) { described_class.new }
 
-    it { should include(net.send(:config).gitlab_url) }
-    it("uses API version 4") { should include("api/v4") }
+    subject { net.send :base_api_endpoint }
+
+    it { is_expected.to include(net.send(:config).gitlab_url) }
+    it("uses API version 4") { should end_with("api/v4") }
   end
 
-  describe :http_client_for do
+  describe '#internal_api_endpoint' do
+    let(:net) { described_class.new }
+
+    subject { net.send :internal_api_endpoint }
+
+    it { is_expected.to include(net.send(:config).gitlab_url) }
+    it("uses API version 4") { should end_with("api/v4/internal") }
+  end
+
+  describe '#http_client_for' do
     subject { gitlab_net.send :http_client_for, URI('https://localhost/') }
+
     before do
       gitlab_net.stub :cert_store
       gitlab_net.send(:config).stub(:http_settings) { {'self_signed_cert' => true} }
@@ -371,26 +384,74 @@ describe GitlabNet, vcr: true do
     its(:verify_mode) { should eq(OpenSSL::SSL::VERIFY_NONE) }
   end
 
-  describe :http_request_for do
+  describe '#http_request_for' do
     context 'with stub' do
-      let(:get) do
-        double(Net::HTTP::Get).tap do |get|
-          Net::HTTP::Get.stub(:new) { get }
-        end
-      end
+      let(:get) { double(Net::HTTP::Get) }
       let(:user) { 'user' }
       let(:password) { 'password' }
       let(:url) { URI 'http://localhost/' }
-      subject { gitlab_net.send :http_request_for, :get, url }
+      let(:params) { { 'key1' => 'value1' } }
+      let(:headers) { { 'Content-Type' => 'application/json'} }
+      let(:options) { { json: { 'key2' => 'value2' } } }
 
-      before do
-        gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
-        gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
-        get.should_receive(:basic_auth).with(user, password).once
-        get.should_receive(:set_form_data).with(hash_including(secret_token: secret)).once
+      context 'with no params, options or headers' do
+        subject { gitlab_net.send :http_request_for, :get, url }
+
+        before do
+          gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
+          gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
+          Net::HTTP::Get.should_receive(:new).with('/', {}).and_return(get)
+          get.should_receive(:basic_auth).with(user, password).once
+          get.should_receive(:set_form_data).with(hash_including(secret_token: secret)).once
+        end
+
+        it { should_not be_nil }
       end
 
-      it { should_not be_nil }
+      context 'with params' do
+        subject { gitlab_net.send :http_request_for, :get, url, params: params, headers: headers }
+
+        before do
+          gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
+          gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
+          Net::HTTP::Get.should_receive(:new).with('/', headers).and_return(get)
+          get.should_receive(:basic_auth).with(user, password).once
+          get.should_receive(:set_form_data).with({ 'key1' => 'value1', secret_token: secret }).once
+        end
+
+        it { should_not be_nil }
+      end
+
+      context 'with headers' do
+        subject { gitlab_net.send :http_request_for, :get, url, headers: headers }
+
+        before do
+          gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
+          gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
+          Net::HTTP::Get.should_receive(:new).with('/', headers).and_return(get)
+          get.should_receive(:basic_auth).with(user, password).once
+          get.should_receive(:set_form_data).with(hash_including(secret_token: secret)).once
+        end
+
+        it { should_not be_nil }
+      end
+
+      context 'with options' do
+        context 'with json' do
+          subject { gitlab_net.send :http_request_for, :get, url, options: options }
+
+          before do
+            gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
+            gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
+            Net::HTTP::Get.should_receive(:new).with('/', {}).and_return(get)
+            get.should_receive(:basic_auth).with(user, password).once
+            get.should_receive(:body=).with({ 'key2' => 'value2', secret_token: secret }.to_json).once
+            get.should_not_receive(:set_form_data)
+          end
+
+          it { should_not be_nil }
+        end
+      end
     end
 
     context 'Unix socket' do
@@ -405,7 +466,7 @@ describe GitlabNet, vcr: true do
     end
   end
 
-  describe :cert_store do
+  describe '#cert_store' do
     let(:store) do
       double(OpenSSL::X509::Store).tap do |store|
         OpenSSL::X509::Store.stub(:new) { store }
