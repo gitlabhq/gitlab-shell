@@ -1,0 +1,26 @@
+#!/usr/bin/env ruby
+
+require 'fileutils'
+
+require_relative 'go_build'
+include GoBuild
+
+def main(dependency)
+  # Govendor wants to run in a GOPATH so let's make one for it.
+  create_fresh_build_dir
+  run!(GO_ENV, %w[go get github.com/kardianos/govendor])
+
+  gitlab_shell_build_go_dir = File.join(BUILD_DIR, 'src', GO_PACKAGE)
+  run!(GO_ENV, %W[govendor fetch #{dependency}], chdir: gitlab_shell_build_go_dir)
+
+  # Now we have updated go/vendor in the temporary build dir. We must sync
+  # the changes back so that Git will see them.
+  FileUtils.rm_rf('go/vendor')
+  FileUtils.cp_r(File.join(gitlab_shell_build_go_dir, 'vendor'), 'go')
+end
+
+unless ARGV.count == 1
+  abort "usage: #{$PROGRAM_NAME} DEPENDENCY"
+end
+
+main(ARGV.first)

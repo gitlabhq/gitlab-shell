@@ -22,11 +22,11 @@ module GoBuild
     FileUtils.cp_r(File.join(ROOT_PATH, GO_DIR, '.'), build_source_dir)
   end
 
-  def run!(env, cmd)
+  def run!(env, cmd, options = {})
     raise "env must be a hash" unless env.is_a?(Hash)
     raise "cmd must be an array" unless cmd.is_a?(Array)
 
-    unless system(env, *cmd)
+    unless system(env, *cmd, options)
       abort "command failed: #{env.inspect} #{cmd.join(' ')}"
     end
   end
