@@ -16,6 +16,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   class NotFound < StandardError; end
 
   CHECK_TIMEOUT = 5
+  GL_PROTOCOL = 'ssh'.freeze
 
   def check_access(cmd, gl_repository, repo, actor, changes, protocol, env: {})
     changes = changes.join("\n") unless changes.is_a?(String)

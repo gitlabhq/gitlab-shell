@@ -16,7 +16,6 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     'git-receive-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-receive-pack')
   }.freeze
   API_COMMANDS = %w(2fa_recovery_codes).freeze
-  GL_PROTOCOL = 'ssh'.freeze
 
   attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access
   attr_reader :repo_path
@@ -101,7 +100,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
   end
 
   def verify_access
-    status = api.check_access(@git_access, nil, @repo_name, @key_id, '_any', GL_PROTOCOL)
+    status = api.check_access(@git_access, nil, @repo_name, @key_id, '_any', GitlabNet::GL_PROTOCOL)
 
     raise AccessDeniedError, status.message unless status.allowed?
 
@@ -162,7 +161,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
       'LANG' => ENV['LANG'],
       'GL_ID' => @key_id,
-      'GL_PROTOCOL' => GL_PROTOCOL,
+      'GL_PROTOCOL' => GitlabNet::GL_PROTOCOL,
       'GL_REPOSITORY' => @gl_repository,
       'GL_USERNAME' => @username
     }
