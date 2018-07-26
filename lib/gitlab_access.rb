@@ -7,25 +7,21 @@ require_relative 'gitlab_access_status'
 require_relative 'names_helper'
 require_relative 'gitlab_metrics'
 require_relative 'object_dirs_helper'
-require 'json'
 
 class GitlabAccess
   include NamesHelper
 
-  attr_reader :config, :gl_repository, :repo_path, :changes, :protocol
-
-  def initialize(gl_repository, repo_path, actor, changes, protocol)
-    @config = GitlabConfig.new
+  def initialize(gl_repository, repo_path, key_id, changes, protocol)
     @gl_repository = gl_repository
     @repo_path = repo_path.strip
-    @actor = actor
+    @key_id = key_id
     @changes = changes.lines
     @protocol = protocol
   end
 
   def exec
     status = GitlabMetrics.measure('check-access:git-receive-pack') do
-      api.check_access('git-receive-pack', @gl_repository, @repo_path, @actor, @changes, @protocol, env: ObjectDirsHelper.all_attributes.to_json)
+      api.check_access('git-receive-pack', @gl_repository, @repo_path, @key_id, @changes, @protocol, env: ObjectDirsHelper.all_attributes.to_json)
     end
 
     raise AccessDeniedError, status.message unless status.allowed?
@@ -39,7 +35,9 @@ class GitlabAccess
     false
   end
 
-  protected
+  private
+
+  attr_reader :gl_repository, :repo_path, :key_id, :changes, :protocol
 
   def api
     GitlabNet.new
