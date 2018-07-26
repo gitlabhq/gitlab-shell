@@ -6,7 +6,6 @@ require_relative 'gitlab_metrics'
 
 class GitlabShell # rubocop:disable Metrics/ClassLength
 
-  GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-lfs-authenticate).freeze
   GITALY_MIGRATED_COMMANDS = {
     'git-upload-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-upload-pack'),
     'git-upload-archive' => File.join(ROOT_PATH, 'bin', 'gitaly-upload-archive'),
@@ -16,6 +15,13 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
   attr_accessor :key_id, :gl_repository, :repo_name, :command, :git_access
   attr_reader :repo_path
+  GIT_UPLOAD_PACK_COMMAND = 'git-upload-pack'.freeze
+  GIT_RECEIVE_PACK_COMMAND = 'git-receive-pack'.freeze
+  GIT_UPLOAD_ARCHIVE_COMMAND = 'git-upload-archive'.freeze
+  GIT_LFS_AUTHENTICATE_COMMAND = 'git-lfs-authenticate'.freeze
+
+  GIT_COMMANDS = [GIT_UPLOAD_PACK_COMMAND, GIT_RECEIVE_PACK_COMMAND,
+                  GIT_UPLOAD_ARCHIVE_COMMAND, GIT_LFS_AUTHENTICATE_COMMAND].freeze
 
   def initialize(key_id)
     @key_id = key_id
@@ -26,7 +32,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
   # ssh git@gitlab.example.com 'evil command', then origin_cmd contains
   # 'evil command'.
   def exec(origin_cmd)
-    unless origin_cmd
+    if !origin_cmd || origin_cmd.empty?
       puts "Welcome to GitLab, #{username}!"
       return true
     end
@@ -46,20 +52,19 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     false
   rescue AccessDeniedError => ex
     $logger.warn('Access denied', command: origin_cmd, user: log_username)
-
     $stderr.puts "GitLab: #{ex.message}"
     false
   rescue DisallowedCommandError
     $logger.warn('Denied disallowed command', command: origin_cmd, user: log_username)
-
-    $stderr.puts "GitLab: Disallowed command"
+    $stderr.puts 'GitLab: Disallowed command'
     false
   rescue InvalidRepositoryPathError
-    $stderr.puts "GitLab: Invalid repository path"
+    $stderr.puts 'GitLab: Invalid repository path'
     false
   end
 
-  protected
+  private
+
 
   def parse_cmd(args)
     # Handle Git for Windows 2.14 using "git upload-pack" instead of git-upload-pack
