@@ -1,12 +1,8 @@
-require 'net/http'
-require 'openssl'
 require 'json'
 
-require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
 require_relative 'gitlab_access'
 require_relative 'gitlab_lfs_authentication'
-require_relative 'httpunix'
 require_relative 'http_helper'
 
 class GitlabNet # rubocop:disable Metrics/ClassLength
@@ -15,7 +11,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   CHECK_TIMEOUT = 5
   GL_PROTOCOL = 'ssh'.freeze
 
-  def check_access(cmd, gl_repository, repo, key_id, changes, protocol, env: {})
+  def check_access(cmd, gl_repository, repo, key_id, changes, protocol = GL_PROTOCOL, env: {})
     changes = changes.join("\n") unless changes.is_a?(String)
 
     params = {
@@ -28,8 +24,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
       env: env
     }
 
-    url = "#{internal_api_endpoint}/allowed"
-    resp = post(url, params)
+    resp = post("#{internal_api_endpoint}/allowed", params)
 
     if resp.code == '200'
       GitAccessStatus.create_from_json(resp.body)
