@@ -1,15 +1,18 @@
 require 'json'
 
+require_relative 'errors'
 require_relative 'gitlab_logger'
 require_relative 'gitlab_access'
 require_relative 'gitlab_lfs_authentication'
 require_relative 'http_helper'
+require_relative 'action'
 
-class GitlabNet # rubocop:disable Metrics/ClassLength
+class GitlabNet
   include HTTPHelper
 
   CHECK_TIMEOUT = 5
   GL_PROTOCOL = 'ssh'.freeze
+  API_INACCESSIBLE_ERROR = 'API is not accessible'.freeze
 
   def check_access(cmd, gl_repository, repo, key_id, changes, protocol = GL_PROTOCOL, env: {})
     changes = changes.join("\n") unless changes.is_a?(String)
@@ -26,22 +29,15 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
 
     resp = post("#{internal_api_endpoint}/allowed", params)
 
-    if resp.code == '200'
-      GitAccessStatus.create_from_json(resp.body)
-    else
-      GitAccessStatus.new(false,
-                          'API is not accessible',
-                          gl_repository: nil,
-                          gl_username: nil,
-                          repository_path: nil,
-                          gitaly: nil)
-    end
+    determine_action(key_id, resp)
   end
 
   def discover(key)
     key_id = key.gsub("key-", "")
     resp = get("#{internal_api_endpoint}/discover?key_id=#{key_id}")
-    JSON.parse(resp.body) rescue nil
+    JSON.parse(resp.body)
+  rescue JSON::ParserError, ApiUnreachableError
+    nil
   end
 
   def lfs_authenticate(key, repo)
@@ -97,11 +93,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   end
 
   def post_receive(gl_repository, identifier, changes)
-    params = {
-      gl_repository: gl_repository,
-      identifier: identifier,
-      changes: changes
-    }
+    params = { gl_repository: gl_repository, identifier: identifier, changes: changes }
     resp = post("#{internal_api_endpoint}/post_receive", params)
     raise NotFound if resp.code == HTTP_NOT_FOUND
 
@@ -119,5 +111,26 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
 
   def sanitize_path(repo)
     repo.delete("'")
+  end
+
+  def determine_action(key_id, resp)
+    json = JSON.parse(resp.body)
+    message = json['message']
+
+    case resp.code
+    when HTTP_SUCCESS
+      # TODO: This raise can be removed once internal API can respond with correct
+      #       HTTP status codes, instead of relying upon parsing the body and
+      #       accessing the 'status' key.
+      raise AccessDeniedError, message unless json['status']
+
+      Action::Gitaly.create_from_json(key_id, json)
+    when HTTP_UNAUTHORIZED, HTTP_NOT_FOUND
+      raise AccessDeniedError, message
+    else
+      raise UnknownError, "#{API_INACCESSIBLE_ERROR}: #{message}"
+    end
+  rescue JSON::ParserError
+    raise UnknownError, API_INACCESSIBLE_ERROR
   end
 end

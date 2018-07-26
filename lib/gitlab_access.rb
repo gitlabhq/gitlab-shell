@@ -20,12 +20,9 @@ class GitlabAccess
   end
 
   def exec
-    status = GitlabMetrics.measure('check-access:git-receive-pack') do
-      api.check_access('git-receive-pack', @gl_repository, @repo_path, @key_id, @changes, @protocol, env: ObjectDirsHelper.all_attributes.to_json)
+    GitlabMetrics.measure('check-access:git-receive-pack') do
+      api.check_access('git-receive-pack', gl_repository, repo_path, key_id, changes, protocol, env: ObjectDirsHelper.all_attributes.to_json)
     end
-
-    raise AccessDeniedError, status.message unless status.allowed?
-
     true
   rescue GitlabNet::ApiUnreachableError
     $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
