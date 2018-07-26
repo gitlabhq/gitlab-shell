@@ -15,23 +15,18 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   CHECK_TIMEOUT = 5
   GL_PROTOCOL = 'ssh'.freeze
 
-  def check_access(cmd, gl_repository, repo, actor, changes, protocol, env: {})
+  def check_access(cmd, gl_repository, repo, key_id, changes, protocol, env: {})
     changes = changes.join("\n") unless changes.is_a?(String)
 
     params = {
       action: cmd,
       changes: changes,
       gl_repository: gl_repository,
+      key_id: key_id.gsub('key-', ''),
       project: sanitize_path(repo),
       protocol: protocol,
       env: env
     }
-
-    if actor =~ /\Akey\-\d+\Z/
-      params[:key_id] = actor.gsub("key-", "")
-    elsif actor =~ /\Auser\-\d+\Z/
-      params[:user_id] = actor.gsub("user-", "")
-    end
 
     url = "#{internal_api_endpoint}/allowed"
     resp = post(url, params)
