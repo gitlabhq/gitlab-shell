@@ -1,6 +1,5 @@
 require_relative 'spec_helper'
 require_relative '../lib/gitlab_net'
-require_relative '../lib/gitlab_access_status'
 
 describe GitlabNet, vcr: true do
   let(:gitlab_net) { described_class.new }
@@ -14,28 +13,28 @@ describe GitlabNet, vcr: true do
 
   before do
     $logger = double('logger').as_null_object
-    gitlab_net.stub(:base_api_endpoint).and_return(base_api_endpoint)
-    gitlab_net.stub(:secret_token).and_return(secret)
+    allow(gitlab_net).to receive(:base_api_endpoint).and_return(base_api_endpoint)
+    allow(gitlab_net).to receive(:secret_token).and_return(secret)
   end
 
   describe '#check' do
     it 'should return 200 code for gitlab check' do
       VCR.use_cassette("check-ok") do
         result = gitlab_net.check
-        result.code.should == '200'
+        expect(result.code).to eql('200')
       end
     end
 
     it 'adds the secret_token to request' do
       VCR.use_cassette("check-ok") do
-        Net::HTTP::Get.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: secret))
+        allow_any_instance_of(Net::HTTP::Get).to receive(:set_form_data).with(hash_including(secret_token: secret))
         gitlab_net.check
       end
     end
 
     it "raises an exception if the connection fails" do
-      Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
-      expect { gitlab_net.check }.to raise_error(GitlabNet::ApiUnreachableError)
+      allow_any_instance_of(Net::HTTP).to receive(:request).and_raise(StandardError)
+      expect do gitlab_net.check end.to raise_error(GitlabNet::ApiUnreachableError)
     end
   end
 
@@ -43,21 +42,21 @@ describe GitlabNet, vcr: true do
     it 'should return user has based on key id' do
       VCR.use_cassette("discover-ok") do
         user = gitlab_net.discover(key)
-        user['name'].should == 'Administrator'
-        user['username'].should == 'root'
+        expect(user['name']).to eql 'Administrator'
+        expect(user['username']).to eql 'root'
       end
     end
 
     it 'adds the secret_token to request' do
       VCR.use_cassette("discover-ok") do
-        Net::HTTP::Get.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: secret))
+        allow_any_instance_of(Net::HTTP::Get).to receive(:set_form_data).with(hash_including(secret_token: secret))
         gitlab_net.discover(key)
       end
     end
 
     it "raises an exception if the connection fails" do
       VCR.use_cassette("discover-ok") do
-        Net::HTTP.any_instance.stub(:request).and_raise(StandardError)
+        allow_any_instance_of(Net::HTTP).to receive(:request).and_raise(StandardError)
         expect { gitlab_net.discover(key) }.to raise_error(GitlabNet::ApiUnreachableError)
       end
     end
@@ -68,9 +67,9 @@ describe GitlabNet, vcr: true do
       it 'should return the correct data' do
         VCR.use_cassette('lfs-authenticate-ok') do
           lfs_access = gitlab_net.lfs_authenticate(key, project)
-          lfs_access.username.should == 'root'
-          lfs_access.lfs_token.should == 'Hyzhyde_wLUeyUQsR3tHGTG8eNocVQm4ssioTEsBSdb6KwCSzQ'
-          lfs_access.repository_http_path.should == URI.join(internal_api_endpoint.sub('api/v4', ''), project).to_s
+          expect(lfs_access.username).to eql 'root'
+          expect(lfs_access.lfs_token).to eql 'Hyzhyde_wLUeyUQsR3tHGTG8eNocVQm4ssioTEsBSdb6KwCSzQ'
+          expect(lfs_access.repository_http_path).to eql URI.join(internal_api_endpoint.sub('api/v4', ''), project).to_s
         end
       end
     end
@@ -81,7 +80,7 @@ describe GitlabNet, vcr: true do
       it 'should return message' do
         VCR.use_cassette("broadcast_message-ok") do
           result = gitlab_net.broadcast_message
-          result["message"].should == "Message"
+          expect(result["message"]).to eql "Message"
         end
       end
     end
@@ -90,7 +89,7 @@ describe GitlabNet, vcr: true do
       it 'should return nil' do
         VCR.use_cassette("broadcast_message-none") do
           result = gitlab_net.broadcast_message
-          result.should == {}
+          expect(result).to eql({})
         end
       end
     end
@@ -102,13 +101,13 @@ describe GitlabNet, vcr: true do
     let(:encoded_changes) { "123456%20789012%20refs/heads/test%0A654321%20210987%20refs/tags/tag" }
 
     it "sends the given arguments as encoded URL parameters" do
-      gitlab_net.should_receive(:get).with("#{internal_api_endpoint}/merge_request_urls?project=#{project}&changes=#{encoded_changes}&gl_repository=#{gl_repository}")
+      expect(gitlab_net).to receive(:get).with("#{internal_api_endpoint}/merge_request_urls?project=#{project}&changes=#{encoded_changes}&gl_repository=#{gl_repository}")
 
       gitlab_net.merge_request_urls(gl_repository, project, changes)
     end
 
     it "omits the gl_repository parameter if it's nil" do
-      gitlab_net.should_receive(:get).with("#{internal_api_endpoint}/merge_request_urls?project=#{project}&changes=#{encoded_changes}")
+      expect(gitlab_net).to receive(:get).with("#{internal_api_endpoint}/merge_request_urls?project=#{project}&changes=#{encoded_changes}")
 
       gitlab_net.merge_request_urls(nil, project, changes)
     end
@@ -135,8 +134,7 @@ describe GitlabNet, vcr: true do
     subject { gitlab_net.pre_receive(gl_repository) }
 
     it 'sends the correct parameters and returns the request body parsed' do
-      Net::HTTP::Post.any_instance.should_receive(:set_form_data)
-        .with(hash_including(params))
+      allow_any_instance_of(Net::HTTP::Post).to receive(:set_form_data).with(hash_including(params))
 
       VCR.use_cassette("pre-receive") { subject }
     end
@@ -149,7 +147,7 @@ describe GitlabNet, vcr: true do
 
     it 'throws a NotFound error when pre-receive is not available' do
       VCR.use_cassette("pre-receive-not-found") do
-        expect { subject }.to raise_error(GitlabNet::NotFound)
+        expect do subject end.to raise_error(GitlabNet::NotFound)
       end
     end
   end
@@ -171,7 +169,7 @@ describe GitlabNet, vcr: true do
     subject { gitlab_net.post_receive(gl_repository, key, changes) }
 
     it 'sends the correct parameters' do
-      Net::HTTP::Post.any_instance.should_receive(:set_form_data).with(hash_including(params))
+      allow_any_instance_of(Net::HTTP::Post).to receive(:set_form_data).with(hash_including(params))
 
 
       VCR.use_cassette("post-receive") do
@@ -189,7 +187,7 @@ describe GitlabNet, vcr: true do
 
     it 'throws a NotFound error when post-receive is not available' do
       VCR.use_cassette("post-receive-not-found") do
-        expect { subject }.to raise_error(GitlabNet::NotFound)
+        expect do subject end.to raise_error(GitlabNet::NotFound)
       end
     end
   end
@@ -200,21 +198,21 @@ describe GitlabNet, vcr: true do
     it "should return nil when the resource is not implemented" do
       VCR.use_cassette("ssh-key-not-implemented") do
         result = gitlab_net.authorized_key("whatever")
-        result.should be_nil
+        expect(result).to be_nil
       end
     end
 
     it "should return nil when the fingerprint is not found" do
       VCR.use_cassette("ssh-key-not-found") do
         result = gitlab_net.authorized_key("whatever")
-        result.should be_nil
+        expect(result).to be_nil
       end
     end
 
     it "should return a ssh key with a valid fingerprint" do
       VCR.use_cassette("ssh-key-ok") do
         result = gitlab_net.authorized_key(ssh_key)
-        result.should eq({
+        expect(result).to eql({
           "can_push" => false,
           "created_at" => "2017-06-21T09:50:07.150Z",
           "id" => 99,
@@ -252,7 +250,7 @@ describe GitlabNet, vcr: true do
 
     it 'sets the arguments as form parameters' do
       VCR.use_cassette('notify-post-receive') do
-        Net::HTTP::Post.any_instance.should_receive(:set_form_data).with(hash_including(params))
+        allow_any_instance_of(Net::HTTP::Post).to receive(:set_form_data).with(hash_including(params))
         gitlab_net.notify_post_receive(gl_repository, repo_path)
       end
     end
@@ -274,8 +272,8 @@ describe GitlabNet, vcr: true do
       end
 
       it 'adds the secret_token to the request' do
-        VCR.use_cassette("allowed-pull") do
-          Net::HTTP::Post.any_instance.should_receive(:set_form_data).with(hash_including(secret_token: secret))
+        VCR.use_cassette('allowed-pull') do
+          allow_any_instance_of(Net::HTTP::Post).to receive(:set_form_data).with(hash_including(secret_token: secret))
           gitlab_net.check_access('git-receive-pack', nil, project, key, changes, 'ssh')
         end
       end
@@ -377,8 +375,8 @@ describe GitlabNet, vcr: true do
     subject { gitlab_net.send :http_client_for, URI('https://localhost/') }
 
     before do
-      gitlab_net.stub :cert_store
-      gitlab_net.send(:config).stub(:http_settings) { {'self_signed_cert' => true} }
+      allow(gitlab_net).to receive(:cert_store)
+      allow(gitlab_net.send(:config)).to receive(:http_settings).and_return({ 'self_signed_cert' => true })
     end
 
     its(:verify_mode) { should eq(OpenSSL::SSL::VERIFY_NONE) }
@@ -398,11 +396,11 @@ describe GitlabNet, vcr: true do
         subject { gitlab_net.send :http_request_for, :get, url }
 
         before do
-          gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
-          gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
-          Net::HTTP::Get.should_receive(:new).with('/', {}).and_return(get)
-          get.should_receive(:basic_auth).with(user, password).once
-          get.should_receive(:set_form_data).with(hash_including(secret_token: secret)).once
+          allow(gitlab_net.send(:config).http_settings).to receive(:[]).with('user').and_return(user)
+          allow(gitlab_net.send(:config).http_settings).to receive(:[]).with('password').and_return(password)
+          expect(Net::HTTP::Get).to receive(:new).with('/', {}).and_return(get)
+          expect(get).to receive(:basic_auth).with(user, password).once
+          expect(get).to receive(:set_form_data).with(hash_including(secret_token: secret)).once
         end
 
         it { should_not be_nil }
@@ -412,11 +410,11 @@ describe GitlabNet, vcr: true do
         subject { gitlab_net.send :http_request_for, :get, url, params: params, headers: headers }
 
         before do
-          gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
-          gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
-          Net::HTTP::Get.should_receive(:new).with('/', headers).and_return(get)
-          get.should_receive(:basic_auth).with(user, password).once
-          get.should_receive(:set_form_data).with({ 'key1' => 'value1', secret_token: secret }).once
+          allow(gitlab_net.send(:config).http_settings).to receive(:[]).with('user').and_return(user)
+          allow(gitlab_net.send(:config).http_settings).to receive(:[]).with('password').and_return(password)
+          expect(Net::HTTP::Get).to receive(:new).with('/', headers).and_return(get)
+          expect(get).to receive(:basic_auth).with(user, password).once
+          expect(get).to receive(:set_form_data).with({ 'key1' => 'value1', secret_token: secret }).once
         end
 
         it { should_not be_nil }
@@ -426,11 +424,11 @@ describe GitlabNet, vcr: true do
         subject { gitlab_net.send :http_request_for, :get, url, headers: headers }
 
         before do
-          gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
-          gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
-          Net::HTTP::Get.should_receive(:new).with('/', headers).and_return(get)
-          get.should_receive(:basic_auth).with(user, password).once
-          get.should_receive(:set_form_data).with(hash_including(secret_token: secret)).once
+          allow(gitlab_net.send(:config).http_settings).to receive(:[]).with('user').and_return(user)
+          allow(gitlab_net.send(:config).http_settings).to receive(:[]).with('password').and_return(password)
+          expect(Net::HTTP::Get).to receive(:new).with('/', headers).and_return(get)
+          expect(get).to receive(:basic_auth).with(user, password).once
+          expect(get).to receive(:set_form_data).with(hash_including(secret_token: secret)).once
         end
 
         it { should_not be_nil }
@@ -441,12 +439,12 @@ describe GitlabNet, vcr: true do
           subject { gitlab_net.send :http_request_for, :get, url, options: options }
 
           before do
-            gitlab_net.send(:config).http_settings.stub(:[]).with('user') { user }
-            gitlab_net.send(:config).http_settings.stub(:[]).with('password') { password }
-            Net::HTTP::Get.should_receive(:new).with('/', {}).and_return(get)
-            get.should_receive(:basic_auth).with(user, password).once
-            get.should_receive(:body=).with({ 'key2' => 'value2', secret_token: secret }.to_json).once
-            get.should_not_receive(:set_form_data)
+            allow(gitlab_net.send(:config).http_settings).to receive(:[]).with('user').and_return(user)
+            allow(gitlab_net.send(:config).http_settings).to receive(:[]).with('password').and_return(password)
+            expect(Net::HTTP::Get).to receive(:new).with('/', {}).and_return(get)
+            expect(get).to receive(:basic_auth).with(user, password).once
+            expect(get).to receive(:body=).with({ 'key2' => 'value2', secret_token: secret }.to_json).once
+            expect(get).to_not receive(:set_form_data)
           end
 
           it { should_not be_nil }
@@ -457,7 +455,7 @@ describe GitlabNet, vcr: true do
     context 'Unix socket' do
       it 'sets the Host header to "localhost"' do
         gitlab_net = described_class.new
-        gitlab_net.should_receive(:secret_token).and_return(secret)
+        expect(gitlab_net).to receive(:secret_token).and_return(secret)
 
         request = gitlab_net.send(:http_request_for, :get, URI('http+unix://%2Ffoo'))
 
@@ -469,12 +467,12 @@ describe GitlabNet, vcr: true do
   describe '#cert_store' do
     let(:store) do
       double(OpenSSL::X509::Store).tap do |store|
-        OpenSSL::X509::Store.stub(:new) { store }
+        allow(OpenSSL::X509::Store).to receive(:new).and_return(store)
       end
     end
 
     before :each do
-      store.should_receive(:set_default_paths).once
+      expect(store).to receive(:set_default_paths).once
     end
 
     after do
@@ -482,17 +480,17 @@ describe GitlabNet, vcr: true do
     end
 
     it "calls add_file with http_settings['ca_file']" do
-      gitlab_net.send(:config).http_settings.stub(:[]).with('ca_file') { 'test_file' }
-      gitlab_net.send(:config).http_settings.stub(:[]).with('ca_path') { nil }
-      store.should_receive(:add_file).with('test_file')
-      store.should_not_receive(:add_path)
+      allow(gitlab_net.send(:config).http_settings).to receive(:[]).with('ca_file').and_return('test_file')
+      allow(gitlab_net.send(:config).http_settings).to receive(:[]).with('ca_path').and_return(nil)
+      expect(store).to receive(:add_file).with('test_file')
+      expect(store).to_not receive(:add_path)
     end
 
     it "calls add_path with http_settings['ca_path']" do
-      gitlab_net.send(:config).http_settings.stub(:[]).with('ca_file') { nil }
-      gitlab_net.send(:config).http_settings.stub(:[]).with('ca_path') { 'test_path' }
-      store.should_not_receive(:add_file)
-      store.should_receive(:add_path).with('test_path')
+      allow(gitlab_net.send(:config).http_settings).to receive(:[]).with('ca_file').and_return(nil)
+      allow(gitlab_net.send(:config).http_settings).to receive(:[]).with('ca_path').and_return('test_path')
+      expect(store).to_not receive(:add_file)
+      expect(store).to receive(:add_path).with('test_path')
     end
   end
 end
