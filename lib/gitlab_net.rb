@@ -55,16 +55,10 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   end
 
   def lfs_authenticate(key, repo)
-    params = {
-      project: sanitize_path(repo),
-      key_id: key.gsub('key-', '')
-    }
-
+    params = { project: sanitize_path(repo), key_id: key.gsub('key-', '') }
     resp = post("#{internal_api_endpoint}/lfs_authenticate", params)
 
-    if resp.code == '200'
-      GitlabLfsAuthentication.build_from_json(resp.body)
-    end
+    GitlabLfsAuthentication.build_from_json(resp.body) if resp.code == HTTP_SUCCESS
   end
 
   def broadcast_message
@@ -79,11 +73,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     url += "&gl_repository=#{URI.escape(gl_repository)}" if gl_repository
     resp = get(url)
 
-    if resp.code == '200'
-      JSON.parse(resp.body)
-    else
-      []
-    end
+    resp.code == HTTP_SUCCESS ? JSON.parse(resp.body) : []
   rescue
     []
   end
@@ -94,7 +84,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
 
   def authorized_key(key)
     resp = get("#{internal_api_endpoint}/authorized_keys?key=#{URI.escape(key, '+/=')}")
-    JSON.parse(resp.body) if resp.code == "200"
+    JSON.parse(resp.body) if resp.code == HTTP_SUCCESS
   rescue
     nil
   end
@@ -102,8 +92,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   def two_factor_recovery_codes(key)
     key_id = key.gsub('key-', '')
     resp = post("#{internal_api_endpoint}/two_factor_recovery_codes", key_id: key_id)
-
-    JSON.parse(resp.body) if resp.code == '200'
+    JSON.parse(resp.body) if resp.code == HTTP_SUCCESS
   rescue
     {}
   end
@@ -112,7 +101,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     params = { gl_repository: gl_repository, project: repo_path }
     resp = post("#{internal_api_endpoint}/notify_post_receive", params)
 
-    resp.code == '200'
+    resp.code == HTTP_SUCCESS
   rescue
     false
   end
@@ -124,21 +113,19 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
       changes: changes
     }
     resp = post("#{internal_api_endpoint}/post_receive", params)
+    raise NotFound if resp.code == HTTP_NOT_FOUND
 
-    raise NotFound if resp.code == '404'
-
-    JSON.parse(resp.body) if resp.code == '200'
+    JSON.parse(resp.body) if resp.code == HTTP_SUCCESS
   end
 
   def pre_receive(gl_repository)
     resp = post("#{internal_api_endpoint}/pre_receive", gl_repository: gl_repository)
+    raise NotFound if resp.code == HTTP_NOT_FOUND
 
-    raise NotFound if resp.code == '404'
-
-    JSON.parse(resp.body) if resp.code == '200'
+    JSON.parse(resp.body) if resp.code == HTTP_SUCCESS
   end
 
-  protected
+  private
 
   def sanitize_path(repo)
     repo.delete("'")
