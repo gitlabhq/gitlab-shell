@@ -5,9 +5,6 @@ require_relative 'gitlab_net'
 require_relative 'gitlab_metrics'
 
 class GitlabShell # rubocop:disable Metrics/ClassLength
-  class AccessDeniedError < StandardError; end
-  class DisallowedCommandError < StandardError; end
-  class InvalidRepositoryPathError < StandardError; end
 
   GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-lfs-authenticate).freeze
   GITALY_MIGRATED_COMMANDS = {
