@@ -1,5 +1,7 @@
 module HTTPHelper
   READ_TIMEOUT = 300
+  class ApiUnreachableError < StandardError; end
+  class NotFound < StandardError; end
 
   protected
 
