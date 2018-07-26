@@ -1,5 +1,18 @@
+require 'net/http'
+require 'openssl'
+
+require_relative 'gitlab_config'
+require_relative 'httpunix'
+
 module HTTPHelper
   READ_TIMEOUT = 300
+  HTTP_SUCCESS = '200'.freeze
+  HTTP_MULTIPLE_CHOICES = '300'.freeze
+  HTTP_UNAUTHORIZED = '401'.freeze
+  HTTP_NOT_FOUND = '404'.freeze
+
+  HTTP_SUCCESS_LIKE = [HTTP_SUCCESS, HTTP_MULTIPLE_CHOICES].freeze
+
   class ApiUnreachableError < StandardError; end
   class NotFound < StandardError; end
 
@@ -78,7 +91,7 @@ module HTTPHelper
       $logger.info('finished HTTP request', method: method.to_s.upcase, url: url, duration: Time.new - start_time)
     end
 
-    if response.code == "200"
+    if HTTP_SUCCESS_LIKE.include?(response.code)
       $logger.debug('Received response', code: response.code, body: response.body)
     else
       $logger.error('Call failed', method: method.to_s.upcase, url: url, code: response.code, body: response.body)
@@ -111,7 +124,7 @@ module HTTPHelper
   end
 
   def secret_token
-    @secret_token ||= File.read config.secret_file
+    @secret_token ||= File.read(config.secret_file)
   end
 
   def read_timeout
