@@ -158,7 +158,8 @@ describe GitlabShell do
         'gl_repository' => gl_repository,
         'gl_id' => gl_id,
         'gl_username' => gl_username,
-        'git_protocol' => git_protocol
+        'git_protocol' => git_protocol,
+        'git_config_options' => []
       )
     end
 

@@ -119,6 +119,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     self.repo_path = status.repository_path
     @gl_repository = status.gl_repository
     @git_protocol = ENV['GIT_PROTOCOL']
+    @git_config_options = status.git_config_options
     @gitaly = status.gitaly
     @username = status.gl_username
     if defined?(@who)
@@ -152,7 +153,8 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
         'gl_repository' => @gl_repository,
         'gl_id' => @gl_id,
         'gl_username' => @username,
-        'git_protocol' => @git_protocol
+        'git_protocol' => @git_protocol,
+        'git_config_options' => @git_config_options
       }
 
       args = [gitaly_address, JSON.dump(gitaly_request)]
