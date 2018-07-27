@@ -1,3 +1,6 @@
+v7.2.0
+  - Update gitaly-proto to 0.109.0 (!216)
+
 v7.1.5
   - Fix a NoMethodError in the pre-receive hook (!206)
 
