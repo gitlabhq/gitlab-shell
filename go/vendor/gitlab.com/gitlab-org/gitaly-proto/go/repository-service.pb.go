@@ -43,7 +43,45 @@ func (x GetArchiveRequest_Format) String() string {
 	return proto.EnumName(GetArchiveRequest_Format_name, int32(x))
 }
 func (GetArchiveRequest_Format) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor10, []int{16, 0}
+	return fileDescriptor10, []int{18, 0}
+}
+
+type GetRawChangesResponse_RawChange_Operation int32
+
+const (
+	GetRawChangesResponse_RawChange_UNKNOWN      GetRawChangesResponse_RawChange_Operation = 0
+	GetRawChangesResponse_RawChange_ADDED        GetRawChangesResponse_RawChange_Operation = 1
+	GetRawChangesResponse_RawChange_COPIED       GetRawChangesResponse_RawChange_Operation = 2
+	GetRawChangesResponse_RawChange_DELETED      GetRawChangesResponse_RawChange_Operation = 3
+	GetRawChangesResponse_RawChange_MODIFIED     GetRawChangesResponse_RawChange_Operation = 4
+	GetRawChangesResponse_RawChange_RENAMED      GetRawChangesResponse_RawChange_Operation = 5
+	GetRawChangesResponse_RawChange_TYPE_CHANGED GetRawChangesResponse_RawChange_Operation = 6
+)
+
+var GetRawChangesResponse_RawChange_Operation_name = map[int32]string{
+	0: "UNKNOWN",
+	1: "ADDED",
+	2: "COPIED",
+	3: "DELETED",
+	4: "MODIFIED",
+	5: "RENAMED",
+	6: "TYPE_CHANGED",
+}
+var GetRawChangesResponse_RawChange_Operation_value = map[string]int32{
+	"UNKNOWN":      0,
+	"ADDED":        1,
+	"COPIED":       2,
+	"DELETED":      3,
+	"MODIFIED":     4,
+	"RENAMED":      5,
+	"TYPE_CHANGED": 6,
+}
+
+func (x GetRawChangesResponse_RawChange_Operation) String() string {
+	return proto.EnumName(GetRawChangesResponse_RawChange_Operation_name, int32(x))
+}
+func (GetRawChangesResponse_RawChange_Operation) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor10, []int{63, 0, 0}
 }
 
 type RepositoryExistsRequest struct {
@@ -166,6 +204,30 @@ func (m *GarbageCollectResponse) String() string            { return proto.Compa
 func (*GarbageCollectResponse) ProtoMessage()               {}
 func (*GarbageCollectResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{7} }
 
+type CleanupRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+}
+
+func (m *CleanupRequest) Reset()                    { *m = CleanupRequest{} }
+func (m *CleanupRequest) String() string            { return proto.CompactTextString(m) }
+func (*CleanupRequest) ProtoMessage()               {}
+func (*CleanupRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{8} }
+
+func (m *CleanupRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+type CleanupResponse struct {
+}
+
+func (m *CleanupResponse) Reset()                    { *m = CleanupResponse{} }
+func (m *CleanupResponse) String() string            { return proto.CompactTextString(m) }
+func (*CleanupResponse) ProtoMessage()               {}
+func (*CleanupResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{9} }
+
 type RepositorySizeRequest struct {
 	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
 }
@@ -173,7 +235,7 @@ type RepositorySizeRequest struct {
 func (m *RepositorySizeRequest) Reset()                    { *m = RepositorySizeRequest{} }
 func (m *RepositorySizeRequest) String() string            { return proto.CompactTextString(m) }
 func (*RepositorySizeRequest) ProtoMessage()               {}
-func (*RepositorySizeRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{8} }
+func (*RepositorySizeRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{10} }
 
 func (m *RepositorySizeRequest) GetRepository() *Repository {
 	if m != nil {
@@ -190,7 +252,7 @@ type RepositorySizeResponse struct {
 func (m *RepositorySizeResponse) Reset()                    { *m = RepositorySizeResponse{} }
 func (m *RepositorySizeResponse) String() string            { return proto.CompactTextString(m) }
 func (*RepositorySizeResponse) ProtoMessage()               {}
-func (*RepositorySizeResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{9} }
+func (*RepositorySizeResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{11} }
 
 func (m *RepositorySizeResponse) GetSize() int64 {
 	if m != nil {
@@ -207,7 +269,7 @@ type ApplyGitattributesRequest struct {
 func (m *ApplyGitattributesRequest) Reset()                    { *m = ApplyGitattributesRequest{} }
 func (m *ApplyGitattributesRequest) String() string            { return proto.CompactTextString(m) }
 func (*ApplyGitattributesRequest) ProtoMessage()               {}
-func (*ApplyGitattributesRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{10} }
+func (*ApplyGitattributesRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{12} }
 
 func (m *ApplyGitattributesRequest) GetRepository() *Repository {
 	if m != nil {
@@ -229,7 +291,7 @@ type ApplyGitattributesResponse struct {
 func (m *ApplyGitattributesResponse) Reset()                    { *m = ApplyGitattributesResponse{} }
 func (m *ApplyGitattributesResponse) String() string            { return proto.CompactTextString(m) }
 func (*ApplyGitattributesResponse) ProtoMessage()               {}
-func (*ApplyGitattributesResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{11} }
+func (*ApplyGitattributesResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{13} }
 
 type FetchRemoteRequest struct {
 	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
@@ -245,7 +307,7 @@ type FetchRemoteRequest struct {
 func (m *FetchRemoteRequest) Reset()                    { *m = FetchRemoteRequest{} }
 func (m *FetchRemoteRequest) String() string            { return proto.CompactTextString(m) }
 func (*FetchRemoteRequest) ProtoMessage()               {}
-func (*FetchRemoteRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{12} }
+func (*FetchRemoteRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{14} }
 
 func (m *FetchRemoteRequest) GetRepository() *Repository {
 	if m != nil {
@@ -309,7 +371,7 @@ type FetchRemoteResponse struct {
 func (m *FetchRemoteResponse) Reset()                    { *m = FetchRemoteResponse{} }
 func (m *FetchRemoteResponse) String() string            { return proto.CompactTextString(m) }
 func (*FetchRemoteResponse) ProtoMessage()               {}
-func (*FetchRemoteResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{13} }
+func (*FetchRemoteResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{15} }
 
 type CreateRepositoryRequest struct {
 	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
@@ -318,7 +380,7 @@ type CreateRepositoryRequest struct {
 func (m *CreateRepositoryRequest) Reset()                    { *m = CreateRepositoryRequest{} }
 func (m *CreateRepositoryRequest) String() string            { return proto.CompactTextString(m) }
 func (*CreateRepositoryRequest) ProtoMessage()               {}
-func (*CreateRepositoryRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{14} }
+func (*CreateRepositoryRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{16} }
 
 func (m *CreateRepositoryRequest) GetRepository() *Repository {
 	if m != nil {
@@ -333,7 +395,7 @@ type CreateRepositoryResponse struct {
 func (m *CreateRepositoryResponse) Reset()                    { *m = CreateRepositoryResponse{} }
 func (m *CreateRepositoryResponse) String() string            { return proto.CompactTextString(m) }
 func (*CreateRepositoryResponse) ProtoMessage()               {}
-func (*CreateRepositoryResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{15} }
+func (*CreateRepositoryResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{17} }
 
 type GetArchiveRequest struct {
 	Repository *Repository              `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
@@ -345,7 +407,7 @@ type GetArchiveRequest struct {
 func (m *GetArchiveRequest) Reset()                    { *m = GetArchiveRequest{} }
 func (m *GetArchiveRequest) String() string            { return proto.CompactTextString(m) }
 func (*GetArchiveRequest) ProtoMessage()               {}
-func (*GetArchiveRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{16} }
+func (*GetArchiveRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{18} }
 
 func (m *GetArchiveRequest) GetRepository() *Repository {
 	if m != nil {
@@ -382,7 +444,7 @@ type GetArchiveResponse struct {
 func (m *GetArchiveResponse) Reset()                    { *m = GetArchiveResponse{} }
 func (m *GetArchiveResponse) String() string            { return proto.CompactTextString(m) }
 func (*GetArchiveResponse) ProtoMessage()               {}
-func (*GetArchiveResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{17} }
+func (*GetArchiveResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{19} }
 
 func (m *GetArchiveResponse) GetData() []byte {
 	if m != nil {
@@ -398,7 +460,7 @@ type HasLocalBranchesRequest struct {
 func (m *HasLocalBranchesRequest) Reset()                    { *m = HasLocalBranchesRequest{} }
 func (m *HasLocalBranchesRequest) String() string            { return proto.CompactTextString(m) }
 func (*HasLocalBranchesRequest) ProtoMessage()               {}
-func (*HasLocalBranchesRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{18} }
+func (*HasLocalBranchesRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{20} }
 
 func (m *HasLocalBranchesRequest) GetRepository() *Repository {
 	if m != nil {
@@ -414,7 +476,7 @@ type HasLocalBranchesResponse struct {
 func (m *HasLocalBranchesResponse) Reset()                    { *m = HasLocalBranchesResponse{} }
 func (m *HasLocalBranchesResponse) String() string            { return proto.CompactTextString(m) }
 func (*HasLocalBranchesResponse) ProtoMessage()               {}
-func (*HasLocalBranchesResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{19} }
+func (*HasLocalBranchesResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{21} }
 
 func (m *HasLocalBranchesResponse) GetValue() bool {
 	if m != nil {
@@ -433,7 +495,7 @@ type FetchSourceBranchRequest struct {
 func (m *FetchSourceBranchRequest) Reset()                    { *m = FetchSourceBranchRequest{} }
 func (m *FetchSourceBranchRequest) String() string            { return proto.CompactTextString(m) }
 func (*FetchSourceBranchRequest) ProtoMessage()               {}
-func (*FetchSourceBranchRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{20} }
+func (*FetchSourceBranchRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{22} }
 
 func (m *FetchSourceBranchRequest) GetRepository() *Repository {
 	if m != nil {
@@ -470,7 +532,7 @@ type FetchSourceBranchResponse struct {
 func (m *FetchSourceBranchResponse) Reset()                    { *m = FetchSourceBranchResponse{} }
 func (m *FetchSourceBranchResponse) String() string            { return proto.CompactTextString(m) }
 func (*FetchSourceBranchResponse) ProtoMessage()               {}
-func (*FetchSourceBranchResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{21} }
+func (*FetchSourceBranchResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{23} }
 
 func (m *FetchSourceBranchResponse) GetResult() bool {
 	if m != nil {
@@ -486,7 +548,7 @@ type FsckRequest struct {
 func (m *FsckRequest) Reset()                    { *m = FsckRequest{} }
 func (m *FsckRequest) String() string            { return proto.CompactTextString(m) }
 func (*FsckRequest) ProtoMessage()               {}
-func (*FsckRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{22} }
+func (*FsckRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{24} }
 
 func (m *FsckRequest) GetRepository() *Repository {
 	if m != nil {
@@ -502,7 +564,7 @@ type FsckResponse struct {
 func (m *FsckResponse) Reset()                    { *m = FsckResponse{} }
 func (m *FsckResponse) String() string            { return proto.CompactTextString(m) }
 func (*FsckResponse) ProtoMessage()               {}
-func (*FsckResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{23} }
+func (*FsckResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{25} }
 
 func (m *FsckResponse) GetError() []byte {
 	if m != nil {
@@ -523,7 +585,7 @@ type WriteRefRequest struct {
 func (m *WriteRefRequest) Reset()                    { *m = WriteRefRequest{} }
 func (m *WriteRefRequest) String() string            { return proto.CompactTextString(m) }
 func (*WriteRefRequest) ProtoMessage()               {}
-func (*WriteRefRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{24} }
+func (*WriteRefRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{26} }
 
 func (m *WriteRefRequest) GetRepository() *Repository {
 	if m != nil {
@@ -574,7 +636,7 @@ type WriteRefResponse struct {
 func (m *WriteRefResponse) Reset()                    { *m = WriteRefResponse{} }
 func (m *WriteRefResponse) String() string            { return proto.CompactTextString(m) }
 func (*WriteRefResponse) ProtoMessage()               {}
-func (*WriteRefResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{25} }
+func (*WriteRefResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{27} }
 
 func (m *WriteRefResponse) GetError() []byte {
 	if m != nil {
@@ -594,7 +656,7 @@ type FindMergeBaseRequest struct {
 func (m *FindMergeBaseRequest) Reset()                    { *m = FindMergeBaseRequest{} }
 func (m *FindMergeBaseRequest) String() string            { return proto.CompactTextString(m) }
 func (*FindMergeBaseRequest) ProtoMessage()               {}
-func (*FindMergeBaseRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{26} }
+func (*FindMergeBaseRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{28} }
 
 func (m *FindMergeBaseRequest) GetRepository() *Repository {
 	if m != nil {
@@ -617,7 +679,7 @@ type FindMergeBaseResponse struct {
 func (m *FindMergeBaseResponse) Reset()                    { *m = FindMergeBaseResponse{} }
 func (m *FindMergeBaseResponse) String() string            { return proto.CompactTextString(m) }
 func (*FindMergeBaseResponse) ProtoMessage()               {}
-func (*FindMergeBaseResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{27} }
+func (*FindMergeBaseResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{29} }
 
 func (m *FindMergeBaseResponse) GetBase() string {
 	if m != nil {
@@ -634,7 +696,7 @@ type CreateForkRequest struct {
 func (m *CreateForkRequest) Reset()                    { *m = CreateForkRequest{} }
 func (m *CreateForkRequest) String() string            { return proto.CompactTextString(m) }
 func (*CreateForkRequest) ProtoMessage()               {}
-func (*CreateForkRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{28} }
+func (*CreateForkRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{30} }
 
 func (m *CreateForkRequest) GetRepository() *Repository {
 	if m != nil {
@@ -656,7 +718,7 @@ type CreateForkResponse struct {
 func (m *CreateForkResponse) Reset()                    { *m = CreateForkResponse{} }
 func (m *CreateForkResponse) String() string            { return proto.CompactTextString(m) }
 func (*CreateForkResponse) ProtoMessage()               {}
-func (*CreateForkResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{29} }
+func (*CreateForkResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{31} }
 
 type IsRebaseInProgressRequest struct {
 	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
@@ -666,7 +728,7 @@ type IsRebaseInProgressRequest struct {
 func (m *IsRebaseInProgressRequest) Reset()                    { *m = IsRebaseInProgressRequest{} }
 func (m *IsRebaseInProgressRequest) String() string            { return proto.CompactTextString(m) }
 func (*IsRebaseInProgressRequest) ProtoMessage()               {}
-func (*IsRebaseInProgressRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{30} }
+func (*IsRebaseInProgressRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{32} }
 
 func (m *IsRebaseInProgressRequest) GetRepository() *Repository {
 	if m != nil {
@@ -689,7 +751,7 @@ type IsRebaseInProgressResponse struct {
 func (m *IsRebaseInProgressResponse) Reset()                    { *m = IsRebaseInProgressResponse{} }
 func (m *IsRebaseInProgressResponse) String() string            { return proto.CompactTextString(m) }
 func (*IsRebaseInProgressResponse) ProtoMessage()               {}
-func (*IsRebaseInProgressResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{31} }
+func (*IsRebaseInProgressResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{33} }
 
 func (m *IsRebaseInProgressResponse) GetInProgress() bool {
 	if m != nil {
@@ -706,7 +768,7 @@ type IsSquashInProgressRequest struct {
 func (m *IsSquashInProgressRequest) Reset()                    { *m = IsSquashInProgressRequest{} }
 func (m *IsSquashInProgressRequest) String() string            { return proto.CompactTextString(m) }
 func (*IsSquashInProgressRequest) ProtoMessage()               {}
-func (*IsSquashInProgressRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{32} }
+func (*IsSquashInProgressRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{34} }
 
 func (m *IsSquashInProgressRequest) GetRepository() *Repository {
 	if m != nil {
@@ -729,7 +791,7 @@ type IsSquashInProgressResponse struct {
 func (m *IsSquashInProgressResponse) Reset()                    { *m = IsSquashInProgressResponse{} }
 func (m *IsSquashInProgressResponse) String() string            { return proto.CompactTextString(m) }
 func (*IsSquashInProgressResponse) ProtoMessage()               {}
-func (*IsSquashInProgressResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{33} }
+func (*IsSquashInProgressResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{35} }
 
 func (m *IsSquashInProgressResponse) GetInProgress() bool {
 	if m != nil {
@@ -747,7 +809,7 @@ func (m *CreateRepositoryFromURLRequest) Reset()         { *m = CreateRepository
 func (m *CreateRepositoryFromURLRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateRepositoryFromURLRequest) ProtoMessage()    {}
 func (*CreateRepositoryFromURLRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor10, []int{34}
+	return fileDescriptor10, []int{36}
 }
 
 func (m *CreateRepositoryFromURLRequest) GetRepository() *Repository {
@@ -771,7 +833,7 @@ func (m *CreateRepositoryFromURLResponse) Reset()         { *m = CreateRepositor
 func (m *CreateRepositoryFromURLResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateRepositoryFromURLResponse) ProtoMessage()    {}
 func (*CreateRepositoryFromURLResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor10, []int{35}
+	return fileDescriptor10, []int{37}
 }
 
 type CreateBundleRequest struct {
@@ -781,7 +843,7 @@ type CreateBundleRequest struct {
 func (m *CreateBundleRequest) Reset()                    { *m = CreateBundleRequest{} }
 func (m *CreateBundleRequest) String() string            { return proto.CompactTextString(m) }
 func (*CreateBundleRequest) ProtoMessage()               {}
-func (*CreateBundleRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{36} }
+func (*CreateBundleRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{38} }
 
 func (m *CreateBundleRequest) GetRepository() *Repository {
 	if m != nil {
@@ -797,7 +859,7 @@ type CreateBundleResponse struct {
 func (m *CreateBundleResponse) Reset()                    { *m = CreateBundleResponse{} }
 func (m *CreateBundleResponse) String() string            { return proto.CompactTextString(m) }
 func (*CreateBundleResponse) ProtoMessage()               {}
-func (*CreateBundleResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{37} }
+func (*CreateBundleResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{39} }
 
 func (m *CreateBundleResponse) GetData() []byte {
 	if m != nil {
@@ -814,7 +876,7 @@ type WriteConfigRequest struct {
 func (m *WriteConfigRequest) Reset()                    { *m = WriteConfigRequest{} }
 func (m *WriteConfigRequest) String() string            { return proto.CompactTextString(m) }
 func (*WriteConfigRequest) ProtoMessage()               {}
-func (*WriteConfigRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{38} }
+func (*WriteConfigRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{40} }
 
 func (m *WriteConfigRequest) GetRepository() *Repository {
 	if m != nil {
@@ -837,11 +899,287 @@ type WriteConfigResponse struct {
 func (m *WriteConfigResponse) Reset()                    { *m = WriteConfigResponse{} }
 func (m *WriteConfigResponse) String() string            { return proto.CompactTextString(m) }
 func (*WriteConfigResponse) ProtoMessage()               {}
-func (*WriteConfigResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{39} }
+func (*WriteConfigResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{41} }
 
 func (m *WriteConfigResponse) GetError() []byte {
 	if m != nil {
 		return m.Error
+	}
+	return nil
+}
+
+type SetConfigRequest struct {
+	Repository *Repository               `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	Entries    []*SetConfigRequest_Entry `protobuf:"bytes,2,rep,name=entries" json:"entries,omitempty"`
+}
+
+func (m *SetConfigRequest) Reset()                    { *m = SetConfigRequest{} }
+func (m *SetConfigRequest) String() string            { return proto.CompactTextString(m) }
+func (*SetConfigRequest) ProtoMessage()               {}
+func (*SetConfigRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{42} }
+
+func (m *SetConfigRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *SetConfigRequest) GetEntries() []*SetConfigRequest_Entry {
+	if m != nil {
+		return m.Entries
+	}
+	return nil
+}
+
+type SetConfigRequest_Entry struct {
+	Key string `protobuf:"bytes,1,opt,name=key" json:"key,omitempty"`
+	// Types that are valid to be assigned to Value:
+	//	*SetConfigRequest_Entry_ValueStr
+	//	*SetConfigRequest_Entry_ValueInt32
+	//	*SetConfigRequest_Entry_ValueBool
+	Value isSetConfigRequest_Entry_Value `protobuf_oneof:"value"`
+}
+
+func (m *SetConfigRequest_Entry) Reset()                    { *m = SetConfigRequest_Entry{} }
+func (m *SetConfigRequest_Entry) String() string            { return proto.CompactTextString(m) }
+func (*SetConfigRequest_Entry) ProtoMessage()               {}
+func (*SetConfigRequest_Entry) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{42, 0} }
+
+type isSetConfigRequest_Entry_Value interface{ isSetConfigRequest_Entry_Value() }
+
+type SetConfigRequest_Entry_ValueStr struct {
+	ValueStr string `protobuf:"bytes,2,opt,name=value_str,json=valueStr,oneof"`
+}
+type SetConfigRequest_Entry_ValueInt32 struct {
+	ValueInt32 int32 `protobuf:"varint,3,opt,name=value_int32,json=valueInt32,oneof"`
+}
+type SetConfigRequest_Entry_ValueBool struct {
+	ValueBool bool `protobuf:"varint,4,opt,name=value_bool,json=valueBool,oneof"`
+}
+
+func (*SetConfigRequest_Entry_ValueStr) isSetConfigRequest_Entry_Value()   {}
+func (*SetConfigRequest_Entry_ValueInt32) isSetConfigRequest_Entry_Value() {}
+func (*SetConfigRequest_Entry_ValueBool) isSetConfigRequest_Entry_Value()  {}
+
+func (m *SetConfigRequest_Entry) GetValue() isSetConfigRequest_Entry_Value {
+	if m != nil {
+		return m.Value
+	}
+	return nil
+}
+
+func (m *SetConfigRequest_Entry) GetKey() string {
+	if m != nil {
+		return m.Key
+	}
+	return ""
+}
+
+func (m *SetConfigRequest_Entry) GetValueStr() string {
+	if x, ok := m.GetValue().(*SetConfigRequest_Entry_ValueStr); ok {
+		return x.ValueStr
+	}
+	return ""
+}
+
+func (m *SetConfigRequest_Entry) GetValueInt32() int32 {
+	if x, ok := m.GetValue().(*SetConfigRequest_Entry_ValueInt32); ok {
+		return x.ValueInt32
+	}
+	return 0
+}
+
+func (m *SetConfigRequest_Entry) GetValueBool() bool {
+	if x, ok := m.GetValue().(*SetConfigRequest_Entry_ValueBool); ok {
+		return x.ValueBool
+	}
+	return false
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*SetConfigRequest_Entry) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _SetConfigRequest_Entry_OneofMarshaler, _SetConfigRequest_Entry_OneofUnmarshaler, _SetConfigRequest_Entry_OneofSizer, []interface{}{
+		(*SetConfigRequest_Entry_ValueStr)(nil),
+		(*SetConfigRequest_Entry_ValueInt32)(nil),
+		(*SetConfigRequest_Entry_ValueBool)(nil),
+	}
+}
+
+func _SetConfigRequest_Entry_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*SetConfigRequest_Entry)
+	// value
+	switch x := m.Value.(type) {
+	case *SetConfigRequest_Entry_ValueStr:
+		b.EncodeVarint(2<<3 | proto.WireBytes)
+		b.EncodeStringBytes(x.ValueStr)
+	case *SetConfigRequest_Entry_ValueInt32:
+		b.EncodeVarint(3<<3 | proto.WireVarint)
+		b.EncodeVarint(uint64(x.ValueInt32))
+	case *SetConfigRequest_Entry_ValueBool:
+		t := uint64(0)
+		if x.ValueBool {
+			t = 1
+		}
+		b.EncodeVarint(4<<3 | proto.WireVarint)
+		b.EncodeVarint(t)
+	case nil:
+	default:
+		return fmt.Errorf("SetConfigRequest_Entry.Value has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _SetConfigRequest_Entry_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*SetConfigRequest_Entry)
+	switch tag {
+	case 2: // value.value_str
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		x, err := b.DecodeStringBytes()
+		m.Value = &SetConfigRequest_Entry_ValueStr{x}
+		return true, err
+	case 3: // value.value_int32
+		if wire != proto.WireVarint {
+			return true, proto.ErrInternalBadWireType
+		}
+		x, err := b.DecodeVarint()
+		m.Value = &SetConfigRequest_Entry_ValueInt32{int32(x)}
+		return true, err
+	case 4: // value.value_bool
+		if wire != proto.WireVarint {
+			return true, proto.ErrInternalBadWireType
+		}
+		x, err := b.DecodeVarint()
+		m.Value = &SetConfigRequest_Entry_ValueBool{x != 0}
+		return true, err
+	default:
+		return false, nil
+	}
+}
+
+func _SetConfigRequest_Entry_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*SetConfigRequest_Entry)
+	// value
+	switch x := m.Value.(type) {
+	case *SetConfigRequest_Entry_ValueStr:
+		n += proto.SizeVarint(2<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(len(x.ValueStr)))
+		n += len(x.ValueStr)
+	case *SetConfigRequest_Entry_ValueInt32:
+		n += proto.SizeVarint(3<<3 | proto.WireVarint)
+		n += proto.SizeVarint(uint64(x.ValueInt32))
+	case *SetConfigRequest_Entry_ValueBool:
+		n += proto.SizeVarint(4<<3 | proto.WireVarint)
+		n += 1
+	case nil:
+	default:
+		panic(fmt.Sprintf("proto: unexpected type %T in oneof", x))
+	}
+	return n
+}
+
+type SetConfigResponse struct {
+}
+
+func (m *SetConfigResponse) Reset()                    { *m = SetConfigResponse{} }
+func (m *SetConfigResponse) String() string            { return proto.CompactTextString(m) }
+func (*SetConfigResponse) ProtoMessage()               {}
+func (*SetConfigResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{43} }
+
+type DeleteConfigRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	Keys       []string    `protobuf:"bytes,2,rep,name=keys" json:"keys,omitempty"`
+}
+
+func (m *DeleteConfigRequest) Reset()                    { *m = DeleteConfigRequest{} }
+func (m *DeleteConfigRequest) String() string            { return proto.CompactTextString(m) }
+func (*DeleteConfigRequest) ProtoMessage()               {}
+func (*DeleteConfigRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{44} }
+
+func (m *DeleteConfigRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *DeleteConfigRequest) GetKeys() []string {
+	if m != nil {
+		return m.Keys
+	}
+	return nil
+}
+
+type DeleteConfigResponse struct {
+}
+
+func (m *DeleteConfigResponse) Reset()                    { *m = DeleteConfigResponse{} }
+func (m *DeleteConfigResponse) String() string            { return proto.CompactTextString(m) }
+func (*DeleteConfigResponse) ProtoMessage()               {}
+func (*DeleteConfigResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{45} }
+
+type RestoreCustomHooksRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	Data       []byte      `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+}
+
+func (m *RestoreCustomHooksRequest) Reset()                    { *m = RestoreCustomHooksRequest{} }
+func (m *RestoreCustomHooksRequest) String() string            { return proto.CompactTextString(m) }
+func (*RestoreCustomHooksRequest) ProtoMessage()               {}
+func (*RestoreCustomHooksRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{46} }
+
+func (m *RestoreCustomHooksRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *RestoreCustomHooksRequest) GetData() []byte {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
+type RestoreCustomHooksResponse struct {
+}
+
+func (m *RestoreCustomHooksResponse) Reset()                    { *m = RestoreCustomHooksResponse{} }
+func (m *RestoreCustomHooksResponse) String() string            { return proto.CompactTextString(m) }
+func (*RestoreCustomHooksResponse) ProtoMessage()               {}
+func (*RestoreCustomHooksResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{47} }
+
+type BackupCustomHooksRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+}
+
+func (m *BackupCustomHooksRequest) Reset()                    { *m = BackupCustomHooksRequest{} }
+func (m *BackupCustomHooksRequest) String() string            { return proto.CompactTextString(m) }
+func (*BackupCustomHooksRequest) ProtoMessage()               {}
+func (*BackupCustomHooksRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{48} }
+
+func (m *BackupCustomHooksRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+type BackupCustomHooksResponse struct {
+	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+}
+
+func (m *BackupCustomHooksResponse) Reset()                    { *m = BackupCustomHooksResponse{} }
+func (m *BackupCustomHooksResponse) String() string            { return proto.CompactTextString(m) }
+func (*BackupCustomHooksResponse) ProtoMessage()               {}
+func (*BackupCustomHooksResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{49} }
+
+func (m *BackupCustomHooksResponse) GetData() []byte {
+	if m != nil {
+		return m.Data
 	}
 	return nil
 }
@@ -856,7 +1194,7 @@ func (m *CreateRepositoryFromBundleRequest) Reset()         { *m = CreateReposit
 func (m *CreateRepositoryFromBundleRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateRepositoryFromBundleRequest) ProtoMessage()    {}
 func (*CreateRepositoryFromBundleRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor10, []int{40}
+	return fileDescriptor10, []int{50}
 }
 
 func (m *CreateRepositoryFromBundleRequest) GetRepository() *Repository {
@@ -880,7 +1218,7 @@ func (m *CreateRepositoryFromBundleResponse) Reset()         { *m = CreateReposi
 func (m *CreateRepositoryFromBundleResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateRepositoryFromBundleResponse) ProtoMessage()    {}
 func (*CreateRepositoryFromBundleResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor10, []int{41}
+	return fileDescriptor10, []int{51}
 }
 
 type FindLicenseRequest struct {
@@ -890,7 +1228,7 @@ type FindLicenseRequest struct {
 func (m *FindLicenseRequest) Reset()                    { *m = FindLicenseRequest{} }
 func (m *FindLicenseRequest) String() string            { return proto.CompactTextString(m) }
 func (*FindLicenseRequest) ProtoMessage()               {}
-func (*FindLicenseRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{42} }
+func (*FindLicenseRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{52} }
 
 func (m *FindLicenseRequest) GetRepository() *Repository {
 	if m != nil {
@@ -906,13 +1244,355 @@ type FindLicenseResponse struct {
 func (m *FindLicenseResponse) Reset()                    { *m = FindLicenseResponse{} }
 func (m *FindLicenseResponse) String() string            { return proto.CompactTextString(m) }
 func (*FindLicenseResponse) ProtoMessage()               {}
-func (*FindLicenseResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{43} }
+func (*FindLicenseResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{53} }
 
 func (m *FindLicenseResponse) GetLicenseShortName() string {
 	if m != nil {
 		return m.LicenseShortName
 	}
 	return ""
+}
+
+type GetInfoAttributesRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+}
+
+func (m *GetInfoAttributesRequest) Reset()                    { *m = GetInfoAttributesRequest{} }
+func (m *GetInfoAttributesRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetInfoAttributesRequest) ProtoMessage()               {}
+func (*GetInfoAttributesRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{54} }
+
+func (m *GetInfoAttributesRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+type GetInfoAttributesResponse struct {
+	Attributes []byte `protobuf:"bytes,1,opt,name=attributes,proto3" json:"attributes,omitempty"`
+}
+
+func (m *GetInfoAttributesResponse) Reset()                    { *m = GetInfoAttributesResponse{} }
+func (m *GetInfoAttributesResponse) String() string            { return proto.CompactTextString(m) }
+func (*GetInfoAttributesResponse) ProtoMessage()               {}
+func (*GetInfoAttributesResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{55} }
+
+func (m *GetInfoAttributesResponse) GetAttributes() []byte {
+	if m != nil {
+		return m.Attributes
+	}
+	return nil
+}
+
+type CalculateChecksumRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+}
+
+func (m *CalculateChecksumRequest) Reset()                    { *m = CalculateChecksumRequest{} }
+func (m *CalculateChecksumRequest) String() string            { return proto.CompactTextString(m) }
+func (*CalculateChecksumRequest) ProtoMessage()               {}
+func (*CalculateChecksumRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{56} }
+
+func (m *CalculateChecksumRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+type CalculateChecksumResponse struct {
+	Checksum string `protobuf:"bytes,1,opt,name=checksum" json:"checksum,omitempty"`
+}
+
+func (m *CalculateChecksumResponse) Reset()                    { *m = CalculateChecksumResponse{} }
+func (m *CalculateChecksumResponse) String() string            { return proto.CompactTextString(m) }
+func (*CalculateChecksumResponse) ProtoMessage()               {}
+func (*CalculateChecksumResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{57} }
+
+func (m *CalculateChecksumResponse) GetChecksum() string {
+	if m != nil {
+		return m.Checksum
+	}
+	return ""
+}
+
+type GetSnapshotRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+}
+
+func (m *GetSnapshotRequest) Reset()                    { *m = GetSnapshotRequest{} }
+func (m *GetSnapshotRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetSnapshotRequest) ProtoMessage()               {}
+func (*GetSnapshotRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{58} }
+
+func (m *GetSnapshotRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+type GetSnapshotResponse struct {
+	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
+}
+
+func (m *GetSnapshotResponse) Reset()                    { *m = GetSnapshotResponse{} }
+func (m *GetSnapshotResponse) String() string            { return proto.CompactTextString(m) }
+func (*GetSnapshotResponse) ProtoMessage()               {}
+func (*GetSnapshotResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{59} }
+
+func (m *GetSnapshotResponse) GetData() []byte {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
+type CreateRepositoryFromSnapshotRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	HttpUrl    string      `protobuf:"bytes,2,opt,name=http_url,json=httpUrl" json:"http_url,omitempty"`
+	HttpAuth   string      `protobuf:"bytes,3,opt,name=http_auth,json=httpAuth" json:"http_auth,omitempty"`
+}
+
+func (m *CreateRepositoryFromSnapshotRequest) Reset()         { *m = CreateRepositoryFromSnapshotRequest{} }
+func (m *CreateRepositoryFromSnapshotRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateRepositoryFromSnapshotRequest) ProtoMessage()    {}
+func (*CreateRepositoryFromSnapshotRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor10, []int{60}
+}
+
+func (m *CreateRepositoryFromSnapshotRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *CreateRepositoryFromSnapshotRequest) GetHttpUrl() string {
+	if m != nil {
+		return m.HttpUrl
+	}
+	return ""
+}
+
+func (m *CreateRepositoryFromSnapshotRequest) GetHttpAuth() string {
+	if m != nil {
+		return m.HttpAuth
+	}
+	return ""
+}
+
+type CreateRepositoryFromSnapshotResponse struct {
+}
+
+func (m *CreateRepositoryFromSnapshotResponse) Reset()         { *m = CreateRepositoryFromSnapshotResponse{} }
+func (m *CreateRepositoryFromSnapshotResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateRepositoryFromSnapshotResponse) ProtoMessage()    {}
+func (*CreateRepositoryFromSnapshotResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor10, []int{61}
+}
+
+type GetRawChangesRequest struct {
+	Repository   *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	FromRevision string      `protobuf:"bytes,2,opt,name=from_revision,json=fromRevision" json:"from_revision,omitempty"`
+	ToRevision   string      `protobuf:"bytes,3,opt,name=to_revision,json=toRevision" json:"to_revision,omitempty"`
+}
+
+func (m *GetRawChangesRequest) Reset()                    { *m = GetRawChangesRequest{} }
+func (m *GetRawChangesRequest) String() string            { return proto.CompactTextString(m) }
+func (*GetRawChangesRequest) ProtoMessage()               {}
+func (*GetRawChangesRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{62} }
+
+func (m *GetRawChangesRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *GetRawChangesRequest) GetFromRevision() string {
+	if m != nil {
+		return m.FromRevision
+	}
+	return ""
+}
+
+func (m *GetRawChangesRequest) GetToRevision() string {
+	if m != nil {
+		return m.ToRevision
+	}
+	return ""
+}
+
+type GetRawChangesResponse struct {
+	RawChanges []*GetRawChangesResponse_RawChange `protobuf:"bytes,1,rep,name=raw_changes,json=rawChanges" json:"raw_changes,omitempty"`
+}
+
+func (m *GetRawChangesResponse) Reset()                    { *m = GetRawChangesResponse{} }
+func (m *GetRawChangesResponse) String() string            { return proto.CompactTextString(m) }
+func (*GetRawChangesResponse) ProtoMessage()               {}
+func (*GetRawChangesResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{63} }
+
+func (m *GetRawChangesResponse) GetRawChanges() []*GetRawChangesResponse_RawChange {
+	if m != nil {
+		return m.RawChanges
+	}
+	return nil
+}
+
+type GetRawChangesResponse_RawChange struct {
+	BlobId       string                                    `protobuf:"bytes,1,opt,name=blob_id,json=blobId" json:"blob_id,omitempty"`
+	Size         int64                                     `protobuf:"varint,2,opt,name=size" json:"size,omitempty"`
+	NewPath      string                                    `protobuf:"bytes,3,opt,name=new_path,json=newPath" json:"new_path,omitempty"`
+	OldPath      string                                    `protobuf:"bytes,4,opt,name=old_path,json=oldPath" json:"old_path,omitempty"`
+	Operation    GetRawChangesResponse_RawChange_Operation `protobuf:"varint,5,opt,name=operation,enum=gitaly.GetRawChangesResponse_RawChange_Operation" json:"operation,omitempty"`
+	RawOperation string                                    `protobuf:"bytes,6,opt,name=raw_operation,json=rawOperation" json:"raw_operation,omitempty"`
+}
+
+func (m *GetRawChangesResponse_RawChange) Reset()         { *m = GetRawChangesResponse_RawChange{} }
+func (m *GetRawChangesResponse_RawChange) String() string { return proto.CompactTextString(m) }
+func (*GetRawChangesResponse_RawChange) ProtoMessage()    {}
+func (*GetRawChangesResponse_RawChange) Descriptor() ([]byte, []int) {
+	return fileDescriptor10, []int{63, 0}
+}
+
+func (m *GetRawChangesResponse_RawChange) GetBlobId() string {
+	if m != nil {
+		return m.BlobId
+	}
+	return ""
+}
+
+func (m *GetRawChangesResponse_RawChange) GetSize() int64 {
+	if m != nil {
+		return m.Size
+	}
+	return 0
+}
+
+func (m *GetRawChangesResponse_RawChange) GetNewPath() string {
+	if m != nil {
+		return m.NewPath
+	}
+	return ""
+}
+
+func (m *GetRawChangesResponse_RawChange) GetOldPath() string {
+	if m != nil {
+		return m.OldPath
+	}
+	return ""
+}
+
+func (m *GetRawChangesResponse_RawChange) GetOperation() GetRawChangesResponse_RawChange_Operation {
+	if m != nil {
+		return m.Operation
+	}
+	return GetRawChangesResponse_RawChange_UNKNOWN
+}
+
+func (m *GetRawChangesResponse_RawChange) GetRawOperation() string {
+	if m != nil {
+		return m.RawOperation
+	}
+	return ""
+}
+
+type SearchFilesByNameRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	Query      string      `protobuf:"bytes,2,opt,name=query" json:"query,omitempty"`
+	Ref        []byte      `protobuf:"bytes,3,opt,name=ref,proto3" json:"ref,omitempty"`
+}
+
+func (m *SearchFilesByNameRequest) Reset()                    { *m = SearchFilesByNameRequest{} }
+func (m *SearchFilesByNameRequest) String() string            { return proto.CompactTextString(m) }
+func (*SearchFilesByNameRequest) ProtoMessage()               {}
+func (*SearchFilesByNameRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{64} }
+
+func (m *SearchFilesByNameRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *SearchFilesByNameRequest) GetQuery() string {
+	if m != nil {
+		return m.Query
+	}
+	return ""
+}
+
+func (m *SearchFilesByNameRequest) GetRef() []byte {
+	if m != nil {
+		return m.Ref
+	}
+	return nil
+}
+
+type SearchFilesByNameResponse struct {
+	Files [][]byte `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
+}
+
+func (m *SearchFilesByNameResponse) Reset()                    { *m = SearchFilesByNameResponse{} }
+func (m *SearchFilesByNameResponse) String() string            { return proto.CompactTextString(m) }
+func (*SearchFilesByNameResponse) ProtoMessage()               {}
+func (*SearchFilesByNameResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{65} }
+
+func (m *SearchFilesByNameResponse) GetFiles() [][]byte {
+	if m != nil {
+		return m.Files
+	}
+	return nil
+}
+
+type SearchFilesByContentRequest struct {
+	Repository *Repository `protobuf:"bytes,1,opt,name=repository" json:"repository,omitempty"`
+	Query      string      `protobuf:"bytes,2,opt,name=query" json:"query,omitempty"`
+	Ref        []byte      `protobuf:"bytes,3,opt,name=ref,proto3" json:"ref,omitempty"`
+}
+
+func (m *SearchFilesByContentRequest) Reset()                    { *m = SearchFilesByContentRequest{} }
+func (m *SearchFilesByContentRequest) String() string            { return proto.CompactTextString(m) }
+func (*SearchFilesByContentRequest) ProtoMessage()               {}
+func (*SearchFilesByContentRequest) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{66} }
+
+func (m *SearchFilesByContentRequest) GetRepository() *Repository {
+	if m != nil {
+		return m.Repository
+	}
+	return nil
+}
+
+func (m *SearchFilesByContentRequest) GetQuery() string {
+	if m != nil {
+		return m.Query
+	}
+	return ""
+}
+
+func (m *SearchFilesByContentRequest) GetRef() []byte {
+	if m != nil {
+		return m.Ref
+	}
+	return nil
+}
+
+type SearchFilesByContentResponse struct {
+	Matches [][]byte `protobuf:"bytes,1,rep,name=matches,proto3" json:"matches,omitempty"`
+}
+
+func (m *SearchFilesByContentResponse) Reset()                    { *m = SearchFilesByContentResponse{} }
+func (m *SearchFilesByContentResponse) String() string            { return proto.CompactTextString(m) }
+func (*SearchFilesByContentResponse) ProtoMessage()               {}
+func (*SearchFilesByContentResponse) Descriptor() ([]byte, []int) { return fileDescriptor10, []int{67} }
+
+func (m *SearchFilesByContentResponse) GetMatches() [][]byte {
+	if m != nil {
+		return m.Matches
+	}
+	return nil
 }
 
 func init() {
@@ -924,6 +1604,8 @@ func init() {
 	proto.RegisterType((*RepackFullResponse)(nil), "gitaly.RepackFullResponse")
 	proto.RegisterType((*GarbageCollectRequest)(nil), "gitaly.GarbageCollectRequest")
 	proto.RegisterType((*GarbageCollectResponse)(nil), "gitaly.GarbageCollectResponse")
+	proto.RegisterType((*CleanupRequest)(nil), "gitaly.CleanupRequest")
+	proto.RegisterType((*CleanupResponse)(nil), "gitaly.CleanupResponse")
 	proto.RegisterType((*RepositorySizeRequest)(nil), "gitaly.RepositorySizeRequest")
 	proto.RegisterType((*RepositorySizeResponse)(nil), "gitaly.RepositorySizeResponse")
 	proto.RegisterType((*ApplyGitattributesRequest)(nil), "gitaly.ApplyGitattributesRequest")
@@ -956,11 +1638,36 @@ func init() {
 	proto.RegisterType((*CreateBundleResponse)(nil), "gitaly.CreateBundleResponse")
 	proto.RegisterType((*WriteConfigRequest)(nil), "gitaly.WriteConfigRequest")
 	proto.RegisterType((*WriteConfigResponse)(nil), "gitaly.WriteConfigResponse")
+	proto.RegisterType((*SetConfigRequest)(nil), "gitaly.SetConfigRequest")
+	proto.RegisterType((*SetConfigRequest_Entry)(nil), "gitaly.SetConfigRequest.Entry")
+	proto.RegisterType((*SetConfigResponse)(nil), "gitaly.SetConfigResponse")
+	proto.RegisterType((*DeleteConfigRequest)(nil), "gitaly.DeleteConfigRequest")
+	proto.RegisterType((*DeleteConfigResponse)(nil), "gitaly.DeleteConfigResponse")
+	proto.RegisterType((*RestoreCustomHooksRequest)(nil), "gitaly.RestoreCustomHooksRequest")
+	proto.RegisterType((*RestoreCustomHooksResponse)(nil), "gitaly.RestoreCustomHooksResponse")
+	proto.RegisterType((*BackupCustomHooksRequest)(nil), "gitaly.BackupCustomHooksRequest")
+	proto.RegisterType((*BackupCustomHooksResponse)(nil), "gitaly.BackupCustomHooksResponse")
 	proto.RegisterType((*CreateRepositoryFromBundleRequest)(nil), "gitaly.CreateRepositoryFromBundleRequest")
 	proto.RegisterType((*CreateRepositoryFromBundleResponse)(nil), "gitaly.CreateRepositoryFromBundleResponse")
 	proto.RegisterType((*FindLicenseRequest)(nil), "gitaly.FindLicenseRequest")
 	proto.RegisterType((*FindLicenseResponse)(nil), "gitaly.FindLicenseResponse")
+	proto.RegisterType((*GetInfoAttributesRequest)(nil), "gitaly.GetInfoAttributesRequest")
+	proto.RegisterType((*GetInfoAttributesResponse)(nil), "gitaly.GetInfoAttributesResponse")
+	proto.RegisterType((*CalculateChecksumRequest)(nil), "gitaly.CalculateChecksumRequest")
+	proto.RegisterType((*CalculateChecksumResponse)(nil), "gitaly.CalculateChecksumResponse")
+	proto.RegisterType((*GetSnapshotRequest)(nil), "gitaly.GetSnapshotRequest")
+	proto.RegisterType((*GetSnapshotResponse)(nil), "gitaly.GetSnapshotResponse")
+	proto.RegisterType((*CreateRepositoryFromSnapshotRequest)(nil), "gitaly.CreateRepositoryFromSnapshotRequest")
+	proto.RegisterType((*CreateRepositoryFromSnapshotResponse)(nil), "gitaly.CreateRepositoryFromSnapshotResponse")
+	proto.RegisterType((*GetRawChangesRequest)(nil), "gitaly.GetRawChangesRequest")
+	proto.RegisterType((*GetRawChangesResponse)(nil), "gitaly.GetRawChangesResponse")
+	proto.RegisterType((*GetRawChangesResponse_RawChange)(nil), "gitaly.GetRawChangesResponse.RawChange")
+	proto.RegisterType((*SearchFilesByNameRequest)(nil), "gitaly.SearchFilesByNameRequest")
+	proto.RegisterType((*SearchFilesByNameResponse)(nil), "gitaly.SearchFilesByNameResponse")
+	proto.RegisterType((*SearchFilesByContentRequest)(nil), "gitaly.SearchFilesByContentRequest")
+	proto.RegisterType((*SearchFilesByContentResponse)(nil), "gitaly.SearchFilesByContentResponse")
 	proto.RegisterEnum("gitaly.GetArchiveRequest_Format", GetArchiveRequest_Format_name, GetArchiveRequest_Format_value)
+	proto.RegisterEnum("gitaly.GetRawChangesResponse_RawChange_Operation", GetRawChangesResponse_RawChange_Operation_name, GetRawChangesResponse_RawChange_Operation_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -995,7 +1702,19 @@ type RepositoryServiceClient interface {
 	CreateBundle(ctx context.Context, in *CreateBundleRequest, opts ...grpc.CallOption) (RepositoryService_CreateBundleClient, error)
 	CreateRepositoryFromBundle(ctx context.Context, opts ...grpc.CallOption) (RepositoryService_CreateRepositoryFromBundleClient, error)
 	WriteConfig(ctx context.Context, in *WriteConfigRequest, opts ...grpc.CallOption) (*WriteConfigResponse, error)
+	SetConfig(ctx context.Context, in *SetConfigRequest, opts ...grpc.CallOption) (*SetConfigResponse, error)
+	DeleteConfig(ctx context.Context, in *DeleteConfigRequest, opts ...grpc.CallOption) (*DeleteConfigResponse, error)
 	FindLicense(ctx context.Context, in *FindLicenseRequest, opts ...grpc.CallOption) (*FindLicenseResponse, error)
+	GetInfoAttributes(ctx context.Context, in *GetInfoAttributesRequest, opts ...grpc.CallOption) (RepositoryService_GetInfoAttributesClient, error)
+	CalculateChecksum(ctx context.Context, in *CalculateChecksumRequest, opts ...grpc.CallOption) (*CalculateChecksumResponse, error)
+	Cleanup(ctx context.Context, in *CleanupRequest, opts ...grpc.CallOption) (*CleanupResponse, error)
+	GetSnapshot(ctx context.Context, in *GetSnapshotRequest, opts ...grpc.CallOption) (RepositoryService_GetSnapshotClient, error)
+	CreateRepositoryFromSnapshot(ctx context.Context, in *CreateRepositoryFromSnapshotRequest, opts ...grpc.CallOption) (*CreateRepositoryFromSnapshotResponse, error)
+	GetRawChanges(ctx context.Context, in *GetRawChangesRequest, opts ...grpc.CallOption) (RepositoryService_GetRawChangesClient, error)
+	SearchFilesByContent(ctx context.Context, in *SearchFilesByContentRequest, opts ...grpc.CallOption) (RepositoryService_SearchFilesByContentClient, error)
+	SearchFilesByName(ctx context.Context, in *SearchFilesByNameRequest, opts ...grpc.CallOption) (RepositoryService_SearchFilesByNameClient, error)
+	RestoreCustomHooks(ctx context.Context, opts ...grpc.CallOption) (RepositoryService_RestoreCustomHooksClient, error)
+	BackupCustomHooks(ctx context.Context, in *BackupCustomHooksRequest, opts ...grpc.CallOption) (RepositoryService_BackupCustomHooksClient, error)
 }
 
 type repositoryServiceClient struct {
@@ -1266,6 +1985,24 @@ func (c *repositoryServiceClient) WriteConfig(ctx context.Context, in *WriteConf
 	return out, nil
 }
 
+func (c *repositoryServiceClient) SetConfig(ctx context.Context, in *SetConfigRequest, opts ...grpc.CallOption) (*SetConfigResponse, error) {
+	out := new(SetConfigResponse)
+	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/SetConfig", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryServiceClient) DeleteConfig(ctx context.Context, in *DeleteConfigRequest, opts ...grpc.CallOption) (*DeleteConfigResponse, error) {
+	out := new(DeleteConfigResponse)
+	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/DeleteConfig", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *repositoryServiceClient) FindLicense(ctx context.Context, in *FindLicenseRequest, opts ...grpc.CallOption) (*FindLicenseResponse, error) {
 	out := new(FindLicenseResponse)
 	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/FindLicense", in, out, c.cc, opts...)
@@ -1273,6 +2010,259 @@ func (c *repositoryServiceClient) FindLicense(ctx context.Context, in *FindLicen
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *repositoryServiceClient) GetInfoAttributes(ctx context.Context, in *GetInfoAttributesRequest, opts ...grpc.CallOption) (RepositoryService_GetInfoAttributesClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RepositoryService_serviceDesc.Streams[3], c.cc, "/gitaly.RepositoryService/GetInfoAttributes", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &repositoryServiceGetInfoAttributesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type RepositoryService_GetInfoAttributesClient interface {
+	Recv() (*GetInfoAttributesResponse, error)
+	grpc.ClientStream
+}
+
+type repositoryServiceGetInfoAttributesClient struct {
+	grpc.ClientStream
+}
+
+func (x *repositoryServiceGetInfoAttributesClient) Recv() (*GetInfoAttributesResponse, error) {
+	m := new(GetInfoAttributesResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *repositoryServiceClient) CalculateChecksum(ctx context.Context, in *CalculateChecksumRequest, opts ...grpc.CallOption) (*CalculateChecksumResponse, error) {
+	out := new(CalculateChecksumResponse)
+	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/CalculateChecksum", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryServiceClient) Cleanup(ctx context.Context, in *CleanupRequest, opts ...grpc.CallOption) (*CleanupResponse, error) {
+	out := new(CleanupResponse)
+	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/Cleanup", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryServiceClient) GetSnapshot(ctx context.Context, in *GetSnapshotRequest, opts ...grpc.CallOption) (RepositoryService_GetSnapshotClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RepositoryService_serviceDesc.Streams[4], c.cc, "/gitaly.RepositoryService/GetSnapshot", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &repositoryServiceGetSnapshotClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type RepositoryService_GetSnapshotClient interface {
+	Recv() (*GetSnapshotResponse, error)
+	grpc.ClientStream
+}
+
+type repositoryServiceGetSnapshotClient struct {
+	grpc.ClientStream
+}
+
+func (x *repositoryServiceGetSnapshotClient) Recv() (*GetSnapshotResponse, error) {
+	m := new(GetSnapshotResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *repositoryServiceClient) CreateRepositoryFromSnapshot(ctx context.Context, in *CreateRepositoryFromSnapshotRequest, opts ...grpc.CallOption) (*CreateRepositoryFromSnapshotResponse, error) {
+	out := new(CreateRepositoryFromSnapshotResponse)
+	err := grpc.Invoke(ctx, "/gitaly.RepositoryService/CreateRepositoryFromSnapshot", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *repositoryServiceClient) GetRawChanges(ctx context.Context, in *GetRawChangesRequest, opts ...grpc.CallOption) (RepositoryService_GetRawChangesClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RepositoryService_serviceDesc.Streams[5], c.cc, "/gitaly.RepositoryService/GetRawChanges", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &repositoryServiceGetRawChangesClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type RepositoryService_GetRawChangesClient interface {
+	Recv() (*GetRawChangesResponse, error)
+	grpc.ClientStream
+}
+
+type repositoryServiceGetRawChangesClient struct {
+	grpc.ClientStream
+}
+
+func (x *repositoryServiceGetRawChangesClient) Recv() (*GetRawChangesResponse, error) {
+	m := new(GetRawChangesResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *repositoryServiceClient) SearchFilesByContent(ctx context.Context, in *SearchFilesByContentRequest, opts ...grpc.CallOption) (RepositoryService_SearchFilesByContentClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RepositoryService_serviceDesc.Streams[6], c.cc, "/gitaly.RepositoryService/SearchFilesByContent", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &repositoryServiceSearchFilesByContentClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type RepositoryService_SearchFilesByContentClient interface {
+	Recv() (*SearchFilesByContentResponse, error)
+	grpc.ClientStream
+}
+
+type repositoryServiceSearchFilesByContentClient struct {
+	grpc.ClientStream
+}
+
+func (x *repositoryServiceSearchFilesByContentClient) Recv() (*SearchFilesByContentResponse, error) {
+	m := new(SearchFilesByContentResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *repositoryServiceClient) SearchFilesByName(ctx context.Context, in *SearchFilesByNameRequest, opts ...grpc.CallOption) (RepositoryService_SearchFilesByNameClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RepositoryService_serviceDesc.Streams[7], c.cc, "/gitaly.RepositoryService/SearchFilesByName", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &repositoryServiceSearchFilesByNameClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type RepositoryService_SearchFilesByNameClient interface {
+	Recv() (*SearchFilesByNameResponse, error)
+	grpc.ClientStream
+}
+
+type repositoryServiceSearchFilesByNameClient struct {
+	grpc.ClientStream
+}
+
+func (x *repositoryServiceSearchFilesByNameClient) Recv() (*SearchFilesByNameResponse, error) {
+	m := new(SearchFilesByNameResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *repositoryServiceClient) RestoreCustomHooks(ctx context.Context, opts ...grpc.CallOption) (RepositoryService_RestoreCustomHooksClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RepositoryService_serviceDesc.Streams[8], c.cc, "/gitaly.RepositoryService/RestoreCustomHooks", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &repositoryServiceRestoreCustomHooksClient{stream}
+	return x, nil
+}
+
+type RepositoryService_RestoreCustomHooksClient interface {
+	Send(*RestoreCustomHooksRequest) error
+	CloseAndRecv() (*RestoreCustomHooksResponse, error)
+	grpc.ClientStream
+}
+
+type repositoryServiceRestoreCustomHooksClient struct {
+	grpc.ClientStream
+}
+
+func (x *repositoryServiceRestoreCustomHooksClient) Send(m *RestoreCustomHooksRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *repositoryServiceRestoreCustomHooksClient) CloseAndRecv() (*RestoreCustomHooksResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(RestoreCustomHooksResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *repositoryServiceClient) BackupCustomHooks(ctx context.Context, in *BackupCustomHooksRequest, opts ...grpc.CallOption) (RepositoryService_BackupCustomHooksClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_RepositoryService_serviceDesc.Streams[9], c.cc, "/gitaly.RepositoryService/BackupCustomHooks", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &repositoryServiceBackupCustomHooksClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type RepositoryService_BackupCustomHooksClient interface {
+	Recv() (*BackupCustomHooksResponse, error)
+	grpc.ClientStream
+}
+
+type repositoryServiceBackupCustomHooksClient struct {
+	grpc.ClientStream
+}
+
+func (x *repositoryServiceBackupCustomHooksClient) Recv() (*BackupCustomHooksResponse, error) {
+	m := new(BackupCustomHooksResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // Server API for RepositoryService service
@@ -1299,7 +2289,19 @@ type RepositoryServiceServer interface {
 	CreateBundle(*CreateBundleRequest, RepositoryService_CreateBundleServer) error
 	CreateRepositoryFromBundle(RepositoryService_CreateRepositoryFromBundleServer) error
 	WriteConfig(context.Context, *WriteConfigRequest) (*WriteConfigResponse, error)
+	SetConfig(context.Context, *SetConfigRequest) (*SetConfigResponse, error)
+	DeleteConfig(context.Context, *DeleteConfigRequest) (*DeleteConfigResponse, error)
 	FindLicense(context.Context, *FindLicenseRequest) (*FindLicenseResponse, error)
+	GetInfoAttributes(*GetInfoAttributesRequest, RepositoryService_GetInfoAttributesServer) error
+	CalculateChecksum(context.Context, *CalculateChecksumRequest) (*CalculateChecksumResponse, error)
+	Cleanup(context.Context, *CleanupRequest) (*CleanupResponse, error)
+	GetSnapshot(*GetSnapshotRequest, RepositoryService_GetSnapshotServer) error
+	CreateRepositoryFromSnapshot(context.Context, *CreateRepositoryFromSnapshotRequest) (*CreateRepositoryFromSnapshotResponse, error)
+	GetRawChanges(*GetRawChangesRequest, RepositoryService_GetRawChangesServer) error
+	SearchFilesByContent(*SearchFilesByContentRequest, RepositoryService_SearchFilesByContentServer) error
+	SearchFilesByName(*SearchFilesByNameRequest, RepositoryService_SearchFilesByNameServer) error
+	RestoreCustomHooks(RepositoryService_RestoreCustomHooksServer) error
+	BackupCustomHooks(*BackupCustomHooksRequest, RepositoryService_BackupCustomHooksServer) error
 }
 
 func RegisterRepositoryServiceServer(s *grpc.Server, srv RepositoryServiceServer) {
@@ -1698,6 +2700,42 @@ func _RepositoryService_WriteConfig_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RepositoryService_SetConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).SetConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitaly.RepositoryService/SetConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).SetConfig(ctx, req.(*SetConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RepositoryService_DeleteConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteConfigRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).DeleteConfig(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitaly.RepositoryService/DeleteConfig",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).DeleteConfig(ctx, req.(*DeleteConfigRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _RepositoryService_FindLicense_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(FindLicenseRequest)
 	if err := dec(in); err != nil {
@@ -1714,6 +2752,212 @@ func _RepositoryService_FindLicense_Handler(srv interface{}, ctx context.Context
 		return srv.(RepositoryServiceServer).FindLicense(ctx, req.(*FindLicenseRequest))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _RepositoryService_GetInfoAttributes_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetInfoAttributesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RepositoryServiceServer).GetInfoAttributes(m, &repositoryServiceGetInfoAttributesServer{stream})
+}
+
+type RepositoryService_GetInfoAttributesServer interface {
+	Send(*GetInfoAttributesResponse) error
+	grpc.ServerStream
+}
+
+type repositoryServiceGetInfoAttributesServer struct {
+	grpc.ServerStream
+}
+
+func (x *repositoryServiceGetInfoAttributesServer) Send(m *GetInfoAttributesResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _RepositoryService_CalculateChecksum_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CalculateChecksumRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).CalculateChecksum(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitaly.RepositoryService/CalculateChecksum",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).CalculateChecksum(ctx, req.(*CalculateChecksumRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RepositoryService_Cleanup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CleanupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).Cleanup(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitaly.RepositoryService/Cleanup",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).Cleanup(ctx, req.(*CleanupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RepositoryService_GetSnapshot_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetSnapshotRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RepositoryServiceServer).GetSnapshot(m, &repositoryServiceGetSnapshotServer{stream})
+}
+
+type RepositoryService_GetSnapshotServer interface {
+	Send(*GetSnapshotResponse) error
+	grpc.ServerStream
+}
+
+type repositoryServiceGetSnapshotServer struct {
+	grpc.ServerStream
+}
+
+func (x *repositoryServiceGetSnapshotServer) Send(m *GetSnapshotResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _RepositoryService_CreateRepositoryFromSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateRepositoryFromSnapshotRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RepositoryServiceServer).CreateRepositoryFromSnapshot(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gitaly.RepositoryService/CreateRepositoryFromSnapshot",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RepositoryServiceServer).CreateRepositoryFromSnapshot(ctx, req.(*CreateRepositoryFromSnapshotRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RepositoryService_GetRawChanges_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetRawChangesRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RepositoryServiceServer).GetRawChanges(m, &repositoryServiceGetRawChangesServer{stream})
+}
+
+type RepositoryService_GetRawChangesServer interface {
+	Send(*GetRawChangesResponse) error
+	grpc.ServerStream
+}
+
+type repositoryServiceGetRawChangesServer struct {
+	grpc.ServerStream
+}
+
+func (x *repositoryServiceGetRawChangesServer) Send(m *GetRawChangesResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _RepositoryService_SearchFilesByContent_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SearchFilesByContentRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RepositoryServiceServer).SearchFilesByContent(m, &repositoryServiceSearchFilesByContentServer{stream})
+}
+
+type RepositoryService_SearchFilesByContentServer interface {
+	Send(*SearchFilesByContentResponse) error
+	grpc.ServerStream
+}
+
+type repositoryServiceSearchFilesByContentServer struct {
+	grpc.ServerStream
+}
+
+func (x *repositoryServiceSearchFilesByContentServer) Send(m *SearchFilesByContentResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _RepositoryService_SearchFilesByName_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(SearchFilesByNameRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RepositoryServiceServer).SearchFilesByName(m, &repositoryServiceSearchFilesByNameServer{stream})
+}
+
+type RepositoryService_SearchFilesByNameServer interface {
+	Send(*SearchFilesByNameResponse) error
+	grpc.ServerStream
+}
+
+type repositoryServiceSearchFilesByNameServer struct {
+	grpc.ServerStream
+}
+
+func (x *repositoryServiceSearchFilesByNameServer) Send(m *SearchFilesByNameResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _RepositoryService_RestoreCustomHooks_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RepositoryServiceServer).RestoreCustomHooks(&repositoryServiceRestoreCustomHooksServer{stream})
+}
+
+type RepositoryService_RestoreCustomHooksServer interface {
+	SendAndClose(*RestoreCustomHooksResponse) error
+	Recv() (*RestoreCustomHooksRequest, error)
+	grpc.ServerStream
+}
+
+type repositoryServiceRestoreCustomHooksServer struct {
+	grpc.ServerStream
+}
+
+func (x *repositoryServiceRestoreCustomHooksServer) SendAndClose(m *RestoreCustomHooksResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *repositoryServiceRestoreCustomHooksServer) Recv() (*RestoreCustomHooksRequest, error) {
+	m := new(RestoreCustomHooksRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _RepositoryService_BackupCustomHooks_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(BackupCustomHooksRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RepositoryServiceServer).BackupCustomHooks(m, &repositoryServiceBackupCustomHooksServer{stream})
+}
+
+type RepositoryService_BackupCustomHooksServer interface {
+	Send(*BackupCustomHooksResponse) error
+	grpc.ServerStream
+}
+
+type repositoryServiceBackupCustomHooksServer struct {
+	grpc.ServerStream
+}
+
+func (x *repositoryServiceBackupCustomHooksServer) Send(m *BackupCustomHooksResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 var _RepositoryService_serviceDesc = grpc.ServiceDesc{
@@ -1793,8 +3037,28 @@ var _RepositoryService_serviceDesc = grpc.ServiceDesc{
 			Handler:    _RepositoryService_WriteConfig_Handler,
 		},
 		{
+			MethodName: "SetConfig",
+			Handler:    _RepositoryService_SetConfig_Handler,
+		},
+		{
+			MethodName: "DeleteConfig",
+			Handler:    _RepositoryService_DeleteConfig_Handler,
+		},
+		{
 			MethodName: "FindLicense",
 			Handler:    _RepositoryService_FindLicense_Handler,
+		},
+		{
+			MethodName: "CalculateChecksum",
+			Handler:    _RepositoryService_CalculateChecksum_Handler,
+		},
+		{
+			MethodName: "Cleanup",
+			Handler:    _RepositoryService_Cleanup_Handler,
+		},
+		{
+			MethodName: "CreateRepositoryFromSnapshot",
+			Handler:    _RepositoryService_CreateRepositoryFromSnapshot_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -1813,6 +3077,41 @@ var _RepositoryService_serviceDesc = grpc.ServiceDesc{
 			Handler:       _RepositoryService_CreateRepositoryFromBundle_Handler,
 			ClientStreams: true,
 		},
+		{
+			StreamName:    "GetInfoAttributes",
+			Handler:       _RepositoryService_GetInfoAttributes_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetSnapshot",
+			Handler:       _RepositoryService_GetSnapshot_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetRawChanges",
+			Handler:       _RepositoryService_GetRawChanges_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "SearchFilesByContent",
+			Handler:       _RepositoryService_SearchFilesByContent_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "SearchFilesByName",
+			Handler:       _RepositoryService_SearchFilesByName_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "RestoreCustomHooks",
+			Handler:       _RepositoryService_RestoreCustomHooks_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "BackupCustomHooks",
+			Handler:       _RepositoryService_BackupCustomHooks_Handler,
+			ServerStreams: true,
+		},
 	},
 	Metadata: "repository-service.proto",
 }
@@ -1820,97 +3119,152 @@ var _RepositoryService_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("repository-service.proto", fileDescriptor10) }
 
 var fileDescriptor10 = []byte{
-	// 1458 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x58, 0x5f, 0x6f, 0xdb, 0xb6,
-	0x16, 0xb7, 0xf3, 0xd7, 0x3e, 0x71, 0x7b, 0x1d, 0x26, 0x69, 0x14, 0x25, 0x6d, 0x12, 0xde, 0xe2,
-	0xde, 0xdc, 0xb6, 0x37, 0x28, 0x92, 0x97, 0xbd, 0x0c, 0x45, 0x12, 0x34, 0x7f, 0xd6, 0xa6, 0xc8,
-	0x94, 0x0e, 0x05, 0x02, 0x0c, 0x82, 0x22, 0xd3, 0xb6, 0x60, 0x59, 0x74, 0x49, 0x3a, 0x6d, 0xfa,
-	0xbc, 0x87, 0x7d, 0xae, 0x3d, 0xee, 0x75, 0x1f, 0x63, 0x5f, 0x62, 0x10, 0x29, 0x89, 0x92, 0x25,
-	0x79, 0x05, 0xb4, 0x61, 0x6f, 0xe2, 0x21, 0xf9, 0x3b, 0x87, 0xe7, 0xf0, 0x1c, 0xfe, 0x8e, 0xc0,
-	0x60, 0x64, 0x44, 0xb9, 0x27, 0x28, 0xbb, 0xff, 0x3f, 0x27, 0xec, 0xce, 0x73, 0xc9, 0xfe, 0x88,
-	0x51, 0x41, 0xd1, 0x42, 0xcf, 0x13, 0x8e, 0x7f, 0x6f, 0xb6, 0x78, 0xdf, 0x61, 0xa4, 0xa3, 0xa4,
-	0xf8, 0x12, 0xd6, 0xad, 0x64, 0xc7, 0xeb, 0xcf, 0x1e, 0x17, 0xdc, 0x22, 0x1f, 0xc7, 0x84, 0x0b,
-	0x74, 0x00, 0xa0, 0xc1, 0x8c, 0xfa, 0x4e, 0x7d, 0x6f, 0xe9, 0x00, 0xed, 0x2b, 0x94, 0x7d, 0xbd,
-	0xc9, 0x4a, 0xad, 0xc2, 0x07, 0x60, 0xe4, 0xe1, 0xf8, 0x88, 0x06, 0x9c, 0xa0, 0x47, 0xb0, 0x40,
-	0xa4, 0x44, 0x62, 0x35, 0xac, 0x68, 0x84, 0xdf, 0xc9, 0x3d, 0x8e, 0x3b, 0xb8, 0x08, 0x5c, 0x46,
-	0x86, 0x24, 0x10, 0x8e, 0x5f, 0xc5, 0x86, 0x4d, 0xd8, 0x28, 0xc0, 0x53, 0x46, 0x60, 0x1f, 0x96,
-	0xd5, 0xe4, 0xe9, 0xd8, 0xaf, 0xa2, 0x05, 0xfd, 0x1b, 0x1e, 0xb8, 0x8c, 0x38, 0x82, 0xd8, 0xb7,
-	0x9e, 0x18, 0x3a, 0x23, 0x63, 0x46, 0x1e, 0xaa, 0xa5, 0x84, 0xc7, 0x52, 0x86, 0x57, 0x01, 0xa5,
-	0xb5, 0x45, 0x36, 0x8c, 0x60, 0xed, 0xcc, 0x61, 0xb7, 0x4e, 0x8f, 0x9c, 0x50, 0xdf, 0x27, 0xae,
-	0xf8, 0xdb, 0xed, 0x30, 0xe0, 0xd1, 0xa4, 0xc6, 0xc8, 0x96, 0x37, 0xb0, 0xa6, 0x81, 0xaf, 0xbd,
-	0x2f, 0xa4, 0x8a, 0xe7, 0x5f, 0xc0, 0xa3, 0x49, 0xb0, 0x28, 0xf6, 0x08, 0xe6, 0xb8, 0xf7, 0x85,
-	0x48, 0x9c, 0x59, 0x4b, 0x7e, 0xe3, 0x01, 0x6c, 0x1c, 0x8d, 0x46, 0xfe, 0xfd, 0x99, 0x27, 0x1c,
-	0x21, 0x98, 0x77, 0x3b, 0x16, 0xa4, 0xca, 0xe5, 0x43, 0x26, 0x34, 0x18, 0xb9, 0xf3, 0xb8, 0x47,
-	0x03, 0xe9, 0x85, 0x96, 0x95, 0x8c, 0xf1, 0x16, 0x98, 0x45, 0xca, 0x22, 0x2f, 0xfc, 0x34, 0x03,
-	0xe8, 0x94, 0x08, 0xb7, 0x6f, 0x91, 0x21, 0x15, 0x55, 0x7c, 0x10, 0xde, 0x72, 0x26, 0x41, 0xa4,
-	0x09, 0x4d, 0x2b, 0x1a, 0xa1, 0x55, 0x98, 0xef, 0x52, 0xe6, 0x12, 0x63, 0x56, 0xc6, 0x47, 0x0d,
-	0xd0, 0x3a, 0x2c, 0x06, 0xd4, 0x16, 0x4e, 0x8f, 0x1b, 0x73, 0x2a, 0x29, 0x02, 0xfa, 0xde, 0xe9,
-	0x71, 0x64, 0xc0, 0xa2, 0xf0, 0x86, 0x84, 0x8e, 0x85, 0x31, 0xbf, 0x53, 0xdf, 0x9b, 0xb7, 0xe2,
-	0x61, 0xb8, 0x85, 0xf3, 0xbe, 0x3d, 0x20, 0xf7, 0xc6, 0x82, 0xd2, 0xc0, 0x79, 0xff, 0x0d, 0xb9,
-	0x47, 0xdb, 0xb0, 0x34, 0x08, 0xe8, 0xa7, 0xc0, 0xee, 0xd3, 0x30, 0xc9, 0x16, 0xe5, 0x24, 0x48,
-	0xd1, 0x79, 0x28, 0x41, 0x1b, 0xd0, 0x08, 0xa8, 0x3d, 0x62, 0xe3, 0x80, 0x18, 0x4d, 0xa9, 0x6d,
-	0x31, 0xa0, 0x57, 0xe1, 0xf0, 0xbb, 0xb9, 0x46, 0xa3, 0xdd, 0xc4, 0x6b, 0xb0, 0x92, 0xf1, 0x42,
-	0xe4, 0x9d, 0x4b, 0x58, 0x3f, 0x91, 0xb7, 0x29, 0x75, 0xe4, 0x0a, 0xb7, 0xc4, 0x04, 0x23, 0x0f,
-	0x17, 0xa9, 0xfa, 0xbd, 0x0e, 0xcb, 0x67, 0x44, 0x1c, 0x31, 0xb7, 0xef, 0xdd, 0x55, 0x8a, 0xc3,
-	0x26, 0x34, 0x5d, 0x3a, 0x1c, 0x7a, 0xc2, 0xf6, 0x3a, 0x51, 0x28, 0x1a, 0x4a, 0x70, 0xd1, 0x09,
-	0x83, 0x34, 0x62, 0xa4, 0xeb, 0x7d, 0x96, 0xd1, 0x68, 0x5a, 0xd1, 0x08, 0x7d, 0x03, 0x0b, 0x5d,
-	0xca, 0x86, 0x8e, 0x90, 0xd1, 0x78, 0x78, 0xb0, 0x13, 0x2b, 0xc9, 0xd9, 0xb4, 0x7f, 0x2a, 0xd7,
-	0x59, 0xd1, 0x7a, 0x7c, 0x08, 0x0b, 0x4a, 0x82, 0x16, 0x61, 0xf6, 0xe6, 0xe2, 0xaa, 0x5d, 0x0b,
-	0x3f, 0xde, 0x1f, 0x59, 0xed, 0x3a, 0x02, 0x58, 0x78, 0x7f, 0x64, 0xd9, 0x67, 0x37, 0xed, 0x19,
-	0xb4, 0x04, 0x8b, 0xe1, 0xf7, 0xf1, 0xcd, 0x41, 0x7b, 0x16, 0xef, 0x01, 0x4a, 0x03, 0xeb, 0x5c,
-	0xe9, 0x38, 0xc2, 0x91, 0xe7, 0x6c, 0x59, 0xf2, 0x3b, 0x0c, 0xc1, 0xb9, 0xc3, 0xdf, 0x52, 0xd7,
-	0xf1, 0x8f, 0x99, 0x13, 0xb8, 0xfd, 0x4a, 0x99, 0x82, 0x5f, 0x82, 0x91, 0x87, 0x8b, 0xd4, 0xaf,
-	0xc2, 0xfc, 0x9d, 0xe3, 0x8f, 0x49, 0x54, 0xa5, 0xd5, 0x00, 0xff, 0x56, 0x07, 0x43, 0xde, 0x8d,
-	0x6b, 0x3a, 0x66, 0x2e, 0x51, 0xbb, 0xaa, 0xc4, 0xe7, 0x15, 0x2c, 0x73, 0x09, 0x65, 0xa7, 0xb6,
-	0xce, 0x94, 0x6e, 0x6d, 0xab, 0xc5, 0x56, 0xa6, 0xf0, 0x45, 0x00, 0xb7, 0xd2, 0x18, 0x19, 0xca,
-	0x96, 0xd5, 0xe2, 0x29, 0x03, 0xd1, 0x63, 0x00, 0xe1, 0xb0, 0x1e, 0x11, 0x36, 0x23, 0x5d, 0x19,
-	0xd4, 0x96, 0xd5, 0x54, 0x12, 0x8b, 0x74, 0xf1, 0x21, 0x6c, 0x14, 0x1c, 0x4a, 0xbf, 0x57, 0x8c,
-	0xf0, 0xb1, 0x2f, 0xe2, 0xf7, 0x4a, 0x8d, 0xf0, 0x11, 0x2c, 0x9d, 0x72, 0x77, 0x50, 0xc5, 0xff,
-	0x4f, 0xa1, 0xa5, 0x20, 0xb4, 0xcf, 0x09, 0x63, 0x94, 0x45, 0x31, 0x57, 0x03, 0xfc, 0x4b, 0x1d,
-	0xfe, 0xf5, 0x81, 0x79, 0x61, 0xa2, 0x74, 0xab, 0xb8, 0xba, 0x0d, 0xb3, 0xe1, 0xe9, 0x55, 0x49,
-	0x0c, 0x3f, 0x33, 0x95, 0x72, 0x36, 0x5b, 0x29, 0xd1, 0x2e, 0xb4, 0xa8, 0xdf, 0xb1, 0x93, 0x79,
-	0xe5, 0xb4, 0x25, 0xea, 0x77, 0xac, 0x78, 0x49, 0x52, 0xcb, 0xe6, 0xd3, 0xb5, 0x6c, 0x15, 0xe6,
-	0x79, 0x9f, 0xf8, 0xbe, 0x2c, 0x4b, 0x0d, 0x4b, 0x0d, 0xf0, 0x1e, 0xb4, 0xf5, 0x19, 0xa6, 0x1e,
-	0xb7, 0x0f, 0xab, 0xa7, 0x5e, 0xd0, 0xb9, 0x24, 0xac, 0x47, 0x8e, 0x1d, 0x5e, 0x29, 0xfb, 0xb7,
-	0xa0, 0x19, 0x1f, 0x80, 0x1b, 0x33, 0x3b, 0xb3, 0x61, 0xd8, 0x13, 0x01, 0x7e, 0x0e, 0x6b, 0x13,
-	0x9a, 0x74, 0xea, 0xdd, 0x3a, 0x5c, 0x5d, 0xfd, 0xa6, 0x25, 0xbf, 0xf1, 0xcf, 0x75, 0x58, 0x56,
-	0xf5, 0xea, 0x94, 0xb2, 0xc1, 0x3f, 0x79, 0xe5, 0x43, 0x3a, 0x91, 0xb6, 0x24, 0xa1, 0x34, 0x1b,
-	0x17, 0xdc, 0x22, 0xa1, 0xb1, 0x17, 0xc1, 0x15, 0xa3, 0x3d, 0x46, 0x38, 0xaf, 0x58, 0x3a, 0x99,
-	0x84, 0x4b, 0x95, 0x4e, 0x25, 0xb8, 0xe8, 0xe0, 0x6f, 0xc1, 0x2c, 0xd2, 0x16, 0x39, 0x70, 0x1b,
-	0x96, 0xbc, 0xc0, 0x1e, 0x45, 0xe2, 0x28, 0x71, 0xc0, 0x4b, 0x16, 0x2a, 0x63, 0xaf, 0x3f, 0x8e,
-	0x1d, 0xde, 0xff, 0xcb, 0x8c, 0xe5, 0x12, 0x2e, 0x65, 0xac, 0x12, 0xc4, 0xc6, 0xe6, 0xb5, 0x7d,
-	0xad, 0xb1, 0x5d, 0x78, 0x32, 0xf9, 0x52, 0x9d, 0x32, 0x3a, 0xfc, 0xc1, 0x7a, 0x5b, 0x31, 0x1d,
-	0xc7, 0xcc, 0x8f, 0x6c, 0x0d, 0x3f, 0xf1, 0x2e, 0x6c, 0x97, 0xea, 0x89, 0x82, 0x7c, 0x01, 0x2b,
-	0x6a, 0xc9, 0xf1, 0x38, 0xe8, 0xf8, 0x95, 0x58, 0xda, 0x33, 0x58, 0xcd, 0x42, 0x4d, 0x79, 0x77,
-	0x08, 0x20, 0x99, 0xbd, 0x27, 0x34, 0xe8, 0x7a, 0xbd, 0x8a, 0x71, 0xea, 0x8e, 0x7d, 0xdf, 0x1e,
-	0x39, 0xa2, 0x1f, 0xc7, 0x29, 0x14, 0x5c, 0x39, 0xa2, 0x8f, 0x9f, 0xc3, 0x4a, 0x46, 0xcd, 0xd4,
-	0x3a, 0x31, 0x80, 0xdd, 0x22, 0x6f, 0x55, 0x76, 0x4c, 0xe2, 0x80, 0x99, 0x94, 0x03, 0x9e, 0x02,
-	0x9e, 0xa6, 0x2c, 0x8a, 0xce, 0x39, 0xa0, 0xb0, 0xa0, 0xbc, 0xf5, 0x5c, 0x12, 0x54, 0x2a, 0x5c,
-	0xf8, 0x04, 0x56, 0x32, 0x48, 0x91, 0x27, 0x5e, 0x00, 0xf2, 0x95, 0xc8, 0xe6, 0x7d, 0xca, 0x84,
-	0x1d, 0x38, 0xc3, 0xb8, 0x4c, 0xb5, 0xa3, 0x99, 0xeb, 0x70, 0xe2, 0x9d, 0x33, 0x24, 0x07, 0xbf,
-	0x3e, 0x94, 0x5d, 0x4e, 0x4c, 0xc4, 0x55, 0x1b, 0x88, 0x3e, 0x40, 0x7b, 0xb2, 0x37, 0x43, 0xdb,
-	0x79, 0x73, 0x32, 0x4d, 0xa0, 0xb9, 0x53, 0xbe, 0x20, 0x3a, 0x7b, 0x0d, 0xdd, 0xc4, 0x3d, 0x55,
-	0xaa, 0xe1, 0x42, 0xe9, 0x8d, 0x85, 0xbd, 0x9d, 0xb9, 0x3b, 0x65, 0x45, 0x82, 0xfd, 0x1a, 0x40,
-	0x77, 0x50, 0x68, 0x23, 0xbb, 0x25, 0xd5, 0xc3, 0x99, 0x66, 0xd1, 0x54, 0x02, 0xf3, 0x3d, 0x3c,
-	0xcc, 0x36, 0x40, 0xe8, 0x71, 0x42, 0xed, 0x8a, 0x5a, 0x31, 0xf3, 0x49, 0xd9, 0x74, 0x1a, 0x32,
-	0xdb, 0xec, 0x68, 0xc8, 0xc2, 0x8e, 0x4a, 0x43, 0x16, 0xf7, 0x48, 0xb8, 0x86, 0x7e, 0x04, 0x94,
-	0x6f, 0x52, 0x50, 0xe2, 0xa7, 0xd2, 0x6e, 0xc9, 0xc4, 0xd3, 0x96, 0x24, 0xf0, 0xe7, 0xb0, 0x94,
-	0xa2, 0xf7, 0x28, 0xf1, 0x58, 0xbe, 0xf3, 0x31, 0x37, 0x0b, 0xe7, 0x12, 0xa4, 0x0f, 0xd0, 0x9e,
-	0xcc, 0x0a, 0x7d, 0x95, 0x4a, 0x7a, 0x05, 0x7d, 0x95, 0x4a, 0xd9, 0x7f, 0x0d, 0x9d, 0x01, 0x68,
-	0x46, 0xac, 0xc3, 0x9d, 0xa3, 0xdf, 0x3a, 0xdc, 0x79, 0x02, 0x8d, 0x6b, 0x2f, 0xeb, 0xa1, 0x85,
-	0x93, 0x0c, 0x57, 0x5b, 0x58, 0x42, 0xa5, 0xb5, 0x85, 0x65, 0xe4, 0x58, 0x5d, 0xf6, 0x1c, 0x65,
-	0xd4, 0x97, 0xbd, 0x8c, 0x22, 0xeb, 0xcb, 0x5e, 0xca, 0x37, 0x71, 0x0d, 0x1d, 0xc2, 0x5c, 0x48,
-	0x0b, 0xd1, 0x4a, 0xb2, 0x58, 0xf3, 0x4c, 0x73, 0x35, 0x2b, 0x4c, 0x36, 0xbd, 0x82, 0x46, 0x4c,
-	0xb0, 0xd0, 0x7a, 0xbc, 0x66, 0x82, 0x36, 0x9a, 0x46, 0x7e, 0x22, 0x01, 0x78, 0x07, 0x0f, 0x32,
-	0x6c, 0x08, 0x6d, 0x25, 0x9a, 0x0a, 0xe8, 0x98, 0xf9, 0xb8, 0x64, 0x36, 0x9d, 0xb2, 0x9a, 0xa5,
-	0xe8, 0x18, 0xe6, 0x38, 0x94, 0x8e, 0x61, 0x01, 0xa9, 0x91, 0xc9, 0x90, 0x27, 0x1a, 0x3a, 0x19,
-	0x4a, 0x29, 0x8f, 0x4e, 0x86, 0x72, 0x9e, 0x12, 0xc3, 0x4f, 0x52, 0x83, 0x34, 0x7c, 0x09, 0x49,
-	0x49, 0xc3, 0x97, 0x31, 0x0b, 0x5c, 0x43, 0x7e, 0xbe, 0x67, 0x8e, 0x9e, 0x74, 0xf4, 0x9f, 0xb2,
-	0x3c, 0xc8, 0x72, 0x0b, 0xf3, 0xbf, 0x7f, 0xba, 0x2e, 0xd1, 0x76, 0x09, 0xad, 0xf4, 0x93, 0x8e,
-	0x36, 0xb3, 0x5b, 0x33, 0x4f, 0xa3, 0xb9, 0x55, 0x3c, 0x99, 0x4a, 0x9e, 0x4f, 0x60, 0x96, 0x3f,
-	0x7a, 0xe8, 0x7f, 0xd3, 0xec, 0xca, 0xaa, 0x7a, 0xf6, 0x35, 0x4b, 0x63, 0xc5, 0x7b, 0xf5, 0xb0,
-	0x42, 0xa5, 0x78, 0x80, 0xae, 0x50, 0x79, 0x0e, 0xa2, 0x2b, 0x54, 0x01, 0x71, 0x88, 0x6a, 0x9d,
-	0x7e, 0x47, 0x53, 0xb5, 0x2e, 0xf7, 0x4c, 0xa7, 0x6a, 0x5d, 0xfe, 0xe1, 0xc5, 0xb5, 0xdb, 0x05,
-	0xf9, 0xa3, 0xf4, 0xf0, 0x8f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x46, 0x1f, 0xcc, 0xb0, 0x5a, 0x15,
-	0x00, 0x00,
+	// 2344 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x5a, 0x51, 0x73, 0xdb, 0xb8,
+	0x11, 0x96, 0x6c, 0xcb, 0xb2, 0x56, 0xca, 0x9d, 0x0c, 0x2b, 0xb6, 0xc4, 0x38, 0x71, 0xc2, 0x64,
+	0xee, 0x7c, 0x97, 0xd4, 0xbd, 0x73, 0x1e, 0x9a, 0x99, 0xb6, 0x73, 0x63, 0x4b, 0xb2, 0xad, 0x4b,
+	0xec, 0xb8, 0x74, 0x32, 0x99, 0x66, 0x2e, 0xa3, 0xa1, 0x29, 0xc8, 0xe4, 0x88, 0x22, 0x14, 0x10,
+	0x8a, 0xcf, 0xd7, 0xd7, 0x76, 0xe6, 0x1e, 0xdb, 0xdf, 0xd2, 0x7f, 0xd0, 0x3f, 0xd0, 0x87, 0xfe,
+	0x8c, 0xbe, 0xf4, 0x27, 0x74, 0x00, 0x50, 0x04, 0x29, 0x92, 0x6a, 0x66, 0x98, 0xb6, 0x6f, 0xc4,
+	0x62, 0xb1, 0xbb, 0xd8, 0x5d, 0x2c, 0xb0, 0x9f, 0x04, 0x4d, 0x8a, 0x27, 0xc4, 0x77, 0x18, 0xa1,
+	0x37, 0xbf, 0xf0, 0x31, 0xfd, 0xe0, 0x58, 0x78, 0x6f, 0x42, 0x09, 0x23, 0x68, 0xf5, 0xca, 0x61,
+	0xa6, 0x7b, 0xa3, 0xd5, 0x7c, 0xdb, 0xa4, 0x78, 0x20, 0xa9, 0xfa, 0x29, 0x6c, 0x19, 0xe1, 0x8a,
+	0xee, 0x8f, 0x8e, 0xcf, 0x7c, 0x03, 0xbf, 0x9f, 0x62, 0x9f, 0xa1, 0x7d, 0x00, 0x25, 0xac, 0x59,
+	0xbc, 0x5f, 0xdc, 0xad, 0xee, 0xa3, 0x3d, 0x29, 0x65, 0x4f, 0x2d, 0x32, 0x22, 0x5c, 0xfa, 0x3e,
+	0x34, 0x93, 0xe2, 0xfc, 0x09, 0xf1, 0x7c, 0x8c, 0x36, 0x61, 0x15, 0x0b, 0x8a, 0x90, 0xb5, 0x66,
+	0x04, 0x23, 0xfd, 0x4c, 0xac, 0x31, 0xad, 0x51, 0xcf, 0xb3, 0x28, 0x1e, 0x63, 0x8f, 0x99, 0x6e,
+	0x1e, 0x1b, 0xee, 0x40, 0x2b, 0x45, 0x9e, 0x34, 0x42, 0x77, 0x61, 0x5d, 0x4e, 0x1e, 0x4d, 0xdd,
+	0x3c, 0x5a, 0xd0, 0x43, 0xb8, 0x65, 0x51, 0x6c, 0x32, 0xdc, 0xbf, 0x74, 0xd8, 0xd8, 0x9c, 0x34,
+	0x97, 0xc4, 0xa6, 0x6a, 0x92, 0x78, 0x28, 0x68, 0x7a, 0x03, 0x50, 0x54, 0x5b, 0x60, 0xc3, 0x04,
+	0x6e, 0x1f, 0x9b, 0xf4, 0xd2, 0xbc, 0xc2, 0x6d, 0xe2, 0xba, 0xd8, 0x62, 0xff, 0x75, 0x3b, 0x9a,
+	0xb0, 0x39, 0xaf, 0x31, 0xb0, 0xa5, 0x03, 0x9f, 0xb5, 0x5d, 0x6c, 0x7a, 0xd3, 0x49, 0x1e, 0x97,
+	0xaf, 0xc3, 0xe7, 0xa1, 0x94, 0x40, 0xf0, 0x73, 0xb8, 0xad, 0x98, 0x2f, 0x9c, 0x9f, 0x70, 0x1e,
+	0xf9, 0x4f, 0x60, 0x73, 0x5e, 0x58, 0x90, 0x54, 0x08, 0x56, 0x7c, 0xe7, 0x27, 0x2c, 0xe4, 0x2c,
+	0x1b, 0xe2, 0x5b, 0x1f, 0x41, 0xeb, 0x60, 0x32, 0x71, 0x6f, 0x8e, 0x1d, 0x66, 0x32, 0x46, 0x9d,
+	0xcb, 0x29, 0xc3, 0x79, 0xb2, 0x1a, 0x69, 0xb0, 0x46, 0xf1, 0x07, 0xc7, 0x77, 0x88, 0x27, 0xdc,
+	0x5b, 0x33, 0xc2, 0xb1, 0xbe, 0x0d, 0x5a, 0x9a, 0xb2, 0xc0, 0x0b, 0x7f, 0x5c, 0x02, 0x74, 0x84,
+	0x99, 0x65, 0x1b, 0x78, 0x4c, 0x58, 0x1e, 0x1f, 0xf0, 0xe3, 0x43, 0x85, 0x10, 0x61, 0x42, 0xc5,
+	0x08, 0x46, 0xa8, 0x01, 0xa5, 0x21, 0xa1, 0x16, 0x6e, 0x2e, 0x8b, 0xc0, 0xcb, 0x01, 0xda, 0x82,
+	0xb2, 0x47, 0xfa, 0xcc, 0xbc, 0xf2, 0x9b, 0x2b, 0xf2, 0xb4, 0x79, 0xe4, 0x95, 0x79, 0xe5, 0xa3,
+	0x26, 0x94, 0x99, 0x33, 0xc6, 0x64, 0xca, 0x9a, 0xa5, 0xfb, 0xc5, 0xdd, 0x92, 0x31, 0x1b, 0xf2,
+	0x25, 0xbe, 0x6f, 0xf7, 0x47, 0xf8, 0xa6, 0xb9, 0x2a, 0x35, 0xf8, 0xbe, 0xfd, 0x1c, 0xdf, 0xa0,
+	0x1d, 0xa8, 0x8e, 0x3c, 0x72, 0xed, 0xf5, 0x6d, 0xc2, 0x4f, 0x6f, 0x59, 0x4c, 0x82, 0x20, 0x9d,
+	0x70, 0x0a, 0x6a, 0xc1, 0x9a, 0x47, 0xfa, 0x13, 0x3a, 0xf5, 0x70, 0xb3, 0x22, 0xb4, 0x95, 0x3d,
+	0x72, 0xce, 0x87, 0xdf, 0xaf, 0xac, 0xad, 0xd5, 0x2b, 0xfa, 0x6d, 0xd8, 0x88, 0x79, 0x21, 0xf0,
+	0xce, 0x29, 0x6c, 0xb5, 0x45, 0x9a, 0x46, 0xb6, 0x9c, 0x23, 0x4b, 0x34, 0x68, 0x26, 0xc5, 0x05,
+	0xaa, 0xfe, 0x59, 0x84, 0xf5, 0x63, 0xcc, 0x0e, 0xa8, 0x65, 0x3b, 0x1f, 0x72, 0xc5, 0xe1, 0x0e,
+	0x54, 0x2c, 0x32, 0x1e, 0x3b, 0xac, 0xef, 0x0c, 0x82, 0x50, 0xac, 0x49, 0x42, 0x6f, 0xc0, 0x83,
+	0x34, 0xa1, 0x78, 0xe8, 0xfc, 0x28, 0xa2, 0x51, 0x31, 0x82, 0x11, 0x7a, 0x06, 0xab, 0x43, 0x42,
+	0xc7, 0x26, 0x13, 0xd1, 0xf8, 0x6c, 0xff, 0xfe, 0x4c, 0x49, 0xc2, 0xa6, 0xbd, 0x23, 0xc1, 0x67,
+	0x04, 0xfc, 0xfa, 0x53, 0x58, 0x95, 0x14, 0x54, 0x86, 0xe5, 0xb7, 0xbd, 0xf3, 0x7a, 0x81, 0x7f,
+	0xbc, 0x3a, 0x30, 0xea, 0x45, 0x04, 0xb0, 0xfa, 0xea, 0xc0, 0xe8, 0x1f, 0xbf, 0xad, 0x2f, 0xa1,
+	0x2a, 0x94, 0xf9, 0xf7, 0xe1, 0xdb, 0xfd, 0xfa, 0xb2, 0xbe, 0x0b, 0x28, 0x2a, 0x58, 0x9d, 0x95,
+	0x81, 0xc9, 0x4c, 0xb1, 0xcf, 0x9a, 0x21, 0xbe, 0x79, 0x08, 0x4e, 0x4c, 0xff, 0x05, 0xb1, 0x4c,
+	0xf7, 0x90, 0x9a, 0x9e, 0x65, 0xe7, 0x3a, 0x29, 0xfa, 0x37, 0xd0, 0x4c, 0x8a, 0x0b, 0xd4, 0x37,
+	0xa0, 0xf4, 0xc1, 0x74, 0xa7, 0x38, 0x28, 0xff, 0x72, 0xa0, 0xff, 0xa3, 0x08, 0x4d, 0x91, 0x1b,
+	0x17, 0x64, 0x4a, 0x2d, 0x2c, 0x57, 0xe5, 0x89, 0xcf, 0x77, 0xb0, 0xee, 0x0b, 0x51, 0xfd, 0xc8,
+	0xd2, 0xa5, 0xcc, 0xa5, 0x75, 0xc9, 0x6c, 0xc4, 0x2a, 0x6a, 0x20, 0xe0, 0x52, 0x18, 0x23, 0x42,
+	0x59, 0x33, 0x6a, 0x7e, 0xc4, 0x40, 0x74, 0x17, 0x80, 0x99, 0xf4, 0x0a, 0xb3, 0x3e, 0xc5, 0x43,
+	0x11, 0xd4, 0x9a, 0x51, 0x91, 0x14, 0x03, 0x0f, 0xf5, 0xa7, 0xd0, 0x4a, 0xd9, 0x94, 0xba, 0x08,
+	0x29, 0xf6, 0xa7, 0x2e, 0x9b, 0x5d, 0x84, 0x72, 0xa4, 0x1f, 0x40, 0xf5, 0xc8, 0xb7, 0x46, 0x79,
+	0xfc, 0xff, 0x08, 0x6a, 0x52, 0x84, 0xf2, 0x39, 0xa6, 0x94, 0xd0, 0x20, 0xe6, 0x72, 0xa0, 0xff,
+	0xad, 0x08, 0x9f, 0xbf, 0xa1, 0x0e, 0x3f, 0x28, 0xc3, 0x3c, 0xae, 0xae, 0xc3, 0x32, 0xdf, 0xbd,
+	0x2c, 0x89, 0xfc, 0x33, 0x56, 0x29, 0x97, 0xe3, 0x95, 0x12, 0x3d, 0x80, 0x1a, 0x71, 0x07, 0xfd,
+	0x70, 0x5e, 0x3a, 0xad, 0x4a, 0xdc, 0x81, 0x31, 0x63, 0x09, 0x6b, 0x59, 0x29, 0x5a, 0xcb, 0x1a,
+	0x50, 0xf2, 0x6d, 0xec, 0xba, 0xa2, 0x2c, 0xad, 0x19, 0x72, 0xa0, 0xef, 0x42, 0x5d, 0xed, 0x61,
+	0xe1, 0x76, 0x6d, 0x68, 0x1c, 0x39, 0xde, 0xe0, 0x14, 0xd3, 0x2b, 0x7c, 0x68, 0xfa, 0xb9, 0x4e,
+	0xff, 0x36, 0x54, 0x66, 0x1b, 0xf0, 0x9b, 0x4b, 0xf7, 0x97, 0x79, 0xd8, 0x43, 0x82, 0xfe, 0x18,
+	0x6e, 0xcf, 0x69, 0x52, 0x47, 0xef, 0xd2, 0xf4, 0x65, 0xea, 0x57, 0x0c, 0xf1, 0xad, 0xff, 0x5c,
+	0x84, 0x75, 0x59, 0xaf, 0x8e, 0x08, 0x1d, 0xfd, 0x3f, 0x53, 0x9e, 0xbf, 0x53, 0xa2, 0x96, 0x84,
+	0x6f, 0xa5, 0x56, 0xcf, 0x37, 0x30, 0x37, 0xb6, 0xe7, 0x9d, 0x53, 0x72, 0x45, 0xb1, 0xef, 0xe7,
+	0x2c, 0x9d, 0x54, 0x88, 0x8b, 0x94, 0x4e, 0x49, 0xe8, 0x0d, 0xf4, 0xdf, 0x82, 0x96, 0xa6, 0x2d,
+	0x70, 0xe0, 0x0e, 0x54, 0x1d, 0xaf, 0x3f, 0x09, 0xc8, 0xc1, 0xc1, 0x01, 0x27, 0x64, 0x94, 0xc6,
+	0x5e, 0xbc, 0x9f, 0x9a, 0xbe, 0xfd, 0xc9, 0x8c, 0xf5, 0x85, 0xb8, 0x88, 0xb1, 0x92, 0x30, 0x33,
+	0x36, 0xa9, 0xed, 0x63, 0x8d, 0x1d, 0xc2, 0xbd, 0xf9, 0x9b, 0xea, 0x88, 0x92, 0xf1, 0x6b, 0xe3,
+	0x45, 0xce, 0xe3, 0x38, 0xa5, 0x6e, 0x60, 0x2b, 0xff, 0xd4, 0x1f, 0xc0, 0x4e, 0xa6, 0x9e, 0x20,
+	0xc8, 0x3d, 0xd8, 0x90, 0x2c, 0x87, 0x53, 0x6f, 0xe0, 0xe6, 0x7a, 0xa5, 0x7d, 0x0d, 0x8d, 0xb8,
+	0xa8, 0x05, 0xf7, 0x0e, 0x06, 0x24, 0x4e, 0x6f, 0x9b, 0x78, 0x43, 0xe7, 0x2a, 0x67, 0x9c, 0x86,
+	0x53, 0xd7, 0xed, 0x4f, 0x4c, 0x66, 0xcf, 0xe2, 0xc4, 0x09, 0xe7, 0x26, 0xb3, 0xf5, 0xc7, 0xb0,
+	0x11, 0x53, 0xb3, 0xb0, 0x4e, 0xfc, 0xbc, 0x04, 0xf5, 0x0b, 0xcc, 0xf2, 0x9b, 0xf4, 0x0c, 0xca,
+	0xd8, 0x63, 0xd4, 0xc1, 0xb2, 0x44, 0x54, 0xf7, 0xef, 0xcd, 0x16, 0xcc, 0x8b, 0xdf, 0xeb, 0x7a,
+	0x8c, 0xde, 0x18, 0x33, 0x76, 0xed, 0x4f, 0x45, 0x28, 0x09, 0x12, 0x0f, 0x26, 0x7f, 0x89, 0xc9,
+	0x82, 0xc1, 0x3f, 0xd1, 0x5d, 0xa8, 0x88, 0x2b, 0xb3, 0xef, 0x33, 0x2a, 0x37, 0x7a, 0x52, 0x30,
+	0xd6, 0x04, 0xe9, 0x82, 0x51, 0xf4, 0x00, 0xaa, 0x72, 0xda, 0xf1, 0xd8, 0xd3, 0x7d, 0x51, 0x7d,
+	0x4b, 0x27, 0x05, 0x03, 0x04, 0xb1, 0xc7, 0x69, 0x68, 0x07, 0xe4, 0xa8, 0x7f, 0x49, 0x88, 0x2b,
+	0xdf, 0x85, 0x27, 0x05, 0x43, 0x4a, 0x3d, 0x24, 0xc4, 0x3d, 0x2c, 0x07, 0x57, 0xb4, 0xbe, 0x01,
+	0xeb, 0x11, 0x53, 0x83, 0x54, 0x79, 0x07, 0x1b, 0x1d, 0xec, 0xe2, 0x4f, 0x11, 0x34, 0x04, 0x2b,
+	0x23, 0x7c, 0x23, 0xdd, 0x53, 0x31, 0xc4, 0xb7, 0xbe, 0x09, 0x8d, 0xb8, 0xf8, 0x40, 0xad, 0xc5,
+	0xfb, 0x39, 0x9f, 0x11, 0x8a, 0xdb, 0x53, 0x9f, 0x91, 0xf1, 0x09, 0x21, 0x23, 0x3f, 0xa7, 0x72,
+	0x91, 0x8f, 0x4b, 0x91, 0x7c, 0xdc, 0x06, 0x2d, 0x4d, 0x49, 0x60, 0xc2, 0x19, 0x34, 0x0f, 0x4d,
+	0x6b, 0x34, 0x9d, 0x7c, 0x1a, 0x0b, 0xf4, 0x5f, 0x42, 0x2b, 0x45, 0xde, 0x82, 0xe3, 0x32, 0x82,
+	0x07, 0x69, 0x07, 0x39, 0xf7, 0x99, 0x4d, 0xf5, 0xc5, 0x23, 0xd0, 0x17, 0x29, 0x0b, 0x7c, 0x72,
+	0x02, 0x88, 0xdf, 0x75, 0x2f, 0x1c, 0x0b, 0x7b, 0xb9, 0xee, 0x54, 0xbd, 0x0d, 0x1b, 0x31, 0x49,
+	0x81, 0x1f, 0x9e, 0x00, 0x72, 0x25, 0xa9, 0xef, 0xdb, 0x84, 0xb2, 0xbe, 0x67, 0x8e, 0x67, 0x37,
+	0x68, 0x3d, 0x98, 0xb9, 0xe0, 0x13, 0x67, 0xe6, 0x58, 0x84, 0xe8, 0x18, 0xb3, 0x9e, 0x37, 0x24,
+	0x07, 0x9f, 0xa2, 0xe7, 0xd3, 0x7f, 0x0d, 0xad, 0x14, 0x79, 0x81, 0x69, 0xf7, 0x00, 0x54, 0xb3,
+	0x17, 0x04, 0x2a, 0x42, 0xe1, 0xc6, 0xb4, 0x4d, 0xd7, 0x9a, 0xba, 0x26, 0xc3, 0x6d, 0x1b, 0x5b,
+	0x23, 0x7f, 0x3a, 0xce, 0x63, 0xcc, 0xaf, 0xa0, 0x95, 0x22, 0x2f, 0x30, 0x46, 0x83, 0x35, 0x2b,
+	0xa0, 0x05, 0xde, 0x09, 0xc7, 0x3c, 0x48, 0xc7, 0x98, 0x5d, 0x78, 0xe6, 0xc4, 0xb7, 0x49, 0x1e,
+	0x9c, 0x41, 0xff, 0x0a, 0x36, 0x62, 0x92, 0x16, 0x24, 0xeb, 0x5f, 0x8a, 0xf0, 0x30, 0x2d, 0x81,
+	0x3e, 0x81, 0x19, 0xbc, 0xd5, 0xb4, 0x19, 0x9b, 0xf4, 0xd5, 0x45, 0x57, 0xe6, 0xe3, 0xd7, 0xd4,
+	0xe5, 0x17, 0x81, 0x98, 0x32, 0xa7, 0xcc, 0x0e, 0xda, 0x2f, 0xc1, 0x7b, 0x30, 0x65, 0xb6, 0xfe,
+	0x05, 0x3c, 0x5a, 0x6c, 0x52, 0x90, 0xd5, 0x7f, 0x2e, 0x42, 0xe3, 0x18, 0x33, 0xc3, 0xbc, 0x6e,
+	0xdb, 0xa6, 0x77, 0x95, 0x0f, 0x37, 0x78, 0x08, 0xb7, 0x86, 0x94, 0x8c, 0xfb, 0x31, 0xf0, 0xa0,
+	0x62, 0xd4, 0x38, 0x31, 0x7c, 0xf3, 0xee, 0x40, 0x95, 0x91, 0x7e, 0xec, 0xd5, 0x5c, 0x31, 0x80,
+	0x91, 0x19, 0x83, 0xfe, 0xd7, 0x65, 0xb8, 0x3d, 0x67, 0x52, 0xe0, 0xfc, 0x13, 0xa8, 0x52, 0xf3,
+	0xba, 0x6f, 0x49, 0x72, 0xb3, 0x28, 0xee, 0x9a, 0x2f, 0x23, 0xad, 0x65, 0x72, 0xcd, 0x5e, 0x48,
+	0x32, 0x80, 0x86, 0xb3, 0xda, 0xdf, 0x97, 0xa0, 0x12, 0xce, 0xa0, 0x2d, 0x28, 0x5f, 0xba, 0xe4,
+	0x92, 0x3f, 0x7c, 0x64, 0x42, 0xad, 0xf2, 0x61, 0x6f, 0x10, 0xa2, 0x2d, 0x4b, 0x0a, 0x6d, 0x11,
+	0xcd, 0x3f, 0xbe, 0x96, 0xd7, 0xaf, 0x34, 0xbe, 0xec, 0xe1, 0x6b, 0x7e, 0xfb, 0xf2, 0x29, 0xfe,
+	0xe2, 0x17, 0x53, 0x2b, 0x72, 0x8a, 0xb8, 0x03, 0x31, 0xf5, 0x12, 0x2a, 0x64, 0x82, 0xa9, 0xc9,
+	0xf8, 0x9e, 0x4b, 0xa2, 0x27, 0xfe, 0xf6, 0x23, 0x0d, 0xdf, 0x7b, 0x39, 0x5b, 0x68, 0x28, 0x19,
+	0xdc, 0xd7, 0xdc, 0x17, 0x4a, 0xa8, 0xc4, 0x30, 0x6a, 0xd4, 0xbc, 0x0e, 0xf9, 0x75, 0x07, 0x2a,
+	0xe1, 0x80, 0x77, 0xcc, 0xaf, 0xcf, 0x9e, 0x9f, 0xbd, 0x7c, 0x73, 0x56, 0x2f, 0xa0, 0x0a, 0x94,
+	0x0e, 0x3a, 0x9d, 0x6e, 0x47, 0x76, 0xd5, 0xed, 0x97, 0xe7, 0xbd, 0x6e, 0x47, 0x76, 0xd5, 0x9d,
+	0xee, 0x8b, 0xee, 0xab, 0x6e, 0xa7, 0xbe, 0x8c, 0x6a, 0xb0, 0x76, 0xfa, 0xb2, 0xd3, 0x3b, 0xe2,
+	0x53, 0x2b, 0x7c, 0xca, 0xe8, 0x9e, 0x1d, 0x9c, 0x76, 0x3b, 0xf5, 0x12, 0xaa, 0x43, 0xed, 0xd5,
+	0xef, 0xcf, 0xbb, 0xfd, 0xf6, 0xc9, 0xc1, 0xd9, 0x71, 0xb7, 0x53, 0x5f, 0xd5, 0x3f, 0x40, 0xf3,
+	0x02, 0x9b, 0xd4, 0xb2, 0x8f, 0x1c, 0x17, 0xfb, 0x87, 0x37, 0xbc, 0x48, 0xe5, 0xc9, 0xa5, 0x06,
+	0x94, 0xde, 0x4f, 0x71, 0xf0, 0xae, 0xaf, 0x18, 0x72, 0x30, 0xeb, 0xc0, 0x96, 0xc3, 0x0e, 0x4c,
+	0xff, 0x16, 0x5a, 0x29, 0x7a, 0xd5, 0xbb, 0x67, 0xc8, 0xc9, 0x22, 0x55, 0x6a, 0x86, 0x1c, 0xe8,
+	0x37, 0x70, 0x27, 0xb6, 0xa4, 0x4d, 0x3c, 0x86, 0x3d, 0xf6, 0xbf, 0xb0, 0xf6, 0x19, 0x6c, 0xa7,
+	0xab, 0x0e, 0x0c, 0x6e, 0x42, 0x79, 0x6c, 0x32, 0xcb, 0x0e, 0x4d, 0x9e, 0x0d, 0xf7, 0xff, 0xb5,
+	0x29, 0x90, 0xdc, 0x19, 0x26, 0x28, 0xa1, 0x6e, 0xf4, 0x06, 0xea, 0xf3, 0xf8, 0x33, 0xda, 0x49,
+	0xda, 0x1a, 0x03, 0xba, 0xb5, 0xfb, 0xd9, 0x0c, 0x41, 0x55, 0x28, 0xa0, 0xb7, 0x33, 0xdc, 0x38,
+	0x02, 0x2a, 0xa3, 0xe8, 0xc2, 0x54, 0xfc, 0x5a, 0x7b, 0xb0, 0x80, 0x23, 0x94, 0xdd, 0x05, 0x50,
+	0x28, 0x31, 0x6a, 0xc5, 0x97, 0x44, 0x70, 0x6a, 0x4d, 0x4b, 0x9b, 0x0a, 0xc5, 0xfc, 0x0e, 0x3e,
+	0x8b, 0x83, 0xbc, 0xe8, 0x6e, 0x78, 0xa2, 0xd2, 0xe0, 0x66, 0xed, 0x5e, 0xd6, 0x74, 0x54, 0x64,
+	0x1c, 0x77, 0x55, 0x22, 0x53, 0xc1, 0x5d, 0x25, 0x32, 0x1d, 0xae, 0xd5, 0x0b, 0xe8, 0x1d, 0xa0,
+	0x24, 0x5e, 0x8a, 0x42, 0x3f, 0x65, 0x02, 0xb7, 0x9a, 0xbe, 0x88, 0x25, 0x14, 0x7f, 0x02, 0xd5,
+	0x08, 0xd2, 0x88, 0x42, 0x8f, 0x25, 0x41, 0x58, 0xed, 0x4e, 0xea, 0x5c, 0x28, 0xe9, 0x0d, 0xd4,
+	0xe7, 0x6f, 0x0c, 0x95, 0x4a, 0x19, 0xb0, 0xa5, 0x4a, 0xa5, 0x4c, 0x20, 0xb2, 0x80, 0x8e, 0x01,
+	0x14, 0x38, 0xa7, 0xc2, 0x9d, 0x40, 0x02, 0x55, 0xb8, 0x93, 0x58, 0x9e, 0x5e, 0xf8, 0xa6, 0xc8,
+	0x2d, 0x9c, 0x07, 0xdb, 0x94, 0x85, 0x19, 0xa8, 0x9e, 0xb2, 0x30, 0x0b, 0xa7, 0x93, 0xc9, 0x9e,
+	0x40, 0xaf, 0x54, 0xb2, 0x67, 0xa1, 0x75, 0x2a, 0xd9, 0x33, 0xa1, 0x2f, 0xbd, 0x80, 0x9e, 0xc2,
+	0xca, 0x91, 0x6f, 0x8d, 0xd0, 0x46, 0xc8, 0xac, 0x20, 0x2f, 0xad, 0x11, 0x27, 0x86, 0x8b, 0xbe,
+	0x83, 0xb5, 0x19, 0xd6, 0x83, 0xb6, 0x66, 0x3c, 0x73, 0x08, 0x96, 0xd6, 0x4c, 0x4e, 0x84, 0x02,
+	0xce, 0xe0, 0x56, 0x0c, 0x98, 0x41, 0xdb, 0xa1, 0xa6, 0x14, 0x64, 0x48, 0xbb, 0x9b, 0x31, 0x1b,
+	0x3d, 0xb2, 0x0a, 0x30, 0x51, 0x31, 0x4c, 0xc0, 0x39, 0x2a, 0x86, 0x29, 0xf8, 0x8a, 0x38, 0x0c,
+	0x49, 0xcc, 0x43, 0x1d, 0x86, 0x4c, 0xf4, 0x45, 0x1d, 0x86, 0x6c, 0xc8, 0x64, 0x26, 0x7e, 0x1e,
+	0xa5, 0x88, 0x8a, 0xcf, 0xc0, 0x4b, 0xa2, 0xe2, 0xb3, 0x40, 0x0e, 0xbd, 0x80, 0xdc, 0x24, 0x7c,
+	0x1f, 0xa0, 0x0b, 0xe8, 0x8b, 0xac, 0x73, 0x10, 0x87, 0x39, 0xb4, 0x2f, 0xff, 0x23, 0x5f, 0xa8,
+	0xed, 0x14, 0x6a, 0x51, 0x74, 0x01, 0xdd, 0x89, 0x2f, 0x8d, 0xb5, 0x42, 0xda, 0x76, 0xfa, 0x64,
+	0xe4, 0xf0, 0x5c, 0x83, 0x96, 0xdd, 0xe4, 0xa0, 0xaf, 0x16, 0xd9, 0x15, 0x57, 0xf5, 0xf5, 0xc7,
+	0xb0, 0xce, 0x14, 0xef, 0x16, 0x79, 0x85, 0x8a, 0x40, 0x12, 0xaa, 0x42, 0x25, 0xe1, 0x10, 0x55,
+	0xa1, 0x52, 0x30, 0x0c, 0xbd, 0x80, 0x0e, 0xa1, 0x12, 0x36, 0xe9, 0xa8, 0x99, 0x05, 0x31, 0x68,
+	0xad, 0x94, 0x99, 0x50, 0xc6, 0x73, 0xa8, 0x45, 0x9b, 0x6e, 0xe5, 0xd5, 0x94, 0x4e, 0x5f, 0x79,
+	0x35, 0xb5, 0x4f, 0x97, 0xc5, 0x57, 0x35, 0x72, 0x91, 0xe2, 0x9b, 0xe8, 0x13, 0x23, 0xc5, 0x37,
+	0xd9, 0xf9, 0xe9, 0x05, 0xf4, 0x83, 0xf8, 0xb5, 0x26, 0xde, 0x7d, 0xa1, 0xe8, 0x8f, 0x26, 0xa9,
+	0x8d, 0x9e, 0xaa, 0x40, 0x99, 0xad, 0x9b, 0x88, 0xfd, 0x5b, 0x58, 0x4f, 0xb4, 0x53, 0x4a, 0x7a,
+	0x56, 0xe7, 0xa6, 0xa4, 0x67, 0xf6, 0x62, 0x7a, 0x01, 0xfd, 0x06, 0xca, 0xc1, 0x4f, 0xa1, 0x68,
+	0x33, 0xe4, 0x8f, 0xfd, 0xc2, 0xaa, 0x6d, 0x25, 0xe8, 0xe1, 0xea, 0xef, 0xa1, 0x1a, 0xe9, 0xb2,
+	0x50, 0xf4, 0x06, 0x98, 0xeb, 0x9e, 0x94, 0x07, 0x53, 0xda, 0x32, 0xb1, 0xcb, 0x3f, 0xc0, 0xf6,
+	0xa2, 0x96, 0x07, 0x3d, 0x5e, 0x94, 0xb8, 0xf3, 0xda, 0x9e, 0x7c, 0x1c, 0x73, 0xb8, 0x91, 0x73,
+	0xb8, 0x15, 0x7b, 0xc6, 0xab, 0x82, 0x9b, 0xd6, 0x5d, 0xa9, 0x82, 0x9b, 0xfa, 0xf6, 0x17, 0xdb,
+	0xc1, 0xd0, 0x48, 0x7b, 0x2a, 0xa2, 0x87, 0x2a, 0xbd, 0x33, 0xdf, 0xb0, 0xda, 0xa3, 0xc5, 0x4c,
+	0x11, 0x35, 0x3f, 0xc0, 0x7a, 0xe2, 0xfd, 0xac, 0x72, 0x23, 0xeb, 0x49, 0xaf, 0x72, 0x23, 0xf3,
+	0xf1, 0x2d, 0xa4, 0xbf, 0x03, 0x94, 0x84, 0x99, 0x50, 0xe4, 0x95, 0x98, 0x81, 0x73, 0xa9, 0x8a,
+	0x9c, 0x8d, 0x52, 0xed, 0x0a, 0xe3, 0x13, 0xb8, 0x92, 0x32, 0x3e, 0x0b, 0xc2, 0x52, 0xc6, 0x67,
+	0x82, 0x52, 0xdc, 0xf8, 0xcb, 0x55, 0xf1, 0x97, 0x91, 0xa7, 0xff, 0x0e, 0x00, 0x00, 0xff, 0xff,
+	0xcc, 0xc6, 0x1f, 0x98, 0x64, 0x22, 0x00, 0x00,
 }

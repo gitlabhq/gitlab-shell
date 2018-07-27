@@ -109,9 +109,7 @@ func (m *ConflictFile) String() string            { return proto.CompactTextStri
 func (*ConflictFile) ProtoMessage()               {}
 func (*ConflictFile) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{2} }
 
-type isConflictFile_ConflictFilePayload interface {
-	isConflictFile_ConflictFilePayload()
-}
+type isConflictFile_ConflictFilePayload interface{ isConflictFile_ConflictFilePayload() }
 
 type ConflictFile_Header struct {
 	Header *ConflictFileHeader `protobuf:"bytes,1,opt,name=header,oneof"`
@@ -314,9 +312,7 @@ func (m *ResolveConflictsRequest) String() string            { return proto.Comp
 func (*ResolveConflictsRequest) ProtoMessage()               {}
 func (*ResolveConflictsRequest) Descriptor() ([]byte, []int) { return fileDescriptor2, []int{5} }
 
-type isResolveConflictsRequest_ResolveConflictsRequestPayload interface {
-	isResolveConflictsRequest_ResolveConflictsRequestPayload()
-}
+type isResolveConflictsRequest_ResolveConflictsRequestPayload interface{ isResolveConflictsRequest_ResolveConflictsRequestPayload() }
 
 type ResolveConflictsRequest_Header struct {
 	Header *ResolveConflictsRequestHeader `protobuf:"bytes,1,opt,name=header,oneof"`

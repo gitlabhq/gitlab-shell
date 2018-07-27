@@ -20,6 +20,7 @@ It is generated from these files:
 	shared.proto
 	smarthttp.proto
 	ssh.proto
+	storage.proto
 	wiki.proto
 
 It has these top-level messages:
@@ -71,6 +72,8 @@ It has these top-level messages:
 	ExtractCommitSignatureResponse
 	GetCommitSignaturesRequest
 	GetCommitSignaturesResponse
+	GetCommitMessagesRequest
+	GetCommitMessagesResponse
 	ListConflictFilesRequest
 	ConflictFileHeader
 	ConflictFile
@@ -89,6 +92,9 @@ It has these top-level messages:
 	RawDiffResponse
 	RawPatchRequest
 	RawPatchResponse
+	DiffStatsRequest
+	DiffStats
+	DiffStatsResponse
 	AddNamespaceRequest
 	RemoveNamespaceRequest
 	RenameNamespaceRequest
@@ -101,6 +107,8 @@ It has these top-level messages:
 	PostReceiveResponse
 	UserCreateBranchRequest
 	UserCreateBranchResponse
+	UserUpdateBranchRequest
+	UserUpdateBranchResponse
 	UserDeleteBranchRequest
 	UserDeleteBranchResponse
 	UserDeleteTagRequest
@@ -155,6 +163,12 @@ It has these top-level messages:
 	ListBranchNamesContainingCommitResponse
 	ListTagNamesContainingCommitRequest
 	ListTagNamesContainingCommitResponse
+	GetTagMessagesRequest
+	GetTagMessagesResponse
+	ListNewCommitsRequest
+	ListNewCommitsResponse
+	FindAllRemoteBranchesRequest
+	FindAllRemoteBranchesResponse
 	AddRemoteRequest
 	AddRemoteResponse
 	RemoveRemoteRequest
@@ -163,6 +177,8 @@ It has these top-level messages:
 	FetchInternalRemoteResponse
 	UpdateRemoteMirrorRequest
 	UpdateRemoteMirrorResponse
+	FindRemoteRepositoryRequest
+	FindRemoteRepositoryResponse
 	RepositoryExistsRequest
 	RepositoryExistsResponse
 	RepackIncrementalRequest
@@ -171,6 +187,8 @@ It has these top-level messages:
 	RepackFullResponse
 	GarbageCollectRequest
 	GarbageCollectResponse
+	CleanupRequest
+	CleanupResponse
 	RepositorySizeRequest
 	RepositorySizeResponse
 	ApplyGitattributesRequest
@@ -203,10 +221,32 @@ It has these top-level messages:
 	CreateBundleResponse
 	WriteConfigRequest
 	WriteConfigResponse
+	SetConfigRequest
+	SetConfigResponse
+	DeleteConfigRequest
+	DeleteConfigResponse
+	RestoreCustomHooksRequest
+	RestoreCustomHooksResponse
+	BackupCustomHooksRequest
+	BackupCustomHooksResponse
 	CreateRepositoryFromBundleRequest
 	CreateRepositoryFromBundleResponse
 	FindLicenseRequest
 	FindLicenseResponse
+	GetInfoAttributesRequest
+	GetInfoAttributesResponse
+	CalculateChecksumRequest
+	CalculateChecksumResponse
+	GetSnapshotRequest
+	GetSnapshotResponse
+	CreateRepositoryFromSnapshotRequest
+	CreateRepositoryFromSnapshotResponse
+	GetRawChangesRequest
+	GetRawChangesResponse
+	SearchFilesByNameRequest
+	SearchFilesByNameResponse
+	SearchFilesByContentRequest
+	SearchFilesByContentResponse
 	ServerInfoRequest
 	ServerInfoResponse
 	Repository
@@ -228,6 +268,8 @@ It has these top-level messages:
 	SSHReceivePackResponse
 	SSHUploadArchiveRequest
 	SSHUploadArchiveResponse
+	DeleteAllRepositoriesRequest
+	DeleteAllRepositoriesResponse
 	WikiCommitDetails
 	WikiPageVersion
 	WikiPage
