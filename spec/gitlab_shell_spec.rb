@@ -27,7 +27,8 @@ describe GitlabShell do
     gl_id: gl_id,
     gl_username: gl_username,
     repository_path: repo_path,
-    gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' }
+    gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' },
+    git_protocol: git_protocol
   )
   }
 
@@ -41,11 +42,12 @@ describe GitlabShell do
                 gl_id: gl_id,
                 gl_username: gl_username,
                 repository_path: repo_path,
-                gitaly: nil))
+                gitaly: nil,
+                git_protocol: git_protocol))
       api.stub(two_factor_recovery_codes: {
-        'success' => true,
-        'recovery_codes' => ['f67c514de60c4953', '41278385fc00c1e0']
-      })
+                 'success' => true,
+                 'recovery_codes' => %w[f67c514de60c4953 41278385fc00c1e0]
+               })
     end
   end
 
@@ -58,6 +60,7 @@ describe GitlabShell do
   let(:gl_repository) { 'project-1' }
   let(:gl_id) { 'user-1' }
   let(:gl_username) { 'testuser' }
+  let(:git_protocol) { 'version=2' }
 
   before do
     GitlabConfig.any_instance.stub(audit_usernames: false)
@@ -72,7 +75,7 @@ describe GitlabShell do
   describe :parse_cmd do
     describe 'git' do
       context 'w/o namespace' do
-        let(:ssh_args) { %W(git-upload-pack gitlab-ci.git) }
+        let(:ssh_args) { %w(git-upload-pack gitlab-ci.git) }
 
         before do
           subject.send :parse_cmd, ssh_args
@@ -84,7 +87,7 @@ describe GitlabShell do
 
       context 'namespace' do
         let(:repo_name) { 'dmitriy.zaporozhets/gitlab-ci.git' }
-        let(:ssh_args) { %W(git-upload-pack dmitriy.zaporozhets/gitlab-ci.git) }
+        let(:ssh_args) { %w(git-upload-pack dmitriy.zaporozhets/gitlab-ci.git) }
 
         before do
           subject.send :parse_cmd, ssh_args
@@ -95,7 +98,7 @@ describe GitlabShell do
       end
 
       context 'with an invalid number of arguments' do
-        let(:ssh_args) { %W(foobar) }
+        let(:ssh_args) { %w(foobar) }
 
         it "should raise an DisallowedCommandError" do
           expect { subject.send :parse_cmd, ssh_args }.to raise_error(GitlabShell::DisallowedCommandError)
@@ -123,7 +126,7 @@ describe GitlabShell do
 
     describe 'git-lfs' do
       let(:repo_name) { 'dzaporozhets/gitlab.git' }
-      let(:ssh_args) { %W(git-lfs-authenticate dzaporozhets/gitlab.git download) }
+      let(:ssh_args) { %w(git-lfs-authenticate dzaporozhets/gitlab.git download) }
 
       before do
         subject.send :parse_cmd, ssh_args
@@ -136,7 +139,7 @@ describe GitlabShell do
 
     describe 'git-lfs old clients' do
       let(:repo_name) { 'dzaporozhets/gitlab.git' }
-      let(:ssh_args) { %W(git-lfs-authenticate dzaporozhets/gitlab.git download long_oid) }
+      let(:ssh_args) { %w(git-lfs-authenticate dzaporozhets/gitlab.git download long_oid) }
 
       before do
         subject.send :parse_cmd, ssh_args
@@ -149,14 +152,22 @@ describe GitlabShell do
   end
 
   describe :exec do
-    let(:gitaly_message) { JSON.dump({ 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' }, 'gl_repository' => gl_repository, 'gl_id' => gl_id, 'gl_username' => gl_username}) }
+    let(:gitaly_message) do
+      JSON.dump(
+        'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' },
+        'gl_repository' => gl_repository,
+        'gl_id' => gl_id,
+        'gl_username' => gl_username,
+        'git_protocol' => git_protocol
+      )
+    end
 
     shared_examples_for 'upload-pack' do |command|
       let(:ssh_cmd) { "#{command} gitlab-ci.git" }
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
-        subject.should_receive(:process_cmd).with(%W(git-upload-pack gitlab-ci.git))
+        subject.should_receive(:process_cmd).with(%w(git-upload-pack gitlab-ci.git))
       end
 
       it "should execute the command" do
@@ -185,13 +196,13 @@ describe GitlabShell do
 
     context 'gitaly-upload-pack' do
       let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
-      before {
+      before do
         api.stub(check_access: gitaly_check_access)
-      }
+      end
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
-        subject.should_receive(:process_cmd).with(%W(git-upload-pack gitlab-ci.git))
+        subject.should_receive(:process_cmd).with(%w(git-upload-pack gitlab-ci.git))
       end
 
       it "should execute the command" do
@@ -215,7 +226,7 @@ describe GitlabShell do
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
-        subject.should_receive(:process_cmd).with(%W(git-receive-pack gitlab-ci.git))
+        subject.should_receive(:process_cmd).with(%w(git-receive-pack gitlab-ci.git))
       end
 
       it "should execute the command" do
@@ -231,13 +242,13 @@ describe GitlabShell do
 
     context 'gitaly-receive-pack' do
       let(:ssh_cmd) { "git-receive-pack gitlab-ci.git" }
-      before {
+      before do
         api.stub(check_access: gitaly_check_access)
-      }
+      end
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
-        subject.should_receive(:process_cmd).with(%W(git-receive-pack gitlab-ci.git))
+        subject.should_receive(:process_cmd).with(%w(git-receive-pack gitlab-ci.git))
       end
 
       it "should execute the command" do
@@ -264,7 +275,7 @@ describe GitlabShell do
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
-        subject.should_receive(:process_cmd).with(%W(git-upload-archive gitlab-ci.git))
+        subject.should_receive(:process_cmd).with(%w(git-upload-archive gitlab-ci.git))
       end
 
       it "should execute the command" do
@@ -341,9 +352,9 @@ describe GitlabShell do
     context "failed connection" do
       let(:ssh_cmd) { 'git-upload-pack gitlab-ci.git' }
 
-      before {
+      before do
         api.stub(:check_access).and_raise(GitlabNet::ApiUnreachableError)
-      }
+      end
       after { subject.exec(ssh_cmd) }
 
       it "should not process the command" do
@@ -382,9 +393,9 @@ describe GitlabShell do
         context 'when the process is unsuccessful' do
           it 'displays the error to the user' do
             api.stub(two_factor_recovery_codes: {
-              'success' => false,
-              'message' => 'Could not find the given key'
-            })
+                       'success' => false,
+                       'message' => 'Could not find the given key'
+                     })
 
             expect($stdout).to receive(:puts)
               .with(/Could not find the given key/)
@@ -412,7 +423,8 @@ describe GitlabShell do
                   gl_id: nil,
                   gl_username: nil,
                   repository_path: nil,
-                  gitaly: nil))
+                  gitaly: nil,
+                  git_protocol: nil))
         message = 'Access denied'
         user_string = "user with id #{gl_id}"
         $logger.should_receive(:warn).with(message, command: 'git-upload-pack gitlab-ci.git', user: user_string)
@@ -450,13 +462,15 @@ describe GitlabShell do
         'GL_ID' => gl_id,
         'GL_PROTOCOL' => 'ssh',
         'GL_REPOSITORY' => gl_repository,
-        'GL_USERNAME' => 'testuser'
+        'GL_USERNAME' => 'testuser',
+        'GIT_PROTOCOL' => 'version=2'
       }
     end
     let(:exec_options) { { unsetenv_others: true, chdir: ROOT_PATH } }
     before do
       Kernel.stub(:exec)
       shell.gl_repository = gl_repository
+      shell.git_protocol = git_protocol
       shell.instance_variable_set(:@username, gl_username)
     end
 

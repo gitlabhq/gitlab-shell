@@ -18,7 +18,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
   API_COMMANDS = %w(2fa_recovery_codes).freeze
   GL_PROTOCOL = 'ssh'.freeze
 
-  attr_accessor :gl_id, :gl_repository, :repo_name, :command, :git_access
+  attr_accessor :gl_id, :gl_repository, :repo_name, :command, :git_access, :git_protocol
   attr_reader :repo_path
 
   def initialize(who)
@@ -118,6 +118,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
     self.repo_path = status.repository_path
     @gl_repository = status.gl_repository
+    @git_protocol = status.git_protocol
     @gitaly = status.gitaly
     @username = status.gl_username
     if defined?(@who)
@@ -150,7 +151,8 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
         'repository' => @gitaly['repository'],
         'gl_repository' => @gl_repository,
         'gl_id' => @gl_id,
-        'gl_username' => @username
+        'gl_username' => @username,
+        'git_protocol' => @git_protocol
       }
 
       args = [gitaly_address, JSON.dump(gitaly_request)]
@@ -178,6 +180,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       'GL_ID' => @gl_id,
       'GL_PROTOCOL' => GL_PROTOCOL,
       'GL_REPOSITORY' => @gl_repository,
+      'GIT_PROTOCOL' => @git_protocol,
       'GL_USERNAME' => @username
     }
     if @gitaly && @gitaly.include?('token')
