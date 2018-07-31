@@ -14,7 +14,7 @@ module HTTPHelper
   HTTP_SUCCESS_LIKE = [HTTP_SUCCESS, HTTP_MULTIPLE_CHOICES].freeze
 
   class ApiUnreachableError < StandardError; end
-  class NotFound < StandardError; end
+  class NotFoundError < StandardError; end
 
   protected
 

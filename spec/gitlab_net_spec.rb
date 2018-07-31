@@ -145,9 +145,9 @@ describe GitlabNet, vcr: true do
       end
     end
 
-    it 'throws a NotFound error when pre-receive is not available' do
+    it 'throws a NotFoundError when pre-receive is not available' do
       VCR.use_cassette("pre-receive-not-found") do
-        expect do subject end.to raise_error(GitlabNet::NotFound)
+        expect do subject end.to raise_error(GitlabNet::NotFoundError)
       end
     end
   end
@@ -185,9 +185,9 @@ describe GitlabNet, vcr: true do
       end
     end
 
-    it 'throws a NotFound error when post-receive is not available' do
+    it 'throws a NotFoundError when post-receive is not available' do
       VCR.use_cassette("post-receive-not-found") do
-        expect do subject end.to raise_error(GitlabNet::NotFound)
+        expect do subject end.to raise_error(GitlabNet::NotFoundError)
       end
     end
   end

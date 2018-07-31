@@ -95,14 +95,14 @@ class GitlabNet
   def post_receive(gl_repository, identifier, changes)
     params = { gl_repository: gl_repository, identifier: identifier, changes: changes }
     resp = post("#{internal_api_endpoint}/post_receive", params)
-    raise NotFound if resp.code == HTTP_NOT_FOUND
+    raise NotFoundError if resp.code == HTTP_NOT_FOUND
 
     JSON.parse(resp.body) if resp.code == HTTP_SUCCESS
   end
 
   def pre_receive(gl_repository)
     resp = post("#{internal_api_endpoint}/pre_receive", gl_repository: gl_repository)
-    raise NotFound if resp.code == HTTP_NOT_FOUND
+    raise NotFoundError if resp.code == HTTP_NOT_FOUND
 
     JSON.parse(resp.body) if resp.code == HTTP_SUCCESS
   end
