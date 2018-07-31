@@ -162,6 +162,10 @@ describe GitlabShell do
       )
     end
 
+    before do
+      allow(ENV).to receive(:[]).with('GIT_PROTOCOL').and_return(git_protocol)
+    end
+
     shared_examples_for 'upload-pack' do |command|
       let(:ssh_cmd) { "#{command} gitlab-ci.git" }
       after { subject.exec(ssh_cmd) }
@@ -462,7 +466,7 @@ describe GitlabShell do
         'GL_ID' => gl_id,
         'GL_PROTOCOL' => 'ssh',
         'GL_REPOSITORY' => gl_repository,
-        'GL_USERNAME' => 'testuser',
+        'GL_USERNAME' => 'testuser'
       }
     end
     let(:exec_options) { { unsetenv_others: true, chdir: ROOT_PATH } }

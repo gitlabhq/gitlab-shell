@@ -118,7 +118,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
     self.repo_path = status.repository_path
     @gl_repository = status.gl_repository
-    @git_protocol = status.git_protocol
+    @git_protocol = ENV['GIT_PROTOCOL']
     @gitaly = status.gitaly
     @username = status.gl_username
     if defined?(@who)
