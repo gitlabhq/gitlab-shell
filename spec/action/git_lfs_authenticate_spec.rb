@@ -2,8 +2,9 @@ require_relative '../spec_helper'
 require_relative '../../lib/action/git_lfs_authenticate'
 
 describe Action::GitLFSAuthenticate do
-  let(:key_id) { "key-#{rand(100) + 100}" }
+  let(:key_id) { '1' }
   let(:repo_name) { 'gitlab-ci.git' }
+  let(:key) { Actor::Key.new(key_id) }
   let(:username) { 'testuser' }
   let(:discover_payload) { { 'username' => username } }
   let(:api) { double(GitlabNet) }
@@ -14,7 +15,7 @@ describe Action::GitLFSAuthenticate do
   end
 
   subject do
-    described_class.new(key_id, repo_name)
+    described_class.new(key, repo_name)
   end
 
   describe '#execute' do

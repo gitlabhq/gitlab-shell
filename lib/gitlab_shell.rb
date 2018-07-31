@@ -3,7 +3,7 @@ require 'pathname'
 
 require_relative 'gitlab_net'
 require_relative 'gitlab_metrics'
-require_relative 'user'
+require_relative 'actor/key'
 
 class GitlabShell
   API_2FA_RECOVERY_CODES_COMMAND = '2fa_recovery_codes'.freeze
@@ -16,8 +16,8 @@ class GitlabShell
   GIT_COMMANDS = [GIT_UPLOAD_PACK_COMMAND, GIT_RECEIVE_PACK_COMMAND,
                   GIT_UPLOAD_ARCHIVE_COMMAND, GIT_LFS_AUTHENTICATE_COMMAND].freeze
 
-  def initialize(key_id)
-    @key_id = key_id
+  def initialize(key_str)
+    @key_str = key_str
     @config = GitlabConfig.new
   end
 
@@ -26,7 +26,7 @@ class GitlabShell
   # 'evil command'.
   def exec(origin_cmd)
     if !origin_cmd || origin_cmd.empty?
-      puts "Welcome to GitLab, #{user.username}!"
+      puts "Welcome to GitLab, #{key.username}!"
       return true
     end
 
@@ -38,11 +38,11 @@ class GitlabShell
     $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
     false
   rescue AccessDeniedError, UnknownError => ex
-    $logger.warn('Access denied', command: origin_cmd, user: user.log_username)
+    $logger.warn('Access denied', command: origin_cmd, user: key.log_username)
     $stderr.puts "GitLab: #{ex.message}"
     false
   rescue DisallowedCommandError
-    $logger.warn('Denied disallowed command', command: origin_cmd, user: user.log_username)
+    $logger.warn('Denied disallowed command', command: origin_cmd, user: key.log_username)
     $stderr.puts 'GitLab: Disallowed command'
     false
   rescue InvalidRepositoryPathError
@@ -52,10 +52,10 @@ class GitlabShell
 
   private
 
-  attr_reader :config, :key_id
+  attr_reader :config, :key_str
 
-  def user
-    @user ||= User.new(key_id, audit_usernames: config.audit_usernames)
+  def key
+    @key ||= Actor::Key.from(key_str, audit_usernames: config.audit_usernames)
   end
 
   def parse_cmd(cmd)
@@ -96,16 +96,16 @@ class GitlabShell
   end
 
   def determine_action(command, git_access_command, repo_name)
-    return Action::API2FARecovery.new(key_id) if command == API_2FA_RECOVERY_CODES_COMMAND
+    return Action::API2FARecovery.new(key) if command == API_2FA_RECOVERY_CODES_COMMAND
 
     GitlabMetrics.measure('verify-access') do
       # GitlatNet#check_access will raise exception in the event of a problem
       initial_action = api.check_access(git_access_command, nil,
-                                        repo_name, key_id, '_any')
+                                        repo_name, key, '_any')
 
       case command
       when GIT_LFS_AUTHENTICATE_COMMAND
-        Action::GitLFSAuthenticate.new(key_id, repo_name)
+        Action::GitLFSAuthenticate.new(key, repo_name)
       else
         initial_action
       end
@@ -113,6 +113,6 @@ class GitlabShell
   end
 
   def api
-    GitlabNet.new
+    @api ||= GitlabNet.new
   end
 end

@@ -5,7 +5,9 @@ describe Action::Gitaly do
   let(:git_trace_log_file_valid) { '/tmp/git_trace_performance.log' }
   let(:git_trace_log_file_invalid) { "/bleep-bop#{git_trace_log_file_valid}" }
   let(:git_trace_log_file_relative) { "..#{git_trace_log_file_valid}" }
-  let(:key_id) { "key-#{rand(100) + 100}" }
+  let(:key_id) { '1' }
+  let(:key_str) { 'key-1' }
+  let(:key) { Actor::Key.new(key_id) }
   let(:gl_repository) { 'project-1' }
   let(:gl_username) { 'testuser' }
   let(:tmp_repos_path) { File.join(ROOT_PATH, 'tmp', 'repositories') }
@@ -34,7 +36,7 @@ describe Action::Gitaly do
   end
 
   subject do
-    described_class.new(key_id, gl_repository, gl_username, repository_path, gitaly)
+    described_class.new(key, gl_repository, gl_username, repository_path, gitaly)
   end
 
   describe '#execute' do
@@ -45,7 +47,7 @@ describe Action::Gitaly do
         'PATH' => ENV['PATH'],
         'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
         'LANG' => ENV['LANG'],
-        'GL_ID' => key_id,
+        'GL_ID' => key_str,
         'GL_PROTOCOL' => GitlabNet::GL_PROTOCOL,
         'GL_REPOSITORY' => gl_repository,
         'GL_USERNAME' => gl_username,
@@ -63,7 +65,7 @@ describe Action::Gitaly do
       {
         'repository' => gitaly['repository'],
         'gl_repository' => gl_repository,
-        'gl_id' => key_id,
+        'gl_id' => key_str,
         'gl_username' => gl_username
       }
     end
@@ -94,7 +96,7 @@ describe Action::Gitaly do
           end
         end
 
-        context 'with an relative config.git_trace_log_file' do
+        context 'with n relative config.git_trace_log_file' do
           let(:git_trace_log_file) { git_trace_log_file_relative }
 
           it 'returns true' do

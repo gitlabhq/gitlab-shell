@@ -2,7 +2,7 @@ require_relative '../spec_helper'
 require_relative '../../lib/action/api_2fa_recovery'
 
 describe Action::API2FARecovery do
-  let(:key_id) { "key-#{rand(100) + 100}" }
+  let(:key_id) { '1' }
   let(:key) { Actor::Key.new(key_id) }
   let(:username) { 'testuser' }
   let(:discover_payload) { { 'username' => username } }
@@ -14,7 +14,7 @@ describe Action::API2FARecovery do
   end
 
   subject do
-    described_class.new(key_id)
+    described_class.new(key)
   end
 
   describe '#execute' do

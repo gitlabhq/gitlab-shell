@@ -12,14 +12,17 @@ describe GitlabShell do
 
   subject { described_class.new(key_id) }
 
-  let(:key_id) { "key-#{rand(100) + 100}" }
+  let(:key_id) { '1' }
+  let(:key) { Actor::Key.new(key_id) }
   let(:tmp_repos_path) { File.join(ROOT_PATH, 'tmp', 'repositories') }
   let(:repo_name) { 'gitlab-ci.git' }
   let(:repo_path) { File.join(tmp_repos_path, repo_name) }
   let(:gl_repository) { 'project-1' }
   let(:gl_username) { 'testuser' }
+  let(:audit_usernames) { true }
 
   let(:api) { double(GitlabNet) }
+  let(:config) { double(GitlabConfig) }
 
   let(:gitaly_action) { Action::Gitaly.new(
                           key_id,
@@ -32,6 +35,11 @@ describe GitlabShell do
   let(:git_lfs_authenticate_action) { Action::GitLFSAuthenticate.new(key_id, repo_name) }
 
   before do
+    allow(GitlabConfig).to receive(:new).and_return(config)
+    allow(config).to receive(:audit_usernames).and_return(audit_usernames)
+
+    allow(Actor::Key).to receive(:from).with(key_id, audit_usernames: audit_usernames).and_return(key)
+
     allow(GitlabNet).to receive(:new).and_return(api)
     allow(api).to receive(:discover).with(key_id).and_return('username' => gl_username)
   end
@@ -106,7 +114,7 @@ describe GitlabShell do
       let(:git_access) { '2fa_recovery_codes' }
 
       before do
-        expect(Action::API2FARecovery).to receive(:new).with(key_id).and_return(api_2fa_recovery_action)
+        expect(Action::API2FARecovery).to receive(:new).with(key).and_return(api_2fa_recovery_action)
       end
 
       it 'returns true' do
@@ -117,7 +125,7 @@ describe GitlabShell do
 
     context 'when access to the repo is denied' do
       before do
-        expect(api).to receive(:check_access).with('git-upload-pack', nil, repo_name, key_id, '_any').and_raise(AccessDeniedError, 'Sorry, access denied')
+        expect(api).to receive(:check_access).with('git-upload-pack', nil, repo_name, key, '_any').and_raise(AccessDeniedError, 'Sorry, access denied')
       end
 
       it 'prints a message to stderr and returns false' do
@@ -128,7 +136,7 @@ describe GitlabShell do
 
     context 'when the API is unavailable' do
       before do
-        expect(api).to receive(:check_access).with('git-upload-pack', nil, repo_name, key_id, '_any').and_raise(GitlabNet::ApiUnreachableError)
+        expect(api).to receive(:check_access).with('git-upload-pack', nil, repo_name, key, '_any').and_raise(GitlabNet::ApiUnreachableError)
       end
 
       it 'prints a message to stderr and returns false' do
@@ -139,7 +147,7 @@ describe GitlabShell do
 
     context 'when access has been verified OK' do
       before do
-        expect(api).to receive(:check_access).with(git_access, nil, repo_name, key_id, '_any').and_return(gitaly_action)
+        expect(api).to receive(:check_access).with(git_access, nil, repo_name, key, '_any').and_return(gitaly_action)
       end
 
       context 'when origin_cmd is git-upload-pack' do
@@ -169,11 +177,10 @@ describe GitlabShell do
 
       context 'when origin_cmd is git-lfs-authenticate' do
         let(:origin_cmd) { 'git-lfs-authenticate' }
-        # let(:fake_payload) { 'FAKE PAYLOAD' }
         let(:lfs_access) { double(GitlabLfsAuthentication, authentication_payload: fake_payload)}
 
         before do
-          expect(Action::GitLFSAuthenticate).to receive(:new).with(key_id, repo_name).and_return(git_lfs_authenticate_action)
+          expect(Action::GitLFSAuthenticate).to receive(:new).with(key, repo_name).and_return(git_lfs_authenticate_action)
         end
 
         context 'upload' do
@@ -181,7 +188,6 @@ describe GitlabShell do
 
           it 'returns true' do
             expect(git_lfs_authenticate_action).to receive(:execute).with('git-lfs-authenticate', %w{ git-lfs-authenticate gitlab-ci.git upload }).and_return(true)
-            # expect($stdout).to receive(:puts).with(fake_payload)
             expect(subject.exec("#{origin_cmd} #{repo_name} upload")).to be_truthy
           end
         end
@@ -191,14 +197,12 @@ describe GitlabShell do
 
           it 'returns true' do
             expect(git_lfs_authenticate_action).to receive(:execute).with('git-lfs-authenticate', %w{ git-lfs-authenticate gitlab-ci.git download }).and_return(true)
-            # expect($stdout).to receive(:puts).with(fake_payload)
             expect(subject.exec("#{origin_cmd} #{repo_name} download")).to be_truthy
           end
 
           context 'for old git-lfs clients' do
             it 'returns true' do
               expect(git_lfs_authenticate_action).to receive(:execute).with('git-lfs-authenticate', %w{ git-lfs-authenticate gitlab-ci.git download long_oid }).and_return(true)
-              # expect($stdout).to receive(:puts).with(fake_payload)
               expect(subject.exec("#{origin_cmd} #{repo_name} download long_oid")).to be_truthy
             end
           end

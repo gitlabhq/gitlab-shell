@@ -14,34 +14,34 @@ class GitlabNet
   GL_PROTOCOL = 'ssh'.freeze
   API_INACCESSIBLE_ERROR = 'API is not accessible'.freeze
 
-  def check_access(cmd, gl_repository, repo, key_id, changes, protocol = GL_PROTOCOL, env: {})
+  def check_access(cmd, gl_repository, repo, actor, changes, protocol = GL_PROTOCOL, env: {})
     changes = changes.join("\n") unless changes.is_a?(String)
 
     params = {
       action: cmd,
       changes: changes,
       gl_repository: gl_repository,
-      key_id: key_id.gsub('key-', ''),
       project: sanitize_path(repo),
       protocol: protocol,
       env: env
     }
 
+    params[actor.class.identifier_key.to_sym] = actor.id
+
     resp = post("#{internal_api_endpoint}/allowed", params)
 
-    determine_action(key_id, resp)
+    determine_action(actor, resp)
   end
 
-  def discover(key)
-    key_id = key.gsub("key-", "")
+  def discover(key_id)
     resp = get("#{internal_api_endpoint}/discover?key_id=#{key_id}")
     JSON.parse(resp.body)
   rescue JSON::ParserError, ApiUnreachableError
     nil
   end
 
-  def lfs_authenticate(key, repo)
-    params = { project: sanitize_path(repo), key_id: key.gsub('key-', '') }
+  def lfs_authenticate(key_id, repo)
+    params = { project: sanitize_path(repo), key_id: key_id }
     resp = post("#{internal_api_endpoint}/lfs_authenticate", params)
 
     GitlabLfsAuthentication.build_from_json(resp.body) if resp.code == HTTP_SUCCESS
@@ -68,15 +68,14 @@ class GitlabNet
     get("#{internal_api_endpoint}/check", options: { read_timeout: CHECK_TIMEOUT })
   end
 
-  def authorized_key(key)
-    resp = get("#{internal_api_endpoint}/authorized_keys?key=#{URI.escape(key, '+/=')}")
+  def authorized_key(full_key)
+    resp = get("#{internal_api_endpoint}/authorized_keys?key=#{URI.escape(full_key, '+/=')}")
     JSON.parse(resp.body) if resp.code == HTTP_SUCCESS
   rescue
     nil
   end
 
-  def two_factor_recovery_codes(key)
-    key_id = key.gsub('key-', '')
+  def two_factor_recovery_codes(key_id)
     resp = post("#{internal_api_endpoint}/two_factor_recovery_codes", key_id: key_id)
     JSON.parse(resp.body) if resp.code == HTTP_SUCCESS
   rescue
@@ -92,8 +91,8 @@ class GitlabNet
     false
   end
 
-  def post_receive(gl_repository, identifier, changes)
-    params = { gl_repository: gl_repository, identifier: identifier, changes: changes }
+  def post_receive(gl_repository, actor, changes)
+    params = { gl_repository: gl_repository, identifier: actor.identifier, changes: changes }
     resp = post("#{internal_api_endpoint}/post_receive", params)
     raise NotFoundError if resp.code == HTTP_NOT_FOUND
 
@@ -113,7 +112,7 @@ class GitlabNet
     repo.delete("'")
   end
 
-  def determine_action(key_id, resp)
+  def determine_action(actor, resp)
     json = JSON.parse(resp.body)
     message = json['message']
 
@@ -124,7 +123,7 @@ class GitlabNet
       #       accessing the 'status' key.
       raise AccessDeniedError, message unless json['status']
 
-      Action::Gitaly.create_from_json(key_id, json)
+      Action::Gitaly.create_from_json(actor, json)
     when HTTP_UNAUTHORIZED, HTTP_NOT_FOUND
       raise AccessDeniedError, message
     else

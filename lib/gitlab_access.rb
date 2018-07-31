@@ -1,6 +1,7 @@
 require 'json'
 
 require_relative 'errors'
+require_relative 'actor'
 require_relative 'gitlab_init'
 require_relative 'gitlab_net'
 require_relative 'names_helper'
@@ -10,17 +11,17 @@ require_relative 'object_dirs_helper'
 class GitlabAccess
   include NamesHelper
 
-  def initialize(gl_repository, repo_path, key_id, changes, protocol)
+  def initialize(gl_repository, repo_path, gl_id, changes, protocol)
     @gl_repository = gl_repository
     @repo_path = repo_path.strip
-    @key_id = key_id
+    @gl_id = gl_id
     @changes = changes.lines
     @protocol = protocol
   end
 
   def exec
     GitlabMetrics.measure('check-access:git-receive-pack') do
-      api.check_access('git-receive-pack', gl_repository, repo_path, key_id, changes, protocol, env: ObjectDirsHelper.all_attributes.to_json)
+      api.check_access('git-receive-pack', gl_repository, repo_path, actor, changes, protocol, env: ObjectDirsHelper.all_attributes.to_json)
     end
     true
   rescue GitlabNet::ApiUnreachableError
@@ -33,9 +34,17 @@ class GitlabAccess
 
   private
 
-  attr_reader :gl_repository, :repo_path, :key_id, :changes, :protocol
+  attr_reader :gl_repository, :repo_path, :gl_id, :changes, :protocol
 
   def api
-    GitlabNet.new
+    @api ||= GitlabNet.new
+  end
+
+  def config
+    @config ||= GitlabConfig.new
+  end
+
+  def actor
+    @actor ||= Actor.new_from(gl_id, audit_usernames: config.audit_usernames)
   end
 end

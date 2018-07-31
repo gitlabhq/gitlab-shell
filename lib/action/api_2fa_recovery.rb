@@ -3,8 +3,8 @@ require_relative '../gitlab_logger'
 
 module Action
   class API2FARecovery < Base
-    def initialize(key_id)
-      @key_id = key_id
+    def initialize(key)
+      @key = key
     end
 
     def execute(_, _)
@@ -13,7 +13,7 @@ module Action
 
     private
 
-    attr_reader :key_id
+    attr_reader :key
 
     def continue?(question)
       puts "#{question} (yes/no)"
@@ -34,10 +34,10 @@ module Action
         return
       end
 
-      resp = api.two_factor_recovery_codes(key_id)
+      resp = api.two_factor_recovery_codes(key.key_id)
       if resp['success']
         codes = resp['recovery_codes'].join("\n")
-        $logger.info('API 2FA recovery success', user: user.log_username)
+        $logger.info('API 2FA recovery success', user: key.log_username)
         puts "Your two-factor authentication recovery codes are:\n\n" \
             "#{codes}\n\n" \
             "During sign in, use one of the codes above when prompted for\n" \
@@ -45,7 +45,7 @@ module Action
             "a new device so you do not lose access to your account again."
         true
       else
-        $logger.info('API 2FA recovery error', user: user.log_username)
+        $logger.info('API 2FA recovery error', user: key.log_username)
         puts "An error occurred while trying to generate new recovery codes.\n" \
             "#{resp['message']}"
       end

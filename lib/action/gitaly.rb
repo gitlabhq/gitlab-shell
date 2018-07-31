@@ -11,16 +11,16 @@ module Action
       'git-receive-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-receive-pack')
     }.freeze
 
-    def initialize(key_id, gl_repository, gl_username, repository_path, gitaly)
-      @key_id = key_id
+    def initialize(actor, gl_repository, gl_username, repository_path, gitaly)
+      @actor = actor
       @gl_repository = gl_repository
       @gl_username = gl_username
       @repository_path = repository_path
       @gitaly = gitaly
     end
 
-    def self.create_from_json(key_id, json)
-      new(key_id,
+    def self.create_from_json(actor, json)
+      new(actor,
           json['gl_repository'],
           json['gl_username'],
           json['repository_path'],
@@ -31,13 +31,13 @@ module Action
       raise ArgumentError, REPOSITORY_PATH_NOT_PROVIDED unless repository_path
       raise InvalidRepositoryPathError unless valid_repository?
 
-      $logger.info('Performing Gitaly command', user: user.log_username)
+      $logger.info('Performing Gitaly command', user: actor.log_username)
       process(command, args)
     end
 
     private
 
-    attr_reader :gl_repository, :gl_username, :repository_path, :gitaly
+    attr_reader :actor, :gl_repository, :gl_username, :repository_path, :gitaly
 
     def process(command, args)
       executable = command
@@ -50,7 +50,7 @@ module Action
       end
 
       args_string = [File.basename(executable), *args].join(' ')
-      $logger.info('executing git command', command: args_string, user: user.log_username)
+      $logger.info('executing git command', command: args_string, user: actor.log_username)
 
       exec_cmd(executable, *args)
     end
@@ -77,7 +77,7 @@ module Action
         'PATH' => ENV['PATH'],
         'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
         'LANG' => ENV['LANG'],
-        'GL_ID' => key_id,
+        'GL_ID' => actor.identifier,
         'GL_PROTOCOL' => GitlabNet::GL_PROTOCOL,
         'GL_REPOSITORY' => gl_repository,
         'GL_USERNAME' => gl_username
@@ -90,7 +90,7 @@ module Action
       {
         'repository' => gitaly['repository'],
         'gl_repository' => gl_repository,
-        'gl_id' => key_id,
+        'gl_id' => actor.identifier,
         'gl_username' => gl_username
       }
     end
