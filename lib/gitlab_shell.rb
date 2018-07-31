@@ -16,6 +16,8 @@ class GitlabShell
   GIT_COMMANDS = [GIT_UPLOAD_PACK_COMMAND, GIT_RECEIVE_PACK_COMMAND,
                   GIT_UPLOAD_ARCHIVE_COMMAND, GIT_LFS_AUTHENTICATE_COMMAND].freeze
 
+  Struct.new('ParsedCommand', :command, :git_access_command, :repo_name, :args)
+
   def initialize(key_str)
     @key_str = key_str
     @config = GitlabConfig.new
@@ -30,10 +32,9 @@ class GitlabShell
       return true
     end
 
-    command, git_access_command, repo_name, args = parse_cmd(origin_cmd)
-    action = determine_action(command, git_access_command, repo_name)
-
-    action.execute(command, args)
+    parsed_command = parse_cmd(origin_cmd)
+    action = determine_action(parsed_command)
+    action.execute(parsed_command.command, parsed_command.args)
   rescue GitlabNet::ApiUnreachableError
     $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
     false
@@ -71,7 +72,9 @@ class GitlabShell
 
     git_access_command = command
 
-    return [command, git_access_command, nil, args] if command == API_2FA_RECOVERY_CODES_COMMAND
+    if command == API_2FA_RECOVERY_CODES_COMMAND
+      return Struct::ParsedCommand.new(command, git_access_command, nil, args)
+    end
 
     raise DisallowedCommandError unless GIT_COMMANDS.include?(command)
 
@@ -92,20 +95,25 @@ class GitlabShell
       repo_name = args.last
     end
 
-    [command, git_access_command, repo_name, args]
+    Struct::ParsedCommand.new(command, git_access_command, repo_name, args)
   end
 
-  def determine_action(command, git_access_command, repo_name)
-    return Action::API2FARecovery.new(key) if command == API_2FA_RECOVERY_CODES_COMMAND
+  def determine_action(parsed_command)
+    return Action::API2FARecovery.new(key) if parsed_command.command == API_2FA_RECOVERY_CODES_COMMAND
 
     GitlabMetrics.measure('verify-access') do
       # GitlatNet#check_access will raise exception in the event of a problem
-      initial_action = api.check_access(git_access_command, nil,
-                                        repo_name, key, '_any')
+      initial_action = api.check_access(
+        parsed_command.git_access_command,
+        nil,
+        parsed_command.repo_name,
+        key,
+        '_any'
+      )
 
-      case command
+      case parsed_command.command
       when GIT_LFS_AUTHENTICATE_COMMAND
-        Action::GitLFSAuthenticate.new(key, repo_name)
+        Action::GitLFSAuthenticate.new(key, parsed_command.repo_name)
       else
         initial_action
       end
