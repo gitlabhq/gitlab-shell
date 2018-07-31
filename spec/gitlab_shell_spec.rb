@@ -13,8 +13,8 @@ describe GitlabShell do
   end
 
   subject do
-    ARGV[0] = key_id
-    GitlabShell.new(key_id).tap do |shell|
+    ARGV[0] = gl_id
+    GitlabShell.new(gl_id).tap do |shell|
       shell.stub(exec_cmd: :exec_called)
       shell.stub(api: api)
     end
@@ -24,6 +24,7 @@ describe GitlabShell do
     true,
     'ok',
     gl_repository: gl_repository,
+    gl_id: gl_id,
     gl_username: gl_username,
     repository_path: repo_path,
     gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' }
@@ -37,6 +38,7 @@ describe GitlabShell do
                 true,
                 'ok',
                 gl_repository: gl_repository,
+                gl_id: gl_id,
                 gl_username: gl_username,
                 repository_path: repo_path,
                 gitaly: nil))
@@ -47,13 +49,14 @@ describe GitlabShell do
     end
   end
 
-  let(:key_id) { "key-#{rand(100) + 100}" }
+  let(:gl_id) { "key-#{rand(100) + 100}" }
   let(:ssh_cmd) { nil }
   let(:tmp_repos_path) { File.join(ROOT_PATH, 'tmp', 'repositories') }
 
   let(:repo_name) { 'gitlab-ci.git' }
   let(:repo_path) { File.join(tmp_repos_path, repo_name) }
   let(:gl_repository) { 'project-1' }
+  let(:gl_id) { 'user-1' }
   let(:gl_username) { 'testuser' }
 
   before do
@@ -63,7 +66,7 @@ describe GitlabShell do
   describe :initialize do
     let(:ssh_cmd) { 'git-receive-pack' }
 
-    its(:key_id) { should == key_id }
+    its(:gl_id) { should == gl_id }
   end
 
   describe :parse_cmd do
@@ -146,7 +149,7 @@ describe GitlabShell do
   end
 
   describe :exec do
-    let(:gitaly_message) { JSON.dump({ 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' }, 'gl_repository' => gl_repository, 'gl_id' => key_id, 'gl_username' => gl_username}) }
+    let(:gitaly_message) { JSON.dump({ 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' }, 'gl_repository' => gl_repository, 'gl_id' => gl_id, 'gl_username' => gl_username}) }
 
     shared_examples_for 'upload-pack' do |command|
       let(:ssh_cmd) { "#{command} gitlab-ci.git" }
@@ -162,7 +165,7 @@ describe GitlabShell do
 
       it "should log the command execution" do
         message = "executing git command"
-        user_string = "user with key #{key_id}"
+        user_string = "user with id #{gl_id}"
         $logger.should_receive(:info).with(message, command: "git-upload-pack #{repo_path}", user: user_string)
       end
 
@@ -197,7 +200,7 @@ describe GitlabShell do
 
       it "should log the command execution" do
         message = "executing git command"
-        user_string = "user with key #{key_id}"
+        user_string = "user with id #{gl_id}"
         $logger.should_receive(:info).with(message, command: "gitaly-upload-pack unix:gitaly.socket #{gitaly_message}", user: user_string)
       end
 
@@ -221,7 +224,7 @@ describe GitlabShell do
 
       it "should log the command execution" do
         message = "executing git command"
-        user_string = "user with key #{key_id}"
+        user_string = "user with id #{gl_id}"
         $logger.should_receive(:info).with(message, command: "git-receive-pack #{repo_path}", user: user_string)
       end
     end
@@ -243,7 +246,7 @@ describe GitlabShell do
 
       it "should log the command execution" do
         message = "executing git command"
-        user_string = "user with key #{key_id}"
+        user_string = "user with id #{gl_id}"
         $logger.should_receive(:info).with(message, command: "gitaly-receive-pack unix:gitaly.socket #{gitaly_message}", user: user_string)
       end
 
@@ -270,7 +273,7 @@ describe GitlabShell do
 
       it "should log the command execution" do
         message = "executing git command"
-        user_string = "user with key #{key_id}"
+        user_string = "user with id #{gl_id}"
         $logger.should_receive(:info).with(message, command: exec_cmd_log_params.join(' '), user: user_string)
       end
 
@@ -322,7 +325,7 @@ describe GitlabShell do
 
       it "should log the attempt" do
         message = 'Denied disallowed command'
-        user_string = "user with key #{key_id}"
+        user_string = "user with id #{gl_id}"
         $logger.should_receive(:warn).with(message, command: 'arbitrary command', user: user_string)
       end
     end
@@ -331,7 +334,7 @@ describe GitlabShell do
       after { subject.exec(nil) }
 
       it "should call api.discover" do
-        api.should_receive(:discover).with(key_id)
+        api.should_receive(:discover).with(gl_id)
       end
     end
 
@@ -398,7 +401,7 @@ describe GitlabShell do
       after { subject.exec(ssh_cmd) }
 
       it "should call api.check_access" do
-        api.should_receive(:check_access).with('git-upload-pack', nil, 'gitlab-ci.git', key_id, '_any', 'ssh')
+        api.should_receive(:check_access).with('git-upload-pack', nil, 'gitlab-ci.git', gl_id, '_any', 'ssh')
       end
 
       it "should disallow access and log the attempt if check_access returns false status" do
@@ -406,11 +409,12 @@ describe GitlabShell do
                   false,
                   'denied',
                   gl_repository: nil,
+                  gl_id: nil,
                   gl_username: nil,
                   repository_path: nil,
                   gitaly: nil))
         message = 'Access denied'
-        user_string = "user with key #{key_id}"
+        user_string = "user with id #{gl_id}"
         $logger.should_receive(:warn).with(message, command: 'git-upload-pack gitlab-ci.git', user: user_string)
       end
     end
@@ -436,14 +440,14 @@ describe GitlabShell do
   end
 
   describe :exec_cmd do
-    let(:shell) { GitlabShell.new(key_id) }
+    let(:shell) { GitlabShell.new(gl_id) }
     let(:env) do
       {
         'HOME' => ENV['HOME'],
         'PATH' => ENV['PATH'],
         'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
         'LANG' => ENV['LANG'],
-        'GL_ID' => key_id,
+        'GL_ID' => gl_id,
         'GL_PROTOCOL' => 'ssh',
         'GL_REPOSITORY' => gl_repository,
         'GL_USERNAME' => 'testuser'
@@ -543,7 +547,7 @@ describe GitlabShell do
   end
 
   describe :api do
-    let(:shell) { GitlabShell.new(key_id) }
+    let(:shell) { GitlabShell.new(gl_id) }
     subject { shell.send :api }
 
     it { should be_a(GitlabNet) }
