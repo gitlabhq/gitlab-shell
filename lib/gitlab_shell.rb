@@ -180,7 +180,6 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       'GL_ID' => @gl_id,
       'GL_PROTOCOL' => GL_PROTOCOL,
       'GL_REPOSITORY' => @gl_repository,
-      'GIT_PROTOCOL' => @git_protocol,
       'GL_USERNAME' => @username
     }
     if @gitaly && @gitaly.include?('token')

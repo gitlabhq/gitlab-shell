@@ -463,7 +463,6 @@ describe GitlabShell do
         'GL_PROTOCOL' => 'ssh',
         'GL_REPOSITORY' => gl_repository,
         'GL_USERNAME' => 'testuser',
-        'GIT_PROTOCOL' => 'version=2'
       }
     end
     let(:exec_options) { { unsetenv_others: true, chdir: ROOT_PATH } }
