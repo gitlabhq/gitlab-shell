@@ -4,7 +4,7 @@
 # will be processed properly.
 
 refs = $stdin.read
-key_id = ENV.delete('GL_ID')
+gl_id = ENV.delete('GL_ID')
 protocol = ENV.delete('GL_PROTOCOL')
 repo_path = Dir.pwd
 gl_repository = ENV['GL_REPOSITORY']
@@ -23,8 +23,8 @@ require_relative '../lib/gitlab_net'
 # last so that it only runs if everything else succeeded. On post-receive on the
 # other hand, we run GitlabPostReceive first because the push is already done
 # and we don't want to skip it if the custom hook fails.
-if GitlabAccess.new(gl_repository, repo_path, key_id, refs, protocol).exec &&
-    GitlabCustomHook.new(repo_path, key_id).pre_receive(refs) &&
+if GitlabAccess.new(gl_repository, repo_path, gl_id, refs, protocol).exec &&
+    GitlabCustomHook.new(repo_path, gl_id).pre_receive(refs) &&
     increase_reference_counter(gl_repository, repo_path)
   exit 0
 else

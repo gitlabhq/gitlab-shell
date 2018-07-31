@@ -5,9 +5,9 @@ require_relative 'gitlab_metrics'
 class GitlabCustomHook
   attr_reader :vars, :config
 
-  def initialize(repo_path, key_id)
+  def initialize(repo_path, gl_id)
     @repo_path = repo_path
-    @vars = { 'GL_ID' => key_id }
+    @vars = { 'GL_ID' => gl_id }
     @config = GitlabConfig.new
   end
 
