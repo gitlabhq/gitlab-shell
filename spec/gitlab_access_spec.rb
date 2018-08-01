@@ -3,8 +3,8 @@ require 'gitlab_access'
 
 describe GitlabAccess do
   let(:repository_path) { "/home/git/repositories" }
-  let(:repo_name)   { 'dzaporozhets/gitlab-ci' }
-  let(:repo_path)  { File.join(repository_path, repo_name) + ".git" }
+  let(:repo_name) { 'dzaporozhets/gitlab-ci' }
+  let(:repo_path) { File.join(repository_path, repo_name) + ".git" }
   let(:api) do
     double(GitlabNet).tap do |api|
       api.stub(check_access: GitAccessStatus.new(true,
@@ -13,7 +13,8 @@ describe GitlabAccess do
                                                  gl_id: 'user-123',
                                                  gl_username: 'testuser',
                                                  repository_path: '/home/git/repositories',
-                                                 gitaly: nil))
+                                                 gitaly: nil,
+                                                 git_protocol: 'version=2'))
     end
   end
   subject do
@@ -35,14 +36,12 @@ describe GitlabAccess do
 
   describe "#exec" do
     context "access is granted" do
-
       it "returns true" do
         expect(subject.exec).to be_truthy
       end
     end
 
     context "access is denied" do
-
       before do
         api.stub(check_access: GitAccessStatus.new(
                   false,
@@ -51,7 +50,8 @@ describe GitlabAccess do
                   gl_id: nil,
                   gl_username: nil,
                   repository_path: nil,
-                  gitaly: nil
+                  gitaly: nil,
+                  git_protocol: nil
                 ))
       end
 
@@ -61,7 +61,6 @@ describe GitlabAccess do
     end
 
     context "API connection fails" do
-
       before do
         api.stub(:check_access).and_raise(GitlabNet::ApiUnreachableError)
       end
