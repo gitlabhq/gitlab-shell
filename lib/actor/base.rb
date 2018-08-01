@@ -36,7 +36,7 @@ module Actor
     end
 
     def log_username
-      audit_usernames? ? username : "#{klass_name.downcase} with identifier #{identifier}"
+      audit_usernames? ? username : "#{label} with identifier #{identifier}"
     end
 
     private
@@ -45,6 +45,10 @@ module Actor
 
     def klass_name
       self.class.to_s.split('::')[-1]
+    end
+
+    def label
+      klass_name.downcase
     end
 
     def audit_usernames?
