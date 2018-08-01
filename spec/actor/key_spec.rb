@@ -11,7 +11,7 @@ describe Actor::Key do
 
   before do
     allow(GitlabNet).to receive(:new).and_return(api)
-    allow(api).to receive(:discover).with(key_id).and_return(discover_payload)
+    allow(api).to receive(:discover).with(subject).and_return(discover_payload)
   end
 
   describe '.from' do

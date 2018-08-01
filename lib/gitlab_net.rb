@@ -26,22 +26,24 @@ class GitlabNet
       env: env
     }
 
-    params[actor.class.identifier_key.to_sym] = actor.id
+    params[actor.identifier_key.to_sym] = actor.id
 
     resp = post("#{internal_api_endpoint}/allowed", params)
 
     determine_action(actor, resp)
   end
 
-  def discover(key_id)
-    resp = get("#{internal_api_endpoint}/discover?key_id=#{key_id}")
+  def discover(actor)
+    resp = get("#{internal_api_endpoint}/discover?#{actor.identifier_key}=#{actor.id}")
     JSON.parse(resp.body)
   rescue JSON::ParserError, ApiUnreachableError
     nil
   end
 
-  def lfs_authenticate(key_id, repo)
-    params = { project: sanitize_path(repo), key_id: key_id }
+  def lfs_authenticate(actor, repo)
+    params = { project: sanitize_path(repo) }
+    params[actor.identifier_key.to_sym] = actor.id
+
     resp = post("#{internal_api_endpoint}/lfs_authenticate", params)
 
     GitlabLfsAuthentication.build_from_json(resp.body) if resp.code == HTTP_SUCCESS
@@ -75,8 +77,9 @@ class GitlabNet
     nil
   end
 
-  def two_factor_recovery_codes(key_id)
-    resp = post("#{internal_api_endpoint}/two_factor_recovery_codes", key_id: key_id)
+  def two_factor_recovery_codes(actor)
+    params = { actor.identifier_key.to_sym => actor.id }
+    resp = post("#{internal_api_endpoint}/two_factor_recovery_codes", params)
     JSON.parse(resp.body) if resp.code == HTTP_SUCCESS
   rescue
     {}

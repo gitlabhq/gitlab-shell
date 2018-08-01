@@ -9,12 +9,20 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
 
   attr_accessor :auth_file, :key
 
-  def self.command(key_id)
+  def self.command(whatever)
+    "#{ROOT_PATH}/bin/gitlab-shell #{whatever}"
+  end
+
+  def self.command_key(key_id)
     unless /\A[a-z0-9-]+\z/ =~ key_id
       raise KeyError, "Invalid key_id: #{key_id.inspect}"
     end
 
-    "#{ROOT_PATH}/bin/gitlab-shell #{key_id}"
+    command(key_id)
+  end
+
+  def self.whatever_line(command, trailer)
+    "command=\"#{command}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{trailer}"
   end
 
   def self.key_line(key_id, public_key)
@@ -24,7 +32,17 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
       raise KeyError, "Invalid public_key: #{public_key.inspect}"
     end
 
-    "command=\"#{command(key_id)}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{public_key}"
+    whatever_line(command_key(key_id), public_key)
+  end
+
+  def self.principal_line(username_key_id, principal)
+    principal.chomp!
+
+    if principal.include?("\n")
+      raise KeyError, "Invalid principal: #{principal.inspect}"
+    end
+
+    whatever_line(command_key(username_key_id), principal)
   end
 
   def initialize
@@ -119,7 +137,7 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
       $logger.info('Removing key', key_id: @key_id)
       open_auth_file('r+') do |f|
         while line = f.gets # rubocop:disable Style/AssignmentInCondition
-          next unless line.start_with?("command=\"#{self.class.command(@key_id)}\"")
+          next unless line.start_with?("command=\"#{self.class.command_key(@key_id)}\"")
           f.seek(-line.length, IO::SEEK_CUR)
           # Overwrite the line with #'s. Because the 'line' variable contains
           # a terminating '\n', we write line.length - 1 '#' characters.

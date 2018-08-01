@@ -31,6 +31,10 @@ module Actor
       "#{self.class.identifier_prefix}-#{id}"
     end
 
+    def identifier_key
+      self.class.identifier_key
+    end
+
     def log_username
       audit_usernames? ? username : "#{klass_name.downcase} with identifier #{identifier}"
     end

@@ -10,44 +10,44 @@ describe GitlabShell do
 
   after { FileUtils.rm_rf(tmp_repos_path) }
 
-  subject { described_class.new(key_id) }
+  subject { described_class.new(who) }
 
-  let(:key_id) { '1' }
-  let(:key) { Actor::Key.new(key_id) }
+  let(:who) { 'key-1' }
+  let(:audit_usernames) { true }
+  let(:actor) { Actor.new_from(who, audit_usernames: audit_usernames) }
   let(:tmp_repos_path) { File.join(ROOT_PATH, 'tmp', 'repositories') }
   let(:repo_name) { 'gitlab-ci.git' }
   let(:repo_path) { File.join(tmp_repos_path, repo_name) }
   let(:gl_repository) { 'project-1' }
   let(:gl_username) { 'testuser' }
-  let(:audit_usernames) { true }
 
   let(:api) { double(GitlabNet) }
   let(:config) { double(GitlabConfig) }
 
   let(:gitaly_action) { Action::Gitaly.new(
-                          key_id,
+                          actor,
                           gl_repository,
                           gl_username,
                           repo_path,
                           { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' } , 'address' => 'unix:gitaly.socket' })
                       }
-  let(:api_2fa_recovery_action) { Action::API2FARecovery.new(key_id) }
-  let(:git_lfs_authenticate_action) { Action::GitLFSAuthenticate.new(key_id, repo_name) }
+  let(:api_2fa_recovery_action) { Action::API2FARecovery.new(actor) }
+  let(:git_lfs_authenticate_action) { Action::GitLFSAuthenticate.new(actor, repo_name) }
 
   before do
     allow(GitlabConfig).to receive(:new).and_return(config)
     allow(config).to receive(:audit_usernames).and_return(audit_usernames)
 
-    allow(Actor::Key).to receive(:from).with(key_id, audit_usernames: audit_usernames).and_return(key)
+    allow(Actor).to receive(:new_from).with(who, audit_usernames: audit_usernames).and_return(actor)
 
     allow(GitlabNet).to receive(:new).and_return(api)
-    allow(api).to receive(:discover).with(key_id).and_return('username' => gl_username)
+    allow(api).to receive(:discover).with(actor).and_return('username' => gl_username)
   end
 
   describe '#exec' do
     context "when we don't have a valid user" do
       before do
-        allow(api).to receive(:discover).with(key_id).and_return(nil)
+        allow(api).to receive(:discover).with(actor).and_return(nil)
       end
 
       it 'prints Welcome.. and returns true' do
@@ -114,7 +114,7 @@ describe GitlabShell do
       let(:git_access) { '2fa_recovery_codes' }
 
       before do
-        expect(Action::API2FARecovery).to receive(:new).with(key).and_return(api_2fa_recovery_action)
+        expect(Action::API2FARecovery).to receive(:new).with(actor).and_return(api_2fa_recovery_action)
       end
 
       it 'returns true' do
@@ -125,7 +125,7 @@ describe GitlabShell do
 
     context 'when access to the repo is denied' do
       before do
-        expect(api).to receive(:check_access).with('git-upload-pack', nil, repo_name, key, '_any').and_raise(AccessDeniedError, 'Sorry, access denied')
+        expect(api).to receive(:check_access).with('git-upload-pack', nil, repo_name, actor, '_any').and_raise(AccessDeniedError, 'Sorry, access denied')
       end
 
       it 'prints a message to stderr and returns false' do
@@ -136,7 +136,7 @@ describe GitlabShell do
 
     context 'when the API is unavailable' do
       before do
-        expect(api).to receive(:check_access).with('git-upload-pack', nil, repo_name, key, '_any').and_raise(GitlabNet::ApiUnreachableError)
+        expect(api).to receive(:check_access).with('git-upload-pack', nil, repo_name, actor, '_any').and_raise(GitlabNet::ApiUnreachableError)
       end
 
       it 'prints a message to stderr and returns false' do
@@ -147,7 +147,7 @@ describe GitlabShell do
 
     context 'when access has been verified OK' do
       before do
-        expect(api).to receive(:check_access).with(git_access, nil, repo_name, key, '_any').and_return(gitaly_action)
+        expect(api).to receive(:check_access).with(git_access, nil, repo_name, actor, '_any').and_return(gitaly_action)
       end
 
       context 'when origin_cmd is git-upload-pack' do
@@ -180,7 +180,7 @@ describe GitlabShell do
         let(:lfs_access) { double(GitlabLfsAuthentication, authentication_payload: fake_payload)}
 
         before do
-          expect(Action::GitLFSAuthenticate).to receive(:new).with(key, repo_name).and_return(git_lfs_authenticate_action)
+          expect(Action::GitLFSAuthenticate).to receive(:new).with(actor, repo_name).and_return(git_lfs_authenticate_action)
         end
 
         context 'upload' do

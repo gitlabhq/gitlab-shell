@@ -4,24 +4,24 @@ require_relative '../../lib/action/git_lfs_authenticate'
 describe Action::GitLFSAuthenticate do
   let(:key_id) { '1' }
   let(:repo_name) { 'gitlab-ci.git' }
-  let(:key) { Actor::Key.new(key_id) }
+  let(:actor) { Actor::Key.new(key_id) }
   let(:username) { 'testuser' }
   let(:discover_payload) { { 'username' => username } }
   let(:api) { double(GitlabNet) }
 
   before do
     allow(GitlabNet).to receive(:new).and_return(api)
-    allow(api).to receive(:discover).with(key_id).and_return(discover_payload)
+    allow(api).to receive(:discover).with(actor).and_return(discover_payload)
   end
 
   subject do
-    described_class.new(key, repo_name)
+    described_class.new(actor, repo_name)
   end
 
   describe '#execute' do
     context 'when response from API is not a success' do
       before do
-        expect(api).to receive(:lfs_authenticate).with(key_id, repo_name).and_return(nil)
+        expect(api).to receive(:lfs_authenticate).with(subject, repo_name).and_return(nil)
       end
 
       it 'returns nil' do
@@ -36,7 +36,7 @@ describe Action::GitLFSAuthenticate do
       let(:gitlab_lfs_authentication) { GitlabLfsAuthentication.new(username, lfs_token, repository_http_path) }
 
       before do
-        expect(api).to receive(:lfs_authenticate).with(key_id, repo_name).and_return(gitlab_lfs_authentication)
+        expect(api).to receive(:lfs_authenticate).with(subject, repo_name).and_return(gitlab_lfs_authentication)
       end
 
       it 'puts payload to stdout' do

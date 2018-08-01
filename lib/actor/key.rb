@@ -21,7 +21,7 @@ module Actor
 
     def username
       @username ||= begin
-        user = GitlabNet.new.discover(key_id)
+        user = GitlabNet.new.discover(self)
         user ? "@#{user['username']}" : ANONYMOUS_USER
       end
     end

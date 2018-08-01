@@ -3,18 +3,18 @@ require_relative '../../lib/action/api_2fa_recovery'
 
 describe Action::API2FARecovery do
   let(:key_id) { '1' }
-  let(:key) { Actor::Key.new(key_id) }
+  let(:actor) { Actor::Key.new(key_id) }
   let(:username) { 'testuser' }
   let(:discover_payload) { { 'username' => username } }
   let(:api) { double(GitlabNet) }
 
   before do
     allow(GitlabNet).to receive(:new).and_return(api)
-    allow(api).to receive(:discover).with(key_id).and_return(discover_payload)
+    allow(api).to receive(:discover).with(actor).and_return(discover_payload)
   end
 
   subject do
-    described_class.new(key)
+    described_class.new(actor)
   end
 
   describe '#execute' do
@@ -46,7 +46,7 @@ describe Action::API2FARecovery do
 
       before do
         expect(subject).to receive(:continue?).and_return(true)
-        expect(api).to receive(:two_factor_recovery_codes).with(key_id).and_return(response)
+        expect(api).to receive(:two_factor_recovery_codes).with(subject).and_return(response)
       end
 
       context 'with a unsuccessful response' do
