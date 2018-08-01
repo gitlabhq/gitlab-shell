@@ -5,7 +5,7 @@
 # command for a given ssh key fingerprint
 #
 # Ex.
-#   bin/gitlab-shell-authorized-keys-check <username> <public-key>
+#   bin/gitlab-shell-authorized-keys-check <expected-username> <actual-username> <public-key>
 #
 # Returns
 #   command="/bin/gitlab-shell key-#",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAA...
