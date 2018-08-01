@@ -33,7 +33,7 @@ class GitlabShell
     end
 
     parsed_command = parse_cmd(origin_cmd)
-    action = determine_action(parsed_command)  # FIXME: watch out
+    action = determine_action(parsed_command)
     action.execute(parsed_command.command, parsed_command.args)
   rescue GitlabNet::ApiUnreachableError
     $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"

@@ -1,9 +1,8 @@
 require_relative 'base'
+require_relative 'key'
 
 module Actor
-  class Username < Base
-    alias username identifier
-
+  class Username < Key
     def self.identifier_prefix
       'username'.freeze
     end
@@ -13,7 +12,14 @@ module Actor
     end
 
     def self.id_regex
-      /\Ausername\-\d+\Z/
+      /\Ausername\-[a-z0-9-]+\z/
+    end
+
+    private
+
+    # Override Base#label
+    def label
+      'user'
     end
   end
 end

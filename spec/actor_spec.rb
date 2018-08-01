@@ -23,6 +23,12 @@ describe Actor do
           expect(described_class.new_from('user-1')).to be_a(Actor::User)
         end
       end
+
+      context 'of Username' do
+        it 'returns an instance of Username' do
+          expect(described_class.new_from('username-john1')).to be_a(Actor::Username)
+        end
+      end
     end
   end
 end
