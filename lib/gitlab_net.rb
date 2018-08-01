@@ -35,7 +35,7 @@ class GitlabNet
 
   def discover(actor)
     resp = get("#{internal_api_endpoint}/discover?#{actor.identifier_key}=#{actor.id}")
-    JSON.parse(resp.body)
+    JSON.parse(resp.body) if resp.code == HTTP_SUCCESS
   rescue JSON::ParserError, ApiUnreachableError
     nil
   end

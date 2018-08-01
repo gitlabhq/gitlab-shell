@@ -42,11 +42,17 @@ describe GitlabNet, vcr: true do
   end
 
   describe '#discover' do
-    it 'should return user has based on key id' do
+    it 'returns user has based on key id' do
       VCR.use_cassette("discover-ok") do
         user = gitlab_net.discover(actor1)
         expect(user['name']).to eql 'Administrator'
         expect(user['username']).to eql 'root'
+      end
+    end
+
+    it 'returns nil if the user cannot be found' do
+      VCR.use_cassette("discover-not-found") do
+        expect(gitlab_net.discover(actor1)).to be_nil
       end
     end
 
