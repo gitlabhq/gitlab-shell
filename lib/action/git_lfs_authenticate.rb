@@ -11,7 +11,7 @@ module Action
     def execute(_, _)
       GitlabMetrics.measure('lfs-authenticate') do
         $logger.info('Processing LFS authentication', user: actor.log_username)
-        lfs_access = api.lfs_authenticate(self, repo_name)
+        lfs_access = api.lfs_authenticate(actor, repo_name)
         return unless lfs_access
 
         puts lfs_access.authentication_payload

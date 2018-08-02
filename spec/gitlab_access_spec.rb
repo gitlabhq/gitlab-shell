@@ -7,7 +7,16 @@ describe GitlabAccess do
   let(:repo_path) { File.join(repository_path, repo_name) + ".git" }
   let(:api) do
     double(GitlabNet).tap do |api|
-      allow(api).to receive(:check_access).and_return(Action::Gitaly.new('key-1', 'project-1', 'testuser', '/home/git/repositories', nil))
+      allow(api).to receive(:check_access).and_return(
+        Action::Gitaly.new(
+          'key-1',
+          'project-1',
+          'testuser',
+          'version=2',
+          '/home/git/repositories',
+          nil
+        )
+      )
     end
   end
   subject do
@@ -23,7 +32,6 @@ describe GitlabAccess do
 
   describe "#exec" do
     context "access is granted" do
-
       it "returns true" do
         expect(subject.exec).to be_truthy
       end
@@ -40,7 +48,6 @@ describe GitlabAccess do
     end
 
     context "API connection fails" do
-
       before do
         allow(api).to receive(:check_access).and_raise(GitlabNet::ApiUnreachableError)
       end

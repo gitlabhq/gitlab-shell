@@ -46,7 +46,7 @@ describe Action::API2FARecovery do
 
       before do
         expect(subject).to receive(:continue?).and_return(true)
-        expect(api).to receive(:two_factor_recovery_codes).with(subject).and_return(response)
+        expect(api).to receive(:two_factor_recovery_codes).with(actor).and_return(response)
       end
 
       context 'with a unsuccessful response' do

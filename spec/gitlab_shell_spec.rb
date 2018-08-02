@@ -20,6 +20,7 @@ describe GitlabShell do
   let(:repo_path) { File.join(tmp_repos_path, repo_name) }
   let(:gl_repository) { 'project-1' }
   let(:gl_username) { 'testuser' }
+  let(:git_protocol) { 'version=2' }
 
   let(:api) { double(GitlabNet) }
   let(:config) { double(GitlabConfig) }
@@ -28,6 +29,7 @@ describe GitlabShell do
                           actor,
                           gl_repository,
                           gl_username,
+                          git_protocol,
                           repo_path,
                           { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' } , 'address' => 'unix:gitaly.socket' })
                       }

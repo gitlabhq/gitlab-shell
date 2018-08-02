@@ -34,7 +34,7 @@ module Action
         return
       end
 
-      resp = api.two_factor_recovery_codes(self)
+      resp = api.two_factor_recovery_codes(actor)
       if resp['success']
         codes = resp['recovery_codes'].join("\n")
         $logger.info('API 2FA recovery success', user: actor.log_username)

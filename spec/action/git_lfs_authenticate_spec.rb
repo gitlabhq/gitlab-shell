@@ -21,7 +21,7 @@ describe Action::GitLFSAuthenticate do
   describe '#execute' do
     context 'when response from API is not a success' do
       before do
-        expect(api).to receive(:lfs_authenticate).with(subject, repo_name).and_return(nil)
+        expect(api).to receive(:lfs_authenticate).with(actor, repo_name).and_return(nil)
       end
 
       it 'returns nil' do
@@ -36,7 +36,7 @@ describe Action::GitLFSAuthenticate do
       let(:gitlab_lfs_authentication) { GitlabLfsAuthentication.new(username, lfs_token, repository_http_path) }
 
       before do
-        expect(api).to receive(:lfs_authenticate).with(subject, repo_name).and_return(gitlab_lfs_authentication)
+        expect(api).to receive(:lfs_authenticate).with(actor, repo_name).and_return(gitlab_lfs_authentication)
       end
 
       it 'puts payload to stdout' do
