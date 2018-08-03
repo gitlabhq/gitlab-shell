@@ -43,16 +43,14 @@ module Actor
 
     attr_reader :audit_usernames
 
+    alias audit_usernames? audit_usernames
+
     def klass_name
       self.class.to_s.split('::')[-1]
     end
 
     def label
       klass_name.downcase
-    end
-
-    def audit_usernames?
-      audit_usernames
     end
   end
 end
