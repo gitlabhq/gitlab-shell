@@ -11,10 +11,11 @@ module Action
       'git-receive-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-receive-pack')
     }.freeze
 
-    def initialize(actor, gl_repository, gl_username, git_protocol, repository_path, gitaly)
+    def initialize(actor, gl_repository, gl_username, git_config_options, git_protocol, repository_path, gitaly)
       @actor = actor
       @gl_repository = gl_repository
       @gl_username = gl_username
+      @git_config_options = git_config_options
       @git_protocol = git_protocol
       @repository_path = repository_path
       @gitaly = gitaly
@@ -24,6 +25,7 @@ module Action
       new(actor,
           json['gl_repository'],
           json['gl_username'],
+          json['git_config_options'],
           json['git_protocol'],
           json['repository_path'],
           json['gitaly'])
@@ -39,7 +41,7 @@ module Action
 
     private
 
-    attr_reader :actor, :gl_repository, :gl_username, :repository_path, :gitaly
+    attr_reader :actor, :gl_repository, :gl_username, :git_config_options, :repository_path, :gitaly
 
     def git_protocol
       @git_protocol || ENV['GIT_PROTOCOL'] # TODO: tidy this up
@@ -98,6 +100,7 @@ module Action
         'gl_repository' => gl_repository,
         'gl_id' => actor.identifier,
         'gl_username' => gl_username,
+        'git_config_options' => git_config_options,
         'git_protocol' => git_protocol
       }
     end
