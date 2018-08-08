@@ -5,6 +5,9 @@ describe 'bin/gitlab-shell-authorized-keys-check' do
     ROOT_PATH
   end
 
+  # All this test boilerplate is mostly copy/pasted between
+  # gitlab_shell_gitlab_shell_spec.rb and
+  # gitlab_shell_authorized_keys_check_spec.rb
   def tmp_root_path
     @tmp_root_path ||= File.realpath(Dir.mktmpdir)
   end
