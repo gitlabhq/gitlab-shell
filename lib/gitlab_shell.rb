@@ -98,7 +98,7 @@ class GitlabShell
     return Action::API2FARecovery.new(actor) if parsed_command.command == API_2FA_RECOVERY_CODES_COMMAND
 
     GitlabMetrics.measure('verify-access') do
-      # GitlatNet#check_access will raise exception in the event of a problem
+      # GitlabNet#check_access will raise exception in the event of a problem
       initial_action = api.check_access(
         parsed_command.git_access_command,
         nil,
