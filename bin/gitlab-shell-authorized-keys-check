@@ -5,7 +5,7 @@
 # command for a given ssh key fingerprint
 #
 # Ex.
-#   bin/gitlab-shell-authorized-keys-check <username> <public-key>
+#   bin/gitlab-shell-authorized-keys-check <expected-username> <actual-username> <public-key>
 #
 # Returns
 #   command="/bin/gitlab-shell key-#",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAA...
@@ -27,16 +27,16 @@ abort '# No username provided' if actual_username.nil? || actual_username == ''
 # Normally, these would both be 'git', but it can be configured by the user
 exit 0 unless expected_username == actual_username
 
-key = ARGV[2]
-abort "# No key provided" if key.nil? || key == ''
+full_key = ARGV[2]
+abort "# No key provided" if full_key.nil? || full_key == ''
 
 require_relative '../lib/gitlab_init'
 require_relative '../lib/gitlab_net'
 require_relative '../lib/gitlab_keys'
 
-authorized_key = GitlabNet.new.authorized_key(key)
+authorized_key = GitlabNet.new.authorized_key(full_key)
 if authorized_key.nil?
-  puts "# No key was found for #{key}"
+  puts "# No key was found for #{full_key}"
 else
   puts GitlabKeys.key_line("key-#{authorized_key['id']}", authorized_key['key'])
 end

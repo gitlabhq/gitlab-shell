@@ -1,34 +1,28 @@
+require 'json'
+
+require_relative 'errors'
+require_relative 'actor'
 require_relative 'gitlab_init'
 require_relative 'gitlab_net'
-require_relative 'gitlab_access_status'
 require_relative 'names_helper'
 require_relative 'gitlab_metrics'
 require_relative 'object_dirs_helper'
-require 'json'
 
 class GitlabAccess
-  class AccessDeniedError < StandardError; end
-
   include NamesHelper
 
-  attr_reader :config, :gl_repository, :repo_path, :changes, :protocol
-
-  def initialize(gl_repository, repo_path, actor, changes, protocol)
-    @config = GitlabConfig.new
+  def initialize(gl_repository, repo_path, gl_id, changes, protocol)
     @gl_repository = gl_repository
     @repo_path = repo_path.strip
-    @actor = actor
+    @gl_id = gl_id
     @changes = changes.lines
     @protocol = protocol
   end
 
   def exec
-    status = GitlabMetrics.measure('check-access:git-receive-pack') do
-      api.check_access('git-receive-pack', @gl_repository, @repo_path, @actor, @changes, @protocol, env: ObjectDirsHelper.all_attributes.to_json)
+    GitlabMetrics.measure('check-access:git-receive-pack') do
+      api.check_access('git-receive-pack', gl_repository, repo_path, actor, changes, protocol, env: ObjectDirsHelper.all_attributes.to_json)
     end
-
-    raise AccessDeniedError, status.message unless status.allowed?
-
     true
   rescue GitlabNet::ApiUnreachableError
     $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
@@ -38,9 +32,19 @@ class GitlabAccess
     false
   end
 
-  protected
+  private
+
+  attr_reader :gl_repository, :repo_path, :gl_id, :changes, :protocol
 
   def api
-    GitlabNet.new
+    @api ||= GitlabNet.new
+  end
+
+  def config
+    @config ||= GitlabConfig.new
+  end
+
+  def actor
+    @actor ||= Actor.new_from(gl_id, audit_usernames: config.audit_usernames)
   end
 end

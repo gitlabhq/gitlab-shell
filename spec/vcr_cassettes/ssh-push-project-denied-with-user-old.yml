@@ -1,0 +1,46 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: http://localhost:3000/api/v4/internal/allowed
+    body:
+      encoding: US-ASCII
+      string: action=git-upload-pack&changes=0000000000000000000000000000000000000000+92d0970eefd7acb6d548878925ce2208cfe2d2ec+refs%2Fheads%2Fbranch4&gl_repository&project=gitlab-org%2Fgitlab-test.git&protocol=ssh&env=%7B%7D&user_id=2&secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+      Content-Type:
+      - application/x-www-form-urlencoded
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Content-Length:
+      - '63'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 21 Jun 2017 12:24:05 GMT
+      Etag:
+      - W/"76a32010244f80700d5e1ba8a55d094c"
+      Vary:
+      - Origin
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Request-Id:
+      - 3b242d73-d860-48ac-8fef-80e2d0d3daca
+      X-Runtime:
+      - '0.342469'
+    body:
+      encoding: UTF-8
+      string: '{"status":false,"message":"Git access over SSH is not allowed"}'
+    http_version: 
+  recorded_at: Wed, 21 Jun 2017 12:24:05 GMT
+recorded_with: VCR 2.4.0
