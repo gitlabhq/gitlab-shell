@@ -6,6 +6,7 @@
 
 require_relative '../lib/gitlab_init'
 require File.join(ROOT_PATH, 'lib', 'gitlab_metrics')
+require 'fileutils'
 
 def create_hooks(path)
   global_hooks_directory = File.join(ROOT_PATH, 'hooks')
