@@ -17,7 +17,11 @@ require_relative '../lib/gitlab_init'
 #
 require File.join(ROOT_PATH, 'lib', 'gitlab_shell')
 
-if GitlabShell.new(ARGV.join).exec(original_cmd)
+# We must match e.g. "key-12345" anywhere on the command-line. See
+# https://gitlab.com/gitlab-org/gitlab-shell/issues/145
+who = /\b(?:(?:key|user)-[0-9]+|username-\S+)\b/.match(ARGV.join(' ')).to_s
+
+if GitlabShell.new(who).exec(original_cmd)
   exit 0
 else
   exit 1

@@ -208,7 +208,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     begin
       if defined?(@who)
         @user = api.discover(@who)
-        @gl_id = "user-#{@user['id']}"
+        @gl_id = "user-#{@user['id']}" if @user && @user.key?('id')
       else
         @user = api.discover(@gl_id)
       end
