@@ -10,7 +10,6 @@ describe Action::Gitaly do
   let(:key) { Actor::Key.new(key_id) }
   let(:gl_repository) { 'project-1' }
   let(:gl_username) { 'testuser' }
-  let(:git_config_options) { ['receive.MaxInputSize=10000'] }
   let(:git_protocol) { 'version=2' }
   let(:tmp_repos_path) { File.join(ROOT_PATH, 'tmp', 'repositories') }
   let(:repo_name) { 'gitlab-ci.git' }
@@ -38,7 +37,7 @@ describe Action::Gitaly do
   end
 
   subject do
-    described_class.new(key, gl_repository, gl_username, git_config_options, git_protocol, repository_path, gitaly)
+    described_class.new(key, gl_repository, gl_username, git_protocol, repository_path, gitaly)
   end
 
   describe '#execute' do
@@ -69,7 +68,6 @@ describe Action::Gitaly do
         'gl_repository' => gl_repository,
         'gl_id' => key_str,
         'gl_username' => gl_username,
-        'git_config_options' => git_config_options,
         'git_protocol' => git_protocol
       }
     end

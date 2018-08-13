@@ -12,7 +12,6 @@ describe GitlabAccess do
           'key-1',
           'project-1',
           'testuser',
-          ['receive.MaxInputSize=10000'],
           'version=2',
           '/home/git/repositories',
           nil
