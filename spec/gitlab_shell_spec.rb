@@ -20,12 +20,15 @@ describe GitlabShell do
     end
   end
 
+  let(:git_config_options) { ['receive.MaxInputSize=10000'] }
+
   let(:gitaly_check_access) { GitAccessStatus.new(
     true,
     'ok',
     gl_repository: gl_repository,
     gl_id: gl_id,
     gl_username: gl_username,
+    git_config_options: git_config_options,
     repository_path: repo_path,
     gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' },
     git_protocol: git_protocol
@@ -41,6 +44,7 @@ describe GitlabShell do
                 gl_repository: gl_repository,
                 gl_id: gl_id,
                 gl_username: gl_username,
+                git_config_options: nil,
                 repository_path: repo_path,
                 gitaly: nil,
                 git_protocol: git_protocol))
@@ -60,6 +64,7 @@ describe GitlabShell do
   let(:gl_repository) { 'project-1' }
   let(:gl_id) { 'user-1' }
   let(:gl_username) { 'testuser' }
+  let(:git_config_options) { ['receive.MaxInputSize=10000'] }
   let(:git_protocol) { 'version=2' }
 
   before do
@@ -158,6 +163,7 @@ describe GitlabShell do
         'gl_repository' => gl_repository,
         'gl_id' => gl_id,
         'gl_username' => gl_username,
+        'git_config_options' => git_config_options,
         'git_protocol' => git_protocol
       )
     end
@@ -426,6 +432,7 @@ describe GitlabShell do
                   gl_repository: nil,
                   gl_id: nil,
                   gl_username: nil,
+                  git_config_options: nil,
                   repository_path: nil,
                   gitaly: nil,
                   git_protocol: nil))
