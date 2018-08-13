@@ -9,7 +9,6 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
 
   attr_accessor :auth_file, :key
 
-  # TODO: whatever is not a great name
   def self.command(whatever)
     "#{ROOT_PATH}/bin/gitlab-shell #{whatever}"
   end
@@ -22,7 +21,6 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
     command(key_id)
   end
 
-  # TODO: whatever is not a great name
   def self.whatever_line(command, trailer)
     "command=\"#{command}\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty #{trailer}"
   end

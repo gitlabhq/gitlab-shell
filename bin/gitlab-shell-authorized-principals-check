@@ -6,7 +6,7 @@
 # the right options.
 #
 # Ex.
-#   bin/gitlab-shell-authorized-principals-check <key-id> <principal1> [<principal2>...]
+#   bin/gitlab-shell-authorized-keys-check <key-id> <principal1> [<principal2>...]
 #
 # Returns one line per principal passed in, e.g.:
 #   command="/bin/gitlab-shell username-{KEY_ID}",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty {PRINCIPAL}
@@ -23,9 +23,9 @@ key_id = ARGV[0]
 abort '# No key_id provided' if key_id.nil? || key_id == ''
 
 principals = ARGV[1..-1]
-principals.each do |principal|
-  abort '# An invalid principal was provided' if principal.nil? || principal == ''
-end
+principals.each { |principal|
+  abort '# An invalid principal was provided' if principal.nil? || principal == ''  
+}
 
 require_relative '../lib/gitlab_init'
 require_relative '../lib/gitlab_net'
