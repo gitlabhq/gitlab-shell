@@ -1,8 +1,6 @@
 source "http://rubygems.org"
 
 group :development, :test do
-  gem 'guard', '~> 1.5.0'
-  gem 'guard-rspec', '~> 2.1.0'
   gem 'listen', '~> 0.5.0'
   gem 'rspec', '~> 2.0'
   gem 'rspec-its', '~> 1.0.0'
