@@ -74,7 +74,7 @@ describe GitlabShell do
   describe :initialize do
     let(:ssh_cmd) { 'git-receive-pack' }
 
-    its(:gl_id) { should == gl_id }
+    it { expect(subject.gl_id).to eq gl_id }
   end
 
   describe :parse_cmd do
@@ -86,8 +86,10 @@ describe GitlabShell do
           subject.send :parse_cmd, ssh_args
         end
 
-        its(:repo_name) { should == 'gitlab-ci.git' }
-        its(:command) { should == 'git-upload-pack' }
+        it 'has the correct attributes' do
+          expect(subject.repo_name).to eq 'gitlab-ci.git'
+          expect(subject.command).to eq 'git-upload-pack'
+        end
       end
 
       context 'namespace' do
@@ -98,8 +100,10 @@ describe GitlabShell do
           subject.send :parse_cmd, ssh_args
         end
 
-        its(:repo_name) { should == 'dmitriy.zaporozhets/gitlab-ci.git' }
-        its(:command) { should == 'git-upload-pack' }
+        it 'has the correct attributes' do
+          expect(subject.repo_name).to eq 'dmitriy.zaporozhets/gitlab-ci.git'
+          expect(subject.command).to eq 'git-upload-pack'
+        end
       end
 
       context 'with an invalid number of arguments' do
@@ -137,9 +141,11 @@ describe GitlabShell do
         subject.send :parse_cmd, ssh_args
       end
 
-      its(:repo_name) { should == 'dzaporozhets/gitlab.git' }
-      its(:command) { should == 'git-lfs-authenticate' }
-      its(:git_access) { should == 'git-upload-pack' }
+      it 'has the correct attributes' do
+        expect(subject.repo_name).to eq 'dzaporozhets/gitlab.git'
+        expect(subject.command).to eq 'git-lfs-authenticate'
+        expect(subject.git_access).to eq 'git-upload-pack'
+      end
     end
 
     describe 'git-lfs old clients' do
@@ -150,9 +156,11 @@ describe GitlabShell do
         subject.send :parse_cmd, ssh_args
       end
 
-      its(:repo_name) { should == 'dzaporozhets/gitlab.git' }
-      its(:command) { should == 'git-lfs-authenticate' }
-      its(:git_access) { should == 'git-upload-pack' }
+      it 'has the correct attributes' do
+        expect(subject.repo_name).to eq 'dzaporozhets/gitlab.git'
+        expect(subject.command).to eq 'git-lfs-authenticate'
+        expect(subject.git_access).to eq 'git-upload-pack'
+      end
     end
   end
 
@@ -446,7 +454,7 @@ describe GitlabShell do
       context 'with a correct path' do
         before { subject.exec(ssh_cmd) }
 
-        its(:repo_path) { should == repo_path }
+        it { expect(subject.repo_path).to eq repo_path }
       end
 
       context "with a path that doesn't match an absolute path" do

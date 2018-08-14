@@ -381,7 +381,7 @@ describe GitlabNet, vcr: true do
       allow(gitlab_net.send(:config)).to receive(:http_settings) { {'self_signed_cert' => true} }
     end
 
-    its(:verify_mode) { should eq(OpenSSL::SSL::VERIFY_NONE) }
+    it { expect(subject.verify_mode).to eq(OpenSSL::SSL::VERIFY_NONE) }
   end
 
   describe '#http_request_for' do

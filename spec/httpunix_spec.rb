@@ -7,9 +7,12 @@ describe URI::HTTPUNIX do
     subject { uri }
 
     it { is_expected.to be_an_instance_of(URI::HTTPUNIX) }
-    its(:scheme) { should eq('http+unix') }
-    its(:hostname) { should eq('/path/to/socket') }
-    its(:path) { should eq('/img.jpg') }
+
+    it 'has the correct attributes' do
+      expect(subject.scheme).to eq('http+unix')
+      expect(subject.hostname).to eq('/path/to/socket')
+      expect(subject.path).to eq('/img.jpg')
+    end
   end
 end
 
