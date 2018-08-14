@@ -1,5 +1,3 @@
-ROOT_PATH = File.expand_path(File.join(File.dirname(__FILE__), ".."))
-
 require 'simplecov'
 SimpleCov.start
 
@@ -11,6 +9,12 @@ VCR.configure do |c|
   c.cassette_library_dir = 'spec/vcr_cassettes'
   c.hook_into :webmock
   c.configure_rspec_metadata!
+end
+
+RSpec.configure do |config|
+  config.before(:each) do
+    stub_const('ROOT_PATH', File.expand_path('..', __dir__))
+  end
 end
 
 # like WEBrick::HTTPServer, but listens on UNIX socket
