@@ -16,22 +16,22 @@ describe GitlabLfsAuthentication do
   end
 
   describe '#build_from_json' do
-    it { subject.username.should == 'dzaporozhets' }
-    it { subject.lfs_token.should == 'wsnys8Zm8Jn7zyhHTAAK' }
-    it { subject.repository_http_path.should == 'http://gitlab.dev/repo' }
+    it { expect(subject.username).to eq('dzaporozhets') }
+    it { expect(subject.lfs_token).to eq('wsnys8Zm8Jn7zyhHTAAK') }
+    it { expect(subject.repository_http_path).to eq('http://gitlab.dev/repo') }
   end
 
   describe '#authentication_payload' do
     result = "{\"header\":{\"Authorization\":\"Basic ZHphcG9yb3poZXRzOndzbnlzOFptOEpuN3p5aEhUQUFL\"},\"href\":\"http://gitlab.dev/repo/info/lfs/\"}"
 
-    it { subject.authentication_payload.should eq(result) }
+    it { expect(subject.authentication_payload).to eq(result) }
 
     it 'should be a proper JSON' do
       payload = subject.authentication_payload
       json_payload = JSON.parse(payload)
 
-      json_payload['header']['Authorization'].should eq('Basic ZHphcG9yb3poZXRzOndzbnlzOFptOEpuN3p5aEhUQUFL')
-      json_payload['href'].should eq('http://gitlab.dev/repo/info/lfs/')
+      expect(json_payload['header']['Authorization']).to eq('Basic ZHphcG9yb3poZXRzOndzbnlzOFptOEpuN3p5aEhUQUFL')
+      expect(json_payload['href']).to eq('http://gitlab.dev/repo/info/lfs/')
     end
   end
 end

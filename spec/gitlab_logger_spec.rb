@@ -6,8 +6,8 @@ describe :convert_log_level do
   subject { convert_log_level :extreme }
 
   it "converts invalid log level to Logger::INFO" do
-    $stderr.should_receive(:puts).at_least(:once)
-    should eq(Logger::INFO)
+    expect($stderr).to receive(:puts).at_least(:once)
+    is_expected.to eq(Logger::INFO)
   end
 end
 

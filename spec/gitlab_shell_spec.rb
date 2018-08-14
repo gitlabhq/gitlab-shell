@@ -15,8 +15,8 @@ describe GitlabShell do
   subject do
     ARGV[0] = gl_id
     GitlabShell.new(gl_id).tap do |shell|
-      shell.stub(exec_cmd: :exec_called)
-      shell.stub(api: api)
+      allow(shell).to receive(:exec_cmd).and_return(:exec_called)
+      allow(shell).to receive(:api).and_return(api)
     end
   end
 
@@ -37,8 +37,8 @@ describe GitlabShell do
 
   let(:api) do
     double(GitlabNet).tap do |api|
-      api.stub(discover: { 'name' => 'John Doe', 'username' => 'testuser' })
-      api.stub(check_access: GitAccessStatus.new(
+      allow(api).to receive(:discover).and_return({ 'name' => 'John Doe', 'username' => 'testuser' })
+      allow(api).to receive(:check_access).and_return(GitAccessStatus.new(
                 true,
                 'ok',
                 gl_repository: gl_repository,
@@ -48,7 +48,7 @@ describe GitlabShell do
                 repository_path: repo_path,
                 gitaly: nil,
                 git_protocol: git_protocol))
-      api.stub(two_factor_recovery_codes: {
+      allow(api).to receive(:two_factor_recovery_codes).and_return({
                  'success' => true,
                  'recovery_codes' => %w[f67c514de60c4953 41278385fc00c1e0]
                })
@@ -68,7 +68,7 @@ describe GitlabShell do
   let(:git_protocol) { 'version=2' }
 
   before do
-    GitlabConfig.any_instance.stub(audit_usernames: false)
+    allow_any_instance_of(GitlabConfig).to receive(:audit_usernames).and_return(false)
   end
 
   describe :initialize do
@@ -177,22 +177,22 @@ describe GitlabShell do
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
-        subject.should_receive(:process_cmd).with(%w(git-upload-pack gitlab-ci.git))
+        expect(subject).to receive(:process_cmd).with(%w(git-upload-pack gitlab-ci.git))
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with('git-upload-pack', repo_path)
+        expect(subject).to receive(:exec_cmd).with('git-upload-pack', repo_path)
       end
 
       it "should log the command execution" do
         message = "executing git command"
         user_string = "user with id #{gl_id}"
-        $logger.should_receive(:info).with(message, command: "git-upload-pack #{repo_path}", user: user_string)
+        expect($logger).to receive(:info).with(message, command: "git-upload-pack #{repo_path}", user: user_string)
       end
 
       it "should use usernames if configured to do so" do
-        GitlabConfig.any_instance.stub(audit_usernames: true)
-        $logger.should_receive(:info).with("executing git command", hash_including(user: 'testuser'))
+        allow_any_instance_of(GitlabConfig).to receive(:audit_usernames).and_return(true)
+        expect($logger).to receive(:info).with("executing git command", hash_including(user: 'testuser'))
       end
     end
 
@@ -207,27 +207,27 @@ describe GitlabShell do
     context 'gitaly-upload-pack' do
       let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
       before do
-        api.stub(check_access: gitaly_check_access)
+        allow(api).to receive(:check_access).and_return(gitaly_check_access)
       end
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
-        subject.should_receive(:process_cmd).with(%w(git-upload-pack gitlab-ci.git))
+        expect(subject).to receive(:process_cmd).with(%w(git-upload-pack gitlab-ci.git))
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-upload-pack"), 'unix:gitaly.socket', gitaly_message)
+        expect(subject).to receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-upload-pack"), 'unix:gitaly.socket', gitaly_message)
       end
 
       it "should log the command execution" do
         message = "executing git command"
         user_string = "user with id #{gl_id}"
-        $logger.should_receive(:info).with(message, command: "gitaly-upload-pack unix:gitaly.socket #{gitaly_message}", user: user_string)
+        expect($logger).to receive(:info).with(message, command: "gitaly-upload-pack unix:gitaly.socket #{gitaly_message}", user: user_string)
       end
 
       it "should use usernames if configured to do so" do
-        GitlabConfig.any_instance.stub(audit_usernames: true)
-        $logger.should_receive(:info).with("executing git command", hash_including(user: 'testuser'))
+        allow_any_instance_of(GitlabConfig).to receive(:audit_usernames).and_return(true)
+        expect($logger).to receive(:info).with("executing git command", hash_including(user: 'testuser'))
       end
     end
 
@@ -236,44 +236,44 @@ describe GitlabShell do
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
-        subject.should_receive(:process_cmd).with(%w(git-receive-pack gitlab-ci.git))
+        expect(subject).to receive(:process_cmd).with(%w(git-receive-pack gitlab-ci.git))
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with('git-receive-pack', repo_path)
+        expect(subject).to receive(:exec_cmd).with('git-receive-pack', repo_path)
       end
 
       it "should log the command execution" do
         message = "executing git command"
         user_string = "user with id #{gl_id}"
-        $logger.should_receive(:info).with(message, command: "git-receive-pack #{repo_path}", user: user_string)
+        expect($logger).to receive(:info).with(message, command: "git-receive-pack #{repo_path}", user: user_string)
       end
     end
 
     context 'gitaly-receive-pack' do
       let(:ssh_cmd) { "git-receive-pack gitlab-ci.git" }
       before do
-        api.stub(check_access: gitaly_check_access)
+        allow(api).to receive(:check_access).and_return(gitaly_check_access)
       end
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
-        subject.should_receive(:process_cmd).with(%w(git-receive-pack gitlab-ci.git))
+        expect(subject).to receive(:process_cmd).with(%w(git-receive-pack gitlab-ci.git))
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-receive-pack"), 'unix:gitaly.socket', gitaly_message)
+        expect(subject).to receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-receive-pack"), 'unix:gitaly.socket', gitaly_message)
       end
 
       it "should log the command execution" do
         message = "executing git command"
         user_string = "user with id #{gl_id}"
-        $logger.should_receive(:info).with(message, command: "gitaly-receive-pack unix:gitaly.socket #{gitaly_message}", user: user_string)
+        expect($logger).to receive(:info).with(message, command: "gitaly-receive-pack unix:gitaly.socket #{gitaly_message}", user: user_string)
       end
 
       it "should use usernames if configured to do so" do
-        GitlabConfig.any_instance.stub(audit_usernames: true)
-        $logger.should_receive(:info).with("executing git command", hash_including(user: 'testuser'))
+        allow_any_instance_of(GitlabConfig).to receive(:audit_usernames).and_return(true)
+        expect($logger).to receive(:info).with("executing git command", hash_including(user: 'testuser'))
       end
     end
 
@@ -285,22 +285,22 @@ describe GitlabShell do
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
-        subject.should_receive(:process_cmd).with(%w(git-upload-archive gitlab-ci.git))
+        expect(subject).to receive(:process_cmd).with(%w(git-upload-archive gitlab-ci.git))
       end
 
       it "should execute the command" do
-        subject.should_receive(:exec_cmd).with(*exec_cmd_params)
+        expect(subject).to receive(:exec_cmd).with(*exec_cmd_params)
       end
 
       it "should log the command execution" do
         message = "executing git command"
         user_string = "user with id #{gl_id}"
-        $logger.should_receive(:info).with(message, command: exec_cmd_log_params.join(' '), user: user_string)
+        expect($logger).to receive(:info).with(message, command: exec_cmd_log_params.join(' '), user: user_string)
       end
 
       it "should use usernames if configured to do so" do
-        GitlabConfig.any_instance.stub(audit_usernames: true)
-        $logger.should_receive(:info).with("executing git command", hash_including(user: 'testuser'))
+        allow_any_instance_of(GitlabConfig).to receive(:audit_usernames).and_return(true)
+        expect($logger).to receive(:info).with("executing git command", hash_including(user: 'testuser'))
       end
     end
 
@@ -314,7 +314,7 @@ describe GitlabShell do
 
     context 'gitaly-upload-archive' do
       before do
-        api.stub(check_access: gitaly_check_access)
+        allow(api).to receive(:check_access).and_return(gitaly_check_access)
       end
 
       it_behaves_like 'upload-archive', 'git-upload-archive' do
@@ -337,17 +337,17 @@ describe GitlabShell do
       after { subject.exec(ssh_cmd) }
 
       it "should not process the command" do
-        subject.should_not_receive(:process_cmd)
+        expect(subject).not_to receive(:process_cmd)
       end
 
       it "should not execute the command" do
-        subject.should_not_receive(:exec_cmd)
+        expect(subject).not_to receive(:exec_cmd)
       end
 
       it "should log the attempt" do
         message = 'Denied disallowed command'
         user_string = "user with id #{gl_id}"
-        $logger.should_receive(:warn).with(message, command: 'arbitrary command', user: user_string)
+        expect($logger).to receive(:warn).with(message, command: 'arbitrary command', user: user_string)
       end
     end
 
@@ -355,7 +355,7 @@ describe GitlabShell do
       after { subject.exec(nil) }
 
       it "should call api.discover" do
-        api.should_receive(:discover).with(gl_id)
+        expect(api).to receive(:discover).with(gl_id)
       end
     end
 
@@ -363,16 +363,16 @@ describe GitlabShell do
       let(:ssh_cmd) { 'git-upload-pack gitlab-ci.git' }
 
       before do
-        api.stub(:check_access).and_raise(GitlabNet::ApiUnreachableError)
+        allow(api).to receive(:check_access).and_raise(GitlabNet::ApiUnreachableError)
       end
       after { subject.exec(ssh_cmd) }
 
       it "should not process the command" do
-        subject.should_not_receive(:process_cmd)
+        expect(subject).not_to receive(:process_cmd)
       end
 
       it "should not execute the command" do
-        subject.should_not_receive(:exec_cmd)
+        expect(subject).not_to receive(:exec_cmd)
       end
     end
 
@@ -402,7 +402,7 @@ describe GitlabShell do
 
         context 'when the process is unsuccessful' do
           it 'displays the error to the user' do
-            api.stub(two_factor_recovery_codes: {
+            allow(api).to receive(:two_factor_recovery_codes).and_return({
                        'success' => false,
                        'message' => 'Could not find the given key'
                      })
@@ -422,11 +422,11 @@ describe GitlabShell do
       after { subject.exec(ssh_cmd) }
 
       it "should call api.check_access" do
-        api.should_receive(:check_access).with('git-upload-pack', nil, 'gitlab-ci.git', gl_id, '_any', 'ssh')
+        expect(api).to receive(:check_access).with('git-upload-pack', nil, 'gitlab-ci.git', gl_id, '_any', 'ssh')
       end
 
       it "should disallow access and log the attempt if check_access returns false status" do
-        api.stub(check_access: GitAccessStatus.new(
+        allow(api).to receive(:check_access).and_return(GitAccessStatus.new(
                   false,
                   'denied',
                   gl_repository: nil,
@@ -438,7 +438,7 @@ describe GitlabShell do
                   git_protocol: nil))
         message = 'Access denied'
         user_string = "user with id #{gl_id}"
-        $logger.should_receive(:warn).with(message, command: 'git-upload-pack gitlab-ci.git', user: user_string)
+        expect($logger).to receive(:warn).with(message, command: 'git-upload-pack gitlab-ci.git', user: user_string)
       end
     end
 
@@ -451,11 +451,11 @@ describe GitlabShell do
 
       context "with a path that doesn't match an absolute path" do
         before do
-          File.stub(:absolute_path) { 'y/gitlab-ci.git' }
+          allow(File).to receive(:absolute_path) { 'y/gitlab-ci.git' }
         end
 
         it "refuses to assign the path" do
-          $stderr.should_receive(:puts).with("GitLab: Invalid repository path")
+          expect($stderr).to receive(:puts).with("GitLab: Invalid repository path")
           expect(subject.exec(ssh_cmd)).to be_falsey
         end
       end
@@ -478,14 +478,14 @@ describe GitlabShell do
     end
     let(:exec_options) { { unsetenv_others: true, chdir: ROOT_PATH } }
     before do
-      Kernel.stub(:exec)
+      allow(Kernel).to receive(:exec)
       shell.gl_repository = gl_repository
       shell.git_protocol = git_protocol
       shell.instance_variable_set(:@username, gl_username)
     end
 
     it "uses Kernel::exec method" do
-      Kernel.should_receive(:exec).with(env, 1, 2, exec_options).once
+      expect(Kernel).to receive(:exec).with(env, 1, 2, exec_options).once
       shell.send :exec_cmd, 1, 2
     end
 
@@ -494,7 +494,7 @@ describe GitlabShell do
     end
 
     it "allows one argument if it is an array" do
-      Kernel.should_receive(:exec).with(env, [1, 2], exec_options).once
+      expect(Kernel).to receive(:exec).with(env, [1, 2], exec_options).once
       shell.send :exec_cmd, [1, 2]
     end
 
@@ -502,7 +502,7 @@ describe GitlabShell do
       let(:git_trace_log_file) { '/tmp/git_trace_performance.log' }
 
       before do
-        GitlabConfig.any_instance.stub(git_trace_log_file: git_trace_log_file)
+        allow_any_instance_of(GitlabConfig).to receive(:git_trace_log_file).and_return(git_trace_log_file)
         shell
       end
 
@@ -512,7 +512,7 @@ describe GitlabShell do
           'GIT_TRACE_PACKET' => git_trace_log_file,
           'GIT_TRACE_PERFORMANCE' => git_trace_log_file
         )
-        Kernel.should_receive(:exec).with(expected_hash, [1, 2], exec_options).once
+        expect(Kernel).to receive(:exec).with(expected_hash, [1, 2], exec_options).once
 
         shell.send :exec_cmd, [1, 2]
       end
@@ -525,7 +525,7 @@ describe GitlabShell do
           expected_hash = hash_excluding(
             'GIT_TRACE', 'GIT_TRACE_PACKET', 'GIT_TRACE_PERFORMANCE'
           )
-          Kernel.should_receive(:exec).with(expected_hash, [1, 2], exec_options).once
+          expect(Kernel).to receive(:exec).with(expected_hash, [1, 2], exec_options).once
 
           shell.send :exec_cmd, [1, 2]
         end
@@ -536,7 +536,7 @@ describe GitlabShell do
           expect($logger).to receive(:warn).
             with(message, git_trace_log_file: git_trace_log_file)
 
-          Kernel.should_receive(:exec).with(env, [1, 2], exec_options).once
+          expect(Kernel).to receive(:exec).with(env, [1, 2], exec_options).once
           shell.send :exec_cmd, [1, 2]
         end
       end
@@ -551,7 +551,7 @@ describe GitlabShell do
           expected_hash = hash_excluding(
             'GIT_TRACE', 'GIT_TRACE_PACKET', 'GIT_TRACE_PERFORMANCE'
           )
-          Kernel.should_receive(:exec).with(expected_hash, [1, 2], exec_options).once
+          expect(Kernel).to receive(:exec).with(expected_hash, [1, 2], exec_options).once
 
           shell.send :exec_cmd, [1, 2]
         end
@@ -563,7 +563,7 @@ describe GitlabShell do
           expect($logger).to receive(:warn).
             with(message, git_trace_log_file: git_trace_log_file, error: error)
 
-          Kernel.should_receive(:exec).with(env, [1, 2], exec_options).once
+          expect(Kernel).to receive(:exec).with(env, [1, 2], exec_options).once
           shell.send :exec_cmd, [1, 2]
         end
       end
@@ -574,6 +574,6 @@ describe GitlabShell do
     let(:shell) { GitlabShell.new(gl_id) }
     subject { shell.send :api }
 
-    it { should be_a(GitlabNet) }
+    it { is_expected.to be_a(GitlabNet) }
   end
 end

@@ -31,7 +31,7 @@ describe GitlabPostReceive do
 
   before do
     $logger = double('logger').as_null_object # Global vars are bad
-    GitlabConfig.any_instance.stub(repos_path: repository_path)
+    allow_any_instance_of(GitlabConfig).to receive(:repos_path).and_return(repository_path)
   end
 
   describe "#exec" do

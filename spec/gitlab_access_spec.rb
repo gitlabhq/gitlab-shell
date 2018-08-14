@@ -7,7 +7,7 @@ describe GitlabAccess do
   let(:repo_path) { File.join(repository_path, repo_name) + ".git" }
   let(:api) do
     double(GitlabNet).tap do |api|
-      api.stub(check_access: GitAccessStatus.new(true,
+      allow(api).to receive(:check_access).and_return(GitAccessStatus.new(true,
                                                  'ok',
                                                  gl_repository: 'project-1',
                                                  gl_id: 'user-123',
@@ -20,19 +20,19 @@ describe GitlabAccess do
   end
   subject do
     GitlabAccess.new(nil, repo_path, 'key-123', 'wow', 'ssh').tap do |access|
-      access.stub(exec_cmd: :exec_called)
-      access.stub(api: api)
+      allow(access).to receive(:exec_cmd).and_return(:exec_called)
+      allow(access).to receive(:api).and_return(api)
     end
   end
 
   before do
-    GitlabConfig.any_instance.stub(repos_path: repository_path)
+    allow_any_instance_of(GitlabConfig).to receive(:repos_path).and_return(repository_path)
   end
 
   describe :initialize do
-    it { subject.repo_path.should == repo_path }
-    it { subject.changes.should == ['wow'] }
-    it { subject.protocol.should == 'ssh' }
+    it { expect(subject.repo_path).to eq(repo_path) }
+    it { expect(subject.changes).to eq(['wow']) }
+    it { expect(subject.protocol).to eq('ssh') }
   end
 
   describe "#exec" do
@@ -44,7 +44,7 @@ describe GitlabAccess do
 
     context "access is denied" do
       before do
-        api.stub(check_access: GitAccessStatus.new(
+        allow(api).to receive(:check_access).and_return(GitAccessStatus.new(
                   false,
                   'denied',
                   gl_repository: nil,
@@ -64,7 +64,7 @@ describe GitlabAccess do
 
     context "API connection fails" do
       before do
-        api.stub(:check_access).and_raise(GitlabNet::ApiUnreachableError)
+        allow(api).to receive(:check_access).and_raise(GitlabNet::ApiUnreachableError)
       end
 
       it "returns false" do
