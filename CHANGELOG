@@ -1,3 +1,6 @@
+v8.1.1
+  - Fix two regressions in SSH certificate support (!226)
+
 v8.1.0
   - Support Git v2 protocol (!217)
 
