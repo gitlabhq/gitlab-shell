@@ -8,6 +8,6 @@ group :development, :test do
   gem 'rspec-its', '~> 1.0.0'
   gem 'rubocop', '0.49.1', require: false
   gem 'simplecov', '~> 0.9.0', require: false
-  gem 'vcr', '~> 2.4.0'
+  gem 'vcr', '~> 4.0.0'
   gem 'webmock', '~> 1.9.0'
 end
