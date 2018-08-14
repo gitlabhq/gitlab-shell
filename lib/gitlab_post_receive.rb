@@ -8,18 +8,20 @@ require 'securerandom'
 class GitlabPostReceive
   include NamesHelper
 
-  def initialize(gl_repository, repo_path, gl_id, changes)
+  attr_reader :config, :gl_repository, :repo_path, :changes, :jid
+
+  def initialize(gl_repository, repo_path, actor, changes)
     @config = GitlabConfig.new
     @gl_repository = gl_repository
     @repo_path = repo_path.strip
-    @gl_id = gl_id
+    @actor = actor
     @changes = changes
     @jid = SecureRandom.hex(12)
   end
 
   def exec
     response = GitlabMetrics.measure("post-receive") do
-      api.post_receive(gl_repository, actor, changes)
+      api.post_receive(gl_repository, @actor, changes)
     end
 
     return false unless response
@@ -33,16 +35,10 @@ class GitlabPostReceive
     false
   end
 
-  private
-
-  attr_reader :config, :gl_repository, :repo_path, :gl_id, :changes, :jid
+  protected
 
   def api
     @api ||= GitlabNet.new
-  end
-
-  def actor
-    @actor ||= Actor.new_from(gl_id, audit_usernames: config.audit_usernames)
   end
 
   def print_merge_request_links(merge_request_urls)
@@ -103,6 +99,8 @@ class GitlabPostReceive
     puts
     puts "=" * total_width
   end
+
+  private
 
   def parse_broadcast_msg(msg, text_length)
     msg ||= ""

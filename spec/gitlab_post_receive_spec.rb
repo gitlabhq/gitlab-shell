@@ -5,13 +5,13 @@ require 'gitlab_post_receive'
 describe GitlabPostReceive do
   let(:repository_path) { "/home/git/repositories" }
   let(:repo_name) { 'dzaporozhets/gitlab-ci' }
-  let(:gl_id) { 'key-123' }
+  let(:actor) { 'key-123' }
   let(:changes) { "123456 789012 refs/heads/tést\n654321 210987 refs/tags/tag" }
   let(:wrongly_encoded_changes) { changes.encode("ISO-8859-1").force_encoding("UTF-8") }
   let(:base64_changes) { Base64.encode64(wrongly_encoded_changes) }
   let(:repo_path) { File.join(repository_path, repo_name) + ".git" }
   let(:gl_repository) { "project-1" }
-  let(:gitlab_post_receive) { GitlabPostReceive.new(gl_repository, repo_path, gl_id, wrongly_encoded_changes) }
+  let(:gitlab_post_receive) { GitlabPostReceive.new(gl_repository, repo_path, actor, wrongly_encoded_changes) }
   let(:broadcast_message) { "test " * 10 + "message " * 10 }
   let(:enqueued_at) { Time.new(2016, 6, 23, 6, 59) }
   let(:new_merge_request_urls) do
@@ -31,7 +31,7 @@ describe GitlabPostReceive do
 
   before do
     $logger = double('logger').as_null_object # Global vars are bad
-    allow_any_instance_of(GitlabConfig).to receive(:repos_path).and_return(repository_path)
+    GitlabConfig.any_instance.stub(repos_path: repository_path)
   end
 
   describe "#exec" do
@@ -63,7 +63,7 @@ describe GitlabPostReceive do
       context 'when contains long url string at end' do
         let(:broadcast_message) { "test " * 10 + "message " * 10 + "https://localhost:5000/test/a/really/long/url/that/is/in/the/broadcast/message/do-not-truncate-when-url" }
 
-        it 'doesnt truncate url' do
+        it 'doesnt truncate url' do          
           expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
           assert_broadcast_message_printed_keep_long_url_end(gitlab_post_receive)
           assert_new_mr_printed(gitlab_post_receive)
@@ -75,7 +75,7 @@ describe GitlabPostReceive do
       context 'when contains long url string at start' do
         let(:broadcast_message) { "https://localhost:5000/test/a/really/long/url/that/is/in/the/broadcast/message/do-not-truncate-when-url " + "test " * 10 + "message " * 11}
 
-        it 'doesnt truncate url' do
+        it 'doesnt truncate url' do          
           expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
           assert_broadcast_message_printed_keep_long_url_start(gitlab_post_receive)
           assert_new_mr_printed(gitlab_post_receive)
@@ -87,7 +87,7 @@ describe GitlabPostReceive do
       context 'when contains long url string in middle' do
         let(:broadcast_message) { "test " * 11 + "https://localhost:5000/test/a/really/long/url/that/is/in/the/broadcast/message/do-not-truncate-when-url " + "message " * 11}
 
-        it 'doesnt truncate url' do
+        it 'doesnt truncate url' do          
           expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
           assert_broadcast_message_printed_keep_long_url_middle(gitlab_post_receive)
           assert_new_mr_printed(gitlab_post_receive)
@@ -198,7 +198,7 @@ describe GitlabPostReceive do
     expect(gitlab_post_receive).to receive(:puts).with(
       "    message message message message message message message message"
     ).ordered
-
+    
     expect(gitlab_post_receive).to receive(:puts).with(
       "https://localhost:5000/test/a/really/long/url/that/is/in/the/broadcast/message/do-not-truncate-when-url"
     ).ordered
@@ -215,7 +215,7 @@ describe GitlabPostReceive do
       "========================================================================"
     ).ordered
     expect(gitlab_post_receive).to receive(:puts).ordered
-
+    
     expect(gitlab_post_receive).to receive(:puts).with(
       "https://localhost:5000/test/a/really/long/url/that/is/in/the/broadcast/message/do-not-truncate-when-url"
     ).ordered
@@ -244,7 +244,7 @@ describe GitlabPostReceive do
       "========================================================================"
     ).ordered
     expect(gitlab_post_receive).to receive(:puts).ordered
-
+    
     expect(gitlab_post_receive).to receive(:puts).with(
       "         test test test test test test test test test test test"
     ).ordered

@@ -17,8 +17,8 @@ http_interactions:
       - application/x-www-form-urlencoded
   response:
     status:
-      code: 401
-      message: Unauthorized
+      code: 200
+      message: OK
     headers:
       Cache-Control:
       - max-age=0, private, must-revalidate

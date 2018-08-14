@@ -65,9 +65,9 @@ describe GitlabKeys do
   describe :initialize do
     let(:gitlab_keys) { build_gitlab_keys('add-key', 'key-741', 'ssh-rsa AAAAB3NzaDAxx2E') }
 
-    it { expect(gitlab_keys.key).to eql 'ssh-rsa AAAAB3NzaDAxx2E' }
-    it { expect(gitlab_keys.instance_variable_get(:@command)).to eql 'add-key' }
-    it { expect(gitlab_keys.instance_variable_get(:@key_id)).to eql 'key-741' }
+    it { gitlab_keys.key.should == 'ssh-rsa AAAAB3NzaDAxx2E' }
+    it { gitlab_keys.instance_variable_get(:@command).should == 'add-key' }
+    it { gitlab_keys.instance_variable_get(:@key_id).should == 'key-741' }
   end
 
   describe :add_key do
@@ -77,7 +77,7 @@ describe GitlabKeys do
       create_authorized_keys_fixture
       gitlab_keys.send :add_key
       auth_line = "command=\"#{ROOT_PATH}/bin/gitlab-shell key-741\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAAB3NzaDAxx2E"
-      expect(File.read(tmp_authorized_keys_path)).to eql "existing content\n#{auth_line}\n"
+      File.read(tmp_authorized_keys_path).should == "existing content\n#{auth_line}\n"
     end
 
     context "without file writing" do
@@ -85,12 +85,12 @@ describe GitlabKeys do
       before { create_authorized_keys_fixture }
 
       it "should log an add-key event" do
-        expect($logger).to receive(:info).with("Adding key", {:key_id=>"key-741", :public_key=>"ssh-rsa AAAAB3NzaDAxx2E"})
+        $logger.should_receive(:info).with("Adding key", {:key_id=>"key-741", :public_key=>"ssh-rsa AAAAB3NzaDAxx2E"})
         gitlab_keys.send :add_key
       end
 
       it "should return true" do
-        expect(gitlab_keys.send(:add_key)).to be_truthy
+        gitlab_keys.send(:add_key).should be_truthy
       end
     end
   end
@@ -104,7 +104,7 @@ describe GitlabKeys do
       create_authorized_keys_fixture
       gitlab_keys.send :add_key
       auth_line1 = 'key-741 AAAAB3NzaDAxx2E'
-      expect(gitlab_keys.send(:list_keys)).to eql "#{auth_line1}\n"
+      gitlab_keys.send(:list_keys).should == "#{auth_line1}\n"
     end
   end
 
@@ -118,9 +118,10 @@ describe GitlabKeys do
     end
 
     it 'outputs the key IDs, separated by newlines' do
-      expect do
+      output = capture_stdout do
         gitlab_keys.send(:list_key_ids)
-      end.to output("1\n2\n3\n9000\n").to_stdout
+      end
+      output.should match "1\n2\n3\n9000"
     end
   end
 
@@ -129,38 +130,38 @@ describe GitlabKeys do
     let(:fake_stdin) { StringIO.new("key-12\tssh-dsa ASDFASGADG\nkey-123\tssh-rsa GFDGDFSGSDFG\n", 'r') }
     before do
       create_authorized_keys_fixture
-      allow(gitlab_keys).to receive(:stdin).and_return(fake_stdin)
+      gitlab_keys.stub(stdin: fake_stdin)
     end
 
     it "adds lines at the end of the file" do
       gitlab_keys.send :batch_add_keys
       auth_line1 = "command=\"#{ROOT_PATH}/bin/gitlab-shell key-12\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-dsa ASDFASGADG"
       auth_line2 = "command=\"#{ROOT_PATH}/bin/gitlab-shell key-123\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa GFDGDFSGSDFG"
-      expect(File.read(tmp_authorized_keys_path)).to eql "existing content\n#{auth_line1}\n#{auth_line2}\n"
+      File.read(tmp_authorized_keys_path).should == "existing content\n#{auth_line1}\n#{auth_line2}\n"
     end
 
     context "with invalid input" do
       let(:fake_stdin) { StringIO.new("key-12\tssh-dsa ASDFASGADG\nkey-123\tssh-rsa GFDGDFSGSDFG\nfoo\tbar\tbaz\n", 'r') }
 
       it "aborts" do
-        expect(gitlab_keys).to receive(:abort)
+        gitlab_keys.should_receive(:abort)
         gitlab_keys.send :batch_add_keys
       end
     end
 
     context "without file writing" do
       before do
-        expect(gitlab_keys).to receive(:open).and_yield(double(:file, puts: nil, chmod: nil))
+        gitlab_keys.should_receive(:open).and_yield(double(:file, puts: nil, chmod: nil))
       end
 
       it "should log an add-key event" do
-        expect($logger).to receive(:info).with("Adding key", key_id: 'key-12', public_key: "ssh-dsa ASDFASGADG")
-        expect($logger).to receive(:info).with("Adding key", key_id: 'key-123', public_key: "ssh-rsa GFDGDFSGSDFG")
+        $logger.should_receive(:info).with("Adding key", key_id: 'key-12', public_key: "ssh-dsa ASDFASGADG")
+        $logger.should_receive(:info).with("Adding key", key_id: 'key-123', public_key: "ssh-rsa GFDGDFSGSDFG")
         gitlab_keys.send :batch_add_keys
       end
 
       it "should return true" do
-        expect(gitlab_keys.send(:batch_add_keys)).to be_truthy
+        gitlab_keys.send(:batch_add_keys).should be_truthy
       end
     end
   end
@@ -186,22 +187,22 @@ describe GitlabKeys do
       end
       gitlab_keys.send :rm_key
       erased_line = delete_line.gsub(/./, '#')
-      expect(File.read(tmp_authorized_keys_path)).to eql "existing content\n#{erased_line}\n#{other_line}\n"
+      File.read(tmp_authorized_keys_path).should == "existing content\n#{erased_line}\n#{other_line}\n"
     end
 
     context "without file writing" do
       before do
-        allow(gitlab_keys).to receive(:open)
-        allow(gitlab_keys).to receive(:lock).and_yield
+        gitlab_keys.stub(:open)
+        gitlab_keys.stub(:lock).and_yield
       end
 
       it "should log an rm-key event" do
-        expect($logger).to receive(:info).with("Removing key", key_id: "key-741")
+        $logger.should_receive(:info).with("Removing key", key_id: "key-741")
         gitlab_keys.send :rm_key
       end
 
       it "should return true" do
-        expect(gitlab_keys.send(:rm_key)).to be_truthy
+        gitlab_keys.send(:rm_key).should be_truthy
       end
     end
 
@@ -218,7 +219,7 @@ describe GitlabKeys do
         end
         gitlab_keys.send :rm_key
         erased_line = delete_line.gsub(/./, '#')
-        expect(File.read(tmp_authorized_keys_path)).to eql "existing content\n#{erased_line}\n#{other_line}\n"
+        File.read(tmp_authorized_keys_path).should == "existing content\n#{erased_line}\n#{other_line}\n"
       end
     end
   end
@@ -227,8 +228,8 @@ describe GitlabKeys do
     let(:gitlab_keys) { build_gitlab_keys('clear') }
 
     it "should return true" do
-      allow(gitlab_keys).to receive(:open)
-      expect(gitlab_keys.send(:clear)).to be_truthy
+      gitlab_keys.stub(:open)
+      gitlab_keys.send(:clear).should be_truthy
     end
   end
 
@@ -241,7 +242,7 @@ describe GitlabKeys do
     end
 
     it 'returns false if opening raises an exception' do
-      expect(gitlab_keys).to receive(:open_auth_file).and_raise("imaginary error")
+      gitlab_keys.should_receive(:open_auth_file).and_raise("imaginary error")
       expect(gitlab_keys.exec).to eq(false)
     end
 
@@ -256,51 +257,51 @@ describe GitlabKeys do
   describe :exec do
     it 'add-key arg should execute add_key method' do
       gitlab_keys = build_gitlab_keys('add-key')
-      expect(gitlab_keys).to receive(:add_key)
+      gitlab_keys.should_receive(:add_key)
       gitlab_keys.exec
     end
 
     it 'batch-add-keys arg should execute batch_add_keys method' do
       gitlab_keys = build_gitlab_keys('batch-add-keys')
-      expect(gitlab_keys).to receive(:batch_add_keys)
+      gitlab_keys.should_receive(:batch_add_keys)
       gitlab_keys.exec
     end
 
     it 'rm-key arg should execute rm_key method' do
       gitlab_keys = build_gitlab_keys('rm-key')
-      expect(gitlab_keys).to receive(:rm_key)
+      gitlab_keys.should_receive(:rm_key)
       gitlab_keys.exec
     end
 
     it 'clear arg should execute clear method' do
       gitlab_keys = build_gitlab_keys('clear')
-      expect(gitlab_keys).to receive(:clear)
+      gitlab_keys.should_receive(:clear)
       gitlab_keys.exec
     end
 
     it 'check-permissions arg should execute check_permissions method' do
       gitlab_keys = build_gitlab_keys('check-permissions')
-      expect(gitlab_keys).to receive(:check_permissions)
+      gitlab_keys.should_receive(:check_permissions)
       gitlab_keys.exec
     end
 
     it 'should puts message if unknown command arg' do
       gitlab_keys = build_gitlab_keys('change-key')
-      expect(gitlab_keys).to receive(:puts).with('not allowed')
+      gitlab_keys.should_receive(:puts).with('not allowed')
       gitlab_keys.exec
     end
 
     it 'should log a warning on unknown commands' do
       gitlab_keys = build_gitlab_keys('nooope')
-      allow(gitlab_keys).to receive(:puts).and_return(nil)
-      expect($logger).to receive(:warn).with("Attempt to execute invalid gitlab-keys command", command: '"nooope"')
+      gitlab_keys.stub(puts: nil)
+      $logger.should_receive(:warn).with("Attempt to execute invalid gitlab-keys command", command: '"nooope"')
       gitlab_keys.exec
     end
   end
 
   describe :lock do
     before do
-      allow_any_instance_of(GitlabKeys).to receive(:lock_file).and_return(tmp_lock_file_path)
+      GitlabKeys.any_instance.stub(lock_file: tmp_lock_file_path)
     end
 
     it "should raise exception if operation lasts more then timeout" do
@@ -309,7 +310,7 @@ describe GitlabKeys do
         key.send :lock, 1 do
           sleep 2
         end
-      end.to raise_error(Timeout::Error)
+      end.to raise_error
     end
 
     it "should actually lock file" do
@@ -334,7 +335,7 @@ describe GitlabKeys do
       end
 
       thr1.join
-      expect($global).to eql "foobar"
+      $global.should == "foobar"
     end
   end
 
@@ -352,7 +353,7 @@ describe GitlabKeys do
   def create_authorized_keys_fixture(existing_content: 'existing content')
     FileUtils.mkdir_p(File.dirname(tmp_authorized_keys_path))
     open(tmp_authorized_keys_path, 'w') { |file| file.puts(existing_content) }
-    allow(gitlab_keys).to receive(:auth_file).and_return(tmp_authorized_keys_path)
+    gitlab_keys.stub(auth_file: tmp_authorized_keys_path)
   end
 
   def tmp_authorized_keys_path
