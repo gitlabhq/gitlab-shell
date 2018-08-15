@@ -118,10 +118,7 @@ describe GitlabKeys do
     end
 
     it 'outputs the key IDs, separated by newlines' do
-      output = capture_stdout do
-        gitlab_keys.send(:list_key_ids)
-      end
-      expect(output).to match "1\n2\n3\n9000"
+      expect { gitlab_keys.send(:list_key_ids) }.to output("1\n2\n3\n9000\n").to_stdout
     end
   end
 
