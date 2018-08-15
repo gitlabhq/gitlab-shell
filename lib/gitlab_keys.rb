@@ -136,7 +136,7 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
     lock do
       $logger.info('Removing key', key_id: @key_id)
       open_auth_file('r+') do |f|
-        while line = f.gets # rubocop:disable Style/AssignmentInCondition
+        while line = f.gets # rubocop:disable Lint/AssignmentInCondition
           next unless line.start_with?("command=\"#{self.class.command_key(@key_id)}\"")
           f.seek(-line.length, IO::SEEK_CUR)
           # Overwrite the line with #'s. Because the 'line' variable contains
