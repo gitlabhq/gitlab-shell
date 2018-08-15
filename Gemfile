@@ -6,5 +6,5 @@ group :development, :test do
   gem 'rubocop', '0.49.1', require: false
   gem 'simplecov', '~> 0.9.0', require: false
   gem 'vcr', '~> 4.0.0'
-  gem 'webmock', '~> 1.9.0'
+  gem 'webmock', '~> 3.4.0'
 end
