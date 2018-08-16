@@ -5,8 +5,8 @@ describe NamesHelper do
   include NamesHelper
 
   describe :extract_ref_name do
-    it { extract_ref_name('refs/heads/awesome-feature').should == 'awesome-feature' }
-    it { extract_ref_name('refs/tags/v2.2.1').should == 'v2.2.1' }
-    it { extract_ref_name('refs/tags/releases/v2.2.1').should == 'releases/v2.2.1' }
+    it { expect(extract_ref_name('refs/heads/awesome-feature')).to eq('awesome-feature') }
+    it { expect(extract_ref_name('refs/tags/v2.2.1')).to eq('v2.2.1') }
+    it { expect(extract_ref_name('refs/tags/releases/v2.2.1')).to eq('releases/v2.2.1') }
   end
 end

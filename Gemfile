@@ -1,13 +1,10 @@
-source "http://rubygems.org"
+source 'https://rubygems.org'
 
 group :development, :test do
-  gem 'guard', '~> 1.5.0'
-  gem 'guard-rspec', '~> 2.1.0'
   gem 'listen', '~> 0.5.0'
-  gem 'rspec', '~> 2.0'
-  gem 'rspec-its', '~> 1.0.0'
+  gem 'rspec', '~> 3.8.0'
   gem 'rubocop', '0.49.1', require: false
   gem 'simplecov', '~> 0.9.0', require: false
-  gem 'vcr', '~> 2.4.0'
-  gem 'webmock', '~> 1.9.0'
+  gem 'vcr', '~> 4.0.0'
+  gem 'webmock', '~> 3.4.0'
 end
