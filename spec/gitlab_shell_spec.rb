@@ -201,14 +201,6 @@ describe GitlabShell do
       end
     end
 
-    context 'git-upload-pack' do
-      it_behaves_like 'upload-pack', 'git-upload-pack'
-    end
-
-    context 'git upload-pack' do
-      it_behaves_like 'upload-pack', 'git upload-pack'
-    end
-
     context 'gitaly-upload-pack' do
       let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
       before do
@@ -307,14 +299,6 @@ describe GitlabShell do
         allow_any_instance_of(GitlabConfig).to receive(:audit_usernames).and_return(true)
         expect($logger).to receive(:info).with("executing git command", hash_including(user: 'testuser'))
       end
-    end
-
-    context 'git-upload-archive' do
-      it_behaves_like 'upload-archive', 'git-upload-archive'
-    end
-
-    context 'git upload-archive' do
-      it_behaves_like 'upload-archive', 'git upload-archive'
     end
 
     context 'gitaly-upload-archive' do

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'shellwords'
 require 'pathname'
 
@@ -9,12 +11,13 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
   class DisallowedCommandError < StandardError; end
   class InvalidRepositoryPathError < StandardError; end
 
-  GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-lfs-authenticate).freeze
-  GITALY_MIGRATED_COMMANDS = {
+  GITALY_COMMAND = {
     'git-upload-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-upload-pack'),
     'git-upload-archive' => File.join(ROOT_PATH, 'bin', 'gitaly-upload-archive'),
     'git-receive-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-receive-pack')
   }.freeze
+
+  GIT_COMMANDS = GITALY_COMMAND.keys + ['git-lfs-authenticate']
   API_COMMANDS = %w(2fa_recovery_codes).freeze
   GL_PROTOCOL = 'ssh'.freeze
 
@@ -136,28 +139,23 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       return
     end
 
-    executable = @command
-    args = []
+    # TODO happens only in testing as of right now
+    return unless @gitaly
 
-    if GITALY_MIGRATED_COMMANDS.key?(executable) && @gitaly
-      executable = GITALY_MIGRATED_COMMANDS[executable]
+    # The entire gitaly_request hash should be built in gitlab-ce and passed
+    # on as-is. For now we build a fake one on the spot.
+    gitaly_request = {
+      'repository' => @gitaly['repository'],
+      'gl_repository' => @gl_repository,
+      'gl_id' => @gl_id,
+      'gl_username' => @username,
+      'git_config_options' => @git_config_options,
+      'git_protocol' => @git_protocol
+    }
 
-      gitaly_address = @gitaly['address']
+    args = [@gitaly['address'], JSON.dump(gitaly_request)]
 
-      # The entire gitaly_request hash should be built in gitlab-ce and passed
-      # on as-is. For now we build a fake one on the spot.
-      gitaly_request = {
-        'repository' => @gitaly['repository'],
-        'gl_repository' => @gl_repository,
-        'gl_id' => @gl_id,
-        'gl_username' => @username,
-        'git_config_options' => @git_config_options,
-        'git_protocol' => @git_protocol
-      }
-
-      args = [gitaly_address, JSON.dump(gitaly_request)]
-    end
-
+    executable = GITALY_COMMAND[@command]
     args_string = [File.basename(executable), *args].join(' ')
     $logger.info('executing git command', command: args_string, user: log_username)
     exec_cmd(executable, *args)
@@ -182,7 +180,9 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       'GL_REPOSITORY' => @gl_repository,
       'GL_USERNAME' => @username
     }
-    if @gitaly && @gitaly.include?('token')
+
+    # @gitaly is a thing, unless another code path exists that doesn't go through process_cmd
+    if @gitaly&.include?('token')
       env['GITALY_TOKEN'] = @gitaly['token']
     end
 
