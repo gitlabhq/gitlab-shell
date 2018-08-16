@@ -203,9 +203,11 @@ describe GitlabShell do
 
     context 'gitaly-upload-pack' do
       let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
+
       before do
         allow(api).to receive(:check_access).and_return(gitaly_check_access)
       end
+
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
@@ -213,12 +215,13 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        expect(subject).to receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-upload-pack"), 'unix:gitaly.socket', gitaly_message)
+        expect(subject).to receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-upload-pack"), gitaly_address: 'unix:gitaly.socket', json_args: gitaly_message, token: nil)
       end
 
       it "should log the command execution" do
         message = "executing git command"
         user_string = "user with id #{gl_id}"
+
         expect($logger).to receive(:info).with(message, command: "gitaly-upload-pack unix:gitaly.socket #{gitaly_message}", user: user_string)
       end
 
@@ -230,6 +233,11 @@ describe GitlabShell do
 
     context 'git-receive-pack' do
       let(:ssh_cmd) { "git-receive-pack gitlab-ci.git" }
+
+      before do
+        allow(api).to receive(:check_access).and_return(gitaly_check_access)
+      end
+
       after { subject.exec(ssh_cmd) }
 
       it "should process the command" do
@@ -237,13 +245,13 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        expect(subject).to receive(:exec_cmd).with('git-receive-pack')
+        expect(subject).to receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-receive-pack"), gitaly_address: 'unix:gitaly.socket', json_args: gitaly_message, token: nil)
       end
 
       it "should log the command execution" do
         message = "executing git command"
         user_string = "user with id #{gl_id}"
-        expect($logger).to receive(:info).with(message, command: "git-receive-pack", user: user_string)
+        expect($logger).to receive(:info).with(message, command: "gitaly-receive-pack unix:gitaly.socket #{gitaly_message}", user: user_string)
       end
     end
 
@@ -259,7 +267,7 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        expect(subject).to receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-receive-pack"), 'unix:gitaly.socket', gitaly_message)
+        expect(subject).to receive(:exec_cmd).with(File.join(ROOT_PATH, "bin/gitaly-receive-pack"), gitaly_address: 'unix:gitaly.socket', json_args: gitaly_message, token: nil)
       end
 
       it "should log the command execution" do
@@ -276,7 +284,6 @@ describe GitlabShell do
 
     shared_examples_for 'upload-archive' do |command|
       let(:ssh_cmd) { "#{command} gitlab-ci.git" }
-      let(:exec_cmd_params) { ['git-upload-archive'] }
       let(:exec_cmd_log_params) { exec_cmd_params }
 
       after { subject.exec(ssh_cmd) }
@@ -311,8 +318,7 @@ describe GitlabShell do
         let(:exec_cmd_params) do
           [
             File.join(ROOT_PATH, "bin", gitaly_executable),
-            'unix:gitaly.socket',
-            gitaly_message
+            { gitaly_address: 'unix:gitaly.socket', json_args: gitaly_message, token: nil }
           ]
         end
         let(:exec_cmd_log_params) do
@@ -408,6 +414,19 @@ describe GitlabShell do
     let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
 
     describe 'check access with api' do
+      before do
+        allow(api).to receive(:check_access).and_return(
+          GitAccessStatus.new(
+            false,
+            'denied',
+            gl_repository: nil,
+            gl_id: nil,
+            gl_username: nil,
+            git_config_options: nil,
+            gitaly: nil,
+            git_protocol: nil))
+      end
+
       after { subject.exec(ssh_cmd) }
 
       it "should call api.check_access" do
@@ -415,126 +434,10 @@ describe GitlabShell do
       end
 
       it "should disallow access and log the attempt if check_access returns false status" do
-        allow(api).to receive(:check_access).and_return(GitAccessStatus.new(
-                  false,
-                  'denied',
-                  gl_repository: nil,
-                  gl_id: nil,
-                  gl_username: nil,
-                  git_config_options: nil,
-                  gitaly: nil,
-                  git_protocol: nil))
         message = 'Access denied'
         user_string = "user with id #{gl_id}"
+
         expect($logger).to receive(:warn).with(message, command: 'git-upload-pack gitlab-ci.git', user: user_string)
-      end
-    end
-  end
-
-  describe :exec_cmd do
-    let(:shell) { GitlabShell.new(gl_id) }
-    let(:env) do
-      {
-        'HOME' => ENV['HOME'],
-        'PATH' => ENV['PATH'],
-        'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
-        'LANG' => ENV['LANG'],
-        'GL_ID' => gl_id,
-        'GL_PROTOCOL' => 'ssh',
-        'GL_REPOSITORY' => gl_repository,
-        'GL_USERNAME' => 'testuser'
-      }
-    end
-    let(:exec_options) { { unsetenv_others: true, chdir: ROOT_PATH } }
-    before do
-      allow(Kernel).to receive(:exec)
-      shell.gl_repository = gl_repository
-      shell.git_protocol = git_protocol
-      shell.instance_variable_set(:@username, gl_username)
-    end
-
-    it "uses Kernel::exec method" do
-      expect(Kernel).to receive(:exec).with(env, 1, 2, exec_options).once
-      shell.send :exec_cmd, 1, 2
-    end
-
-    it "refuses to execute a lone non-array argument" do
-      expect { shell.send :exec_cmd, 1 }.to raise_error(GitlabShell::DisallowedCommandError)
-    end
-
-    it "allows one argument if it is an array" do
-      expect(Kernel).to receive(:exec).with(env, [1, 2], exec_options).once
-      shell.send :exec_cmd, [1, 2]
-    end
-
-    context "when specifying a git_tracing log file" do
-      let(:git_trace_log_file) { '/tmp/git_trace_performance.log' }
-
-      before do
-        allow_any_instance_of(GitlabConfig).to receive(:git_trace_log_file).and_return(git_trace_log_file)
-        shell
-      end
-
-      it "uses GIT_TRACE_PERFORMANCE" do
-        expected_hash = hash_including(
-          'GIT_TRACE' => git_trace_log_file,
-          'GIT_TRACE_PACKET' => git_trace_log_file,
-          'GIT_TRACE_PERFORMANCE' => git_trace_log_file
-        )
-        expect(Kernel).to receive(:exec).with(expected_hash, [1, 2], exec_options).once
-
-        shell.send :exec_cmd, [1, 2]
-      end
-
-      context "when provides a relative path" do
-        let(:git_trace_log_file) { 'git_trace_performance.log' }
-
-        it "does not uses GIT_TRACE*" do
-          # If we try to use it we'll show a warning to the users
-          expected_hash = hash_excluding(
-            'GIT_TRACE', 'GIT_TRACE_PACKET', 'GIT_TRACE_PERFORMANCE'
-          )
-          expect(Kernel).to receive(:exec).with(expected_hash, [1, 2], exec_options).once
-
-          shell.send :exec_cmd, [1, 2]
-        end
-
-        it "writes an entry on the log" do
-          message = 'git trace log path must be absolute, ignoring'
-
-          expect($logger).to receive(:warn).
-            with(message, git_trace_log_file: git_trace_log_file)
-
-          expect(Kernel).to receive(:exec).with(env, [1, 2], exec_options).once
-          shell.send :exec_cmd, [1, 2]
-        end
-      end
-
-      context "when provides a file not writable" do
-        before do
-          expect(File).to receive(:open).with(git_trace_log_file, 'a').and_raise(Errno::EACCES)
-        end
-
-        it "does not uses GIT_TRACE*" do
-          # If we try to use it we'll show a warning to the users
-          expected_hash = hash_excluding(
-            'GIT_TRACE', 'GIT_TRACE_PACKET', 'GIT_TRACE_PERFORMANCE'
-          )
-          expect(Kernel).to receive(:exec).with(expected_hash, [1, 2], exec_options).once
-
-          shell.send :exec_cmd, [1, 2]
-        end
-
-        it "writes an entry on the log" do
-          message = 'Failed to open git trace log file'
-          error = 'Permission denied'
-
-          expect($logger).to receive(:warn).
-            with(message, git_trace_log_file: git_trace_log_file, error: error)
-
-          expect(Kernel).to receive(:exec).with(env, [1, 2], exec_options).once
-          shell.send :exec_cmd, [1, 2]
-        end
       end
     end
   end
