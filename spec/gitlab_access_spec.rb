@@ -13,7 +13,6 @@ describe GitlabAccess do
                                                  gl_id: 'user-123',
                                                  gl_username: 'testuser',
                                                  git_config_options: ['receive.MaxInputSize=10000'],
-                                                 repository_path: '/home/git/repositories',
                                                  gitaly: nil,
                                                  git_protocol: 'version=2'))
     end
@@ -51,7 +50,6 @@ describe GitlabAccess do
                   gl_id: nil,
                   gl_username: nil,
                   git_config_options: nil,
-                  repository_path: nil,
                   gitaly: nil,
                   git_protocol: nil
                 ))

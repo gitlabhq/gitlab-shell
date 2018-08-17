@@ -29,7 +29,6 @@ describe GitlabShell do
     gl_id: gl_id,
     gl_username: gl_username,
     git_config_options: git_config_options,
-    repository_path: repo_path,
     gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' },
     git_protocol: git_protocol
   )
@@ -45,7 +44,6 @@ describe GitlabShell do
                 gl_id: gl_id,
                 gl_username: gl_username,
                 git_config_options: nil,
-                repository_path: repo_path,
                 gitaly: nil,
                 git_protocol: git_protocol))
       allow(api).to receive(:two_factor_recovery_codes).and_return({
@@ -60,7 +58,6 @@ describe GitlabShell do
   let(:tmp_repos_path) { File.join(ROOT_PATH, 'tmp', 'repositories') }
 
   let(:repo_name) { 'gitlab-ci.git' }
-  let(:repo_path) { File.join(tmp_repos_path, repo_name) }
   let(:gl_repository) { 'project-1' }
   let(:gl_id) { 'user-1' }
   let(:gl_username) { 'testuser' }
@@ -189,13 +186,13 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        expect(subject).to receive(:exec_cmd).with('git-upload-pack', repo_path)
+        expect(subject).to receive(:exec_cmd).with('git-upload-pack')
       end
 
       it "should log the command execution" do
         message = "executing git command"
         user_string = "user with id #{gl_id}"
-        expect($logger).to receive(:info).with(message, command: "git-upload-pack #{repo_path}", user: user_string)
+        expect($logger).to receive(:info).with(message, command: "git-upload-pack", user: user_string)
       end
 
       it "should use usernames if configured to do so" do
@@ -248,13 +245,13 @@ describe GitlabShell do
       end
 
       it "should execute the command" do
-        expect(subject).to receive(:exec_cmd).with('git-receive-pack', repo_path)
+        expect(subject).to receive(:exec_cmd).with('git-receive-pack')
       end
 
       it "should log the command execution" do
         message = "executing git command"
         user_string = "user with id #{gl_id}"
-        expect($logger).to receive(:info).with(message, command: "git-receive-pack #{repo_path}", user: user_string)
+        expect($logger).to receive(:info).with(message, command: "git-receive-pack", user: user_string)
       end
     end
 
@@ -287,7 +284,7 @@ describe GitlabShell do
 
     shared_examples_for 'upload-archive' do |command|
       let(:ssh_cmd) { "#{command} gitlab-ci.git" }
-      let(:exec_cmd_params) { ['git-upload-archive', repo_path] }
+      let(:exec_cmd_params) { ['git-upload-archive'] }
       let(:exec_cmd_log_params) { exec_cmd_params }
 
       after { subject.exec(ssh_cmd) }
@@ -441,31 +438,11 @@ describe GitlabShell do
                   gl_id: nil,
                   gl_username: nil,
                   git_config_options: nil,
-                  repository_path: nil,
                   gitaly: nil,
                   git_protocol: nil))
         message = 'Access denied'
         user_string = "user with id #{gl_id}"
         expect($logger).to receive(:warn).with(message, command: 'git-upload-pack gitlab-ci.git', user: user_string)
-      end
-    end
-
-    describe 'set the repository path' do
-      context 'with a correct path' do
-        before { subject.exec(ssh_cmd) }
-
-        it { expect(subject.repo_path).to eq repo_path }
-      end
-
-      context "with a path that doesn't match an absolute path" do
-        before do
-          allow(File).to receive(:absolute_path) { 'y/gitlab-ci.git' }
-        end
-
-        it "refuses to assign the path" do
-          expect($stderr).to receive(:puts).with("GitLab: Invalid repository path")
-          expect(subject.exec(ssh_cmd)).to be_falsey
-        end
       end
     end
   end
