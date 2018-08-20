@@ -68,13 +68,13 @@ describe GitlabShell do
     allow_any_instance_of(GitlabConfig).to receive(:audit_usernames).and_return(false)
   end
 
-  describe :initialize do
+  describe '#initialize' do
     let(:ssh_cmd) { 'git-receive-pack' }
 
     it { expect(subject.gl_id).to eq gl_id }
   end
 
-  describe :parse_cmd do
+  describe '#parse_cmd' do
     describe 'git' do
       context 'w/o namespace' do
         let(:ssh_args) { %w(git-upload-pack gitlab-ci.git) }
@@ -161,7 +161,7 @@ describe GitlabShell do
     end
   end
 
-  describe :exec do
+  describe '#exec' do
     let(:gitaly_message) do
       JSON.dump(
         'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' },
@@ -410,7 +410,7 @@ describe GitlabShell do
     end
   end
 
-  describe :validate_access do
+  describe '#validate_access' do
     let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
 
     describe 'check access with api' do
@@ -442,7 +442,7 @@ describe GitlabShell do
     end
   end
 
-  describe :api do
+  describe '#api' do
     let(:shell) { GitlabShell.new(gl_id) }
     subject { shell.send :api }
 

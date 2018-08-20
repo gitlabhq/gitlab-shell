@@ -307,7 +307,7 @@ describe GitlabKeys do
         key.send :lock, 1 do
           sleep 2
         end
-      end.to raise_error
+      end.to raise_error(Timeout::Error, 'execution expired')
     end
 
     it "should actually lock file" do
