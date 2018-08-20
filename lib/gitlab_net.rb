@@ -37,14 +37,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     when HTTP_SUCCESS, HTTP_UNAUTHORIZED, HTTP_NOT_FOUND
       GitAccessStatus.create_from_json(resp.body)
     else
-      GitAccessStatus.new(false,
-                          'API is not accessible',
-                          gl_repository: nil,
-                          gl_id: nil,
-                          gl_username: nil,
-                          git_config_options: nil,
-                          gitaly: nil,
-                          git_protocol: nil)
+      GitAccessStatus.new(false, resp.code, 'API is not accessible')
     end
   end
 
