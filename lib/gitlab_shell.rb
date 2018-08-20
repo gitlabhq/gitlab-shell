@@ -11,10 +11,15 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
   class DisallowedCommandError < StandardError; end
   class InvalidRepositoryPathError < StandardError; end
 
+  GIT_UPLOAD_PACK_COMMAND = 'git-upload-pack'
+  GIT_RECEIVE_PACK_COMMAND = 'git-receive-pack'
+  GIT_UPLOAD_ARCHIVE_COMMAND = 'git-upload-archive'
+  GIT_LFS_AUTHENTICATE_COMMAND = 'git-lfs-authenticate'
+
   GITALY_COMMANDS = {
-    'git-upload-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-upload-pack'),
-    'git-upload-archive' => File.join(ROOT_PATH, 'bin', 'gitaly-upload-archive'),
-    'git-receive-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-receive-pack')
+    GIT_UPLOAD_PACK_COMMAND => File.join(ROOT_PATH, 'bin', 'gitaly-upload-pack'),
+    GIT_UPLOAD_ARCHIVE_COMMAND => File.join(ROOT_PATH, 'bin', 'gitaly-upload-archive'),
+    GIT_RECEIVE_PACK_COMMAND => File.join(ROOT_PATH, 'bin', 'gitaly-receive-pack')
   }.freeze
 
   GIT_COMMANDS = (GITALY_COMMANDS.keys + ['git-lfs-authenticate']).freeze
@@ -94,14 +99,14 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     raise DisallowedCommandError unless GIT_COMMANDS.include?(@command)
 
     case @command
-    when 'git-lfs-authenticate'
+    when GIT_LFS_AUTHENTICATE_COMMAND
       raise DisallowedCommandError unless args.count >= 2
       @repo_name = args[1]
       case args[2]
       when 'download'
-        @git_access = 'git-upload-pack'
+        @git_access = GIT_UPLOAD_PACK_COMMAND
       when 'upload'
-        @git_access = 'git-receive-pack'
+        @git_access = GIT_RECEIVE_PACK_COMMAND
       else
         raise DisallowedCommandError
       end
