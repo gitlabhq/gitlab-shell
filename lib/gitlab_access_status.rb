@@ -3,8 +3,9 @@ require 'json'
 class GitAccessStatus
   attr_reader :message, :gl_repository, :gl_id, :gl_username, :gitaly, :git_protocol, :git_config_options
 
-  def initialize(status, message, gl_repository: nil, gl_id: nil, gl_username: nil, gitaly: nil, git_protocol: nil, git_config_options: nil)
+  def initialize(status, status_code, message, gl_repository: nil, gl_id: nil, gl_username: nil, gitaly: nil, git_protocol: nil, git_config_options: nil)
     @status = status
+    @status_code = status_code
     @message = message
     @gl_repository = gl_repository
     @gl_id = gl_id
@@ -14,9 +15,10 @@ class GitAccessStatus
     @git_protocol = git_protocol
   end
 
-  def self.create_from_json(json)
+  def self.create_from_json(json, status_code)
     values = JSON.parse(json)
     new(values["status"],
+        status_code,
         values["message"],
         gl_repository: values["gl_repository"],
         gl_id: values["gl_id"],

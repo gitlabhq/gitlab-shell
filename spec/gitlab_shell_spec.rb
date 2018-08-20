@@ -22,23 +22,26 @@ describe GitlabShell do
 
   let(:git_config_options) { ['receive.MaxInputSize=10000'] }
 
-  let(:gitaly_check_access) { GitAccessStatus.new(
-    true,
-    'ok',
-    gl_repository: gl_repository,
-    gl_id: gl_id,
-    gl_username: gl_username,
-    git_config_options: git_config_options,
-    gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' },
-    git_protocol: git_protocol
-  )
-  }
+  let(:gitaly_check_access) do
+    GitAccessStatus.new(
+      true,
+      HTTPCodes::HTTP_SUCCESS,
+      'ok',
+      gl_repository: gl_repository,
+      gl_id: gl_id,
+      gl_username: gl_username,
+      git_config_options: git_config_options,
+      gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' },
+      git_protocol: git_protocol
+    )
+  end
 
   let(:api) do
     double(GitlabNet).tap do |api|
       allow(api).to receive(:discover).and_return({ 'name' => 'John Doe', 'username' => 'testuser' })
       allow(api).to receive(:check_access).and_return(GitAccessStatus.new(
                 true,
+                HTTPCodes::HTTP_SUCCESS,
                 'ok',
                 gl_repository: gl_repository,
                 gl_id: gl_id,
