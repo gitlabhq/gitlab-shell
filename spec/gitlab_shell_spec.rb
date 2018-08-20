@@ -256,6 +256,29 @@ describe GitlabShell do
         user_string = "user with id #{gl_id}"
         expect($logger).to receive(:info).with(message, command: "gitaly-receive-pack unix:gitaly.socket #{gitaly_message}", user: user_string)
       end
+
+      context 'with a custom action' do
+        let(:fake_payload) { { 'api_endpoints' => [ '/fake/api/endpoint' ], 'data' => {} } }
+        let(:custom_action_gitlab_access_status) do
+          GitAccessStatus.new(
+            true,
+            HTTPCodes::HTTP_MULTIPLE_CHOICES,
+            'Multiple Choices',
+            payload: fake_payload
+          )
+        end
+        let(:action_custom) { double(Action::Custom) }
+
+        before do
+          allow(api).to receive(:check_access).and_return(custom_action_gitlab_access_status)
+        end
+
+        it "should not process the command" do
+          expect(subject).to_not receive(:process_cmd).with(%w(git-receive-pack gitlab-ci.git))
+          expect(Action::Custom).to receive(:new).with(gl_id, fake_payload).and_return(action_custom)
+          expect(action_custom).to receive(:execute)
+        end
+      end
     end
 
     context 'gitaly-receive-pack' do

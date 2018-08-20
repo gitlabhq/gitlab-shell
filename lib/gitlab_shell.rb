@@ -5,6 +5,7 @@ require 'pathname'
 
 require_relative 'gitlab_net'
 require_relative 'gitlab_metrics'
+require_relative 'action'
 
 class GitlabShell # rubocop:disable Metrics/ClassLength
   class AccessDeniedError < StandardError; end
@@ -50,14 +51,30 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     args = Shellwords.shellwords(origin_cmd)
     args = parse_cmd(args)
 
+    access_status = nil
+
     if GIT_COMMANDS.include?(args.first)
-      GitlabMetrics.measure('verify-access') { verify_access }
+      access_status = GitlabMetrics.measure('verify-access') { verify_access }
+
+      @gl_repository = access_status.gl_repository
+      @git_protocol = ENV['GIT_PROTOCOL']
+      @gitaly = access_status.gitaly
+      @username = access_status.gl_username
+      @git_config_options = access_status.git_config_options
+      @gl_id = access_status.gl_id if defined?(@who)
     elsif !defined?(@gl_id)
       # We're processing an API command like 2fa_recovery_codes, but
       # don't have a @gl_id yet, that means we're in the "username"
       # mode and need to materialize it, calling the "user" method
       # will do that and call the /discover method.
       user
+    end
+
+    if @command == GIT_RECEIVE_PACK_COMMAND && access_status.custom_action?
+      # If the response from /api/v4/allowed is a HTTP 300, we need to perform
+      # a Custom Action and therefore should return and not call process_cmd()
+      #
+      return process_custom_action(access_status)
     end
 
     process_cmd(args)
@@ -68,16 +85,18 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     false
   rescue AccessDeniedError => ex
     $logger.warn('Access denied', command: origin_cmd, user: log_username)
-
     $stderr.puts "GitLab: #{ex.message}"
     false
   rescue DisallowedCommandError
     $logger.warn('Denied disallowed command', command: origin_cmd, user: log_username)
-
     $stderr.puts "GitLab: Disallowed command"
     false
   rescue InvalidRepositoryPathError
     $stderr.puts "GitLab: Invalid repository path"
+    false
+  rescue Action::Custom::BaseError => ex
+    $logger.warn('Custom action error', command: origin_cmd, user: log_username)
+    $stderr.puts "GitLab: #{ex.message}"
     false
   end
 
@@ -123,14 +142,11 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
     raise AccessDeniedError, status.message unless status.allowed?
 
-    @gl_repository = status.gl_repository
-    @git_protocol = ENV['GIT_PROTOCOL']
-    @gitaly = status.gitaly
-    @username = status.gl_username
-    @git_config_options = status.git_config_options
-    if defined?(@who)
-      @gl_id = status.gl_id
-    end
+    status
+  end
+
+  def process_custom_action(access_status)
+    Action::Custom.new(@gl_id, access_status.payload).execute
   end
 
   def process_cmd(args)

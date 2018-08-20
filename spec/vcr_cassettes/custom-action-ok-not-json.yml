@@ -1,0 +1,51 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: http://localhost:3000/api/v4/fake/info_refs
+    body:
+      encoding: UTF-8
+      string: '{"data":{"gl_username":"user1","primary_repo":"http://localhost:3001/user1/repo1.git","gl_id":"key-1"},"output":"","secret_token":"0a3938d9d95d807e94d937af3a4fbbea"}'
+    headers:
+      Content-Type:
+      - application/json
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+      Host:
+      - localhost
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Date:
+      - Fri, 20 Jul 2018 06:18:58 GMT
+      Connection:
+      - close
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Content-Type-Options:
+      - nosniff
+      Content-Type:
+      - application/json
+      Content-Length:
+      - '172'
+      Vary:
+      - Origin
+      Etag:
+      - W/"7d01e1e3dbcbe7cca9607461352f8244"
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      X-Request-Id:
+      - 03afa234-b6be-49ab-9392-4aa35c5dee25
+      X-Runtime:
+      - '1.436040'
+    body:
+      encoding: UTF-8
+      string: '""'
+    http_version:
+  recorded_at: Fri, 20 Jul 2018 06:18:58 GMT
