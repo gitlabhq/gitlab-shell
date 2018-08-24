@@ -50,10 +50,6 @@ class GitlabConfig
     @config['audit_usernames'] ||= false
   end
 
-  def git_trace_log_file
-    @config['git_trace_log_file']
-  end
-
   def metrics_log_file
     @config['metrics_log_file'] ||= File.join(ROOT_PATH, 'gitlab-shell-metrics.log')
   end

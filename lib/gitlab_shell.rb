@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'shellwords'
 require 'pathname'
 
@@ -9,14 +11,15 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
   class DisallowedCommandError < StandardError; end
   class InvalidRepositoryPathError < StandardError; end
 
-  GIT_COMMANDS = %w(git-upload-pack git-receive-pack git-upload-archive git-lfs-authenticate).freeze
-  GITALY_MIGRATED_COMMANDS = {
+  GITALY_COMMANDS = {
     'git-upload-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-upload-pack'),
     'git-upload-archive' => File.join(ROOT_PATH, 'bin', 'gitaly-upload-archive'),
     'git-receive-pack' => File.join(ROOT_PATH, 'bin', 'gitaly-receive-pack')
   }.freeze
+
+  GIT_COMMANDS = (GITALY_COMMANDS.keys + ['git-lfs-authenticate']).freeze
   API_COMMANDS = %w(2fa_recovery_codes).freeze
-  GL_PROTOCOL = 'ssh'.freeze
+  GL_PROTOCOL = 'ssh'
 
   attr_accessor :gl_id, :gl_repository, :repo_name, :command, :git_access, :git_protocol
 
@@ -136,64 +139,31 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       return
     end
 
-    executable = @command
-    args = []
+    # TODO: instead of building from pieces here in gitlab-shell, build the
+    # entire gitaly_request in gitlab-ce and pass on as-is here.
+    args = JSON.dump(
+      'repository' => @gitaly['repository'],
+      'gl_repository' => @gl_repository,
+      'gl_id' => @gl_id,
+      'gl_username' => @username,
+      'git_config_options' => @git_config_options,
+      'git_protocol' => @git_protocol
+    )
 
-    if GITALY_MIGRATED_COMMANDS.key?(executable) && @gitaly
-      executable = GITALY_MIGRATED_COMMANDS[executable]
-
-      gitaly_address = @gitaly['address']
-
-      # The entire gitaly_request hash should be built in gitlab-ce and passed
-      # on as-is. For now we build a fake one on the spot.
-      gitaly_request = {
-        'repository' => @gitaly['repository'],
-        'gl_repository' => @gl_repository,
-        'gl_id' => @gl_id,
-        'gl_username' => @username,
-        'git_config_options' => @git_config_options,
-        'git_protocol' => @git_protocol
-      }
-
-      args = [gitaly_address, JSON.dump(gitaly_request)]
-    end
-
-    args_string = [File.basename(executable), *args].join(' ')
+    gitaly_address = @gitaly['address']
+    executable = GITALY_COMMANDS.fetch(@command)
+    gitaly_bin = File.basename(executable)
+    args_string = [gitaly_bin, gitaly_address, args].join(' ')
     $logger.info('executing git command', command: args_string, user: log_username)
-    exec_cmd(executable, *args)
+
+    exec_cmd(executable, gitaly_address: gitaly_address, token: @gitaly['token'], json_args: args)
   end
 
   # This method is not covered by Rspec because it ends the current Ruby process.
-  def exec_cmd(*args)
-    # If you want to call a command without arguments, use
-    # exec_cmd(['my_command', 'my_command']) . Otherwise use
-    # exec_cmd('my_command', 'my_argument', ...).
-    if args.count == 1 && !args.first.is_a?(Array)
-      raise DisallowedCommandError
-    end
+  def exec_cmd(executable, gitaly_address:, token:, json_args:)
+    env = { 'GITALY_TOKEN' => token }
 
-    env = {
-      'HOME' => ENV['HOME'],
-      'PATH' => ENV['PATH'],
-      'LD_LIBRARY_PATH' => ENV['LD_LIBRARY_PATH'],
-      'LANG' => ENV['LANG'],
-      'GL_ID' => @gl_id,
-      'GL_PROTOCOL' => GL_PROTOCOL,
-      'GL_REPOSITORY' => @gl_repository,
-      'GL_USERNAME' => @username
-    }
-    if @gitaly && @gitaly.include?('token')
-      env['GITALY_TOKEN'] = @gitaly['token']
-    end
-
-    if git_trace_available?
-      env.merge!(
-        'GIT_TRACE' => @config.git_trace_log_file,
-        'GIT_TRACE_PACKET' => @config.git_trace_log_file,
-        'GIT_TRACE_PERFORMANCE' => @config.git_trace_log_file
-      )
-    end
-
+    args = [executable, gitaly_address, json_args]
     # We use 'chdir: ROOT_PATH' to let the next executable know where config.yml is.
     Kernel.exec(env, *args, unsetenv_others: true, chdir: ROOT_PATH)
   end
@@ -272,23 +242,6 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     else
       puts "An error occurred while trying to generate new recovery codes.\n" \
            "#{resp['message']}"
-    end
-  end
-
-  def git_trace_available?
-    return false unless @config.git_trace_log_file
-
-    if Pathname(@config.git_trace_log_file).relative?
-      $logger.warn('git trace log path must be absolute, ignoring', git_trace_log_file: @config.git_trace_log_file)
-      return false
-    end
-
-    begin
-      File.open(@config.git_trace_log_file, 'a') { nil }
-      return true
-    rescue => ex
-      $logger.warn('Failed to open git trace log file', git_trace_log_file: @config.git_trace_log_file, error: ex.to_s)
-      return false
     end
   end
 end
