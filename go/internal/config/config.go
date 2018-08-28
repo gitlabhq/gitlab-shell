@@ -14,9 +14,10 @@ const (
 )
 
 type Config struct {
-	RootDir   string
-	LogFile   string `yaml:"log_file"`
-	LogFormat string `yaml:"log_format"`
+	RootDir      string
+	LogFile      string `yaml:"log_file"`
+	LogFormat    string `yaml:"log_format"`
+	Experimental bool   `yaml:"experimental"`
 }
 
 func New() (*Config, error) {

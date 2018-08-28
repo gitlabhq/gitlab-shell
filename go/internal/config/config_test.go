@@ -8,14 +8,16 @@ import (
 func TestConfigLogFile(t *testing.T) {
 	testRoot := "/foo/bar"
 	testCases := []struct {
-		yaml   string
-		path   string
-		format string
+		yaml         string
+		path         string
+		format       string
+		experimental bool
 	}{
 		{path: "/foo/bar/gitlab-shell.log", format: "text"},
 		{yaml: "log_file: my-log.log", path: "/foo/bar/my-log.log", format: "text"},
 		{yaml: "log_file: /qux/my-log.log", path: "/qux/my-log.log", format: "text"},
 		{yaml: "log_format: json", path: "/foo/bar/gitlab-shell.log", format: "json"},
+		{yaml: "experimental: true", path: "/foo/bar/gitlab-shell.log", format: "text", experimental: true},
 	}
 
 	for _, tc := range testCases {
@@ -23,6 +25,10 @@ func TestConfigLogFile(t *testing.T) {
 			cfg := Config{RootDir: testRoot}
 			if err := parseConfig([]byte(tc.yaml), &cfg); err != nil {
 				t.Fatal(err)
+			}
+
+			if cfg.Experimental != tc.experimental {
+				t.Fatalf("expected %v, got %v", tc.experimental, cfg.Experimental)
 			}
 
 			if cfg.LogFile != tc.path {
