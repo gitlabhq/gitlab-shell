@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"testing"
 )
@@ -49,5 +50,31 @@ func TestParseConfig(t *testing.T) {
 				t.Fatalf("expected %q, got %q", tc.format, cfg.LogFormat)
 			}
 		})
+	}
+}
+
+func TestExampleFile(t *testing.T) {
+	content, err := ioutil.ReadFile("./testdata/config.yml.example")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := Config{}
+
+	err = parseConfig(content, &cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := Config{
+		RootDir:        "",
+		LogFile:        "gitlab-shell.log",
+		LogFormat:      "text",
+		GitlabUrl:      "http://localhost:8080",
+		InternalApiUrl: "http://localhost:8080/api/v4/internal",
+	}
+
+	if cfg != expected {
+		t.Fatalf("expected %v got %v", expected, cfg)
 	}
 }

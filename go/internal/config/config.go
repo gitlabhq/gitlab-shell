@@ -2,6 +2,7 @@ package config
 
 import (
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path"
 
@@ -19,10 +20,12 @@ type MigrationConfig struct {
 }
 
 type Config struct {
-	RootDir   string
-	LogFile   string          `yaml:"log_file"`
-	LogFormat string          `yaml:"log_format"`
-	Migration MigrationConfig `yaml:"migration"`
+	RootDir        string
+	LogFile        string          `yaml:"log_file"`
+	LogFormat      string          `yaml:"log_format"`
+	Migration      MigrationConfig `yaml:"migration"`
+	GitlabUrl      string          `yaml:"gitlab_url"`
+	InternalApiUrl string
 }
 
 func New() (*Config, error) {
@@ -70,6 +73,18 @@ func parseConfig(configBytes []byte, cfg *Config) error {
 	if cfg.LogFormat == "" {
 		cfg.LogFormat = "text"
 	}
+
+	baseUrl, err := url.Parse(cfg.GitlabUrl)
+	if err != nil {
+		return err
+	}
+
+	path, err := url.Parse("api/v4/internal")
+	if err != nil {
+		return err
+	}
+
+	cfg.InternalApiUrl = baseUrl.ResolveReference(path).String()
 
 	return nil
 }
