@@ -347,6 +347,15 @@ describe GitlabNet, vcr: true do
       end
     end
 
+    it 'handles non 200 status codes' do
+      resp = double(:resp, code: 501)
+
+      allow(gitlab_net).to receive(:post).and_return(resp)
+
+      access = gitlab_net.check_access('git-upload-pack', nil, project, 'user-2', changes, 'ssh')
+      expect(access).not_to be_allowed
+    end
+
     it "raises an exception if the connection fails" do
       allow_any_instance_of(Net::HTTP).to receive(:request).and_raise(StandardError)
       expect {
