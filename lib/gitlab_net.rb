@@ -44,7 +44,6 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
                           gl_id: nil,
                           gl_username: nil,
                           git_config_options: nil,
-                          repository_path: nil,
                           gitaly: nil,
                           git_protocol: nil)
     end

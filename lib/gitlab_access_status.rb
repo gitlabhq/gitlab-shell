@@ -1,7 +1,7 @@
 require 'json'
 
 class GitAccessStatus
-  attr_reader :message, :gl_repository, :gl_id, :gl_username, :repository_path, :gitaly, :git_protocol, :git_config_options
+  attr_reader :message, :gl_repository, :gl_id, :gl_username, :gitaly, :git_protocol, :git_config_options
 
   def initialize(status, message, gl_repository:, gl_id:, gl_username:, gitaly:, git_protocol:, git_config_options:)
     @status = status
