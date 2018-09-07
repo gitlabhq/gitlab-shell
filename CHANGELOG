@@ -1,3 +1,6 @@
+v8.3.0
+  - Add custom action (e.g. proxying SSH push) support
+
 v8.2.1
   - Fix HTTP status code handling for /api/v4/allowed API endpoint
 
