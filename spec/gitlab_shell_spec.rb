@@ -22,23 +22,26 @@ describe GitlabShell do
 
   let(:git_config_options) { ['receive.MaxInputSize=10000'] }
 
-  let(:gitaly_check_access) { GitAccessStatus.new(
-    true,
-    'ok',
-    gl_repository: gl_repository,
-    gl_id: gl_id,
-    gl_username: gl_username,
-    git_config_options: git_config_options,
-    gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' },
-    git_protocol: git_protocol
-  )
-  }
+  let(:gitaly_check_access) do
+    GitAccessStatus.new(
+      true,
+      HTTPCodes::HTTP_SUCCESS,
+      'ok',
+      gl_repository: gl_repository,
+      gl_id: gl_id,
+      gl_username: gl_username,
+      git_config_options: git_config_options,
+      gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' },
+      git_protocol: git_protocol
+    )
+  end
 
   let(:api) do
     double(GitlabNet).tap do |api|
       allow(api).to receive(:discover).and_return({ 'name' => 'John Doe', 'username' => 'testuser' })
       allow(api).to receive(:check_access).and_return(GitAccessStatus.new(
                 true,
+                HTTPCodes::HTTP_SUCCESS,
                 'ok',
                 gl_repository: gl_repository,
                 gl_id: gl_id,
@@ -68,13 +71,13 @@ describe GitlabShell do
     allow_any_instance_of(GitlabConfig).to receive(:audit_usernames).and_return(false)
   end
 
-  describe :initialize do
+  describe '#initialize' do
     let(:ssh_cmd) { 'git-receive-pack' }
 
     it { expect(subject.gl_id).to eq gl_id }
   end
 
-  describe :parse_cmd do
+  describe '#parse_cmd' do
     describe 'git' do
       context 'w/o namespace' do
         let(:ssh_args) { %w(git-upload-pack gitlab-ci.git) }
@@ -161,7 +164,7 @@ describe GitlabShell do
     end
   end
 
-  describe :exec do
+  describe '#exec' do
     let(:gitaly_message) do
       JSON.dump(
         'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' },
@@ -252,6 +255,29 @@ describe GitlabShell do
         message = "executing git command"
         user_string = "user with id #{gl_id}"
         expect($logger).to receive(:info).with(message, command: "gitaly-receive-pack unix:gitaly.socket #{gitaly_message}", user: user_string)
+      end
+
+      context 'with a custom action' do
+        let(:fake_payload) { { 'api_endpoints' => [ '/fake/api/endpoint' ], 'data' => {} } }
+        let(:custom_action_gitlab_access_status) do
+          GitAccessStatus.new(
+            true,
+            HTTPCodes::HTTP_MULTIPLE_CHOICES,
+            'Multiple Choices',
+            payload: fake_payload
+          )
+        end
+        let(:action_custom) { double(Action::Custom) }
+
+        before do
+          allow(api).to receive(:check_access).and_return(custom_action_gitlab_access_status)
+        end
+
+        it "should not process the command" do
+          expect(subject).to_not receive(:process_cmd).with(%w(git-receive-pack gitlab-ci.git))
+          expect(Action::Custom).to receive(:new).with(gl_id, fake_payload).and_return(action_custom)
+          expect(action_custom).to receive(:execute)
+        end
       end
     end
 
@@ -410,7 +436,7 @@ describe GitlabShell do
     end
   end
 
-  describe :validate_access do
+  describe '#validate_access' do
     let(:ssh_cmd) { "git-upload-pack gitlab-ci.git" }
 
     describe 'check access with api' do
@@ -442,7 +468,7 @@ describe GitlabShell do
     end
   end
 
-  describe :api do
+  describe '#api' do
     let(:shell) { GitlabShell.new(gl_id) }
     subject { shell.send :api }
 

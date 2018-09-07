@@ -1,4 +1,6 @@
 require_relative 'http_codes'
+require_relative 'httpunix'
+require_relative 'gitlab_logger'
 
 module HTTPHelper
   include HTTPCodes

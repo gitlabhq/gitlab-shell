@@ -3,10 +3,8 @@ require 'openssl'
 require 'json'
 
 require_relative 'gitlab_config'
-require_relative 'gitlab_logger'
 require_relative 'gitlab_access'
 require_relative 'gitlab_lfs_authentication'
-require_relative 'httpunix'
 require_relative 'http_helper'
 
 class GitlabNet # rubocop:disable Metrics/ClassLength
@@ -35,18 +33,11 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     url = "#{internal_api_endpoint}/allowed"
     resp = post(url, params)
 
-    case resp.code.to_s
-    when HTTP_SUCCESS, HTTP_UNAUTHORIZED, HTTP_NOT_FOUND
-      GitAccessStatus.create_from_json(resp.body)
+    case resp.code
+    when HTTP_SUCCESS, HTTP_MULTIPLE_CHOICES, HTTP_UNAUTHORIZED, HTTP_NOT_FOUND
+      GitAccessStatus.create_from_json(resp.body, resp.code)
     else
-      GitAccessStatus.new(false,
-                          'API is not accessible',
-                          gl_repository: nil,
-                          gl_id: nil,
-                          gl_username: nil,
-                          git_config_options: nil,
-                          gitaly: nil,
-                          git_protocol: nil)
+      GitAccessStatus.new(false, resp.code, 'API is not accessible')
     end
   end
 
