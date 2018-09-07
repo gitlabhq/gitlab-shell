@@ -116,7 +116,9 @@ module Action
     def raise_unsuccessful!(result)
       message = begin
         body = JSON.parse(result.body)
-        body['message'] || Base64.decode64(body['result']) || NO_MESSAGE_TEXT
+        message = body['message']
+        message = Base64.decode64(body['result']) if !message && body['result'] && !body['result'].empty?
+        message ? message : NO_MESSAGE_TEXT
       rescue JSON::ParserError
         NO_MESSAGE_TEXT
       end
