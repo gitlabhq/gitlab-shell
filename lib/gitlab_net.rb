@@ -35,7 +35,8 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     url = "#{internal_api_endpoint}/allowed"
     resp = post(url, params)
 
-    if resp.code == '200'
+    case resp.code.to_s
+    when HTTP_SUCCESS, HTTP_UNAUTHORIZED, HTTP_NOT_FOUND
       GitAccessStatus.create_from_json(resp.body)
     else
       GitAccessStatus.new(false,
