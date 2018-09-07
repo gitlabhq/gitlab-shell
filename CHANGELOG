@@ -1,3 +1,6 @@
+v8.2.1
+  - Fix HTTP status code handling for /api/v4/allowed API endpoint
+
 v8.2.0
   - Pass custom git_config_options to Gitaly !221
   - Add missing require statement in create-hooks !225
