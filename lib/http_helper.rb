@@ -1,4 +1,8 @@
+require_relative 'http_codes'
+
 module HTTPHelper
+  include HTTPCodes
+
   READ_TIMEOUT = 300
 
   protected
