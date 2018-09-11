@@ -17,15 +17,15 @@ http_interactions:
       - application/x-www-form-urlencoded
   response:
     status:
-      code: 200
-      message: OK
+      code: 401
+      message: Unauthorized
     headers:
       Cache-Control:
       - max-age=0, private, must-revalidate
       Content-Length:
       - '63'
       Content-Type:
-      - application/json
+      - text/plain
       Date:
       - Wed, 21 Jun 2017 12:24:04 GMT
       Etag:
@@ -40,7 +40,7 @@ http_interactions:
       - '0.228256'
     body:
       encoding: UTF-8
-      string: '{"status":false,"message":"Git access over SSH is not allowed"}'
-    http_version: 
+      string: 'Git access over SSH is not allowed'
+    http_version:
   recorded_at: Wed, 21 Jun 2017 12:24:04 GMT
 recorded_with: VCR 2.4.0

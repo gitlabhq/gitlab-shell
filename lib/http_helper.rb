@@ -6,6 +6,7 @@ module HTTPHelper
   include HTTPCodes
 
   READ_TIMEOUT = 300
+  CONTENT_TYPE_JSON = 'application/json'.freeze
 
   protected
 
