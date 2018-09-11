@@ -1,3 +1,4 @@
+require 'rspec-parameterized'
 require 'simplecov'
 SimpleCov.start
 

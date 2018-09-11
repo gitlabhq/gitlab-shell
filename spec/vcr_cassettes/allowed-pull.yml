@@ -5,7 +5,7 @@ http_interactions:
     uri: http://localhost:3000/api/v4/internal/allowed
     body:
       encoding: US-ASCII
-      string: action=git-receive-pack&changes=0000000000000000000000000000000000000000+92d0970eefd7acb6d548878925ce2208cfe2d2ec+refs%2Fheads%2Fbranch4&gl_repository&project=gitlab-org%2Fgitlab-test.git&protocol=ssh&env=%7B%7D&key_id=1&secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
+      string: action=git-upload-pack&changes=0000000000000000000000000000000000000000+92d0970eefd7acb6d548878925ce2208cfe2d2ec+refs%2Fheads%2Fbranch4&gl_repository&project=gitlab-org%2Fgitlab-test.git&protocol=ssh&env=%7B%7D&key_id=1&secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -35,9 +35,9 @@ http_interactions:
       X-Frame-Options:
       - SAMEORIGIN
       X-Request-Id:
-      - 8d4b8b06-fb6e-4f94-832f-72f8e0afad5f
+      - 67ab4954-19e6-42ce-aae6-55c8ae5a365e
       X-Runtime:
-      - '0.289759'
+      - '0.230871'
     body:
       encoding: UTF-8
       string: '{"status":true,"gl_repository":"project-3","repository_path":"/Users/dzaporozhets/Projects/gitlab-development-kit/repositories/gitlab-org/gitlab-test.git"}'

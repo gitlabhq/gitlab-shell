@@ -14,6 +14,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   class NotFound < StandardError; end
 
   CHECK_TIMEOUT = 5
+  API_INACCESSIBLE_MESSAGE = 'API is not accessible'.freeze
 
   def check_access(cmd, gl_repository, repo, who, changes, protocol, env: {})
     changes = changes.join("\n") unless changes.is_a?(String)
@@ -33,12 +34,15 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     url = "#{internal_api_endpoint}/allowed"
     resp = post(url, params)
 
-    case resp.code
-    when HTTP_SUCCESS, HTTP_MULTIPLE_CHOICES, HTTP_UNAUTHORIZED, HTTP_NOT_FOUND
-      GitAccessStatus.create_from_json(resp.body, resp.code)
-    else
-      GitAccessStatus.new(false, resp.code, 'API is not accessible')
+    case resp
+    when Net::HTTPSuccess, Net::HTTPMultipleChoices, Net::HTTPUnauthorized,
+         Net::HTTPNotFound
+      if resp.content_type == CONTENT_TYPE_JSON
+        return GitAccessStatus.create_from_json(resp.body, resp.code)
+      end
     end
+
+    GitAccessStatus.new(false, resp.code, API_INACCESSIBLE_MESSAGE)
   end
 
   def discover(who)

@@ -13,7 +13,7 @@ module Action
     class UnsuccessfulError < BaseError; end
 
     NO_MESSAGE_TEXT = 'No message'.freeze
-    DEFAULT_HEADERS = { 'Content-Type' => 'application/json' }.freeze
+    DEFAULT_HEADERS = { 'Content-Type' => CONTENT_TYPE_JSON }.freeze
 
     def initialize(gl_id, payload)
       @gl_id = gl_id

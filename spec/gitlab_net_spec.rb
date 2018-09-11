@@ -3,6 +3,8 @@ require_relative '../lib/gitlab_net'
 require_relative '../lib/gitlab_access_status'
 
 describe GitlabNet, vcr: true do
+  using RSpec::Parameterized::TableSyntax
+
   let(:gitlab_net) { described_class.new }
   let(:changes) { ['0000000000000000000000000000000000000000 92d0970eefd7acb6d548878925ce2208cfe2d2ec refs/heads/branch4'] }
   let(:base_api_endpoint) { 'http://localhost:3000/api/v4' }
@@ -266,22 +268,43 @@ describe GitlabNet, vcr: true do
 
   describe '#check_access' do
     context 'ssh key with access nil, to project' do
-      it 'should allow pull access for host' do
-        VCR.use_cassette("allowed-pull") do
+      it 'should allow push access for host' do
+        VCR.use_cassette("allowed-push") do
           access = gitlab_net.check_access('git-receive-pack', nil, project, key, changes, 'ssh')
           expect(access.allowed?).to be_truthy
         end
       end
 
+      context 'but project not found' do
+        where(:desc, :cassette, :message) do
+          'deny push access for host'                                        | 'allowed-push-project-not-found'                | 'The project you were looking for could not be found.'
+          'deny push access for host (when text/html)'                       | 'allowed-push-project-not-found-text-html'      | 'API is not accessible'
+          'deny push access for host (when text/plain)'                      | 'allowed-push-project-not-found-text-plain'     | 'API is not accessible'
+          'deny push access for host (when 404 is returned)'                 | 'allowed-push-project-not-found-404'            | 'The project you were looking for could not be found.'
+          'deny push access for host (when 404 is returned with text/html)'  | 'allowed-push-project-not-found-404-text-html'  | 'API is not accessible'
+          'deny push access for host (when 404 is returned with text/plain)' | 'allowed-push-project-not-found-404-text-plain' | 'API is not accessible'
+        end
+
+        with_them do
+          it 'should deny push access for host' do
+            VCR.use_cassette(cassette) do
+              access = gitlab_net.check_access('git-receive-pack', nil, project, key, changes, 'ssh')
+              expect(access.allowed?).to be_falsey
+              expect(access.message).to eql(message)
+            end
+          end
+        end
+      end
+
       it 'adds the secret_token to the request' do
-        VCR.use_cassette("allowed-pull") do
+        VCR.use_cassette("allowed-push") do
           expect_any_instance_of(Net::HTTP::Post).to receive(:set_form_data).with(hash_including(secret_token: secret))
           gitlab_net.check_access('git-receive-pack', nil, project, key, changes, 'ssh')
         end
       end
 
-      it 'should allow push access for host' do
-        VCR.use_cassette("allowed-push") do
+      it 'should allow pull access for host' do
+        VCR.use_cassette("allowed-pull") do
           access = gitlab_net.check_access('git-upload-pack', nil, project, key, changes, 'ssh')
           expect(access.allowed?).to be_truthy
         end
@@ -325,24 +348,32 @@ describe GitlabNet, vcr: true do
     end
 
     context 'ssh key without access to project' do
-      it 'should deny pull access for host' do
-        VCR.use_cassette("ssh-pull-project-denied") do
-          access = gitlab_net.check_access('git-receive-pack', nil, project, key2, changes, 'ssh')
-          expect(access.allowed?).to be_falsey
+      where(:desc, :cassette, :message) do
+        'deny push access for host'                                        | 'ssh-push-project-denied'                | 'Git access over SSH is not allowed'
+        'deny push access for host (when 401 is returned)'                 | 'ssh-push-project-denied-401'            | 'Git access over SSH is not allowed'
+        'deny push access for host (when 401 is returned with text/html)'  | 'ssh-push-project-denied-401-text-html'  | 'API is not accessible'
+        'deny push access for host (when 401 is returned with text/plain)' | 'ssh-push-project-denied-401-text-plain' | 'API is not accessible'
+        'deny pull access for host'                                        | 'ssh-pull-project-denied'                | 'Git access over SSH is not allowed'
+        'deny pull access for host (when 401 is returned)'                 | 'ssh-pull-project-denied-401'            | 'Git access over SSH is not allowed'
+        'deny pull access for host (when 401 is returned with text/html)'  | 'ssh-pull-project-denied-401-text-html'  | 'API is not accessible'
+        'deny pull access for host (when 401 is returned with text/plain)' | 'ssh-pull-project-denied-401-text-plain' | 'API is not accessible'
+      end
+
+      with_them do
+        it 'should deny push access for host' do
+          VCR.use_cassette(cassette) do
+            access = gitlab_net.check_access('git-receive-pack', nil, project, key2, changes, 'ssh')
+            expect(access.allowed?).to be_falsey
+            expect(access.message).to eql(message)
+          end
         end
       end
 
-      it 'should deny push access for host' do
-        VCR.use_cassette("ssh-push-project-denied") do
-          access = gitlab_net.check_access('git-upload-pack', nil, project, key2, changes, 'ssh')
-          expect(access.allowed?).to be_falsey
-        end
-      end
-
-      it 'should deny push access for host (with user)' do
-        VCR.use_cassette("ssh-push-project-denied-with-user") do
+      it 'should deny pull access for host (with user)' do
+        VCR.use_cassette("ssh-pull-project-denied-with-user") do
           access = gitlab_net.check_access('git-upload-pack', nil, project, 'user-2', changes, 'ssh')
           expect(access.allowed?).to be_falsey
+          expect(access.message).to eql('Git access over SSH is not allowed')
         end
       end
     end
