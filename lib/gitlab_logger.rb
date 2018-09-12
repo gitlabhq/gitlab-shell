@@ -68,9 +68,10 @@ class GitlabLogger
 
     case log_format
     when 'json'
-      log_file.puts format_json(data)
+      # Don't use IO#puts because of https://bugs.ruby-lang.org/issues/14042
+      log_file.print("#{format_json(data)}\n")
     else
-      log_file.puts format_text(data)
+      log_file.print("#{format_text(data)}\n")
     end
   end
 
