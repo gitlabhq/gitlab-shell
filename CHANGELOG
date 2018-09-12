@@ -1,3 +1,7 @@
+v8.3.2
+  - Ensure text/plain & text/html content types are handled !239
+  - Fix newlines not appearing between new log entries !242
+
 v8.3.1
   - No changes (version tag correction)
 
