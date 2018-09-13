@@ -52,6 +52,12 @@ describe Action::Custom do
               allow($stdout).to receive(:print).with('push-result')
             end
 
+            it 'prints a message to $stderr' do
+              VCR.use_cassette("custom-action-ok-with-message") do
+                expect { subject.execute }.to output(/NOTE: Message here/).to_stderr
+              end
+            end
+
             it 'returns an instance of Net::HTTPCreated' do
               VCR.use_cassette("custom-action-ok") do
                 expect(subject.execute ).to be_instance_of(Net::HTTPCreated)
