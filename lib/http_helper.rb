@@ -83,7 +83,8 @@ module HTTPHelper
       $logger.info('finished HTTP request', method: method.to_s.upcase, url: url, duration: Time.new - start_time)
     end
 
-    if response.code == "200"
+    case response
+    when Net::HTTPSuccess, Net::HTTPMultipleChoices
       $logger.debug('Received response', code: response.code, body: response.body)
     else
       $logger.error('Call failed', method: method.to_s.upcase, url: url, code: response.code, body: response.body)
