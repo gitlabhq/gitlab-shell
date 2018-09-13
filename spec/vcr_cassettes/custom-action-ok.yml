@@ -46,7 +46,7 @@ http_interactions:
       - '1.436040'
     body:
       encoding: UTF-8
-      string: '{"result":"info_refs-result"}'
+      string: '{"result":"aW5mb19yZWZzLXJlc3VsdA==\n"}'
     http_version:
   recorded_at: Fri, 20 Jul 2018 06:18:58 GMT
 - request:
@@ -93,7 +93,7 @@ http_interactions:
       - '0.786754'
     body:
       encoding: UTF-8
-      string: '{"result":"push-result"}'
+      string: '{"result":"cHVzaC1yZXN1bHQ=\n"}'
     http_version:
   recorded_at: Fri, 20 Jul 2018 06:19:08 GMT
 recorded_with: VCR 2.4.0

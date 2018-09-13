@@ -90,8 +90,8 @@ module Action
 
     def print_flush(str)
       return false unless str
-      print(Base64.decode64(str))
-      STDOUT.flush
+      $stdout.print(Base64.decode64(str))
+      $stdout.flush
     end
 
     def validate!

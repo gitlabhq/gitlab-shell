@@ -38,9 +38,24 @@ describe Action::Custom do
         end
 
         context 'and responds correctly' do
-          it 'returns an instance of Net::HTTPCreated' do
+          it 'prints a Base64 encoded result to $stdout' do
             VCR.use_cassette("custom-action-ok") do
-              expect(subject.execute).to be_instance_of(Net::HTTPCreated)
+              expect($stdout).to receive(:print).with('info_refs-result').ordered
+              expect($stdout).to receive(:print).with('push-result').ordered
+              subject.execute
+            end
+          end
+
+          context 'with results printed to $stdout' do
+            before do
+              allow($stdout).to receive(:print).with('info_refs-result')
+              allow($stdout).to receive(:print).with('push-result')
+            end
+
+            it 'returns an instance of Net::HTTPCreated' do
+              VCR.use_cassette("custom-action-ok") do
+                expect(subject.execute ).to be_instance_of(Net::HTTPCreated)
+              end
             end
           end
         end
