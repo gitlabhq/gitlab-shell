@@ -54,6 +54,8 @@ module Action
           raise UnsuccessfulError, 'Response was not valid JSON'
         end
 
+        inform_client(body['message']) if body['message']
+
         print_flush(body['result'])
 
         # In the context of the git push sequence of events, it's necessary to read
@@ -90,8 +92,12 @@ module Action
 
     def print_flush(str)
       return false unless str
-      print(Base64.decode64(str))
-      STDOUT.flush
+      $stdout.print(Base64.decode64(str))
+      $stdout.flush
+    end
+
+    def inform_client(str)
+      $stderr.puts(str)
     end
 
     def validate!

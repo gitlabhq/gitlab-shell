@@ -46,7 +46,7 @@ http_interactions:
       - '1.436040'
     body:
       encoding: UTF-8
-      string: '{"result":"aW5mb19yZWZzLXJlc3VsdA==\n"}'
+      string: '{"result":"aW5mb19yZWZzLXJlc3VsdA==\n", "message":"NOTE: Message here"}'
     http_version:
   recorded_at: Fri, 20 Jul 2018 06:18:58 GMT
 - request:
