@@ -25,7 +25,7 @@ describe GitlabShell do
   let(:gitaly_check_access) do
     GitAccessStatus.new(
       true,
-      HTTPCodes::HTTP_SUCCESS,
+      '200',
       'ok',
       gl_repository: gl_repository,
       gl_id: gl_id,
@@ -41,7 +41,7 @@ describe GitlabShell do
       allow(api).to receive(:discover).and_return({ 'name' => 'John Doe', 'username' => 'testuser' })
       allow(api).to receive(:check_access).and_return(GitAccessStatus.new(
                 true,
-                HTTPCodes::HTTP_SUCCESS,
+                '200',
                 'ok',
                 gl_repository: gl_repository,
                 gl_id: gl_id,
@@ -262,7 +262,7 @@ describe GitlabShell do
         let(:custom_action_gitlab_access_status) do
           GitAccessStatus.new(
             true,
-            HTTPCodes::HTTP_MULTIPLE_CHOICES,
+            '300',
             'Multiple Choices',
             payload: fake_payload
           )

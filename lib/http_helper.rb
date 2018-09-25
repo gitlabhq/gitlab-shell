@@ -1,10 +1,7 @@
-require_relative 'http_codes'
 require_relative 'httpunix'
 require_relative 'gitlab_logger'
 
 module HTTPHelper
-  include HTTPCodes
-
   READ_TIMEOUT = 300
   CONTENT_TYPE_JSON = 'application/json'.freeze
 

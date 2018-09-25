@@ -26,62 +26,57 @@ describe Action::Custom do
       end
 
       context 'that are valid' do
-        where(:primary_repo_data) do
-          [
-            [ 'http://localhost:3001/user1/repo1.git' ],
-            [{ 'http' => 'http://localhost:3001/user1/repo1.git' }],
-            [{ 'http' => 'http://localhost:3001/user1/repo1.git', 'ssh' => 'ssh://user@localhost:3002/user1/repo1.git' }]
-          ]
+        let(:payload) do
+          {
+            'action' => 'geo_proxy_to_primary',
+            'data' => {
+              'api_endpoints' => %w{/api/v4/fake/info_refs /api/v4/fake/push},
+              'primary_repo' => 'http://localhost:3001/user1/repo1.git'
+            }
+          }
         end
 
-        with_them do
-          let(:payload) do
-            {
-              'action' => 'geo_proxy_to_primary',
-              'data' => {
-                'api_endpoints' => %w{/api/v4/fake/info_refs /api/v4/fake/push},
-                'gl_username' => 'user1',
-                'primary_repo' => primary_repo_data
-              }
-            }
+        context 'and responds correctly' do
+          it 'prints a Base64 encoded result to $stdout' do
+            VCR.use_cassette("custom-action-ok") do
+              expect($stdout).to receive(:print).with('info_refs-result').ordered
+              expect($stdout).to receive(:print).with('push-result').ordered
+              subject.execute
+            end
           end
 
-          context 'and responds correctly' do
-            it 'prints a Base64 encoded result to $stdout' do
+          context 'with results printed to $stdout' do
+            before do
+              allow($stdout).to receive(:print).with('info_refs-result')
+              allow($stdout).to receive(:print).with('push-result')
+            end
+
+            it 'returns an instance of Net::HTTPCreated' do
               VCR.use_cassette("custom-action-ok") do
-                expect($stdout).to receive(:print).with('info_refs-result').ordered
-                expect($stdout).to receive(:print).with('push-result').ordered
-                subject.execute
+                expect(subject.execute).to be_instance_of(Net::HTTPCreated)
               end
             end
 
-            context 'with results printed to $stdout' do
+            context 'and with an information message provided' do
               before do
-                allow($stdout).to receive(:print).with('info_refs-result')
-                allow($stdout).to receive(:print).with('push-result')
+                payload['data']['info_message'] = 'Important message here.'
               end
 
-              it 'prints a message to $stderr' do
+              it 'prints said informational message to $stderr' do
                 VCR.use_cassette("custom-action-ok-with-message") do
-                  expect { subject.execute }.to output(/NOTE: Message here/).to_stderr
-                end
-              end
-
-              it 'returns an instance of Net::HTTPCreated' do
-                VCR.use_cassette("custom-action-ok") do
-                  expect(subject.execute ).to be_instance_of(Net::HTTPCreated)
+                  expect { subject.execute }.to output(/Important message here./).to_stderr
                 end
               end
             end
           end
+        end
 
-          context 'but responds incorrectly' do
-            it 'raises an UnsuccessfulError exception' do
-              VCR.use_cassette("custom-action-ok-not-json") do
-                expect {
-                  subject.execute
-                }.to raise_error(Action::Custom::UnsuccessfulError, 'Response was not valid JSON')
-              end
+        context 'but responds incorrectly' do
+          it 'raises an UnsuccessfulError exception' do
+            VCR.use_cassette("custom-action-ok-not-json") do
+              expect do
+                subject.execute
+              end.to raise_error(Action::Custom::UnsuccessfulError, 'Response was not valid JSON')
             end
           end
         end
@@ -93,7 +88,6 @@ describe Action::Custom do
             {
               'action' => 'geo_proxy_to_primary',
               'data' => {
-                'gl_username' => 'user1',
                 'primary_repo' => 'http://localhost:3001/user1/repo1.git'
               }
             }
@@ -110,7 +104,6 @@ describe Action::Custom do
               'action' => 'geo_proxy_to_primary',
               'data' => {
                 'api_endpoints' => [],
-                'gl_username' => 'user1',
                 'primary_repo' => 'http://localhost:3001/user1/repo1.git'
               }
             }
@@ -135,7 +128,6 @@ describe Action::Custom do
               'action' => 'geo_proxy_to_primary',
               'data' => {
                 'api_endpoints' => %w{/api/v4/fake/info_refs_bad /api/v4/fake/push_bad},
-                'gl_username' => 'user1',
                 'primary_repo' => 'http://localhost:3001/user1/repo1.git'
               }
             }
@@ -144,9 +136,9 @@ describe Action::Custom do
           context 'and response is JSON' do
             it 'raises an UnsuccessfulError exception' do
               VCR.use_cassette("custom-action-not-ok-json") do
-                expect {
+                expect do
                   subject.execute
-                }.to raise_error(Action::Custom::UnsuccessfulError, 'You cannot perform write operations on a read-only instance (403)')
+                end.to raise_error(Action::Custom::UnsuccessfulError, '> GitLab: You cannot perform write operations on a read-only instance (403)')
               end
             end
           end
@@ -154,9 +146,9 @@ describe Action::Custom do
           context 'and response is not JSON' do
             it 'raises an UnsuccessfulError exception' do
               VCR.use_cassette("custom-action-not-ok-not-json") do
-                expect {
+                expect do
                   subject.execute
-                }.to raise_error(Action::Custom::UnsuccessfulError, 'No message (403)')
+                end.to raise_error(Action::Custom::UnsuccessfulError, '> GitLab: No message (403)')
               end
             end
           end
