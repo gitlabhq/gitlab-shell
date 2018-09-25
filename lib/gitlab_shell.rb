@@ -95,8 +95,9 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     $stderr.puts "GitLab: Invalid repository path"
     false
   rescue Action::Custom::BaseError => ex
-    $logger.warn('Custom action error', command: origin_cmd, user: log_username)
-    $stderr.puts "GitLab: #{ex.message}"
+    $logger.warn('Custom action error', exception: ex.class, message: ex.message,
+                                        command: origin_cmd, user: log_username)
+    $stderr.puts ex.message
     false
   end
 

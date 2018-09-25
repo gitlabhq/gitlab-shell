@@ -1,8 +1,7 @@
 require 'json'
-require_relative 'http_codes'
 
 class GitAccessStatus
-  include HTTPCodes
+  HTTP_MULTIPLE_CHOICES = '300'.freeze
 
   attr_reader :message, :gl_repository, :gl_id, :gl_username, :gitaly, :git_protocol, :git_config_options, :payload
 

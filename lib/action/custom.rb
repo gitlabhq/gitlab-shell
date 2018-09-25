@@ -22,20 +22,15 @@ module Action
 
     def execute
       validate!
-      result = process_api_endpoints
-
-      if result && HTTP_SUCCESS_CODES.include?(result.code)
-        result
-      else
-        raise_unsuccessful!(result)
-      end
+      inform_client(info_message) if info_message
+      process_api_endpoints!
     end
 
     private
 
     attr_reader :gl_id, :payload
 
-    def process_api_endpoints
+    def process_api_endpoints!
       output = ''
       resp = nil
 
@@ -46,15 +41,20 @@ module Action
         json = { 'data' => data_with_gl_id, 'output' => output }
 
         resp = post(url, {}, headers: DEFAULT_HEADERS, options: { json: json })
-        return resp unless HTTP_SUCCESS_CODES.include?(resp.code)
+
+        # Net::HTTPSuccess is the parent of Net::HTTPOK, Net::HTTPCreated etc.
+        case resp
+        when Net::HTTPSuccess, Net::HTTPMultipleChoices
+          true
+        else
+          raise_unsuccessful!(resp)
+        end
 
         begin
           body = JSON.parse(resp.body)
         rescue JSON::ParserError
           raise UnsuccessfulError, 'Response was not valid JSON'
         end
-
-        inform_client(body['message']) if body['message']
 
         print_flush(body['result'])
 
@@ -78,6 +78,10 @@ module Action
       data['api_endpoints']
     end
 
+    def info_message
+      data['info_message']
+    end
+
     def config
       @config ||= GitlabConfig.new
     end
@@ -97,7 +101,11 @@ module Action
     end
 
     def inform_client(str)
-      $stderr.puts(str)
+      $stderr.puts(format_gitlab_output(str))
+    end
+
+    def format_gitlab_output(str)
+      str.split("\n").map { |line| "> GitLab: #{line}" }.join("\n")
     end
 
     def validate!
@@ -120,16 +128,17 @@ module Action
     end
 
     def raise_unsuccessful!(result)
-      message = begin
-        body = JSON.parse(result.body)
-        message = body['message']
-        message = Base64.decode64(body['result']) if !message && body['result'] && !body['result'].empty?
-        message ? message : NO_MESSAGE_TEXT
-      rescue JSON::ParserError
-        NO_MESSAGE_TEXT
-      end
+      message = "#{exception_message_for(result.body)} (#{result.code})"
+      raise UnsuccessfulError, format_gitlab_output(message)
+    end
 
-      raise UnsuccessfulError, "#{message} (#{result.code})"
+    def exception_message_for(body)
+      body = JSON.parse(body)
+      return body['message'] unless body['message'].to_s.empty?
+
+      body['result'].to_s.empty? ? NO_MESSAGE_TEXT : Base64.decode64(body['result'])
+    rescue JSON::ParserError
+      NO_MESSAGE_TEXT
     end
   end
 end

@@ -8,7 +8,7 @@ describe GitlabAccess do
   let(:api) do
     double(GitlabNet).tap do |api|
       allow(api).to receive(:check_access).and_return(GitAccessStatus.new(true,
-                                                HTTPCodes::HTTP_SUCCESS,
+                                                '200',
                                                  'ok',
                                                  gl_repository: 'project-1',
                                                  gl_id: 'user-123',
@@ -46,7 +46,7 @@ describe GitlabAccess do
       before do
         allow(api).to receive(:check_access).and_return(GitAccessStatus.new(
                   false,
-                  HTTPCodes::HTTP_UNAUTHORIZED,
+                  '401',
                   'denied',
                   gl_repository: nil,
                   gl_id: nil,
