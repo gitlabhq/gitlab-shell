@@ -50,5 +50,9 @@ log_level: INFO
 # incurs an extra API call on every gitlab-shell command.
 audit_usernames: false
 
-# Feature flag: go or ruby
-experimental: false
+# Migration to Go: anything listed here has two implementations. Use these flags
+# to try the new implementations out, or to revert to the old behaviour if there
+# problems arise.
+migration:
+  enabled: false
+  features: []

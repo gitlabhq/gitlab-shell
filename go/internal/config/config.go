@@ -13,11 +13,16 @@ const (
 	logFile    = "gitlab-shell.log"
 )
 
+type MigrationConfig struct {
+	Enabled  bool     `yaml:"enabled"`
+	Features []string `yaml:"features"`
+}
+
 type Config struct {
-	RootDir      string
-	LogFile      string `yaml:"log_file"`
-	LogFormat    string `yaml:"log_format"`
-	Experimental bool   `yaml:"experimental"`
+	RootDir   string
+	LogFile   string          `yaml:"log_file"`
+	LogFormat string          `yaml:"log_format"`
+	Migration MigrationConfig `yaml:"migration"`
 }
 
 func New() (*Config, error) {
