@@ -12,6 +12,7 @@ tags
 custom_hooks
 hooks/*.d
 /go_build
+/bin/gitlab-shell
 /bin/gitaly-upload-pack
 /bin/gitaly-receive-pack
 /bin/gitaly-upload-archive

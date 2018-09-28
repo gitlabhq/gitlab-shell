@@ -49,3 +49,10 @@ log_level: INFO
 # Set to true to see real usernames in the logs instead of key ids, which is easier to follow, but
 # incurs an extra API call on every gitlab-shell command.
 audit_usernames: false
+
+# Migration to Go: anything listed here has two implementations. Use these flags
+# to try the new implementations out, or to revert to the old behaviour if there
+# problems arise.
+migration:
+  enabled: false
+  features: []
