@@ -26,24 +26,31 @@ type Config struct {
 }
 
 func New() (*Config, error) {
-	cfg := Config{}
-
 	dir, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
-	cfg.RootDir = dir
 
-	configBytes, err := ioutil.ReadFile(path.Join(cfg.RootDir, configFile))
+	return NewFromDir(dir)
+}
+
+func NewFromDir(dir string) (*Config, error) {
+	return newFromFile(path.Join(dir, configFile))
+}
+
+func newFromFile(filename string) (*Config, error) {
+	cfg := &Config{RootDir: path.Dir(filename)}
+
+	configBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := parseConfig(configBytes, &cfg); err != nil {
+	if err := parseConfig(configBytes, cfg); err != nil {
 		return nil, err
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }
 
 // parseConfig expects YAML data in configBytes and a Config instance with RootDir set.

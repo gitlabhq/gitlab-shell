@@ -9,21 +9,28 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 )
 
-func migrate(_cfg *config.Config, _args []string) (int, bool) {
-	// TODO: decide whether to handle the request in Go or not
+var (
+	binDir  string
+	rootDir string
+)
+
+func init() {
+	binDir = filepath.Dir(os.Args[0])
+	rootDir = filepath.Dir(binDir)
+}
+
+func migrate(*config.Config) (int, bool) {
+	// TODO: Dispatch appropriate requests to Go handlers and return
+	// <exitstatus, true> depending on how they fare
 	return 0, false
 }
 
 // rubyExec will never return. It either replaces the current process with a
 // Ruby interpreter, or outputs an error and kills the process.
 func execRuby() {
-	root := filepath.Dir(os.Args[0])
+	rubyCmd := filepath.Join(binDir, "gitlab-shell-ruby")
 
-	rubyCmd := filepath.Join(root, "gitlab-shell-ruby")
-	rubyArgs := os.Args[1:]
-	rubyEnv := os.Environ()
-
-	execErr := syscall.Exec(rubyCmd, rubyArgs, rubyEnv)
+	execErr := syscall.Exec(rubyCmd, os.Args, os.Environ())
 	if execErr != nil {
 		fmt.Fprintf(os.Stderr, "Failed to exec(%q): %v\n", rubyCmd, execErr)
 		os.Exit(1)
@@ -33,14 +40,14 @@ func execRuby() {
 func main() {
 	// Fall back to Ruby in case of problems reading the config, but issue a
 	// warning as this isn't something we can sustain indefinitely
-	config, err := config.New()
+	config, err := config.NewFromDir(rootDir)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to read config, falling back to gitlab-shell-ruby")
 		execRuby()
 	}
 
 	// Try to handle the command with the Go implementation
-	if exitCode, done := migrate(config, os.Args[1:]); done {
+	if exitCode, done := migrate(config); done {
 		os.Exit(exitCode)
 	}
 

@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestConfigLogFile(t *testing.T) {
+func TestParseConfig(t *testing.T) {
 	testRoot := "/foo/bar"
 	testCases := []struct {
 		yaml      string
