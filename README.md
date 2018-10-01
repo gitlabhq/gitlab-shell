@@ -1,42 +1,32 @@
 # GitLab Shell
 
-## GitLab Shell handles git commands for GitLab
+## GitLab Shell handles git SSH sessions for GitLab
 
-GitLab Shell handles git commands for GitLab and modifies the list of authorized keys.
+GitLab Shell handles git SSH sessions for GitLab and modifies the list of authorized keys.
 GitLab Shell is not a Unix shell nor a replacement for Bash or Zsh.
 
-When you access the GitLab server over ssh then GitLab Shell will:
+When you access the GitLab server over SSH then GitLab Shell will:
 
 1. Limits you to predefined git commands (git push, git pull).
-1. Call the GitLab Rails API to check if you are authorized
-1. It will execute the pre-receive hooks (called Git Hooks in GitLab Enterprise Edition)
-1. It will execute the action you requested
-1. Process the GitLab post-receive actions
-1. Process any custom post-receive actions
+1. Call the GitLab Rails API to check if you are authorized, and what Gitaly server your repository is on
+1. Copy data back and forth between the SSH client and the Gitaly server
 
-If you access a GitLab server over http(s) what happens depends on if you pull from or push to the git repository.
-If you pull from git repositories over http(s) the GitLab Rails app will completely handle the authentication and execution.
-If you push to git repositories over http(s) the GitLab Rails app will not handle any authentication or execution but it will delegate the following to GitLab Shell:
-
-1. Call the GitLab Rails API to check if you are authorized
-1. It will execute the pre-receive hooks (called Git Hooks in GitLab Enterprise Edition)
-1. It will excute the action you requested
-1. Process the GitLab post-receive actions
-1. Process any custom post-receive actions
-
-Maybe you wonder why in the case of git push over http(s) the Rails app doesn't handle authentication before delegating to GitLab Shell.
-This is because GitLab Rails doesn't have the logic to interpret git push commands.
-The idea is to have these interpretation code in only one place and this is GitLab Shell so we can reuse it for ssh access.
-Actually GitLab Shell executes all git push commands without checking authorizations and relies on the pre-receive hooks to check authorizations.
-When you do a git pull command the authorizations are checked before executing the commands (either in GitLab Rails or GitLab Shell with an API call to GitLab Rails).
-The authorization checks for git pull are much simpler since you only have to check if a user can access the repo (no need to check branch permissions).
+If you access a GitLab server over HTTP(S) you end up in [gitlab-workhorse](https://gitlab.com/gitlab-org/gitlab-workhorse).
 
 An overview of the four cases described above:
 
-1. git pull over ssh  -> gitlab-shell -> API call to gitlab-rails (Authorization) -> accept or decline -> execute git command
-1. git pull over http -> gitlab-rails (Authorization) -> accept or decline -> execute git command
-1. git push over ssh  -> gitlab-shell (git command is not executed yet) -> execute git command -> gitlab-shell pre-receive hook -> API call to gitlab-rails (authorization) -> accept or decline push
-1. git push over http -> gitlab-rails (git command is not executed yet) -> execute git command -> gitlab-shell pre-receive hook -> API call to gitlab-rails (authorization) -> accept or decline push
+1. git pull over ssh  -> gitlab-shell -> API call to gitlab-rails (Authorization) -> accept or decline -> establish Gitaly session
+1. git push over ssh  -> gitlab-shell (git command is not executed yet) -> establish Gitaly session -> (in Gitaly) gitlab-shell pre-receive hook -> API call to gitlab-rails (authorization) -> accept or decline push
+
+## Git hooks
+
+For historical reasons the gitlab-shell repository also contains the
+Git hooks that allow GitLab to validate Git pushes (e.g. "is this user
+allowed to push to this protected branch"). These hooks also trigger
+events in GitLab (e.g. to start a CI pipeline after a push). In
+GitLab's current architecture (Q4 2018) these hooks belong to Gitaly
+more than gitlab-shell. We [intend to move them to the Gitaly
+repository](https://gitlab.com/gitlab-org/gitaly/issues/1226).
 
 ## Code status
 
