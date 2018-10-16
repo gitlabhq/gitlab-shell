@@ -36,7 +36,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
 
     case resp
     when Net::HTTPSuccess, Net::HTTPMultipleChoices, Net::HTTPUnauthorized,
-         Net::HTTPNotFound
+         Net::HTTPNotFound, Net::HTTPGatewayTimeOut
       if resp.content_type == CONTENT_TYPE_JSON
         return GitAccessStatus.create_from_json(resp.body, resp.code)
       end
