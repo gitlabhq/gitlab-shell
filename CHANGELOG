@@ -1,3 +1,6 @@
+v8.4.1
+  - Surface error message sent along with API Service Unavailable error to user
+
 v8.4.0
   - Use Gitaly v2 auth scheme
 
