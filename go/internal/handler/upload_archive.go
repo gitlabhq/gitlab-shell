@@ -14,7 +14,9 @@ func UploadArchive(gitalyAddress string, request *pb.SSHUploadArchiveRequest) (i
 		return 0, fmt.Errorf("no gitaly_address given")
 	}
 
-	conn, err := client.Dial(gitalyAddress, dialOpts())
+	gitalyAddress, isTls := transFormTls(gitalyAddress)
+	conn, err := client.Dial(gitalyAddress, dialOpts(isTls))
+
 	if err != nil {
 		return 0, err
 	}
