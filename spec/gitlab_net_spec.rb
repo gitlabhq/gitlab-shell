@@ -67,12 +67,27 @@ describe GitlabNet, vcr: true do
 
   describe '#lfs_authenticate' do
     context 'lfs authentication succeeded' do
-      it 'should return the correct data' do
-        VCR.use_cassette('lfs-authenticate-ok') do
-          lfs_access = gitlab_net.lfs_authenticate(key, project)
-          expect(lfs_access.username).to eq('root')
-          expect(lfs_access.lfs_token).to eq('Hyzhyde_wLUeyUQsR3tHGTG8eNocVQm4ssioTEsBSdb6KwCSzQ')
-          expect(lfs_access.repository_http_path).to eq(URI.join(internal_api_endpoint.sub('api/v4', ''), project).to_s)
+      let(:repository_http_path) { URI.join(internal_api_endpoint.sub('api/v4', ''), project).to_s }
+
+      context 'for download operation' do
+        it 'should return the correct data' do
+          VCR.use_cassette('lfs-authenticate-ok-download') do
+            lfs_access = gitlab_net.lfs_authenticate(key, project, 'download')
+            expect(lfs_access.username).to eq('root')
+            expect(lfs_access.lfs_token).to eq('Hyzhyde_wLUeyUQsR3tHGTG8eNocVQm4ssioTEsBSdb6KwCSzQ')
+            expect(lfs_access.repository_http_path).to eq(repository_http_path)
+          end
+        end
+      end
+
+      context 'for upload operation' do
+        it 'should return the correct data' do
+          VCR.use_cassette('lfs-authenticate-ok-upload') do
+            lfs_access = gitlab_net.lfs_authenticate(key, project, 'upload')
+            expect(lfs_access.username).to eq('root')
+            expect(lfs_access.lfs_token).to eq('Hyzhyde_wLUeyUQsR3tHGTG8eNocVQm4ssioTEsBSdb6KwCSzQ')
+            expect(lfs_access.repository_http_path).to eq(repository_http_path)
+          end
         end
       end
     end
