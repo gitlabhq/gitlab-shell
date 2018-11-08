@@ -1,3 +1,6 @@
+v8.4.2
+  - Include LFS operation when requesting auth !254
+
 v8.4.1
   - Surface error message sent along with API Service Unavailable error to user
 
