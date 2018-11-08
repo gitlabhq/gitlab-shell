@@ -155,8 +155,9 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
     if @command == 'git-lfs-authenticate'
       GitlabMetrics.measure('lfs-authenticate') do
-        $logger.info('Processing LFS authentication', user: log_username)
-        lfs_authenticate
+        operation = args[2]
+        $logger.info('Processing LFS authentication', operation: operation, user: log_username)
+        lfs_authenticate(operation)
       end
       return
     end
@@ -224,8 +225,8 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     @config.audit_usernames ? username : "user with id #{@gl_id}"
   end
 
-  def lfs_authenticate
-    lfs_access = api.lfs_authenticate(@gl_id, @repo_name)
+  def lfs_authenticate(operation)
+    lfs_access = api.lfs_authenticate(@gl_id, @repo_name, operation)
 
     return unless lfs_access
 

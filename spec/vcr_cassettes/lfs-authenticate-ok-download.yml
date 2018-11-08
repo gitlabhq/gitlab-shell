@@ -1,0 +1,46 @@
+---
+http_interactions:
+- request:
+    method: post
+    uri: http://localhost:3000/api/v4/internal/lfs_authenticate
+    body:
+      encoding: US-ASCII
+      string: project=gitlab-org%2Fgitlab-test.git&key_id=1&operation=download&secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
+    headers:
+      Accept-Encoding:
+      - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
+      Accept:
+      - "*/*"
+      User-Agent:
+      - Ruby
+      Content-Type:
+      - application/x-www-form-urlencoded
+  response:
+    status:
+      code: 200
+      message: OK
+    headers:
+      Cache-Control:
+      - max-age=0, private, must-revalidate
+      Content-Length:
+      - '158'
+      Content-Type:
+      - application/json
+      Date:
+      - Wed, 21 Jun 2017 10:44:50 GMT
+      Etag:
+      - W/"0a8ccf1603566e521c169d5e43c86cd2"
+      Vary:
+      - Origin
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Request-Id:
+      - d82d6071-1868-4a37-b026-65ab37f96f2f
+      X-Runtime:
+      - '0.331056'
+    body:
+      encoding: UTF-8
+      string: '{"username":"root","lfs_token":"Hyzhyde_wLUeyUQsR3tHGTG8eNocVQm4ssioTEsBSdb6KwCSzQ","repository_http_path":"http://localhost:3000/gitlab-org/gitlab-test.git"}'
+    http_version:
+  recorded_at: Wed, 21 Jun 2017 10:44:50 GMT
+recorded_with: VCR 2.4.0

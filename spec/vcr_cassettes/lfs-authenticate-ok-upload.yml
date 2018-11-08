@@ -5,7 +5,7 @@ http_interactions:
     uri: http://localhost:3000/api/v4/internal/lfs_authenticate
     body:
       encoding: US-ASCII
-      string: project=gitlab-org%2Fgitlab-test.git&key_id=1&secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
+      string: project=gitlab-org%2Fgitlab-test.git&key_id=1&operation=upload&secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
     headers:
       Accept-Encoding:
       - gzip;q=1.0,deflate;q=0.6,identity;q=0.3
@@ -41,6 +41,6 @@ http_interactions:
     body:
       encoding: UTF-8
       string: '{"username":"root","lfs_token":"Hyzhyde_wLUeyUQsR3tHGTG8eNocVQm4ssioTEsBSdb6KwCSzQ","repository_http_path":"http://localhost:3000/gitlab-org/gitlab-test.git"}'
-    http_version: 
+    http_version:
   recorded_at: Wed, 21 Jun 2017 10:44:50 GMT
 recorded_with: VCR 2.4.0

@@ -53,28 +53,22 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     JSON.parse(resp.body) rescue nil
   end
 
-  def lfs_authenticate(gl_id, repo)
+  def lfs_authenticate(gl_id, repo, operation)
     id_sym, _, id = self.class.parse_who(gl_id)
+    params = { project: sanitize_path(repo), operation: operation }
 
-    if id_sym == :key_id
-      params = {
-        project: sanitize_path(repo),
-        key_id: id
-      }
-    elsif id_sym == :user_id
-      params = {
-        project: sanitize_path(repo),
-        user_id: id
-      }
+    case id_sym
+    when :key_id
+      params[:key_id] = id
+    when :user_id
+      params[:user_id] = id
     else
       raise ArgumentError, "lfs_authenticate() got unsupported GL_ID='#{gl_id}'!"
     end
 
     resp = post("#{internal_api_endpoint}/lfs_authenticate", params)
 
-    if resp.code == '200'
-      GitlabLfsAuthentication.build_from_json(resp.body)
-    end
+    GitlabLfsAuthentication.build_from_json(resp.body) if resp.code == '200'
   end
 
   def broadcast_message
