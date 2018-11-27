@@ -10,9 +10,6 @@ require_relative 'http_helper'
 class GitlabNet # rubocop:disable Metrics/ClassLength
   include HTTPHelper
 
-  class ApiUnreachableError < StandardError; end
-  class NotFound < StandardError; end
-
   CHECK_TIMEOUT = 5
   API_INACCESSIBLE_MESSAGE = 'API is not accessible'.freeze
 
