@@ -1,3 +1,6 @@
+v8.4.3
+  - Remove circular dependency between HTTPHelper and GitlabNet !258
+
 v8.4.2
   - Include LFS operation when requesting auth !254
 
