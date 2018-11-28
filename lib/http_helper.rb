@@ -1,5 +1,6 @@
 require_relative 'httpunix'
 require_relative 'gitlab_logger'
+require_relative 'gitlab_net/errors'
 
 module HTTPHelper
   READ_TIMEOUT = 300
