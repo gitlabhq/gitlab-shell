@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	"gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/handler"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/logger"
-
-	pb "gitlab.com/gitlab-org/gitaly-proto/go"
 )
 
 func init() {
@@ -24,7 +23,7 @@ func main() {
 		logger.Fatal("wrong number of arguments", fmt.Errorf("expected 2 arguments, got %v", os.Args))
 	}
 
-	var request pb.SSHReceivePackRequest
+	var request gitalypb.SSHReceivePackRequest
 	if err := json.Unmarshal([]byte(os.Args[2]), &request); err != nil {
 		logger.Fatal("unmarshaling request json failed", err)
 	}

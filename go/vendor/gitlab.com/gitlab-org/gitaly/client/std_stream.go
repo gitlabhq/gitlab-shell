@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"io"
 
-	pb "gitlab.com/gitlab-org/gitaly-proto/go"
+	"gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 )
 
 type stdoutStderrResponse interface {
-	GetExitStatus() *pb.ExitStatus
+	GetExitStatus() *gitalypb.ExitStatus
 	GetStderr() []byte
 	GetStdout() []byte
 }
