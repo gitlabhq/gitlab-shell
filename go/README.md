@@ -14,5 +14,5 @@ To update e.g. `gitaly-proto` run the following command in the root
 directory of the project.
 
 ```
-support/go-update-vendor gitlab.com/gitlab-org/gitaly-proto/go@v0.109.0
+support/go-update-vendor gitlab.com/gitlab-org/gitaly-proto/go/gitalypb@v1.3.0
 ```

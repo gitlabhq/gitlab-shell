@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	pb "gitlab.com/gitlab-org/gitaly-proto/go"
+	"gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 )
 
 var testGitalyAddress = "unix:gitaly.socket"
@@ -13,7 +13,7 @@ var testGitalyAddress = "unix:gitaly.socket"
 func TestUploadArchiveSuccess(t *testing.T) {
 	testRelativePath := "myrepo.git"
 	requestJSON := fmt.Sprintf(`{"repository":{"relative_path":"%s"}}`, testRelativePath)
-	mockHandler := func(gitalyAddress string, request *pb.SSHUploadArchiveRequest) (int32, error) {
+	mockHandler := func(gitalyAddress string, request *gitalypb.SSHUploadArchiveRequest) (int32, error) {
 		if gitalyAddress != testGitalyAddress {
 			t.Fatalf("Expected gitaly address %s got %v", testGitalyAddress, gitalyAddress)
 		}
@@ -35,7 +35,7 @@ func TestUploadArchiveSuccess(t *testing.T) {
 }
 
 func TestUploadArchiveFailure(t *testing.T) {
-	mockHandler := func(_ string, _ *pb.SSHUploadArchiveRequest) (int32, error) {
+	mockHandler := func(_ string, _ *gitalypb.SSHUploadArchiveRequest) (int32, error) {
 		t.Fatal("Expected handler not to be called")
 
 		return 0, nil
