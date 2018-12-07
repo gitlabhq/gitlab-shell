@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	pb "gitlab.com/gitlab-org/gitaly-proto/go"
+	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitaly/client"
 )
 

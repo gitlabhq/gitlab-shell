@@ -8,7 +8,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/handler"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/logger"
 
-	pb "gitlab.com/gitlab-org/gitaly-proto/go"
+	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 )
 
 func init() {

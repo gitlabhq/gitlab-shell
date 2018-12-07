@@ -5,7 +5,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitaly/streamio"
 
-	pb "gitlab.com/gitlab-org/gitaly-proto/go"
+	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"

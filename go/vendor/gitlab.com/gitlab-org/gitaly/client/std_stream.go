@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	pb "gitlab.com/gitlab-org/gitaly-proto/go"
+	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 )
 
 type stdoutStderrResponse interface {
