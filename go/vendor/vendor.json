@@ -379,12 +379,12 @@
 			"versionExact": "v1.16.0"
 		},
 		{
-			"checksumSHA1": "grHAHa6Fi3WBsXJpmlEOlRbWWVg=",
+			"checksumSHA1": "I9b2MMRa7Sz+hSB0AF/vPFsPOv4=",
 			"path": "google.golang.org/grpc/resolver/dns",
-			"revision": "2e463a05d100327ca47ac218281906921038fd95",
-			"revisionTime": "2018-10-23T17:37:47Z",
-			"version": "v1.16.0",
-			"versionExact": "v1.16.0"
+			"revision": "187e357ac194b625331eb5f35c6440c40770f018",
+			"revisionTime": "2018-12-06T22:02:16Z",
+			"version": "master",
+			"versionExact": "master"
 		},
 		{
 			"checksumSHA1": "zs9M4xE8Lyg4wvuYvR00XoBxmuw=",
