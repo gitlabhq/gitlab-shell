@@ -77,7 +77,7 @@
 			"versionExact": "v1.7.0"
 		},
 		{
-			"checksumSHA1": "CsPKG7r/N8ARlHtnHKimJiOnYiY=",
+			"checksumSHA1": "0FMG4FMRxji6+9LSKgWT6snO1FM=",
 			"path": "gitlab.com/gitlab-org/gitaly/client",
 			"revision": "52d67af596f75e82305f16ff0f27a9e0e77d57e1",
 			"revisionTime": "2018-12-06T13:13:53Z",
