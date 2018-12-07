@@ -2,17 +2,16 @@
 // source: blob.proto
 
 /*
-Package gitalypb is a generated protocol buffer package.
+Package gitaly is a generated protocol buffer package.
 
 It is generated from these files:
 	blob.proto
-	cleanup.proto
 	commit.proto
 	conflicts.proto
+	deprecated-services.proto
 	diff.proto
 	namespace.proto
 	notifications.proto
-	objectpool.proto
 	operations.proto
 	ref.proto
 	remote.proto
@@ -37,8 +36,6 @@ It has these top-level messages:
 	GetNewLFSPointersResponse
 	GetAllLFSPointersRequest
 	GetAllLFSPointersResponse
-	ApplyBfgObjectMapRequest
-	ApplyBfgObjectMapResponse
 	CommitStatsRequest
 	CommitStatsResponse
 	CommitIsAncestorRequest
@@ -68,8 +65,6 @@ It has these top-level messages:
 	RawBlameResponse
 	LastCommitForPathRequest
 	LastCommitForPathResponse
-	ListLastCommitsForTreeRequest
-	ListLastCommitsForTreeResponse
 	CommitsByMessageRequest
 	CommitsByMessageResponse
 	FilterShasWithSignaturesRequest
@@ -111,15 +106,6 @@ It has these top-level messages:
 	RenameNamespaceResponse
 	PostReceiveRequest
 	PostReceiveResponse
-	ObjectPool
-	CreateObjectPoolRequest
-	CreateObjectPoolResponse
-	DeleteObjectPoolRequest
-	DeleteObjectPoolResponse
-	LinkRepositoryToObjectPoolRequest
-	LinkRepositoryToObjectPoolResponse
-	UnlinkRepositoryFromObjectPoolRequest
-	UnlinkRepositoryFromObjectPoolResponse
 	UserCreateBranchRequest
 	UserCreateBranchResponse
 	UserUpdateBranchRequest
@@ -148,10 +134,6 @@ It has these top-level messages:
 	UserRebaseResponse
 	UserSquashRequest
 	UserSquashResponse
-	UserApplyPatchRequest
-	UserApplyPatchResponse
-	UserUpdateSubmoduleRequest
-	UserUpdateSubmoduleResponse
 	ListNewBlobsRequest
 	ListNewBlobsResponse
 	FindDefaultBranchNameRequest
@@ -200,8 +182,6 @@ It has these top-level messages:
 	UpdateRemoteMirrorResponse
 	FindRemoteRepositoryRequest
 	FindRemoteRepositoryResponse
-	FindRemoteRootRefRequest
-	FindRemoteRootRefResponse
 	RepositoryExistsRequest
 	RepositoryExistsResponse
 	RepackIncrementalRequest
@@ -291,8 +271,6 @@ It has these top-level messages:
 	SSHReceivePackResponse
 	SSHUploadArchiveRequest
 	SSHUploadArchiveResponse
-	ListDirectoriesRequest
-	ListDirectoriesResponse
 	DeleteAllRepositoriesRequest
 	DeleteAllRepositoriesResponse
 	WikiCommitDetails
@@ -315,7 +293,7 @@ It has these top-level messages:
 	WikiGetFormattedDataRequest
 	WikiGetFormattedDataResponse
 */
-package gitalypb
+package gitaly
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
