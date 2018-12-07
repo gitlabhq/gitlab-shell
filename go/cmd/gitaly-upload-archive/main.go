@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"os"
 
-	"gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/handler"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/logger"
+
+	pb "gitlab.com/gitlab-org/gitaly-proto/go"
 )
 
 func init() {
 	logger.ProgName = "gitaly-upload-archive"
 }
 
-type uploadArchiveHandler func(gitalyAddress string, request *gitalypb.SSHUploadArchiveRequest) (int32, error)
+type uploadArchiveHandler func(gitalyAddress string, request *pb.SSHUploadArchiveRequest) (int32, error)
 
 func main() {
 	if err := handler.Prepare(); err != nil {
@@ -35,7 +36,7 @@ func uploadArchive(handler uploadArchiveHandler, args []string) (int32, error) {
 		return 0, fmt.Errorf("wrong number of arguments: expected 2 arguments, got %v", args)
 	}
 
-	var request gitalypb.SSHUploadArchiveRequest
+	var request pb.SSHUploadArchiveRequest
 	if err := json.Unmarshal([]byte(args[2]), &request); err != nil {
 		return 0, fmt.Errorf("unmarshaling request json failed: %v", err)
 	}
