@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	pb "gitlab.com/gitlab-org/gitaly-proto/go"
+	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 )
 
 var testGitalyAddress = "unix:gitaly.socket"
