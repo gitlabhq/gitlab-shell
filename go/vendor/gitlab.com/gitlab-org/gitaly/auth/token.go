@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
