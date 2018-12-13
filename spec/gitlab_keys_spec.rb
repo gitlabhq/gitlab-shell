@@ -5,6 +5,8 @@ require 'stringio'
 describe GitlabKeys do
   before do
     $logger = double('logger').as_null_object
+    # The default 'auth_file' value from config.yml.example is '/home/git/.ssh/authorized_keys'
+    allow(GitlabConfig).to receive_message_chain(:new, :auth_file).and_return('/home/git/.ssh/authorized_keys')
   end
 
   describe '.command' do
@@ -148,7 +150,9 @@ describe GitlabKeys do
 
     context "without file writing" do
       before do
-        expect(gitlab_keys).to receive(:open).and_yield(double(:file, puts: nil, chmod: nil))
+        file = double(:file, puts: nil, chmod: nil, flock: nil)
+        expect(File).to receive(:open).with(tmp_authorized_keys_path + '.lock', 'w+').and_yield(file)
+        expect(File).to receive(:open).with(tmp_authorized_keys_path, "a", 0o600).and_yield(file)
       end
 
       it "should log an add-key event" do
@@ -189,7 +193,8 @@ describe GitlabKeys do
 
     context "without file writing" do
       before do
-        allow(gitlab_keys).to receive(:open)
+        allow(File).to receive(:open).with("#{ROOT_PATH}/config.yml", 'r:bom|utf-8').and_call_original
+        allow(File).to receive(:open).with('/home/git/.ssh/authorized_keys', 'r+', 384)
         allow(gitlab_keys).to receive(:lock).and_yield
       end
 
@@ -225,7 +230,8 @@ describe GitlabKeys do
     let(:gitlab_keys) { build_gitlab_keys('clear') }
 
     it "should return true" do
-      allow(gitlab_keys).to receive(:open)
+      allow(File).to receive(:open).with("#{ROOT_PATH}/config.yml", 'r:bom|utf-8').and_call_original
+      allow(File).to receive(:open).with('/home/git/.ssh/authorized_keys', 'w', 384)
       expect(gitlab_keys.send(:clear)).to be_truthy
     end
   end
@@ -240,7 +246,7 @@ describe GitlabKeys do
 
     it 'returns false if opening raises an exception' do
       expect(gitlab_keys).to receive(:open_auth_file).and_raise("imaginary error")
-      expect(gitlab_keys.exec).to eq(false)
+      expect { expect(gitlab_keys.exec).to eq(false) }.to output(/imaginary error/).to_stdout
     end
 
     it 'creates the keys file if it does not exist' do

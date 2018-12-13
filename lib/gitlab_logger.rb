@@ -7,15 +7,14 @@ require_relative 'gitlab_config'
 def convert_log_level(log_level)
   Logger.const_get(log_level.upcase)
 rescue NameError
-  $stderr.puts "WARNING: Unrecognized log level #{log_level.inspect}."
-  $stderr.puts "WARNING: Falling back to INFO."
+  warn "WARNING: Unrecognized log level #{log_level.inspect}. Falling back to INFO."
   Logger::INFO
 end
 
 class GitlabLogger
   # Emulate the quoting logic of logrus
   # https://github.com/sirupsen/logrus/blob/v1.0.5/text_formatter.go#L143-L156
-  SHOULD_QUOTE = /[^a-zA-Z0-9\-._\/@^+]/
+  SHOULD_QUOTE = /[^a-zA-Z0-9\-._\/@^+]/.freeze
 
   LEVELS = {
     Logger::INFO => 'info'.freeze,
