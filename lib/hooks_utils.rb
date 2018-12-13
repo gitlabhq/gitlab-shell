@@ -1,5 +1,5 @@
 module HooksUtils
-  extend self
+  module_function
 
   # Gets an array of Git push options from the environment
   def get_push_options
