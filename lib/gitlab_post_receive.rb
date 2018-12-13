@@ -6,8 +6,6 @@ require 'base64'
 require 'securerandom'
 
 class GitlabPostReceive
-  include NamesHelper
-
   attr_reader :config, :gl_repository, :repo_path, :changes, :jid
 
   def initialize(gl_repository, repo_path, actor, changes)
