@@ -12,9 +12,9 @@ require_relative '../lib/gitlab_custom_hook'
 require_relative '../lib/hooks_utils'
 require_relative '../lib/gitlab_post_receive'
 
-push_opts = HooksUtils.get_push_options
+push_options = HooksUtils.get_push_options
 
-if GitlabPostReceive.new(gl_repository, repo_path, key_id, refs, push_opts).exec &&
+if GitlabPostReceive.new(gl_repository, repo_path, key_id, refs, push_options).exec &&
     GitlabCustomHook.new(repo_path, key_id).post_receive(refs)
   exit 0
 else

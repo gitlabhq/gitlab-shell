@@ -8,19 +8,19 @@ require 'securerandom'
 class GitlabPostReceive
   attr_reader :config, :gl_repository, :repo_path, :changes, :jid
 
-  def initialize(gl_repository, repo_path, actor, changes, push_opts)
+  def initialize(gl_repository, repo_path, actor, changes, push_options)
     @config = GitlabConfig.new
     @gl_repository = gl_repository
     @repo_path = repo_path.strip
     @actor = actor
     @changes = changes
-    @push_opts = push_opts
+    @push_options = push_options
     @jid = SecureRandom.hex(12)
   end
 
   def exec
     response = GitlabMetrics.measure("post-receive") do
-      api.post_receive(gl_repository, @actor, changes, @push_opts)
+      api.post_receive(gl_repository, @actor, changes, @push_options)
     end
 
     return false unless response
