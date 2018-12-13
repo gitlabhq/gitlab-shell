@@ -12,14 +12,13 @@ module URI
     def hostname
       # decode %XX from path to file
       v = host
-      URI.decode(v) # rubocop:disable Lint/UriEscapeUnescape
+      URI.decode(v)
     end
 
     # port is not allowed in URI
     DEFAULT_PORT = nil
-    def set_port(value)
-      return value unless value
-
+    def set_port(v)
+      return v unless v
       raise InvalidURIError, "http+unix:// cannot contain port"
     end
   end

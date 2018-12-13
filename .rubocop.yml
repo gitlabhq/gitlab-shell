@@ -6,7 +6,6 @@ AllCops:
     - 'tmp/**/*'
     - 'bin/**/*'
     - 'hooks/**/*'
-    - 'support/**/*'
     - 'Guardfile'
 
 Layout/DotPosition:
@@ -36,9 +35,6 @@ Metrics/CyclomaticComplexity:
 Metrics/PerceivedComplexity:
   Enabled: false
 
-Naming/AccessorMethodName:
-  Enabled: false
-
 Style/Documentation:
   Enabled: false
 
@@ -49,6 +45,9 @@ Style/StringLiterals:
   Enabled: false
 
 Style/GlobalVars:
+  Enabled: false
+
+Style/AccessorMethodName:
   Enabled: false
 
 Style/GuardClause:

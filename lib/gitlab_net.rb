@@ -1,5 +1,3 @@
-# frozen_string_literal: true
-
 require 'net/http'
 require 'openssl'
 require 'json'
@@ -13,7 +11,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   include HTTPHelper
 
   CHECK_TIMEOUT = 5
-  API_INACCESSIBLE_MESSAGE = 'API is not accessible'
+  API_INACCESSIBLE_MESSAGE = 'API is not accessible'.freeze
 
   def check_access(cmd, gl_repository, repo, who, changes, protocol, env: {})
     changes = changes.join("\n") unless changes.is_a?(String)
@@ -78,8 +76,8 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   def merge_request_urls(gl_repository, repo_path, changes)
     changes = changes.join("\n") unless changes.is_a?(String)
     changes = changes.encode('UTF-8', 'ASCII', invalid: :replace, replace: '')
-    url = "#{internal_api_endpoint}/merge_request_urls?project=#{uri_escape(repo_path)}&changes=#{uri_escape(changes)}"
-    url += "&gl_repository=#{uri_escape(gl_repository)}" if gl_repository
+    url = "#{internal_api_endpoint}/merge_request_urls?project=#{URI.escape(repo_path)}&changes=#{URI.escape(changes)}"
+    url += "&gl_repository=#{URI.escape(gl_repository)}" if gl_repository
     resp = get(url)
 
     if resp.code == '200'
@@ -87,7 +85,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     else
       []
     end
-  rescue StandardError
+  rescue
     []
   end
 
@@ -96,9 +94,9 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   end
 
   def authorized_key(key)
-    resp = get("#{internal_api_endpoint}/authorized_keys?key=#{URI.escape(key, '+/=')}") # rubocop:disable Lint/UriEscapeUnescape
+    resp = get("#{internal_api_endpoint}/authorized_keys?key=#{URI.escape(key, '+/=')}")
     JSON.parse(resp.body) if resp.code == "200"
-  rescue StandardError
+  rescue
     nil
   end
 
@@ -108,7 +106,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     resp = post("#{internal_api_endpoint}/two_factor_recovery_codes", id_sym => id)
 
     JSON.parse(resp.body) if resp.code == '200'
-  rescue StandardError
+  rescue
     {}
   end
 
@@ -117,7 +115,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     resp = post("#{internal_api_endpoint}/notify_post_receive", params)
 
     resp.code == '200'
-  rescue StandardError
+  rescue
     false
   end
 
@@ -145,15 +143,11 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
   def self.parse_who(who)
     if who.start_with?("key-")
       value = who.gsub("key-", "")
-
       raise ArgumentError, "who='#{who}' is invalid!" unless value =~ /\A[0-9]+\z/
-
       [:key_id, 'key_id', value]
     elsif who.start_with?("user-")
       value = who.gsub("user-", "")
-
       raise ArgumentError, "who='#{who}' is invalid!" unless value =~ /\A[0-9]+\z/
-
       [:user_id, 'user_id', value]
     elsif who.start_with?("username-")
       [:username, 'username', who.gsub("username-", "")]
@@ -166,9 +160,5 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
 
   def sanitize_path(repo)
     repo.delete("'")
-  end
-
-  def uri_escape(str)
-    URI.escape(str) # rubocop:disable Lint/UriEscapeUnescape
   end
 end

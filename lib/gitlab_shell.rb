@@ -81,23 +81,23 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
     true
   rescue GitlabNet::ApiUnreachableError
-    warn "GitLab: Failed to authorize your Git request: internal API unreachable"
+    $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
     false
   rescue AccessDeniedError => ex
     $logger.warn('Access denied', command: origin_cmd, user: log_username)
-    warn "GitLab: #{ex.message}"
+    $stderr.puts "GitLab: #{ex.message}"
     false
   rescue DisallowedCommandError
     $logger.warn('Denied disallowed command', command: origin_cmd, user: log_username)
-    warn "GitLab: Disallowed command"
+    $stderr.puts "GitLab: Disallowed command"
     false
   rescue InvalidRepositoryPathError
-    warn "GitLab: Invalid repository path"
+    $stderr.puts "GitLab: Invalid repository path"
     false
   rescue Action::Custom::BaseError => ex
     $logger.warn('Custom action error', exception: ex.class, message: ex.message,
                                         command: origin_cmd, user: log_username)
-    warn ex.message
+    $stderr.puts ex.message
     false
   end
 
@@ -121,7 +121,6 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     case @command
     when GIT_LFS_AUTHENTICATE_COMMAND
       raise DisallowedCommandError unless args.count >= 2
-
       @repo_name = args[1]
       case args[2]
       when 'download'
@@ -133,7 +132,6 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       end
     else
       raise DisallowedCommandError unless args.count == 2
-
       @repo_name = args.last
     end
 
@@ -203,7 +201,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     begin
       if defined?(@who)
         @user = api.discover(@who)
-        @gl_id = "user-#{@user['id']}" if @user&.key?('id')
+        @gl_id = "user-#{@user['id']}" if @user && @user.key?('id')
       else
         @user = api.discover(@gl_id)
       end

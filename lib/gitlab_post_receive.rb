@@ -25,7 +25,6 @@ class GitlabPostReceive
     end
 
     return false unless response
-
     print_broadcast_message(response['broadcast_message']) if response['broadcast_message']
     print_merge_request_links(response['merge_request_urls']) if response['merge_request_urls']
     puts response['redirected_message'] if response['redirected_message']
@@ -44,7 +43,6 @@ class GitlabPostReceive
 
   def print_merge_request_links(merge_request_urls)
     return if merge_request_urls.empty?
-
     puts
     merge_request_urls.each { |mr| print_merge_request_link(mr) }
   end

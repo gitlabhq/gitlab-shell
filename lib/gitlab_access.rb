@@ -31,10 +31,10 @@ class GitlabAccess
 
     true
   rescue GitlabNet::ApiUnreachableError
-    warn "GitLab: Failed to authorize your Git request: internal API unreachable"
+    $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
     false
   rescue AccessDeniedError => ex
-    warn "GitLab: #{ex.message}"
+    $stderr.puts "GitLab: #{ex.message}"
     false
   end
 

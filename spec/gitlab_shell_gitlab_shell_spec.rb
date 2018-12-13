@@ -1,5 +1,4 @@
 require_relative 'spec_helper'
-require 'open3'
 
 describe 'bin/gitlab-shell' do
   def original_root_path
@@ -132,13 +131,12 @@ describe 'bin/gitlab-shell' do
 
   def run!(args)
     cmd = [
-      'SSH_CONNECTION=fake',
       gitlab_shell_path,
       args
-    ].flatten.join(' ')
+    ].flatten.compact
 
-    stdout, _stderr, status = Open3.capture3(cmd)
+    output = IO.popen({'SSH_CONNECTION' => 'fake'}, cmd, &:read)
 
-    [stdout, status]
+    [output, $?]
   end
 end

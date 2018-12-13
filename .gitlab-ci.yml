@@ -1,4 +1,4 @@
-image: "ruby:2.5"
+image: "ruby:2.3"
 
 before_script:
   - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin
@@ -30,18 +30,18 @@ rubocop:
   except:
     - tags
 
-#ruby 2.4
-rspec:ruby2.4:
-  image: ruby:2.4
+#ruby 2.2
+rspec:ruby2.2:
+  image: ruby:2.2
   <<: *rspec_definition
   tags:
     - ruby
   except:
     - tags
 
-#ruby 2.3
-rspec:ruby2.3:
-  image: ruby:2.3
+#ruby 2.1
+rspec:ruby2.1:
+  image: ruby:2.1
   <<: *rspec_definition
   tags:
     - ruby
@@ -77,7 +77,7 @@ go:1.10:
 
 go:1.11:
   <<: *go_definition
-  image: golang:1.11
+  image: golang:1.10
 
 codequality:
   image: docker:stable
