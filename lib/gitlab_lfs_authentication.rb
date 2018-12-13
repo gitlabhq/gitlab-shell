@@ -13,7 +13,7 @@ class GitlabLfsAuthentication
   def self.build_from_json(json)
     values = JSON.parse(json)
     new(values['username'], values['lfs_token'], values['repository_http_path'])
-  rescue
+  rescue StandardError
     nil
   end
 

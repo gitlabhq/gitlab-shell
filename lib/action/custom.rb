@@ -96,12 +96,13 @@ module Action
 
     def print_flush(str)
       return false unless str
+
       $stdout.print(Base64.decode64(str))
       $stdout.flush
     end
 
     def inform_client(str)
-      $stderr.puts(format_gitlab_output(str))
+      warn(format_gitlab_output(str))
     end
 
     def format_gitlab_output(str)

@@ -74,7 +74,7 @@ module HTTPHelper
     begin
       start_time = Time.new
       response = http.start { http.request(request) }
-    rescue => e
+    rescue StandardError => e
       $logger.warn('Failed to connect', method: method.to_s.upcase, url: url, error: e)
       raise GitlabNet::ApiUnreachableError
     ensure

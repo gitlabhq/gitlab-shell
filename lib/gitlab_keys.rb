@@ -1,4 +1,5 @@
 require 'timeout'
+require 'open3'
 
 require_relative 'gitlab_config'
 require_relative 'gitlab_logger'
@@ -14,7 +15,7 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
   end
 
   def self.command_key(key_id)
-    unless /\A[a-z0-9-]+\z/ =~ key_id
+    unless /\A[a-z0-9-]+\z/ =~ key_id # rubocop:disable Performance/RegexpMatch
       raise KeyError, "Invalid key_id: #{key_id.inspect}"
     end
 
@@ -107,7 +108,9 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
     open_auth_file('r') do |f|
       f.each_line do |line|
         matchd = line.match(/key-(\d+)/)
+
         next unless matchd
+
         puts matchd[1]
       end
     end
@@ -138,6 +141,7 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
       open_auth_file('r+') do |f|
         while line = f.gets # rubocop:disable Lint/AssignmentInCondition
           next unless line.start_with?("command=\"#{self.class.command_key(@key_id)}\"")
+
           f.seek(-line.length, IO::SEEK_CUR)
           # Overwrite the line with #'s. Because the 'line' variable contains
           # a terminating '\n', we write line.length - 1 '#' characters.
@@ -155,20 +159,24 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
 
   def check_permissions
     open_auth_file(File::RDWR | File::CREAT) { true }
-  rescue => ex
+  rescue StandardError => ex
     puts "error: could not open #{auth_file}: #{ex}"
-    if File.exist?(auth_file)
-      system('ls', '-l', auth_file)
-    else
-      # Maybe the parent directory is not writable?
-      system('ls', '-ld', File.dirname(auth_file))
-    end
+
+    cmd = if File.exist?(auth_file)
+            %W{ls -l #{auth_file}}
+          else
+            # Maybe the parent directory is not writable?
+            %W{ls -ld #{File.dirname(auth_file)}}
+          end
+
+    output, = Open3.capture2e(cmd.join(' '))
+    puts output
     false
   end
 
   def lock(timeout = 10)
     File.open(lock_file, "w+") do |f|
-      begin
+      begin # rubocop:disable Style/RedundantBegin
         f.flock File::LOCK_EX
         Timeout.timeout(timeout) { yield }
       ensure
@@ -182,7 +190,7 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
   end
 
   def open_auth_file(mode)
-    open(auth_file, mode, 0o600) do |file|
+    File.open(auth_file, mode, 0o600) do |file|
       file.chmod(0o600)
       yield file
     end
