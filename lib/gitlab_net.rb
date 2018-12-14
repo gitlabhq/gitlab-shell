@@ -119,11 +119,12 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     false
   end
 
-  def post_receive(gl_repository, identifier, changes)
+  def post_receive(gl_repository, identifier, changes, push_options)
     params = {
       gl_repository: gl_repository,
       identifier: identifier,
-      changes: changes
+      changes: changes,
+      :"push_options[]" => push_options,	# rubocop:disable Style/HashSyntax
     }
     resp = post("#{internal_api_endpoint}/post_receive", params)
 

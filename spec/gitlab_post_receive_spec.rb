@@ -11,7 +11,8 @@ describe GitlabPostReceive do
   let(:base64_changes) { Base64.encode64(wrongly_encoded_changes) }
   let(:repo_path) { File.join(repository_path, repo_name) + ".git" }
   let(:gl_repository) { "project-1" }
-  let(:gitlab_post_receive) { GitlabPostReceive.new(gl_repository, repo_path, actor, wrongly_encoded_changes) }
+  let(:push_options) { [] }
+  let(:gitlab_post_receive) { GitlabPostReceive.new(gl_repository, repo_path, actor, wrongly_encoded_changes, push_options) }
   let(:broadcast_message) { "test " * 10 + "message " * 10 }
   let(:enqueued_at) { Time.new(2016, 6, 23, 6, 59) }
   let(:new_merge_request_urls) do
