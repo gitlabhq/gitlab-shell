@@ -124,7 +124,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
       gl_repository: gl_repository,
       identifier: identifier,
       changes: changes,
-      :"push_options[]" => push_options,	# ruby <2.2 syntax
+      :"push_options[]" => push_options,	# rubocop:disable Style/HashSyntax
     }
     resp = post("#{internal_api_endpoint}/post_receive", params)
 
