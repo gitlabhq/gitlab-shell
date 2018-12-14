@@ -1,3 +1,6 @@
+v8.4.4
+  - Pass push options along to gitlab-rails's post-receive endpoint
+
 v8.4.3
   - Remove circular dependency between HTTPHelper and GitlabNet !258
 
