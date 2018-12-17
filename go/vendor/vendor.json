@@ -77,14 +77,6 @@
 			"versionExact": "v1.3.0"
 		},
 		{
-			"checksumSHA1": "GkeSZfXVbtAkBZOrswot19GJZqQ=",
-			"path": "gitlab.com/gitlab-org/gitaly-proto/go/helper",
-			"revision": "ca09ca1e2da6dc957644fa95990e8a3d032d6252",
-			"revisionTime": "2018-11-28T10:00:28Z",
-			"version": "v1.3.0",
-			"versionExact": "v1.3.0"
-		},
-		{
 			"checksumSHA1": "oUtVvP0F/NLt9fen+qUoOnfQHv0=",
 			"path": "gitlab.com/gitlab-org/gitaly/auth",
 			"revision": "52d67af596f75e82305f16ff0f27a9e0e77d57e1",
