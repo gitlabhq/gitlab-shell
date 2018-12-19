@@ -6,22 +6,36 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"gitlab.com/gitlab-org/gitlab-shell/go/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 )
 
 var (
-	binDir  string
-	rootDir string
+	binDir   string
+	rootDir  string
+	features map[command.CommandType]bool
 )
 
 func init() {
 	binDir = filepath.Dir(os.Args[0])
 	rootDir = filepath.Dir(binDir)
+	features = map[command.CommandType]bool{}
 }
 
-func migrate(*config.Config) (int, bool) {
-	// TODO: Dispatch appropriate requests to Go handlers and return
-	// <exitstatus, true> depending on how they fare
+func migrate(config *config.Config) (int, bool) {
+	if !config.Migration.Enabled {
+		return 0, false
+	}
+	command, err := command.New(os.Args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to build command: %v\n", err)
+		return 0, false
+	}
+
+	if featureEnabled(config, command.Type) {
+
+	}
+
 	return 0, false
 }
 
@@ -42,7 +56,7 @@ func main() {
 	// warning as this isn't something we can sustain indefinitely
 	config, err := config.NewFromDir(rootDir)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Failed to read config, falling back to gitlab-shell-ruby")
+		fmt.Fprintf(os.Stderr, "Failed to read config, falling back to gitlab-shell-ruby: %v", err)
 		execRuby()
 	}
 
@@ -53,4 +67,20 @@ func main() {
 
 	// Since a migration has not handled the command, fall back to Ruby to do so
 	execRuby()
+}
+
+func featureEnabled(config *config.Config, commandType command.CommandType) bool {
+	if features[commandType] {
+		return true
+	}
+
+	fmt.Fprintf(os.Stderr, "Config: %v", config.Migration)
+
+	for _, featureName := range config.Migration.Features {
+		fmt.Fprintf(os.Stderr, "Setting feature: %v to %v", featureName, command.CommandType(featureName))
+
+		features[command.CommandType(featureName)] = true
+	}
+
+	return features[commandType]
 }

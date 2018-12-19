@@ -74,7 +74,9 @@ func parseConfig(configBytes []byte, cfg *Config) error {
 		cfg.LogFormat = "text"
 	}
 
-	baseUrl, err := url.Parse(cfg.GitlabUrl)
+	unescapedUrl, err := url.PathUnescape(cfg.GitlabUrl)
+
+	baseUrl, err := url.Parse(unescapedUrl)
 	if err != nil {
 		return err
 	}

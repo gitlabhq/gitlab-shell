@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"gitlab.com/gitlab-org/go/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 )
 
 type Client struct {
@@ -21,20 +21,12 @@ func New() (*Client, error) {
 		return nil, err
 	}
 
-	tr = &http.Transport{
+	tr := &http.Transport{
 		MaxIdleConns:       10,
 		IdleConnTimeout:    30 * time.Second,
 		DisableCompression: true,
 	}
-	httpClient = &http.Client{Transport: tr}
+	httpClient := &http.Client{Transport: tr}
 
 	return &Client{config: config, httpClient: httpClient}, nil
-}
-
-func (c *Client) Discover(gitlabId string) {
-
-}
-
-func (c *Client) get(path string) (*Response, error) {
-
 }
