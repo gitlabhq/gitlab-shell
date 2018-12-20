@@ -67,7 +67,7 @@ describe GitlabNet, vcr: true do
 
   describe '#lfs_authenticate' do
     context 'lfs authentication succeeded' do
-      let(:repository_http_path) { URI.join(internal_api_endpoint.sub('api/v4', ''), project).to_s }
+      let(:repository_http_path) { URI.join(internal_api_endpoint.sub('/api/v4', ''), project).to_s }
 
       context 'for download operation' do
         it 'should return the correct data' do
