@@ -25,7 +25,7 @@ Git hooks that allow GitLab to validate Git pushes (e.g. "is this user
 allowed to push to this protected branch"). These hooks also trigger
 events in GitLab (e.g. to start a CI pipeline after a push). In
 GitLab's current architecture (Q4 2018) these hooks belong to Gitaly
-more than gitlab-shell. We [intend to move them to the Gitaly
+more than gitlab-shell. We [are moving them to the Gitaly
 repository](https://gitlab.com/gitlab-org/gitaly/issues/1226).
 
 ## Code status
