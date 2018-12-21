@@ -23,8 +23,8 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     GIT_RECEIVE_PACK_COMMAND => File.join(ROOT_PATH, 'bin', 'gitaly-receive-pack')
   }.freeze
 
-  GIT_COMMANDS = (GITALY_COMMANDS.keys + ['git-lfs-authenticate']).freeze
-  API_COMMANDS = %w(2fa_recovery_codes).freeze
+  GIT_COMMANDS = (GITALY_COMMANDS.keys + [GIT_LFS_AUTHENTICATE_COMMAND]).freeze
+  TWO_FACTOR_RECOVERY_COMMAND = '2fa_recovery_codes'
   GL_PROTOCOL = 'ssh'
 
   attr_accessor :gl_id, :gl_repository, :repo_name, :command, :git_access, :git_protocol
@@ -114,7 +114,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
     @git_access = @command
 
-    return args if API_COMMANDS.include?(@command)
+    return args if TWO_FACTOR_RECOVERY_COMMAND == @command
 
     raise DisallowedCommandError unless GIT_COMMANDS.include?(@command)
 
@@ -151,9 +151,9 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
   end
 
   def process_cmd(args)
-    return send("api_#{@command}") if API_COMMANDS.include?(@command)
+    return api_2fa_recovery_codes if TWO_FACTOR_RECOVERY_COMMAND == @command
 
-    if @command == 'git-lfs-authenticate'
+    if @command == GIT_LFS_AUTHENTICATE_COMMAND
       GitlabMetrics.measure('lfs-authenticate') do
         operation = args[2]
         $logger.info('Processing LFS authentication', operation: operation, user: log_username)
