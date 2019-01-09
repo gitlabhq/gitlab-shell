@@ -5,7 +5,7 @@ variables:
 
 before_script:
   - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin
-  - gem install --bindir /usr/local/bin bundler -v "$INSTALL_BUNDLER_VERSION"
+  - gem install --force --bindir /usr/local/bin bundler -v "$INSTALL_BUNDLER_VERSION"
   - cp config.yml.example config.yml
   - bundle install
 
@@ -16,7 +16,7 @@ before_script:
     #
     # The full rspec suite is also run against each suppported golang version
     - cp bin/gitlab-shell-ruby bin/gitlab-shell
-    - bundle exec rspec --color --format d spec
+    - bundle exec rspec --color --tag ~go --format d spec
 
 rspec:
   <<: *rspec_definition
