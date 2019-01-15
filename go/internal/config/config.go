@@ -2,8 +2,10 @@ package config
 
 import (
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path"
+	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -23,6 +25,7 @@ type Config struct {
 	LogFile   string          `yaml:"log_file"`
 	LogFormat string          `yaml:"log_format"`
 	Migration MigrationConfig `yaml:"migration"`
+	GitlabUrl string          `yaml:"gitlab_url"`
 }
 
 func New() (*Config, error) {
@@ -36,6 +39,24 @@ func New() (*Config, error) {
 
 func NewFromDir(dir string) (*Config, error) {
 	return newFromFile(path.Join(dir, configFile))
+}
+
+func (c *Config) FeatureEnabled(featureName string) bool {
+	if !c.Migration.Enabled {
+		return false
+	}
+
+	if !strings.HasPrefix(c.GitlabUrl, "http+unix://") {
+		return false
+	}
+
+	for _, enabledFeature := range c.Migration.Features {
+		if enabledFeature == featureName {
+			return true
+		}
+	}
+
+	return false
 }
 
 func newFromFile(filename string) (*Config, error) {
@@ -69,6 +90,15 @@ func parseConfig(configBytes []byte, cfg *Config) error {
 
 	if cfg.LogFormat == "" {
 		cfg.LogFormat = "text"
+	}
+
+	if cfg.GitlabUrl != "" {
+		unescapedUrl, err := url.PathUnescape(cfg.GitlabUrl)
+		if err != nil {
+			return err
+		}
+
+		cfg.GitlabUrl = unescapedUrl
 	}
 
 	return nil

@@ -1,5 +1,7 @@
 require_relative 'spec_helper'
 
+require 'open3'
+
 describe 'bin/gitlab-shell' do
   def original_root_path
     ROOT_PATH
@@ -43,11 +45,7 @@ describe 'bin/gitlab-shell' do
 
     sleep(0.1) while @webrick_thread.alive? && @server.status != :Running
     raise "Couldn't start stub GitlabNet server" unless @server.status == :Running
-
-    File.open(config_path, 'w') do |f|
-      f.write("---\ngitlab_url: http+unix://#{CGI.escape(tmp_socket_path)}\n")
-    end
-
+    system(original_root_path, 'bin/compile')
     copy_dirs = ['bin', 'lib']
     FileUtils.rm_rf(copy_dirs.map { |d| File.join(tmp_root_path, d) })
     FileUtils.cp_r(copy_dirs, tmp_root_path)
@@ -61,82 +59,118 @@ describe 'bin/gitlab-shell' do
 
   let(:gitlab_shell_path) { File.join(tmp_root_path, 'bin', 'gitlab-shell') }
 
-  # Basic valid input
-  it 'succeeds and prints username when a valid known key id is given' do
-    output, status = run!(["key-100"])
+  shared_examples 'results with keys' do
+    # Basic valid input
+    it 'succeeds and prints username when a valid known key id is given' do
+      output, _, status = run!(["key-100"])
 
-    expect(output).to eq("Welcome to GitLab, @someuser!\n")
-    expect(status).to be_success
+      expect(output).to eq("Welcome to GitLab, @someuser!\n")
+      expect(status).to be_success
+    end
+
+    it 'succeeds and prints username when a valid known username is given' do
+      output, _, status = run!(["username-someuser"])
+
+      expect(output).to eq("Welcome to GitLab, @someuser!\n")
+      expect(status).to be_success
+    end
+
+    # Valid but unknown input
+    it 'succeeds and prints Anonymous when a valid unknown key id is given' do
+      output, _, status = run!(["key-12345"])
+
+      expect(output).to eq("Welcome to GitLab, Anonymous!\n")
+      expect(status).to be_success
+    end
+
+    it 'succeeds and prints Anonymous when a valid unknown username is given' do
+      output, _, status = run!(["username-unknown"])
+
+      expect(output).to eq("Welcome to GitLab, Anonymous!\n")
+      expect(status).to be_success
+    end
+
+    it 'gets an ArgumentError on invalid input (empty)' do
+      _, stderr, status = run!([])
+
+      expect(stderr).to match(/who='' is invalid/)
+      expect(status).not_to be_success
+    end
+
+    it 'gets an ArgumentError on invalid input (unknown)' do
+      _, stderr, status = run!(["whatever"])
+
+      expect(stderr).to match(/who='' is invalid/)
+      expect(status).not_to be_success
+    end
+
+    it 'gets an ArgumentError on invalid input (multiple unknown)' do
+      _, stderr, status = run!(["this", "is", "all", "invalid"])
+
+      expect(stderr).to match(/who='' is invalid/)
+      expect(status).not_to be_success
+    end
+
+    # Not so basic valid input
+    # (https://gitlab.com/gitlab-org/gitlab-shell/issues/145)
+    it 'succeeds and prints username when a valid known key id is given in the middle of other input' do
+      output, _, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "key-100", "2foo"])
+
+      expect(output).to eq("Welcome to GitLab, @someuser!\n")
+      expect(status).to be_success
+    end
+
+    it 'succeeds and prints username when a valid known username is given in the middle of other input' do
+      output, _, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-someuser" ,"foo"])
+
+      expect(output).to eq("Welcome to GitLab, @someuser!\n")
+      expect(status).to be_success
+    end
   end
 
-  it 'succeeds and prints username when a valid known username is given' do
-    output, status = run!(["username-someuser"])
+  describe 'without go features' do
+    before(:context) do
+      write_config("gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}")
+    end
 
-    expect(output).to eq("Welcome to GitLab, @someuser!\n")
-    expect(status).to be_success
+    it_behaves_like 'results with keys'
   end
 
-  # Valid but unknown input
-  it 'succeeds and prints Anonymous when a valid unknown key id is given' do
-    output, status = run!(["key-12345"])
+  describe 'with the go discover feature', :go do
+    before(:context) do
+      write_config(
+        "gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}",
+        "migration" => { "enabled" => true,
+                        "features" => ["discover"] }
+      )
+    end
 
-    expect(output).to eq("Welcome to GitLab, Anonymous!\n")
-    expect(status).to be_success
+    it_behaves_like 'results with keys' do
+      before do
+        pending
+      end
+    end
+
+    it 'outputs "Only ssh allowed"' do
+      _, stderr, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-someuser"], env: {})
+
+      expect(stderr).to eq("Only ssh allowed\n")
+      expect(status).not_to be_success
+    end
   end
 
-  it 'succeeds and prints Anonymous when a valid unknown username is given' do
-    output, status = run!(["username-unknown"])
-
-    expect(output).to eq("Welcome to GitLab, Anonymous!\n")
-    expect(status).to be_success
-  end
-
-  # Invalid input. TODO: capture stderr & compare
-  it 'gets an ArgumentError on invalid input (empty)' do
-    output, status = run!([])
-
-    expect(output).to eq("")
-    expect(status).not_to be_success
-  end
-
-  it 'gets an ArgumentError on invalid input (unknown)' do
-    output, status = run!(["whatever"])
-
-    expect(output).to eq("")
-    expect(status).not_to be_success
-  end
-
-  it 'gets an ArgumentError on invalid input (multiple unknown)' do
-    output, status = run!(["this", "is", "all", "invalid"])
-
-    expect(output).to eq("")
-    expect(status).not_to be_success
-  end
-
-  # Not so basic valid input
-  # (https://gitlab.com/gitlab-org/gitlab-shell/issues/145)
-  it 'succeeds and prints username when a valid known key id is given in the middle of other input' do
-    output, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "key-100", "2foo"])
-
-    expect(output).to eq("Welcome to GitLab, @someuser!\n")
-    expect(status).to be_success
-  end
-
-  it 'succeeds and prints username when a valid known username is given in the middle of other input' do
-    output, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-someuser" ,"foo"])
-
-    expect(output).to eq("Welcome to GitLab, @someuser!\n")
-    expect(status).to be_success
-  end
-
-  def run!(args)
+  def run!(args, env: {'SSH_CONNECTION' => 'fake'})
     cmd = [
       gitlab_shell_path,
       args
-    ].flatten.compact
+    ].flatten.compact.join(' ')
 
-    output = IO.popen({'SSH_CONNECTION' => 'fake'}, cmd, &:read)
+    Open3.capture3(env, cmd)
+  end
 
-    [output, $?]
+  def write_config(config)
+    File.open(config_path, 'w') do |f|
+      f.write(config.to_yaml)
+    end
   end
 end

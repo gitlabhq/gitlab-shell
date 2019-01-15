@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"syscall"
 
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 )
 
@@ -19,20 +20,12 @@ func init() {
 	rootDir = filepath.Dir(binDir)
 }
 
-func migrate(*config.Config) (int, bool) {
-	// TODO: Dispatch appropriate requests to Go handlers and return
-	// <exitstatus, true> depending on how they fare
-	return 0, false
-}
-
 // rubyExec will never return. It either replaces the current process with a
 // Ruby interpreter, or outputs an error and kills the process.
 func execRuby() {
-	rubyCmd := filepath.Join(binDir, "gitlab-shell-ruby")
-
-	execErr := syscall.Exec(rubyCmd, os.Args, os.Environ())
-	if execErr != nil {
-		fmt.Fprintf(os.Stderr, "Failed to exec(%q): %v\n", rubyCmd, execErr)
+	cmd := &fallback.Command{}
+	if err := cmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to exec: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -46,11 +39,18 @@ func main() {
 		execRuby()
 	}
 
-	// Try to handle the command with the Go implementation
-	if exitCode, done := migrate(config); done {
-		os.Exit(exitCode)
+	cmd, err := command.New(os.Args, config)
+	if err != nil {
+		// For now this could happen if `SSH_CONNECTION` is not set on
+		// the environment
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
 	}
 
-	// Since a migration has not handled the command, fall back to Ruby to do so
-	execRuby()
+	// The command will write to STDOUT on execution or replace the current
+	// process in case of the `fallback.Command`
+	if err = cmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
+	}
 }

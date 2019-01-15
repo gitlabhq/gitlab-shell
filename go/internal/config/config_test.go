@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseConfig(t *testing.T) {
@@ -12,6 +14,7 @@ func TestParseConfig(t *testing.T) {
 		yaml      string
 		path      string
 		format    string
+		gitlabUrl string
 		migration MigrationConfig
 	}{
 		{path: "/foo/bar/gitlab-shell.log", format: "text"},
@@ -23,6 +26,12 @@ func TestParseConfig(t *testing.T) {
 			path:      "/foo/bar/gitlab-shell.log",
 			format:    "text",
 			migration: MigrationConfig{Enabled: true, Features: []string{"foo", "bar"}},
+		},
+		{
+			yaml:      "gitlab_url: http+unix://%2Fpath%2Fto%2Fgitlab%2Fgitlab.socket",
+			path:      "/foo/bar/gitlab-shell.log",
+			format:    "text",
+			gitlabUrl: "http+unix:///path/to/gitlab/gitlab.socket",
 		},
 	}
 
@@ -48,6 +57,60 @@ func TestParseConfig(t *testing.T) {
 			if cfg.LogFormat != tc.format {
 				t.Fatalf("expected %q, got %q", tc.format, cfg.LogFormat)
 			}
+
+			assert.Equal(t, tc.gitlabUrl, cfg.GitlabUrl)
+		})
+	}
+}
+
+func TestFeatureEnabled(t *testing.T) {
+	testCases := []struct {
+		desc          string
+		config        *Config
+		feature       string
+		expectEnabled bool
+	}{
+		{
+			desc: "When the protocol is supported and the feature enabled",
+			config: &Config{
+				GitlabUrl: "http+unix://gitlab.socket",
+				Migration: MigrationConfig{Enabled: true, Features: []string{"discover"}},
+			},
+			feature:       "discover",
+			expectEnabled: true,
+		},
+		{
+			desc: "When the protocol is supported and the feature is not enabled",
+			config: &Config{
+				GitlabUrl: "http+unix://gitlab.socket",
+				Migration: MigrationConfig{Enabled: true, Features: []string{}},
+			},
+			feature:       "discover",
+			expectEnabled: false,
+		},
+		{
+			desc: "When the protocol is supported and all features are disabled",
+			config: &Config{
+				GitlabUrl: "http+unix://gitlab.socket",
+				Migration: MigrationConfig{Enabled: false, Features: []string{"discover"}},
+			},
+			feature:       "discover",
+			expectEnabled: false,
+		},
+		{
+			desc: "When the protocol is not supported",
+			config: &Config{
+				GitlabUrl: "https://localhost:3000",
+				Migration: MigrationConfig{Enabled: true, Features: []string{"discover"}},
+			},
+			feature:       "discover",
+			expectEnabled: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			assert.Equal(t, tc.expectEnabled, tc.config.FeatureEnabled(string(tc.feature)))
 		})
 	}
 }
