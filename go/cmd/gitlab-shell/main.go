@@ -41,17 +41,16 @@ func main() {
 
 	cmd, err := command.New(os.Args, config)
 	if err != nil {
-		// Failed to build the command, fall back to ruby.
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment
-		fmt.Fprintf(os.Stderr, "Failed to build command: %v\n", err)
-		execRuby()
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
 	}
 
 	// The command will write to STDOUT on execution or replace the current
 	// process in case of the `fallback.Command`
 	if err = cmd.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 }

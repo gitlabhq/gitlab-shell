@@ -37,15 +37,15 @@ func Parse(arguments []string) (*CommandArgs, error) {
 	return info, nil
 }
 
-func (info *CommandArgs) parseWho(arguments []string) {
+func (c *CommandArgs) parseWho(arguments []string) {
 	for _, argument := range arguments {
 		if keyId := tryParseKeyId(argument); keyId != "" {
-			info.GitlabKeyId = keyId
+			c.GitlabKeyId = keyId
 			break
 		}
 
 		if username := tryParseUsername(argument); username != "" {
-			info.GitlabUsername = username
+			c.GitlabUsername = username
 			break
 		}
 	}

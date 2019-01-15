@@ -1,5 +1,7 @@
 require_relative 'spec_helper'
 
+require 'open3'
+
 describe 'bin/gitlab-shell' do
   def original_root_path
     ROOT_PATH
@@ -60,14 +62,14 @@ describe 'bin/gitlab-shell' do
   shared_examples 'results with keys' do
     # Basic valid input
     it 'succeeds and prints username when a valid known key id is given' do
-      output, status = run!(["key-100"])
+      output, _, status = run!(["key-100"])
 
       expect(output).to eq("Welcome to GitLab, @someuser!\n")
       expect(status).to be_success
     end
 
     it 'succeeds and prints username when a valid known username is given' do
-      output, status = run!(["username-someuser"])
+      output, _, status = run!(["username-someuser"])
 
       expect(output).to eq("Welcome to GitLab, @someuser!\n")
       expect(status).to be_success
@@ -75,52 +77,51 @@ describe 'bin/gitlab-shell' do
 
     # Valid but unknown input
     it 'succeeds and prints Anonymous when a valid unknown key id is given' do
-      output, status = run!(["key-12345"])
+      output, _, status = run!(["key-12345"])
 
       expect(output).to eq("Welcome to GitLab, Anonymous!\n")
       expect(status).to be_success
     end
 
     it 'succeeds and prints Anonymous when a valid unknown username is given' do
-      output, status = run!(["username-unknown"])
+      output, _, status = run!(["username-unknown"])
 
       expect(output).to eq("Welcome to GitLab, Anonymous!\n")
       expect(status).to be_success
     end
 
-    # Invalid input. TODO: capture stderr & compare
     it 'gets an ArgumentError on invalid input (empty)' do
-      output, status = run!([])
+      _, stderr, status = run!([])
 
-      expect(output).to eq("")
+      expect(stderr).to match(/who='' is invalid/)
       expect(status).not_to be_success
     end
 
     it 'gets an ArgumentError on invalid input (unknown)' do
-      output, status = run!(["whatever"])
+      _, stderr, status = run!(["whatever"])
 
-      expect(output).to eq("")
+      expect(stderr).to match(/who='' is invalid/)
       expect(status).not_to be_success
     end
 
     it 'gets an ArgumentError on invalid input (multiple unknown)' do
-      output, status = run!(["this", "is", "all", "invalid"])
+      _, stderr, status = run!(["this", "is", "all", "invalid"])
 
-      expect(output).to eq("")
+      expect(stderr).to match(/who='' is invalid/)
       expect(status).not_to be_success
     end
 
     # Not so basic valid input
     # (https://gitlab.com/gitlab-org/gitlab-shell/issues/145)
     it 'succeeds and prints username when a valid known key id is given in the middle of other input' do
-      output, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "key-100", "2foo"])
+      output, _, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "key-100", "2foo"])
 
       expect(output).to eq("Welcome to GitLab, @someuser!\n")
       expect(status).to be_success
     end
 
     it 'succeeds and prints username when a valid known username is given in the middle of other input' do
-      output, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-someuser" ,"foo"])
+      output, _, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-someuser" ,"foo"])
 
       expect(output).to eq("Welcome to GitLab, @someuser!\n")
       expect(status).to be_success
@@ -144,24 +145,27 @@ describe 'bin/gitlab-shell' do
       )
     end
 
-
-
     it_behaves_like 'results with keys' do
       before do
         pending
       end
     end
+
+    it 'outputs "Only ssh allowed"' do
+      _, stderr, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-someuser"], env: {})
+
+      expect(stderr).to eq("Only ssh allowed\n")
+      expect(status).not_to be_success
+    end
   end
 
-  def run!(args)
+  def run!(args, env: {'SSH_CONNECTION' => 'fake'})
     cmd = [
       gitlab_shell_path,
       args
-    ].flatten.compact
+    ].flatten.compact.join(' ')
 
-    output = IO.popen({'SSH_CONNECTION' => 'fake'}, cmd, &:read)
-
-    [output, $?]
+    Open3.capture3(env, cmd)
   end
 
   def write_config(config)
