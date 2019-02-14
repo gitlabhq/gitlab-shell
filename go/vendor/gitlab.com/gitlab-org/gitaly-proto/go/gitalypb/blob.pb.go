@@ -49,6 +49,8 @@ It has these top-level messages:
 	CommitsBetweenResponse
 	CountCommitsRequest
 	CountCommitsResponse
+	CountDivergingCommitsRequest
+	CountDivergingCommitsResponse
 	TreeEntry
 	GetTreeEntriesRequest
 	GetTreeEntriesResponse
@@ -120,6 +122,8 @@ It has these top-level messages:
 	LinkRepositoryToObjectPoolResponse
 	UnlinkRepositoryFromObjectPoolRequest
 	UnlinkRepositoryFromObjectPoolResponse
+	ReduplicateRepositoryRequest
+	ReduplicateRepositoryResponse
 	UserCreateBranchRequest
 	UserCreateBranchResponse
 	UserUpdateBranchRequest
@@ -132,6 +136,8 @@ It has these top-level messages:
 	UserCreateTagResponse
 	UserMergeBranchRequest
 	UserMergeBranchResponse
+	UserMergeToRefRequest
+	UserMergeToRefResponse
 	OperationBranchUpdate
 	UserFFBranchRequest
 	UserFFBranchResponse
@@ -202,6 +208,8 @@ It has these top-level messages:
 	FindRemoteRepositoryResponse
 	FindRemoteRootRefRequest
 	FindRemoteRootRefResponse
+	ListRemotesRequest
+	ListRemotesResponse
 	RepositoryExistsRequest
 	RepositoryExistsResponse
 	RepackIncrementalRequest

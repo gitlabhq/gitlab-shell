@@ -1,3 +1,6 @@
+v8.5.0
+  - Bump gitaly-proto to v1.10.0
+
 v8.4.4
   - Pass push options along to gitlab-rails's post-receive endpoint
 
