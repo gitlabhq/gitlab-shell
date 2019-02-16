@@ -40,7 +40,7 @@ http_interactions:
       - '0.289759'
     body:
       encoding: UTF-8
-      string: '{"status":true,"gl_repository":"project-3","repository_path":"/Users/dzaporozhets/Projects/gitlab-development-kit/repositories/gitlab-org/gitlab-test.git"}'
+      string: '{"status":true,"gl_repository":"project-3","gl_project_path":"gitlab-org/gitlab.test","repository_path":"/Users/dzaporozhets/Projects/gitlab-development-kit/repositories/gitlab-org/gitlab-test.git"}'
     http_version: 
   recorded_at: Wed, 21 Jun 2017 10:44:52 GMT
 recorded_with: VCR 2.4.0

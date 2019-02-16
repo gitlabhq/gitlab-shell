@@ -28,6 +28,7 @@ describe GitlabShell do
       '200',
       'ok',
       gl_repository: gl_repository,
+      gl_project_path: gl_project_path,
       gl_id: gl_id,
       gl_username: gl_username,
       git_config_options: git_config_options,
@@ -44,6 +45,7 @@ describe GitlabShell do
                 '200',
                 'ok',
                 gl_repository: gl_repository,
+                gl_project_path: gl_project_path,
                 gl_id: gl_id,
                 gl_username: gl_username,
                 git_config_options: nil,
@@ -62,6 +64,7 @@ describe GitlabShell do
 
   let(:repo_name) { 'gitlab-ci.git' }
   let(:gl_repository) { 'project-1' }
+  let(:gl_project_path) { 'group/subgroup/gitlab-ci' }
   let(:gl_id) { 'user-1' }
   let(:gl_username) { 'testuser' }
   let(:git_config_options) { ['receive.MaxInputSize=10000'] }
@@ -169,6 +172,7 @@ describe GitlabShell do
       JSON.dump(
         'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default' },
         'gl_repository' => gl_repository,
+        'gl_project_path' => gl_project_path,
         'gl_id' => gl_id,
         'gl_username' => gl_username,
         'git_config_options' => git_config_options,
@@ -446,6 +450,7 @@ describe GitlabShell do
             false,
             'denied',
             gl_repository: nil,
+            gl_project_path: nil,
             gl_id: nil,
             gl_username: nil,
             git_config_options: nil,
