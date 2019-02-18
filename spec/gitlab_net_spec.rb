@@ -287,7 +287,9 @@ describe GitlabNet, vcr: true do
       it 'should allow push access for host' do
         VCR.use_cassette("allowed-push") do
           access = gitlab_net.check_access('git-receive-pack', nil, project, key, changes, 'ssh')
+
           expect(access.allowed?).to be_truthy
+          expect(access.gl_project_path).to eq('gitlab-org/gitlab.test')
         end
       end
 
@@ -322,7 +324,9 @@ describe GitlabNet, vcr: true do
       it 'should allow pull access for host' do
         VCR.use_cassette("allowed-pull") do
           access = gitlab_net.check_access('git-upload-pack', nil, project, key, changes, 'ssh')
+
           expect(access.allowed?).to be_truthy
+          expect(access.gl_project_path).to eq('gitlab-org/gitlab.test')
         end
       end
     end

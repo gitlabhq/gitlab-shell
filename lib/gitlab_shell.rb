@@ -27,7 +27,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
   TWO_FACTOR_RECOVERY_COMMAND = '2fa_recovery_codes'
   GL_PROTOCOL = 'ssh'
 
-  attr_accessor :gl_id, :gl_repository, :repo_name, :command, :git_access, :git_protocol
+  attr_accessor :gl_id, :gl_repository, :gl_project_path, :repo_name, :command, :git_access, :git_protocol
 
   def initialize(who)
     who_sym, = GitlabNet.parse_who(who)
@@ -58,6 +58,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
       @gl_repository = access_status.gl_repository
       @git_protocol = ENV['GIT_PROTOCOL']
+      @gl_project_path = access_status.gl_project_path
       @gitaly = access_status.gitaly
       @username = access_status.gl_username
       @git_config_options = access_status.git_config_options
@@ -167,6 +168,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     args = JSON.dump(
       'repository' => @gitaly['repository'],
       'gl_repository' => @gl_repository,
+      'gl_project_path' => @gl_project_path,
       'gl_id' => @gl_id,
       'gl_username' => @username,
       'git_config_options' => @git_config_options,
