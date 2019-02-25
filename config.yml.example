@@ -56,3 +56,7 @@ audit_usernames: false
 migration:
   enabled: false
   features: []
+
+# Distributed Tracing. GitLab-Shell has distributed tracing instrumentation.
+# For more details, visit https://docs.gitlab.com/ee/development/distributed_tracing.html
+# gitlab_tracing: opentracing://driver

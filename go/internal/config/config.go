@@ -21,11 +21,12 @@ type MigrationConfig struct {
 }
 
 type Config struct {
-	RootDir   string
-	LogFile   string          `yaml:"log_file"`
-	LogFormat string          `yaml:"log_format"`
-	Migration MigrationConfig `yaml:"migration"`
-	GitlabUrl string          `yaml:"gitlab_url"`
+	RootDir       string
+	LogFile       string          `yaml:"log_file"`
+	LogFormat     string          `yaml:"log_format"`
+	Migration     MigrationConfig `yaml:"migration"`
+	GitlabUrl     string          `yaml:"gitlab_url"`
+	GitlabTracing string          `yaml:"gitlab_tracing"`
 }
 
 func New() (*Config, error) {
