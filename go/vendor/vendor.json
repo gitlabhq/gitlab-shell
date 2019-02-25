@@ -67,6 +67,51 @@
 			"revisionTime": "2018-11-12T10:25:10Z"
 		},
 		{
+			"path": "github.com/lightstep/lightstep-tracer-go",
+			"revision": "c0184d44cb322c9d9abcaebb2139dc754b3c0145",
+			"revisionTime": "2019-02-19T15:09:25Z"
+		},
+		{
+			"path": "github.com/lightstep/lightstep-tracer-go/collectorpb",
+			"revision": "c0184d44cb322c9d9abcaebb2139dc754b3c0145"
+		},
+		{
+			"path": "github.com/lightstep/lightstep-tracer-go/lightstep/rand",
+			"revision": "c0184d44cb322c9d9abcaebb2139dc754b3c0145"
+		},
+		{
+			"path": "github.com/lightstep/lightstep-tracer-go/lightsteppb",
+			"revision": "c0184d44cb322c9d9abcaebb2139dc754b3c0145"
+		},
+		{
+			"checksumSHA1": "a/DHmc9bdsYlZZcwp6i3xhvV7Pk=",
+			"path": "github.com/opentracing/opentracing-go",
+			"revision": "25a84ff92183e2f8ac018ba1db54f8a07b3c0e04",
+			"revisionTime": "2019-02-18T02:30:34Z"
+		},
+		{
+			"checksumSHA1": "hZnCURJIhg56jbKk0UFRfZkcQ+c=",
+			"path": "github.com/opentracing/opentracing-go/ext",
+			"revision": "25a84ff92183e2f8ac018ba1db54f8a07b3c0e04",
+			"revisionTime": "2019-02-18T02:30:34Z"
+		},
+		{
+			"checksumSHA1": "tnkdNJbJxNKuPZMWapP1xhKIIGw=",
+			"path": "github.com/opentracing/opentracing-go/log",
+			"revision": "25a84ff92183e2f8ac018ba1db54f8a07b3c0e04",
+			"revisionTime": "2019-02-18T02:30:34Z"
+		},
+		{
+			"checksumSHA1": "8U5pEHFpXd1/Klgp+C/a6TqWoh8=",
+			"path": "github.com/philhofer/fwd",
+			"revision": "bb6d471dc95d4fe11e432687f8b70ff496cf3136",
+			"revisionTime": "2017-09-05T21:21:22Z"
+		},
+		{
+			"path": "github.com/pkg/errors",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",
 			"path": "github.com/pmezard/go-difflib/difflib",
 			"revision": "5d4384ee4fb2527b0a1256a821ebfc92f91efefc",
@@ -111,6 +156,48 @@
 			"revisionTime": "2018-09-01T16:25:39Z"
 		},
 		{
+			"checksumSHA1": "XqGf8TvdzfKDhkE+HDZAT7RlERU=",
+			"path": "github.com/tinylib/msgp/msgp",
+			"revision": "ade0ca4ace05af96235d107023ab018ee921309c",
+			"revisionTime": "2019-01-03T19:08:39Z"
+		},
+		{
+			"path": "github.com/uber/jaeger-client-go",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "VGtI2lhUBiBj3XcEqL9oQfQMsz0=",
+			"path": "github.com/uber/jaeger-client-go/config",
+			"revision": "64f57863bf63d3842dbe79cdc793d57baaff9ab5",
+			"revisionTime": "2019-02-14T18:28:10Z"
+		},
+		{
+			"path": "github.com/uber/jaeger-client-go/internal/baggage/remote",
+			"revision": ""
+		},
+		{
+			"path": "github.com/uber/jaeger-client-go/internal/throttler/remote",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "tMP/vxbHwNAbOEaUhic5/meKfac=",
+			"path": "github.com/uber/jaeger-client-go/log",
+			"revision": "64f57863bf63d3842dbe79cdc793d57baaff9ab5",
+			"revisionTime": "2019-02-14T18:28:10Z"
+		},
+		{
+			"path": "github.com/uber/jaeger-client-go/rpcmetrics",
+			"revision": ""
+		},
+		{
+			"path": "github.com/uber/jaeger-client-go/transport",
+			"revision": ""
+		},
+		{
+			"path": "github.com/uber/jaeger-lib/metrics",
+			"revision": ""
+		},
+		{
 			"checksumSHA1": "AEuc/0oF2vF1nYiibaT/UIxMgbg=",
 			"path": "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb",
 			"revision": "53d58cd1f691f0370aca152927db89a6b6fbab59",
@@ -141,6 +228,38 @@
 			"revisionTime": "2018-12-06T13:13:53Z",
 			"version": "v1.7.0",
 			"versionExact": "v1.7.0"
+		},
+		{
+			"checksumSHA1": "WMOuBgCyclqy+Mqunb0NbykaC4Y=",
+			"path": "gitlab.com/gitlab-org/labkit/correlation",
+			"revision": "0c3fc7cdd57c57da5ab474aa72b6640d2bdc9ebb",
+			"revisionTime": "2019-02-21T12:25:36Z",
+			"version": "master",
+			"versionExact": "master"
+		},
+		{
+			"checksumSHA1": "6SAh0LdyizW+RICpQglU6WLMhus=",
+			"path": "gitlab.com/gitlab-org/labkit/tracing",
+			"revision": "0c3fc7cdd57c57da5ab474aa72b6640d2bdc9ebb",
+			"revisionTime": "2019-02-21T12:25:36Z",
+			"version": "master",
+			"versionExact": "master"
+		},
+		{
+			"checksumSHA1": "uIvjqXAsMQK/Y5FgWRaGydYGbYs=",
+			"path": "gitlab.com/gitlab-org/labkit/tracing/connstr",
+			"revision": "0c3fc7cdd57c57da5ab474aa72b6640d2bdc9ebb",
+			"revisionTime": "2019-02-21T12:25:36Z",
+			"version": "master",
+			"versionExact": "master"
+		},
+		{
+			"checksumSHA1": "hB59Es/WTWfBPLSAheQaRyHGSXA=",
+			"path": "gitlab.com/gitlab-org/labkit/tracing/impl",
+			"revision": "0c3fc7cdd57c57da5ab474aa72b6640d2bdc9ebb",
+			"revisionTime": "2019-02-21T12:25:36Z",
+			"version": "master",
+			"versionExact": "master"
 		},
 		{
 			"checksumSHA1": "BGm8lKZmvJbf/YOJLeL1rw2WVjA=",
@@ -471,6 +590,36 @@
 			"revisionTime": "2018-10-23T17:37:47Z",
 			"version": "v1.16.0",
 			"versionExact": "v1.16.0"
+		},
+		{
+			"checksumSHA1": "GE96+o57Lj5bo7eUP/rPHAJvhOY=",
+			"path": "gopkg.in/DataDog/dd-trace-go.v1/ddtrace",
+			"revision": "823d51722f66a748804943f6fa6be18776073b82",
+			"revisionTime": "2019-01-24T09:21:27Z"
+		},
+		{
+			"checksumSHA1": "fHmbkWZvCViDUFo1S4vVETnZ8V0=",
+			"path": "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/ext",
+			"revision": "823d51722f66a748804943f6fa6be18776073b82",
+			"revisionTime": "2019-01-24T09:21:27Z"
+		},
+		{
+			"checksumSHA1": "Y+OLwoHr6B/kbFMbI8IRui26wZ0=",
+			"path": "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/internal",
+			"revision": "823d51722f66a748804943f6fa6be18776073b82",
+			"revisionTime": "2019-01-24T09:21:27Z"
+		},
+		{
+			"checksumSHA1": "5eLUeoF0F5+BYLgztcwUCg/T3dc=",
+			"path": "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/opentracer",
+			"revision": "823d51722f66a748804943f6fa6be18776073b82",
+			"revisionTime": "2019-01-24T09:21:27Z"
+		},
+		{
+			"checksumSHA1": "6Q+wVAvbgJzvcE+k8ofJlPECDko=",
+			"path": "gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer",
+			"revision": "823d51722f66a748804943f6fa6be18776073b82",
+			"revisionTime": "2019-01-24T09:21:27Z"
 		},
 		{
 			"checksumSHA1": "fALlQNY1fM99NesfLJ50KguWsio=",
