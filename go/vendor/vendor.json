@@ -156,6 +156,12 @@
 			"revisionTime": "2018-09-01T16:25:39Z"
 		},
 		{
+			"checksumSHA1": "3DvkGtpbJW8oXepRr3wYSs72LmQ=",
+			"path": "github.com/stretchr/testify/require",
+			"revision": "865fb2c8f5af9ccbaaadfd20d18236358dccaaff",
+			"revisionTime": "2018-09-01T16:25:39Z"
+		},
+		{
 			"checksumSHA1": "XqGf8TvdzfKDhkE+HDZAT7RlERU=",
 			"path": "github.com/tinylib/msgp/msgp",
 			"revision": "ade0ca4ace05af96235d107023ab018ee921309c",
