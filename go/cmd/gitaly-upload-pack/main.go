@@ -1,12 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
-	"os"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/handler"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/logger"
+	"google.golang.org/grpc"
 
 	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 )
@@ -16,22 +16,20 @@ func init() {
 }
 
 func main() {
-	if err := handler.Prepare(); err != nil {
-		logger.Fatal("preparation failed", err)
-	}
+	handler.RunGitalyCommand(func(ctx context.Context, conn *grpc.ClientConn, requestJSON string) (int32, error) {
+		request, err := deserialize(requestJSON)
+		if err != nil {
+			return 1, err
+		}
 
-	if n := len(os.Args); n != 3 {
-		logger.Fatal("wrong number of arguments", fmt.Errorf("expected 2 arguments, got %v", os.Args))
-	}
+		return handler.UploadPack(ctx, conn, request)
+	})
+}
 
+func deserialize(requestJSON string) (*pb.SSHUploadPackRequest, error) {
 	var request pb.SSHUploadPackRequest
-	if err := json.Unmarshal([]byte(os.Args[2]), &request); err != nil {
-		logger.Fatal("unmarshaling request json failed", err)
+	if err := json.Unmarshal([]byte(requestJSON), request); err != nil {
+		return nil, err
 	}
-
-	code, err := handler.UploadPack(os.Args[1], &request)
-	if err != nil {
-		logger.Fatal("upload-pack failed", err)
-	}
-	os.Exit(int(code))
+	return &request, nil
 }

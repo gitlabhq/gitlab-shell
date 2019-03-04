@@ -2,25 +2,17 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitaly/client"
+	"google.golang.org/grpc"
 )
 
-func ReceivePack(gitalyAddress string, request *pb.SSHReceivePackRequest) (int32, error) {
-	if gitalyAddress == "" {
-		return 0, fmt.Errorf("no gitaly_address given")
-	}
-
-	conn, err := client.Dial(gitalyAddress, dialOpts())
-	if err != nil {
-		return 0, err
-	}
-	defer conn.Close()
-
-	ctx, cancel := context.WithCancel(context.Background())
+// ReceivePack issues a Gitaly receive-pack rpc to the provided address
+func ReceivePack(ctx context.Context, conn *grpc.ClientConn, request *pb.SSHReceivePackRequest) (int32, error) {
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
 	return client.ReceivePack(ctx, conn, os.Stdin, os.Stdout, os.Stderr, request)
 }
