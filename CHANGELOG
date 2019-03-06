@@ -1,3 +1,6 @@
+v8.7.0
+  - Add distributed tracing to GitLab-Shell !277
+
 v8.6.0
   - Add support for using gl_project_path !275
   - Provide expires_in for LFS if available !273
