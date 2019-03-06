@@ -28,7 +28,7 @@ func main() {
 
 func deserialize(requestJSON string) (*pb.SSHUploadPackRequest, error) {
 	var request pb.SSHUploadPackRequest
-	if err := json.Unmarshal([]byte(requestJSON), request); err != nil {
+	if err := json.Unmarshal([]byte(requestJSON), &request); err != nil {
 		return nil, err
 	}
 	return &request, nil
