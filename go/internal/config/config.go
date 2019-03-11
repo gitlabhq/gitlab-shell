@@ -5,14 +5,16 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 )
 
 const (
-	configFile = "config.yml"
-	logFile    = "gitlab-shell.log"
+	configFile            = "config.yml"
+	logFile               = "gitlab-shell.log"
+	defaultSecretFileName = ".gitlab_shell_secret"
 )
 
 type MigrationConfig struct {
@@ -21,12 +23,14 @@ type MigrationConfig struct {
 }
 
 type Config struct {
-	RootDir       string
-	LogFile       string          `yaml:"log_file"`
-	LogFormat     string          `yaml:"log_format"`
-	Migration     MigrationConfig `yaml:"migration"`
-	GitlabUrl     string          `yaml:"gitlab_url"`
-	GitlabTracing string          `yaml:"gitlab_tracing"`
+	RootDir        string
+	LogFile        string          `yaml:"log_file"`
+	LogFormat      string          `yaml:"log_format"`
+	Migration      MigrationConfig `yaml:"migration"`
+	GitlabUrl      string          `yaml:"gitlab_url"`
+	GitlabTracing  string          `yaml:"gitlab_tracing"`
+	SecretFilePath string          `yaml:"secret_file"`
+	Secret         string          `yaml:"secret"`
 }
 
 func New() (*Config, error) {
@@ -101,6 +105,33 @@ func parseConfig(configBytes []byte, cfg *Config) error {
 
 		cfg.GitlabUrl = unescapedUrl
 	}
+
+	if err := parseSecret(cfg); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func parseSecret(cfg *Config) error {
+	// The secret was parsed from yaml no need to read another file
+	if cfg.Secret != "" {
+		return nil
+	}
+
+	if cfg.SecretFilePath == "" {
+		cfg.SecretFilePath = defaultSecretFileName
+	}
+
+	if !filepath.IsAbs(cfg.SecretFilePath) {
+		cfg.SecretFilePath = path.Join(cfg.RootDir, cfg.SecretFilePath)
+	}
+
+	secretFileContent, err := ioutil.ReadFile(cfg.SecretFilePath)
+	if err != nil {
+		return err
+	}
+	cfg.Secret = string(secretFileContent)
 
 	return nil
 }
