@@ -102,6 +102,12 @@
 			"revisionTime": "2019-02-18T02:30:34Z"
 		},
 		{
+			"checksumSHA1": "ejq9Z6KUxfUyeL+IszhcxcGiw1s=",
+			"path": "github.com/otiai10/copy",
+			"revision": "a15b9cb96cf2f7930107fe0a9a6faf1b91e69df4",
+			"revisionTime": "2019-02-27T01:32:50Z"
+		},
+		{
 			"checksumSHA1": "8U5pEHFpXd1/Klgp+C/a6TqWoh8=",
 			"path": "github.com/philhofer/fwd",
 			"revision": "bb6d471dc95d4fe11e432687f8b70ff496cf3136",
@@ -632,6 +638,10 @@
 			"path": "gopkg.in/yaml.v2",
 			"revision": "cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b",
 			"revisionTime": "2017-04-07T17:21:22Z"
+		},
+		{
+			"path": "https://github.com/otiai10/copy",
+			"revision": ""
 		}
 	],
 	"rootPath": "gitlab.com/gitlab-org/gitlab-shell/go"
