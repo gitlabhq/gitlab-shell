@@ -3,12 +3,10 @@ package handler
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/testhelper"
 	"google.golang.org/grpc"
 )
 
@@ -88,7 +86,7 @@ func TestInteralRunHandler(t *testing.T) {
 				currentTest = nil
 			}()
 
-			done, err := createEnv()
+			done, err := testhelper.PrepareTestRootDir()
 			defer done()
 			require.NoError(t, err)
 
@@ -102,52 +100,4 @@ func TestInteralRunHandler(t *testing.T) {
 			require.Equal(t, tt.want, got)
 		})
 	}
-}
-
-// createEnv sets up an environment for `config.New()`.
-func createEnv() (func(), error) {
-	var dir string
-	var oldWd string
-	closer := func() {
-		if oldWd != "" {
-			err := os.Chdir(oldWd)
-			if err != nil {
-				panic(err)
-			}
-		}
-
-		if dir != "" {
-			err := os.RemoveAll(dir)
-			if err != nil {
-				panic(err)
-			}
-		}
-	}
-
-	dir, err := ioutil.TempDir("", "test")
-	if err != nil {
-		return closer, err
-	}
-
-	err = ioutil.WriteFile(filepath.Join(dir, "config.yml"), []byte{}, 0644)
-	if err != nil {
-		return closer, err
-	}
-
-	err = ioutil.WriteFile(filepath.Join(dir, "gitlab-shell.log"), []byte{}, 0644)
-	if err != nil {
-		return closer, err
-	}
-
-	oldWd, err = os.Getwd()
-	if err != nil {
-		return closer, err
-	}
-
-	err = os.Chdir(dir)
-	if err != nil {
-		return closer, err
-	}
-
-	return closer, err
 }
