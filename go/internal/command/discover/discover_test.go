@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/reporting"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/testserver"
 )
@@ -78,11 +79,10 @@ func TestExecute(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			buffer := &bytes.Buffer{}
-			output = buffer
 			cmd := &Command{Config: testConfig, Args: tc.arguments}
+			buffer := &bytes.Buffer{}
 
-			err := cmd.Execute()
+			err := cmd.Execute(&reporting.Reporter{Out: buffer})
 
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedOutput, buffer.String())
@@ -120,11 +120,12 @@ func TestFailingExecute(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			cmd := &Command{Config: testConfig, Args: tc.arguments}
+			buffer := &bytes.Buffer{}
 
-			err := cmd.Execute()
+			err := cmd.Execute(&reporting.Reporter{Out: buffer})
 
+			assert.Empty(t, buffer.String())
 			assert.EqualError(t, err, tc.expectedError)
 		})
 	}
-
 }

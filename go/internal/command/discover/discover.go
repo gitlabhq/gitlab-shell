@@ -2,10 +2,9 @@ package discover
 
 import (
 	"fmt"
-	"io"
-	"os"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/reporting"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/discover"
 )
@@ -15,20 +14,16 @@ type Command struct {
 	Args   *commandargs.CommandArgs
 }
 
-var (
-	output io.Writer = os.Stdout
-)
-
-func (c *Command) Execute() error {
+func (c *Command) Execute(reporter *reporting.Reporter) error {
 	response, err := c.getUserInfo()
 	if err != nil {
 		return fmt.Errorf("Failed to get username: %v", err)
 	}
 
 	if response.IsAnonymous() {
-		fmt.Fprintf(output, "Welcome to GitLab, Anonymous!\n")
+		fmt.Fprintf(reporter.Out, "Welcome to GitLab, Anonymous!\n")
 	} else {
-		fmt.Fprintf(output, "Welcome to GitLab, @%s!\n", response.Username)
+		fmt.Fprintf(reporter.Out, "Welcome to GitLab, @%s!\n", response.Username)
 	}
 
 	return nil

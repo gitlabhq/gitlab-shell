@@ -45,7 +45,6 @@ func (c *Client) GetByUsername(username string) (*Response, error) {
 }
 
 func (c *Client) parseResponse(resp *http.Response) (*Response, error) {
-	defer resp.Body.Close()
 	parsedResponse := &Response{}
 
 	if err := json.NewDecoder(resp.Body).Decode(parsedResponse); err != nil {
@@ -53,7 +52,6 @@ func (c *Client) parseResponse(resp *http.Response) (*Response, error) {
 	} else {
 		return parsedResponse, nil
 	}
-
 }
 
 func (c *Client) getResponse(params url.Values) (*Response, error) {
@@ -64,7 +62,13 @@ func (c *Client) getResponse(params url.Values) (*Response, error) {
 		return nil, err
 	}
 
-	return c.parseResponse(response)
+	defer response.Body.Close()
+	parsedResponse, err := c.parseResponse(response)
+	if err != nil {
+		return nil, fmt.Errorf("Parsing failed")
+	}
+
+	return parsedResponse, nil
 }
 
 func (r *Response) IsAnonymous() bool {
