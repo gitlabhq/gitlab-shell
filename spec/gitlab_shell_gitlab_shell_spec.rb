@@ -30,12 +30,19 @@ describe 'bin/gitlab-shell' do
 
     @server = HTTPUNIXServer.new(BindAddress: tmp_socket_path)
     @server.mount_proc('/api/v4/internal/discover') do |req, res|
-      if req.query['key_id'] == '100' ||
-         req.query['user_id'] == '10' ||
-         req.query['username'] == 'someuser'
+      identifier = req.query['key_id'] || req.query['username'] || req.query['user_id']
+      known_identifiers = %w(10 someuser 100)
+      if known_identifiers.include?(identifier)
         res.status = 200
         res.content_type = 'application/json'
         res.body = '{"id":1, "name": "Some User", "username": "someuser"}'
+      elsif identifier == 'broken_message'
+        res.status = 401
+        res.body = '{"message": "Forbidden!"}'
+      elsif identifier && identifier != 'broken'
+        res.status = 200
+        res.content_type = 'application/json'
+        res.body = 'null'
       else
         res.status = 500
       end
@@ -145,16 +152,26 @@ describe 'bin/gitlab-shell' do
       )
     end
 
-    it_behaves_like 'results with keys' do
-      before do
-        pending
-      end
-    end
+    it_behaves_like 'results with keys'
 
     it 'outputs "Only ssh allowed"' do
       _, stderr, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-someuser"], env: {})
 
       expect(stderr).to eq("Only ssh allowed\n")
+      expect(status).not_to be_success
+    end
+
+    it 'returns an error message when the API call fails with a message' do
+      _, stderr, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-broken_message"])
+
+      expect(stderr).to match(/Failed to get username: Forbidden!/)
+      expect(status).not_to be_success
+    end
+
+    it 'returns an error message when the API call fails without a message' do
+      _, stderr, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-broken"])
+
+      expect(stderr).to match(/Failed to get username: Internal API error \(500\)/)
       expect(status).not_to be_success
     end
   end
