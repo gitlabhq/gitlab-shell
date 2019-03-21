@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/reporting"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/testserver"
 )
@@ -82,7 +82,7 @@ func TestExecute(t *testing.T) {
 			cmd := &Command{Config: testConfig, Args: tc.arguments}
 			buffer := &bytes.Buffer{}
 
-			err := cmd.Execute(&reporting.Reporter{Out: buffer})
+			err := cmd.Execute(&readwriter.ReadWriter{Out: buffer})
 
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedOutput, buffer.String())
@@ -122,7 +122,7 @@ func TestFailingExecute(t *testing.T) {
 			cmd := &Command{Config: testConfig, Args: tc.arguments}
 			buffer := &bytes.Buffer{}
 
-			err := cmd.Execute(&reporting.Reporter{Out: buffer})
+			err := cmd.Execute(&readwriter.ReadWriter{Out: buffer})
 
 			assert.Empty(t, buffer.String())
 			assert.EqualError(t, err, tc.expectedError)

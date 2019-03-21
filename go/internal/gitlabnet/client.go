@@ -17,8 +17,7 @@ const (
 
 type GitlabClient interface {
 	Get(path string) (*http.Response, error)
-	// TODO: implement posts
-	// Post(path string) (http.Response, error)
+	Post(path string, data interface{}) (*http.Response, error)
 }
 
 type ErrorResponse struct {

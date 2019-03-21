@@ -3,33 +3,10 @@ require_relative 'spec_helper'
 require 'open3'
 
 describe 'bin/gitlab-shell' do
-  def original_root_path
-    ROOT_PATH
-  end
+  include_context 'gitlab shell'
 
-  # All this test boilerplate is mostly copy/pasted between
-  # gitlab_shell_gitlab_shell_spec.rb and
-  # gitlab_shell_authorized_keys_check_spec.rb
-  def tmp_root_path
-    @tmp_root_path ||= File.realpath(Dir.mktmpdir)
-  end
-
-  def config_path
-    File.join(tmp_root_path, 'config.yml')
-  end
-
-  def tmp_socket_path
-    # This has to be a relative path shorter than 100 bytes due to
-    # limitations in how Unix sockets work.
-    'tmp/gitlab-shell-socket'
-  end
-
-  before(:all) do
-    FileUtils.mkdir_p(File.dirname(tmp_socket_path))
-    FileUtils.touch(File.join(tmp_root_path, '.gitlab_shell_secret'))
-
-    @server = HTTPUNIXServer.new(BindAddress: tmp_socket_path)
-    @server.mount_proc('/api/v4/internal/discover') do |req, res|
+  def mock_server(server)
+    server.mount_proc('/api/v4/internal/discover') do |req, res|
       identifier = req.query['key_id'] || req.query['username'] || req.query['user_id']
       known_identifiers = %w(10 someuser 100)
       if known_identifiers.include?(identifier)
@@ -47,24 +24,16 @@ describe 'bin/gitlab-shell' do
         res.status = 500
       end
     end
-
-    @webrick_thread = Thread.new { @server.start }
-
-    sleep(0.1) while @webrick_thread.alive? && @server.status != :Running
-    raise "Couldn't start stub GitlabNet server" unless @server.status == :Running
-    system(original_root_path, 'bin/compile')
-    copy_dirs = ['bin', 'lib']
-    FileUtils.rm_rf(copy_dirs.map { |d| File.join(tmp_root_path, d) })
-    FileUtils.cp_r(copy_dirs, tmp_root_path)
   end
 
-  after(:all) do
-    @server.shutdown if @server
-    @webrick_thread.join if @webrick_thread
-    FileUtils.rm_rf(tmp_root_path)
-  end
+  def run!(args, env: {'SSH_CONNECTION' => 'fake'})
+    cmd = [
+      gitlab_shell_path,
+      args
+    ].flatten.compact.join(' ')
 
-  let(:gitlab_shell_path) { File.join(tmp_root_path, 'bin', 'gitlab-shell') }
+    Open3.capture3(env, cmd)
+  end
 
   shared_examples 'results with keys' do
     # Basic valid input
@@ -173,21 +142,6 @@ describe 'bin/gitlab-shell' do
 
       expect(stderr).to match(/Failed to get username: Internal API error \(500\)/)
       expect(status).not_to be_success
-    end
-  end
-
-  def run!(args, env: {'SSH_CONNECTION' => 'fake'})
-    cmd = [
-      gitlab_shell_path,
-      args
-    ].flatten.compact.join(' ')
-
-    Open3.capture3(env, cmd)
-  end
-
-  def write_config(config)
-    File.open(config_path, 'w') do |f|
-      f.write(config.to_yaml)
     end
   end
 end

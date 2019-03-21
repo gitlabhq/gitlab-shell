@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet"
 )
@@ -28,6 +29,18 @@ func NewClient(config *config.Config) (*Client, error) {
 	}
 
 	return &Client{config: config, client: client}, nil
+}
+
+func (c *Client) GetByCommandArgs(args *commandargs.CommandArgs) (*Response, error) {
+	if args.GitlabKeyId != "" {
+		return c.GetByKeyId(args.GitlabKeyId)
+	} else if args.GitlabUsername != "" {
+		return c.GetByUsername(args.GitlabUsername)
+	} else {
+		// There was no 'who' information, this  matches the ruby error
+		// message.
+		return nil, fmt.Errorf("who='' is invalid")
+	}
 }
 
 func (c *Client) GetByKeyId(keyId string) (*Response, error) {
