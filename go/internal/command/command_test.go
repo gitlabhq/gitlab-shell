@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/twofactorrecover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/testhelper"
 )
@@ -43,6 +44,19 @@ func TestNew(t *testing.T) {
 				"SSH_ORIGINAL_COMMAND": "",
 			},
 			expectedType: &fallback.Command{},
+		},
+		{
+			desc:      "it returns a TwoFactorRecover command if the feature is enabled",
+			arguments: []string{},
+			config: &config.Config{
+				GitlabUrl: "http+unix://gitlab.socket",
+				Migration: config.MigrationConfig{Enabled: true, Features: []string{"2fa_recovery_codes"}},
+			},
+			environment: map[string]string{
+				"SSH_CONNECTION":       "1",
+				"SSH_ORIGINAL_COMMAND": "2fa_recovery_codes",
+			},
+			expectedType: &twofactorrecover.Command{},
 		},
 	}
 
