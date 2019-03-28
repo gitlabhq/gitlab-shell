@@ -64,7 +64,7 @@ describe GitlabPostReceive do
       context 'when contains long url string at end' do
         let(:broadcast_message) { "test " * 10 + "message " * 10 + "https://localhost:5000/test/a/really/long/url/that/is/in/the/broadcast/message/do-not-truncate-when-url" }
 
-        it 'doesnt truncate url' do          
+        it 'doesnt truncate url' do
           expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
           assert_broadcast_message_printed_keep_long_url_end(gitlab_post_receive)
           assert_new_mr_printed(gitlab_post_receive)
@@ -76,7 +76,7 @@ describe GitlabPostReceive do
       context 'when contains long url string at start' do
         let(:broadcast_message) { "https://localhost:5000/test/a/really/long/url/that/is/in/the/broadcast/message/do-not-truncate-when-url " + "test " * 10 + "message " * 11}
 
-        it 'doesnt truncate url' do          
+        it 'doesnt truncate url' do
           expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
           assert_broadcast_message_printed_keep_long_url_start(gitlab_post_receive)
           assert_new_mr_printed(gitlab_post_receive)
@@ -88,7 +88,7 @@ describe GitlabPostReceive do
       context 'when contains long url string in middle' do
         let(:broadcast_message) { "test " * 11 + "https://localhost:5000/test/a/really/long/url/that/is/in/the/broadcast/message/do-not-truncate-when-url " + "message " * 11}
 
-        it 'doesnt truncate url' do          
+        it 'doesnt truncate url' do
           expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
           assert_broadcast_message_printed_keep_long_url_middle(gitlab_post_receive)
           assert_new_mr_printed(gitlab_post_receive)
@@ -98,7 +98,7 @@ describe GitlabPostReceive do
       end
     end
 
-    context 'when warnings available' do
+    context 'when warnings are present' do
       let(:response) do
         {
           'reference_counter_decreased' => true,
@@ -106,7 +106,7 @@ describe GitlabPostReceive do
         }
       end
 
-      it 'prints warnings the same ways as broadcast messages' do
+      it 'treats the warning as a broadcast message' do
         expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
         expect(gitlab_post_receive).to receive(:print_broadcast_message).with("WARNINGS:\nMy warning message")
         expect(gitlab_post_receive.exec).to eq(true)
@@ -213,7 +213,7 @@ describe GitlabPostReceive do
     expect(gitlab_post_receive).to receive(:puts).with(
       "    message message message message message message message message"
     ).ordered
-    
+
     expect(gitlab_post_receive).to receive(:puts).with(
       "https://localhost:5000/test/a/really/long/url/that/is/in/the/broadcast/message/do-not-truncate-when-url"
     ).ordered
@@ -230,7 +230,7 @@ describe GitlabPostReceive do
       "========================================================================"
     ).ordered
     expect(gitlab_post_receive).to receive(:puts).ordered
-    
+
     expect(gitlab_post_receive).to receive(:puts).with(
       "https://localhost:5000/test/a/really/long/url/that/is/in/the/broadcast/message/do-not-truncate-when-url"
     ).ordered
@@ -259,7 +259,7 @@ describe GitlabPostReceive do
       "========================================================================"
     ).ordered
     expect(gitlab_post_receive).to receive(:puts).ordered
-    
+
     expect(gitlab_post_receive).to receive(:puts).with(
       "         test test test test test test test test test test test"
     ).ordered
