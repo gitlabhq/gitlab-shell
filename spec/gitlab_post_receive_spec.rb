@@ -96,7 +96,21 @@ describe GitlabPostReceive do
           expect(gitlab_post_receive.exec).to eq(true)
         end
       end
+    end
 
+    context 'when warnings available' do
+      let(:response) do
+        {
+          'reference_counter_decreased' => true,
+          'warnings' => 'My warning message'
+        }
+      end
+
+      it 'prints warnings the same ways as broadcast messages' do
+        expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
+        expect(gitlab_post_receive).to receive(:print_broadcast_message).with("WARNINGS:\nMy warning message")
+        expect(gitlab_post_receive.exec).to eq(true)
+      end
     end
 
     context 'when redirected message available' do

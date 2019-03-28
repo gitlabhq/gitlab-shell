@@ -28,6 +28,7 @@ class GitlabPostReceive
     print_merge_request_links(response['merge_request_urls']) if response['merge_request_urls']
     puts response['redirected_message'] if response['redirected_message']
     puts response['project_created_message'] if response['project_created_message']
+    print_warnings(response['warnings']) if response['warnings']
 
     response['reference_counter_decreased']
   rescue GitlabNet::ApiUnreachableError
@@ -57,6 +58,11 @@ class GitlabPostReceive
     puts message
     puts((" " * 2) + merge_request["url"])
     puts
+  end
+
+  def print_warnings(warnings)
+    message = "WARNINGS:\n#{warnings}"
+    print_broadcast_message(message)
   end
 
   def print_broadcast_message(message)
