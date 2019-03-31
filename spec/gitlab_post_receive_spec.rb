@@ -108,7 +108,7 @@ describe GitlabPostReceive do
 
       it 'treats the warning as a broadcast message' do
         expect_any_instance_of(GitlabNet).to receive(:post_receive).and_return(response)
-        expect(gitlab_post_receive).to receive(:print_broadcast_message).with("WARNINGS:\nMy warning message")
+        expect(gitlab_post_receive).to receive(:print_formatted_alert_message).with("WARNINGS:\nMy warning message")
         expect(gitlab_post_receive.exec).to eq(true)
       end
     end
