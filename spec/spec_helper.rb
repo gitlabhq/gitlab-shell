@@ -1,3 +1,4 @@
+require 'pry'
 require 'rspec-parameterized'
 require 'simplecov'
 SimpleCov.start
