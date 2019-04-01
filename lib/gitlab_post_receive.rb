@@ -24,10 +24,11 @@ class GitlabPostReceive
     end
 
     return false unless response
-    print_broadcast_message(response['broadcast_message']) if response['broadcast_message']
+    print_formatted_alert_message(response['broadcast_message']) if response['broadcast_message']
     print_merge_request_links(response['merge_request_urls']) if response['merge_request_urls']
     puts response['redirected_message'] if response['redirected_message']
     puts response['project_created_message'] if response['project_created_message']
+    print_warnings(response['warnings']) if response['warnings']
 
     response['reference_counter_decreased']
   rescue GitlabNet::ApiUnreachableError
@@ -59,7 +60,12 @@ class GitlabPostReceive
     puts
   end
 
-  def print_broadcast_message(message)
+  def print_warnings(warnings)
+    message = "WARNINGS:\n#{warnings}"
+    print_formatted_alert_message(message)
+  end
+
+  def print_formatted_alert_message(message)
     # A standard terminal window is (at least) 80 characters wide.
     total_width = 80
 
