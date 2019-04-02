@@ -33,7 +33,8 @@ describe GitlabShell do
       gl_username: gl_username,
       git_config_options: git_config_options,
       gitaly: { 'repository' => { 'relative_path' => repo_name, 'storage_name' => 'default'} , 'address' => 'unix:gitaly.socket' },
-      git_protocol: git_protocol
+      git_protocol: git_protocol,
+      gl_console_messages:  gl_console_messages
     )
   end
 
@@ -69,6 +70,7 @@ describe GitlabShell do
   let(:gl_username) { 'testuser' }
   let(:git_config_options) { ['receive.MaxInputSize=10000'] }
   let(:git_protocol) { 'version=2' }
+  let(:gl_console_messages) { nil }
 
   before do
     allow_any_instance_of(GitlabConfig).to receive(:audit_usernames).and_return(false)
@@ -436,6 +438,19 @@ describe GitlabShell do
               .with(/Could not find the given key/)
           end
         end
+      end
+    end
+
+    context 'with a console message' do
+      let(:ssh_cmd) { "git-receive-pack gitlab-ci.git" }
+      let(:gl_console_messages) { 'Very important message' }
+
+      before do
+        allow(api).to receive(:check_access).and_return(gitaly_check_access)
+      end
+
+      it 'displays the message on $stderr' do
+        expect { subject.exec(ssh_cmd) }.to output("> GitLab: #{gl_console_messages}\n").to_stderr
       end
     end
   end

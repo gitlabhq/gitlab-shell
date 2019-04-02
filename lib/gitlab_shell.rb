@@ -66,6 +66,8 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       @username = access_status.gl_username
       @git_config_options = access_status.git_config_options
       @gl_id = access_status.gl_id if defined?(@who)
+
+      write_stderr(access_status.gl_console_messages)
     elsif !defined?(@gl_id)
       # We're processing an API command like 2fa_recovery_codes, but
       # don't have a @gl_id yet, that means we're in the "username"
