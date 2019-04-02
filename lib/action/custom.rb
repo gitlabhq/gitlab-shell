@@ -1,10 +1,12 @@
 require 'base64'
 
 require_relative '../http_helper'
+require_relative '../console_helper'
 
 module Action
   class Custom
     include HTTPHelper
+    include ConsoleHelper
 
     class BaseError < StandardError; end
     class MissingPayloadError < BaseError; end
@@ -105,7 +107,7 @@ module Action
     end
 
     def format_gitlab_output(str)
-      str.split("\n").map { |line| "> GitLab: #{line}" }.join("\n")
+      format_for_stderr(str.split("\n")).join("\n")
     end
 
     def validate!

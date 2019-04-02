@@ -6,8 +6,11 @@ require 'pathname'
 require_relative 'gitlab_net'
 require_relative 'gitlab_metrics'
 require_relative 'action'
+require_relative 'console_helper'
 
 class GitlabShell # rubocop:disable Metrics/ClassLength
+  include ConsoleHelper
+
   class AccessDeniedError < StandardError; end
   class DisallowedCommandError < StandardError; end
   class InvalidRepositoryPathError < StandardError; end
@@ -82,18 +85,18 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
     true
   rescue GitlabNet::ApiUnreachableError
-    $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
+    write_stderr('Failed to authorize your Git request: internal API unreachable')
     false
   rescue AccessDeniedError => ex
     $logger.warn('Access denied', command: origin_cmd, user: log_username)
-    $stderr.puts "GitLab: #{ex.message}"
+    write_stderr(ex.message)
     false
   rescue DisallowedCommandError
     $logger.warn('Denied disallowed command', command: origin_cmd, user: log_username)
-    $stderr.puts "GitLab: Disallowed command"
+    write_stderr('Disallowed command')
     false
   rescue InvalidRepositoryPathError
-    $stderr.puts "GitLab: Invalid repository path"
+    write_stderr('Invalid repository path')
     false
   rescue Action::Custom::BaseError => ex
     $logger.warn('Custom action error', exception: ex.class, message: ex.message,
