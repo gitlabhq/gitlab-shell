@@ -1,18 +1,4 @@
-#!/usr/bin/env ruby
+#!/bin/sh
+echo "The gitlab-shell hooks have been migrated to Gitaly, see https://gitlab.com/gitlab-org/gitaly/issues/1226"
+exit 1
 
-# This file was placed here by GitLab. It makes sure that your pushed commits
-# will be processed properly.
-
-ref_name  = ARGV[0]
-old_value = ARGV[1]
-new_value = ARGV[2]
-repo_path = Dir.pwd
-key_id    = ENV.delete('GL_ID')
-
-require_relative '../lib/gitlab_custom_hook'
-
-if GitlabCustomHook.new(repo_path, key_id).update(ref_name, old_value, new_value)
-  exit 0
-else
-  exit 1
-end

@@ -3,7 +3,6 @@ require 'openssl'
 require 'json'
 
 require_relative 'gitlab_config'
-require_relative 'gitlab_access'
 require_relative 'gitlab_lfs_authentication'
 require_relative 'http_helper'
 

@@ -20,7 +20,7 @@ An overview of the four cases described above:
 
 ## Git hooks
 
-For historical reasons the gitlab-shell repository also contains the
+The gitlab-shell repository used to also contain the
 Git hooks that allow GitLab to validate Git pushes (e.g. "is this user
 allowed to push to this protected branch"). These hooks also trigger
 events in GitLab (e.g. to start a CI pipeline after a push). 
@@ -30,16 +30,12 @@ require direct disk access to Git repositories, and that is only
 possible on Gitaly servers. It makes no sense to have to install
 gitlab-shell on Gitaly servers.
 
-As of GitLab 11.9 [the actual Git hooks are in the Gitaly
+As of GitLab 11.10  [the actual Git hooks are in the Gitaly
 repository](https://gitlab.com/gitlab-org/gitaly/tree/v1.22.0/ruby/vendor/gitlab-shell/hooks),
 but gitlab-shell must still be installed on Gitaly servers because the
 hooks rely on configuration data (e.g. the GitLab internal API URL) that
 is not yet available in Gitaly itself. Also see the [transition
 plan](https://gitlab.com/gitlab-org/gitaly/issues/1226#note_126519133).
-
-This means that for GitLab 11.9 and up, it is pointless to make changes
-to Git hook code in the gitlab-shell repository, because the code that
-gets run is in the Gitaly repository instead.
 
 ## Code status
 
