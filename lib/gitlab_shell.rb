@@ -6,8 +6,11 @@ require 'pathname'
 require_relative 'gitlab_net'
 require_relative 'gitlab_metrics'
 require_relative 'action'
+require_relative 'console_helper'
 
 class GitlabShell # rubocop:disable Metrics/ClassLength
+  include ConsoleHelper
+
   class AccessDeniedError < StandardError; end
   class DisallowedCommandError < StandardError; end
   class InvalidRepositoryPathError < StandardError; end
@@ -63,6 +66,8 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
       @username = access_status.gl_username
       @git_config_options = access_status.git_config_options
       @gl_id = access_status.gl_id if defined?(@who)
+
+      write_stderr(access_status.gl_console_messages)
     elsif !defined?(@gl_id)
       # We're processing an API command like 2fa_recovery_codes, but
       # don't have a @gl_id yet, that means we're in the "username"
@@ -82,18 +87,18 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
 
     true
   rescue GitlabNet::ApiUnreachableError
-    $stderr.puts "GitLab: Failed to authorize your Git request: internal API unreachable"
+    write_stderr('Failed to authorize your Git request: internal API unreachable')
     false
   rescue AccessDeniedError => ex
     $logger.warn('Access denied', command: origin_cmd, user: log_username)
-    $stderr.puts "GitLab: #{ex.message}"
+    write_stderr(ex.message)
     false
   rescue DisallowedCommandError
     $logger.warn('Denied disallowed command', command: origin_cmd, user: log_username)
-    $stderr.puts "GitLab: Disallowed command"
+    write_stderr('Disallowed command')
     false
   rescue InvalidRepositoryPathError
-    $stderr.puts "GitLab: Invalid repository path"
+    write_stderr('Invalid repository path')
     false
   rescue Action::Custom::BaseError => ex
     $logger.warn('Custom action error', exception: ex.class, message: ex.message,
