@@ -1,3 +1,10 @@
+v9.0.0
+  - Add a Go implementation of the "discover" command !283
+  - Add a Go implementation of the 2fa_recovery_codes" command !285
+  - Display console messages, if available !287
+  - Allow the post-receive hook to print warnings !288
+  - Remove hooks, they belong to Gitaly now !291
+
 v8.7.1
   - Fix unmarshalling JSON from the command line !280
 
