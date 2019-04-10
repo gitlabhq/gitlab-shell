@@ -26,8 +26,9 @@ func findRootDir() (string, error) {
 
 // rubyExec will never return. It either replaces the current process with a
 // Ruby interpreter, or outputs an error and kills the process.
-func execRuby(readWriter *readwriter.ReadWriter) {
-	cmd := &fallback.Command{}
+func execRuby(rootDir string, readWriter *readwriter.ReadWriter) {
+	cmd := &fallback.Command{RootDir: rootDir, Args: os.Args}
+
 	if err := cmd.Execute(readWriter); err != nil {
 		fmt.Fprintf(readWriter.ErrOut, "Failed to exec: %v\n", err)
 		os.Exit(1)
@@ -43,8 +44,8 @@ func main() {
 
 	rootDir, err := findRootDir()
 	if err != nil {
-		fmt.Fprintln(readWriter.ErrOut, "Failed to determine root directory, falling back to gitlab-shell-ruby")
-		execRuby(readWriter)
+		fmt.Fprintln(readWriter.ErrOut, "Failed to determine root directory, exiting")
+		os.Exit(1)
 	}
 
 	// Fall back to Ruby in case of problems reading the config, but issue a
@@ -52,7 +53,7 @@ func main() {
 	config, err := config.NewFromDir(rootDir)
 	if err != nil {
 		fmt.Fprintln(readWriter.ErrOut, "Failed to read config, falling back to gitlab-shell-ruby")
-		execRuby(readWriter)
+		execRuby(rootDir, readWriter)
 	}
 
 	cmd, err := command.New(os.Args, config)

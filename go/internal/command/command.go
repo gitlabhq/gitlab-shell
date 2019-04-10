@@ -24,7 +24,7 @@ func New(arguments []string, config *config.Config) (Command, error) {
 		return buildCommand(args, config), nil
 	}
 
-	return &fallback.Command{}, nil
+	return &fallback.Command{RootDir: config.RootDir, Args: arguments}, nil
 }
 
 func buildCommand(args *commandargs.CommandArgs, config *config.Config) Command {
