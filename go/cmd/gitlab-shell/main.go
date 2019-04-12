@@ -11,22 +11,24 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 )
 
-var (
-	binDir     string
-	rootDir    string
-	readWriter *readwriter.ReadWriter
-)
+// findRootDir determines the root directory (and so, the location of the config
+// file) from os.Executable()
+func findRootDir() (string, error) {
+	path, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
 
-func init() {
-	binDir = filepath.Dir(os.Args[0])
-	rootDir = filepath.Dir(binDir)
-	readWriter = &readwriter.ReadWriter{Out: os.Stdout, In: os.Stdin, ErrOut: os.Stderr}
+	// Start: /opt/.../gitlab-shell/bin/gitlab-shell
+	// Ends:  /opt/.../gitlab-shell
+	return filepath.Dir(filepath.Dir(path)), nil
 }
 
 // rubyExec will never return. It either replaces the current process with a
 // Ruby interpreter, or outputs an error and kills the process.
-func execRuby() {
-	cmd := &fallback.Command{}
+func execRuby(rootDir string, readWriter *readwriter.ReadWriter) {
+	cmd := &fallback.Command{RootDir: rootDir, Args: os.Args}
+
 	if err := cmd.Execute(readWriter); err != nil {
 		fmt.Fprintf(readWriter.ErrOut, "Failed to exec: %v\n", err)
 		os.Exit(1)
@@ -34,12 +36,24 @@ func execRuby() {
 }
 
 func main() {
+	readWriter := &readwriter.ReadWriter{
+		Out:    os.Stdout,
+		In:     os.Stdin,
+		ErrOut: os.Stderr,
+	}
+
+	rootDir, err := findRootDir()
+	if err != nil {
+		fmt.Fprintln(readWriter.ErrOut, "Failed to determine root directory, exiting")
+		os.Exit(1)
+	}
+
 	// Fall back to Ruby in case of problems reading the config, but issue a
 	// warning as this isn't something we can sustain indefinitely
 	config, err := config.NewFromDir(rootDir)
 	if err != nil {
 		fmt.Fprintln(readWriter.ErrOut, "Failed to read config, falling back to gitlab-shell-ruby")
-		execRuby()
+		execRuby(rootDir, readWriter)
 	}
 
 	cmd, err := command.New(os.Args, config)
