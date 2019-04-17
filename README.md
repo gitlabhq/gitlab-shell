@@ -98,6 +98,43 @@ Remove all keys from authorized_keys file:
 
 Starting with GitLab 8.12, GitLab supports Git LFS authentication through ssh.
 
+## Migration to Go feature flags
+
+We are starting to migrate some features from Ruby to Go. To be able to do this
+incrementally, we hide the Go implementation behind a feature flag.
+
+To enable a feature, modify `migration` option in `config.yml` and ensure `enabled`
+is set to `true` and feature to be enabled is added to `features`.
+
+It should look something like this:
+
+```yaml
+migration:
+  enabled: true
+  features: ['discover']
+```
+
+Here are the following features that can be enabled:
+
+- `discover`
+- `2fa_recovery_codes`
+
+### Configuring using Omnibus
+
+If you're using Omnibus, these features can be enabled by adding something like this to `gitlab.rb`:
+
+```ruby
+gitlab_shell['migration'] = { enabled: true, features: ['discover', '2fa_recovery_codes'] }
+```
+
+This is equivalent to having this in `config.yml`:
+
+```yaml
+migration:
+  enabled: true
+  features: ['discover', '2fa_recovery_codes']
+```
+
 ## Releasing a new version
 
 GitLab Shell is versioned by git tags, and the version used by the Rails
