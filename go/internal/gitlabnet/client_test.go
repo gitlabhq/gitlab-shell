@@ -61,37 +61,44 @@ func TestClients(t *testing.T) {
 			},
 		},
 	}
-	testConfig := &config.Config{GitlabUrl: "http+unix://" + testserver.TestSocket, Secret: "sssh, it's a secret"}
 
 	testCases := []struct {
 		desc   string
-		client GitlabClient
-		server func([]testserver.TestRequestHandler) (func(), error)
+		secret string
+		server func([]testserver.TestRequestHandler) (func(), string, error)
 	}{
 		{
 			desc:   "Socket client",
-			client: buildSocketClient(testConfig),
+			secret: "sssh, it's a secret",
 			server: testserver.StartSocketHttpServer,
+		},
+		{
+			desc:   "Http client",
+			secret: "sssh, it's a secret",
+			server: testserver.StartHttpServer,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			cleanup, err := tc.server(requests)
+			cleanup, url, err := tc.server(requests)
 			defer cleanup()
 			require.NoError(t, err)
 
-			testBrokenRequest(t, tc.client)
-			testSuccessfulGet(t, tc.client)
-			testSuccessfulPost(t, tc.client)
-			testMissing(t, tc.client)
-			testErrorMessage(t, tc.client)
-			testAuthenticationHeader(t, tc.client)
+			client, err := GetClient(&config.Config{GitlabUrl: url, Secret: tc.secret})
+			require.NoError(t, err)
+
+			testBrokenRequest(t, client)
+			testSuccessfulGet(t, client)
+			testSuccessfulPost(t, client)
+			testMissing(t, client)
+			testErrorMessage(t, client)
+			testAuthenticationHeader(t, client)
 		})
 	}
 }
 
-func testSuccessfulGet(t *testing.T, client GitlabClient) {
+func testSuccessfulGet(t *testing.T, client *GitlabClient) {
 	t.Run("Successful get", func(t *testing.T) {
 		response, err := client.Get("/hello")
 		defer response.Body.Close()
@@ -105,7 +112,7 @@ func testSuccessfulGet(t *testing.T, client GitlabClient) {
 	})
 }
 
-func testSuccessfulPost(t *testing.T, client GitlabClient) {
+func testSuccessfulPost(t *testing.T, client *GitlabClient) {
 	t.Run("Successful Post", func(t *testing.T) {
 		data := map[string]string{"key": "value"}
 
@@ -121,7 +128,7 @@ func testSuccessfulPost(t *testing.T, client GitlabClient) {
 	})
 }
 
-func testMissing(t *testing.T, client GitlabClient) {
+func testMissing(t *testing.T, client *GitlabClient) {
 	t.Run("Missing error for GET", func(t *testing.T) {
 		response, err := client.Get("/missing")
 		assert.EqualError(t, err, "Internal API error (404)")
@@ -135,7 +142,7 @@ func testMissing(t *testing.T, client GitlabClient) {
 	})
 }
 
-func testErrorMessage(t *testing.T, client GitlabClient) {
+func testErrorMessage(t *testing.T, client *GitlabClient) {
 	t.Run("Error with message for GET", func(t *testing.T) {
 		response, err := client.Get("/error")
 		assert.EqualError(t, err, "Don't do that")
@@ -149,7 +156,7 @@ func testErrorMessage(t *testing.T, client GitlabClient) {
 	})
 }
 
-func testBrokenRequest(t *testing.T, client GitlabClient) {
+func testBrokenRequest(t *testing.T, client *GitlabClient) {
 	t.Run("Broken request for GET", func(t *testing.T) {
 		response, err := client.Get("/broken")
 		assert.EqualError(t, err, "Internal API unreachable")
@@ -163,7 +170,7 @@ func testBrokenRequest(t *testing.T, client GitlabClient) {
 	})
 }
 
-func testAuthenticationHeader(t *testing.T, client GitlabClient) {
+func testAuthenticationHeader(t *testing.T, client *GitlabClient) {
 	t.Run("Authentication headers for GET", func(t *testing.T) {
 		response, err := client.Get("/auth")
 		defer response.Body.Close()

@@ -24,12 +24,13 @@ func TestParseConfig(t *testing.T) {
 	defer cleanup()
 
 	testCases := []struct {
-		yaml      string
-		path      string
-		format    string
-		gitlabUrl string
-		migration MigrationConfig
-		secret    string
+		yaml         string
+		path         string
+		format       string
+		gitlabUrl    string
+		migration    MigrationConfig
+		secret       string
+		httpSettings HttpSettingsConfig
 	}{
 		{
 			path:   path.Join(testRoot, "gitlab-shell.log"),
@@ -86,6 +87,13 @@ func TestParseConfig(t *testing.T) {
 			format: "text",
 			secret: "an inline secret",
 		},
+		{
+			yaml:         "http_settings:\n  user: user_basic_auth\n  password: password_basic_auth\n  read_timeout: 500",
+			path:         path.Join(testRoot, "gitlab-shell.log"),
+			format:       "text",
+			secret:       "default-secret-content",
+			httpSettings: HttpSettingsConfig{User: "user_basic_auth", Password: "password_basic_auth", ReadTimeoutSeconds: 500},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -101,6 +109,7 @@ func TestParseConfig(t *testing.T) {
 			assert.Equal(t, tc.format, cfg.LogFormat)
 			assert.Equal(t, tc.gitlabUrl, cfg.GitlabUrl)
 			assert.Equal(t, tc.secret, cfg.Secret)
+			assert.Equal(t, tc.httpSettings, cfg.HttpSettings)
 		})
 	}
 }
@@ -138,6 +147,15 @@ func TestFeatureEnabled(t *testing.T) {
 			},
 			feature:       "discover",
 			expectEnabled: false,
+		},
+		{
+			desc: "When the protocol is http and the feature enabled",
+			config: &Config{
+				GitlabUrl: "http://localhost:3000",
+				Migration: MigrationConfig{Enabled: true, Features: []string{"discover"}},
+			},
+			feature:       "discover",
+			expectEnabled: true,
 		},
 		{
 			desc: "When the protocol is not supported",

@@ -18,12 +18,10 @@ import (
 )
 
 var (
-	testConfig *config.Config
-	requests   []testserver.TestRequestHandler
+	requests []testserver.TestRequestHandler
 )
 
 func setup(t *testing.T) {
-	testConfig = &config.Config{GitlabUrl: "http+unix://" + testserver.TestSocket}
 	requests = []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/two_factor_recovery_codes",
@@ -66,7 +64,7 @@ const (
 func TestExecute(t *testing.T) {
 	setup(t)
 
-	cleanup, err := testserver.StartSocketHttpServer(requests)
+	cleanup, url, err := testserver.StartSocketHttpServer(requests)
 	require.NoError(t, err)
 	defer cleanup()
 
@@ -124,7 +122,7 @@ func TestExecute(t *testing.T) {
 			output := &bytes.Buffer{}
 			input := bytes.NewBufferString(tc.answer)
 
-			cmd := &Command{Config: testConfig, Args: tc.arguments}
+			cmd := &Command{Config: &config.Config{GitlabUrl: url}, Args: tc.arguments}
 
 			err := cmd.Execute(&readwriter.ReadWriter{Out: output, In: input})
 
