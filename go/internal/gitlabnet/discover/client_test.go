@@ -15,12 +15,10 @@ import (
 )
 
 var (
-	testConfig *config.Config
-	requests   []testserver.TestRequestHandler
+	requests []testserver.TestRequestHandler
 )
 
 func init() {
-	testConfig = &config.Config{GitlabUrl: "http+unix://" + testserver.TestSocket}
 	requests = []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/discover",
@@ -121,10 +119,10 @@ func TestErrorResponses(t *testing.T) {
 }
 
 func setup(t *testing.T) (*Client, func()) {
-	cleanup, err := testserver.StartSocketHttpServer(requests)
+	cleanup, url, err := testserver.StartSocketHttpServer(requests)
 	require.NoError(t, err)
 
-	client, err := NewClient(testConfig)
+	client, err := NewClient(&config.Config{GitlabUrl: url})
 	require.NoError(t, err)
 
 	return client, cleanup

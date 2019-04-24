@@ -17,8 +17,7 @@ import (
 )
 
 var (
-	testConfig = &config.Config{GitlabUrl: "http+unix://" + testserver.TestSocket}
-	requests   = []testserver.TestRequestHandler{
+	requests = []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/discover",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +45,7 @@ var (
 )
 
 func TestExecute(t *testing.T) {
-	cleanup, err := testserver.StartSocketHttpServer(requests)
+	cleanup, url, err := testserver.StartSocketHttpServer(requests)
 	require.NoError(t, err)
 	defer cleanup()
 
@@ -79,7 +78,7 @@ func TestExecute(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			cmd := &Command{Config: testConfig, Args: tc.arguments}
+			cmd := &Command{Config: &config.Config{GitlabUrl: url}, Args: tc.arguments}
 			buffer := &bytes.Buffer{}
 
 			err := cmd.Execute(&readwriter.ReadWriter{Out: buffer})
@@ -91,7 +90,7 @@ func TestExecute(t *testing.T) {
 }
 
 func TestFailingExecute(t *testing.T) {
-	cleanup, err := testserver.StartSocketHttpServer(requests)
+	cleanup, url, err := testserver.StartSocketHttpServer(requests)
 	require.NoError(t, err)
 	defer cleanup()
 
@@ -119,7 +118,7 @@ func TestFailingExecute(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			cmd := &Command{Config: testConfig, Args: tc.arguments}
+			cmd := &Command{Config: &config.Config{GitlabUrl: url}, Args: tc.arguments}
 			buffer := &bytes.Buffer{}
 
 			err := cmd.Execute(&readwriter.ReadWriter{Out: buffer})

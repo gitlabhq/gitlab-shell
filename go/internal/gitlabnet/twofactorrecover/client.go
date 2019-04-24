@@ -15,7 +15,7 @@ import (
 
 type Client struct {
 	config *config.Config
-	client gitlabnet.GitlabClient
+	client *gitlabnet.GitlabClient
 }
 
 type Response struct {

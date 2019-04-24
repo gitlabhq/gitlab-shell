@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
 	"path/filepath"
@@ -12,7 +13,7 @@ import (
 
 var (
 	tempDir, _ = ioutil.TempDir("", "gitlab-shell-test-api")
-	TestSocket = path.Join(tempDir, "internal.sock")
+	testSocket = path.Join(tempDir, "internal.sock")
 )
 
 type TestRequestHandler struct {
@@ -20,14 +21,14 @@ type TestRequestHandler struct {
 	Handler func(w http.ResponseWriter, r *http.Request)
 }
 
-func StartSocketHttpServer(handlers []TestRequestHandler) (func(), error) {
-	if err := os.MkdirAll(filepath.Dir(TestSocket), 0700); err != nil {
-		return nil, err
+func StartSocketHttpServer(handlers []TestRequestHandler) (func(), string, error) {
+	if err := os.MkdirAll(filepath.Dir(testSocket), 0700); err != nil {
+		return nil, "", err
 	}
 
-	socketListener, err := net.Listen("unix", TestSocket)
+	socketListener, err := net.Listen("unix", testSocket)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	server := http.Server{
@@ -38,7 +39,15 @@ func StartSocketHttpServer(handlers []TestRequestHandler) (func(), error) {
 	}
 	go server.Serve(socketListener)
 
-	return cleanupSocket, nil
+	url := "http+unix://" + testSocket
+
+	return cleanupSocket, url, nil
+}
+
+func StartHttpServer(handlers []TestRequestHandler) (func(), string, error) {
+	server := httptest.NewServer(buildHandler(handlers))
+
+	return server.Close, server.URL, nil
 }
 
 func cleanupSocket() {
