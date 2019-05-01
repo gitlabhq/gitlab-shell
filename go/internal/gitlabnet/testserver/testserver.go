@@ -1,6 +1,7 @@
 package testserver
 
 import (
+	"crypto/tls"
 	"io/ioutil"
 	"log"
 	"net"
@@ -9,6 +10,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/testhelper"
 )
 
 var (
@@ -46,6 +49,23 @@ func StartSocketHttpServer(handlers []TestRequestHandler) (func(), string, error
 
 func StartHttpServer(handlers []TestRequestHandler) (func(), string, error) {
 	server := httptest.NewServer(buildHandler(handlers))
+
+	return server.Close, server.URL, nil
+}
+
+func StartHttpsServer(handlers []TestRequestHandler) (func(), string, error) {
+	crt := path.Join(testhelper.TestRoot, "certs/valid/server.crt")
+	key := path.Join(testhelper.TestRoot, "certs/valid/server.key")
+
+	server := httptest.NewUnstartedServer(buildHandler(handlers))
+	cer, err := tls.LoadX509KeyPair(crt, key)
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	server.TLS = &tls.Config{Certificates: []tls.Certificate{cer}}
+	server.StartTLS()
 
 	return server.Close, server.URL, nil
 }

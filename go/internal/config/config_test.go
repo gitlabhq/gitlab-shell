@@ -94,6 +94,13 @@ func TestParseConfig(t *testing.T) {
 			secret:       "default-secret-content",
 			httpSettings: HttpSettingsConfig{User: "user_basic_auth", Password: "password_basic_auth", ReadTimeoutSeconds: 500},
 		},
+		{
+			yaml:         "http_settings:\n  ca_file: /etc/ssl/cert.pem\n  ca_path: /etc/pki/tls/certs\n  self_signed_cert: true",
+			path:         path.Join(testRoot, "gitlab-shell.log"),
+			format:       "text",
+			secret:       "default-secret-content",
+			httpSettings: HttpSettingsConfig{CaFile: "/etc/ssl/cert.pem", CaPath: "/etc/pki/tls/certs", SelfSignedCert: true},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -158,13 +165,13 @@ func TestFeatureEnabled(t *testing.T) {
 			expectEnabled: true,
 		},
 		{
-			desc: "When the protocol is not supported",
+			desc: "When the protocol is https and the feature enabled",
 			config: &Config{
 				GitlabUrl: "https://localhost:3000",
 				Migration: MigrationConfig{Enabled: true, Features: []string{"discover"}},
 			},
 			feature:       "discover",
-			expectEnabled: false,
+			expectEnabled: true,
 		},
 	}
 

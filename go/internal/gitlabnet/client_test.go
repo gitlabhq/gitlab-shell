@@ -6,15 +6,21 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/testhelper"
 )
 
 func TestClients(t *testing.T) {
+	testDirCleanup, err := testhelper.PrepareTestRootDir()
+	require.NoError(t, err)
+	defer testDirCleanup()
+
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/hello",
@@ -64,18 +70,25 @@ func TestClients(t *testing.T) {
 
 	testCases := []struct {
 		desc   string
-		secret string
+		config *config.Config
 		server func([]testserver.TestRequestHandler) (func(), string, error)
 	}{
 		{
 			desc:   "Socket client",
-			secret: "sssh, it's a secret",
+			config: &config.Config{},
 			server: testserver.StartSocketHttpServer,
 		},
 		{
 			desc:   "Http client",
-			secret: "sssh, it's a secret",
+			config: &config.Config{},
 			server: testserver.StartHttpServer,
+		},
+		{
+			desc: "Https client",
+			config: &config.Config{
+				HttpSettings: config.HttpSettingsConfig{CaFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt")},
+			},
+			server: testserver.StartHttpsServer,
 		},
 	}
 
@@ -85,7 +98,10 @@ func TestClients(t *testing.T) {
 			defer cleanup()
 			require.NoError(t, err)
 
-			client, err := GetClient(&config.Config{GitlabUrl: url, Secret: tc.secret})
+			tc.config.GitlabUrl = url
+			tc.config.Secret = "sssh, it's a secret"
+
+			client, err := GetClient(tc.config)
 			require.NoError(t, err)
 
 			testBrokenRequest(t, client)
