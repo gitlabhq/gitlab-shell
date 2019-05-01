@@ -99,7 +99,7 @@ class GitlabKeys # rubocop:disable Metrics/ClassLength
       matches = /^command=\".+?\s+(.+?)\".+?(?:ssh|ecdsa)-.*?\s(.+)\s*.*\n*$/.match(line)
       keys << "#{matches[1]} #{matches[2]}\n" unless matches.nil?
     end
-    keys
+    puts keys
   end
 
   def list_key_ids
