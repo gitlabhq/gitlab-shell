@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -26,6 +25,9 @@ type HttpSettingsConfig struct {
 	User               string `yaml:"user"`
 	Password           string `yaml:"password"`
 	ReadTimeoutSeconds uint64 `yaml:"read_timeout"`
+	CaFile             string `yaml:"ca_file"`
+	CaPath             string `yaml:"ca_path"`
+	SelfSignedCert     bool   `yaml:"self_signed_cert"`
 }
 
 type Config struct {
@@ -56,10 +58,6 @@ func NewFromDir(dir string) (*Config, error) {
 
 func (c *Config) FeatureEnabled(featureName string) bool {
 	if !c.Migration.Enabled {
-		return false
-	}
-
-	if !strings.HasPrefix(c.GitlabUrl, "http+unix://") && !strings.HasPrefix(c.GitlabUrl, "http://") {
 		return false
 	}
 
