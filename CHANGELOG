@@ -1,3 +1,9 @@
+v9.1.0
+  - Correctly determine the root directory for gitlab-shell !294
+  - Support calling internal api using HTTP !295
+  - Print keys in list-keys command !198
+  - Support calling internal API using HTTPS !297
+
 v9.0.0
   - Add a Go implementation of the "discover" command !283
   - Add a Go implementation of the 2fa_recovery_codes" command !285
