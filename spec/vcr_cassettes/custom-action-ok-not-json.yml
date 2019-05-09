@@ -46,6 +46,6 @@ http_interactions:
       - '1.436040'
     body:
       encoding: UTF-8
-      string: '""'
+      string: '{'
     http_version:
   recorded_at: Fri, 20 Jul 2018 06:18:58 GMT

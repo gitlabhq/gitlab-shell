@@ -33,6 +33,17 @@ rubocop:
   except:
     - tags
 
+#ruby 2.6
+rspec:ruby2.6:
+  image: ruby:2.6
+  variables:
+    INSTALL_BUNDLER_VERSION: ~> 1.17.3
+  <<: *rspec_definition
+  tags:
+    - ruby
+  except:
+    - tags
+
 #ruby 2.2
 rspec:ruby2.2:
   image: ruby:2.2

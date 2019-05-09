@@ -1,5 +1,6 @@
 # Exclude some of GitLab files
 AllCops:
+  TargetRubyVersion: 2.3
   Exclude:
     - 'spec/**/*'
     - 'vendor/**/*'
