@@ -1,6 +1,9 @@
 package command
 
 import (
+	"fmt"
+	"os"
+
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
@@ -14,6 +17,8 @@ type Command interface {
 }
 
 func New(arguments []string, config *config.Config) (Command, error) {
+	fmt.Printf("------%v---------", os.Environ())
+
 	args, err := commandargs.Parse(arguments)
 
 	if err != nil {

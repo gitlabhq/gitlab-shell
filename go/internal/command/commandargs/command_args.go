@@ -2,6 +2,7 @@ package commandargs
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"regexp"
 )
@@ -34,6 +35,9 @@ func Parse(arguments []string) (*CommandArgs, error) {
 
 	info.parseWho(arguments)
 	info.parseCommand(os.Getenv("SSH_ORIGINAL_COMMAND"))
+
+	fmt.Printf("-------------%v\n", os.Getenv("SSH_ORIGINAL_COMMAND"))
+	return nil, errors.New(os.Getenv("SSH_ORIGINAL_COMMAND"))
 
 	return info, nil
 }

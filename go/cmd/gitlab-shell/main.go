@@ -42,6 +42,8 @@ func main() {
 		ErrOut: os.Stderr,
 	}
 
+	fmt.Print("+++++++++++")
+
 	rootDir, err := findRootDir()
 	if err != nil {
 		fmt.Fprintln(readWriter.ErrOut, "Failed to determine root directory, exiting")

@@ -27,7 +27,7 @@ func (c *Command) Execute(readWriter *readwriter.ReadWriter) error {
 
 func (c *Command) canContinue(readWriter *readwriter.ReadWriter) bool {
 	question :=
-		"Are you sure you want to generate new two-factor recovery codes?\n" +
+		"re you sure you want to generate new two-factor recovery codes?\n" +
 			"Any existing recovery codes you saved will be invalidated. (yes/no)"
 	fmt.Fprintln(readWriter.Out, question)
 
