@@ -78,10 +78,14 @@ func TestExecute(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			cmd := &Command{Config: &config.Config{GitlabUrl: url}, Args: tc.arguments}
 			buffer := &bytes.Buffer{}
+			cmd := &Command{
+				Config:     &config.Config{GitlabUrl: url},
+				Args:       tc.arguments,
+				ReadWriter: &readwriter.ReadWriter{Out: buffer},
+			}
 
-			err := cmd.Execute(&readwriter.ReadWriter{Out: buffer})
+			err := cmd.Execute()
 
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedOutput, buffer.String())
@@ -118,10 +122,14 @@ func TestFailingExecute(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			cmd := &Command{Config: &config.Config{GitlabUrl: url}, Args: tc.arguments}
 			buffer := &bytes.Buffer{}
+			cmd := &Command{
+				Config:     &config.Config{GitlabUrl: url},
+				Args:       tc.arguments,
+				ReadWriter: &readwriter.ReadWriter{Out: buffer},
+			}
 
-			err := cmd.Execute(&readwriter.ReadWriter{Out: buffer})
+			err := cmd.Execute()
 
 			assert.Empty(t, buffer.String())
 			assert.EqualError(t, err, tc.expectedError)

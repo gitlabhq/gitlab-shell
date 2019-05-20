@@ -122,9 +122,13 @@ func TestExecute(t *testing.T) {
 			output := &bytes.Buffer{}
 			input := bytes.NewBufferString(tc.answer)
 
-			cmd := &Command{Config: &config.Config{GitlabUrl: url}, Args: tc.arguments}
+			cmd := &Command{
+				Config:     &config.Config{GitlabUrl: url},
+				Args:       tc.arguments,
+				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
+			}
 
-			err := cmd.Execute(&readwriter.ReadWriter{Out: output, In: input})
+			err := cmd.Execute()
 
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedOutput, output.String())
