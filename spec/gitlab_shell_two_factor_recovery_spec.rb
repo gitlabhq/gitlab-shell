@@ -34,6 +34,8 @@ describe 'bin/gitlab-shell 2fa_recovery_codes' do
   shared_examples 'dialog for regenerating recovery keys' do
     context 'when the user agrees to regenerate keys' do
       def verify_successful_regeneration!(cmd)
+        p "+++++++++++++++++++++++++++#{env}---------------#{cmd}"
+
         Open3.popen2(env, cmd) do |stdin, stdout|
           expect(stdout.gets).to eq("Are you sure you want to generate new two-factor recovery codes?\n")
           expect(stdout.gets).to eq("Any existing recovery codes you saved will be invalidated. (yes/no)\n")
