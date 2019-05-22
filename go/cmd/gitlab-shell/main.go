@@ -29,7 +29,7 @@ func findRootDir() (string, error) {
 func execRuby(rootDir string, readWriter *readwriter.ReadWriter) {
 	cmd := &fallback.Command{RootDir: rootDir, Args: os.Args}
 
-	if err := cmd.Execute(readWriter); err != nil {
+	if err := cmd.Execute(); err != nil {
 		fmt.Fprintf(readWriter.ErrOut, "Failed to exec: %v\n", err)
 		os.Exit(1)
 	}
@@ -56,7 +56,7 @@ func main() {
 		execRuby(rootDir, readWriter)
 	}
 
-	cmd, err := command.New(os.Args, config)
+	cmd, err := command.New(os.Args, config, readWriter)
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment
@@ -66,7 +66,7 @@ func main() {
 
 	// The command will write to STDOUT on execution or replace the current
 	// process in case of the `fallback.Command`
-	if err = cmd.Execute(readWriter); err != nil {
+	if err = cmd.Execute(); err != nil {
 		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
 		os.Exit(1)
 	}

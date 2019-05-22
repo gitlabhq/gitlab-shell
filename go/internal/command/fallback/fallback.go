@@ -4,8 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
-
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
 )
 
 type Command struct {
@@ -22,7 +20,7 @@ const (
 	RubyProgram = "gitlab-shell-ruby"
 )
 
-func (c *Command) Execute(*readwriter.ReadWriter) error {
+func (c *Command) Execute() error {
 	rubyCmd := filepath.Join(c.RootDir, "bin", RubyProgram)
 
 	// Ensure rubyArgs[0] is the full path to gitlab-shell-ruby

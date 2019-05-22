@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"testing"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
@@ -59,7 +60,9 @@ func TestGetByKeyId(t *testing.T) {
 	client, cleanup := setup(t)
 	defer cleanup()
 
-	result, err := client.GetByKeyId("1")
+	params := url.Values{}
+	params.Add("key_id", "1")
+	result, err := client.getResponse(params)
 	assert.NoError(t, err)
 	assert.Equal(t, &Response{UserId: 2, Username: "alex-doe", Name: "Alex Doe"}, result)
 }
@@ -68,7 +71,9 @@ func TestGetByUsername(t *testing.T) {
 	client, cleanup := setup(t)
 	defer cleanup()
 
-	result, err := client.GetByUsername("jane-doe")
+	params := url.Values{}
+	params.Add("username", "jane-doe")
+	result, err := client.getResponse(params)
 	assert.NoError(t, err)
 	assert.Equal(t, &Response{UserId: 1, Username: "jane-doe", Name: "Jane Doe"}, result)
 }
@@ -77,7 +82,9 @@ func TestMissingUser(t *testing.T) {
 	client, cleanup := setup(t)
 	defer cleanup()
 
-	result, err := client.GetByUsername("missing")
+	params := url.Values{}
+	params.Add("username", "missing")
+	result, err := client.getResponse(params)
 	assert.NoError(t, err)
 	assert.True(t, result.IsAnonymous())
 }
@@ -110,7 +117,9 @@ func TestErrorResponses(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			resp, err := client.GetByUsername(tc.fakeUsername)
+			params := url.Values{}
+			params.Add("username", tc.fakeUsername)
+			resp, err := client.getResponse(params)
 
 			assert.EqualError(t, err, tc.expectedError)
 			assert.Nil(t, resp)

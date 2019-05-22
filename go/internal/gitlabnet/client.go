@@ -17,6 +17,10 @@ const (
 	secretHeaderName = "Gitlab-Shared-Secret"
 )
 
+var (
+	ParsingError = fmt.Errorf("Parsing failed")
+)
+
 type ErrorResponse struct {
 	Message string `json:"message"`
 }
@@ -119,4 +123,12 @@ func (c *GitlabClient) doRequest(method, path string, data interface{}) (*http.R
 	}
 
 	return response, nil
+}
+
+func ParseJSON(hr *http.Response, response interface{}) error {
+	if err := json.NewDecoder(hr.Body).Decode(response); err != nil {
+		return ParsingError
+	}
+
+	return nil
 }

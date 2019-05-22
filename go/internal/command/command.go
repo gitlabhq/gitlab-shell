@@ -10,10 +10,10 @@ import (
 )
 
 type Command interface {
-	Execute(*readwriter.ReadWriter) error
+	Execute() error
 }
 
-func New(arguments []string, config *config.Config) (Command, error) {
+func New(arguments []string, config *config.Config, readWriter *readwriter.ReadWriter) (Command, error) {
 	args, err := commandargs.Parse(arguments)
 
 	if err != nil {
@@ -21,18 +21,18 @@ func New(arguments []string, config *config.Config) (Command, error) {
 	}
 
 	if config.FeatureEnabled(string(args.CommandType)) {
-		return buildCommand(args, config), nil
+		return buildCommand(args, config, readWriter), nil
 	}
 
 	return &fallback.Command{RootDir: config.RootDir, Args: arguments}, nil
 }
 
-func buildCommand(args *commandargs.CommandArgs, config *config.Config) Command {
+func buildCommand(args *commandargs.CommandArgs, config *config.Config, readWriter *readwriter.ReadWriter) Command {
 	switch args.CommandType {
 	case commandargs.Discover:
-		return &discover.Command{Config: config, Args: args}
+		return &discover.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.TwoFactorRecover:
-		return &twofactorrecover.Command{Config: config, Args: args}
+		return &twofactorrecover.Command{Config: config, Args: args, ReadWriter: readWriter}
 	}
 
 	return nil

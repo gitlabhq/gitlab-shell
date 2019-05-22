@@ -10,20 +10,21 @@ import (
 )
 
 type Command struct {
-	Config *config.Config
-	Args   *commandargs.CommandArgs
+	Config     *config.Config
+	Args       *commandargs.CommandArgs
+	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(readWriter *readwriter.ReadWriter) error {
+func (c *Command) Execute() error {
 	response, err := c.getUserInfo()
 	if err != nil {
 		return fmt.Errorf("Failed to get username: %v", err)
 	}
 
 	if response.IsAnonymous() {
-		fmt.Fprintf(readWriter.Out, "Welcome to GitLab, Anonymous!\n")
+		fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, Anonymous!\n")
 	} else {
-		fmt.Fprintf(readWriter.Out, "Welcome to GitLab, @%s!\n", response.Username)
+		fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, @%s!\n", response.Username)
 	}
 
 	return nil

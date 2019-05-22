@@ -114,7 +114,7 @@ describe 'bin/gitlab-shell 2fa_recovery_codes' do
     it_behaves_like 'dialog for regenerating recovery keys'
   end
 
-  describe 'with go features' do
+  describe 'with go features', :go do
     before(:context) do
       write_config(
         "gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}",

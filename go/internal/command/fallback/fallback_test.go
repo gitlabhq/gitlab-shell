@@ -49,7 +49,7 @@ func TestExecuteExecsCommandSuccesfully(t *testing.T) {
 	fake.Setup()
 	defer fake.Cleanup()
 
-	require.NoError(t, cmd.Execute(nil))
+	require.NoError(t, cmd.Execute())
 	require.True(t, fake.Called)
 	require.Equal(t, fake.Filename, "/tmp/bin/gitlab-shell-ruby")
 	require.Equal(t, fake.Args, []string{"/tmp/bin/gitlab-shell-ruby", "foo", "bar"})
@@ -64,12 +64,12 @@ func TestExecuteExecsCommandOnError(t *testing.T) {
 	fake.Setup()
 	defer fake.Cleanup()
 
-	require.Error(t, cmd.Execute(nil))
+	require.Error(t, cmd.Execute())
 	require.True(t, fake.Called)
 }
 
 func TestExecuteGivenNonexistentCommand(t *testing.T) {
 	cmd := &Command{RootDir: "/tmp/does/not/exist", Args: fakeArgs}
 
-	require.Error(t, cmd.Execute(nil))
+	require.Error(t, cmd.Execute())
 }

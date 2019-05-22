@@ -65,7 +65,7 @@ func TestNew(t *testing.T) {
 			restoreEnv := testhelper.TempEnv(tc.environment)
 			defer restoreEnv()
 
-			command, err := New(tc.arguments, tc.config)
+			command, err := New(tc.arguments, tc.config, nil)
 
 			assert.NoError(t, err)
 			assert.IsType(t, tc.expectedType, command)
@@ -78,7 +78,7 @@ func TestFailingNew(t *testing.T) {
 		restoreEnv := testhelper.TempEnv(map[string]string{})
 		defer restoreEnv()
 
-		_, err := New([]string{}, &config.Config{})
+		_, err := New([]string{}, &config.Config{}, nil)
 
 		assert.Error(t, err, "Only ssh allowed")
 	})
