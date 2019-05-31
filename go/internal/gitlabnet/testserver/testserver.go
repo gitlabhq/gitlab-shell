@@ -10,6 +10,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/testhelper"
 )
@@ -24,15 +27,12 @@ type TestRequestHandler struct {
 	Handler func(w http.ResponseWriter, r *http.Request)
 }
 
-func StartSocketHttpServer(handlers []TestRequestHandler) (func(), string, error) {
-	if err := os.MkdirAll(filepath.Dir(testSocket), 0700); err != nil {
-		return nil, "", err
-	}
+func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) (string, func()) {
+	err := os.MkdirAll(filepath.Dir(testSocket), 0700)
+	require.NoError(t, err)
 
 	socketListener, err := net.Listen("unix", testSocket)
-	if err != nil {
-		return nil, "", err
-	}
+	require.NoError(t, err)
 
 	server := http.Server{
 		Handler: buildHandler(handlers),
@@ -44,30 +44,27 @@ func StartSocketHttpServer(handlers []TestRequestHandler) (func(), string, error
 
 	url := "http+unix://" + testSocket
 
-	return cleanupSocket, url, nil
+	return url, cleanupSocket
 }
 
-func StartHttpServer(handlers []TestRequestHandler) (func(), string, error) {
+func StartHttpServer(t *testing.T, handlers []TestRequestHandler) (string, func()) {
 	server := httptest.NewServer(buildHandler(handlers))
 
-	return server.Close, server.URL, nil
+	return server.URL, server.Close
 }
 
-func StartHttpsServer(handlers []TestRequestHandler) (func(), string, error) {
+func StartHttpsServer(t *testing.T, handlers []TestRequestHandler) (string, func()) {
 	crt := path.Join(testhelper.TestRoot, "certs/valid/server.crt")
 	key := path.Join(testhelper.TestRoot, "certs/valid/server.key")
 
 	server := httptest.NewUnstartedServer(buildHandler(handlers))
 	cer, err := tls.LoadX509KeyPair(crt, key)
-
-	if err != nil {
-		return nil, "", err
-	}
+	require.NoError(t, err)
 
 	server.TLS = &tls.Config{Certificates: []tls.Certificate{cer}}
 	server.StartTLS()
 
-	return server.Close, server.URL, nil
+	return server.URL, server.Close
 }
 
 func cleanupSocket() {

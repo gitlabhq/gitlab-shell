@@ -3,9 +3,11 @@ package command
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/receivepack"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/twofactorrecover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/testhelper"
@@ -58,6 +60,19 @@ func TestNew(t *testing.T) {
 			},
 			expectedType: &twofactorrecover.Command{},
 		},
+		{
+			desc:      "it returns a ReceivePack command if the feature is enabled",
+			arguments: []string{},
+			config: &config.Config{
+				GitlabUrl: "http+unix://gitlab.socket",
+				Migration: config.MigrationConfig{Enabled: true, Features: []string{"git-receive-pack"}},
+			},
+			environment: map[string]string{
+				"SSH_CONNECTION":       "1",
+				"SSH_ORIGINAL_COMMAND": "git-receive-pack",
+			},
+			expectedType: &receivepack.Command{},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -67,8 +82,8 @@ func TestNew(t *testing.T) {
 
 			command, err := New(tc.arguments, tc.config, nil)
 
-			assert.NoError(t, err)
-			assert.IsType(t, tc.expectedType, command)
+			require.NoError(t, err)
+			require.IsType(t, tc.expectedType, command)
 		})
 	}
 }
@@ -80,6 +95,6 @@ func TestFailingNew(t *testing.T) {
 
 		_, err := New([]string{}, &config.Config{}, nil)
 
-		assert.Error(t, err, "Only ssh allowed")
+		require.Error(t, err, "Only ssh allowed")
 	})
 }

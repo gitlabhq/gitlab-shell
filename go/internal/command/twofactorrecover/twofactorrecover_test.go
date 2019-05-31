@@ -64,8 +64,7 @@ const (
 func TestExecute(t *testing.T) {
 	setup(t)
 
-	cleanup, url, err := testserver.StartSocketHttpServer(requests)
-	require.NoError(t, err)
+	url, cleanup := testserver.StartSocketHttpServer(t, requests)
 	defer cleanup()
 
 	testCases := []struct {

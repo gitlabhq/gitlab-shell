@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
@@ -45,8 +44,7 @@ var (
 )
 
 func TestExecute(t *testing.T) {
-	cleanup, url, err := testserver.StartSocketHttpServer(requests)
-	require.NoError(t, err)
+	url, cleanup := testserver.StartSocketHttpServer(t, requests)
 	defer cleanup()
 
 	testCases := []struct {
@@ -87,15 +85,14 @@ func TestExecute(t *testing.T) {
 
 			err := cmd.Execute()
 
-			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedOutput, buffer.String())
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedOutput, buffer.String())
 		})
 	}
 }
 
 func TestFailingExecute(t *testing.T) {
-	cleanup, url, err := testserver.StartSocketHttpServer(requests)
-	require.NoError(t, err)
+	url, cleanup := testserver.StartSocketHttpServer(t, requests)
 	defer cleanup()
 
 	testCases := []struct {
@@ -131,8 +128,8 @@ func TestFailingExecute(t *testing.T) {
 
 			err := cmd.Execute()
 
-			assert.Empty(t, buffer.String())
-			assert.EqualError(t, err, tc.expectedError)
+			require.Empty(t, buffer.String())
+			require.EqualError(t, err, tc.expectedError)
 		})
 	}
 }
