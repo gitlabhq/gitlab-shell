@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os"
 	"regexp"
+
+	"github.com/mattn/go-shellwords"
 )
 
 type CommandType string
@@ -11,6 +13,7 @@ type CommandType string
 const (
 	Discover         CommandType = "discover"
 	TwoFactorRecover CommandType = "2fa_recovery_codes"
+	ReceivePack      CommandType = "git-receive-pack"
 )
 
 var (
@@ -21,7 +24,7 @@ var (
 type CommandArgs struct {
 	GitlabUsername string
 	GitlabKeyId    string
-	SshCommand     string
+	SshArgs        []string
 	CommandType    CommandType
 }
 
@@ -30,12 +33,15 @@ func Parse(arguments []string) (*CommandArgs, error) {
 		return nil, errors.New("Only ssh allowed")
 	}
 
-	info := &CommandArgs{}
+	args := &CommandArgs{}
+	args.parseWho(arguments)
 
-	info.parseWho(arguments)
-	info.parseCommand(os.Getenv("SSH_ORIGINAL_COMMAND"))
+	if err := args.parseCommand(os.Getenv("SSH_ORIGINAL_COMMAND")); err != nil {
+		return nil, errors.New("Invalid ssh command")
+	}
+	args.defineCommandType()
 
-	return info, nil
+	return args, nil
 }
 
 func (c *CommandArgs) parseWho(arguments []string) {
@@ -74,14 +80,29 @@ func tryParseUsername(argument string) string {
 	return ""
 }
 
-func (c *CommandArgs) parseCommand(commandString string) {
-	c.SshCommand = commandString
-
-	if commandString == "" {
-		c.CommandType = Discover
+func (c *CommandArgs) parseCommand(commandString string) error {
+	args, err := shellwords.Parse(commandString)
+	if err != nil {
+		return err
 	}
 
-	if CommandType(commandString) == TwoFactorRecover {
-		c.CommandType = TwoFactorRecover
+	// Handle Git for Windows 2.14 using "git upload-pack" instead of git-upload-pack
+	if len(args) > 1 && args[0] == "git" {
+		command := args[0] + "-" + args[1]
+		commandArgs := args[2:]
+
+		args = append([]string{command}, commandArgs...)
+	}
+
+	c.SshArgs = args
+
+	return nil
+}
+
+func (c *CommandArgs) defineCommandType() {
+	if len(c.SshArgs) == 0 {
+		c.CommandType = Discover
+	} else {
+		c.CommandType = CommandType(c.SshArgs[0])
 	}
 }

@@ -53,8 +53,6 @@ func normalizePath(path string) string {
 }
 
 func newRequest(method, host, path string, data interface{}) (*http.Request, error) {
-	path = normalizePath(path)
-
 	var jsonReader io.Reader
 	if data != nil {
 		jsonData, err := json.Marshal(data)
@@ -74,7 +72,7 @@ func newRequest(method, host, path string, data interface{}) (*http.Request, err
 }
 
 func parseError(resp *http.Response) error {
-	if resp.StatusCode >= 200 && resp.StatusCode <= 299 {
+	if resp.StatusCode >= 200 && resp.StatusCode <= 399 {
 		return nil
 	}
 	defer resp.Body.Close()
@@ -89,14 +87,14 @@ func parseError(resp *http.Response) error {
 }
 
 func (c *GitlabClient) Get(path string) (*http.Response, error) {
-	return c.doRequest("GET", path, nil)
+	return c.DoRequest(http.MethodGet, normalizePath(path), nil)
 }
 
 func (c *GitlabClient) Post(path string, data interface{}) (*http.Response, error) {
-	return c.doRequest("POST", path, data)
+	return c.DoRequest(http.MethodPost, normalizePath(path), data)
 }
 
-func (c *GitlabClient) doRequest(method, path string, data interface{}) (*http.Response, error) {
+func (c *GitlabClient) DoRequest(method, path string, data interface{}) (*http.Response, error) {
 	request, err := newRequest(method, c.host, path, data)
 	if err != nil {
 		return nil, err

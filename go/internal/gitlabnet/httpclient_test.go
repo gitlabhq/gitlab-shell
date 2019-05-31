@@ -86,8 +86,7 @@ func TestEmptyBasicAuthSettings(t *testing.T) {
 }
 
 func setup(t *testing.T, config *config.Config, requests []testserver.TestRequestHandler) (*GitlabClient, func()) {
-	cleanup, url, err := testserver.StartHttpServer(requests)
-	require.NoError(t, err)
+	url, cleanup := testserver.StartHttpServer(t, requests)
 
 	config.GitlabUrl = url
 	client, err := GetClient(config)

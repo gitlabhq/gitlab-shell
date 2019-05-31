@@ -115,8 +115,7 @@ func setupWithRequests(t *testing.T, config *config.Config) (*GitlabClient, func
 		},
 	}
 
-	cleanup, url, err := testserver.StartHttpsServer(requests)
-	require.NoError(t, err)
+	url, cleanup := testserver.StartHttpsServer(t, requests)
 
 	config.GitlabUrl = url
 	client, err := GetClient(config)

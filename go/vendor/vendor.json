@@ -84,6 +84,12 @@
 			"revision": "c0184d44cb322c9d9abcaebb2139dc754b3c0145"
 		},
 		{
+			"checksumSHA1": "AZtrc8Chiynrp48VQzRDH5vBR3M=",
+			"path": "github.com/mattn/go-shellwords",
+			"revision": "2444a32a19f450fabaa0bb3e96a703f15d9a97d2",
+			"revisionTime": "2019-04-25T16:15:01Z"
+		},
+		{
 			"checksumSHA1": "a/DHmc9bdsYlZZcwp6i3xhvV7Pk=",
 			"path": "github.com/opentracing/opentracing-go",
 			"revision": "25a84ff92183e2f8ac018ba1db54f8a07b3c0e04",
@@ -638,6 +644,10 @@
 			"path": "gopkg.in/yaml.v2",
 			"revision": "cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b",
 			"revisionTime": "2017-04-07T17:21:22Z"
+		},
+		{
+			"path": "https://github.com/mattn/go-shellwords",
+			"revision": ""
 		},
 		{
 			"path": "https://github.com/otiai10/copy",

@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/testhelper"
@@ -71,7 +72,7 @@ func TestClients(t *testing.T) {
 	testCases := []struct {
 		desc   string
 		config *config.Config
-		server func([]testserver.TestRequestHandler) (func(), string, error)
+		server func(*testing.T, []testserver.TestRequestHandler) (string, func())
 	}{
 		{
 			desc:   "Socket client",
@@ -94,9 +95,8 @@ func TestClients(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			cleanup, url, err := tc.server(requests)
+			url, cleanup := tc.server(t, requests)
 			defer cleanup()
-			require.NoError(t, err)
 
 			tc.config.GitlabUrl = url
 			tc.config.Secret = "sssh, it's a secret"
