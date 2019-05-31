@@ -85,17 +85,13 @@ rspec:ruby2.1:
     # reduce
     - bundle exec rspec --color --format d spec
 
-go:1.9:
-  <<: *go_definition
-  image: golang:1.9
-
-go:1.10:
-  <<: *go_definition
-  image: golang:1.10
-
 go:1.11:
   <<: *go_definition
-  image: golang:1.10
+  image: golang:1.11
+
+go:1.12:
+  <<: *go_definition
+  image: golang:1.12
 
 codequality:
   image: docker:stable
