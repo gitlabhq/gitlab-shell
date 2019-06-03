@@ -22,7 +22,9 @@ func New(arguments []string, config *config.Config, readWriter *readwriter.ReadW
 	}
 
 	if config.FeatureEnabled(string(args.CommandType)) {
-		return buildCommand(args, config, readWriter), nil
+		if cmd := buildCommand(args, config, readWriter); cmd != nil {
+			return cmd, nil
+		}
 	}
 
 	return &fallback.Command{RootDir: config.RootDir, Args: arguments}, nil
