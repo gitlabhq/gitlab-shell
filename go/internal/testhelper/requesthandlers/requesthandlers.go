@@ -10,6 +10,24 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/testserver"
 )
 
+func BuildDisallowedByApiHandlers(t *testing.T) []testserver.TestRequestHandler {
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/api/v4/internal/allowed",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				body := map[string]interface{}{
+					"status":  false,
+					"message": "Disallowed by API call",
+				}
+				w.WriteHeader(http.StatusForbidden)
+				require.NoError(t, json.NewEncoder(w).Encode(body))
+			},
+		},
+	}
+
+	return requests
+}
+
 func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testserver.TestRequestHandler {
 	requests := []testserver.TestRequestHandler{
 		{

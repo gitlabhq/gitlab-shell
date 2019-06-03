@@ -76,6 +76,13 @@ func TestParseSuccess(t *testing.T) {
 				"SSH_ORIGINAL_COMMAND": `git-receive-pack group/repo; any command`,
 			},
 			expectedArgs: &CommandArgs{SshArgs: []string{"git-receive-pack", "group/repo"}, CommandType: ReceivePack},
+		}, {
+			desc: "It parses git-upload-pack command",
+			environment: map[string]string{
+				"SSH_CONNECTION":       "1",
+				"SSH_ORIGINAL_COMMAND": `git upload-pack "group/repo"`,
+			},
+			expectedArgs: &CommandArgs{SshArgs: []string{"git-upload-pack", "group/repo"}, CommandType: UploadPack},
 		},
 	}
 

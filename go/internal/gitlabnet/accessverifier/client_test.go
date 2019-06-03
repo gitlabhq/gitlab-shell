@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet"
@@ -29,13 +30,13 @@ func buildExpectedResponse(who string) *Response {
 		Username:         "root",
 		GitConfigOptions: []string{"option"},
 		Gitaly: Gitaly{
-			Repo: GitalyRepo{
+			Repo: pb.Repository{
 				StorageName:                   "default",
 				RelativePath:                  "@hashed/5f/9c/5f9c4ab08cac7457e9111a30e4664920607ea2c115a1433d7be98e97e64244ca.git",
 				GitObjectDirectory:            "path/to/git_object_directory",
 				GitAlternateObjectDirectories: []string{"path/to/git_alternate_object_directory"},
-				RepoName:                      "project-26",
-				ProjectPath:                   repo,
+				GlRepository:                  "project-26",
+				GlProjectPath:                 repo,
 			},
 			Address: "unix:gitaly.socket",
 			Token:   "token",
