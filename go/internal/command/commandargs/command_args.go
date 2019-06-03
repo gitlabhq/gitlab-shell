@@ -14,6 +14,7 @@ const (
 	Discover         CommandType = "discover"
 	TwoFactorRecover CommandType = "2fa_recovery_codes"
 	ReceivePack      CommandType = "git-receive-pack"
+	UploadPack       CommandType = "git-upload-pack"
 )
 
 var (

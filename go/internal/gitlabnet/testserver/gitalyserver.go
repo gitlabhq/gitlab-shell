@@ -18,7 +18,6 @@ type testGitalyServer struct{}
 
 func (s *testGitalyServer) SSHReceivePack(stream pb.SSHService_SSHReceivePackServer) error {
 	req, err := stream.Recv()
-
 	if err != nil {
 		return err
 	}
@@ -30,6 +29,14 @@ func (s *testGitalyServer) SSHReceivePack(stream pb.SSHService_SSHReceivePackSer
 }
 
 func (s *testGitalyServer) SSHUploadPack(stream pb.SSHService_SSHUploadPackServer) error {
+	req, err := stream.Recv()
+	if err != nil {
+		return err
+	}
+
+	response := []byte("UploadPack: " + req.Repository.GlRepository)
+	stream.Send(&pb.SSHUploadPackResponse{Stdout: response})
+
 	return nil
 }
 

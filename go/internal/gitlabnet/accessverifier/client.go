@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet"
@@ -27,19 +28,10 @@ type Request struct {
 	Username string                  `json:"username,omitempty"`
 }
 
-type GitalyRepo struct {
-	StorageName                   string   `json:"storage_name"`
-	RelativePath                  string   `json:"relative_path"`
-	GitObjectDirectory            string   `json:"git_object_directory"`
-	GitAlternateObjectDirectories []string `json:"git_alternate_object_directories"`
-	RepoName                      string   `json:"gl_repository"`
-	ProjectPath                   string   `json:"gl_project_path"`
-}
-
 type Gitaly struct {
-	Repo    GitalyRepo `json:"repository"`
-	Address string     `json:"address"`
-	Token   string     `json:"token"`
+	Repo    pb.Repository `json:"repository"`
+	Address string        `json:"address"`
+	Token   string        `json:"token"`
 }
 
 type CustomPayloadData struct {

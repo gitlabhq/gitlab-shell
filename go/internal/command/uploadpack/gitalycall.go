@@ -1,4 +1,4 @@
-package receivepack
+package uploadpack
 
 import (
 	"context"
@@ -8,23 +8,20 @@ import (
 	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitaly/client"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/shared/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/handler"
 )
 
 func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 	gc := &handler.GitalyCommand{
 		Config:      c.Config,
-		ServiceName: string(commandargs.ReceivePack),
+		ServiceName: string(commandargs.UploadPack),
 		Address:     response.Gitaly.Address,
 		Token:       response.Gitaly.Token,
 	}
 
-	request := &pb.SSHReceivePackRequest{
+	request := &pb.SSHUploadPackRequest{
 		Repository:       &response.Gitaly.Repo,
-		GlId:             response.UserId,
-		GlRepository:     response.Repo,
-		GlUsername:       response.Username,
 		GitProtocol:      response.GitProtocol,
 		GitConfigOptions: response.GitConfigOptions,
 	}
@@ -34,6 +31,6 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 		defer cancel()
 
 		rw := c.ReadWriter
-		return client.ReceivePack(ctx, conn, rw.In, rw.Out, rw.ErrOut, request)
+		return client.UploadPack(ctx, conn, rw.In, rw.Out, rw.ErrOut, request)
 	})
 }

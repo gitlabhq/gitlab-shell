@@ -1,4 +1,4 @@
-package receivepack
+package uploadpack
 
 import (
 	"bytes"
@@ -19,12 +19,11 @@ func TestForbiddenAccess(t *testing.T) {
 	defer cleanup()
 
 	output := &bytes.Buffer{}
-	input := bytes.NewBufferString("input")
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},
-		Args:       &commandargs.CommandArgs{GitlabKeyId: "disallowed", SshArgs: []string{"git-receive-pack", "group/repo"}},
-		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
+		Args:       &commandargs.CommandArgs{GitlabKeyId: "disallowed", SshArgs: []string{"git-upload-pack", "group/repo"}},
+		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 	}
 
 	err := cmd.Execute()

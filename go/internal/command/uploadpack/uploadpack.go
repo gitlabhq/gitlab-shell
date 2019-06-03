@@ -1,4 +1,4 @@
-package receivepack
+package uploadpack
 
 import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
@@ -24,10 +24,6 @@ func (c *Command) Execute() error {
 	response, err := c.verifyAccess(repo)
 	if err != nil {
 		return err
-	}
-
-	if response.IsCustomAction() {
-		return c.processCustomAction(response)
 	}
 
 	return c.performGitalyCall(response)
