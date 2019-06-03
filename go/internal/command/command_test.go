@@ -16,14 +16,12 @@ import (
 func TestNew(t *testing.T) {
 	testCases := []struct {
 		desc         string
-		arguments    []string
 		config       *config.Config
 		environment  map[string]string
 		expectedType interface{}
 	}{
 		{
-			desc:      "it returns a Discover command if the feature is enabled",
-			arguments: []string{},
+			desc: "it returns a Discover command if the feature is enabled",
 			config: &config.Config{
 				GitlabUrl: "http+unix://gitlab.socket",
 				Migration: config.MigrationConfig{Enabled: true, Features: []string{"discover"}},
@@ -35,8 +33,7 @@ func TestNew(t *testing.T) {
 			expectedType: &discover.Command{},
 		},
 		{
-			desc:      "it returns a Fallback command no feature is enabled",
-			arguments: []string{},
+			desc: "it returns a Fallback command no feature is enabled",
 			config: &config.Config{
 				GitlabUrl: "http+unix://gitlab.socket",
 				Migration: config.MigrationConfig{Enabled: false},
@@ -48,8 +45,7 @@ func TestNew(t *testing.T) {
 			expectedType: &fallback.Command{},
 		},
 		{
-			desc:      "it returns a TwoFactorRecover command if the feature is enabled",
-			arguments: []string{},
+			desc: "it returns a TwoFactorRecover command if the feature is enabled",
 			config: &config.Config{
 				GitlabUrl: "http+unix://gitlab.socket",
 				Migration: config.MigrationConfig{Enabled: true, Features: []string{"2fa_recovery_codes"}},
@@ -61,8 +57,7 @@ func TestNew(t *testing.T) {
 			expectedType: &twofactorrecover.Command{},
 		},
 		{
-			desc:      "it returns a ReceivePack command if the feature is enabled",
-			arguments: []string{},
+			desc: "it returns a ReceivePack command if the feature is enabled",
 			config: &config.Config{
 				GitlabUrl: "http+unix://gitlab.socket",
 				Migration: config.MigrationConfig{Enabled: true, Features: []string{"git-receive-pack"}},
@@ -73,6 +68,18 @@ func TestNew(t *testing.T) {
 			},
 			expectedType: &receivepack.Command{},
 		},
+		{
+			desc: "it returns a Fallback command if the feature is unimplemented",
+			config: &config.Config{
+				GitlabUrl: "http+unix://gitlab.socket",
+				Migration: config.MigrationConfig{Enabled: true, Features: []string{"git-unimplemented-feature"}},
+			},
+			environment: map[string]string{
+				"SSH_CONNECTION":       "1",
+				"SSH_ORIGINAL_COMMAND": "git-unimplemented-feature",
+			},
+			expectedType: &fallback.Command{},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -80,7 +87,7 @@ func TestNew(t *testing.T) {
 			restoreEnv := testhelper.TempEnv(tc.environment)
 			defer restoreEnv()
 
-			command, err := New(tc.arguments, tc.config, nil)
+			command, err := New([]string{}, tc.config, nil)
 
 			require.NoError(t, err)
 			require.IsType(t, tc.expectedType, command)
