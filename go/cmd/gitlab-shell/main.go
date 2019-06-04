@@ -14,6 +14,10 @@ import (
 // findRootDir determines the root directory (and so, the location of the config
 // file) from os.Executable()
 func findRootDir() (string, error) {
+	if path := os.Getenv("GITLAB_SHELL_DIR"); path != "" {
+		return path, nil
+	}
+
 	path, err := os.Executable()
 	if err != nil {
 		return "", err
