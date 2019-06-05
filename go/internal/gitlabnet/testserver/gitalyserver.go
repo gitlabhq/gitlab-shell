@@ -41,6 +41,14 @@ func (s *testGitalyServer) SSHUploadPack(stream pb.SSHService_SSHUploadPackServe
 }
 
 func (s *testGitalyServer) SSHUploadArchive(stream pb.SSHService_SSHUploadArchiveServer) error {
+	req, err := stream.Recv()
+	if err != nil {
+		return err
+	}
+
+	response := []byte("UploadArchive: " + req.Repository.GlRepository)
+	stream.Send(&pb.SSHUploadArchiveResponse{Stdout: response})
+
 	return nil
 }
 

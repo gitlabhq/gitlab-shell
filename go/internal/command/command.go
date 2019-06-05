@@ -7,6 +7,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/receivepack"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/twofactorrecover"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadarchive"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 )
@@ -41,6 +42,8 @@ func buildCommand(args *commandargs.CommandArgs, config *config.Config, readWrit
 		return &receivepack.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.UploadPack:
 		return &uploadpack.Command{Config: config, Args: args, ReadWriter: readWriter}
+	case commandargs.UploadArchive:
+		return &uploadarchive.Command{Config: config, Args: args, ReadWriter: readWriter}
 	}
 
 	return nil

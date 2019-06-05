@@ -9,6 +9,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/receivepack"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/twofactorrecover"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadarchive"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/testhelper"
@@ -80,6 +81,18 @@ func TestNew(t *testing.T) {
 				"SSH_ORIGINAL_COMMAND": "git-upload-pack",
 			},
 			expectedType: &uploadpack.Command{},
+		},
+		{
+			desc: "it returns a UploadArchive command if the feature is enabled",
+			config: &config.Config{
+				GitlabUrl: "http+unix://gitlab.socket",
+				Migration: config.MigrationConfig{Enabled: true, Features: []string{"git-upload-archive"}},
+			},
+			environment: map[string]string{
+				"SSH_CONNECTION":       "1",
+				"SSH_ORIGINAL_COMMAND": "git-upload-archive",
+			},
+			expectedType: &uploadarchive.Command{},
 		},
 		{
 			desc: "it returns a Fallback command if the feature is unimplemented",

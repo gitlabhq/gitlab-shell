@@ -15,6 +15,7 @@ const (
 	TwoFactorRecover CommandType = "2fa_recovery_codes"
 	ReceivePack      CommandType = "git-receive-pack"
 	UploadPack       CommandType = "git-upload-pack"
+	UploadArchive    CommandType = "git-upload-archive"
 )
 
 var (
