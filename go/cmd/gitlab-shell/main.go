@@ -52,6 +52,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	if _, err := os.Stat(rootDir); os.IsNotExist(err) {
+		fmt.Fprintf(readWriter.ErrOut, "Root directory %q does not exist, exiting\n", rootDir)
+		os.Exit(1)
+	}
+
 	// Fall back to Ruby in case of problems reading the config, but issue a
 	// warning as this isn't something we can sustain indefinitely
 	config, err := config.NewFromDir(rootDir)
