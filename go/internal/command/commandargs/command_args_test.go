@@ -90,6 +90,13 @@ func TestParseSuccess(t *testing.T) {
 				"SSH_ORIGINAL_COMMAND": "git-upload-archive 'group/repo'",
 			},
 			expectedArgs: &CommandArgs{SshArgs: []string{"git-upload-archive", "group/repo"}, CommandType: UploadArchive},
+		}, {
+			desc: "It parses git-lfs-authenticate command",
+			environment: map[string]string{
+				"SSH_CONNECTION":       "1",
+				"SSH_ORIGINAL_COMMAND": "git-lfs-authenticate 'group/repo' download",
+			},
+			expectedArgs: &CommandArgs{SshArgs: []string{"git-lfs-authenticate", "group/repo", "download"}, CommandType: LfsAuthenticate},
 		},
 	}
 

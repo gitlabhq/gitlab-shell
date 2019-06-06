@@ -7,6 +7,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/lfsauthenticate"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/receivepack"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/twofactorrecover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadarchive"
@@ -57,6 +58,18 @@ func TestNew(t *testing.T) {
 				"SSH_ORIGINAL_COMMAND": "2fa_recovery_codes",
 			},
 			expectedType: &twofactorrecover.Command{},
+		},
+		{
+			desc: "it returns an LfsAuthenticate command if the feature is enabled",
+			config: &config.Config{
+				GitlabUrl: "http+unix://gitlab.socket",
+				Migration: config.MigrationConfig{Enabled: true, Features: []string{"git-lfs-authenticate"}},
+			},
+			environment: map[string]string{
+				"SSH_CONNECTION":       "1",
+				"SSH_ORIGINAL_COMMAND": "git-lfs-authenticate",
+			},
+			expectedType: &lfsauthenticate.Command{},
 		},
 		{
 			desc: "it returns a ReceivePack command if the feature is enabled",

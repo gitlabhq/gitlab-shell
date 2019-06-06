@@ -13,6 +13,7 @@ type CommandType string
 const (
 	Discover         CommandType = "discover"
 	TwoFactorRecover CommandType = "2fa_recovery_codes"
+	LfsAuthenticate  CommandType = "git-lfs-authenticate"
 	ReceivePack      CommandType = "git-receive-pack"
 	UploadPack       CommandType = "git-upload-pack"
 	UploadArchive    CommandType = "git-upload-archive"

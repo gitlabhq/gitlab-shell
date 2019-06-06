@@ -4,6 +4,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/lfsauthenticate"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/receivepack"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/twofactorrecover"
@@ -38,6 +39,8 @@ func buildCommand(args *commandargs.CommandArgs, config *config.Config, readWrit
 		return &discover.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.TwoFactorRecover:
 		return &twofactorrecover.Command{Config: config, Args: args, ReadWriter: readWriter}
+	case commandargs.LfsAuthenticate:
+		return &lfsauthenticate.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.ReceivePack:
 		return &receivepack.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.UploadPack:
