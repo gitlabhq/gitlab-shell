@@ -1,3 +1,11 @@
+v9.3.0
+  - Go implementation for git-receive-pack !300
+  - Go implementation for git-upload-pack !305
+  - Return Fallback cmd if feature is enabled, but unimplemented !306
+  - Go implementation for git-upload-archive !307
+  - Go implementation for LFS authenticate !308
+  - Respect GITLAB_SHELL_DIR in the Go version !309
+
 v9.2.0
   - Upgrade to Ruby 2.6.3 !298
 
