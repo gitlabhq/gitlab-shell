@@ -12,7 +12,8 @@ module GoBuild
 
   GO_ENV = {
     'GOPATH' => BUILD_DIR,
-    'GO15VENDOREXPERIMENT' => '1'
+    'GO15VENDOREXPERIMENT' => '1',
+    'GO111MODULE' => 'off'
   }.freeze
 
   def create_fresh_build_dir
