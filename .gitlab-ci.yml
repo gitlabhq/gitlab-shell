@@ -15,8 +15,7 @@ before_script:
     # primarily regression tests for particular versions of Ruby.
     #
     # The full rspec suite is also run against each suppported golang version
-    - cp bin/gitlab-shell-ruby bin/gitlab-shell
-    - bundle exec rspec --color --tag ~go --format d spec
+    - make test_ruby
 
 rspec:
   <<: *rspec_definition
@@ -25,9 +24,9 @@ rspec:
   except:
     - tags
 
-rubocop:
+verify_ruby:
   script:
-    - bundle exec rubocop
+    - make verify_ruby
   tags:
     - ruby
   except:
@@ -77,13 +76,11 @@ rspec:ruby2.1:
   script:
     - go version
     - which go
-    - bin/compile
-    - support/go-test
-    - support/go-format check
+    - make build verify_golang test_golang
     # Run the full Ruby test suite in the "go" tests. As more functionality is
     # migrated into these tests and out of Ruby, the amount of work here will
     # reduce
-    - bundle exec rspec --color --format d spec
+    - make test_ruby
 
 go:1.11:
   <<: *go_definition
@@ -110,7 +107,6 @@ codequality:
         "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code
   artifacts:
     paths: [codeclimate.json]
-
 
 sast:
   image: docker:stable
