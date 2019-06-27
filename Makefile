@@ -1,4 +1,4 @@
-.PHONY: test test_ruby test_ruby_rubocop test_ruby_rspec test_go test_go_format test_go_test
+.PHONY: validate verify verify_ruby verify_golang test test_ruby test_golang setup _install build compile check clean
 
 validate: verify test
 
