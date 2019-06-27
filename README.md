@@ -15,15 +15,15 @@ If you access a GitLab server over HTTP(S) you end up in [gitlab-workhorse](http
 
 An overview of the four cases described above:
 
-1. git pull over ssh  -> gitlab-shell -> API call to gitlab-rails (Authorization) -> accept or decline -> establish Gitaly session
-1. git push over ssh  -> gitlab-shell (git command is not executed yet) -> establish Gitaly session -> (in Gitaly) gitlab-shell pre-receive hook -> API call to gitlab-rails (authorization) -> accept or decline push
+1. git pull over SSH -> gitlab-shell -> API call to gitlab-rails (Authorization) -> accept or decline -> establish Gitaly session
+1. git push over SSH -> gitlab-shell (git command is not executed yet) -> establish Gitaly session -> (in Gitaly) gitlab-shell pre-receive hook -> API call to gitlab-rails (authorization) -> accept or decline push
 
 ## Git hooks
 
 The gitlab-shell repository used to also contain the
 Git hooks that allow GitLab to validate Git pushes (e.g. "is this user
 allowed to push to this protected branch"). These hooks also trigger
-events in GitLab (e.g. to start a CI pipeline after a push). 
+events in GitLab (e.g. to start a CI pipeline after a push).
 
 We are in the process of moving these hooks to Gitaly, because Git hooks
 require direct disk access to Git repositories, and that is only
@@ -68,12 +68,13 @@ To install gitlab-shell you also need a Go compiler version 1.8 or newer. https:
 
 ## Setup
 
-    ./bin/install
-    ./bin/compile
+    make setup
 
 ## Check
 
-    ./bin/check
+Checks if GitLab API access and redis via internal API can be reached:
+
+    make check
 
 ## Keys
 
@@ -89,14 +90,27 @@ List all keys:
 
     ./bin/gitlab-keys list-keys
 
-
 Remove all keys from authorized_keys file:
 
     ./bin/gitlab-keys clear
 
+## Testing
+
+Run Ruby and Golang tests:
+
+    make test
+
+Run Rubocop and gofmt:
+
+    make verify
+
+Run both test and verify (the default Makefile target):
+
+    make validate
+
 ## Git LFS remark
 
-Starting with GitLab 8.12, GitLab supports Git LFS authentication through ssh.
+Starting with GitLab 8.12, GitLab supports Git LFS authentication through SSH.
 
 ## Migration to Go feature flags
 
@@ -158,14 +172,14 @@ Rails application:
 
 ## Updating VCR fixtures
 
-In order to generate new VCR fixtures you need to have a local GitLab instance 
-running and have next data: 
+In order to generate new VCR fixtures you need to have a local GitLab instance
+running and have next data:
 
 1. gitlab-org/gitlab-test project.
 2. SSH key with access to the project and ID 1 that belongs to Administrator.
 3. SSH key without access to the project and ID 2.
 
-You also need to modify `secret` variable at `spec/gitlab_net_spec.rb` so tests 
+You also need to modify `secret` variable at `spec/gitlab_net_spec.rb` so tests
 can connect to your local instance.
 
 ## Contributing
