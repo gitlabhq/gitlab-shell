@@ -22,10 +22,14 @@ test_ruby:
 test_golang:
 	support/go-test
 
-setup: compile
-build: compile
-compile:
+setup: _install bin/gitlab-shell
+
+_install:
 	bin/install
+
+build: bin/gitlab-shell
+compile: bin/gitlab-shell
+bin/gitlab-shell:
 	bin/compile
 
 check:
