@@ -33,7 +33,7 @@ config = GitlabConfig.new
 
 abort("ERROR: missing option in config.yml") unless config.auth_file
 
-print "\nAccess to #{config.auth_file}: "
+print "Access to #{config.auth_file}: "
 if system(File.dirname(__FILE__) + '/gitlab-keys', 'check-permissions')
   print 'OK'
 else
