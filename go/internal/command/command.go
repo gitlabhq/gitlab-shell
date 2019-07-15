@@ -3,7 +3,6 @@ package command
 import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/lfsauthenticate"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/receivepack"
@@ -11,6 +10,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadarchive"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/executable/fallback"
 )
 
 type Command interface {
@@ -30,7 +30,7 @@ func New(arguments []string, config *config.Config, readWriter *readwriter.ReadW
 		}
 	}
 
-	return &fallback.Command{RootDir: config.RootDir, Args: arguments}, nil
+	return &fallback.Executable{RootDir: config.RootDir, Args: arguments}, nil
 }
 
 func buildCommand(args *commandargs.CommandArgs, config *config.Config, readWriter *readwriter.ReadWriter) Command {

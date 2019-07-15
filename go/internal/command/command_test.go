@@ -6,13 +6,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/lfsauthenticate"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/receivepack"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/twofactorrecover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadarchive"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/executable/fallback"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/testhelper"
 )
 
@@ -45,7 +45,7 @@ func TestNew(t *testing.T) {
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "",
 			},
-			expectedType: &fallback.Command{},
+			expectedType: &fallback.Executable{},
 		},
 		{
 			desc: "it returns a TwoFactorRecover command if the feature is enabled",
@@ -117,7 +117,7 @@ func TestNew(t *testing.T) {
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "git-unimplemented-feature",
 			},
-			expectedType: &fallback.Command{},
+			expectedType: &fallback.Executable{},
 		},
 	}
 
