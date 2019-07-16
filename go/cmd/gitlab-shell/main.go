@@ -41,7 +41,7 @@ func execRuby(e *executable.Executable, rootDir string, readWriter *readwriter.R
 	}
 }
 
-func execCommand(config *config.Config, rootDir string, readWriter *readwriter.ReadWriter) {
+func execCommand(config *config.Config, readWriter *readwriter.ReadWriter) {
 	cmd, err := command.New(os.Args, config, readWriter)
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
@@ -58,7 +58,7 @@ func execCommand(config *config.Config, rootDir string, readWriter *readwriter.R
 	}
 }
 
-func execChecker(e *executable.Executable, config *config.Config, rootDir string, readWriter *readwriter.ReadWriter) {
+func execChecker(e *executable.Executable, config *config.Config, readWriter *readwriter.ReadWriter) {
 	checker := checker.New(e, os.Args, config, readWriter)
 
 	// The checker will write to STDOUT on execution or replace the current
@@ -97,8 +97,8 @@ func main() {
 	}
 
 	if executable.IsForExecutingCommand() {
-		execCommand(config, rootDir, readWriter)
+		execCommand(config, readWriter)
 	} else {
-		execChecker(executable, config, rootDir, readWriter)
+		execChecker(executable, config, readWriter)
 	}
 }

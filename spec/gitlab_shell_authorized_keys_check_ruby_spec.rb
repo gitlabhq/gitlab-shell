@@ -1,6 +1,6 @@
 require_relative 'spec_helper'
 
-describe 'bin/gitlab-shell-authorized-keys-check' do
+describe 'bin/gitlab-shell-authorized-keys-check-ruby' do
   include_context 'gitlab shell'
 
   def tmp_socket_path
@@ -27,7 +27,7 @@ describe 'bin/gitlab-shell-authorized-keys-check' do
     )
   end
 
-  let(:authorized_keys_check_path) { File.join(tmp_root_path, 'bin', 'gitlab-shell-authorized-keys-check') }
+  let(:authorized_keys_check_path) { File.join(tmp_root_path, 'bin', 'gitlab-shell-authorized-keys-check-ruby') }
 
   it 'succeeds when a valid key is given' do
     output, status = run!

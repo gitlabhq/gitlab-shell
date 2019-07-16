@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+
+#
+# GitLab shell authorized_keys helper. Query GitLab API to get the authorized
+# command for a given ssh key fingerprint
+#
+# Ex.
+#   bin/gitlab-shell-authorized-keys-check <username> <public-key>
+#
+# Returns
+#   command="/bin/gitlab-shell key-#",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAA...
+#
+# Expects to be called by the SSH daemon, via configuration like:
+#     AuthorizedKeysCommandUser git
+#     AuthorizedKeysCommand /bin/gitlab-shell-authorized-keys-check git %u %k
+
+abort "# Wrong number of arguments. #{ARGV.size}. Usage:
+#     gitlab-shell-authorized-keys-check <expected-username> <actual-username> <key>" unless ARGV.size == 3
+
+expected_username = ARGV[0]
+abort '# No username provided' if expected_username.nil? || expected_username == ''
+
+actual_username = ARGV[1]
+abort '# No username provided' if actual_username.nil? || actual_username == ''
+
+# Only check access if the requested username matches the configured username.
+# Normally, these would both be 'git', but it can be configured by the user
+exit 0 unless expected_username == actual_username
+
+key = ARGV[2]
+abort "# No key provided" if key.nil? || key == ''
+
+require_relative '../lib/gitlab_init'
+require_relative '../lib/gitlab_net'
+require_relative '../lib/gitlab_keys'
+
+authorized_key = GitlabNet.new.authorized_key(key)
+if authorized_key.nil?
+  puts "# No key was found for #{key}"
+else
+  puts GitlabKeys.key_line("key-#{authorized_key['id']}", authorized_key['key'])
+end
