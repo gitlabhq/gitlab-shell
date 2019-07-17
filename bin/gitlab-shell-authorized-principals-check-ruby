@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+
+#
+# GitLab shell authorized principals helper. Emits the same sort of
+# command="..." line as gitlab-shell-authorized-principals-check, with
+# the right options.
+#
+# Ex.
+#   bin/gitlab-shell-authorized-keys-check <key-id> <principal1> [<principal2>...]
+#
+# Returns one line per principal passed in, e.g.:
+#   command="/bin/gitlab-shell username-{KEY_ID}",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty {PRINCIPAL}
+#   [command="/bin/gitlab-shell username-{KEY_ID}",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty {PRINCIPAL2}]
+#
+# Expects to be called by the SSH daemon, via configuration like:
+#     AuthorizedPrincipalsCommandUser root
+#     AuthorizedPrincipalsCommand /bin/gitlab-shell-authorized-principals-check git %i sshUsers
+
+abort "# Wrong number of arguments. #{ARGV.size}. Usage:
+#     gitlab-shell-authorized-principals-check <key-id> <principal1> [<principal2>...]" unless ARGV.size >= 2
+
+key_id = ARGV[0]
+abort '# No key_id provided' if key_id.nil? || key_id == ''
+
+principals = ARGV[1..-1]
+principals.each { |principal|
+  abort '# An invalid principal was provided' if principal.nil? || principal == ''  
+}
+
+require_relative '../lib/gitlab_init'
+require_relative '../lib/gitlab_net'
+require_relative '../lib/gitlab_keys'
+
+principals.each { |principal|
+  puts GitlabKeys.principal_line("username-#{key_id}", principal.dup)
+}
