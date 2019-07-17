@@ -3,8 +3,8 @@ package authorizedprincipals
 import (
 	"errors"
 	"fmt"
-	"path"
 
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/checker/keyline"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 )
@@ -24,19 +24,11 @@ func (c *Checker) Execute() error {
 	keyId := args[0]
 	principals := args[1:]
 
-	c.printPrincipalLines(keyId, principals)
+	if err := c.printPrincipalLines(keyId, principals); err != nil {
+		return err
+	}
 
 	return nil
-}
-
-func (c *Checker) printPrincipalLines(keyId string, principals []string) {
-	command := fmt.Sprintf("%s username-%s", path.Join(c.Config.RootDir, "bin", "gitlab-shell"), keyId)
-
-	for _, principal := range principals {
-		principalLine := fmt.Sprintf(`command="%s",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty %s`, command, principal)
-
-		fmt.Fprintln(c.ReadWriter.Out, principalLine)
-	}
 }
 
 func (c *Checker) validateArguments() error {
@@ -58,6 +50,26 @@ func (c *Checker) validateArguments() error {
 		if principal == "" {
 			return errors.New("# An invalid principal was provided")
 		}
+	}
+
+	return nil
+}
+
+func (c *Checker) printPrincipalLines(keyId string, principals []string) error {
+	for _, principal := range principals {
+		principalKeyLine := &keyline.KeyLine{
+			Id:      keyId,
+			Value:   principal,
+			Prefix:  "username",
+			RootDir: c.Config.RootDir,
+		}
+
+		line, err := principalKeyLine.ToString()
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintln(c.ReadWriter.Out, line)
 	}
 
 	return nil

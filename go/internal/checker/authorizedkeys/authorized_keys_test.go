@@ -55,18 +55,18 @@ func TestExecute(t *testing.T) {
 			expectedOutput: "command=\"/tmp/bin/gitlab-shell key-1\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty public-key\n",
 		},
 		{
-			desc:          "When key doesn't match any existing key",
-			arguments:     []string{"user", "user", "not-found"},
+			desc:           "When key doesn't match any existing key",
+			arguments:      []string{"user", "user", "not-found"},
 			expectedOutput: "# No key was found for not-found\n",
 		},
 		{
-			desc:          "When the API returns an error",
-			arguments:     []string{"user", "user", "broken-message"},
+			desc:           "When the API returns an error",
+			arguments:      []string{"user", "user", "broken-message"},
 			expectedOutput: "# No key was found for broken-message\n",
 		},
 		{
-			desc:          "When the API fails",
-			arguments:     []string{"user", "user", "broken"},
+			desc:           "When the API fails",
+			arguments:      []string{"user", "user", "broken"},
 			expectedOutput: "# No key was found for broken\n",
 		},
 	}

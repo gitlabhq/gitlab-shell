@@ -22,7 +22,7 @@ func TestExecute(t *testing.T) {
 			expectedOutput: "command=\"/tmp/bin/gitlab-shell username-key\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty principal\n",
 		},
 		{
-			desc:          "With mulitple principals",
+			desc:           "With mulitple principals",
 			arguments:      []string{"key", "principal-1", "principal-2"},
 			expectedOutput: "command=\"/tmp/bin/gitlab-shell username-key\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty principal-1\ncommand=\"/tmp/bin/gitlab-shell username-key\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty principal-2\n",
 		},

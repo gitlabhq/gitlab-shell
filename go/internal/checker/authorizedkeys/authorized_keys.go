@@ -3,8 +3,9 @@ package authorizedkeys
 import (
 	"errors"
 	"fmt"
-	"path"
+	"strconv"
 
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/checker/keyline"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/authorizedkeys"
@@ -28,33 +29,11 @@ func (c *Checker) Execute() error {
 
 	if expectedUsername == actualUsername {
 		if err := c.printKeyLine(key); err != nil {
-			return fmt.Errorf("Failed to print key line: %v", err)
+			return err
 		}
 	}
 
 	return nil
-}
-
-func (c *Checker) printKeyLine(key string) error {
-	client, err := authorizedkeys.NewClient(c.Config)
-	if err != nil {
-		return err
-	}
-
-	response, err := client.GetByKey(key)
-	if err != nil {
-		fmt.Fprintln(c.ReadWriter.Out, fmt.Sprintf("# No key was found for %s", key))
-	} else {
-		fmt.Fprintln(c.ReadWriter.Out, c.formatKeyLine(response.Id, response.Key))
-	}
-
-	return nil
-}
-
-func (c *Checker) formatKeyLine(id int64, key string) string {
-	command := fmt.Sprintf("%s key-%d", path.Join(c.Config.RootDir, "bin", "gitlab-shell"), id)
-
-	return fmt.Sprintf(`command="%s",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty %s`, command, key)
 }
 
 func (c *Checker) validateArguments() error {
@@ -75,6 +54,34 @@ func (c *Checker) validateArguments() error {
 
 	if key == "" {
 		return errors.New("# No key provided")
+	}
+
+	return nil
+}
+
+func (c *Checker) printKeyLine(key string) error {
+	client, err := authorizedkeys.NewClient(c.Config)
+	if err != nil {
+		return err
+	}
+
+	response, err := client.GetByKey(key)
+	if err != nil {
+		fmt.Fprintln(c.ReadWriter.Out, fmt.Sprintf("# No key was found for %s", key))
+	} else {
+		keyLine := &keyline.KeyLine{
+			Id:      strconv.FormatInt(response.Id, 10),
+			Value:   response.Key,
+			Prefix:  "key",
+			RootDir: c.Config.RootDir,
+		}
+
+		line, err := keyLine.ToString()
+		if err != nil {
+			return err
+		}
+
+		fmt.Fprintln(c.ReadWriter.Out, line)
 	}
 
 	return nil
