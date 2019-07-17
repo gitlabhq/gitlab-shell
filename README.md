@@ -132,6 +132,12 @@ Here are the following features that can be enabled:
 
 - `discover`
 - `2fa_recovery_codes`
+- `git-lfs-authenticate`
+- `git-receive-pack`
+- `git-upload-pack`
+- `git-upload-archive`
+- `gitlab-shell-authorized-keys-check`
+- `gitlab-shell-authorized-principals-check`
 
 ### Configuring using Omnibus
 
