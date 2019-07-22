@@ -67,12 +67,13 @@ rspec:ruby2.1:
 
 .go: &go_definition
   before_script:
-  - apt-get update -qq && apt-get install -y ruby ruby-dev
-  - ruby -v
-  - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin
-  - gem install --bindir /usr/local/bin bundler
-  - cp config.yml.example config.yml
-  - bundle install
+    - apt-get update -qq && apt-get install -y ruby ruby-dev
+    - ruby -v
+    - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin
+    - gem update --system
+    - gem install --bindir /usr/local/bin bundler
+    - cp config.yml.example config.yml
+    - bundle install
   script:
     - go version
     - which go
