@@ -19,7 +19,6 @@ type Command interface {
 
 func New(arguments []string, config *config.Config, readWriter *readwriter.ReadWriter) (Command, error) {
 	args, err := commandargs.Parse(arguments)
-
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +29,7 @@ func New(arguments []string, config *config.Config, readWriter *readwriter.ReadW
 		}
 	}
 
-	return &fallback.Command{RootDir: config.RootDir, Args: arguments}, nil
+	return &fallback.Command{RootDir: config.RootDir, Args: args}, nil
 }
 
 func buildCommand(args *commandargs.CommandArgs, config *config.Config, readWriter *readwriter.ReadWriter) Command {

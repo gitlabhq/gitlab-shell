@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 )
 
 type fakeExec struct {
@@ -18,8 +20,21 @@ type fakeExec struct {
 	Env      []string
 }
 
+type FakeCommandArgs struct {
+	executable commandargs.Executable
+	arguments  []string
+}
+
+func (f *FakeCommandArgs) Executable() commandargs.Executable {
+	return f.executable
+}
+
+func (f *FakeCommandArgs) Arguments() []string {
+	return f.arguments
+}
+
 var (
-	fakeArgs = []string{"./test", "foo", "bar"}
+	fakeArgs = &FakeCommandArgs{executable: commandargs.GitlabShell, arguments: []string{"foo", "bar"}}
 )
 
 func (f *fakeExec) Exec(filename string, args []string, env []string) error {

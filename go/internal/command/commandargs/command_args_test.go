@@ -3,16 +3,16 @@ package commandargs
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/testhelper"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseSuccess(t *testing.T) {
 	testCases := []struct {
 		desc         string
-		arguments    []string
 		environment  map[string]string
+		arguments    []string
 		expectedArgs *CommandArgs
 	}{
 		// Setting the used env variables for every case to ensure we're
@@ -23,7 +23,8 @@ func TestParseSuccess(t *testing.T) {
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "",
 			},
-			expectedArgs: &CommandArgs{SshArgs: []string{}, CommandType: Discover},
+			arguments:    []string{string(GitlabShell)},
+			expectedArgs: &CommandArgs{arguments: []string{string(GitlabShell)}, SshArgs: []string{}, CommandType: Discover},
 		},
 		{
 			desc: "It finds the key id in any passed arguments",
@@ -31,72 +32,80 @@ func TestParseSuccess(t *testing.T) {
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "",
 			},
-			arguments:    []string{"hello", "key-123"},
-			expectedArgs: &CommandArgs{SshArgs: []string{}, CommandType: Discover, GitlabKeyId: "123"},
+			arguments:    []string{string(GitlabShell), "hello", "key-123"},
+			expectedArgs: &CommandArgs{arguments: []string{string(GitlabShell), "hello", "key-123"}, SshArgs: []string{}, CommandType: Discover, GitlabKeyId: "123"},
 		}, {
 			desc: "It finds the username in any passed arguments",
 			environment: map[string]string{
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "",
 			},
-			arguments:    []string{"hello", "username-jane-doe"},
-			expectedArgs: &CommandArgs{SshArgs: []string{}, CommandType: Discover, GitlabUsername: "jane-doe"},
+			arguments:    []string{string(GitlabShell), "hello", "username-jane-doe"},
+			expectedArgs: &CommandArgs{arguments: []string{string(GitlabShell), "hello", "username-jane-doe"}, SshArgs: []string{}, CommandType: Discover, GitlabUsername: "jane-doe"},
 		}, {
 			desc: "It parses 2fa_recovery_codes command",
 			environment: map[string]string{
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "2fa_recovery_codes",
 			},
-			expectedArgs: &CommandArgs{SshArgs: []string{"2fa_recovery_codes"}, CommandType: TwoFactorRecover},
+			arguments:    []string{string(GitlabShell)},
+			expectedArgs: &CommandArgs{arguments: []string{string(GitlabShell)}, SshArgs: []string{"2fa_recovery_codes"}, CommandType: TwoFactorRecover},
 		}, {
 			desc: "It parses git-receive-pack command",
 			environment: map[string]string{
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "git-receive-pack group/repo",
 			},
-			expectedArgs: &CommandArgs{SshArgs: []string{"git-receive-pack", "group/repo"}, CommandType: ReceivePack},
+			arguments:    []string{string(GitlabShell)},
+			expectedArgs: &CommandArgs{arguments: []string{string(GitlabShell)}, SshArgs: []string{"git-receive-pack", "group/repo"}, CommandType: ReceivePack},
 		}, {
 			desc: "It parses git-receive-pack command and a project with single quotes",
 			environment: map[string]string{
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "git receive-pack 'group/repo'",
 			},
-			expectedArgs: &CommandArgs{SshArgs: []string{"git-receive-pack", "group/repo"}, CommandType: ReceivePack},
+			arguments:    []string{string(GitlabShell)},
+			expectedArgs: &CommandArgs{arguments: []string{string(GitlabShell)}, SshArgs: []string{"git-receive-pack", "group/repo"}, CommandType: ReceivePack},
 		}, {
 			desc: `It parses "git receive-pack" command`,
 			environment: map[string]string{
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": `git receive-pack "group/repo"`,
 			},
-			expectedArgs: &CommandArgs{SshArgs: []string{"git-receive-pack", "group/repo"}, CommandType: ReceivePack},
+			arguments:    []string{string(GitlabShell)},
+			expectedArgs: &CommandArgs{arguments: []string{string(GitlabShell)}, SshArgs: []string{"git-receive-pack", "group/repo"}, CommandType: ReceivePack},
 		}, {
 			desc: `It parses a command followed by control characters`,
 			environment: map[string]string{
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": `git-receive-pack group/repo; any command`,
 			},
-			expectedArgs: &CommandArgs{SshArgs: []string{"git-receive-pack", "group/repo"}, CommandType: ReceivePack},
+			arguments:    []string{string(GitlabShell)},
+			expectedArgs: &CommandArgs{arguments: []string{string(GitlabShell)}, SshArgs: []string{"git-receive-pack", "group/repo"}, CommandType: ReceivePack},
 		}, {
 			desc: "It parses git-upload-pack command",
 			environment: map[string]string{
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": `git upload-pack "group/repo"`,
 			},
-			expectedArgs: &CommandArgs{SshArgs: []string{"git-upload-pack", "group/repo"}, CommandType: UploadPack},
+			arguments:    []string{string(GitlabShell)},
+			expectedArgs: &CommandArgs{arguments: []string{string(GitlabShell)}, SshArgs: []string{"git-upload-pack", "group/repo"}, CommandType: UploadPack},
 		}, {
 			desc: "It parses git-upload-archive command",
 			environment: map[string]string{
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "git-upload-archive 'group/repo'",
 			},
-			expectedArgs: &CommandArgs{SshArgs: []string{"git-upload-archive", "group/repo"}, CommandType: UploadArchive},
+			arguments:    []string{string(GitlabShell)},
+			expectedArgs: &CommandArgs{arguments: []string{string(GitlabShell)}, SshArgs: []string{"git-upload-archive", "group/repo"}, CommandType: UploadArchive},
 		}, {
 			desc: "It parses git-lfs-authenticate command",
 			environment: map[string]string{
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "git-lfs-authenticate 'group/repo' download",
 			},
-			expectedArgs: &CommandArgs{SshArgs: []string{"git-lfs-authenticate", "group/repo", "download"}, CommandType: LfsAuthenticate},
+			arguments:    []string{string(GitlabShell)},
+			expectedArgs: &CommandArgs{arguments: []string{string(GitlabShell)}, SshArgs: []string{"git-lfs-authenticate", "group/repo", "download"}, CommandType: LfsAuthenticate},
 		},
 	}
 
@@ -115,7 +124,7 @@ func TestParseSuccess(t *testing.T) {
 
 func TestParseFailure(t *testing.T) {
 	t.Run("It fails if SSH connection is not set", func(t *testing.T) {
-		_, err := Parse([]string{})
+		_, err := Parse([]string{string(GitlabShell)})
 
 		require.Error(t, err, "Only ssh allowed")
 	})
@@ -128,7 +137,7 @@ func TestParseFailure(t *testing.T) {
 		restoreEnv := testhelper.TempEnv(environment)
 		defer restoreEnv()
 
-		_, err := Parse([]string{})
+		_, err := Parse([]string{string(GitlabShell)})
 
 		require.Error(t, err, "Invalid ssh command")
 	})

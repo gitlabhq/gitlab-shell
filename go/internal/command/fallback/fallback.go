@@ -1,14 +1,22 @@
 package fallback
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"syscall"
+
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 )
+
+type CommandArgs interface {
+	Executable() commandargs.Executable
+	Arguments() []string
+}
 
 type Command struct {
 	RootDir string
-	Args    []string
+	Args    CommandArgs
 }
 
 var (
@@ -16,15 +24,15 @@ var (
 	execFunc = syscall.Exec
 )
 
-const (
-	RubyProgram = "gitlab-shell-ruby"
-)
-
 func (c *Command) Execute() error {
-	rubyCmd := filepath.Join(c.RootDir, "bin", RubyProgram)
+	rubyCmd := filepath.Join(c.RootDir, "bin", c.fallbackProgram())
 
 	// Ensure rubyArgs[0] is the full path to gitlab-shell-ruby
-	rubyArgs := append([]string{rubyCmd}, c.Args[1:]...)
+	rubyArgs := append([]string{rubyCmd}, c.Args.Arguments()...)
 
 	return execFunc(rubyCmd, rubyArgs, os.Environ())
+}
+
+func (c *Command) fallbackProgram() string {
+	return fmt.Sprintf("%s-ruby", c.Args.Executable())
 }

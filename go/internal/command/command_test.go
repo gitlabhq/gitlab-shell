@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/lfsauthenticate"
@@ -21,6 +22,7 @@ func TestNew(t *testing.T) {
 		desc         string
 		config       *config.Config
 		environment  map[string]string
+		arguments    []string
 		expectedType interface{}
 	}{
 		{
@@ -33,6 +35,7 @@ func TestNew(t *testing.T) {
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "",
 			},
+			arguments:    []string{string(commandargs.GitlabShell)},
 			expectedType: &discover.Command{},
 		},
 		{
@@ -45,6 +48,7 @@ func TestNew(t *testing.T) {
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "",
 			},
+			arguments:    []string{string(commandargs.GitlabShell)},
 			expectedType: &fallback.Command{},
 		},
 		{
@@ -57,6 +61,7 @@ func TestNew(t *testing.T) {
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "2fa_recovery_codes",
 			},
+			arguments:    []string{string(commandargs.GitlabShell)},
 			expectedType: &twofactorrecover.Command{},
 		},
 		{
@@ -69,6 +74,7 @@ func TestNew(t *testing.T) {
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "git-lfs-authenticate",
 			},
+			arguments:    []string{string(commandargs.GitlabShell)},
 			expectedType: &lfsauthenticate.Command{},
 		},
 		{
@@ -81,6 +87,7 @@ func TestNew(t *testing.T) {
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "git-receive-pack",
 			},
+			arguments:    []string{string(commandargs.GitlabShell)},
 			expectedType: &receivepack.Command{},
 		},
 		{
@@ -93,6 +100,7 @@ func TestNew(t *testing.T) {
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "git-upload-pack",
 			},
+			arguments:    []string{string(commandargs.GitlabShell)},
 			expectedType: &uploadpack.Command{},
 		},
 		{
@@ -105,6 +113,7 @@ func TestNew(t *testing.T) {
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "git-upload-archive",
 			},
+			arguments:    []string{string(commandargs.GitlabShell)},
 			expectedType: &uploadarchive.Command{},
 		},
 		{
@@ -117,6 +126,7 @@ func TestNew(t *testing.T) {
 				"SSH_CONNECTION":       "1",
 				"SSH_ORIGINAL_COMMAND": "git-unimplemented-feature",
 			},
+			arguments:    []string{string(commandargs.GitlabShell)},
 			expectedType: &fallback.Command{},
 		},
 	}
@@ -126,7 +136,7 @@ func TestNew(t *testing.T) {
 			restoreEnv := testhelper.TempEnv(tc.environment)
 			defer restoreEnv()
 
-			command, err := New([]string{}, tc.config, nil)
+			command, err := New(tc.arguments, tc.config, nil)
 
 			require.NoError(t, err)
 			require.IsType(t, tc.expectedType, command)
@@ -139,7 +149,7 @@ func TestFailingNew(t *testing.T) {
 		restoreEnv := testhelper.TempEnv(map[string]string{})
 		defer restoreEnv()
 
-		_, err := New([]string{}, &config.Config{}, nil)
+		_, err := New([]string{string(commandargs.GitlabShell)}, &config.Config{}, nil)
 
 		require.Error(t, err, "Only ssh allowed")
 	})

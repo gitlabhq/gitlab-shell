@@ -3,12 +3,14 @@ package commandargs
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"regexp"
 
 	"github.com/mattn/go-shellwords"
 )
 
 type CommandType string
+type Executable string
 
 const (
 	Discover         CommandType = "discover"
@@ -17,6 +19,7 @@ const (
 	ReceivePack      CommandType = "git-receive-pack"
 	UploadPack       CommandType = "git-upload-pack"
 	UploadArchive    CommandType = "git-upload-archive"
+	GitlabShell      Executable  = "gitlab-shell"
 )
 
 var (
@@ -25,6 +28,7 @@ var (
 )
 
 type CommandArgs struct {
+	arguments      []string
 	GitlabUsername string
 	GitlabKeyId    string
 	SshArgs        []string
@@ -32,23 +36,36 @@ type CommandArgs struct {
 }
 
 func Parse(arguments []string) (*CommandArgs, error) {
-	if sshConnection := os.Getenv("SSH_CONNECTION"); sshConnection == "" {
-		return nil, errors.New("Only ssh allowed")
+	args := &CommandArgs{arguments: arguments}
+
+	if args.Executable() == GitlabShell {
+		if sshConnection := os.Getenv("SSH_CONNECTION"); sshConnection == "" {
+			return nil, errors.New("Only ssh allowed")
+		}
+
+		args.parseWho()
+
+		if err := args.parseCommand(os.Getenv("SSH_ORIGINAL_COMMAND")); err != nil {
+			return nil, errors.New("Invalid ssh command")
+		}
+		args.defineCommandType()
+
+		return args, nil
+	} else {
+		return args, nil
 	}
-
-	args := &CommandArgs{}
-	args.parseWho(arguments)
-
-	if err := args.parseCommand(os.Getenv("SSH_ORIGINAL_COMMAND")); err != nil {
-		return nil, errors.New("Invalid ssh command")
-	}
-	args.defineCommandType()
-
-	return args, nil
 }
 
-func (c *CommandArgs) parseWho(arguments []string) {
-	for _, argument := range arguments {
+func (c *CommandArgs) Executable() Executable {
+	return Executable(filepath.Base(c.arguments[0]))
+}
+
+func (c *CommandArgs) Arguments() []string {
+	return c.arguments[1:]
+}
+
+func (c *CommandArgs) parseWho() {
+	for _, argument := range c.arguments {
 		if keyId := tryParseKeyId(argument); keyId != "" {
 			c.GitlabKeyId = keyId
 			break
