@@ -129,6 +129,12 @@ func TestNew(t *testing.T) {
 			arguments:    []string{string(commandargs.GitlabShell)},
 			expectedType: &fallback.Command{},
 		},
+		{
+			desc:         "it returns a Fallback command if executable is unknown",
+			config:       &config.Config{},
+			arguments:    []string{"unknown"},
+			expectedType: &fallback.Command{},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -145,12 +151,9 @@ func TestNew(t *testing.T) {
 }
 
 func TestFailingNew(t *testing.T) {
-	t.Run("It returns an error when SSH_CONNECTION is not set", func(t *testing.T) {
-		restoreEnv := testhelper.TempEnv(map[string]string{})
-		defer restoreEnv()
+	t.Run("It returns an error parsing arguments failed", func(t *testing.T) {
+		_, err := New([]string{}, &config.Config{}, nil)
 
-		_, err := New([]string{string(commandargs.GitlabShell)}, &config.Config{}, nil)
-
-		require.Error(t, err, "Only ssh allowed")
+		require.Error(t, err)
 	})
 }

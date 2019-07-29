@@ -9,14 +9,9 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 )
 
-type CommandArgs interface {
-	Executable() commandargs.Executable
-	Arguments() []string
-}
-
 type Command struct {
 	RootDir string
-	Args    CommandArgs
+	Args    commandargs.CommandArgs
 }
 
 var (

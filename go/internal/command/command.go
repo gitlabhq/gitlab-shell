@@ -23,16 +23,27 @@ func New(arguments []string, config *config.Config, readWriter *readwriter.ReadW
 		return nil, err
 	}
 
-	if config.FeatureEnabled(string(args.CommandType)) {
-		if cmd := buildCommand(args, config, readWriter); cmd != nil {
-			return cmd, nil
-		}
+	if cmd := buildCommand(args, config, readWriter); cmd != nil {
+		return cmd, nil
 	}
 
 	return &fallback.Command{RootDir: config.RootDir, Args: args}, nil
 }
 
-func buildCommand(args *commandargs.CommandArgs, config *config.Config, readWriter *readwriter.ReadWriter) Command {
+func buildCommand(args commandargs.CommandArgs, config *config.Config, readWriter *readwriter.ReadWriter) Command {
+	switch args.Executable() {
+	case commandargs.GitlabShell:
+		return buildShellCommand(args.(*commandargs.Shell), config, readWriter)
+	}
+
+	return nil
+}
+
+func buildShellCommand(args *commandargs.Shell, config *config.Config, readWriter *readwriter.ReadWriter) Command {
+	if !config.FeatureEnabled(string(args.CommandType)) {
+		return nil
+	}
+
 	switch args.CommandType {
 	case commandargs.Discover:
 		return &discover.Command{Config: config, Args: args, ReadWriter: readWriter}

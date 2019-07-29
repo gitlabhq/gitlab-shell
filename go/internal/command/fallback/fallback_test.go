@@ -25,6 +25,11 @@ type FakeCommandArgs struct {
 	arguments  []string
 }
 
+func (f *FakeCommandArgs) Parse() error {
+	// Do nothing as no need to parse anything
+	return nil
+}
+
 func (f *FakeCommandArgs) Executable() commandargs.Executable {
 	return f.executable
 }
