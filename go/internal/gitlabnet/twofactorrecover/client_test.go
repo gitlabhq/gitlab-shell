@@ -85,7 +85,7 @@ func TestGetRecoveryCodesByKeyId(t *testing.T) {
 	client, cleanup := setup(t)
 	defer cleanup()
 
-	args := &commandargs.CommandArgs{GitlabKeyId: "0"}
+	args := &commandargs.Shell{GitlabKeyId: "0"}
 	result, err := client.GetRecoveryCodes(args)
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"recovery 1", "codes 1"}, result)
@@ -95,7 +95,7 @@ func TestGetRecoveryCodesByUsername(t *testing.T) {
 	client, cleanup := setup(t)
 	defer cleanup()
 
-	args := &commandargs.CommandArgs{GitlabUsername: "jane-doe"}
+	args := &commandargs.Shell{GitlabUsername: "jane-doe"}
 	result, err := client.GetRecoveryCodes(args)
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"recovery 2", "codes 2"}, result)
@@ -105,7 +105,7 @@ func TestMissingUser(t *testing.T) {
 	client, cleanup := setup(t)
 	defer cleanup()
 
-	args := &commandargs.CommandArgs{GitlabKeyId: "1"}
+	args := &commandargs.Shell{GitlabKeyId: "1"}
 	_, err := client.GetRecoveryCodes(args)
 	assert.Equal(t, "missing user", err.Error())
 }
@@ -138,7 +138,7 @@ func TestErrorResponses(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			args := &commandargs.CommandArgs{GitlabKeyId: tc.fakeId}
+			args := &commandargs.Shell{GitlabKeyId: tc.fakeId}
 			resp, err := client.GetRecoveryCodes(args)
 
 			assert.EqualError(t, err, tc.expectedError)

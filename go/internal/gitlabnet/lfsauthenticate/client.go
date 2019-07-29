@@ -13,7 +13,7 @@ import (
 type Client struct {
 	config *config.Config
 	client *gitlabnet.GitlabClient
-	args   *commandargs.CommandArgs
+	args   *commandargs.Shell
 }
 
 type Request struct {
@@ -30,7 +30,7 @@ type Response struct {
 	ExpiresIn int    `json:"expires_in"`
 }
 
-func NewClient(config *config.Config, args *commandargs.CommandArgs) (*Client, error) {
+func NewClient(config *config.Config, args *commandargs.Shell) (*Client, error) {
 	client, err := gitlabnet.GetClient(config)
 	if err != nil {
 		return nil, fmt.Errorf("Error creating http client: %v", err)

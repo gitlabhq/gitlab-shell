@@ -14,7 +14,7 @@ type Response = accessverifier.Response
 
 type Command struct {
 	Config     *config.Config
-	Args       *commandargs.CommandArgs
+	Args       *commandargs.Shell
 	ReadWriter *readwriter.ReadWriter
 }
 

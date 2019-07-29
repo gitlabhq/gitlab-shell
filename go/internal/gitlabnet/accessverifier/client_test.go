@@ -57,16 +57,16 @@ func TestSuccessfulResponses(t *testing.T) {
 
 	testCases := []struct {
 		desc string
-		args *commandargs.CommandArgs
+		args *commandargs.Shell
 		who  string
 	}{
 		{
 			desc: "Provide key id within the request",
-			args: &commandargs.CommandArgs{GitlabKeyId: "1"},
+			args: &commandargs.Shell{GitlabKeyId: "1"},
 			who:  "key-1",
 		}, {
 			desc: "Provide username within the request",
-			args: &commandargs.CommandArgs{GitlabUsername: "first"},
+			args: &commandargs.Shell{GitlabUsername: "first"},
 			who:  "user-1",
 		},
 	}
@@ -86,7 +86,7 @@ func TestGetCustomAction(t *testing.T) {
 	client, cleanup := setup(t)
 	defer cleanup()
 
-	args := &commandargs.CommandArgs{GitlabUsername: "custom"}
+	args := &commandargs.Shell{GitlabUsername: "custom"}
 	result, err := client.Verify(args, action, repo)
 	require.NoError(t, err)
 
@@ -134,7 +134,7 @@ func TestErrorResponses(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			args := &commandargs.CommandArgs{GitlabKeyId: tc.fakeId}
+			args := &commandargs.Shell{GitlabKeyId: tc.fakeId}
 			resp, err := client.Verify(args, action, repo)
 
 			require.EqualError(t, err, tc.expectedError)

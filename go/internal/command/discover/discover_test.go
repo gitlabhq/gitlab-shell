@@ -49,27 +49,27 @@ func TestExecute(t *testing.T) {
 
 	testCases := []struct {
 		desc           string
-		arguments      *commandargs.CommandArgs
+		arguments      *commandargs.Shell
 		expectedOutput string
 	}{
 		{
 			desc:           "With a known username",
-			arguments:      &commandargs.CommandArgs{GitlabUsername: "alex-doe"},
+			arguments:      &commandargs.Shell{GitlabUsername: "alex-doe"},
 			expectedOutput: "Welcome to GitLab, @alex-doe!\n",
 		},
 		{
 			desc:           "With a known key id",
-			arguments:      &commandargs.CommandArgs{GitlabKeyId: "1"},
+			arguments:      &commandargs.Shell{GitlabKeyId: "1"},
 			expectedOutput: "Welcome to GitLab, @alex-doe!\n",
 		},
 		{
 			desc:           "With an unknown key",
-			arguments:      &commandargs.CommandArgs{GitlabKeyId: "-1"},
+			arguments:      &commandargs.Shell{GitlabKeyId: "-1"},
 			expectedOutput: "Welcome to GitLab, Anonymous!\n",
 		},
 		{
 			desc:           "With an unknown username",
-			arguments:      &commandargs.CommandArgs{GitlabUsername: "unknown"},
+			arguments:      &commandargs.Shell{GitlabUsername: "unknown"},
 			expectedOutput: "Welcome to GitLab, Anonymous!\n",
 		},
 	}
@@ -97,22 +97,22 @@ func TestFailingExecute(t *testing.T) {
 
 	testCases := []struct {
 		desc          string
-		arguments     *commandargs.CommandArgs
+		arguments     *commandargs.Shell
 		expectedError string
 	}{
 		{
 			desc:          "With missing arguments",
-			arguments:     &commandargs.CommandArgs{},
+			arguments:     &commandargs.Shell{},
 			expectedError: "Failed to get username: who='' is invalid",
 		},
 		{
 			desc:          "When the API returns an error",
-			arguments:     &commandargs.CommandArgs{GitlabUsername: "broken_message"},
+			arguments:     &commandargs.Shell{GitlabUsername: "broken_message"},
 			expectedError: "Failed to get username: Forbidden!",
 		},
 		{
 			desc:          "When the API fails",
-			arguments:     &commandargs.CommandArgs{GitlabUsername: "broken"},
+			arguments:     &commandargs.Shell{GitlabUsername: "broken"},
 			expectedError: "Failed to get username: Internal API error (500)",
 		},
 	}

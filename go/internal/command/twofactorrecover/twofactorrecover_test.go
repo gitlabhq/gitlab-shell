@@ -69,13 +69,13 @@ func TestExecute(t *testing.T) {
 
 	testCases := []struct {
 		desc           string
-		arguments      *commandargs.CommandArgs
+		arguments      *commandargs.Shell
 		answer         string
 		expectedOutput string
 	}{
 		{
 			desc:      "With a known key id",
-			arguments: &commandargs.CommandArgs{GitlabKeyId: "1"},
+			arguments: &commandargs.Shell{GitlabKeyId: "1"},
 			answer:    "yes\n",
 			expectedOutput: question +
 				"Your two-factor authentication recovery codes are:\n\nrecovery\ncodes\n\n" +
@@ -85,31 +85,31 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			desc:           "With bad response",
-			arguments:      &commandargs.CommandArgs{GitlabKeyId: "-1"},
+			arguments:      &commandargs.Shell{GitlabKeyId: "-1"},
 			answer:         "yes\n",
 			expectedOutput: question + errorHeader + "Parsing failed\n",
 		},
 		{
 			desc:           "With API returns an error",
-			arguments:      &commandargs.CommandArgs{GitlabKeyId: "forbidden"},
+			arguments:      &commandargs.Shell{GitlabKeyId: "forbidden"},
 			answer:         "yes\n",
 			expectedOutput: question + errorHeader + "Forbidden!\n",
 		},
 		{
 			desc:           "With API fails",
-			arguments:      &commandargs.CommandArgs{GitlabKeyId: "broken"},
+			arguments:      &commandargs.Shell{GitlabKeyId: "broken"},
 			answer:         "yes\n",
 			expectedOutput: question + errorHeader + "Internal API error (500)\n",
 		},
 		{
 			desc:           "With missing arguments",
-			arguments:      &commandargs.CommandArgs{},
+			arguments:      &commandargs.Shell{},
 			answer:         "yes\n",
 			expectedOutput: question + errorHeader + "who='' is invalid\n",
 		},
 		{
 			desc:      "With negative answer",
-			arguments: &commandargs.CommandArgs{},
+			arguments: &commandargs.Shell{},
 			answer:    "no\n",
 			expectedOutput: question +
 				"New recovery codes have *not* been generated. Existing codes will remain valid.\n",

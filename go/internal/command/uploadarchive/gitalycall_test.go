@@ -29,7 +29,7 @@ func TestUploadPack(t *testing.T) {
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},
-		Args:       &commandargs.CommandArgs{GitlabKeyId: userId, CommandType: commandargs.UploadArchive, SshArgs: []string{"git-upload-archive", repo}},
+		Args:       &commandargs.Shell{GitlabKeyId: userId, CommandType: commandargs.UploadArchive, SshArgs: []string{"git-upload-archive", repo}},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
 	}
 
