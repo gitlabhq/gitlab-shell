@@ -1,24 +1,22 @@
 package commandargs
 
-type CommandType string
-type Executable string
-
-const (
-	GitlabShell Executable = "gitlab-shell"
+import (
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/executable"
 )
+
+type CommandType string
 
 type CommandArgs interface {
 	Parse() error
-	Executable() Executable
-	Arguments() []string
+	GetArguments() []string
 }
 
-func Parse(arguments []string) (CommandArgs, error) {
-	var args CommandArgs = &BaseArgs{arguments: arguments}
+func Parse(e *executable.Executable, arguments []string) (CommandArgs, error) {
+	var args CommandArgs = &GenericArgs{Arguments: arguments}
 
-	switch args.Executable() {
-	case GitlabShell:
-		args = &Shell{BaseArgs: args.(*BaseArgs)}
+	switch e.Name {
+	case executable.GitlabShell:
+		args = &Shell{Arguments: arguments}
 	}
 
 	if err := args.Parse(); err != nil {

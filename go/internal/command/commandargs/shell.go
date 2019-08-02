@@ -23,7 +23,7 @@ var (
 )
 
 type Shell struct {
-	*BaseArgs
+	Arguments      []string
 	GitlabUsername string
 	GitlabKeyId    string
 	SshArgs        []string
@@ -31,23 +31,44 @@ type Shell struct {
 }
 
 func (s *Shell) Parse() error {
-	if sshConnection := os.Getenv("SSH_CONNECTION"); sshConnection == "" {
-		return errors.New("Only ssh allowed")
+	if err := s.validate(); err != nil {
+		return err
 	}
 
 	s.parseWho()
-
-	if err := s.parseCommand(os.Getenv("SSH_ORIGINAL_COMMAND")); err != nil {
-		return errors.New("Invalid ssh command")
-	}
-
 	s.defineCommandType()
 
 	return nil
 }
 
+func (s *Shell) GetArguments() []string {
+	return s.Arguments
+}
+
+func (s *Shell) validate() error {
+	if !s.isSshConnection() {
+		return errors.New("Only SSH allowed")
+	}
+
+	if !s.isValidSshCommand() {
+		return errors.New("Invalid SSH command")
+	}
+
+	return nil
+}
+
+func (s *Shell) isSshConnection() bool {
+	ok := os.Getenv("SSH_CONNECTION")
+	return ok != ""
+}
+
+func (s *Shell) isValidSshCommand() bool {
+	err := s.parseCommand(os.Getenv("SSH_ORIGINAL_COMMAND"))
+	return err == nil
+}
+
 func (s *Shell) parseWho() {
-	for _, argument := range s.arguments {
+	for _, argument := range s.Arguments {
 		if keyId := tryParseKeyId(argument); keyId != "" {
 			s.GitlabKeyId = keyId
 			break

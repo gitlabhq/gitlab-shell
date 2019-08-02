@@ -11,28 +11,29 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadarchive"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/executable"
 )
 
 type Command interface {
 	Execute() error
 }
 
-func New(arguments []string, config *config.Config, readWriter *readwriter.ReadWriter) (Command, error) {
-	args, err := commandargs.Parse(arguments)
+func New(e *executable.Executable, arguments []string, config *config.Config, readWriter *readwriter.ReadWriter) (Command, error) {
+	args, err := commandargs.Parse(e, arguments)
 	if err != nil {
 		return nil, err
 	}
 
-	if cmd := buildCommand(args, config, readWriter); cmd != nil {
+	if cmd := buildCommand(e, args, config, readWriter); cmd != nil {
 		return cmd, nil
 	}
 
-	return &fallback.Command{RootDir: config.RootDir, Args: args}, nil
+	return &fallback.Command{Executable: e, RootDir: config.RootDir, Args: args}, nil
 }
 
-func buildCommand(args commandargs.CommandArgs, config *config.Config, readWriter *readwriter.ReadWriter) Command {
-	switch args.Executable() {
-	case commandargs.GitlabShell:
+func buildCommand(e *executable.Executable, args commandargs.CommandArgs, config *config.Config, readWriter *readwriter.ReadWriter) Command {
+	switch e.Name {
+	case executable.GitlabShell:
 		return buildShellCommand(args.(*commandargs.Shell), config, readWriter)
 	}
 
