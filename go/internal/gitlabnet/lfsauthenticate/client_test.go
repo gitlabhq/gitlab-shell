@@ -59,22 +59,22 @@ func TestFailedRequests(t *testing.T) {
 
 	testCases := []struct {
 		desc           string
-		args           *commandargs.CommandArgs
+		args           *commandargs.Shell
 		expectedOutput string
 	}{
 		{
 			desc:           "With bad response",
-			args:           &commandargs.CommandArgs{GitlabKeyId: "-1", CommandType: commandargs.UploadPack},
+			args:           &commandargs.Shell{GitlabKeyId: "-1", CommandType: commandargs.UploadPack},
 			expectedOutput: "Parsing failed",
 		},
 		{
 			desc:           "With API returns an error",
-			args:           &commandargs.CommandArgs{GitlabKeyId: "forbidden", CommandType: commandargs.UploadPack},
+			args:           &commandargs.Shell{GitlabKeyId: "forbidden", CommandType: commandargs.UploadPack},
 			expectedOutput: "Internal API error (403)",
 		},
 		{
 			desc:           "With API fails",
-			args:           &commandargs.CommandArgs{GitlabKeyId: "broken", CommandType: commandargs.UploadPack},
+			args:           &commandargs.Shell{GitlabKeyId: "broken", CommandType: commandargs.UploadPack},
 			expectedOutput: "Internal API error (500)",
 		},
 	}
@@ -99,7 +99,7 @@ func TestSuccessfulRequests(t *testing.T) {
 	url, cleanup := testserver.StartHttpServer(t, requests)
 	defer cleanup()
 
-	args := &commandargs.CommandArgs{GitlabKeyId: keyId, CommandType: commandargs.LfsAuthenticate}
+	args := &commandargs.Shell{GitlabKeyId: keyId, CommandType: commandargs.LfsAuthenticate}
 	client, err := NewClient(&config.Config{GitlabUrl: url}, args)
 	require.NoError(t, err)
 

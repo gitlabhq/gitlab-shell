@@ -36,7 +36,7 @@ func NewClient(config *config.Config) (*Client, error) {
 	return &Client{config: config, client: client}, nil
 }
 
-func (c *Client) GetRecoveryCodes(args *commandargs.CommandArgs) ([]string, error) {
+func (c *Client) GetRecoveryCodes(args *commandargs.Shell) ([]string, error) {
 	requestBody, err := c.getRequestBody(args)
 
 	if err != nil {
@@ -65,7 +65,7 @@ func parse(hr *http.Response) ([]string, error) {
 	return response.RecoveryCodes, nil
 }
 
-func (c *Client) getRequestBody(args *commandargs.CommandArgs) (*RequestBody, error) {
+func (c *Client) getRequestBody(args *commandargs.Shell) (*RequestBody, error) {
 	client, err := discover.NewClient(c.config)
 
 	if err != nil {

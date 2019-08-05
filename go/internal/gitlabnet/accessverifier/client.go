@@ -71,7 +71,7 @@ func NewClient(config *config.Config) (*Client, error) {
 	return &Client{client: client}, nil
 }
 
-func (c *Client) Verify(args *commandargs.CommandArgs, action commandargs.CommandType, repo string) (*Response, error) {
+func (c *Client) Verify(args *commandargs.Shell, action commandargs.CommandType, repo string) (*Response, error) {
 	request := &Request{Action: action, Repo: repo, Protocol: protocol, Changes: anyChanges}
 
 	if args.GitlabUsername != "" {
@@ -89,7 +89,7 @@ func (c *Client) Verify(args *commandargs.CommandArgs, action commandargs.Comman
 	return parse(response, args)
 }
 
-func parse(hr *http.Response, args *commandargs.CommandArgs) (*Response, error) {
+func parse(hr *http.Response, args *commandargs.Shell) (*Response, error) {
 	response := &Response{}
 	if err := gitlabnet.ParseJSON(hr, response); err != nil {
 		return nil, err

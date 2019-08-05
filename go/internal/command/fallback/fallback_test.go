@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/executable"
 )
 
 type fakeExec struct {
@@ -19,7 +22,7 @@ type fakeExec struct {
 }
 
 var (
-	fakeArgs = []string{"./test", "foo", "bar"}
+	fakeArgs = &commandargs.GenericArgs{Arguments: []string{"foo", "bar"}}
 )
 
 func (f *fakeExec) Exec(filename string, args []string, env []string) error {
@@ -42,7 +45,7 @@ func (f *fakeExec) Cleanup() {
 }
 
 func TestExecuteExecsCommandSuccesfully(t *testing.T) {
-	cmd := &Command{RootDir: "/tmp", Args: fakeArgs}
+	cmd := &Command{Executable: &executable.Executable{Name: executable.GitlabShell}, RootDir: "/tmp", Args: fakeArgs}
 
 	// Override the exec func
 	fake := &fakeExec{}
@@ -56,8 +59,14 @@ func TestExecuteExecsCommandSuccesfully(t *testing.T) {
 	require.Equal(t, fake.Env, os.Environ())
 }
 
+func TestExecuteExecsUnknownExecutable(t *testing.T) {
+	cmd := &Command{Executable: &executable.Executable{Name: "unknown"}, RootDir: "/test"}
+
+	require.Error(t, cmd.Execute())
+}
+
 func TestExecuteExecsCommandOnError(t *testing.T) {
-	cmd := &Command{RootDir: "/test", Args: fakeArgs}
+	cmd := &Command{Executable: &executable.Executable{Name: executable.GitlabShell}, RootDir: "/test", Args: fakeArgs}
 
 	// Override the exec func
 	fake := &fakeExec{Error: errors.New("Test error")}
@@ -69,7 +78,7 @@ func TestExecuteExecsCommandOnError(t *testing.T) {
 }
 
 func TestExecuteGivenNonexistentCommand(t *testing.T) {
-	cmd := &Command{RootDir: "/tmp/does/not/exist", Args: fakeArgs}
+	cmd := &Command{Executable: &executable.Executable{Name: executable.GitlabShell}, RootDir: "/tmp/does/not/exist", Args: fakeArgs}
 
 	require.Error(t, cmd.Execute())
 }

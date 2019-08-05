@@ -30,7 +30,7 @@ func NewClient(config *config.Config) (*Client, error) {
 	return &Client{config: config, client: client}, nil
 }
 
-func (c *Client) GetByCommandArgs(args *commandargs.CommandArgs) (*Response, error) {
+func (c *Client) GetByCommandArgs(args *commandargs.Shell) (*Response, error) {
 	params := url.Values{}
 	if args.GitlabUsername != "" {
 		params.Add("username", args.GitlabUsername)

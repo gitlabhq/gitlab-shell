@@ -64,7 +64,7 @@ func TestMissingUser(t *testing.T) {
 	cmd, _, _, cleanup := setup(t)
 	defer cleanup()
 
-	cmd.Args = &commandargs.CommandArgs{GitlabKeyId: "2"}
+	cmd.Args = &commandargs.Shell{GitlabKeyId: "2"}
 	_, err := cmd.Verify(action, repo)
 
 	require.Equal(t, "missing user", err.Error())
@@ -74,7 +74,7 @@ func TestConsoleMessages(t *testing.T) {
 	cmd, errBuf, outBuf, cleanup := setup(t)
 	defer cleanup()
 
-	cmd.Args = &commandargs.CommandArgs{GitlabKeyId: "1"}
+	cmd.Args = &commandargs.Shell{GitlabKeyId: "1"}
 	cmd.Verify(action, repo)
 
 	require.Equal(t, "> GitLab: console\n> GitLab: message\n", errBuf.String())

@@ -3,41 +3,12 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/executable"
 )
-
-// findRootDir determines the root directory (and so, the location of the config
-// file) from os.Executable()
-func findRootDir() (string, error) {
-	if path := os.Getenv("GITLAB_SHELL_DIR"); path != "" {
-		return path, nil
-	}
-
-	path, err := os.Executable()
-	if err != nil {
-		return "", err
-	}
-
-	// Start: /opt/.../gitlab-shell/bin/gitlab-shell
-	// Ends:  /opt/.../gitlab-shell
-	return filepath.Dir(filepath.Dir(path)), nil
-}
-
-// rubyExec will never return. It either replaces the current process with a
-// Ruby interpreter, or outputs an error and kills the process.
-func execRuby(rootDir string, readWriter *readwriter.ReadWriter) {
-	cmd := &fallback.Command{RootDir: rootDir, Args: os.Args}
-
-	if err := cmd.Execute(); err != nil {
-		fmt.Fprintf(readWriter.ErrOut, "Failed to exec: %v\n", err)
-		os.Exit(1)
-	}
-}
 
 func main() {
 	readWriter := &readwriter.ReadWriter{
@@ -46,21 +17,19 @@ func main() {
 		ErrOut: os.Stderr,
 	}
 
-	rootDir, err := findRootDir()
+	executable, err := executable.New()
 	if err != nil {
-		fmt.Fprintln(readWriter.ErrOut, "Failed to determine root directory, exiting")
+		fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
 		os.Exit(1)
 	}
 
-	// Fall back to Ruby in case of problems reading the config, but issue a
-	// warning as this isn't something we can sustain indefinitely
-	config, err := config.NewFromDir(rootDir)
+	config, err := config.NewFromDir(executable.RootDir)
 	if err != nil {
-		fmt.Fprintln(readWriter.ErrOut, "Failed to read config, falling back to gitlab-shell-ruby")
-		execRuby(rootDir, readWriter)
+		fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting")
+		os.Exit(1)
 	}
 
-	cmd, err := command.New(os.Args, config, readWriter)
+	cmd, err := command.New(executable, os.Args[1:], config, readWriter)
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment

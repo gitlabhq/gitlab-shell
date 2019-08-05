@@ -22,7 +22,7 @@ func TestForbiddenAccess(t *testing.T) {
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},
-		Args:       &commandargs.CommandArgs{GitlabKeyId: "disallowed", SshArgs: []string{"git-upload-archive", "group/repo"}},
+		Args:       &commandargs.Shell{GitlabKeyId: "disallowed", SshArgs: []string{"git-upload-archive", "group/repo"}},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 	}
 

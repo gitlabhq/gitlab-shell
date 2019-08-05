@@ -16,8 +16,14 @@ test_ruby:
 	# bin/gitlab-shell must exist and needs to be the Ruby version for
 	# rspec to be able to test.
 	cp bin/gitlab-shell-ruby bin/gitlab-shell
+	# bin/gitlab-shell-authorized-keys-check and bin/gitlab-shell-authorized-principals-check
+	# should link to ruby scripts for rspec to be able to test.
+	ln -sf ./gitlab-shell-authorized-keys-check-ruby bin/gitlab-shell-authorized-keys-check
+	ln -sf ./gitlab-shell-authorized-principals-check-ruby bin/gitlab-shell-authorized-principals-check
 	bundle exec rspec --color --tag '~go' --format d spec
 	rm -f bin/gitlab-shell
+	ln -sf ./gitlab-shell bin/gitlab-shell-authorized-keys-check
+	ln -sf ./gitlab-shell bin/gitlab-shell-authorized-principals-check
 
 test_golang:
 	support/go-test

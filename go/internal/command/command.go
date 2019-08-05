@@ -11,29 +11,40 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadarchive"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/executable"
 )
 
 type Command interface {
 	Execute() error
 }
 
-func New(arguments []string, config *config.Config, readWriter *readwriter.ReadWriter) (Command, error) {
-	args, err := commandargs.Parse(arguments)
-
+func New(e *executable.Executable, arguments []string, config *config.Config, readWriter *readwriter.ReadWriter) (Command, error) {
+	args, err := commandargs.Parse(e, arguments)
 	if err != nil {
 		return nil, err
 	}
 
-	if config.FeatureEnabled(string(args.CommandType)) {
-		if cmd := buildCommand(args, config, readWriter); cmd != nil {
-			return cmd, nil
-		}
+	if cmd := buildCommand(e, args, config, readWriter); cmd != nil {
+		return cmd, nil
 	}
 
-	return &fallback.Command{RootDir: config.RootDir, Args: arguments}, nil
+	return &fallback.Command{Executable: e, RootDir: config.RootDir, Args: args}, nil
 }
 
-func buildCommand(args *commandargs.CommandArgs, config *config.Config, readWriter *readwriter.ReadWriter) Command {
+func buildCommand(e *executable.Executable, args commandargs.CommandArgs, config *config.Config, readWriter *readwriter.ReadWriter) Command {
+	switch e.Name {
+	case executable.GitlabShell:
+		return buildShellCommand(args.(*commandargs.Shell), config, readWriter)
+	}
+
+	return nil
+}
+
+func buildShellCommand(args *commandargs.Shell, config *config.Config, readWriter *readwriter.ReadWriter) Command {
+	if !config.FeatureEnabled(string(args.CommandType)) {
+		return nil
+	}
+
 	switch args.CommandType {
 	case commandargs.Discover:
 		return &discover.Command{Config: config, Args: args, ReadWriter: readWriter}

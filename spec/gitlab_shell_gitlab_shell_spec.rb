@@ -123,10 +123,10 @@ describe 'bin/gitlab-shell' do
 
     it_behaves_like 'results with keys'
 
-    it 'outputs "Only ssh allowed"' do
+    it 'outputs "Only SSH allowed"' do
       _, stderr, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-someuser"], env: {})
 
-      expect(stderr).to eq("Only ssh allowed\n")
+      expect(stderr).to eq("Only SSH allowed\n")
       expect(status).not_to be_success
     end
 

@@ -25,22 +25,22 @@ func TestFailedRequests(t *testing.T) {
 
 	testCases := []struct {
 		desc           string
-		arguments      *commandargs.CommandArgs
+		arguments      *commandargs.Shell
 		expectedOutput string
 	}{
 		{
 			desc:           "With missing arguments",
-			arguments:      &commandargs.CommandArgs{},
+			arguments:      &commandargs.Shell{},
 			expectedOutput: "> GitLab: Disallowed command",
 		},
 		{
 			desc:           "With disallowed command",
-			arguments:      &commandargs.CommandArgs{GitlabKeyId: "1", SshArgs: []string{"git-lfs-authenticate", "group/repo", "unknown"}},
+			arguments:      &commandargs.Shell{GitlabKeyId: "1", SshArgs: []string{"git-lfs-authenticate", "group/repo", "unknown"}},
 			expectedOutput: "> GitLab: Disallowed command",
 		},
 		{
 			desc:           "With disallowed user",
-			arguments:      &commandargs.CommandArgs{GitlabKeyId: "disallowed", SshArgs: []string{"git-lfs-authenticate", "group/repo", "download"}},
+			arguments:      &commandargs.Shell{GitlabKeyId: "disallowed", SshArgs: []string{"git-lfs-authenticate", "group/repo", "download"}},
 			expectedOutput: "Disallowed by API call",
 		},
 	}
@@ -140,7 +140,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 			output := &bytes.Buffer{}
 			cmd := &Command{
 				Config:     &config.Config{GitlabUrl: url},
-				Args:       &commandargs.CommandArgs{GitlabUsername: tc.username, SshArgs: []string{"git-lfs-authenticate", "group/repo", "upload"}},
+				Args:       &commandargs.Shell{GitlabUsername: tc.username, SshArgs: []string{"git-lfs-authenticate", "group/repo", "upload"}},
 				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 			}
 
