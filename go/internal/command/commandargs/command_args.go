@@ -19,6 +19,8 @@ func Parse(e *executable.Executable, arguments []string) (CommandArgs, error) {
 		args = &Shell{Arguments: arguments}
 	case executable.AuthorizedKeysCheck:
 		args = &AuthorizedKeys{Arguments: arguments}
+	case executable.AuthorizedPrincipalsCheck:
+		args = &AuthorizedPrincipals{Arguments: arguments}
 	}
 
 	if err := args.Parse(); err != nil {

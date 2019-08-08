@@ -37,6 +37,37 @@ func TestFailingNewPublicKeyLine(t *testing.T) {
 	}
 }
 
+func TestFailingNewPrincipalKeyLine(t *testing.T) {
+	testCases := []struct {
+		desc          string
+		keyId         string
+		principal     string
+		expectedError string
+	}{
+		{
+			desc:          "When username has non-alphanumeric and non-dash characters in it",
+			keyId:         "username\n1",
+			principal:     "principal",
+			expectedError: "Invalid key_id: username\n1",
+		},
+		{
+			desc:          "When principal has newline in it",
+			keyId:         "username",
+			principal:     "principal\n1",
+			expectedError: "Invalid value: principal\n1",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			result, err := NewPrincipalKeyLine(tc.keyId, tc.principal, "root-dir")
+
+			require.Empty(t, result)
+			require.EqualError(t, err, tc.expectedError)
+		})
+	}
+}
+
 func TestToString(t *testing.T) {
 	keyLine := &KeyLine{
 		Id:      "1",

@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/authorizedkeys"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/authorizedprincipals"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/lfsauthenticate"
@@ -134,6 +135,16 @@ func TestNew(t *testing.T) {
 			environment:  map[string]string{},
 			arguments:    []string{"git", "git", "key"},
 			expectedType: &authorizedkeys.Command{},
+		},
+		{
+			desc:       "it returns a AuthorizedPrincipals command if the feature is enabled",
+			executable: &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
+			config: &config.Config{
+				Migration: config.MigrationConfig{Enabled: true, Features: []string{"gitlab-shell-authorized-principals-check"}},
+			},
+			environment:  map[string]string{},
+			arguments:    []string{"key", "principal"},
+			expectedType: &authorizedprincipals.Command{},
 		},
 		{
 			desc:       "it returns a Fallback command if the feature is unimplemented",

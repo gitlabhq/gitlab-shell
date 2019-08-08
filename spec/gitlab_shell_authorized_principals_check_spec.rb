@@ -55,7 +55,7 @@ describe 'bin/gitlab-shell-authorized-principals-check' do
     it_behaves_like 'authorized principals check'
   end
 
-  pending 'with the go authorized-principals-check feature', :go do
+  describe 'with the go authorized-principals-check feature', :go do
     before(:all) do
       write_config(
         'migration' => {
