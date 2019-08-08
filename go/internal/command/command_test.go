@@ -5,6 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/authorizedkeys"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/lfsauthenticate"
@@ -123,6 +124,16 @@ func TestNew(t *testing.T) {
 			},
 			arguments:    []string{},
 			expectedType: &uploadarchive.Command{},
+		},
+		{
+			desc:       "it returns a AuthorizedKeys command if the feature is enabled",
+			executable: &executable.Executable{Name: executable.AuthorizedKeysCheck},
+			config: &config.Config{
+				Migration: config.MigrationConfig{Enabled: true, Features: []string{"gitlab-shell-authorized-keys-check"}},
+			},
+			environment:  map[string]string{},
+			arguments:    []string{"git", "git", "key"},
+			expectedType: &authorizedkeys.Command{},
 		},
 		{
 			desc:       "it returns a Fallback command if the feature is unimplemented",

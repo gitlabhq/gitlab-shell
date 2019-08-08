@@ -87,7 +87,7 @@ describe 'bin/gitlab-shell-authorized-keys-check' do
     it_behaves_like 'authorized keys check'
   end
 
-  pending 'with the go authorized-keys-check feature', :go do
+  describe 'with the go authorized-keys-check feature', :go do
     before(:all) do
       write_config(
         'gitlab_url' => "http+unix://#{CGI.escape(tmp_socket_path)}",

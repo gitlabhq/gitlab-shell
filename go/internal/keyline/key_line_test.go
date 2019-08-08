@@ -1,0 +1,51 @@
+package keyline
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestFailingNewPublicKeyLine(t *testing.T) {
+	testCases := []struct {
+		desc          string
+		id            string
+		publicKey     string
+		expectedError string
+	}{
+		{
+			desc:          "When Id has non-alphanumeric and non-dash characters in it",
+			id:            "key\n1",
+			publicKey:     "public-key",
+			expectedError: "Invalid key_id: key\n1",
+		},
+		{
+			desc:          "When public key has newline in it",
+			id:            "key",
+			publicKey:     "public\nkey",
+			expectedError: "Invalid value: public\nkey",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			result, err := NewPublicKeyLine(tc.id, tc.publicKey, "root-dir")
+
+			require.Empty(t, result)
+			require.EqualError(t, err, tc.expectedError)
+		})
+	}
+}
+
+func TestToString(t *testing.T) {
+	keyLine := &KeyLine{
+		Id:      "1",
+		Value:   "public-key",
+		Prefix:  "key",
+		RootDir: "/tmp",
+	}
+
+	result := keyLine.ToString()
+
+	require.Equal(t, `command="/tmp/bin/gitlab-shell key-1",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty public-key`, result)
+}

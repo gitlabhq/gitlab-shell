@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	BinDir                    = "bin"
 	GitlabShell               = "gitlab-shell"
 	AuthorizedKeysCheck       = "gitlab-shell-authorized-keys-check"
 	AuthorizedPrincipalsCheck = "gitlab-shell-authorized-principals-check"

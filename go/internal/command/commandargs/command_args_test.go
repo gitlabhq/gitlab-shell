@@ -120,6 +120,11 @@ func TestParseSuccess(t *testing.T) {
 			arguments:    []string{},
 			expectedArgs: &Shell{Arguments: []string{}, SshArgs: []string{"git-lfs-authenticate", "group/repo", "download"}, CommandType: LfsAuthenticate},
 		}, {
+			desc:         "It parses authorized-keys command",
+			executable:   &executable.Executable{Name: executable.AuthorizedKeysCheck},
+			arguments:    []string{"git", "git", "key"},
+			expectedArgs: &AuthorizedKeys{Arguments: []string{"git", "git", "key"}, ExpectedUser: "git", ActualUser: "git", Key: "key"},
+		}, {
 			desc:         "Unknown executable",
 			executable:   &executable.Executable{Name: "unknown"},
 			arguments:    []string{},
@@ -162,7 +167,31 @@ func TestParseFailure(t *testing.T) {
 				"SSH_ORIGINAL_COMMAND": `git receive-pack "`,
 			},
 			arguments:     []string{},
-			expectedError: "Invalid SSH allowed",
+			expectedError: "Invalid SSH command",
+		},
+		{
+			desc:          "With not enough arguments for the AuthorizedKeysCheck",
+			executable:    &executable.Executable{Name: executable.AuthorizedKeysCheck},
+			arguments:     []string{"user"},
+			expectedError: "# Insufficient arguments. 1. Usage\n#\tgitlab-shell-authorized-keys-check <expected-username> <actual-username> <key>",
+		},
+		{
+			desc:          "With too many arguments for the AuthorizedKeysCheck",
+			executable:    &executable.Executable{Name: executable.AuthorizedKeysCheck},
+			arguments:     []string{"user", "user", "key", "something-else"},
+			expectedError: "# Insufficient arguments. 4. Usage\n#\tgitlab-shell-authorized-keys-check <expected-username> <actual-username> <key>",
+		},
+		{
+			desc:          "With missing username for the AuthorizedKeysCheck",
+			executable:    &executable.Executable{Name: executable.AuthorizedKeysCheck},
+			arguments:     []string{"user", "", "key"},
+			expectedError: "# No username provided",
+		},
+		{
+			desc:          "With missing key for the AuthorizedKeysCheck",
+			executable:    &executable.Executable{Name: executable.AuthorizedKeysCheck},
+			arguments:     []string{"user", "user", ""},
+			expectedError: "# No key provided",
 		},
 	}
 
@@ -173,7 +202,7 @@ func TestParseFailure(t *testing.T) {
 
 			_, err := Parse(tc.executable, tc.arguments)
 
-			require.Error(t, err, tc.expectedError)
+			require.EqualError(t, err, tc.expectedError)
 		})
 	}
 }

@@ -17,6 +17,8 @@ func Parse(e *executable.Executable, arguments []string) (CommandArgs, error) {
 	switch e.Name {
 	case executable.GitlabShell:
 		args = &Shell{Arguments: arguments}
+	case executable.AuthorizedKeysCheck:
+		args = &AuthorizedKeys{Arguments: arguments}
 	}
 
 	if err := args.Parse(); err != nil {
