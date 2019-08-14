@@ -16,6 +16,7 @@ var (
 
 const (
 	PublicKeyPrefix = "key"
+	PrincipalPrefix = "username"
 	SshOptions      = "no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty"
 )
 
@@ -27,17 +28,25 @@ type KeyLine struct {
 }
 
 func NewPublicKeyLine(id string, publicKey string, rootDir string) (*KeyLine, error) {
-	if err := validate(id, publicKey); err != nil {
-		return nil, err
-	}
+	return newKeyLine(id, publicKey, PublicKeyPrefix, rootDir)
+}
 
-	return &KeyLine{Id: id, Value: publicKey, Prefix: PublicKeyPrefix, RootDir: rootDir}, nil
+func NewPrincipalKeyLine(keyId string, principal string, rootDir string) (*KeyLine, error) {
+	return newKeyLine(keyId, principal, PrincipalPrefix, rootDir)
 }
 
 func (k *KeyLine) ToString() string {
 	command := fmt.Sprintf("%s %s-%s", path.Join(k.RootDir, executable.BinDir, executable.GitlabShell), k.Prefix, k.Id)
 
 	return fmt.Sprintf(`command="%s",%s %s`, command, SshOptions, k.Value)
+}
+
+func newKeyLine(id string, value string, prefix string, rootDir string) (*KeyLine, error) {
+	if err := validate(id, value); err != nil {
+		return nil, err
+	}
+
+	return &KeyLine{Id: id, Value: value, Prefix: prefix, RootDir: rootDir}, nil
 }
 
 func validate(id string, value string) error {

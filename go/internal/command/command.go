@@ -2,6 +2,7 @@ package command
 
 import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/authorizedkeys"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/authorizedprincipals"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
@@ -38,6 +39,8 @@ func buildCommand(e *executable.Executable, args commandargs.CommandArgs, config
 		return buildShellCommand(args.(*commandargs.Shell), config, readWriter)
 	case executable.AuthorizedKeysCheck:
 		return buildAuthorizedKeysCommand(args.(*commandargs.AuthorizedKeys), config, readWriter)
+	case executable.AuthorizedPrincipalsCheck:
+		return buildAuthorizedPrincipalsCommand(args.(*commandargs.AuthorizedPrincipals), config, readWriter)
 	}
 
 	return nil
@@ -72,4 +75,12 @@ func buildAuthorizedKeysCommand(args *commandargs.AuthorizedKeys, config *config
 	}
 
 	return &authorizedkeys.Command{Config: config, Args: args, ReadWriter: readWriter}
+}
+
+func buildAuthorizedPrincipalsCommand(args *commandargs.AuthorizedPrincipals, config *config.Config, readWriter *readwriter.ReadWriter) Command {
+	if !config.FeatureEnabled(executable.AuthorizedPrincipalsCheck) {
+		return nil
+	}
+
+	return &authorizedprincipals.Command{Config: config, Args: args, ReadWriter: readWriter}
 }
