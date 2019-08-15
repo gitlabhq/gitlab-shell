@@ -22,7 +22,7 @@ var (
 	osExecutable = os.Executable
 )
 
-func New() (*Executable, error) {
+func New(name string) (*Executable, error) {
 	path, err := osExecutable()
 	if err != nil {
 		return nil, err
@@ -34,7 +34,7 @@ func New() (*Executable, error) {
 	}
 
 	executable := &Executable{
-		Name:    filepath.Base(path),
+		Name:    name,
 		RootDir: rootDir,
 	}
 

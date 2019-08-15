@@ -13,6 +13,8 @@ custom_hooks
 hooks/*.d
 /go_build
 /bin/gitlab-shell
+/bin/gitlab-shell-authorized-keys-check
+/bin/gitlab-shell-authorized-principals-check
 /bin/gitaly-upload-pack
 /bin/gitaly-receive-pack
 /bin/gitaly-upload-archive
