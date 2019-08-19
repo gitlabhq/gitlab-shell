@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 def main(check)
-  go_files = Dir['go/**/*.go'].reject { |p| p.start_with?('go/vendor/') }
+  go_files = Dir['go/**/*.go']
   cmd = %w[gofmt -s -l]
   cmd << '-w' unless check
   cmd += go_files
