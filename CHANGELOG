@@ -1,3 +1,15 @@
+v9.4.0
+  - Enable all migration features by default !313
+  - Set Go111MODULE to 'off' during compilation !315
+  - Add Makefile for easier building and testing !310
+  - Resolve "Update .PHONY to have accurate list of targets" !316
+  - Update rubygems version on CI for go tests !320
+  - Support falling back to ruby version of checkers !318
+  - Implement AuthorizedKeys command !321
+  - Implement AuthorizedPrincipals command !322
+  - Replace symlinks with actual binaries !324
+  - Use go mod !323
+
 v9.3.0
   - Go implementation for git-receive-pack !300
   - Go implementation for git-upload-pack !305
