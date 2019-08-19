@@ -6,9 +6,9 @@ require_relative '../support/go_build'
 include GoBuild
 
 def main
-  create_fresh_build_dir
+  ensure_build_dir_exists
 
-  run!(GO_ENV, %W[go install #{GO_PACKAGE}/cmd/...])
+  run!(GO_ENV, %W[go install ./cmd/...], chdir: GO_DIR)
   executables = Dir[File.join(BUILD_DIR, 'bin', '*')]
   FileUtils.chmod(0755, executables)
   FileUtils.cp(executables, File.join(ROOT_PATH, 'bin'))

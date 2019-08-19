@@ -8,19 +8,22 @@ require_relative '../lib/gitlab_init'
 module GoBuild
   GO_DIR = 'go'.freeze
   BUILD_DIR = File.join(ROOT_PATH, 'go_build')
-  GO_PACKAGE = File.join('gitlab.com/gitlab-org/gitlab-shell', GO_DIR)
 
   GO_ENV = {
-    'GOPATH' => BUILD_DIR,
-    'GO15VENDOREXPERIMENT' => '1',
-    'GO111MODULE' => 'off'
+    # $GOBIN controls where 'go install' puts binaries. Prior to go mod,
+    # this was $GOPATH/bin.
+    'GOBIN' => File.join(BUILD_DIR, 'bin'),
+    # Force the use of go mod, even if $GOPATH is set.
+    'GO111MODULE' => 'on',
+    # Downloading dependencies via proxy.golang.org is faster and more
+    # reliable than downloading from canonical sources. We need this
+    # environment variable because as of Go 1.12, the default is still to
+    # download from canonical sources.
+    'GOPROXY' => 'https://proxy.golang.org'
   }.freeze
 
-  def create_fresh_build_dir
-    FileUtils.rm_rf(BUILD_DIR)
-    build_source_dir = File.join(BUILD_DIR, 'src', GO_PACKAGE)
-    FileUtils.mkdir_p(build_source_dir)
-    FileUtils.cp_r(File.join(ROOT_PATH, GO_DIR, '.'), build_source_dir)
+  def ensure_build_dir_exists
+    FileUtils.mkdir_p(BUILD_DIR)
   end
 
   def run!(env, cmd, options = {})
