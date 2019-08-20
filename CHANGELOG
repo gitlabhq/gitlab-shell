@@ -1,3 +1,6 @@
+v9.4.1
+  - Fix bug preventing gitlab-development-kit from updating !327
+
 v9.4.0
   - Enable all migration features by default !313
   - Set Go111MODULE to 'off' during compilation !315
