@@ -8,7 +8,7 @@ include GoBuild
 def main
   ensure_build_dir_exists
 
-  run!(GO_ENV, %W[go install ./cmd/...], chdir: GO_DIR)
+  run!(GO_ENV, %W[go install ./cmd/...], chdir: File.join(ROOT_PATH, GO_DIR))
   executables = Dir[File.join(BUILD_DIR, 'bin', '*')]
   FileUtils.chmod(0755, executables)
   FileUtils.cp(executables, File.join(ROOT_PATH, 'bin'))
