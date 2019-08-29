@@ -1,25 +1,9 @@
-#!/usr/bin/env ruby
+#!/bin/sh
 
+# Legacy script used for AuthorizedKeysCommand when configured without username.
+# Executes gitlab-shell-authorized-keys-check with "git" as expected and actual
+# username and with the passed key.
 #
-# GitLab shell authorized_keys. Query GitLab API to get the authorized command for a given ssh key fingerprint
-#
-# Ex.
-#   /bin/authorized_keys BASE64-KEY
-#
-# Returns
-#   command="/bin/gitlab-shell key-#",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-rsa AAAAB3NzaC1yc2EAAAADAQA...
-#
+# TODO: Remove this in https://gitlab.com/gitlab-org/gitlab-shell/issues/209.
 
-key = ARGV[0]
-abort "# No key provided" if key.nil? || key.empty?
-
-require_relative "../lib/gitlab_init"
-require_relative "../lib/gitlab_net"
-require_relative "../lib/gitlab_keys"
-
-authorized_key = GitlabNet.new.authorized_key(key)
-if authorized_key.nil?
-  puts "# No key was found for #{key}"
-else
-  puts GitlabKeys.key_line("key-#{authorized_key['id']}", authorized_key["key"])
-end
+$(dirname $0)/gitlab-shell-authorized-keys-check git git $1
