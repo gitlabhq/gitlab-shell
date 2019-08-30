@@ -1,3 +1,6 @@
+v9.4.2
+  - Repurpose bin/authorized_keys script !330
+
 v9.4.1
   - Fix bug preventing gitlab-development-kit from updating !327
 
