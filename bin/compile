@@ -5,13 +5,16 @@ require 'fileutils'
 require_relative '../support/go_build'
 include GoBuild
 
+BUILD_BIN_GLOB = File.join(BUILD_DIR, 'bin', '*')
+ROOT_BIN = File.join(ROOT_PATH, 'bin')
+
 def main
   ensure_build_dir_exists
 
-  run!(GO_ENV, %W[go install ./cmd/...], chdir: File.join(ROOT_PATH, GO_DIR))
-  executables = Dir[File.join(BUILD_DIR, 'bin', '*')]
+  run!(GO_ENV, %W[go install ./cmd/...], chdir: GO_DIR)
+  executables = Dir[BUILD_BIN_GLOB]
   FileUtils.chmod(0755, executables)
-  FileUtils.cp(executables, File.join(ROOT_PATH, 'bin'))
+  FileUtils.cp(executables, ROOT_BIN)
 end
 
 main

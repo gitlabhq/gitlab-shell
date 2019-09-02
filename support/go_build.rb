@@ -6,7 +6,7 @@ require 'fileutils'
 require_relative '../lib/gitlab_init'
 
 module GoBuild
-  GO_DIR = 'go'.freeze
+  GO_DIR = File.join(ROOT_PATH, 'go')
   BUILD_DIR = File.join(ROOT_PATH, 'go_build')
 
   GO_ENV = {
