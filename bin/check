@@ -29,14 +29,4 @@ rescue GitlabNet::ApiUnreachableError
   abort "FAILED: Failed to connect to internal API"
 end
 
-config = GitlabConfig.new
-
-abort("ERROR: missing option in config.yml") unless config.auth_file
-
-print "Access to #{config.auth_file}: "
-if system(File.dirname(__FILE__) + '/gitlab-keys', 'check-permissions')
-  print 'OK'
-else
-  abort "FAILED"
-end
 puts "\n"
