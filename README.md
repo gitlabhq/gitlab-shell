@@ -76,24 +76,6 @@ Checks if GitLab API access and redis via internal API can be reached:
 
     make check
 
-## Keys
-
-Add key:
-
-    ./bin/gitlab-keys add-key key-782 "ssh-rsa AAAAx321..."
-
-Remove key:
-
-    ./bin/gitlab-keys rm-key key-23 "ssh-rsa AAAAx321..."
-
-List all keys:
-
-    ./bin/gitlab-keys list-keys
-
-Remove all keys from authorized_keys file:
-
-    ./bin/gitlab-keys clear
-
 ## Testing
 
 Run Ruby and Golang tests:
