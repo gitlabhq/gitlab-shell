@@ -3,5 +3,5 @@ package disallowedcommand
 import "errors"
 
 var (
-	Error = errors.New("> GitLab: Disallowed command")
+	Error = errors.New("Disallowed command")
 )

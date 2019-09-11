@@ -100,6 +100,6 @@ func TestCustomReceivePack(t *testing.T) {
 
 	// expect printing of info message, "custom" string from the first request
 	// and "output" string from the second request
-	require.Equal(t, "> GitLab: info_message\n> GitLab: one more message\n", errBuf.String())
+	require.Equal(t, "remote: \nremote: info_message\nremote: one more message\nremote: \n", errBuf.String())
 	require.Equal(t, "customoutput", outBuf.String())
 }
