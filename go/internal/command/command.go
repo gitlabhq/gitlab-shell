@@ -5,10 +5,10 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/authorizedprincipals"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/lfsauthenticate"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/receivepack"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/twofactorrecover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadarchive"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadpack"
@@ -30,7 +30,7 @@ func New(e *executable.Executable, arguments []string, config *config.Config, re
 		return cmd, nil
 	}
 
-	return &fallback.Command{Executable: e, RootDir: config.RootDir, Args: args}, nil
+	return nil, disallowedcommand.Error
 }
 
 func buildCommand(e *executable.Executable, args commandargs.CommandArgs, config *config.Config, readWriter *readwriter.ReadWriter) Command {
@@ -47,10 +47,6 @@ func buildCommand(e *executable.Executable, args commandargs.CommandArgs, config
 }
 
 func buildShellCommand(args *commandargs.Shell, config *config.Config, readWriter *readwriter.ReadWriter) Command {
-	if !config.FeatureEnabled(string(args.CommandType)) {
-		return nil
-	}
-
 	switch args.CommandType {
 	case commandargs.Discover:
 		return &discover.Command{Config: config, Args: args, ReadWriter: readWriter}
@@ -70,17 +66,9 @@ func buildShellCommand(args *commandargs.Shell, config *config.Config, readWrite
 }
 
 func buildAuthorizedKeysCommand(args *commandargs.AuthorizedKeys, config *config.Config, readWriter *readwriter.ReadWriter) Command {
-	if !config.FeatureEnabled(executable.AuthorizedKeysCheck) {
-		return nil
-	}
-
 	return &authorizedkeys.Command{Config: config, Args: args, ReadWriter: readWriter}
 }
 
 func buildAuthorizedPrincipalsCommand(args *commandargs.AuthorizedPrincipals, config *config.Config, readWriter *readwriter.ReadWriter) Command {
-	if !config.FeatureEnabled(executable.AuthorizedPrincipalsCheck) {
-		return nil
-	}
-
 	return &authorizedprincipals.Command{Config: config, Args: args, ReadWriter: readWriter}
 }

@@ -37,8 +37,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// The command will write to STDOUT on execution or replace the current
-	// process in case of the `fallback.Command`
 	if err = cmd.Execute(); err != nil {
 		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
 		os.Exit(1)
