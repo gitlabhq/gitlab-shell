@@ -31,7 +31,12 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     url = "#{internal_api_endpoint}/allowed"
     resp = post(url, params)
 
-    access_status_from_response(resp)
+    access_status_from_response(resp) do |access_status|
+      $logger.info('check_access result', success: access_status.success?,
+                                          gl_id: access_status.gl_id,
+                                          gl_username: access_status.gl_username,
+                                          gl_type: access_status.gl_type)
+    end
   end
 
   def discover(who)
