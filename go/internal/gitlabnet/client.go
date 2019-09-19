@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
@@ -110,8 +109,7 @@ func (c *GitlabClient) DoRequest(method, path string, data interface{}) (*http.R
 	request.Header.Set(secretHeaderName, encodedSecret)
 
 	request.Header.Add("Content-Type", "application/json")
-	ip := ipAddr()
-	request.Header.Add("X_FORWARDED_FOR", ip)
+	request.Header.Add("X_FORWARDED_FOR", c.config.IpAddr())
 
 	request.Close = true
 
@@ -125,14 +123,6 @@ func (c *GitlabClient) DoRequest(method, path string, data interface{}) (*http.R
 	}
 
 	return response, nil
-}
-
-func ipAddr() string {
-	address := os.Getenv("SSH_CONNECTION")
-	if address != "" {
-		return strings.Fields(address)[0]
-	}
-	return address
 }
 
 func ParseJSON(hr *http.Response, response interface{}) error {

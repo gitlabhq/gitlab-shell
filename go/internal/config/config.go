@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -120,4 +121,12 @@ func parseSecret(cfg *Config) error {
 	cfg.Secret = string(secretFileContent)
 
 	return nil
+}
+
+func (c *Config) IpAddr() string {
+	address := os.Getenv("SSH_CONNECTION")
+	if address != "" {
+		return strings.Fields(address)[0]
+	}
+	return address
 }
