@@ -31,15 +31,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     url = "#{internal_api_endpoint}/allowed"
     resp = post(url, params)
 
-    case resp
-    when Net::HTTPSuccess, Net::HTTPMultipleChoices, Net::HTTPUnauthorized,
-         Net::HTTPNotFound, Net::HTTPServiceUnavailable
-      if resp.content_type == CONTENT_TYPE_JSON
-        return GitAccessStatus.create_from_json(resp.body, resp.code)
-      end
-    end
-
-    GitAccessStatus.new(false, resp.code, API_INACCESSIBLE_MESSAGE)
+    access_status_from_response(resp)
   end
 
   def discover(who)
@@ -161,5 +153,19 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
 
   def sanitize_path(repo)
     repo.delete("'")
+  end
+
+  private
+
+  def access_status_from_response(resp)
+    case resp
+    when Net::HTTPSuccess, Net::HTTPMultipleChoices, Net::HTTPUnauthorized,
+        Net::HTTPNotFound, Net::HTTPServiceUnavailable
+      if resp.content_type == CONTENT_TYPE_JSON
+        return GitAccessStatus.create_from_json(resp.body, resp.code)
+      end
+    end
+
+    GitAccessStatus.new(false, resp.code, API_INACCESSIBLE_MESSAGE)
   end
 end
