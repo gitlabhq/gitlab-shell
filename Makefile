@@ -12,13 +12,15 @@ verify_golang:
 
 test: test_ruby test_golang
 
-test_ruby:
-	# bin/gitlab-shell, bin/gitlab-shell-authorized-keys-check and
-	# bin/gitlab-shell-authorized-principals-check must exist and need to be
-	# the Ruby version for rspec to be able to test.
+setup_ruby:
 	cp bin/gitlab-shell-ruby bin/gitlab-shell
 	cp bin/gitlab-shell-authorized-keys-check-ruby bin/gitlab-shell-authorized-keys-check
 	cp bin/gitlab-shell-authorized-principals-check-ruby bin/gitlab-shell-authorized-principals-check
+
+test_ruby: setup_ruby
+	# bin/gitlab-shell, bin/gitlab-shell-authorized-keys-check and
+	# bin/gitlab-shell-authorized-principals-check must exist and need to be
+	# the Ruby version for rspec to be able to test.
 	bundle exec rspec --color --tag '~go' --format d spec
 	rm -f bin/gitlab-shell bin/gitlab-shell-authorized-keys-check bin/gitlab-shell-authorized-principals-check
 
