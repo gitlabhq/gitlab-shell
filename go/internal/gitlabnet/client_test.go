@@ -117,10 +117,10 @@ func TestClients(t *testing.T) {
 func testSuccessfulGet(t *testing.T, client *GitlabClient) {
 	t.Run("Successful get", func(t *testing.T) {
 		response, err := client.Get("/hello")
-		defer response.Body.Close()
-
 		require.NoError(t, err)
 		require.NotNil(t, response)
+
+		defer response.Body.Close()
 
 		responseBody, err := ioutil.ReadAll(response.Body)
 		assert.NoError(t, err)
@@ -133,10 +133,10 @@ func testSuccessfulPost(t *testing.T, client *GitlabClient) {
 		data := map[string]string{"key": "value"}
 
 		response, err := client.Post("/post_endpoint", data)
-		defer response.Body.Close()
-
 		require.NoError(t, err)
 		require.NotNil(t, response)
+
+		defer response.Body.Close()
 
 		responseBody, err := ioutil.ReadAll(response.Body)
 		assert.NoError(t, err)
@@ -189,10 +189,10 @@ func testBrokenRequest(t *testing.T, client *GitlabClient) {
 func testAuthenticationHeader(t *testing.T, client *GitlabClient) {
 	t.Run("Authentication headers for GET", func(t *testing.T) {
 		response, err := client.Get("/auth")
-		defer response.Body.Close()
-
 		require.NoError(t, err)
 		require.NotNil(t, response)
+
+		defer response.Body.Close()
 
 		responseBody, err := ioutil.ReadAll(response.Body)
 		require.NoError(t, err)
@@ -204,10 +204,10 @@ func testAuthenticationHeader(t *testing.T, client *GitlabClient) {
 
 	t.Run("Authentication headers for POST", func(t *testing.T) {
 		response, err := client.Post("/auth", map[string]string{})
-		defer response.Body.Close()
-
 		require.NoError(t, err)
 		require.NotNil(t, response)
+
+		defer response.Body.Close()
 
 		responseBody, err := ioutil.ReadAll(response.Body)
 		require.NoError(t, err)
