@@ -36,6 +36,7 @@ type Config struct {
 	Secret         string             `yaml:"secret"`
 	HttpSettings   HttpSettingsConfig `yaml:"http_settings"`
 	HttpClient     *HttpClient
+	IPAddr         string
 }
 
 func New() (*Config, error) {
@@ -52,7 +53,10 @@ func NewFromDir(dir string) (*Config, error) {
 }
 
 func newFromFile(filename string) (*Config, error) {
-	cfg := &Config{RootDir: path.Dir(filename)}
+	cfg := &Config{
+		RootDir: path.Dir(filename),
+		IPAddr:  getIPAddr(),
+	}
 
 	configBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -123,7 +127,7 @@ func parseSecret(cfg *Config) error {
 	return nil
 }
 
-func (c *Config) IpAddr() string {
+func getIPAddr() string {
 	address := os.Getenv("SSH_CONNECTION")
 	if address != "" {
 		return strings.Fields(address)[0]

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"path"
 	"testing"
 
@@ -108,7 +107,7 @@ func TestClients(t *testing.T) {
 
 			tc.config.GitlabUrl = url
 			tc.config.Secret = "sssh, it's a secret"
-
+			tc.config.IPAddr = "127.0.0.1"
 			client, err := GetClient(tc.config)
 			require.NoError(t, err)
 
@@ -229,9 +228,6 @@ func testAuthenticationHeader(t *testing.T, client *GitlabClient) {
 
 func testXForwardedForHeader(t *testing.T, client *GitlabClient) {
 	t.Run("X-Forwarded-For for GET", func(t *testing.T) {
-		err := os.Setenv("SSH_CONNECTION", "127.0.0.1 0")
-		require.Nil(t, err)
-
 		response, err := client.Get("/with_ip")
 
 		require.NoError(t, err)
@@ -241,7 +237,6 @@ func testXForwardedForHeader(t *testing.T, client *GitlabClient) {
 
 	t.Run("X-Forwarded-For for POST", func(t *testing.T) {
 		data := map[string]string{"key": "value"}
-		os.Setenv("SSH_CONNECTION", "127.0.0.1 0")
 		response, err := client.Post("/with_ip", data)
 
 		require.NoError(t, err)
