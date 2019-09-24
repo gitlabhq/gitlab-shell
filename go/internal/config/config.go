@@ -16,11 +16,6 @@ const (
 	defaultSecretFileName = ".gitlab_shell_secret"
 )
 
-type MigrationConfig struct {
-	Enabled  bool     `yaml:"enabled"`
-	Features []string `yaml:"features"`
-}
-
 type HttpSettingsConfig struct {
 	User               string `yaml:"user"`
 	Password           string `yaml:"password"`
@@ -34,7 +29,6 @@ type Config struct {
 	RootDir        string
 	LogFile        string             `yaml:"log_file"`
 	LogFormat      string             `yaml:"log_format"`
-	Migration      MigrationConfig    `yaml:"migration"`
 	GitlabUrl      string             `yaml:"gitlab_url"`
 	GitlabTracing  string             `yaml:"gitlab_tracing"`
 	SecretFilePath string             `yaml:"secret_file"`
@@ -54,20 +48,6 @@ func New() (*Config, error) {
 
 func NewFromDir(dir string) (*Config, error) {
 	return newFromFile(path.Join(dir, configFile))
-}
-
-func (c *Config) FeatureEnabled(featureName string) bool {
-	if !c.Migration.Enabled {
-		return false
-	}
-
-	for _, enabledFeature := range c.Migration.Features {
-		if enabledFeature == featureName {
-			return true
-		}
-	}
-
-	return false
 }
 
 func newFromFile(filename string) (*Config, error) {

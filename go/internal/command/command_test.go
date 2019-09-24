@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -8,9 +9,9 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/authorizedkeys"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/authorizedprincipals"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/fallback"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/lfsauthenticate"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/receivepack"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/twofactorrecover"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadarchive"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadpack"
@@ -19,153 +20,76 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/testhelper"
 )
 
+var (
+	authorizedKeysExec       = &executable.Executable{Name: executable.AuthorizedKeysCheck}
+	authorizedPrincipalsExec = &executable.Executable{Name: executable.AuthorizedPrincipalsCheck}
+	gitlabShellExec          = &executable.Executable{Name: executable.GitlabShell}
+
+	basicConfig = &config.Config{GitlabUrl: "http+unix://gitlab.socket"}
+)
+
+func buildEnv(command string) map[string]string {
+	return map[string]string{
+		"SSH_CONNECTION":       "1",
+		"SSH_ORIGINAL_COMMAND": command,
+	}
+}
+
 func TestNew(t *testing.T) {
 	testCases := []struct {
 		desc         string
 		executable   *executable.Executable
-		config       *config.Config
 		environment  map[string]string
 		arguments    []string
 		expectedType interface{}
 	}{
 		{
-			desc:       "it returns a Discover command if the feature is enabled",
-			executable: &executable.Executable{Name: executable.GitlabShell},
-			config: &config.Config{
-				GitlabUrl: "http+unix://gitlab.socket",
-				Migration: config.MigrationConfig{Enabled: true, Features: []string{"discover"}},
-			},
-			environment: map[string]string{
-				"SSH_CONNECTION":       "1",
-				"SSH_ORIGINAL_COMMAND": "",
-			},
-			arguments:    []string{},
+			desc:         "it returns a Discover command",
+			executable:   gitlabShellExec,
+			environment:  buildEnv(""),
 			expectedType: &discover.Command{},
 		},
 		{
-			desc:       "it returns a Fallback command no feature is enabled",
-			executable: &executable.Executable{Name: executable.GitlabShell},
-			config: &config.Config{
-				GitlabUrl: "http+unix://gitlab.socket",
-				Migration: config.MigrationConfig{Enabled: false},
-			},
-			environment: map[string]string{
-				"SSH_CONNECTION":       "1",
-				"SSH_ORIGINAL_COMMAND": "",
-			},
-			arguments:    []string{},
-			expectedType: &fallback.Command{},
-		},
-		{
-			desc:       "it returns a TwoFactorRecover command if the feature is enabled",
-			executable: &executable.Executable{Name: executable.GitlabShell},
-			config: &config.Config{
-				GitlabUrl: "http+unix://gitlab.socket",
-				Migration: config.MigrationConfig{Enabled: true, Features: []string{"2fa_recovery_codes"}},
-			},
-			environment: map[string]string{
-				"SSH_CONNECTION":       "1",
-				"SSH_ORIGINAL_COMMAND": "2fa_recovery_codes",
-			},
-			arguments:    []string{},
+			desc:         "it returns a TwoFactorRecover command",
+			executable:   gitlabShellExec,
+			environment:  buildEnv("2fa_recovery_codes"),
 			expectedType: &twofactorrecover.Command{},
 		},
 		{
-			desc:       "it returns an LfsAuthenticate command if the feature is enabled",
-			executable: &executable.Executable{Name: executable.GitlabShell},
-			config: &config.Config{
-				GitlabUrl: "http+unix://gitlab.socket",
-				Migration: config.MigrationConfig{Enabled: true, Features: []string{"git-lfs-authenticate"}},
-			},
-			environment: map[string]string{
-				"SSH_CONNECTION":       "1",
-				"SSH_ORIGINAL_COMMAND": "git-lfs-authenticate",
-			},
-			arguments:    []string{},
+			desc:         "it returns an LfsAuthenticate command",
+			executable:   gitlabShellExec,
+			environment:  buildEnv("git-lfs-authenticate"),
 			expectedType: &lfsauthenticate.Command{},
 		},
 		{
-			desc:       "it returns a ReceivePack command if the feature is enabled",
-			executable: &executable.Executable{Name: executable.GitlabShell},
-			config: &config.Config{
-				GitlabUrl: "http+unix://gitlab.socket",
-				Migration: config.MigrationConfig{Enabled: true, Features: []string{"git-receive-pack"}},
-			},
-			environment: map[string]string{
-				"SSH_CONNECTION":       "1",
-				"SSH_ORIGINAL_COMMAND": "git-receive-pack",
-			},
-			arguments:    []string{},
+			desc:         "it returns a ReceivePack command",
+			executable:   gitlabShellExec,
+			environment:  buildEnv("git-receive-pack"),
 			expectedType: &receivepack.Command{},
 		},
 		{
-			desc:       "it returns an UploadPack command if the feature is enabled",
-			executable: &executable.Executable{Name: executable.GitlabShell},
-			config: &config.Config{
-				GitlabUrl: "http+unix://gitlab.socket",
-				Migration: config.MigrationConfig{Enabled: true, Features: []string{"git-upload-pack"}},
-			},
-			environment: map[string]string{
-				"SSH_CONNECTION":       "1",
-				"SSH_ORIGINAL_COMMAND": "git-upload-pack",
-			},
-			arguments:    []string{},
+			desc:         "it returns an UploadPack command",
+			executable:   gitlabShellExec,
+			environment:  buildEnv("git-upload-pack"),
 			expectedType: &uploadpack.Command{},
 		},
 		{
-			desc:       "it returns an UploadArchive command if the feature is enabled",
-			executable: &executable.Executable{Name: executable.GitlabShell},
-			config: &config.Config{
-				GitlabUrl: "http+unix://gitlab.socket",
-				Migration: config.MigrationConfig{Enabled: true, Features: []string{"git-upload-archive"}},
-			},
-			environment: map[string]string{
-				"SSH_CONNECTION":       "1",
-				"SSH_ORIGINAL_COMMAND": "git-upload-archive",
-			},
-			arguments:    []string{},
+			desc:         "it returns an UploadArchive command",
+			executable:   gitlabShellExec,
+			environment:  buildEnv("git-upload-archive"),
 			expectedType: &uploadarchive.Command{},
 		},
 		{
-			desc:       "it returns a AuthorizedKeys command if the feature is enabled",
-			executable: &executable.Executable{Name: executable.AuthorizedKeysCheck},
-			config: &config.Config{
-				Migration: config.MigrationConfig{Enabled: true, Features: []string{"gitlab-shell-authorized-keys-check"}},
-			},
-			environment:  map[string]string{},
+			desc:         "it returns a AuthorizedKeys command",
+			executable:   authorizedKeysExec,
 			arguments:    []string{"git", "git", "key"},
 			expectedType: &authorizedkeys.Command{},
 		},
 		{
-			desc:       "it returns a AuthorizedPrincipals command if the feature is enabled",
-			executable: &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
-			config: &config.Config{
-				Migration: config.MigrationConfig{Enabled: true, Features: []string{"gitlab-shell-authorized-principals-check"}},
-			},
-			environment:  map[string]string{},
+			desc:         "it returns a AuthorizedPrincipals command",
+			executable:   authorizedPrincipalsExec,
 			arguments:    []string{"key", "principal"},
 			expectedType: &authorizedprincipals.Command{},
-		},
-		{
-			desc:       "it returns a Fallback command if the feature is unimplemented",
-			executable: &executable.Executable{Name: executable.GitlabShell},
-			config: &config.Config{
-				GitlabUrl: "http+unix://gitlab.socket",
-				Migration: config.MigrationConfig{Enabled: true, Features: []string{"git-unimplemented-feature"}},
-			},
-			environment: map[string]string{
-				"SSH_CONNECTION":       "1",
-				"SSH_ORIGINAL_COMMAND": "git-unimplemented-feature",
-			},
-			arguments:    []string{},
-			expectedType: &fallback.Command{},
-		},
-		{
-			desc:         "it returns a Fallback command if executable is unknown",
-			executable:   &executable.Executable{Name: "unknown"},
-			config:       &config.Config{},
-			arguments:    []string{},
-			expectedType: &fallback.Command{},
 		},
 	}
 
@@ -174,7 +98,7 @@ func TestNew(t *testing.T) {
 			restoreEnv := testhelper.TempEnv(tc.environment)
 			defer restoreEnv()
 
-			command, err := New(tc.executable, tc.arguments, tc.config, nil)
+			command, err := New(tc.executable, tc.arguments, basicConfig, nil)
 
 			require.NoError(t, err)
 			require.IsType(t, tc.expectedType, command)
@@ -183,9 +107,33 @@ func TestNew(t *testing.T) {
 }
 
 func TestFailingNew(t *testing.T) {
-	t.Run("It returns an error parsing arguments failed", func(t *testing.T) {
-		_, err := New(&executable.Executable{Name: executable.GitlabShell}, []string{}, &config.Config{}, nil)
+	testCases := []struct {
+		desc          string
+		executable    *executable.Executable
+		environment   map[string]string
+		expectedError error
+	}{
+		{
+			desc:          "Parsing environment failed",
+			executable:    gitlabShellExec,
+			expectedError: errors.New("Only SSH allowed"),
+		},
+		{
+			desc:          "Unknown command given",
+			executable:    gitlabShellExec,
+			environment:   buildEnv("unknown"),
+			expectedError: disallowedcommand.Error,
+		},
+	}
 
-		require.Error(t, err)
-	})
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			restoreEnv := testhelper.TempEnv(tc.environment)
+			defer restoreEnv()
+
+			command, err := New(tc.executable, []string{}, basicConfig, nil)
+			require.Nil(t, command)
+			require.Equal(t, tc.expectedError, err)
+		})
+	}
 }
