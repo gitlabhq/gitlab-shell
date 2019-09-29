@@ -85,3 +85,9 @@ func getTestDataDir() (string, error) {
 
 	return path.Join(path.Dir(currentFile), "testdata"), nil
 }
+
+func Setenv(key, value string) (func(), error) {
+	oldValue := os.Getenv(key)
+	err := os.Setenv(key, value)
+	return func() { os.Setenv(key, oldValue) }, err
+}

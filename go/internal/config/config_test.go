@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"os"
 	"path"
 	"testing"
 
@@ -110,11 +109,4 @@ func TestParseConfig(t *testing.T) {
 			assert.Equal(t, tc.httpSettings, cfg.HttpSettings)
 		})
 	}
-}
-
-func TestGetIPAddr(t *testing.T) {
-	err := os.Setenv("SSH_CONNECTION", "127.0.0.1 0")
-
-	require.Nil(t, err)
-	require.Equal(t, getIPAddr(), "127.0.0.1")
 }

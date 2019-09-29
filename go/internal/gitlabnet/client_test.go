@@ -53,7 +53,7 @@ func TestClients(t *testing.T) {
 		{
 			Path: "/api/v4/internal/with_ip",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				header := r.Header.Get("X_FORWARDED_FOR")
+				header := r.Header.Get("X-Forwarded-For")
 				require.Equal(t, "127.0.0.1", header)
 			},
 		},
@@ -107,7 +107,6 @@ func TestClients(t *testing.T) {
 
 			tc.config.GitlabUrl = url
 			tc.config.Secret = "sssh, it's a secret"
-			tc.config.IPAddr = "127.0.0.1"
 			client, err := GetClient(tc.config)
 			require.NoError(t, err)
 
@@ -228,6 +227,10 @@ func testAuthenticationHeader(t *testing.T, client *GitlabClient) {
 
 func testXForwardedForHeader(t *testing.T, client *GitlabClient) {
 	t.Run("X-Forwarded-For for GET", func(t *testing.T) {
+		cleanup, err := testhelper.Setenv("SSH_CONNECTION", "127.0.0.1 0")
+		require.NoError(t, err)
+		defer cleanup()
+
 		response, err := client.Get("/with_ip")
 
 		require.NoError(t, err)
@@ -237,6 +240,10 @@ func testXForwardedForHeader(t *testing.T, client *GitlabClient) {
 
 	t.Run("X-Forwarded-For for POST", func(t *testing.T) {
 		data := map[string]string{"key": "value"}
+		cleanup, err := testhelper.Setenv("SSH_CONNECTION", "127.0.0.1 0")
+		require.NoError(t, err)
+		defer cleanup()
+
 		response, err := client.Post("/with_ip", data)
 
 		require.NoError(t, err)

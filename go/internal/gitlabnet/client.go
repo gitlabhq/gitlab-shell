@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/sshenv"
 )
 
 const (
@@ -109,7 +110,10 @@ func (c *GitlabClient) DoRequest(method, path string, data interface{}) (*http.R
 	request.Header.Set(secretHeaderName, encodedSecret)
 
 	request.Header.Add("Content-Type", "application/json")
-	request.Header.Add("X_FORWARDED_FOR", c.config.IPAddr)
+	ipAddr := sshenv.LocalAddr()
+	if ipAddr != "" {
+		request.Header.Add("X-Forwarded-For", ipAddr)
+	}
 
 	request.Close = true
 

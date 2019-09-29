@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -36,7 +35,6 @@ type Config struct {
 	Secret         string             `yaml:"secret"`
 	HttpSettings   HttpSettingsConfig `yaml:"http_settings"`
 	HttpClient     *HttpClient
-	IPAddr         string
 }
 
 func New() (*Config, error) {
@@ -55,7 +53,6 @@ func NewFromDir(dir string) (*Config, error) {
 func newFromFile(filename string) (*Config, error) {
 	cfg := &Config{
 		RootDir: path.Dir(filename),
-		IPAddr:  getIPAddr(),
 	}
 
 	configBytes, err := ioutil.ReadFile(filename)
@@ -125,12 +122,4 @@ func parseSecret(cfg *Config) error {
 	cfg.Secret = string(secretFileContent)
 
 	return nil
-}
-
-func getIPAddr() string {
-	address := os.Getenv("SSH_CONNECTION")
-	if address != "" {
-		return strings.Fields(address)[0]
-	}
-	return address
 }

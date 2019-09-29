@@ -5,7 +5,7 @@ include GoBuild
 
 def main
   ensure_build_dir_exists
-  run!(GO_ENV, %w[go test ./...], chdir: GO_DIR)
+  run!(GO_ENV, %w[go test -v ./...], chdir: GO_DIR)
   puts 'OK'
 end
 
