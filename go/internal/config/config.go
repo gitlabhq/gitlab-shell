@@ -51,9 +51,7 @@ func NewFromDir(dir string) (*Config, error) {
 }
 
 func newFromFile(filename string) (*Config, error) {
-	cfg := &Config{
-		RootDir: path.Dir(filename),
-	}
+	cfg := &Config{RootDir: path.Dir(filename)}
 
 	configBytes, err := ioutil.ReadFile(filename)
 	if err != nil {

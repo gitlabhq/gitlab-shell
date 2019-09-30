@@ -12,6 +12,9 @@ func TestLocalAddr(t *testing.T) {
 	require.NoError(t, err)
 	defer cleanup()
 
-	require.Nil(t, err)
 	require.Equal(t, LocalAddr(), "127.0.0.1")
+}
+
+func TestEmptyLocalAddr(t *testing.T) {
+	require.Equal(t, LocalAddr(), "")
 }

@@ -58,6 +58,13 @@ func TestClients(t *testing.T) {
 			},
 		},
 		{
+			Path: "/api/v4/internal/with_empty_ip",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				header := r.Header.Get("X-Forwarded-For")
+				require.Equal(t, "", header)
+			},
+		},
+		{
 			Path: "/api/v4/internal/error",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
@@ -107,6 +114,7 @@ func TestClients(t *testing.T) {
 
 			tc.config.GitlabUrl = url
 			tc.config.Secret = "sssh, it's a secret"
+
 			client, err := GetClient(tc.config)
 			require.NoError(t, err)
 
@@ -117,6 +125,7 @@ func TestClients(t *testing.T) {
 			testErrorMessage(t, client)
 			testAuthenticationHeader(t, client)
 			testXForwardedForHeader(t, client)
+			testEmptyForwardedForHeader(t, client)
 		})
 	}
 }
@@ -245,6 +254,25 @@ func testXForwardedForHeader(t *testing.T, client *GitlabClient) {
 		defer cleanup()
 
 		response, err := client.Post("/with_ip", data)
+
+		require.NoError(t, err)
+		require.NotNil(t, response)
+		response.Body.Close()
+	})
+}
+
+func testEmptyForwardedForHeader(t *testing.T, client *GitlabClient) {
+	t.Run("X-Forwarded-For empty for GET", func(t *testing.T) {
+		response, err := client.Get("/with_empty_ip")
+
+		require.NoError(t, err)
+		require.NotNil(t, response)
+		response.Body.Close()
+	})
+
+	t.Run("X-Forwarded-For empty for POST", func(t *testing.T) {
+		data := map[string]string{"key": "value"}
+		response, err := client.Post("/with_empty_ip", data)
 
 		require.NoError(t, err)
 		require.NotNil(t, response)
