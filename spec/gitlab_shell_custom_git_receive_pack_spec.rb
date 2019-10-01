@@ -24,7 +24,7 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
       res.body = {"result" => output}.to_json
     end
 
-    server.mount_proc('/api/v4/internal/allowed') do |req, res|
+    server.mount_proc('/api/v4/internal/allowed/secure') do |req, res|
       res.content_type = 'application/json'
 
       key_id = req.query['key_id'] || req.query['username']

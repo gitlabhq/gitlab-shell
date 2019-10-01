@@ -90,7 +90,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 			},
 		},
 		{
-			Path: "/api/v4/internal/allowed",
+			Path: "/api/v4/internal/allowed/secure",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := ioutil.ReadAll(r.Body)
 				defer r.Body.Close()

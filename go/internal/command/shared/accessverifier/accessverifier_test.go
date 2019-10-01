@@ -24,7 +24,7 @@ var (
 func setup(t *testing.T) (*Command, *bytes.Buffer, *bytes.Buffer, func()) {
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/allowed",
+			Path: "/api/v4/internal/allowed/secure",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)

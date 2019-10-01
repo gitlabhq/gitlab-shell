@@ -28,7 +28,7 @@ class GitlabNet # rubocop:disable Metrics/ClassLength
     who_sym, _, who_v = self.class.parse_who(who)
     params[who_sym] = who_v
 
-    url = "#{internal_api_endpoint}/allowed"
+    url = "#{internal_api_endpoint}/allowed/secure"
     resp = post(url, params)
 
     case resp

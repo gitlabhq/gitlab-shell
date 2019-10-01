@@ -13,7 +13,7 @@ import (
 func BuildDisallowedByApiHandlers(t *testing.T) []testserver.TestRequestHandler {
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/allowed",
+			Path: "/api/v4/internal/allowed/secure",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				body := map[string]interface{}{
 					"status":  false,
@@ -31,7 +31,7 @@ func BuildDisallowedByApiHandlers(t *testing.T) []testserver.TestRequestHandler 
 func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testserver.TestRequestHandler {
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/allowed",
+			Path: "/api/v4/internal/allowed/secure",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				body := map[string]interface{}{
 					"status": true,

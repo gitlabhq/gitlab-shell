@@ -80,7 +80,7 @@ func (c *Client) Verify(args *commandargs.Shell, action commandargs.CommandType,
 		request.KeyId = args.GitlabKeyId
 	}
 
-	response, err := c.client.Post("/allowed", request)
+	response, err := c.client.Post("/allowed/secure", request)
 	if err != nil {
 		return nil, err
 	}
