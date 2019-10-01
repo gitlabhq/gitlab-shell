@@ -26,7 +26,7 @@ describe 'bin/gitlab-shell git-lfs-authentication' do
       end
     end
 
-    server.mount_proc('/api/v4/internal/allowed/secure') do |req, res|
+    server.mount_proc('/api/v4/internal/allowed') do |req, res|
       res.content_type = 'application/json'
 
       key_id = req.query['key_id'] || req.query['username']

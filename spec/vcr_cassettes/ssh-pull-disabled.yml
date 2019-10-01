@@ -2,7 +2,7 @@
 http_interactions:
 - request:
     method: post
-    uri: http://localhost:3000/api/v4/internal/allowed/secure
+    uri: http://localhost:3000/api/v4/internal/allowed
     body:
       encoding: US-ASCII
       string: action=git-upload-pack&changes=0000000000000000000000000000000000000000+92d0970eefd7acb6d548878925ce2208cfe2d2ec+refs%2Fheads%2Fbranch4&gl_repository&project=gitlab-org%2Fgitlab-test.git&protocol=ssh&env=%7B%7D&key_id=1&secret_token=0a3938d9d95d807e94d937af3a4fbbea%0A
