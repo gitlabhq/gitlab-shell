@@ -50,11 +50,6 @@ log_level: INFO
 # incurs an extra API call on every gitlab-shell command.
 audit_usernames: false
 
-# Migration to Go: anything listed here has two implementations. Use these flags
-# to try the new implementations out, or to revert to the old behaviour if there
-# problems arise.
-# migration: { enabled: true, features: ['discover', '2fa_recovery_codes', 'git-receive-pack', 'git-upload-pack', 'git-upload-archive', 'git-lfs-authenticate'] }
-
 # Distributed Tracing. GitLab-Shell has distributed tracing instrumentation.
 # For more details, visit https://docs.gitlab.com/ee/development/distributed_tracing.html
 # gitlab_tracing: opentracing://driver
