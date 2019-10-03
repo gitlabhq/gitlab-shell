@@ -18,3 +18,4 @@ hooks/*.d
 /bin/gitaly-upload-pack
 /bin/gitaly-receive-pack
 /bin/gitaly-upload-archive
+/bin/check

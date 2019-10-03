@@ -9,6 +9,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/authorizedkeys"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/authorizedprincipals"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/healthcheck"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/lfsauthenticate"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/receivepack"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/shared/disallowedcommand"
@@ -23,6 +24,7 @@ import (
 var (
 	authorizedKeysExec       = &executable.Executable{Name: executable.AuthorizedKeysCheck}
 	authorizedPrincipalsExec = &executable.Executable{Name: executable.AuthorizedPrincipalsCheck}
+	checkExec                = &executable.Executable{Name: executable.Healthcheck}
 	gitlabShellExec          = &executable.Executable{Name: executable.GitlabShell}
 
 	basicConfig = &config.Config{GitlabUrl: "http+unix://gitlab.socket"}
@@ -33,6 +35,13 @@ func buildEnv(command string) map[string]string {
 		"SSH_CONNECTION":       "1",
 		"SSH_ORIGINAL_COMMAND": command,
 	}
+}
+
+func buildCheckAllowedEnv(command string) map[string]string {
+	out := buildEnv(command)
+	out["GITLAB_SHELL_ALLOW_CHECK_COMMAND"] = "1"
+
+	return out
 }
 
 func TestNew(t *testing.T) {
@@ -78,6 +87,11 @@ func TestNew(t *testing.T) {
 			executable:   gitlabShellExec,
 			environment:  buildEnv("git-upload-archive"),
 			expectedType: &uploadarchive.Command{},
+		},
+		{
+			desc:         "it returns a Healthcheck command",
+			executable:   checkExec,
+			expectedType: &healthcheck.Command{},
 		},
 		{
 			desc:         "it returns a AuthorizedKeys command",
