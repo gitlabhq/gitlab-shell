@@ -41,6 +41,6 @@ http_interactions:
     body:
       encoding: UTF-8
       string: '{"status":false,"message":"Git access over SSH is not allowed"}'
-    http_version:
+    http_version: 
   recorded_at: Wed, 21 Jun 2017 12:24:05 GMT
 recorded_with: VCR 2.4.0

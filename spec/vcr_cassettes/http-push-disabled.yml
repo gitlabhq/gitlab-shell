@@ -41,6 +41,6 @@ http_interactions:
     body:
       encoding: UTF-8
       string: '{"status":false,"message":"Pushing over HTTP is not allowed."}'
-    http_version:
+    http_version: 
   recorded_at: Wed, 21 Jun 2017 10:32:01 GMT
 recorded_with: VCR 2.4.0

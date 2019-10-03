@@ -109,7 +109,6 @@ func (c *GitlabClient) DoRequest(method, path string, data interface{}) (*http.R
 	request.Header.Set(secretHeaderName, encodedSecret)
 
 	request.Header.Add("Content-Type", "application/json")
-
 	request.Close = true
 
 	response, err := c.httpClient.Do(request)
