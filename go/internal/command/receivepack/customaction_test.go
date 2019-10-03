@@ -22,7 +22,7 @@ func TestCustomReceivePack(t *testing.T) {
 
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/allowed/secure",
+			Path: "/api/v4/internal/allowed",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)

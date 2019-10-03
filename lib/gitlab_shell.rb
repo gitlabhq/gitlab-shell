@@ -77,7 +77,7 @@ class GitlabShell # rubocop:disable Metrics/ClassLength
     end
 
     if @command == GIT_RECEIVE_PACK_COMMAND && access_status.custom_action?
-      # If the response from /api/v4/allowed/secure is a HTTP 300, we need to perform
+      # If the response from /api/v4/allowed is a HTTP 300, we need to perform
       # a Custom Action and therefore should return and not call process_cmd()
       #
       return process_custom_action(access_status)

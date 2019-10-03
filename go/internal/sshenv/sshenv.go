@@ -11,5 +11,5 @@ func LocalAddr() string {
 	if address != "" {
 		return strings.Fields(address)[0]
 	}
-	return address
+	return ""
 }
