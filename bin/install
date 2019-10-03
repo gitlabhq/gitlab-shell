@@ -1,10 +1,8 @@
 #!/usr/bin/env ruby
 
-require_relative '../lib/gitlab_init'
-
-#
-# GitLab shell, invoked from ~/.ssh/authorized_keys
-#
+# Load ROOT_PATH and access the minimum necessary config file
+require_relative '../support/go_build'
+require_relative '../support/gitlab_config'
 
 config = GitlabConfig.new
 key_dir = File.dirname("#{config.auth_file}")
