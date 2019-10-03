@@ -110,8 +110,6 @@ func TestClients(t *testing.T) {
 			testMissing(t, client)
 			testErrorMessage(t, client)
 			testAuthenticationHeader(t, client)
-			testXForwardedForHeader(t, client)
-			testEmptyForwardedForHeader(t, client)
 		})
 	}
 }
