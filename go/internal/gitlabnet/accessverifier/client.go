@@ -8,6 +8,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/sshenv"
 )
 
 const (
@@ -26,6 +27,7 @@ type Request struct {
 	Protocol string                  `json:"protocol"`
 	KeyId    string                  `json:"key_id,omitempty"`
 	Username string                  `json:"username,omitempty"`
+	CheckIp  string                  `json:"check_ip,omitempty"`
 }
 
 type Gitaly struct {
@@ -79,6 +81,8 @@ func (c *Client) Verify(args *commandargs.Shell, action commandargs.CommandType,
 	} else {
 		request.KeyId = args.GitlabKeyId
 	}
+
+	request.CheckIp = sshenv.LocalAddr()
 
 	response, err := c.client.Post("/allowed", request)
 	if err != nil {
