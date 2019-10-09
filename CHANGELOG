@@ -1,3 +1,10 @@
+v10.1.0
+- Remove feature flags and the fallback command !336
+- Remove an obsolete section from config.yml.example !339
+- Extend group IP restriction to Git activity !335
+- Remove deprecated create-hooks script !342
+- Rewrite `bin/check` in Go !341
+
 v10.0.0
 - Remove gitlab-keys script !329
 
