@@ -37,13 +37,6 @@ func buildEnv(command string) map[string]string {
 	}
 }
 
-func buildCheckAllowedEnv(command string) map[string]string {
-	out := buildEnv(command)
-	out["GITLAB_SHELL_ALLOW_CHECK_COMMAND"] = "1"
-
-	return out
-}
-
 func TestNew(t *testing.T) {
 	testCases := []struct {
 		desc         string
