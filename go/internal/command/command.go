@@ -5,6 +5,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/authorizedprincipals"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
+	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/healthcheck"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/lfsauthenticate"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/receivepack"
@@ -41,6 +42,8 @@ func buildCommand(e *executable.Executable, args commandargs.CommandArgs, config
 		return buildAuthorizedKeysCommand(args.(*commandargs.AuthorizedKeys), config, readWriter)
 	case executable.AuthorizedPrincipalsCheck:
 		return buildAuthorizedPrincipalsCommand(args.(*commandargs.AuthorizedPrincipals), config, readWriter)
+	case executable.Healthcheck:
+		return buildHealthcheckCommand(config, readWriter)
 	}
 
 	return nil
@@ -71,4 +74,8 @@ func buildAuthorizedKeysCommand(args *commandargs.AuthorizedKeys, config *config
 
 func buildAuthorizedPrincipalsCommand(args *commandargs.AuthorizedPrincipals, config *config.Config, readWriter *readwriter.ReadWriter) Command {
 	return &authorizedprincipals.Command{Config: config, Args: args, ReadWriter: readWriter}
+}
+
+func buildHealthcheckCommand(config *config.Config, readWriter *readwriter.ReadWriter) Command {
+	return &healthcheck.Command{Config: config, ReadWriter: readWriter}
 }

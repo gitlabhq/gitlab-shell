@@ -1,5 +1,7 @@
 .PHONY: validate verify verify_ruby verify_golang test test_ruby test_golang setup _install build compile check clean
 
+GO_SOURCES := $(shell find go -name '*.go')
+
 validate: verify test
 
 verify: verify_ruby verify_golang
@@ -32,7 +34,7 @@ _install:
 
 build: bin/gitlab-shell
 compile: bin/gitlab-shell
-bin/gitlab-shell:
+bin/gitlab-shell: $(GO_SOURCES)
 	bin/compile
 
 check:
