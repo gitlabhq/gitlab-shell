@@ -2,8 +2,8 @@
 
 require 'fileutils'
 
-# This will set the ROOT_PATH variable
-require_relative '../lib/gitlab_init'
+# Determine the root of the gitlab-shell directory
+ROOT_PATH = ENV.fetch('GITLAB_SHELL_DIR', File.expand_path('..', __dir__))
 
 module GoBuild
   GO_DIR = File.join(ROOT_PATH, 'go')
