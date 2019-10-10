@@ -4,7 +4,6 @@ tmp/*
 *.log
 /*.log*
 authorized_keys.lock
-coverage/
 .gitlab_shell_secret
 .bundle
 tags
@@ -15,7 +14,4 @@ hooks/*.d
 /bin/gitlab-shell
 /bin/gitlab-shell-authorized-keys-check
 /bin/gitlab-shell-authorized-principals-check
-/bin/gitaly-upload-pack
-/bin/gitaly-receive-pack
-/bin/gitaly-upload-archive
 /bin/check
