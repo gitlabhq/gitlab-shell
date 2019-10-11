@@ -19,16 +19,12 @@ before_script:
 
 rspec:
   <<: *rspec_definition
-  tags:
-    - ruby
   except:
     - tags
 
 verify_ruby:
   script:
     - make verify_ruby
-  tags:
-    - ruby
   except:
     - tags
 
@@ -38,8 +34,6 @@ rspec:ruby2.6:
   variables:
     INSTALL_BUNDLER_VERSION: ~> 1.17.3
   <<: *rspec_definition
-  tags:
-    - ruby
   except:
     - tags
 
@@ -49,8 +43,6 @@ rspec:ruby2.2:
   variables:
     INSTALL_BUNDLER_VERSION: ~> 1.17.3
   <<: *rspec_definition
-  tags:
-    - ruby
   except:
     - tags
 
@@ -60,8 +52,6 @@ rspec:ruby2.1:
   variables:
     INSTALL_BUNDLER_VERSION: ~> 1.17.3
   <<: *rspec_definition
-  tags:
-    - ruby
   except:
     - tags
 
