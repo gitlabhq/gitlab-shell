@@ -1,3 +1,5 @@
+require 'yaml'
+
 RSpec.shared_context 'gitlab shell', shared_context: :metadata do
   def original_root_path
     ROOT_PATH

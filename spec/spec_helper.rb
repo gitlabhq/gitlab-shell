@@ -1,8 +1,3 @@
-require 'pry'
-require 'rspec-parameterized'
-require 'simplecov'
-SimpleCov.start
-
 ROOT_PATH = File.expand_path('..', __dir__)
 
 Dir[File.expand_path('support/**/*.rb', __dir__)].each { |f| require f }
