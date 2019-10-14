@@ -45,26 +45,10 @@ plan](https://gitlab.com/gitlab-org/gitaly/issues/1226#note_126519133).
 
 ## Requirements
 
-**GitLab shell will always use your system ruby (normally located at /usr/bin/ruby) and will not use the ruby your installed with a ruby version manager (such as RVM).**
-It requires ruby 2.0 or higher.
-Please uninstall any old ruby versions from your system:
+GitLab Shell is written in Go, and needs a Go compiler to build. It still requires
+Ruby to build and test, but not to run.
 
-```
-sudo apt-get remove ruby1.8
-```
-
-Download Ruby and compile it with:
-
-```
-mkdir /tmp/ruby && cd /tmp/ruby
-curl -L --progress http://cache.ruby-lang.org/pub/ruby/2.1/ruby-2.1.5.tar.gz | tar xz
-cd ruby-2.1.5
-./configure --disable-install-rdoc
-make
-sudo make install
-```
-
-To install gitlab-shell you also need a Go compiler version 1.8 or newer. https://golang.org/dl/
+Download and install the current version of Go from https://golang.org/dl/
 
 ## Setup
 
@@ -78,58 +62,24 @@ Checks if GitLab API access and redis via internal API can be reached:
 
 ## Testing
 
-Run Ruby and Golang tests:
+Run tests:
 
+    bundle install
     make test
 
-Run Rubocop and gofmt:
+Run gofmt and rubocop:
 
+    bundle install
     make verify
 
 Run both test and verify (the default Makefile target):
 
+    bundle install
     make validate
 
 ## Git LFS remark
 
 Starting with GitLab 8.12, GitLab supports Git LFS authentication through SSH.
-
-## Migration to Go feature flags
-
-We are starting to migrate some features from Ruby to Go. To be able to do this
-incrementally, we hide the Go implementation behind a feature flag.
-
-To enable a feature, modify `migration` option in `config.yml` and ensure `enabled`
-is set to `true` and feature to be enabled is added to `features`.
-
-It should look something like this:
-
-```yaml
-migration:
-  enabled: true
-  features: ['discover']
-```
-
-Here are the following features that can be enabled:
-
-- `discover`
-- `2fa_recovery_codes`
-
-### Configuring using Omnibus
-
-If you're using Omnibus, these features can be enabled by adding something like this to `gitlab.rb`:
-
-```ruby
-gitlab_shell['migration'] = { enabled: true, features: ['discover', '2fa_recovery_codes'] }
-```
-
-This is equivalent to having this in `config.yml`:
-
-```yaml
-migration:
-  enabled: true
-  features: ['discover', '2fa_recovery_codes']
-```
 
 ## Releasing a new version
 
@@ -151,18 +101,6 @@ Rails application:
 3. Update `GITLAB_SHELL_VERSION` in the Rails application to the **raw
    version**. (Note: this can be done as a separate MR to that, or in and MR
    that will make use of the latest GitLab Shell changes.)
-
-## Updating VCR fixtures
-
-In order to generate new VCR fixtures you need to have a local GitLab instance
-running and have next data:
-
-1. gitlab-org/gitlab-test project.
-2. SSH key with access to the project and ID 1 that belongs to Administrator.
-3. SSH key without access to the project and ID 2.
-
-You also need to modify `secret` variable at `spec/gitlab_net_spec.rb` so tests
-can connect to your local instance.
 
 ## Contributing
 
