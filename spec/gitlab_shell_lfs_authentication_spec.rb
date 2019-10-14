@@ -6,6 +6,11 @@ describe 'bin/gitlab-shell git-lfs-authentication' do
   include_context 'gitlab shell'
 
   let(:path) { "https://gitlab.com/repo/path" }
+  let(:env) { {'SSH_CONNECTION' => 'fake', 'SSH_ORIGINAL_COMMAND' => 'git-lfs-authenticate project/repo download' } }
+
+  before(:context) do
+    write_config("gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}")
+  end
 
   def mock_server(server)
     server.mount_proc('/api/v4/internal/lfs_authenticate') do |req, res|
@@ -49,7 +54,7 @@ describe 'bin/gitlab-shell git-lfs-authentication' do
     end
   end
 
-  shared_examples 'lfs authentication command' do
+  describe 'lfs authentication command' do
     def successful_response
       {
         "header" => {
@@ -118,29 +123,5 @@ describe 'bin/gitlab-shell git-lfs-authentication' do
         expect(status).not_to be_success
       end
     end
-  end
-
-  let(:env) { {'SSH_CONNECTION' => 'fake', 'SSH_ORIGINAL_COMMAND' => 'git-lfs-authenticate project/repo download' } }
-
-  describe 'without go features' do
-    before(:context) do
-      write_config(
-        "gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}",
-      )
-    end
-
-    it_behaves_like 'lfs authentication command'
-  end
-
-  describe 'with go features' do
-    before(:context) do
-      write_config(
-        "gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}",
-        "migration" => { "enabled" => true,
-                        "features" => ["git-lfs-authenticate"] }
-      )
-    end
-
-    it_behaves_like 'lfs authentication command'
   end
 end

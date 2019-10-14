@@ -5,6 +5,10 @@ require 'open3'
 describe 'bin/gitlab-shell' do
   include_context 'gitlab shell'
 
+  before(:context) do
+    write_config("gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}")
+  end
+
   def mock_server(server)
     server.mount_proc('/api/v4/internal/discover') do |req, res|
       identifier = req.query['key_id'] || req.query['username'] || req.query['user_id']
@@ -35,7 +39,7 @@ describe 'bin/gitlab-shell' do
     Open3.capture3(env, cmd)
   end
 
-  shared_examples 'results with keys' do
+  describe 'results with keys' do
     # Basic valid input
     it 'succeeds and prints username when a valid known key id is given' do
       output, _, status = run!(["key-100"])
@@ -102,26 +106,6 @@ describe 'bin/gitlab-shell' do
       expect(output).to eq("Welcome to GitLab, @someuser!\n")
       expect(status).to be_success
     end
-  end
-
-  describe 'without go features' do
-    before(:context) do
-      write_config("gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}")
-    end
-
-    it_behaves_like 'results with keys'
-  end
-
-  describe 'with the go discover feature', :go do
-    before(:context) do
-      write_config(
-        "gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}",
-        "migration" => { "enabled" => true,
-                        "features" => ["discover"] }
-      )
-    end
-
-    it_behaves_like 'results with keys'
 
     it 'outputs "Only SSH allowed"' do
       _, stderr, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-someuser"], env: {})

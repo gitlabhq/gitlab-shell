@@ -7,6 +7,12 @@ require 'base64'
 describe 'Custom bin/gitlab-shell git-receive-pack' do
   include_context 'gitlab shell'
 
+  let(:env) { {'SSH_CONNECTION' => 'fake', 'SSH_ORIGINAL_COMMAND' => 'git-receive-pack group/repo' } }
+
+  before(:context) do
+    write_config("gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}")
+  end
+
   def mock_server(server)
     server.mount_proc('/geo/proxy_git_push_ssh/info_refs') do |req, res|
       res.content_type = 'application/json'
@@ -58,7 +64,9 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
     end
   end
 
-  shared_examples 'dialog for performing a custom action' do
+  describe 'dialog for performing a custom action' do
+    let(:inaccessible_error) { "Internal API error (403)\n" }
+
     context 'when API calls perform successfully' do
       def verify_successful_call!(cmd)
         Open3.popen3(env, cmd) do |stdin, stdout, stderr|
@@ -101,34 +109,6 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
           expect(stdout.gets).to eq(inaccessible_error)
         end
       end
-    end
-  end
-
-  let(:env) { {'SSH_CONNECTION' => 'fake', 'SSH_ORIGINAL_COMMAND' => 'git-receive-pack group/repo' } }
-
-  describe 'without go features' do
-    before(:context) do
-      write_config(
-        "gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}",
-      )
-    end
-
-    it_behaves_like 'dialog for performing a custom action' do
-      let(:inaccessible_error) { "> GitLab: API is not accessible\n" }
-    end
-  end
-
-  describe 'with go features', :go do
-    before(:context) do
-      write_config(
-        "gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}",
-        "migration" => { "enabled" => true,
-                        "features" => ["git-receive-pack"] }
-      )
-    end
-
-    it_behaves_like 'dialog for performing a custom action' do
-      let(:inaccessible_error) { "Internal API error (403)\n" }
     end
   end
 end
