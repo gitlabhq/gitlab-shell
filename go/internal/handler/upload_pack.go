@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitaly/client"
+	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 	"google.golang.org/grpc"
 )
 

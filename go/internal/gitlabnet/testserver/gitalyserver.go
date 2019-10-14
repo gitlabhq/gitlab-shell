@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
-	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
+	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 )
 
 type testGitalyServer struct{}

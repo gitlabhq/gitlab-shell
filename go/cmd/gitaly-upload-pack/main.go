@@ -8,7 +8,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/logger"
 	"google.golang.org/grpc"
 
-	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
+	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 )
 
 func init() {
