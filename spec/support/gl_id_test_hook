@@ -1,2 +1,0 @@
-#!/bin/sh
-printenv GL_ID | grep -q '^key_1$'

@@ -45,9 +45,8 @@ RSpec.shared_context 'gitlab shell', shared_context: :metadata do
     raise "Couldn't start stub GitlabNet server" unless @server.status == :Running
     system(original_root_path, 'bin/compile')
 
-    copy_dirs = ['bin', 'lib']
-    FileUtils.rm_rf(copy_dirs.map { |d| File.join(tmp_root_path, d) })
-    FileUtils.cp_r(copy_dirs, tmp_root_path)
+    FileUtils.rm_rf(File.join(tmp_root_path, 'bin'))
+    FileUtils.cp_r('bin', tmp_root_path)
   end
 
   after(:all) do
