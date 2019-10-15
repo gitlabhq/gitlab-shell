@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
+	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet"

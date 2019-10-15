@@ -5,8 +5,8 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitaly/client"
+	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/shared/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/handler"

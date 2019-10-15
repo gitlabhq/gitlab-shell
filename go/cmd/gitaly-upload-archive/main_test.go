@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	pb "gitlab.com/gitlab-org/gitaly-proto/go/gitalypb"
+	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 )
 
 func Test_deserialize(t *testing.T) {
