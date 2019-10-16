@@ -1,88 +1,29 @@
-image: "ruby:2.3"
-
-variables:
-  INSTALL_BUNDLER_VERSION: "~> 2.0.1"
-
-before_script:
-  - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin
-  - gem install --force --bindir /usr/local/bin bundler -v "$INSTALL_BUNDLER_VERSION"
-  - cp config.yml.example config.yml
-  - bundle install
-
-.rspec_definition: &rspec_definition
-  script:
-    # Skip the experimental Golang wrapper in the Ruby specs. These are now
-    # primarily regression tests for particular versions of Ruby.
-    #
-    # The full rspec suite is also run against each suppported golang version
-    - make test_ruby
-
-rspec:
-  <<: *rspec_definition
-  except:
-    - tags
-
-verify_ruby:
-  script:
-    - make verify_ruby
-  except:
-    - tags
-
-#ruby 2.6
-rspec:ruby2.6:
-  image: ruby:2.6
-  variables:
-    INSTALL_BUNDLER_VERSION: ~> 1.17.3
-  <<: *rspec_definition
-  except:
-    - tags
-
-#ruby 2.2
-rspec:ruby2.2:
-  image: ruby:2.2
-  variables:
-    INSTALL_BUNDLER_VERSION: ~> 1.17.3
-  <<: *rspec_definition
-  except:
-    - tags
-
-#ruby 2.1
-rspec:ruby2.1:
-  image: ruby:2.1
-  variables:
-    INSTALL_BUNDLER_VERSION: ~> 1.17.3
-  <<: *rspec_definition
-  except:
-    - tags
-
-.go: &go_definition
+.test: &test_definition
   before_script:
+    # Set up the environment to run integration tests (still written in Ruby)
     - apt-get update -qq && apt-get install -y ruby ruby-dev
     - ruby -v
     - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin
-    - gem update --system
-    - gem install --bindir /usr/local/bin bundler
-    - cp config.yml.example config.yml
+    - gem install --force --bindir /usr/local/bin bundler -v 1.17.2
     - bundle install
-  script:
+    # Now set up to run the Golang tests
+    - make build
+    - cp config.yml.example config.yml
     - go version
     - which go
-    - make build verify_golang test_golang
-    # Run the full Ruby test suite in the "go" tests. As more functionality is
-    # migrated into these tests and out of Ruby, the amount of work here will
-    # reduce
-    - make test_ruby
+  script:
+    - make verify test
 
 go:1.11:
-  <<: *go_definition
+  <<: *test_definition
   image: golang:1.11
 
 go:1.12:
-  <<: *go_definition
+  <<: *test_definition
   image: golang:1.12
 
 go:1.13:
-  <<: *go_definition
+  <<: *test_definition
   image: golang:1.13
 
 codequality:

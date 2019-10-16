@@ -5,6 +5,12 @@ require 'open3'
 describe 'bin/gitlab-shell 2fa_recovery_codes' do
   include_context 'gitlab shell'
 
+  let(:env) { {'SSH_CONNECTION' => 'fake', 'SSH_ORIGINAL_COMMAND' => '2fa_recovery_codes' } }
+
+  before(:context) do
+    write_config("gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}")
+  end
+
   def mock_server(server)
     server.mount_proc('/api/v4/internal/two_factor_recovery_codes') do |req, res|
       res.content_type = 'application/json'
@@ -31,7 +37,7 @@ describe 'bin/gitlab-shell 2fa_recovery_codes' do
     end
   end
 
-  shared_examples 'dialog for regenerating recovery keys' do
+  describe 'dialog for regenerating recovery keys' do
     context 'when the user agrees to regenerate keys' do
       def verify_successful_regeneration!(cmd)
         Open3.popen2(env, cmd) do |stdin, stdout|
@@ -100,29 +106,5 @@ describe 'bin/gitlab-shell 2fa_recovery_codes' do
         end
       end
     end
-  end
-
-  let(:env) { {'SSH_CONNECTION' => 'fake', 'SSH_ORIGINAL_COMMAND' => '2fa_recovery_codes' } }
-
-  describe 'without go features' do
-    before(:context) do
-      write_config(
-        "gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}",
-      )
-    end
-
-    it_behaves_like 'dialog for regenerating recovery keys'
-  end
-
-  describe 'with go features', :go do
-    before(:context) do
-      write_config(
-        "gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}",
-        "migration" => { "enabled" => true,
-                        "features" => ["2fa_recovery_codes"] }
-      )
-    end
-
-    it_behaves_like 'dialog for regenerating recovery keys'
   end
 end
