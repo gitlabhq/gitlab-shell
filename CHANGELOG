@@ -1,3 +1,6 @@
+v10.2.0
+- Remove dead Ruby code and unused binaries !346
+
 v10.1.0
 - Remove feature flags and the fallback command !336
 - Remove an obsolete section from config.yml.example !339
