@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 )
 
 func makeHandler(t *testing.T, err error) func(context.Context, *grpc.ClientConn) (int32, error) {
