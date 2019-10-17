@@ -1,7 +1,6 @@
 #!/usr/bin/env ruby
 
 # Load ROOT_PATH and access the minimum necessary config file
-require_relative '../support/go_build'
 require_relative '../support/gitlab_config'
 
 config = GitlabConfig.new

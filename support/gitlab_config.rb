@@ -1,5 +1,8 @@
 require 'yaml'
 
+# Determine the root of the gitlab-shell directory
+ROOT_PATH = ENV.fetch('GITLAB_SHELL_DIR', File.expand_path('..', __dir__))
+
 class GitlabConfig
   attr_reader :config
 
