@@ -3,8 +3,8 @@ package commandargs
 import (
 	"testing"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/executable"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/testhelper"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 
 	"github.com/stretchr/testify/require"
 )

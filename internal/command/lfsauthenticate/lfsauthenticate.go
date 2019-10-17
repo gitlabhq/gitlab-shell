@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/shared/accessverifier"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/shared/disallowedcommand"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/lfsauthenticate"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/lfsauthenticate"
 )
 
 const (

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/executable"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
 )
 
 func main() {

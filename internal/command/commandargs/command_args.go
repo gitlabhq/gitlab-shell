@@ -1,7 +1,7 @@
 package commandargs
 
 import (
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/executable"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
 )
 
 type CommandType string

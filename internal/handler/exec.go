@@ -8,7 +8,7 @@ import (
 	"gitlab.com/gitlab-org/gitaly/auth"
 	"gitlab.com/gitlab-org/gitaly/client"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/labkit/tracing"
 	"google.golang.org/grpc"
 )

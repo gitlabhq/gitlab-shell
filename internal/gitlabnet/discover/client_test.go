@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"testing"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/testserver"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

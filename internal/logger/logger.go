@@ -8,7 +8,7 @@ import (
 	"os"
 	"sync"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 
 	log "github.com/sirupsen/logrus"
 )

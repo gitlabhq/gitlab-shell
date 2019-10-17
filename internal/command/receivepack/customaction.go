@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strings"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
 )
 
 type Request struct {

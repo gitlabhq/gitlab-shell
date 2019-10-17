@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
 )
 
 type Client struct {

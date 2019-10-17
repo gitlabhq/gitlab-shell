@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/testhelper"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 )
 
 func TestLocalAddr(t *testing.T) {

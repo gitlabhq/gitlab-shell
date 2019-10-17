@@ -1,20 +1,20 @@
 package command
 
 import (
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/authorizedkeys"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/authorizedprincipals"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/discover"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/healthcheck"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/lfsauthenticate"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/receivepack"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/shared/disallowedcommand"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/twofactorrecover"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadarchive"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/uploadpack"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/executable"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/authorizedkeys"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/authorizedprincipals"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/discover"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/healthcheck"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/lfsauthenticate"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/receivepack"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/twofactorrecover"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/uploadarchive"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/uploadpack"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
 )
 
 type Command interface {

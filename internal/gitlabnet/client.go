@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 )
 
 const (

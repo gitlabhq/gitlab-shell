@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/executable"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
 )
 
 var (

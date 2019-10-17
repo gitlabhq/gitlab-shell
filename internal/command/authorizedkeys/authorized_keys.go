@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/authorizedkeys"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/keyline"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/authorizedkeys"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/keyline"
 )
 
 type Command struct {

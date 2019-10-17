@@ -7,9 +7,9 @@ import (
 
 	"gitlab.com/gitlab-org/gitaly/client"
 	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/accessverifier"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/handler"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/handler"
 )
 
 func (c *Command) performGitalyCall(response *accessverifier.Response) error {

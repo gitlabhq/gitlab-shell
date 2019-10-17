@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/discover"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/discover"
 )
 
 type Client struct {

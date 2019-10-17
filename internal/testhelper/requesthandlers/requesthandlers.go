@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/gitlabnet/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/testserver"
 )
 
 func BuildDisallowedByApiHandlers(t *testing.T) []testserver.TestRequestHandler {
