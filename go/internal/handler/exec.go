@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"gitlab.com/gitlab-org/gitaly/auth"
 	"gitlab.com/gitlab-org/gitaly/client"
@@ -11,6 +12,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
 	"gitlab.com/gitlab-org/labkit/tracing"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 // GitalyHandlerFunc implementations are responsible for making
@@ -29,6 +31,7 @@ type GitalyCommand struct {
 	ServiceName string
 	Address     string
 	Token       string
+	Features    map[string]string
 }
 
 // RunGitalyCommand provides a bootstrap for Gitaly commands executed
@@ -46,6 +49,18 @@ func (gc *GitalyCommand) RunGitalyCommand(handler GitalyHandlerFunc) error {
 	gitalyConn.close()
 
 	return err
+}
+
+func withOutgoingMetadata(ctx context.Context, features map[string]string) context.Context {
+	md := metadata.New(nil)
+	for k, v := range features {
+		if !strings.HasPrefix(k, "gitaly-feature-") {
+			continue
+		}
+		md.Append(k, v)
+	}
+
+	return metadata.NewOutgoingContext(ctx, md)
 }
 
 func getConn(gc *GitalyCommand) (*GitalyConn, error) {
@@ -80,6 +95,7 @@ func getConn(gc *GitalyCommand) (*GitalyConn, error) {
 	)
 
 	ctx, finished := tracing.ExtractFromEnv(context.Background())
+	ctx = withOutgoingMetadata(ctx, gc.Features)
 
 	conn, err := client.Dial(gc.Address, connOpts)
 	if err != nil {

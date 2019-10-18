@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/command/commandargs"
@@ -14,7 +15,7 @@ import (
 )
 
 func TestUploadPack(t *testing.T) {
-	gitalyAddress, cleanup := testserver.StartGitalyServer(t)
+	gitalyAddress, testServer, cleanup := testserver.StartGitalyServer(t)
 	defer cleanup()
 
 	requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)
@@ -37,4 +38,14 @@ func TestUploadPack(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "UploadPack: "+repo, output.String())
+
+	for k, v := range map[string]string{
+		"gitaly-feature-cache_invalidator":        "true",
+		"gitaly-feature-inforef_uploadpack_cache": "false",
+	} {
+		actual := testServer.ReceivedMD[k]
+		assert.Len(t, actual, 1)
+		assert.Equal(t, v, actual[0])
+	}
+	assert.Empty(t, testServer.ReceivedMD["some-other-ff"])
 }
