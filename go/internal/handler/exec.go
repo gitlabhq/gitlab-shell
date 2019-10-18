@@ -9,16 +9,9 @@ import (
 	"gitlab.com/gitlab-org/gitaly/client"
 
 	"gitlab.com/gitlab-org/gitlab-shell/go/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/go/internal/logger"
 	"gitlab.com/gitlab-org/labkit/tracing"
 	"google.golang.org/grpc"
 )
-
-// GitalyHandlerFuncWithJSON implementations are responsible for deserializing
-// the request JSON into a GRPC request message, making an appropriate Gitaly
-// call with the request, using the provided client, and returning the exit code
-// or error from the Gitaly call.
-type GitalyHandlerFuncWithJSON func(ctx context.Context, client *grpc.ClientConn, requestJSON string) (int32, error)
 
 // GitalyHandlerFunc implementations are responsible for making
 // an appropriate Gitaly call using the provided client and context
@@ -41,22 +34,6 @@ type GitalyCommand struct {
 // RunGitalyCommand provides a bootstrap for Gitaly commands executed
 // through GitLab-Shell. It ensures that logging, tracing and other
 // common concerns are configured before executing the `handler`.
-// RunGitalyCommand will handle errors internally and call
-// `os.Exit()` on completion. This method will never return to
-// the caller.
-func RunGitalyCommand(handler GitalyHandlerFuncWithJSON) {
-	exitCode, err := internalRunGitalyCommand(os.Args, handler)
-
-	if err != nil {
-		logger.Fatal("error: %v", err)
-	}
-
-	os.Exit(exitCode)
-}
-
-// RunGitalyCommand provides a bootstrap for Gitaly commands executed
-// through GitLab-Shell. It ensures that logging, tracing and other
-// common concerns are configured before executing the `handler`.
 func (gc *GitalyCommand) RunGitalyCommand(handler GitalyHandlerFunc) error {
 	gitalyConn, err := getConn(gc)
 
@@ -69,42 +46,6 @@ func (gc *GitalyCommand) RunGitalyCommand(handler GitalyHandlerFunc) error {
 	gitalyConn.close()
 
 	return err
-}
-
-// internalRunGitalyCommand runs Gitaly's command by particular Gitaly address and token
-func internalRunGitalyCommand(args []string, handler GitalyHandlerFuncWithJSON) (int, error) {
-	if len(args) != 3 {
-		return 1, fmt.Errorf("expected 2 arguments, got %v", args)
-	}
-
-	cfg, err := config.New()
-	if err != nil {
-		return 1, err
-	}
-
-	if err := logger.Configure(cfg); err != nil {
-		return 1, err
-	}
-
-	gc := &GitalyCommand{
-		Config:      cfg,
-		ServiceName: args[0],
-		Address:     args[1],
-		Token:       os.Getenv("GITALY_TOKEN"),
-	}
-	requestJSON := string(args[2])
-
-	gitalyConn, err := getConn(gc)
-
-	if err != nil {
-		return 1, err
-	}
-
-	exitCode, err := handler(gitalyConn.ctx, gitalyConn.conn, requestJSON)
-
-	gitalyConn.close()
-
-	return int(exitCode), err
 }
 
 func getConn(gc *GitalyCommand) (*GitalyConn, error) {
