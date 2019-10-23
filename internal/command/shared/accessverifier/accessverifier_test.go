@@ -77,6 +77,6 @@ func TestConsoleMessages(t *testing.T) {
 	cmd.Args = &commandargs.Shell{GitlabKeyId: "1"}
 	cmd.Verify(action, repo)
 
-	require.Equal(t, "> GitLab: console\n> GitLab: message\n", errBuf.String())
+	require.Equal(t, "remote: \nremote: console\nremote: message\nremote: \n", errBuf.String())
 	require.Empty(t, outBuf.String())
 }

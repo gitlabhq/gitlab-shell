@@ -3,12 +3,13 @@ package receivepack
 import (
 	"bytes"
 	"errors"
-	"fmt"
+
 	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
+	"gitlab.com/gitlab-org/gitlab-shell/internal/console"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
 )
@@ -32,17 +33,9 @@ func (c *Command) processCustomAction(response *accessverifier.Response) error {
 		return errors.New("Custom action error: Empty API endpoints")
 	}
 
-	c.displayInfoMessage(data.InfoMessage)
+	console.DisplayInfoMessages(strings.Split(data.InfoMessage, "\n"), c.ReadWriter.ErrOut)
 
 	return c.processApiEndpoints(response)
-}
-
-func (c *Command) displayInfoMessage(infoMessage string) {
-	messages := strings.Split(infoMessage, "\n")
-
-	for _, msg := range messages {
-		fmt.Fprintf(c.ReadWriter.ErrOut, "> GitLab: %v\n", msg)
-	}
 }
 
 func (c *Command) processApiEndpoints(response *accessverifier.Response) error {

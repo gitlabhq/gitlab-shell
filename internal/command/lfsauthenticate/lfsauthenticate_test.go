@@ -31,12 +31,12 @@ func TestFailedRequests(t *testing.T) {
 		{
 			desc:           "With missing arguments",
 			arguments:      &commandargs.Shell{},
-			expectedOutput: "> GitLab: Disallowed command",
+			expectedOutput: "Disallowed command",
 		},
 		{
 			desc:           "With disallowed command",
 			arguments:      &commandargs.Shell{GitlabKeyId: "1", SshArgs: []string{"git-lfs-authenticate", "group/repo", "unknown"}},
-			expectedOutput: "> GitLab: Disallowed command",
+			expectedOutput: "Disallowed command",
 		},
 		{
 			desc:           "With disallowed user",

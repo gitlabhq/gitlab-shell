@@ -8,6 +8,7 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
   include_context 'gitlab shell'
 
   let(:env) { {'SSH_CONNECTION' => 'fake', 'SSH_ORIGINAL_COMMAND' => 'git-receive-pack group/repo' } }
+  let(:divider) { "remote: ========================================================================\n" }
 
   before(:context) do
     write_config("gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}")
@@ -65,21 +66,24 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
   end
 
   describe 'dialog for performing a custom action' do
-    let(:inaccessible_error) { "Internal API error (403)\n" }
-
     context 'when API calls perform successfully' do
+      let(:remote_blank_line) { "remote: \n" }
       def verify_successful_call!(cmd)
         Open3.popen3(env, cmd) do |stdin, stdout, stderr|
-          expect(stderr.gets).to eq("> GitLab: console\n")
-          expect(stderr.gets).to eq("> GitLab: message\n")
+          expect(stderr.gets).to eq(remote_blank_line)
+          expect(stderr.gets).to eq("remote: console\n")
+          expect(stderr.gets).to eq("remote: message\n")
+          expect(stderr.gets).to eq(remote_blank_line)
 
-          expect(stderr.gets).to eq("> GitLab: info_message\n")
-          expect(stderr.gets).to eq("> GitLab: another_message\n")
-          expect(stdout.gets(6)).to eq("custom")
+          expect(stderr.gets).to eq(remote_blank_line)
+          expect(stderr.gets).to eq("remote: info_message\n")
+          expect(stderr.gets).to eq("remote: another_message\n")
+          expect(stderr.gets).to eq(remote_blank_line)
 
           stdin.puts("input")
           stdin.close
 
+          expect(stdout.gets(6)).to eq("custom")
           expect(stdout.flush.read).to eq("input\n")
         end
       end
@@ -106,7 +110,13 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
 
       it 'custom action is not performed' do
         Open3.popen2e(env, cmd) do |stdin, stdout|
-          expect(stdout.gets).to eq(inaccessible_error)
+          expect(stdout.gets).to eq("remote: \n")
+          expect(stdout.gets).to eq(divider)
+          expect(stdout.gets).to eq("remote: \n")
+          expect(stdout.gets).to eq("remote: Internal API error (403)\n")
+          expect(stdout.gets).to eq("remote: \n")
+          expect(stdout.gets).to eq(divider)
+          expect(stdout.gets).to eq("remote: \n")
         end
       end
     end

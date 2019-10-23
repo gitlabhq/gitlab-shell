@@ -117,9 +117,10 @@ describe 'bin/gitlab-shell git-lfs-authentication' do
       let(:env) { {'SSH_CONNECTION' => 'fake', 'SSH_ORIGINAL_COMMAND' => 'git-lfs-authenticate project/repo unknown' } }
 
       it 'the command is disallowed' do
+        divider = "remote: \nremote: ========================================================================\nremote: \n"
         _, stderr, status = Open3.capture3(env, cmd)
 
-        expect(stderr).to eq("> GitLab: Disallowed command\n")
+        expect(stderr).to eq("#{divider}remote: Disallowed command\n#{divider}")
         expect(status).not_to be_success
       end
     end

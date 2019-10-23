@@ -2,11 +2,11 @@ package accessverifier
 
 import (
 	"errors"
-	"fmt"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/console"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
 )
 
@@ -39,7 +39,5 @@ func (c *Command) Verify(action commandargs.CommandType, repo string) (*Response
 }
 
 func (c *Command) displayConsoleMessages(messages []string) {
-	for _, msg := range messages {
-		fmt.Fprintf(c.ReadWriter.ErrOut, "> GitLab: %v\n", msg)
-	}
+	console.DisplayInfoMessages(messages, c.ReadWriter.ErrOut)
 }

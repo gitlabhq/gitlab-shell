@@ -7,6 +7,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/console"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
 )
 
@@ -38,7 +39,7 @@ func main() {
 	}
 
 	if err = cmd.Execute(); err != nil {
-		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
+		console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
 		os.Exit(1)
 	}
 }
