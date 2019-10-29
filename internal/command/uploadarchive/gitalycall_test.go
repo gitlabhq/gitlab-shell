@@ -14,7 +14,7 @@ import (
 )
 
 func TestUploadPack(t *testing.T) {
-	gitalyAddress, cleanup := testserver.StartGitalyServer(t)
+	gitalyAddress, _, cleanup := testserver.StartGitalyServer(t)
 	defer cleanup()
 
 	requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)

@@ -47,6 +47,11 @@ func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testse
 						},
 						"address": gitalyAddress,
 						"token":   "token",
+						"features": map[string]string{
+							"gitaly-feature-cache_invalidator":        "true",
+							"gitaly-feature-inforef_uploadpack_cache": "false",
+							"some-other-ff":                           "true",
+						},
 					},
 				}
 				require.NoError(t, json.NewEncoder(w).Encode(body))

@@ -18,6 +18,7 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 		ServiceName: string(commandargs.UploadPack),
 		Address:     response.Gitaly.Address,
 		Token:       response.Gitaly.Token,
+		Features:    response.Gitaly.Features,
 	}
 
 	request := &pb.SSHUploadPackRequest{
