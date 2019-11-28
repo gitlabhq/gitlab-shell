@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	downloadAction = "download"
-	uploadAction   = "upload"
+	downloadOperation = "download"
+	uploadOperation   = "upload"
 )
 
 type Command struct {
@@ -40,8 +40,11 @@ func (c *Command) Execute() error {
 		return disallowedcommand.Error
 	}
 
+	// e.g. git-lfs-authenticate user/repo.git download
 	repo := args[1]
-	action, err := actionToCommandType(args[2])
+	operation := args[2]
+
+	action, err := actionFromOperation(operation)
 	if err != nil {
 		return err
 	}
@@ -51,7 +54,7 @@ func (c *Command) Execute() error {
 		return err
 	}
 
-	payload, err := c.authenticate(action, repo, accessResponse.UserId)
+	payload, err := c.authenticate(operation, repo, accessResponse.UserId)
 	if err != nil {
 		// return nothing just like Ruby's GitlabShell#lfs_authenticate does
 		return nil
@@ -62,18 +65,19 @@ func (c *Command) Execute() error {
 	return nil
 }
 
-func actionToCommandType(action string) (commandargs.CommandType, error) {
-	var accessAction commandargs.CommandType
-	switch action {
-	case downloadAction:
-		accessAction = commandargs.UploadPack
-	case uploadAction:
-		accessAction = commandargs.ReceivePack
+func actionFromOperation(operation string) (commandargs.CommandType, error) {
+	var action commandargs.CommandType
+
+	switch operation {
+	case downloadOperation:
+		action = commandargs.UploadPack
+	case uploadOperation:
+		action = commandargs.ReceivePack
 	default:
 		return "", disallowedcommand.Error
 	}
 
-	return accessAction, nil
+	return action, nil
 }
 
 func (c *Command) verifyAccess(action commandargs.CommandType, repo string) (*accessverifier.Response, error) {
@@ -82,13 +86,13 @@ func (c *Command) verifyAccess(action commandargs.CommandType, repo string) (*ac
 	return cmd.Verify(action, repo)
 }
 
-func (c *Command) authenticate(action commandargs.CommandType, repo, userId string) ([]byte, error) {
+func (c *Command) authenticate(operation string, repo, userId string) ([]byte, error) {
 	client, err := lfsauthenticate.NewClient(c.Config, c.Args)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := client.Authenticate(action, repo, userId)
+	response, err := client.Authenticate(operation, repo, userId)
 	if err != nil {
 		return nil, err
 	}

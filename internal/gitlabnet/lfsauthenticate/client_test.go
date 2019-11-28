@@ -14,9 +14,8 @@ import (
 )
 
 const (
-	keyId  = "123"
-	repo   = "group/repo"
-	action = commandargs.UploadPack
+	keyId = "123"
+	repo  = "group/repo"
 )
 
 func setup(t *testing.T) []testserver.TestRequestHandler {
@@ -64,17 +63,17 @@ func TestFailedRequests(t *testing.T) {
 	}{
 		{
 			desc:           "With bad response",
-			args:           &commandargs.Shell{GitlabKeyId: "-1", CommandType: commandargs.UploadPack},
+			args:           &commandargs.Shell{GitlabKeyId: "-1", CommandType: commandargs.LfsAuthenticate, SshArgs: []string{"git-lfs-authenticate", repo, "download"}},
 			expectedOutput: "Parsing failed",
 		},
 		{
 			desc:           "With API returns an error",
-			args:           &commandargs.Shell{GitlabKeyId: "forbidden", CommandType: commandargs.UploadPack},
+			args:           &commandargs.Shell{GitlabKeyId: "forbidden", CommandType: commandargs.LfsAuthenticate, SshArgs: []string{"git-lfs-authenticate", repo, "download"}},
 			expectedOutput: "Internal API error (403)",
 		},
 		{
 			desc:           "With API fails",
-			args:           &commandargs.Shell{GitlabKeyId: "broken", CommandType: commandargs.UploadPack},
+			args:           &commandargs.Shell{GitlabKeyId: "broken", CommandType: commandargs.LfsAuthenticate, SshArgs: []string{"git-lfs-authenticate", repo, "download"}},
 			expectedOutput: "Internal API error (500)",
 		},
 	}
@@ -84,9 +83,9 @@ func TestFailedRequests(t *testing.T) {
 			client, err := NewClient(&config.Config{GitlabUrl: url}, tc.args)
 			require.NoError(t, err)
 
-			repo := "group/repo"
+			operation := tc.args.SshArgs[2]
 
-			_, err = client.Authenticate(tc.args.CommandType, repo, "")
+			_, err = client.Authenticate(operation, repo, "")
 			require.Error(t, err)
 
 			require.Equal(t, tc.expectedOutput, err.Error())
@@ -99,19 +98,38 @@ func TestSuccessfulRequests(t *testing.T) {
 	url, cleanup := testserver.StartHttpServer(t, requests)
 	defer cleanup()
 
-	args := &commandargs.Shell{GitlabKeyId: keyId, CommandType: commandargs.LfsAuthenticate}
-	client, err := NewClient(&config.Config{GitlabUrl: url}, args)
-	require.NoError(t, err)
-
-	response, err := client.Authenticate(action, repo, "")
-	require.NoError(t, err)
-
-	expectedResponse := &Response{
-		Username:  "john",
-		LfsToken:  "sometoken",
-		RepoPath:  "https://gitlab.com/repo/path",
-		ExpiresIn: 1800,
+	testCases := []struct {
+		desc      string
+		operation string
+	}{
+		{
+			desc:      "For download",
+			operation: "download",
+		},
+		{
+			desc:      "For upload",
+			operation: "upload",
+		},
 	}
 
-	require.Equal(t, expectedResponse, response)
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			operation := tc.operation
+			args := &commandargs.Shell{GitlabKeyId: keyId, CommandType: commandargs.LfsAuthenticate, SshArgs: []string{"git-lfs-authenticate", repo, operation}}
+			client, err := NewClient(&config.Config{GitlabUrl: url}, args)
+			require.NoError(t, err)
+
+			response, err := client.Authenticate(operation, repo, "")
+			require.NoError(t, err)
+
+			expectedResponse := &Response{
+				Username:  "john",
+				LfsToken:  "sometoken",
+				RepoPath:  "https://gitlab.com/repo/path",
+				ExpiresIn: 1800,
+			}
+
+			require.Equal(t, expectedResponse, response)
+		})
+	}
 }
