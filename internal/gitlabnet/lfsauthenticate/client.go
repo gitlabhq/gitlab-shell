@@ -17,10 +17,10 @@ type Client struct {
 }
 
 type Request struct {
-	Action commandargs.CommandType `json:"operation"`
-	Repo   string                  `json:"project"`
-	KeyId  string                  `json:"key_id,omitempty"`
-	UserId string                  `json:"user_id,omitempty"`
+	Operation string `json:"operation"`
+	Repo      string `json:"project"`
+	KeyId     string `json:"key_id,omitempty"`
+	UserId    string `json:"user_id,omitempty"`
 }
 
 type Response struct {
@@ -39,8 +39,8 @@ func NewClient(config *config.Config, args *commandargs.Shell) (*Client, error) 
 	return &Client{config: config, client: client, args: args}, nil
 }
 
-func (c *Client) Authenticate(action commandargs.CommandType, repo, userId string) (*Response, error) {
-	request := &Request{Action: action, Repo: repo}
+func (c *Client) Authenticate(operation, repo, userId string) (*Response, error) {
+	request := &Request{Operation: operation, Repo: repo}
 	if c.args.GitlabKeyId != "" {
 		request.KeyId = c.args.GitlabKeyId
 	} else {
