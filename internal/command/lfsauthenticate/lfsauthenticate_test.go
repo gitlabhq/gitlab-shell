@@ -64,6 +64,7 @@ func TestFailedRequests(t *testing.T) {
 
 func TestLfsAuthenticateRequests(t *testing.T) {
 	userId := "123"
+	operation := "upload"
 
 	requests := []testserver.TestRequestHandler{
 		{
@@ -75,6 +76,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 
 				var request *lfsauthenticate.Request
 				require.NoError(t, json.Unmarshal(b, &request))
+				require.Equal(t, request.Operation, operation)
 
 				if request.UserId == userId {
 					body := map[string]interface{}{
@@ -140,7 +142,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 			output := &bytes.Buffer{}
 			cmd := &Command{
 				Config:     &config.Config{GitlabUrl: url},
-				Args:       &commandargs.Shell{GitlabUsername: tc.username, SshArgs: []string{"git-lfs-authenticate", "group/repo", "upload"}},
+				Args:       &commandargs.Shell{GitlabUsername: tc.username, SshArgs: []string{"git-lfs-authenticate", "group/repo", operation}},
 				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 			}
 
