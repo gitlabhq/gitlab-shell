@@ -1,3 +1,6 @@
+v10.2.1
+- Use correct git-lfs download or upload operation names !353
+
 v10.2.0
 - Remove dead Ruby code and unused binaries !346
 
