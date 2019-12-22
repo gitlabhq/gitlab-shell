@@ -65,7 +65,7 @@ func Fatal(msg string, err error) {
 
 // If our log file is not available we want to log somewhere else, but
 // not to standard error because that leaks information to the user. This
-// function attemps to log to syslog.
+// function attempts to log to syslog.
 //
 // We assume the logging mutex is already locked.
 func bootstrapLogPrint(msg string, err error) {
