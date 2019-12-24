@@ -97,7 +97,6 @@ func TestGetCustomAction(t *testing.T) {
 			ApiEndpoints: []string{"geo/proxy_git_push_ssh/info_refs", "geo/proxy_git_push_ssh/push"},
 			Username:     "custom",
 			PrimaryRepo:  "https://repo/path",
-			InfoMessage:  "message",
 		},
 	}
 	response.StatusCode = 300

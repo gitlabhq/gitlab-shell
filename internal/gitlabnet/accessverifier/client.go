@@ -41,7 +41,6 @@ type CustomPayloadData struct {
 	ApiEndpoints []string `json:"api_endpoints"`
 	Username     string   `json:"gl_username"`
 	PrimaryRepo  string   `json:"primary_repo"`
-	InfoMessage  string   `json:"info_message"`
 	UserId       string   `json:"gl_id,omitempty"`
 }
 
