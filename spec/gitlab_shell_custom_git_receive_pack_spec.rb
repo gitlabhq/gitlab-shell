@@ -52,8 +52,7 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
             "data" => {
               "api_endpoints" => ["/geo/proxy_git_push_ssh/info_refs", "/geo/proxy_git_push_ssh/push"],
               "gl_username" =>   "custom",
-              "primary_repo" =>  "https://repo/path",
-              "info_message" => "info_message\nanother_message",
+              "primary_repo" =>  "https://repo/path"
             },
           },
           "gl_console_messages" => ["console", "message"]
@@ -73,11 +72,6 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
           expect(stderr.gets).to eq(remote_blank_line)
           expect(stderr.gets).to eq("remote: console\n")
           expect(stderr.gets).to eq("remote: message\n")
-          expect(stderr.gets).to eq(remote_blank_line)
-
-          expect(stderr.gets).to eq(remote_blank_line)
-          expect(stderr.gets).to eq("remote: info_message\n")
-          expect(stderr.gets).to eq("remote: another_message\n")
           expect(stderr.gets).to eq(remote_blank_line)
 
           stdin.puts("input")

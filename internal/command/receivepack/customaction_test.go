@@ -41,7 +41,6 @@ func TestCustomReceivePack(t *testing.T) {
 							"api_endpoints": []string{"/geo/proxy_git_push_ssh/info_refs", "/geo/proxy_git_push_ssh/push"},
 							"gl_username":   "custom",
 							"primary_repo":  "https://repo/path",
-							"info_message":  "info_message\none more message",
 						},
 					},
 				}
@@ -100,6 +99,5 @@ func TestCustomReceivePack(t *testing.T) {
 
 	// expect printing of info message, "custom" string from the first request
 	// and "output" string from the second request
-	require.Equal(t, "remote: \nremote: info_message\nremote: one more message\nremote: \n", errBuf.String())
 	require.Equal(t, "customoutput", outBuf.String())
 }

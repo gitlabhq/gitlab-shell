@@ -22,8 +22,7 @@
 		"data": {
 			"api_endpoints": ["geo/proxy_git_push_ssh/info_refs", "geo/proxy_git_push_ssh/push"],
 			"gl_username":   "custom",
-			"primary_repo":  "https://repo/path",
-			"info_message":  "message"
+			"primary_repo":  "https://repo/path"
     }
   },
   "git_protocol": "protocol",

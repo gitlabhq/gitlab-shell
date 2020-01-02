@@ -7,9 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
-	"gitlab.com/gitlab-org/gitlab-shell/internal/console"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
 )
@@ -32,8 +30,6 @@ func (c *Command) processCustomAction(response *accessverifier.Response) error {
 	if len(apiEndpoints) == 0 {
 		return errors.New("Custom action error: Empty API endpoints")
 	}
-
-	console.DisplayInfoMessages(strings.Split(data.InfoMessage, "\n"), c.ReadWriter.ErrOut)
 
 	return c.processApiEndpoints(response)
 }
