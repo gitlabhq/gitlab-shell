@@ -1,3 +1,7 @@
+v11.1.0
+- Bump Ruby version to 2.6.5 !357
+- Remove support for Custom data.info_message !356
+
 v10.3.0
 - Use correct git-lfs download or upload operation names !353
 - Add support for Gitaly feature flags !351
