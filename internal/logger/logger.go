@@ -21,6 +21,15 @@ var (
 	ProgName        string
 )
 
+type UTCFormatter struct {
+	defaultFormatter log.Formatter
+}
+
+func (f *UTCFormatter) Format(entry *log.Entry) ([]byte, error) {
+	entry.Time = entry.Time.UTC()
+	return f.defaultFormatter.Format(entry)
+}
+
 func Configure(cfg *config.Config) error {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -34,8 +43,20 @@ func Configure(cfg *config.Config) error {
 	}
 
 	log.SetOutput(logWriter)
+
 	if cfg.LogFormat == "json" {
-		log.SetFormatter(&log.JSONFormatter{})
+		log.SetFormatter(&UTCFormatter{
+			defaultFormatter: &log.JSONFormatter{
+				TimestampFormat: "2020-02-05 15:04:05.999Z",
+			},
+		})
+	} else {
+		log.SetFormatter(&UTCFormatter{
+			defaultFormatter: &log.TextFormatter{
+				TimestampFormat: "2020-02-05 15:04:05.999Z",
+				FullTimestamp:   true,
+			},
+		})
 	}
 
 	return nil
