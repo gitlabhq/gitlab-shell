@@ -14,10 +14,6 @@
   script:
     - make verify test
 
-go:1.11:
-  <<: *test_definition
-  image: golang:1.11
-
 go:1.12:
   <<: *test_definition
   image: golang:1.12
@@ -25,6 +21,10 @@ go:1.12:
 go:1.13:
   <<: *test_definition
   image: golang:1.13
+
+go:1.14:
+  <<: *test_definition
+  image: golang:1.14
 
 codequality:
   image: docker:stable
