@@ -15,6 +15,8 @@ const (
 	ReceivePack      CommandType = "git-receive-pack"
 	UploadPack       CommandType = "git-upload-pack"
 	UploadArchive    CommandType = "git-upload-archive"
+
+	GitProtocolEnv = "GIT_PROTOCOL"
 )
 
 var (
