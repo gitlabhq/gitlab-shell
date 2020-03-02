@@ -1,4 +1,4 @@
-v11.1.0
+v11.0.0
 - Bump Ruby version to 2.6.5 !357
 - Remove support for Custom data.info_message !356
 
