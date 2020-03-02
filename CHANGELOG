@@ -1,3 +1,6 @@
+v12.0.0
+- openssh: Accept GIT_PROTOCOL environment variable !364
+
 v11.0.0
 - Bump Ruby version to 2.6.5 !357
 - Remove support for Custom data.info_message !356
