@@ -2,6 +2,7 @@ package receivepack
 
 import (
 	"context"
+	"os"
 
 	"google.golang.org/grpc"
 
@@ -26,7 +27,7 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 		GlId:             response.UserId,
 		GlRepository:     response.Repo,
 		GlUsername:       response.Username,
-		GitProtocol:      response.GitProtocol,
+		GitProtocol:      os.Getenv(commandargs.GitProtocolEnv),
 		GitConfigOptions: response.GitConfigOptions,
 	}
 
