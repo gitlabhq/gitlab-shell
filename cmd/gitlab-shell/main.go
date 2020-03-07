@@ -9,6 +9,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/console"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/logger"
 )
 
 func main() {
@@ -29,6 +30,8 @@ func main() {
 		fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting")
 		os.Exit(1)
 	}
+
+	logger.Configure(config)
 
 	cmd, err := command.New(executable, os.Args[1:], config, readWriter)
 	if err != nil {

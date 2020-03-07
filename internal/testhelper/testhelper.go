@@ -8,6 +8,8 @@ import (
 	"runtime"
 
 	"github.com/otiai10/copy"
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 )
 
 var (
@@ -90,4 +92,11 @@ func Setenv(key, value string) (func(), error) {
 	oldValue := os.Getenv(key)
 	err := os.Setenv(key, value)
 	return func() { os.Setenv(key, oldValue) }, err
+}
+
+func SetupLogger() *test.Hook {
+	logger, hook := test.NewNullLogger()
+	logrus.SetOutput(logger.Writer())
+
+	return hook
 }
