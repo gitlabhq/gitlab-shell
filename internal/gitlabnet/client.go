@@ -8,8 +8,11 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
+	log "github.com/sirupsen/logrus"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/logger"
 )
 
 const (
@@ -111,14 +114,25 @@ func (c *GitlabClient) DoRequest(method, path string, data interface{}) (*http.R
 	request.Header.Add("Content-Type", "application/json")
 	request.Close = true
 
+	start := time.Now()
 	response, err := c.httpClient.Do(request)
+	fields := log.Fields{
+		"method":      method,
+		"url":         request.URL.String(),
+		"duration_ms": logger.ElapsedTimeMs(start, time.Now()),
+	}
+
 	if err != nil {
+		log.WithError(err).WithFields(fields).Error("Internal API unreachable")
 		return nil, fmt.Errorf("Internal API unreachable")
 	}
 
 	if err := parseError(response); err != nil {
+		log.WithError(err).WithFields(fields).Error("Internal API error")
 		return nil, err
 	}
+
+	log.WithFields(fields).Info("Finished HTTP request")
 
 	return response, nil
 }

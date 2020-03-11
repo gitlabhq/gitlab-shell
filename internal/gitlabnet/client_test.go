@@ -7,7 +7,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path"
+	"strings"
 	"testing"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -116,6 +119,7 @@ func TestClients(t *testing.T) {
 
 func testSuccessfulGet(t *testing.T, client *GitlabClient) {
 	t.Run("Successful get", func(t *testing.T) {
+		hook := testhelper.SetupLogger()
 		response, err := client.Get("/hello")
 		require.NoError(t, err)
 		require.NotNil(t, response)
@@ -125,11 +129,17 @@ func testSuccessfulGet(t *testing.T, client *GitlabClient) {
 		responseBody, err := ioutil.ReadAll(response.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, string(responseBody), "Hello")
+
+		assert.Equal(t, 1, len(hook.Entries))
+		assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
+		assert.True(t, strings.Contains(hook.LastEntry().Message, "method=GET"))
+		assert.True(t, strings.Contains(hook.LastEntry().Message, "Finished HTTP request"))
 	})
 }
 
 func testSuccessfulPost(t *testing.T, client *GitlabClient) {
 	t.Run("Successful Post", func(t *testing.T) {
+		hook := testhelper.SetupLogger()
 		data := map[string]string{"key": "value"}
 
 		response, err := client.Post("/post_endpoint", data)
@@ -141,20 +151,37 @@ func testSuccessfulPost(t *testing.T, client *GitlabClient) {
 		responseBody, err := ioutil.ReadAll(response.Body)
 		assert.NoError(t, err)
 		assert.Equal(t, "Echo: {\"key\":\"value\"}", string(responseBody))
+
+		assert.Equal(t, 1, len(hook.Entries))
+		assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
+		assert.True(t, strings.Contains(hook.LastEntry().Message, "method=POST"))
+		assert.True(t, strings.Contains(hook.LastEntry().Message, "Finished HTTP request"))
 	})
 }
 
 func testMissing(t *testing.T, client *GitlabClient) {
 	t.Run("Missing error for GET", func(t *testing.T) {
+		hook := testhelper.SetupLogger()
 		response, err := client.Get("/missing")
 		assert.EqualError(t, err, "Internal API error (404)")
 		assert.Nil(t, response)
+
+		assert.Equal(t, 1, len(hook.Entries))
+		assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
+		assert.True(t, strings.Contains(hook.LastEntry().Message, "method=GET"))
+		assert.True(t, strings.Contains(hook.LastEntry().Message, "Internal API error"))
 	})
 
 	t.Run("Missing error for POST", func(t *testing.T) {
+		hook := testhelper.SetupLogger()
 		response, err := client.Post("/missing", map[string]string{})
 		assert.EqualError(t, err, "Internal API error (404)")
 		assert.Nil(t, response)
+
+		assert.Equal(t, 1, len(hook.Entries))
+		assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
+		assert.True(t, strings.Contains(hook.LastEntry().Message, "method=POST"))
+		assert.True(t, strings.Contains(hook.LastEntry().Message, "Internal API error"))
 	})
 }
 

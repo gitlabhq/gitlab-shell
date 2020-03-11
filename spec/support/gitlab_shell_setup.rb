@@ -1,4 +1,5 @@
 require 'yaml'
+require 'tempfile'
 
 RSpec.shared_context 'gitlab shell', shared_context: :metadata do
   def original_root_path
@@ -10,6 +11,8 @@ RSpec.shared_context 'gitlab shell', shared_context: :metadata do
   end
 
   def write_config(config)
+    config['log_file'] ||= Tempfile.new.path
+
     File.open(config_path, 'w') do |f|
       f.write(config.to_yaml)
     end
