@@ -5,6 +5,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	log "github.com/sirupsen/logrus"
 	"gitlab.com/gitlab-org/gitaly/client"
 	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
@@ -22,6 +23,16 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 	}
 
 	request := &pb.SSHUploadArchiveRequest{Repository: &response.Gitaly.Repo}
+
+	fields := log.Fields{
+		"command":       "git-upload-archive",
+		"glProjectPath": request.Repository.GlProjectPath,
+		"glRepository":  request.Repository.GlRepository,
+		"userId":        response.UserId,
+		"userName":      response.Username,
+	}
+
+	log.WithFields(fields).Info("executing git command")
 
 	return gc.RunGitalyCommand(func(ctx context.Context, conn *grpc.ClientConn) (int32, error) {
 		ctx, cancel := context.WithCancel(ctx)

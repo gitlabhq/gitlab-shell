@@ -33,12 +33,12 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 	}
 
 	fields := log.Fields{
-		"command":         "git-receive-pack",
-		"gl_project_path": request.Repository.GlProjectPath,
-		"gl_repository":   request.Repository.GlRepository,
-		"user_id":         response.UserId,
-		"username":        response.Username,
-		"git_protocol":    request.GitProtocol,
+		"command":       "git-receive-pack",
+		"glProjectPath": request.Repository.GlProjectPath,
+		"glRepository":  request.Repository.GlRepository,
+		"userId":        response.UserId,
+		"userName":      response.Username,
+		"gitProtocol":   request.GitProtocol,
 	}
 
 	log.WithFields(fields).Info("executing git command")
