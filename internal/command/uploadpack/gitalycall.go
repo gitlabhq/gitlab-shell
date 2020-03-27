@@ -6,6 +6,7 @@ import (
 
 	"google.golang.org/grpc"
 
+	log "github.com/sirupsen/logrus"
 	"gitlab.com/gitlab-org/gitaly/client"
 	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
@@ -27,6 +28,17 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 		GitProtocol:      os.Getenv(commandargs.GitProtocolEnv),
 		GitConfigOptions: response.GitConfigOptions,
 	}
+
+	fields := log.Fields{
+		"command":         "git-upload-pack",
+		"gl_project_path": request.Repository.GlProjectPath,
+		"gl_repository":   request.Repository.GlRepository,
+		"user_id":         response.UserId,
+		"username":        response.Username,
+		"git_protocol":    request.GitProtocol,
+	}
+
+	log.WithFields(fields).Info("executing git command")
 
 	return gc.RunGitalyCommand(func(ctx context.Context, conn *grpc.ClientConn) (int32, error) {
 		ctx, cancel := context.WithCancel(ctx)
