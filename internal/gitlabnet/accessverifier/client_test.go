@@ -52,7 +52,7 @@ func buildExpectedResponse(who string) *Response {
 }
 
 func TestSuccessfulResponses(t *testing.T) {
-	client, cleanup := setup(t)
+	client, cleanup := setup(t, "")
 	defer cleanup()
 
 	testCases := []struct {
@@ -82,8 +82,8 @@ func TestSuccessfulResponses(t *testing.T) {
 	}
 }
 
-	client, cleanup := setup(t)
 func TestGeoPushGetCustomAction(t *testing.T) {
+	client, cleanup := setup(t, "responses/allowed_with_push_payload.json")
 	defer cleanup()
 
 	args := &commandargs.Shell{GitlabUsername: "custom"}
@@ -106,7 +106,7 @@ func TestGeoPushGetCustomAction(t *testing.T) {
 }
 
 func TestErrorResponses(t *testing.T) {
-	client, cleanup := setup(t)
+	client, cleanup := setup(t, "")
 	defer cleanup()
 
 	testCases := []struct {
@@ -142,7 +142,7 @@ func TestErrorResponses(t *testing.T) {
 	}
 }
 
-func setup(t *testing.T) (*Client, func()) {
+func setup(t *testing.T, allowedPayload string) (*Client, func()) {
 	testDirCleanup, err := testhelper.PrepareTestRootDir()
 	require.NoError(t, err)
 	defer testDirCleanup()
@@ -150,9 +150,13 @@ func setup(t *testing.T) (*Client, func()) {
 	body, err := ioutil.ReadFile(path.Join(testhelper.TestRoot, "responses/allowed.json"))
 	require.NoError(t, err)
 
-	allowedWithPayloadPath := path.Join(testhelper.TestRoot, "responses/allowed_with_push_payload.json")
-	bodyWithPayload, err := ioutil.ReadFile(allowedWithPayloadPath)
-	require.NoError(t, err)
+	var bodyWithPayload []byte
+
+	if allowedPayload != "" {
+		allowedWithPayloadPath := path.Join(testhelper.TestRoot, allowedPayload)
+		bodyWithPayload, err = ioutil.ReadFile(allowedWithPayloadPath)
+		require.NoError(t, err)
+	}
 
 	requests := []testserver.TestRequestHandler{
 		{
