@@ -2,8 +2,8 @@ package uploadarchive
 
 import (
 	"bytes"
-	"testing"
 	"strings"
+	"testing"
 
 	"github.com/sirupsen/logrus"
 
@@ -13,8 +13,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/testserver"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper/requesthandlers"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper/requesthandlers"
 )
 
 func TestUploadPack(t *testing.T) {
@@ -45,4 +45,5 @@ func TestUploadPack(t *testing.T) {
 	require.Equal(t, "UploadArchive: "+repo, output.String())
 	require.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
 	require.True(t, strings.Contains(hook.LastEntry().Message, "executing git command"))
+	require.True(t, strings.Contains(hook.LastEntry().Message, "command=git-upload-archive"))
 }
