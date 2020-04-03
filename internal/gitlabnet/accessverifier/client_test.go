@@ -82,8 +82,8 @@ func TestSuccessfulResponses(t *testing.T) {
 	}
 }
 
-func TestGetCustomAction(t *testing.T) {
 	client, cleanup := setup(t)
+func TestGeoPushGetCustomAction(t *testing.T) {
 	defer cleanup()
 
 	args := &commandargs.Shell{GitlabUsername: "custom"}
