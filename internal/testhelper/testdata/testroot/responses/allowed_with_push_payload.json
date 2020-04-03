@@ -20,7 +20,7 @@
   "payload" : {
     "action": "geo_proxy_to_primary",
 		"data": {
-			"api_endpoints": ["geo/proxy_git_push_ssh/info_refs", "geo/proxy_git_push_ssh/push"],
+			"api_endpoints": ["geo/proxy_git_ssh/info_refs_receive_pack", "geo/proxy_git_ssh/receive_pack"],
 			"gl_username":   "custom",
 			"primary_repo":  "https://repo/path"
     }

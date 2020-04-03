@@ -150,7 +150,7 @@ func setup(t *testing.T) (*Client, func()) {
 	body, err := ioutil.ReadFile(path.Join(testhelper.TestRoot, "responses/allowed.json"))
 	require.NoError(t, err)
 
-	allowedWithPayloadPath := path.Join(testhelper.TestRoot, "responses/allowed_with_payload.json")
+	allowedWithPayloadPath := path.Join(testhelper.TestRoot, "responses/allowed_with_push_payload.json")
 	bodyWithPayload, err := ioutil.ReadFile(allowedWithPayloadPath)
 	require.NoError(t, err)
 
