@@ -18,8 +18,8 @@ import (
 )
 
 var (
-	repo   = "group/private"
-	action = commandargs.ReceivePack
+	repo              = "group/private"
+	receivePackAction = commandargs.ReceivePack
 )
 
 func buildExpectedResponse(who string) *Response {
@@ -73,7 +73,7 @@ func TestSuccessfulResponses(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			result, err := client.Verify(tc.args, action, repo)
+			result, err := client.Verify(tc.args, receivePackAction, repo)
 			require.NoError(t, err)
 
 			response := buildExpectedResponse(tc.who)
@@ -87,7 +87,7 @@ func TestGetCustomAction(t *testing.T) {
 	defer cleanup()
 
 	args := &commandargs.Shell{GitlabUsername: "custom"}
-	result, err := client.Verify(args, action, repo)
+	result, err := client.Verify(args, receivePackAction, repo)
 	require.NoError(t, err)
 
 	response := buildExpectedResponse("user-1")
@@ -134,7 +134,7 @@ func TestErrorResponses(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			args := &commandargs.Shell{GitlabKeyId: tc.fakeId}
-			resp, err := client.Verify(args, action, repo)
+			resp, err := client.Verify(args, receivePackAction, repo)
 
 			require.EqualError(t, err, tc.expectedError)
 			require.Nil(t, resp)
