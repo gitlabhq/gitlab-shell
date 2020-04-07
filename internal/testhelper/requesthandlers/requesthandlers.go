@@ -61,3 +61,43 @@ func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testse
 
 	return requests
 }
+
+func BuildAllowedWithCustomActionsHandlers(t *testing.T) []testserver.TestRequestHandler {
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/api/v4/internal/allowed",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				body := map[string]interface{}{
+					"status": true,
+					"gl_id":  "1",
+					"payload": map[string]interface{}{
+						"action": "geo_proxy_to_primary",
+						"data": map[string]interface{}{
+							"api_endpoints": []string{"/geo/proxy/info_refs", "/geo/proxy/push"},
+							"gl_username":   "custom",
+							"primary_repo":  "https://repo/path",
+						},
+					},
+				}
+				w.WriteHeader(http.StatusMultipleChoices)
+				require.NoError(t, json.NewEncoder(w).Encode(body))
+			},
+		},
+		{
+			Path: "/geo/proxy/info_refs",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				body := map[string]interface{}{"result": []byte("custom")}
+				require.NoError(t, json.NewEncoder(w).Encode(body))
+			},
+		},
+		{
+			Path: "/geo/proxy/push",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				body := map[string]interface{}{"result": []byte("output")}
+				require.NoError(t, json.NewEncoder(w).Encode(body))
+			},
+		},
+	}
+
+	return requests
+}

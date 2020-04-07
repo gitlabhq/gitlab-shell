@@ -4,6 +4,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/customaction"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 )
@@ -27,7 +28,8 @@ func (c *Command) Execute() error {
 	}
 
 	if response.IsCustomAction() {
-		return c.processCustomAction(response)
+		customAction := customaction.Command{c.Config, c.ReadWriter}
+		return customAction.Execute(response)
 	}
 
 	return c.performGitalyCall(response)

@@ -1,4 +1,4 @@
-package receivepack
+package customaction
 
 import (
 	"bytes"
@@ -9,47 +9,18 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/testserver"
 )
 
-func TestCustomReceivePack(t *testing.T) {
-	repo := "group/repo"
-	keyId := "1"
+func TestExecute(t *testing.T) {
+	who := "key-1"
 
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/allowed",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
-				require.NoError(t, err)
-
-				var request *accessverifier.Request
-				require.NoError(t, json.Unmarshal(b, &request))
-
-				require.Equal(t, "1", request.KeyId)
-
-				body := map[string]interface{}{
-					"status": true,
-					"gl_id":  "1",
-					"payload": map[string]interface{}{
-						"action": "geo_proxy_to_primary",
-						"data": map[string]interface{}{
-							"api_endpoints": []string{"/geo/proxy_git_push_ssh/info_refs", "/geo/proxy_git_push_ssh/push"},
-							"gl_username":   "custom",
-							"primary_repo":  "https://repo/path",
-						},
-					},
-				}
-				w.WriteHeader(http.StatusMultipleChoices)
-				require.NoError(t, json.NewEncoder(w).Encode(body))
-			},
-		},
-		{
-			Path: "/geo/proxy_git_push_ssh/info_refs",
+			Path: "/geo/proxy/info_refs",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
@@ -57,7 +28,7 @@ func TestCustomReceivePack(t *testing.T) {
 				var request *Request
 				require.NoError(t, json.Unmarshal(b, &request))
 
-				require.Equal(t, request.Data.UserId, "key-"+keyId)
+				require.Equal(t, request.Data.UserId, who)
 				require.Empty(t, request.Output)
 
 				err = json.NewEncoder(w).Encode(Response{Result: []byte("custom")})
@@ -65,7 +36,7 @@ func TestCustomReceivePack(t *testing.T) {
 			},
 		},
 		{
-			Path: "/geo/proxy_git_push_ssh/push",
+			Path: "/geo/proxy/push",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := ioutil.ReadAll(r.Body)
 				require.NoError(t, err)
@@ -73,7 +44,7 @@ func TestCustomReceivePack(t *testing.T) {
 				var request *Request
 				require.NoError(t, json.Unmarshal(b, &request))
 
-				require.Equal(t, request.Data.UserId, "key-"+keyId)
+				require.Equal(t, request.Data.UserId, who)
 				require.Equal(t, "input", string(request.Output))
 
 				err = json.NewEncoder(w).Encode(Response{Result: []byte("output")})
@@ -89,13 +60,24 @@ func TestCustomReceivePack(t *testing.T) {
 	errBuf := &bytes.Buffer{}
 	input := bytes.NewBufferString("input")
 
+	response := &accessverifier.Response{
+		Who: who,
+		Payload: accessverifier.CustomPayload{
+			Action: "geo_proxy_to_primary",
+			Data: accessverifier.CustomPayloadData{
+				ApiEndpoints: []string{"/geo/proxy/info_refs", "/geo/proxy/push"},
+				Username:     "custom",
+				PrimaryRepo:  "https://repo/path",
+			},
+		},
+	}
+
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},
-		Args:       &commandargs.Shell{GitlabKeyId: keyId, CommandType: commandargs.ReceivePack, SshArgs: []string{"git-receive-pack", repo}},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: errBuf, Out: outBuf, In: input},
 	}
 
-	require.NoError(t, cmd.Execute())
+	require.NoError(t, cmd.Execute(response))
 
 	// expect printing of info message, "custom" string from the first request
 	// and "output" string from the second request
