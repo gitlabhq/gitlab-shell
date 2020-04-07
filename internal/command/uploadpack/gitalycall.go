@@ -9,7 +9,6 @@ import (
 	"gitlab.com/gitlab-org/gitaly/client"
 	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/commandlogger"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/handler"
 )
@@ -29,11 +28,11 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 		GitConfigOptions: response.GitConfigOptions,
 	}
 
-	commandlogger.Log("git-upload-pack", request.Repository, response, request.GitProtocol)
-
 	return gc.RunGitalyCommand(func(ctx context.Context, conn *grpc.ClientConn) (int32, error) {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
+
+		gc.LogExecution("git-upload-pack", request.Repository, response, request.GitProtocol)
 
 		rw := c.ReadWriter
 		return client.UploadPack(ctx, conn, rw.In, rw.Out, rw.ErrOut, request)
