@@ -35,7 +35,7 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		gc.LogExecution(request.Repository, response, "")
+		gc.LogExecution(request.Repository, response, request.GitProtocol)
 
 		rw := c.ReadWriter
 		return client.ReceivePack(ctx, conn, rw.In, rw.Out, rw.ErrOut, request)
