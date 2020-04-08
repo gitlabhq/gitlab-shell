@@ -55,9 +55,9 @@ func (gc *GitalyCommand) RunGitalyCommand(handler GitalyHandlerFunc) error {
 	return err
 }
 
-func (gc *GitalyCommand) LogExecution(command string, repository *pb.Repository, response *accessverifier.Response, protocol string) {
+func (gc *GitalyCommand) LogExecution(repository *pb.Repository, response *accessverifier.Response, protocol string) {
 	fields := log.Fields{
-		"command":         command,
+		"command":         gc.ServiceName,
 		"gl_project_path": repository.GlProjectPath,
 		"gl_repository":   repository.GlRepository,
 		"user_id":         response.UserId,

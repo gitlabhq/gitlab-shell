@@ -32,7 +32,7 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 
-		gc.LogExecution("git-upload-pack", request.Repository, response, request.GitProtocol)
+		gc.LogExecution(request.Repository, response, request.GitProtocol)
 
 		rw := c.ReadWriter
 		return client.UploadPack(ctx, conn, rw.In, rw.Out, rw.ErrOut, request)
