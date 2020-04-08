@@ -1,3 +1,7 @@
+v12.1.0
+- Log internal HTTP requests !366
+- Log git-{upload-pack,receive-pack,upload-archive} requests !367
+
 v12.0.0
 - openssh: Accept GIT_PROTOCOL environment variable !364
 
