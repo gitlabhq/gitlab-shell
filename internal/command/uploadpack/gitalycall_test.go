@@ -2,7 +2,10 @@ package uploadpack
 
 import (
 	"bytes"
+	"strings"
 	"testing"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -11,6 +14,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper/requesthandlers"
 )
 
@@ -34,10 +38,15 @@ func TestUploadPack(t *testing.T) {
 		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
 	}
 
+	hook := testhelper.SetupLogger()
+
 	err := cmd.Execute()
 	require.NoError(t, err)
 
 	require.Equal(t, "UploadPack: "+repo, output.String())
+	require.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
+	require.True(t, strings.Contains(hook.LastEntry().Message, "executing git command"))
+	require.True(t, strings.Contains(hook.LastEntry().Message, "command=git-upload-pack"))
 
 	for k, v := range map[string]string{
 		"gitaly-feature-cache_invalidator":        "true",

@@ -6,10 +6,14 @@ import (
 	"os"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	"gitlab.com/gitlab-org/gitaly/auth"
 	"gitlab.com/gitlab-org/gitaly/client"
+	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/labkit/tracing"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -49,6 +53,19 @@ func (gc *GitalyCommand) RunGitalyCommand(handler GitalyHandlerFunc) error {
 	gitalyConn.close()
 
 	return err
+}
+
+func (gc *GitalyCommand) LogExecution(repository *pb.Repository, response *accessverifier.Response, protocol string) {
+	fields := log.Fields{
+		"command":         gc.ServiceName,
+		"gl_project_path": repository.GlProjectPath,
+		"gl_repository":   repository.GlRepository,
+		"user_id":         response.UserId,
+		"username":        response.Username,
+		"git_protocol":    protocol,
+	}
+
+	log.WithFields(fields).Info("executing git command")
 }
 
 func withOutgoingMetadata(ctx context.Context, features map[string]string) context.Context {
