@@ -95,10 +95,12 @@ For each version, there is a raw version and a tag version:
 To release a new version of GitLab Shell and have that version available to the
 Rails application:
 
-1. Update the [`CHANGELOG`](CHANGELOG) with the **tag version** and the
-   [`VERSION`](VERSION) file with the **raw version**.
-2. Add a new git tag with the **tag version**.
-3. Update `GITLAB_SHELL_VERSION` in the Rails application to the **raw
+1. Create a merge request to update the [`CHANGELOG`](CHANGELOG) with the
+   **tag version** and the [`VERSION`](VERSION) file with the **raw version**.
+2. Ask a maintainer to review and merge the merge request. If you're already a
+   maintainer, second maintainer review is not required.
+3. Add a new git tag with the **tag version**.
+4. Update `GITLAB_SHELL_VERSION` in the Rails application to the **raw
    version**. (Note: this can be done as a separate MR to that, or in and MR
    that will make use of the latest GitLab Shell changes.)
 
