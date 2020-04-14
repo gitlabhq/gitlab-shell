@@ -15,14 +15,14 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
   end
 
   def mock_server(server)
-    server.mount_proc('/geo/proxy_git_push_ssh/info_refs') do |req, res|
+    server.mount_proc('/geo/proxy_git_ssh/info_refs_receive_pack') do |req, res|
       res.content_type = 'application/json'
       res.status = 200
 
       res.body = {"result" => "#{Base64.encode64('custom')}"}.to_json
     end
 
-    server.mount_proc('/geo/proxy_git_push_ssh/push') do |req, res|
+    server.mount_proc('/geo/proxy_git_ssh/receive_pack') do |req, res|
       res.content_type = 'application/json'
       res.status = 200
 
@@ -50,7 +50,7 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
           "payload" => {
             "action" => "geo_proxy_to_primary",
             "data" => {
-              "api_endpoints" => ["/geo/proxy_git_push_ssh/info_refs", "/geo/proxy_git_push_ssh/push"],
+              "api_endpoints" => ["/geo/proxy_git_ssh/info_refs_receive_pack", "/geo/proxy_git_ssh/receive_pack"],
               "gl_username" =>   "custom",
               "primary_repo" =>  "https://repo/path"
             },
