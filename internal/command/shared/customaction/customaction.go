@@ -1,4 +1,4 @@
-package receivepack
+package customaction
 
 import (
 	"bytes"
@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
 )
@@ -23,7 +25,12 @@ type Response struct {
 	Message string `json:"message"`
 }
 
-func (c *Command) processCustomAction(response *accessverifier.Response) error {
+type Command struct {
+	Config     *config.Config
+	ReadWriter *readwriter.ReadWriter
+}
+
+func (c *Command) Execute(response *accessverifier.Response) error {
 	data := response.Payload.Data
 	apiEndpoints := data.ApiEndpoints
 
