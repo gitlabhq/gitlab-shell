@@ -4,10 +4,10 @@ require 'open3'
 require 'json'
 require 'base64'
 
-describe 'Custom bin/gitlab-shell git-receive-pack' do
+describe 'Custom bin/gitlab-shell git-upload-pack' do
   include_context 'gitlab shell'
 
-  let(:env) { {'SSH_CONNECTION' => 'fake', 'SSH_ORIGINAL_COMMAND' => 'git-receive-pack group/repo' } }
+  let(:env) { {'SSH_CONNECTION' => 'fake', 'SSH_ORIGINAL_COMMAND' => 'git-upload-pack group/repo' } }
   let(:divider) { "remote: ========================================================================\n" }
 
   before(:context) do
@@ -15,14 +15,14 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
   end
 
   def mock_server(server)
-    server.mount_proc('/geo/proxy_git_ssh/info_refs_receive_pack') do |req, res|
+    server.mount_proc('/geo/proxy_git_ssh/info_refs_upload_pack') do |req, res|
       res.content_type = 'application/json'
       res.status = 200
 
       res.body = {"result" => "#{Base64.encode64('custom')}"}.to_json
     end
 
-    server.mount_proc('/geo/proxy_git_ssh/receive_pack') do |req, res|
+    server.mount_proc('/geo/proxy_git_ssh/upload_pack') do |req, res|
       res.content_type = 'application/json'
       res.status = 200
 
@@ -50,7 +50,7 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
           "payload" => {
             "action" => "geo_proxy_to_primary",
             "data" => {
-              "api_endpoints" => ["/geo/proxy_git_ssh/info_refs_receive_pack", "/geo/proxy_git_ssh/receive_pack"],
+              "api_endpoints" => ["/geo/proxy_git_ssh/info_refs_upload_pack", "/geo/proxy_git_ssh/upload_pack"],
               "gl_username" =>   "custom",
               "primary_repo" =>  "https://repo/path"
             },
@@ -74,11 +74,11 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
           expect(stderr.gets).to eq("remote: message\n")
           expect(stderr.gets).to eq(remote_blank_line)
 
-          stdin.puts("input")
+          stdin.puts("0032want 343d70886785dc1f98aaf70f3b4ca87c93a5d0dd\n")
           stdin.close
 
           expect(stdout.gets(6)).to eq("custom")
-          expect(stdout.flush.read).to eq("input\n")
+          expect(stdout.flush.read).to eq("0032want 343d70886785dc1f98aaf70f3b4ca87c93a5d0dd\n")
         end
       end
 

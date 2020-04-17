@@ -18,8 +18,9 @@ import (
 )
 
 var (
-	repo   = "group/private"
-	action = commandargs.ReceivePack
+	repo              = "group/private"
+	receivePackAction = commandargs.ReceivePack
+	uploadPackAction  = commandargs.UploadPack
 )
 
 func buildExpectedResponse(who string) *Response {
@@ -52,7 +53,7 @@ func buildExpectedResponse(who string) *Response {
 }
 
 func TestSuccessfulResponses(t *testing.T) {
-	client, cleanup := setup(t)
+	client, cleanup := setup(t, "")
 	defer cleanup()
 
 	testCases := []struct {
@@ -73,7 +74,7 @@ func TestSuccessfulResponses(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			result, err := client.Verify(tc.args, action, repo)
+			result, err := client.Verify(tc.args, receivePackAction, repo)
 			require.NoError(t, err)
 
 			response := buildExpectedResponse(tc.who)
@@ -82,19 +83,42 @@ func TestSuccessfulResponses(t *testing.T) {
 	}
 }
 
-func TestGetCustomAction(t *testing.T) {
-	client, cleanup := setup(t)
+func TestGeoPushGetCustomAction(t *testing.T) {
+	client, cleanup := setup(t, "responses/allowed_with_push_payload.json")
 	defer cleanup()
 
 	args := &commandargs.Shell{GitlabUsername: "custom"}
-	result, err := client.Verify(args, action, repo)
+	result, err := client.Verify(args, receivePackAction, repo)
 	require.NoError(t, err)
 
 	response := buildExpectedResponse("user-1")
 	response.Payload = CustomPayload{
 		Action: "geo_proxy_to_primary",
 		Data: CustomPayloadData{
-			ApiEndpoints: []string{"geo/proxy_git_push_ssh/info_refs", "geo/proxy_git_push_ssh/push"},
+			ApiEndpoints: []string{"geo/proxy_git_ssh/info_refs_receive_pack", "geo/proxy_git_ssh/receive_pack"},
+			Username:     "custom",
+			PrimaryRepo:  "https://repo/path",
+		},
+	}
+	response.StatusCode = 300
+
+	require.True(t, response.IsCustomAction())
+	require.Equal(t, response, result)
+}
+
+func TestGeoPullGetCustomAction(t *testing.T) {
+	client, cleanup := setup(t, "responses/allowed_with_pull_payload.json")
+	defer cleanup()
+
+	args := &commandargs.Shell{GitlabUsername: "custom"}
+	result, err := client.Verify(args, uploadPackAction, repo)
+	require.NoError(t, err)
+
+	response := buildExpectedResponse("user-1")
+	response.Payload = CustomPayload{
+		Action: "geo_proxy_to_primary",
+		Data: CustomPayloadData{
+			ApiEndpoints: []string{"geo/proxy_git_ssh/info_refs_upload_pack", "geo/proxy_git_ssh/upload_pack"},
 			Username:     "custom",
 			PrimaryRepo:  "https://repo/path",
 		},
@@ -106,7 +130,7 @@ func TestGetCustomAction(t *testing.T) {
 }
 
 func TestErrorResponses(t *testing.T) {
-	client, cleanup := setup(t)
+	client, cleanup := setup(t, "")
 	defer cleanup()
 
 	testCases := []struct {
@@ -134,7 +158,7 @@ func TestErrorResponses(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			args := &commandargs.Shell{GitlabKeyId: tc.fakeId}
-			resp, err := client.Verify(args, action, repo)
+			resp, err := client.Verify(args, receivePackAction, repo)
 
 			require.EqualError(t, err, tc.expectedError)
 			require.Nil(t, resp)
@@ -142,7 +166,7 @@ func TestErrorResponses(t *testing.T) {
 	}
 }
 
-func setup(t *testing.T) (*Client, func()) {
+func setup(t *testing.T, allowedPayload string) (*Client, func()) {
 	testDirCleanup, err := testhelper.PrepareTestRootDir()
 	require.NoError(t, err)
 	defer testDirCleanup()
@@ -150,9 +174,13 @@ func setup(t *testing.T) (*Client, func()) {
 	body, err := ioutil.ReadFile(path.Join(testhelper.TestRoot, "responses/allowed.json"))
 	require.NoError(t, err)
 
-	allowedWithPayloadPath := path.Join(testhelper.TestRoot, "responses/allowed_with_payload.json")
-	bodyWithPayload, err := ioutil.ReadFile(allowedWithPayloadPath)
-	require.NoError(t, err)
+	var bodyWithPayload []byte
+
+	if allowedPayload != "" {
+		allowedWithPayloadPath := path.Join(testhelper.TestRoot, allowedPayload)
+		bodyWithPayload, err = ioutil.ReadFile(allowedWithPayloadPath)
+		require.NoError(t, err)
+	}
 
 	requests := []testserver.TestRequestHandler{
 		{

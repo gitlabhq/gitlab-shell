@@ -28,7 +28,11 @@ func (c *Command) Execute() error {
 	}
 
 	if response.IsCustomAction() {
-		customAction := customaction.Command{c.Config, c.ReadWriter}
+		customAction := customaction.Command{
+			Config:     c.Config,
+			ReadWriter: c.ReadWriter,
+			EOFSent:    true,
+		}
 		return customAction.Execute(response)
 	}
 
