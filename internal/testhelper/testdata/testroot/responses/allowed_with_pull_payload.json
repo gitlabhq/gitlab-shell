@@ -1,0 +1,40 @@
+{
+  "status": true,
+  "gl_repository": "project-26",
+  "gl_project_path": "group/private",
+  "gl_id": "user-1",
+  "gl_username": "root",
+  "git_config_options": [
+    "option"
+  ],
+  "gitaly": {
+    "repository": {
+      "storage_name": "default",
+      "relative_path": "@hashed/5f/9c/5f9c4ab08cac7457e9111a30e4664920607ea2c115a1433d7be98e97e64244ca.git",
+      "git_object_directory": "path/to/git_object_directory",
+      "git_alternate_object_directories": [
+        "path/to/git_alternate_object_directory"
+      ],
+      "gl_repository": "project-26",
+      "gl_project_path": "group/private"
+    },
+    "address": "unix:gitaly.socket",
+    "token": "token"
+  },
+  "payload": {
+    "action": "geo_proxy_to_primary",
+    "data": {
+      "api_endpoints": [
+        "geo/proxy_git_ssh/info_refs_upload_pack",
+        "geo/proxy_git_ssh/upload_pack"
+      ],
+      "gl_username": "custom",
+      "primary_repo": "https://repo/path"
+    }
+  },
+  "git_protocol": "protocol",
+  "gl_console_messages": [
+    "console",
+    "message"
+  ]
+}

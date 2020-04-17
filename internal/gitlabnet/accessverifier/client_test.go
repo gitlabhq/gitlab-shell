@@ -20,6 +20,7 @@ import (
 var (
 	repo              = "group/private"
 	receivePackAction = commandargs.ReceivePack
+	uploadPackAction  = commandargs.UploadPack
 )
 
 func buildExpectedResponse(who string) *Response {
@@ -94,7 +95,30 @@ func TestGeoPushGetCustomAction(t *testing.T) {
 	response.Payload = CustomPayload{
 		Action: "geo_proxy_to_primary",
 		Data: CustomPayloadData{
-			ApiEndpoints: []string{"geo/proxy_git_push_ssh/info_refs", "geo/proxy_git_push_ssh/push"},
+			ApiEndpoints: []string{"geo/proxy_git_ssh/info_refs_receive_pack", "geo/proxy_git_ssh/receive_pack"},
+			Username:     "custom",
+			PrimaryRepo:  "https://repo/path",
+		},
+	}
+	response.StatusCode = 300
+
+	require.True(t, response.IsCustomAction())
+	require.Equal(t, response, result)
+}
+
+func TestGeoPullGetCustomAction(t *testing.T) {
+	client, cleanup := setup(t, "responses/allowed_with_pull_payload.json")
+	defer cleanup()
+
+	args := &commandargs.Shell{GitlabUsername: "custom"}
+	result, err := client.Verify(args, uploadPackAction, repo)
+	require.NoError(t, err)
+
+	response := buildExpectedResponse("user-1")
+	response.Payload = CustomPayload{
+		Action: "geo_proxy_to_primary",
+		Data: CustomPayloadData{
+			ApiEndpoints: []string{"geo/proxy_git_ssh/info_refs_upload_pack", "geo/proxy_git_ssh/upload_pack"},
 			Username:     "custom",
 			PrimaryRepo:  "https://repo/path",
 		},

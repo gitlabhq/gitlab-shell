@@ -5,13 +5,14 @@ import (
 	"errors"
 
 	"io"
-	"io/ioutil"
 	"net/http"
 
+	log "github.com/sirupsen/logrus"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/pktline"
 )
 
 type Request struct {
@@ -28,6 +29,7 @@ type Response struct {
 type Command struct {
 	Config     *config.Config
 	ReadWriter *readwriter.ReadWriter
+	EOFSent    bool
 }
 
 func (c *Command) Execute(response *accessverifier.Response) error {
@@ -53,21 +55,38 @@ func (c *Command) processApiEndpoints(response *accessverifier.Response) error {
 	request.Data.UserId = response.Who
 
 	for _, endpoint := range data.ApiEndpoints {
+		fields := log.Fields{
+			"primary_repo": data.PrimaryRepo,
+			"endpoint":     endpoint,
+		}
+
+		log.WithFields(fields).Info("Performing custom action")
+
 		response, err := c.performRequest(client, endpoint, request)
 		if err != nil {
 			return err
 		}
 
+		// Print to os.Stdout the result contained in the response
+		//
 		if err = c.displayResult(response.Result); err != nil {
 			return err
 		}
 
 		// In the context of the git push sequence of events, it's necessary to read
 		// stdin in order to capture output to pass onto subsequent commands
-		output, err := ioutil.ReadAll(c.ReadWriter.In)
-		if err != nil {
-			return err
+		//
+		var output []byte
+
+		if c.EOFSent {
+			output, err = c.readFromStdin()
+			if err != nil {
+				return err
+			}
+		} else {
+			output = c.readFromStdinNoEOF()
 		}
+
 		request.Output = output
 	}
 
@@ -87,6 +106,29 @@ func (c *Command) performRequest(client *gitlabnet.GitlabClient, endpoint string
 	}
 
 	return cr, nil
+}
+
+func (c *Command) readFromStdin() ([]byte, error) {
+	output := new(bytes.Buffer)
+	_, err := io.Copy(output, c.ReadWriter.In)
+
+	return output.Bytes(), err
+}
+
+func (c *Command) readFromStdinNoEOF() []byte {
+	var output []byte
+
+	scanner := pktline.NewScanner(c.ReadWriter.In)
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		output = append(output, line...)
+
+		if pktline.IsDone(line) {
+			break
+		}
+	}
+
+	return output
 }
 
 func (c *Command) displayResult(result []byte) error {
