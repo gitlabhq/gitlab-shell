@@ -1,4 +1,4 @@
-package gitlabnet
+package client
 
 import (
 	"encoding/base64"
@@ -7,12 +7,21 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 )
+
+func TestReadTimeout(t *testing.T) {
+	expectedSeconds := uint64(300)
+
+	client := NewHTTPClient("http://localhost:3000", "", "", false, expectedSeconds)
+
+	require.NotNil(t, client)
+	assert.Equal(t, time.Duration(expectedSeconds)*time.Second, client.Client.Timeout)
+}
 
 const (
 	username = "basic_auth_user"
@@ -38,9 +47,8 @@ func TestBasicAuthSettings(t *testing.T) {
 			},
 		},
 	}
-	config := &config.Config{HttpSettings: config.HttpSettingsConfig{User: username, Password: password}}
 
-	client, cleanup := setup(t, config, requests)
+	client, cleanup := setup(t, username, password, requests)
 	defer cleanup()
 
 	response, err := client.Get("/get_endpoint")
@@ -78,18 +86,19 @@ func TestEmptyBasicAuthSettings(t *testing.T) {
 		},
 	}
 
-	client, cleanup := setup(t, &config.Config{}, requests)
+	client, cleanup := setup(t, "", "", requests)
 	defer cleanup()
 
 	_, err := client.Get("/empty_basic_auth")
 	require.NoError(t, err)
 }
 
-func setup(t *testing.T, config *config.Config, requests []testserver.TestRequestHandler) (*GitlabClient, func()) {
+func setup(t *testing.T, username, password string, requests []testserver.TestRequestHandler) (*GitlabNetClient, func()) {
 	url, cleanup := testserver.StartHttpServer(t, requests)
 
-	config.GitlabUrl = url
-	client, err := GetClient(config)
+	httpClient := NewHTTPClient(url, "", "", false, 1)
+
+	client, err := NewGitlabNetClient(username, password, "", httpClient)
 	require.NoError(t, err)
 
 	return client, cleanup

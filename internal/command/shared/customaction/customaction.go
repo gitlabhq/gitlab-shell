@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 
+	"gitlab.com/gitlab-org/gitlab-shell/client"
+
 	"io"
 	"net/http"
 
@@ -93,7 +95,7 @@ func (c *Command) processApiEndpoints(response *accessverifier.Response) error {
 	return nil
 }
 
-func (c *Command) performRequest(client *gitlabnet.GitlabClient, endpoint string, request *Request) (*Response, error) {
+func (c *Command) performRequest(client *client.GitlabNetClient, endpoint string, request *Request) (*Response, error) {
 	response, err := client.DoRequest(http.MethodPost, endpoint, request)
 	if err != nil {
 		return nil, err

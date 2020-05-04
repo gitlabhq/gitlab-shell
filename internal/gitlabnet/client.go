@@ -1,140 +1,27 @@
 package gitlabnet
 
 import (
-	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"strings"
-	"time"
 
-	log "github.com/sirupsen/logrus"
+	"gitlab.com/gitlab-org/gitlab-shell/client"
+
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/logger"
-)
-
-const (
-	internalApiPath  = "/api/v4/internal"
-	secretHeaderName = "Gitlab-Shared-Secret"
 )
 
 var (
 	ParsingError = fmt.Errorf("Parsing failed")
 )
 
-type ErrorResponse struct {
-	Message string `json:"message"`
-}
+func GetClient(config *config.Config) (*client.GitlabNetClient, error) {
+	httpClient := config.GetHttpClient()
 
-type GitlabClient struct {
-	httpClient *http.Client
-	config     *config.Config
-	host       string
-}
-
-func GetClient(config *config.Config) (*GitlabClient, error) {
-	client := config.GetHttpClient()
-
-	if client == nil {
+	if httpClient == nil {
 		return nil, fmt.Errorf("Unsupported protocol")
 	}
 
-	return &GitlabClient{httpClient: client.HttpClient, config: config, host: client.Host}, nil
-}
-
-func normalizePath(path string) string {
-	if !strings.HasPrefix(path, "/") {
-		path = "/" + path
-	}
-
-	if !strings.HasPrefix(path, internalApiPath) {
-		path = internalApiPath + path
-	}
-	return path
-}
-
-func newRequest(method, host, path string, data interface{}) (*http.Request, error) {
-	var jsonReader io.Reader
-	if data != nil {
-		jsonData, err := json.Marshal(data)
-		if err != nil {
-			return nil, err
-		}
-
-		jsonReader = bytes.NewReader(jsonData)
-	}
-
-	request, err := http.NewRequest(method, host+path, jsonReader)
-	if err != nil {
-		return nil, err
-	}
-
-	return request, nil
-}
-
-func parseError(resp *http.Response) error {
-	if resp.StatusCode >= 200 && resp.StatusCode <= 399 {
-		return nil
-	}
-	defer resp.Body.Close()
-	parsedResponse := &ErrorResponse{}
-
-	if err := json.NewDecoder(resp.Body).Decode(parsedResponse); err != nil {
-		return fmt.Errorf("Internal API error (%v)", resp.StatusCode)
-	} else {
-		return fmt.Errorf(parsedResponse.Message)
-	}
-
-}
-
-func (c *GitlabClient) Get(path string) (*http.Response, error) {
-	return c.DoRequest(http.MethodGet, normalizePath(path), nil)
-}
-
-func (c *GitlabClient) Post(path string, data interface{}) (*http.Response, error) {
-	return c.DoRequest(http.MethodPost, normalizePath(path), data)
-}
-
-func (c *GitlabClient) DoRequest(method, path string, data interface{}) (*http.Response, error) {
-	request, err := newRequest(method, c.host, path, data)
-	if err != nil {
-		return nil, err
-	}
-
-	user, password := c.config.HttpSettings.User, c.config.HttpSettings.Password
-	if user != "" && password != "" {
-		request.SetBasicAuth(user, password)
-	}
-
-	encodedSecret := base64.StdEncoding.EncodeToString([]byte(c.config.Secret))
-	request.Header.Set(secretHeaderName, encodedSecret)
-
-	request.Header.Add("Content-Type", "application/json")
-	request.Close = true
-
-	start := time.Now()
-	response, err := c.httpClient.Do(request)
-	fields := log.Fields{
-		"method":      method,
-		"url":         request.URL.String(),
-		"duration_ms": logger.ElapsedTimeMs(start, time.Now()),
-	}
-
-	if err != nil {
-		log.WithError(err).WithFields(fields).Error("Internal API unreachable")
-		return nil, fmt.Errorf("Internal API unreachable")
-	}
-
-	if err := parseError(response); err != nil {
-		log.WithError(err).WithFields(fields).Error("Internal API error")
-		return nil, err
-	}
-
-	log.WithFields(fields).Info("Finished HTTP request")
-
-	return response, nil
+	return client.NewGitlabNetClient(config.HttpSettings.User, config.HttpSettings.Password, config.SecretFilePath, httpClient)
 }
 
 func ParseJSON(hr *http.Response, response interface{}) error {
