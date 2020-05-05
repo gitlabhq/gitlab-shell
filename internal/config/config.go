@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"gitlab.com/gitlab-org/gitlab-shell/client"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -34,7 +35,24 @@ type Config struct {
 	SecretFilePath string             `yaml:"secret_file"`
 	Secret         string             `yaml:"secret"`
 	HttpSettings   HttpSettingsConfig `yaml:"http_settings"`
-	HttpClient     *HttpClient
+	HttpClient     *client.HttpClient
+}
+
+func (c *Config) GetHttpClient() *client.HttpClient {
+	if c.HttpClient != nil {
+		return c.HttpClient
+	}
+
+	client := client.NewHTTPClient(
+		c.GitlabUrl,
+		c.HttpSettings.CaFile,
+		c.HttpSettings.CaPath,
+		c.HttpSettings.SelfSignedCert,
+		c.HttpSettings.ReadTimeoutSeconds)
+
+	c.HttpClient = client
+
+	return client
 }
 
 func New() (*Config, error) {

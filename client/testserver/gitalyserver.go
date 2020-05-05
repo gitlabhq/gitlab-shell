@@ -9,10 +9,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-
-	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 )
 
 type TestGitalyServer struct{ ReceivedMD metadata.MD }

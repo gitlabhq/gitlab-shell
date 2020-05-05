@@ -6,10 +6,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
+	"gitlab.com/gitlab-org/gitlab-shell/client"
+	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/testserver"
 )
 
 var (
@@ -29,7 +28,7 @@ func init() {
 					json.NewEncoder(w).Encode(body)
 				} else if r.URL.Query().Get("key") == "broken-message" {
 					w.WriteHeader(http.StatusForbidden)
-					body := &gitlabnet.ErrorResponse{
+					body := &client.ErrorResponse{
 						Message: "Not allowed!",
 					}
 					json.NewEncoder(w).Encode(body)

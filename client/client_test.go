@@ -1,4 +1,4 @@
-package gitlabnet
+package client
 
 import (
 	"encoding/base64"
@@ -11,12 +11,9 @@ import (
 	"testing"
 
 	"github.com/sirupsen/logrus"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 )
 
@@ -74,24 +71,20 @@ func TestClients(t *testing.T) {
 
 	testCases := []struct {
 		desc   string
-		config *config.Config
+		caFile string
 		server func(*testing.T, []testserver.TestRequestHandler) (string, func())
 	}{
 		{
 			desc:   "Socket client",
-			config: &config.Config{},
 			server: testserver.StartSocketHttpServer,
 		},
 		{
 			desc:   "Http client",
-			config: &config.Config{},
 			server: testserver.StartHttpServer,
 		},
 		{
-			desc: "Https client",
-			config: &config.Config{
-				HttpSettings: config.HttpSettingsConfig{CaFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt")},
-			},
+			desc:   "Https client",
+			caFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt"),
 			server: testserver.StartHttpsServer,
 		},
 	}
@@ -101,10 +94,11 @@ func TestClients(t *testing.T) {
 			url, cleanup := tc.server(t, requests)
 			defer cleanup()
 
-			tc.config.GitlabUrl = url
-			tc.config.Secret = "sssh, it's a secret"
+			secret := "sssh, it's a secret"
 
-			client, err := GetClient(tc.config)
+			httpClient := NewHTTPClient(url, tc.caFile, "", false, 1)
+
+			client, err := NewGitlabNetClient("", "", secret, httpClient)
 			require.NoError(t, err)
 
 			testBrokenRequest(t, client)
@@ -117,7 +111,7 @@ func TestClients(t *testing.T) {
 	}
 }
 
-func testSuccessfulGet(t *testing.T, client *GitlabClient) {
+func testSuccessfulGet(t *testing.T, client *GitlabNetClient) {
 	t.Run("Successful get", func(t *testing.T) {
 		hook := testhelper.SetupLogger()
 		response, err := client.Get("/hello")
@@ -137,7 +131,7 @@ func testSuccessfulGet(t *testing.T, client *GitlabClient) {
 	})
 }
 
-func testSuccessfulPost(t *testing.T, client *GitlabClient) {
+func testSuccessfulPost(t *testing.T, client *GitlabNetClient) {
 	t.Run("Successful Post", func(t *testing.T) {
 		hook := testhelper.SetupLogger()
 		data := map[string]string{"key": "value"}
@@ -159,7 +153,7 @@ func testSuccessfulPost(t *testing.T, client *GitlabClient) {
 	})
 }
 
-func testMissing(t *testing.T, client *GitlabClient) {
+func testMissing(t *testing.T, client *GitlabNetClient) {
 	t.Run("Missing error for GET", func(t *testing.T) {
 		hook := testhelper.SetupLogger()
 		response, err := client.Get("/missing")
@@ -185,7 +179,7 @@ func testMissing(t *testing.T, client *GitlabClient) {
 	})
 }
 
-func testErrorMessage(t *testing.T, client *GitlabClient) {
+func testErrorMessage(t *testing.T, client *GitlabNetClient) {
 	t.Run("Error with message for GET", func(t *testing.T) {
 		response, err := client.Get("/error")
 		assert.EqualError(t, err, "Don't do that")
@@ -199,7 +193,7 @@ func testErrorMessage(t *testing.T, client *GitlabClient) {
 	})
 }
 
-func testBrokenRequest(t *testing.T, client *GitlabClient) {
+func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 	t.Run("Broken request for GET", func(t *testing.T) {
 		response, err := client.Get("/broken")
 		assert.EqualError(t, err, "Internal API unreachable")
@@ -213,7 +207,7 @@ func testBrokenRequest(t *testing.T, client *GitlabClient) {
 	})
 }
 
-func testAuthenticationHeader(t *testing.T, client *GitlabClient) {
+func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 	t.Run("Authentication headers for GET", func(t *testing.T) {
 		response, err := client.Get("/auth")
 		require.NoError(t, err)

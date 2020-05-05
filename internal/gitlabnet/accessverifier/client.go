@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
+	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
@@ -17,7 +18,7 @@ const (
 )
 
 type Client struct {
-	client *gitlabnet.GitlabClient
+	client *client.GitlabNetClient
 }
 
 type Request struct {

@@ -1,4 +1,4 @@
-package config
+package client
 
 import (
 	"context"
@@ -21,41 +21,36 @@ const (
 )
 
 type HttpClient struct {
-	HttpClient *http.Client
-	Host       string
+	*http.Client
+	Host string
 }
 
-func (c *Config) GetHttpClient() *HttpClient {
-	if c.HttpClient != nil {
-		return c.HttpClient
-	}
+func NewHTTPClient(gitlabURL, caFile, caPath string, selfSignedCert bool, readTimeoutSeconds uint64) *HttpClient {
 
 	var transport *http.Transport
 	var host string
-	if strings.HasPrefix(c.GitlabUrl, unixSocketProtocol) {
-		transport, host = c.buildSocketTransport()
-	} else if strings.HasPrefix(c.GitlabUrl, httpProtocol) {
-		transport, host = c.buildHttpTransport()
-	} else if strings.HasPrefix(c.GitlabUrl, httpsProtocol) {
-		transport, host = c.buildHttpsTransport()
+	if strings.HasPrefix(gitlabURL, unixSocketProtocol) {
+		transport, host = buildSocketTransport(gitlabURL)
+	} else if strings.HasPrefix(gitlabURL, httpProtocol) {
+		transport, host = buildHttpTransport(gitlabURL)
+	} else if strings.HasPrefix(gitlabURL, httpsProtocol) {
+		transport, host = buildHttpsTransport(caFile, caPath, selfSignedCert, gitlabURL)
 	} else {
 		return nil
 	}
 
-	httpClient := &http.Client{
+	c := &http.Client{
 		Transport: transport,
-		Timeout:   c.readTimeout(),
+		Timeout:   readTimeout(readTimeoutSeconds),
 	}
 
-	client := &HttpClient{HttpClient: httpClient, Host: host}
-
-	c.HttpClient = client
+	client := &HttpClient{Client: c, Host: host}
 
 	return client
 }
 
-func (c *Config) buildSocketTransport() (*http.Transport, string) {
-	socketPath := strings.TrimPrefix(c.GitlabUrl, unixSocketProtocol)
+func buildSocketTransport(gitlabURL string) (*http.Transport, string) {
+	socketPath := strings.TrimPrefix(gitlabURL, unixSocketProtocol)
 	transport := &http.Transport{
 		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
 			dialer := net.Dialer{}
@@ -66,19 +61,17 @@ func (c *Config) buildSocketTransport() (*http.Transport, string) {
 	return transport, socketBaseUrl
 }
 
-func (c *Config) buildHttpsTransport() (*http.Transport, string) {
+func buildHttpsTransport(caFile, caPath string, selfSignedCert bool, gitlabURL string) (*http.Transport, string) {
 	certPool, err := x509.SystemCertPool()
 
 	if err != nil {
 		certPool = x509.NewCertPool()
 	}
 
-	caFile := c.HttpSettings.CaFile
 	if caFile != "" {
 		addCertToPool(certPool, caFile)
 	}
 
-	caPath := c.HttpSettings.CaPath
 	if caPath != "" {
 		fis, _ := ioutil.ReadDir(caPath)
 		for _, fi := range fis {
@@ -93,11 +86,11 @@ func (c *Config) buildHttpsTransport() (*http.Transport, string) {
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{
 			RootCAs:            certPool,
-			InsecureSkipVerify: c.HttpSettings.SelfSignedCert,
+			InsecureSkipVerify: selfSignedCert,
 		},
 	}
 
-	return transport, c.GitlabUrl
+	return transport, gitlabURL
 }
 
 func addCertToPool(certPool *x509.CertPool, fileName string) {
@@ -107,13 +100,11 @@ func addCertToPool(certPool *x509.CertPool, fileName string) {
 	}
 }
 
-func (c *Config) buildHttpTransport() (*http.Transport, string) {
-	return &http.Transport{}, c.GitlabUrl
+func buildHttpTransport(gitlabURL string) (*http.Transport, string) {
+	return &http.Transport{}, gitlabURL
 }
 
-func (c *Config) readTimeout() time.Duration {
-	timeoutSeconds := c.HttpSettings.ReadTimeoutSeconds
-
+func readTimeout(timeoutSeconds uint64) time.Duration {
 	if timeoutSeconds == 0 {
 		timeoutSeconds = defaultReadTimeoutSeconds
 	}

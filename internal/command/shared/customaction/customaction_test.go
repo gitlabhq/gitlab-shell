@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/testserver"
 )
 
 func TestExecuteEOFSent(t *testing.T) {

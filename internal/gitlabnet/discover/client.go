@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
@@ -12,7 +13,7 @@ import (
 
 type Client struct {
 	config *config.Config
-	client *gitlabnet.GitlabClient
+	client *client.GitlabNetClient
 }
 
 type Response struct {
