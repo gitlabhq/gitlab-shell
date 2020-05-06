@@ -1,3 +1,6 @@
+v13.1.0
+- Ensure we are pasing the parsed secret !381
+
 v13.0.0
 - Move gitlabnet client into a publicly facing client package !377
 
