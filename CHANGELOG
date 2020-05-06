@@ -1,3 +1,6 @@
+v13.0.0
+- Move gitlabnet client into a publicly facing client package !377
+
 v12.2.0
 - Geo: Add custom action support for clone/pull !369
 
