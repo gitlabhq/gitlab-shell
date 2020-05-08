@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path"
-	"strings"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -126,8 +125,9 @@ func testSuccessfulGet(t *testing.T, client *GitlabNetClient) {
 
 		assert.Equal(t, 1, len(hook.Entries))
 		assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-		assert.True(t, strings.Contains(hook.LastEntry().Message, "method=GET"))
-		assert.True(t, strings.Contains(hook.LastEntry().Message, "Finished HTTP request"))
+		assert.Contains(t, hook.LastEntry().Message, "method=GET")
+		assert.Contains(t, hook.LastEntry().Message, "status=200")
+		assert.Contains(t, hook.LastEntry().Message, "Finished HTTP request")
 	})
 }
 
@@ -148,8 +148,9 @@ func testSuccessfulPost(t *testing.T, client *GitlabNetClient) {
 
 		assert.Equal(t, 1, len(hook.Entries))
 		assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-		assert.True(t, strings.Contains(hook.LastEntry().Message, "method=POST"))
-		assert.True(t, strings.Contains(hook.LastEntry().Message, "Finished HTTP request"))
+		assert.Contains(t, hook.LastEntry().Message, "method=POST")
+		assert.Contains(t, hook.LastEntry().Message, "status=200")
+		assert.Contains(t, hook.LastEntry().Message, "Finished HTTP request")
 	})
 }
 
@@ -162,8 +163,9 @@ func testMissing(t *testing.T, client *GitlabNetClient) {
 
 		assert.Equal(t, 1, len(hook.Entries))
 		assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-		assert.True(t, strings.Contains(hook.LastEntry().Message, "method=GET"))
-		assert.True(t, strings.Contains(hook.LastEntry().Message, "Internal API error"))
+		assert.Contains(t, hook.LastEntry().Message, "method=GET")
+		assert.Contains(t, hook.LastEntry().Message, "status=404")
+		assert.Contains(t, hook.LastEntry().Message, "Internal API error")
 	})
 
 	t.Run("Missing error for POST", func(t *testing.T) {
@@ -174,8 +176,9 @@ func testMissing(t *testing.T, client *GitlabNetClient) {
 
 		assert.Equal(t, 1, len(hook.Entries))
 		assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-		assert.True(t, strings.Contains(hook.LastEntry().Message, "method=POST"))
-		assert.True(t, strings.Contains(hook.LastEntry().Message, "Internal API error"))
+		assert.Contains(t, hook.LastEntry().Message, "method=POST")
+		assert.Contains(t, hook.LastEntry().Message, "status=404")
+		assert.Contains(t, hook.LastEntry().Message, "Internal API error")
 	})
 }
 
@@ -195,15 +198,31 @@ func testErrorMessage(t *testing.T, client *GitlabNetClient) {
 
 func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 	t.Run("Broken request for GET", func(t *testing.T) {
+		hook := testhelper.SetupLogger()
+
 		response, err := client.Get("/broken")
 		assert.EqualError(t, err, "Internal API unreachable")
 		assert.Nil(t, response)
+
+		assert.Equal(t, 1, len(hook.Entries))
+		assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
+		assert.Contains(t, hook.LastEntry().Message, "method=GET")
+		assert.NotContains(t, hook.LastEntry().Message, "status=")
+		assert.Contains(t, hook.LastEntry().Message, "Internal API unreachable")
 	})
 
 	t.Run("Broken request for POST", func(t *testing.T) {
+		hook := testhelper.SetupLogger()
+
 		response, err := client.Post("/broken", map[string]string{})
 		assert.EqualError(t, err, "Internal API unreachable")
 		assert.Nil(t, response)
+
+		assert.Equal(t, 1, len(hook.Entries))
+		assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
+		assert.Contains(t, hook.LastEntry().Message, "method=POST")
+		assert.NotContains(t, hook.LastEntry().Message, "status=")
+		assert.Contains(t, hook.LastEntry().Message, "Internal API unreachable")
 	})
 }
 
