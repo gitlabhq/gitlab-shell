@@ -2,7 +2,6 @@ package receivepack
 
 import (
 	"bytes"
-	"strings"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -43,7 +42,10 @@ func TestReceivePack(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "ReceivePack: "+userId+" "+repo, output.String())
-	require.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-	require.True(t, strings.Contains(hook.LastEntry().Message, "executing git command"))
-	require.True(t, strings.Contains(hook.LastEntry().Message, "command=git-receive-pack"))
+
+	entries := hook.AllEntries()
+	require.Equal(t, 2, len(entries))
+	require.Equal(t, logrus.InfoLevel, entries[1].Level)
+	require.Contains(t, entries[1].Message, "executing git command")
+	require.Contains(t, entries[1].Message, "command=git-receive-pack")
 }

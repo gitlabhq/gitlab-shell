@@ -2,10 +2,7 @@ package uploadpack
 
 import (
 	"bytes"
-	"strings"
 	"testing"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -44,9 +41,10 @@ func TestUploadPack(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "UploadPack: "+repo, output.String())
-	require.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-	require.True(t, strings.Contains(hook.LastEntry().Message, "executing git command"))
-	require.True(t, strings.Contains(hook.LastEntry().Message, "command=git-upload-pack"))
+	entries := hook.AllEntries()
+	assert.Equal(t, 2, len(entries))
+	require.Contains(t, entries[1].Message, "executing git command")
+	require.Contains(t, entries[1].Message, "command=git-upload-pack")
 
 	for k, v := range map[string]string{
 		"gitaly-feature-cache_invalidator":        "true",

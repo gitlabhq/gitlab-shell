@@ -123,18 +123,22 @@ func (c *GitlabNetClient) DoRequest(method, path string, data interface{}) (*htt
 		"url":         request.URL.String(),
 		"duration_ms": time.Since(start) / time.Millisecond,
 	}
+	logger := log.WithFields(fields)
 
 	if err != nil {
-		log.WithError(err).WithFields(fields).Error("Internal API unreachable")
+		logger.WithError(err).Error("Internal API unreachable")
 		return nil, fmt.Errorf("Internal API unreachable")
 	}
 
+	if response != nil {
+		logger = logger.WithField("status", response.StatusCode)
+	}
 	if err := parseError(response); err != nil {
-		log.WithError(err).WithFields(fields).Error("Internal API error")
+		logger.WithError(err).Error("Internal API error")
 		return nil, err
 	}
 
-	log.WithFields(fields).Info("Finished HTTP request")
+	logger.Info("Finished HTTP request")
 
 	return response, nil
 }
