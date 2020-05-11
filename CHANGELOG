@@ -1,3 +1,6 @@
+v13.2.0
+- Add HTTP status code to internal API logs !376
+
 v13.1.0
 - Ensure we are pasing the parsed secret !381
 
