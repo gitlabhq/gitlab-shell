@@ -123,6 +123,7 @@ func testSuccessfulGet(t *testing.T, client *GitlabNetClient) {
 		assert.NoError(t, err)
 		assert.Equal(t, string(responseBody), "Hello")
 
+		require.True(t, testhelper.WaitForLogEvent(hook))
 		entries := hook.AllEntries()
 		assert.Equal(t, 1, len(entries))
 		assert.Equal(t, logrus.InfoLevel, entries[0].Level)
@@ -147,6 +148,7 @@ func testSuccessfulPost(t *testing.T, client *GitlabNetClient) {
 		assert.NoError(t, err)
 		assert.Equal(t, "Echo: {\"key\":\"value\"}", string(responseBody))
 
+		require.True(t, testhelper.WaitForLogEvent(hook))
 		entries := hook.AllEntries()
 		assert.Equal(t, 1, len(entries))
 		assert.Equal(t, logrus.InfoLevel, entries[0].Level)
@@ -163,6 +165,7 @@ func testMissing(t *testing.T, client *GitlabNetClient) {
 		assert.EqualError(t, err, "Internal API error (404)")
 		assert.Nil(t, response)
 
+		require.True(t, testhelper.WaitForLogEvent(hook))
 		entries := hook.AllEntries()
 		assert.Equal(t, 1, len(entries))
 		assert.Equal(t, logrus.InfoLevel, entries[0].Level)
@@ -177,6 +180,7 @@ func testMissing(t *testing.T, client *GitlabNetClient) {
 		assert.EqualError(t, err, "Internal API error (404)")
 		assert.Nil(t, response)
 
+		require.True(t, testhelper.WaitForLogEvent(hook))
 		entries := hook.AllEntries()
 		assert.Equal(t, 1, len(entries))
 		assert.Equal(t, logrus.InfoLevel, entries[0].Level)
@@ -208,6 +212,7 @@ func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 		assert.EqualError(t, err, "Internal API unreachable")
 		assert.Nil(t, response)
 
+		require.True(t, testhelper.WaitForLogEvent(hook))
 		entries := hook.AllEntries()
 		assert.Equal(t, 1, len(entries))
 		assert.Equal(t, logrus.InfoLevel, entries[0].Level)
@@ -223,6 +228,7 @@ func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 		assert.EqualError(t, err, "Internal API unreachable")
 		assert.Nil(t, response)
 
+		require.True(t, testhelper.WaitForLogEvent(hook))
 		entries := hook.AllEntries()
 		assert.Equal(t, 1, len(entries))
 		assert.Equal(t, logrus.InfoLevel, entries[0].Level)
