@@ -55,6 +55,12 @@ go:1.14:
   extends: .test
   image: golang:1.14
 
+race:
+  extends: .test
+  image: golang:1.14
+  script:
+    - make test_golang_race
+
 codequality:
   extends: .use-docker-in-docker
   allow_failure: true

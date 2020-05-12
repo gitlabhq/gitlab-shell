@@ -21,6 +21,9 @@ test_ruby:
 test_golang:
 	go test ./...
 
+test_golang_race:
+	go test -race ./...
+
 setup: _install bin/gitlab-shell
 
 _install:
