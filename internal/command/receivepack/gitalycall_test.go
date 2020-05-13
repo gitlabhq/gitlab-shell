@@ -43,6 +43,7 @@ func TestReceivePack(t *testing.T) {
 
 	require.Equal(t, "ReceivePack: "+userId+" "+repo, output.String())
 
+	require.True(t, testhelper.WaitForLogEvent(hook))
 	entries := hook.AllEntries()
 	require.Equal(t, 2, len(entries))
 	require.Equal(t, logrus.InfoLevel, entries[1].Level)

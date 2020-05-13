@@ -42,6 +42,8 @@ func TestUploadPack(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "UploadArchive: "+repo, output.String())
+
+	require.True(t, testhelper.WaitForLogEvent(hook))
 	entries := hook.AllEntries()
 	require.Equal(t, 2, len(entries))
 	require.Equal(t, logrus.InfoLevel, entries[1].Level)
