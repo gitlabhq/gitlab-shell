@@ -104,12 +104,8 @@ code_navigation:
   image: golang:1.14.0
   allow_failure: true
   script:
-    - apt-get update && apt-get install -y ruby-full
     - go get github.com/sourcegraph/lsif-go/cmd/lsif-go
-    - gem install lsif_parser
     - lsif-go
-    - lsif_parser dump.lsif $PWD
-    - mv dump.lsif.tmp lsif
   artifacts:
-    paths:
-      - lsif/
+    reports:
+      lsif: dump.lsif
