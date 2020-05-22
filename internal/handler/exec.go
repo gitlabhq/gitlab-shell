@@ -8,12 +8,13 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"gitlab.com/gitlab-org/gitaly/auth"
+	gitalyauth "gitlab.com/gitlab-org/gitaly/auth"
 	"gitlab.com/gitlab-org/gitaly/client"
 	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
-
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
+	grpccorrelation "gitlab.com/gitlab-org/labkit/correlation/grpc"
 	"gitlab.com/gitlab-org/labkit/tracing"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -87,7 +88,19 @@ func getConn(gc *GitalyCommand) (*GitalyConn, error) {
 
 	connOpts := client.DefaultDialOpts
 	if gc.Token != "" {
-		connOpts = append(client.DefaultDialOpts, grpc.WithPerRPCCredentials(gitalyauth.RPCCredentialsV2(gc.Token)))
+		connOpts = append(client.DefaultDialOpts,
+			grpc.WithPerRPCCredentials(gitalyauth.RPCCredentialsV2(gc.Token)),
+			grpc.WithStreamInterceptor(
+				grpccorrelation.StreamClientCorrelationInterceptor(
+					grpccorrelation.WithClientName(executable.GitlabShell),
+				),
+			),
+			grpc.WithUnaryInterceptor(
+				grpccorrelation.UnaryClientCorrelationInterceptor(
+					grpccorrelation.WithClientName(executable.GitlabShell),
+				),
+			),
+		)
 	}
 
 	// Use a working directory that won't get removed or unmounted.
