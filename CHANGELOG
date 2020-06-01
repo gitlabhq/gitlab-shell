@@ -1,3 +1,9 @@
+v13.3.0
+- Upgrade Ruby version to v2.6.6 !390
+- Use default puma socket in example config !388
+- Set client name when making requests to Gitaly !387
+- Fix race conditions with logrus testing !385
+
 v13.2.0
 - Add HTTP status code to internal API logs !376
 
