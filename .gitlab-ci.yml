@@ -1,8 +1,11 @@
+include:
+  - template: Code-Quality.gitlab-ci.yml
+
 variables:
   DOCKER_VERSION: "19.03.0"
 
 workflow:
-  rules:
+  rules: &workflow_rules
     # For merge requests, create a pipeline.
     - if: '$CI_MERGE_REQUEST_IID'
     # For `master` branch, create a pipeline (this includes on schedules, pushes, merges, etc.).
@@ -61,18 +64,9 @@ race:
   script:
     - make test_golang_race
 
-codequality:
+code_quality:
   extends: .use-docker-in-docker
-  allow_failure: true
-  script:
-    - export SP_VERSION=$(echo "$CI_SERVER_VERSION" | sed 's/^\([0-9]*\)\.\([0-9]*\).*/\1-\2-stable/')
-    - docker run
-        --env SOURCE_CODE="$PWD"
-        --volume "$PWD":/code
-        --volume /var/run/docker.sock:/var/run/docker.sock
-        "registry.gitlab.com/gitlab-org/security-products/codequality:$SP_VERSION" /code
-  artifacts:
-    paths: [codeclimate.json]
+  rules: *workflow_rules
 
 sast:
   extends: .use-docker-in-docker
