@@ -1,4 +1,5 @@
 config.yml
+cover.out
 tmp/*
 .idea
 *.log
