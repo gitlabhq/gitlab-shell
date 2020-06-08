@@ -39,8 +39,8 @@ plan](https://gitlab.com/gitlab-org/gitaly/issues/1226#note_126519133).
 
 ## Code status
 
-[![pipeline status](https://gitlab.com/gitlab-org/gitlab-shell/badges/master/pipeline.svg)](https://gitlab.com/gitlab-org/gitlab-shell/commits/master)
-[![coverage report](https://gitlab.com/gitlab-org/gitlab-shell/badges/master/coverage.svg)](https://gitlab.com/gitlab-org/gitlab-shell/commits/master)
+[![pipeline status](https://gitlab.com/gitlab-org/gitlab-shell/badges/master/pipeline.svg)](https://gitlab.com/gitlab-org/gitlab-shell/-/pipelines?ref=master)
+[![coverage report](https://gitlab.com/gitlab-org/gitlab-shell/badges/master/coverage.svg)](https://gitlab.com/gitlab-org/gitlab-shell/-/pipelines?ref=master)
 [![Code Climate](https://codeclimate.com/github/gitlabhq/gitlab-shell.svg)](https://codeclimate.com/github/gitlabhq/gitlab-shell)
 
 ## Requirements
