@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 )
 
 func TestFailingNewPublicKeyLine(t *testing.T) {
@@ -29,7 +30,7 @@ func TestFailingNewPublicKeyLine(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			result, err := NewPublicKeyLine(tc.id, tc.publicKey, "root-dir")
+			result, err := NewPublicKeyLine(tc.id, tc.publicKey, &config.Config{RootDir: "/tmp", SslCertDir: "/tmp/certs"})
 
 			require.Empty(t, result)
 			require.EqualError(t, err, tc.expectedError)
@@ -60,7 +61,7 @@ func TestFailingNewPrincipalKeyLine(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			result, err := NewPrincipalKeyLine(tc.keyId, tc.principal, "root-dir")
+			result, err := NewPrincipalKeyLine(tc.keyId, tc.principal, &config.Config{RootDir: "/tmp", SslCertDir: "/tmp/certs"})
 
 			require.Empty(t, result)
 			require.EqualError(t, err, tc.expectedError)
@@ -69,14 +70,37 @@ func TestFailingNewPrincipalKeyLine(t *testing.T) {
 }
 
 func TestToString(t *testing.T) {
-	keyLine := &KeyLine{
-		Id:      "1",
-		Value:   "public-key",
-		Prefix:  "key",
-		RootDir: "/tmp",
+	testCases := []struct {
+		desc           string
+		keyLine        *KeyLine
+		expectedOutput string
+	}{
+		{
+			desc: "Without SSL cert dir",
+			keyLine: &KeyLine{
+				Id:     "1",
+				Value:  "public-key",
+				Prefix: "key",
+				Config: &config.Config{RootDir: "/tmp"},
+			},
+			expectedOutput: `command="/tmp/bin/gitlab-shell key-1",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty public-key`,
+		},
+		{
+			desc: "With SSL cert dir",
+			keyLine: &KeyLine{
+				Id:     "1",
+				Value:  "public-key",
+				Prefix: "key",
+				Config: &config.Config{RootDir: "/tmp", SslCertDir: "/tmp/certs"},
+			},
+			expectedOutput: `command="SSL_CERT_DIR=/tmp/certs /tmp/bin/gitlab-shell key-1",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty public-key`,
+		},
 	}
 
-	result := keyLine.ToString()
-
-	require.Equal(t, `command="/tmp/bin/gitlab-shell key-1",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty public-key`, result)
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			result := tc.keyLine.ToString()
+			require.Equal(t, tc.expectedOutput, result)
+		})
+	}
 }
