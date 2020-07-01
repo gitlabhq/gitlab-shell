@@ -41,7 +41,7 @@ func (c *Command) printKeyLine() error {
 		return nil
 	}
 
-	keyLine, err := keyline.NewPublicKeyLine(strconv.FormatInt(response.Id, 10), response.Key, c.Config.RootDir)
+	keyLine, err := keyline.NewPublicKeyLine(strconv.FormatInt(response.Id, 10), response.Key, c.Config)
 	if err != nil {
 		return err
 	}

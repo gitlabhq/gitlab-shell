@@ -36,7 +36,7 @@ func (c *Command) printPrincipalLines() error {
 }
 
 func (c *Command) printPrincipalLine(principal string) error {
-	principalKeyLine, err := keyline.NewPrincipalKeyLine(c.Args.KeyId, principal, c.Config.RootDir)
+	principalKeyLine, err := keyline.NewPrincipalKeyLine(c.Args.KeyId, principal, c.Config)
 	if err != nil {
 		return err
 	}
