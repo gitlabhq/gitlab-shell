@@ -11,24 +11,10 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
 )
 
-type Client struct {
-	config *config.Config
-	client *client.GitlabNetClient
-}
-
 type Response struct {
 	UserId   int64  `json:"id"`
 	Name     string `json:"name"`
 	Username string `json:"username"`
-}
-
-func NewClient(config *config.Config) (*Client, error) {
-	client, err := gitlabnet.GetClient(config)
-	if err != nil {
-		return nil, fmt.Errorf("Error creating http client: %v", err)
-	}
-
-	return &Client{config: config, client: client}, nil
 }
 
 func (c *Client) GetByCommandArgs(args *commandargs.Shell) (*Response, error) {
