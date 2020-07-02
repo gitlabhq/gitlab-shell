@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
 )
 
@@ -21,32 +22,45 @@ const (
 )
 
 type KeyLine struct {
-	Id      string // This can be either an ID of a Key or username
-	Value   string // This can be either a public key or a principal name
-	Prefix  string
-	RootDir string
+	Id     string // This can be either an ID of a Key or username
+	Value  string // This can be either a public key or a principal name
+	Prefix string
+	Config *config.Config
 }
 
-func NewPublicKeyLine(id string, publicKey string, rootDir string) (*KeyLine, error) {
-	return newKeyLine(id, publicKey, PublicKeyPrefix, rootDir)
+func NewPublicKeyLine(id, publicKey string, config *config.Config) (*KeyLine, error) {
+	return newKeyLine(id, publicKey, PublicKeyPrefix, config)
 }
 
-func NewPrincipalKeyLine(keyId string, principal string, rootDir string) (*KeyLine, error) {
-	return newKeyLine(keyId, principal, PrincipalPrefix, rootDir)
+func NewPrincipalKeyLine(keyId, principal string, config *config.Config) (*KeyLine, error) {
+	return newKeyLine(keyId, principal, PrincipalPrefix, config)
 }
 
 func (k *KeyLine) ToString() string {
-	command := fmt.Sprintf("%s %s-%s", path.Join(k.RootDir, executable.BinDir, executable.GitlabShell), k.Prefix, k.Id)
+	sslCertDirEnvVar := k.sslCertDirEnvVar()
+	command := fmt.Sprintf("%s %s-%s", path.Join(k.Config.RootDir, executable.BinDir, executable.GitlabShell), k.Prefix, k.Id)
 
-	return fmt.Sprintf(`command="%s",%s %s`, command, SshOptions, k.Value)
+	if sslCertDirEnvVar != "" {
+		sslCertDirEnvVar = fmt.Sprintf(`%s `, sslCertDirEnvVar)
+	}
+
+	return fmt.Sprintf(`command="%s%s",%s %s`, sslCertDirEnvVar, command, SshOptions, k.Value)
 }
 
-func newKeyLine(id string, value string, prefix string, rootDir string) (*KeyLine, error) {
+func (k *KeyLine) sslCertDirEnvVar() string {
+	if k.Config.SslCertDir != "" {
+		return fmt.Sprintf(`SSL_CERT_DIR=%s`, k.Config.SslCertDir)
+	}
+
+	return ""
+}
+
+func newKeyLine(id, value, prefix string, config *config.Config) (*KeyLine, error) {
 	if err := validate(id, value); err != nil {
 		return nil, err
 	}
 
-	return &KeyLine{Id: id, Value: value, Prefix: prefix, RootDir: rootDir}, nil
+	return &KeyLine{Id: id, Value: value, Prefix: prefix, Config: config}, nil
 }
 
 func validate(id string, value string) error {

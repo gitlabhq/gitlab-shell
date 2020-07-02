@@ -29,6 +29,7 @@ func TestParseConfig(t *testing.T) {
 		format       string
 		gitlabUrl    string
 		secret       string
+		sslCertDir   string
 		httpSettings HttpSettingsConfig
 	}{
 		{
@@ -80,6 +81,13 @@ func TestParseConfig(t *testing.T) {
 			secret: "an inline secret",
 		},
 		{
+			yaml:       "ssl_cert_dir: /tmp/certs",
+			path:       path.Join(testRoot, "gitlab-shell.log"),
+			format:     "text",
+			secret:     "default-secret-content",
+			sslCertDir: "/tmp/certs",
+		},
+		{
 			yaml:         "http_settings:\n  user: user_basic_auth\n  password: password_basic_auth\n  read_timeout: 500",
 			path:         path.Join(testRoot, "gitlab-shell.log"),
 			format:       "text",
@@ -106,6 +114,7 @@ func TestParseConfig(t *testing.T) {
 			assert.Equal(t, tc.format, cfg.LogFormat)
 			assert.Equal(t, tc.gitlabUrl, cfg.GitlabUrl)
 			assert.Equal(t, tc.secret, cfg.Secret)
+			assert.Equal(t, tc.sslCertDir, cfg.SslCertDir)
 			assert.Equal(t, tc.httpSettings, cfg.HttpSettings)
 		})
 	}

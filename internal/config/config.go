@@ -34,6 +34,7 @@ type Config struct {
 	GitlabTracing  string             `yaml:"gitlab_tracing"`
 	SecretFilePath string             `yaml:"secret_file"`
 	Secret         string             `yaml:"secret"`
+	SslCertDir     string             `yaml:"ssl_cert_dir"`
 	HttpSettings   HttpSettingsConfig `yaml:"http_settings"`
 	HttpClient     *client.HttpClient
 }
