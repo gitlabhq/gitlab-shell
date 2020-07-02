@@ -18,12 +18,6 @@ const (
 	uploadOperation   = "upload"
 )
 
-type Command struct {
-	Config     *config.Config
-	Args       *commandargs.Shell
-	ReadWriter *readwriter.ReadWriter
-}
-
 type PayloadHeader struct {
 	Auth string `json:"Authorization"`
 }
@@ -63,21 +57,6 @@ func (c *Command) Execute() error {
 	fmt.Fprintf(c.ReadWriter.Out, "%s\n", payload)
 
 	return nil
-}
-
-func actionFromOperation(operation string) (commandargs.CommandType, error) {
-	var action commandargs.CommandType
-
-	switch operation {
-	case downloadOperation:
-		action = commandargs.UploadPack
-	case uploadOperation:
-		action = commandargs.ReceivePack
-	default:
-		return "", disallowedcommand.Error
-	}
-
-	return action, nil
 }
 
 func (c *Command) verifyAccess(action commandargs.CommandType, repo string) (*accessverifier.Response, error) {
