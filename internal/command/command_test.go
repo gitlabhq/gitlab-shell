@@ -11,6 +11,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/healthcheck"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/lfsauthenticate"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/personalaccesstoken"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/receivepack"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/twofactorrecover"
@@ -97,6 +98,12 @@ func TestNew(t *testing.T) {
 			executable:   authorizedPrincipalsExec,
 			arguments:    []string{"key", "principal"},
 			expectedType: &authorizedprincipals.Command{},
+		},
+		{
+			desc:         "it returns a PersonalAccessToken command",
+			executable:   gitlabShellExec,
+			environment:  buildEnv("personal_access_token"),
+			expectedType: &personalaccesstoken.Command{},
 		},
 	}
 
