@@ -14,7 +14,7 @@ workflow:
     - if: '$CI_COMMIT_TAG'
 
 default:
-  image: golang:1.12
+  image: golang:1.13
   tags:
     - gitlab-org
 
@@ -45,10 +45,6 @@ default:
     - which go
   script:
     - make verify test
-
-go:1.12:
-  extends: .test
-  image: golang:1.12
 
 go:1.13:
   extends: .test
