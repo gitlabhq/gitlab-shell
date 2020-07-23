@@ -1,3 +1,9 @@
+v13.4.0
+- Support ssl_cert_dir config setting !393
+- Log SSH key details !398
+- Log remote IP for executed commands !399
+- Drop Go v1.12 support !401
+
 v13.3.0
 - Upgrade Ruby version to v2.6.6 !390
 - Use default puma socket in example config !388
