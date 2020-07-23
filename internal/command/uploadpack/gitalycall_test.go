@@ -45,6 +45,8 @@ func TestUploadPack(t *testing.T) {
 	assert.Equal(t, 2, len(entries))
 	require.Contains(t, entries[1].Message, "executing git command")
 	require.Contains(t, entries[1].Message, "command=git-upload-pack")
+	require.Contains(t, entries[1].Message, "gl_key_type=key")
+	require.Contains(t, entries[1].Message, "gl_key_id=123")
 
 	for k, v := range map[string]string{
 		"gitaly-feature-cache_invalidator":        "true",

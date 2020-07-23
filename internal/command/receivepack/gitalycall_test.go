@@ -54,4 +54,6 @@ func TestReceivePack(t *testing.T) {
 	require.Contains(t, entries[1].Message, "executing git command")
 	require.Contains(t, entries[1].Message, "command=git-receive-pack")
 	require.Contains(t, entries[1].Message, "remote_ip=127.0.0.1")
+	require.Contains(t, entries[1].Message, "gl_key_type=key")
+	require.Contains(t, entries[1].Message, "gl_key_id=123")
 }

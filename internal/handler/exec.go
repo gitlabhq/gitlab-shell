@@ -66,6 +66,8 @@ func (gc *GitalyCommand) LogExecution(repository *pb.Repository, response *acces
 		"username":        response.Username,
 		"git_protocol":    protocol,
 		"remote_ip":       sshenv.LocalAddr(),
+		"gl_key_type":     response.KeyType,
+		"gl_key_id":       response.KeyId,
 	}
 
 	log.WithFields(fields).Info("executing git command")
