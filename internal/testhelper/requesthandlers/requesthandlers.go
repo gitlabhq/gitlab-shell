@@ -34,8 +34,10 @@ func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testse
 			Path: "/api/v4/internal/allowed",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				body := map[string]interface{}{
-					"status": true,
-					"gl_id":  "1",
+					"status":      true,
+					"gl_id":       "1",
+					"gl_key_type": "key",
+					"gl_key_id":   123,
 					"gitaly": map[string]interface{}{
 						"repository": map[string]interface{}{
 							"storage_name":                     "storage_name",

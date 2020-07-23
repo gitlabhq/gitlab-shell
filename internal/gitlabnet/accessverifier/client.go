@@ -55,6 +55,8 @@ type Response struct {
 	Message          string        `json:"message"`
 	Repo             string        `json:"gl_repository"`
 	UserId           string        `json:"gl_id"`
+	KeyType          string        `json:"gl_key_type"`
+	KeyId            int           `json:"gl_key_id"`
 	Username         string        `json:"gl_username"`
 	GitConfigOptions []string      `json:"git_config_options"`
 	Gitaly           Gitaly        `json:"gitaly"`

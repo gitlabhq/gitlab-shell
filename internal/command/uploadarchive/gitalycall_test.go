@@ -49,4 +49,6 @@ func TestUploadPack(t *testing.T) {
 	require.Equal(t, logrus.InfoLevel, entries[1].Level)
 	require.Contains(t, entries[1].Message, "executing git command")
 	require.Contains(t, entries[1].Message, "command=git-upload-archive")
+	require.Contains(t, entries[1].Message, "gl_key_type=key")
+	require.Contains(t, entries[1].Message, "gl_key_id=123")
 }
