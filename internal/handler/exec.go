@@ -14,6 +14,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 	grpccorrelation "gitlab.com/gitlab-org/labkit/correlation/grpc"
 	"gitlab.com/gitlab-org/labkit/tracing"
 	"google.golang.org/grpc"
@@ -64,6 +65,7 @@ func (gc *GitalyCommand) LogExecution(repository *pb.Repository, response *acces
 		"user_id":         response.UserId,
 		"username":        response.Username,
 		"git_protocol":    protocol,
+		"remote_ip":       sshenv.LocalAddr(),
 	}
 
 	log.WithFields(fields).Info("executing git command")

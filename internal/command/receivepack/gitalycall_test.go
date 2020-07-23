@@ -24,6 +24,10 @@ func TestReceivePack(t *testing.T) {
 	url, cleanup := testserver.StartHttpServer(t, requests)
 	defer cleanup()
 
+	envCleanup, err := testhelper.Setenv("SSH_CONNECTION", "127.0.0.1 0")
+	require.NoError(t, err)
+	defer envCleanup()
+
 	output := &bytes.Buffer{}
 	input := &bytes.Buffer{}
 
@@ -38,7 +42,7 @@ func TestReceivePack(t *testing.T) {
 
 	hook := testhelper.SetupLogger()
 
-	err := cmd.Execute()
+	err = cmd.Execute()
 	require.NoError(t, err)
 
 	require.Equal(t, "ReceivePack: "+userId+" "+repo, output.String())
@@ -49,4 +53,5 @@ func TestReceivePack(t *testing.T) {
 	require.Equal(t, logrus.InfoLevel, entries[1].Level)
 	require.Contains(t, entries[1].Message, "executing git command")
 	require.Contains(t, entries[1].Message, "command=git-receive-pack")
+	require.Contains(t, entries[1].Message, "remote_ip=127.0.0.1")
 }
