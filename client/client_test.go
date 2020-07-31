@@ -130,6 +130,7 @@ func testSuccessfulGet(t *testing.T, client *GitlabNetClient) {
 		assert.Contains(t, entries[0].Message, "method=GET")
 		assert.Contains(t, entries[0].Message, "status=200")
 		assert.Contains(t, entries[0].Message, "Finished HTTP request")
+		assert.Contains(t, entries[0].Message, "correlation_id=")
 	})
 }
 
@@ -155,6 +156,7 @@ func testSuccessfulPost(t *testing.T, client *GitlabNetClient) {
 		assert.Contains(t, entries[0].Message, "method=POST")
 		assert.Contains(t, entries[0].Message, "status=200")
 		assert.Contains(t, entries[0].Message, "Finished HTTP request")
+		assert.Contains(t, entries[0].Message, "correlation_id=")
 	})
 }
 
@@ -172,6 +174,7 @@ func testMissing(t *testing.T, client *GitlabNetClient) {
 		assert.Contains(t, entries[0].Message, "method=GET")
 		assert.Contains(t, entries[0].Message, "status=404")
 		assert.Contains(t, entries[0].Message, "Internal API error")
+		assert.Contains(t, entries[0].Message, "correlation_id=")
 	})
 
 	t.Run("Missing error for POST", func(t *testing.T) {
@@ -187,6 +190,7 @@ func testMissing(t *testing.T, client *GitlabNetClient) {
 		assert.Contains(t, entries[0].Message, "method=POST")
 		assert.Contains(t, entries[0].Message, "status=404")
 		assert.Contains(t, entries[0].Message, "Internal API error")
+		assert.Contains(t, entries[0].Message, "correlation_id=")
 	})
 }
 
@@ -219,6 +223,7 @@ func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 		assert.Contains(t, entries[0].Message, "method=GET")
 		assert.NotContains(t, entries[0].Message, "status=")
 		assert.Contains(t, entries[0].Message, "Internal API unreachable")
+		assert.Contains(t, entries[0].Message, "correlation_id=")
 	})
 
 	t.Run("Broken request for POST", func(t *testing.T) {
@@ -235,6 +240,7 @@ func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 		assert.Contains(t, entries[0].Message, "method=POST")
 		assert.NotContains(t, entries[0].Message, "status=")
 		assert.Contains(t, entries[0].Message, "Internal API unreachable")
+		assert.Contains(t, entries[0].Message, "correlation_id=")
 	})
 }
 

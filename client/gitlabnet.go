@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"gitlab.com/gitlab-org/labkit/correlation"
 )
 
 const (
@@ -57,23 +59,32 @@ func normalizePath(path string) string {
 	return path
 }
 
-func newRequest(method, host, path string, data interface{}) (*http.Request, error) {
+func newRequest(method, host, path string, data interface{}) (*http.Request, string, error) {
 	var jsonReader io.Reader
 	if data != nil {
 		jsonData, err := json.Marshal(data)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 
 		jsonReader = bytes.NewReader(jsonData)
 	}
 
-	request, err := http.NewRequest(method, host+path, jsonReader)
+	correlationID, err := correlation.RandomID()
+	ctx := context.Background()
+
 	if err != nil {
-		return nil, err
+		log.WithError(err).Warn("unable to generate correlation ID")
+	} else {
+		ctx = correlation.ContextWithCorrelation(ctx, correlationID)
 	}
 
-	return request, nil
+	request, err := http.NewRequestWithContext(ctx, method, host+path, jsonReader)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return request, correlationID, nil
 }
 
 func parseError(resp *http.Response) error {
@@ -100,7 +111,7 @@ func (c *GitlabNetClient) Post(path string, data interface{}) (*http.Response, e
 }
 
 func (c *GitlabNetClient) DoRequest(method, path string, data interface{}) (*http.Response, error) {
-	request, err := newRequest(method, c.httpClient.Host, path, data)
+	request, correlationID, err := newRequest(method, c.httpClient.Host, path, data)
 	if err != nil {
 		return nil, err
 	}
@@ -119,9 +130,10 @@ func (c *GitlabNetClient) DoRequest(method, path string, data interface{}) (*htt
 	start := time.Now()
 	response, err := c.httpClient.Do(request)
 	fields := log.Fields{
-		"method":      method,
-		"url":         request.URL.String(),
-		"duration_ms": time.Since(start) / time.Millisecond,
+		"correlation_id": correlationID,
+		"method":         method,
+		"url":            request.URL.String(),
+		"duration_ms":    time.Since(start) / time.Millisecond,
 	}
 	logger := log.WithFields(fields)
 

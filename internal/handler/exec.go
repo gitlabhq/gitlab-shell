@@ -15,6 +15,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
+	"gitlab.com/gitlab-org/labkit/correlation"
 	grpccorrelation "gitlab.com/gitlab-org/labkit/correlation/grpc"
 	"gitlab.com/gitlab-org/labkit/tracing"
 	"google.golang.org/grpc"
@@ -57,9 +58,24 @@ func (gc *GitalyCommand) RunGitalyCommand(handler GitalyHandlerFunc) error {
 	return err
 }
 
+// PrepareContext wraps a given context with a correlation ID and logs the command to
+// be run.
+func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repository, response *accessverifier.Response, protocol string) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(ctx)
+
+	gc.LogExecution(repository, response, protocol)
+
+	if response.CorrelationID != "" {
+		ctx = correlation.ContextWithCorrelation(ctx, response.CorrelationID)
+	}
+
+	return ctx, cancel
+}
+
 func (gc *GitalyCommand) LogExecution(repository *pb.Repository, response *accessverifier.Response, protocol string) {
 	fields := log.Fields{
 		"command":         gc.ServiceName,
+		"correlation_id":  response.CorrelationID,
 		"gl_project_path": repository.GlProjectPath,
 		"gl_repository":   repository.GlRepository,
 		"user_id":         response.UserId,
@@ -91,19 +107,21 @@ func getConn(gc *GitalyCommand) (*GitalyConn, error) {
 	}
 
 	connOpts := client.DefaultDialOpts
+	connOpts = append(connOpts,
+		grpc.WithStreamInterceptor(
+			grpccorrelation.StreamClientCorrelationInterceptor(
+				grpccorrelation.WithClientName(executable.GitlabShell),
+			),
+		),
+		grpc.WithUnaryInterceptor(
+			grpccorrelation.UnaryClientCorrelationInterceptor(
+				grpccorrelation.WithClientName(executable.GitlabShell),
+			),
+		))
+
 	if gc.Token != "" {
-		connOpts = append(client.DefaultDialOpts,
+		connOpts = append(connOpts,
 			grpc.WithPerRPCCredentials(gitalyauth.RPCCredentialsV2(gc.Token)),
-			grpc.WithStreamInterceptor(
-				grpccorrelation.StreamClientCorrelationInterceptor(
-					grpccorrelation.WithClientName(executable.GitlabShell),
-				),
-			),
-			grpc.WithUnaryInterceptor(
-				grpccorrelation.UnaryClientCorrelationInterceptor(
-					grpccorrelation.WithClientName(executable.GitlabShell),
-				),
-			),
 		)
 	}
 
