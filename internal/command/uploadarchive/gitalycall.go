@@ -24,10 +24,8 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 	request := &pb.SSHUploadArchiveRequest{Repository: &response.Gitaly.Repo}
 
 	return gc.RunGitalyCommand(func(ctx context.Context, conn *grpc.ClientConn) (int32, error) {
-		ctx, cancel := context.WithCancel(ctx)
+		ctx, cancel := gc.PrepareContext(ctx, request.Repository, response, "")
 		defer cancel()
-
-		gc.LogExecution(request.Repository, response, "")
 
 		rw := c.ReadWriter
 		return client.UploadArchive(ctx, conn, rw.In, rw.Out, rw.ErrOut, request)

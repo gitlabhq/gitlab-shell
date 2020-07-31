@@ -56,4 +56,5 @@ func TestReceivePack(t *testing.T) {
 	require.Contains(t, entries[1].Message, "remote_ip=127.0.0.1")
 	require.Contains(t, entries[1].Message, "gl_key_type=key")
 	require.Contains(t, entries[1].Message, "gl_key_id=123")
+	require.Contains(t, entries[1].Message, "correlation_id=")
 }

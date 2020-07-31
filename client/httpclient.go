@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"gitlab.com/gitlab-org/labkit/correlation"
 )
 
 const (
@@ -39,8 +41,9 @@ func NewHTTPClient(gitlabURL, caFile, caPath string, selfSignedCert bool, readTi
 		return nil
 	}
 
+
 	c := &http.Client{
-		Transport: transport,
+		Transport: correlation.NewInstrumentedRoundTripper(transport),
 		Timeout:   readTimeout(readTimeoutSeconds),
 	}
 
