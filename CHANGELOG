@@ -1,3 +1,6 @@
+v13.5.0
+- Generate and log correlation IDs !400
+
 v13.4.0
 - Support ssl_cert_dir config setting !393
 - Log SSH key details !398
