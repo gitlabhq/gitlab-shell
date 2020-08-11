@@ -1,6 +1,6 @@
 module gitlab.com/gitlab-org/gitlab-shell
 
-go 1.12
+go 1.13
 
 require (
 	github.com/mattn/go-shellwords v0.0.0-20190425161501-2444a32a19f4
