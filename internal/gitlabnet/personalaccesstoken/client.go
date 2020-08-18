@@ -1,0 +1,93 @@
+package personalaccesstoken
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+
+	"gitlab.com/gitlab-org/gitlab-shell/client"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/discover"
+)
+
+type Client struct {
+	config *config.Config
+	client *client.GitlabNetClient
+}
+
+type Response struct {
+	Success   bool     `json:"success"`
+	Token     string   `json:"token"`
+	Scopes    []string `json:"scopes"`
+	ExpiresAt string   `json:"expires_at"`
+	Message   string   `json:"message"`
+}
+
+type RequestBody struct {
+	KeyId     string   `json:"key_id,omitempty"`
+	UserId    int64    `json:"user_id,omitempty"`
+	Name      string   `json:"name"`
+	Scopes    []string `json:"scopes"`
+	ExpiresAt string   `json:"expires_at,omitempty"`
+}
+
+func NewClient(config *config.Config) (*Client, error) {
+	client, err := gitlabnet.GetClient(config)
+	if err != nil {
+		return nil, fmt.Errorf("Error creating http client: %v", err)
+	}
+
+	return &Client{config: config, client: client}, nil
+}
+
+func (c *Client) GetPersonalAccessToken(args *commandargs.Shell, name string, scopes *[]string, expiresAt string) (*Response, error) {
+	requestBody, err := c.getRequestBody(args, name, scopes, expiresAt)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := c.client.Post("/personal_access_token", requestBody)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	return parse(response)
+}
+
+func parse(hr *http.Response) (*Response, error) {
+	response := &Response{}
+	if err := gitlabnet.ParseJSON(hr, response); err != nil {
+		return nil, err
+	}
+
+	if !response.Success {
+		return nil, errors.New(response.Message)
+	}
+
+	return response, nil
+}
+
+func (c *Client) getRequestBody(args *commandargs.Shell, name string, scopes *[]string, expiresAt string) (*RequestBody, error) {
+	client, err := discover.NewClient(c.config)
+	if err != nil {
+		return nil, err
+	}
+
+	requestBody := &RequestBody{Name: name, Scopes: *scopes, ExpiresAt: expiresAt}
+	if args.GitlabKeyId != "" {
+		requestBody.KeyId = args.GitlabKeyId
+
+		return requestBody, nil
+	}
+
+	userInfo, err := client.GetByCommandArgs(args)
+	if err != nil {
+		return nil, err
+	}
+	requestBody.UserId = userInfo.UserId
+
+	return requestBody, nil
+}

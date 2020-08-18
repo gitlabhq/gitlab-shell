@@ -7,6 +7,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/healthcheck"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/lfsauthenticate"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/personalaccesstoken"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/receivepack"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
@@ -63,6 +64,8 @@ func buildShellCommand(args *commandargs.Shell, config *config.Config, readWrite
 		return &uploadpack.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.UploadArchive:
 		return &uploadarchive.Command{Config: config, Args: args, ReadWriter: readWriter}
+	case commandargs.PersonalAccessToken:
+		return &personalaccesstoken.Command{Config: config, Args: args, ReadWriter: readWriter}
 	}
 
 	return nil

@@ -9,12 +9,13 @@ import (
 )
 
 const (
-	Discover         CommandType = "discover"
-	TwoFactorRecover CommandType = "2fa_recovery_codes"
-	LfsAuthenticate  CommandType = "git-lfs-authenticate"
-	ReceivePack      CommandType = "git-receive-pack"
-	UploadPack       CommandType = "git-upload-pack"
-	UploadArchive    CommandType = "git-upload-archive"
+	Discover            CommandType = "discover"
+	TwoFactorRecover    CommandType = "2fa_recovery_codes"
+	LfsAuthenticate     CommandType = "git-lfs-authenticate"
+	ReceivePack         CommandType = "git-receive-pack"
+	UploadPack          CommandType = "git-upload-pack"
+	UploadArchive       CommandType = "git-upload-archive"
+	PersonalAccessToken CommandType = "personal_access_token"
 
 	GitProtocolEnv = "GIT_PROTOCOL"
 )
