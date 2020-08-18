@@ -106,7 +106,7 @@ func setupWithRequests(t *testing.T, caFile, caPath string, selfSigned bool) (*G
 
 	url, cleanup := testserver.StartHttpsServer(t, requests)
 
-	httpClient := NewHTTPClient(url, caFile, caPath, selfSigned, 1)
+	httpClient := NewHTTPClient(url, "", caFile, caPath, selfSigned, 1)
 
 	client, err := NewGitlabNetClient("", "", "", httpClient)
 	require.NoError(t, err)

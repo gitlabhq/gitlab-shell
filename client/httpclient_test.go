@@ -17,7 +17,7 @@ import (
 func TestReadTimeout(t *testing.T) {
 	expectedSeconds := uint64(300)
 
-	client := NewHTTPClient("http://localhost:3000", "", "", false, expectedSeconds)
+	client := NewHTTPClient("http://localhost:3000", "", "", "", false, expectedSeconds)
 
 	require.NotNil(t, client)
 	assert.Equal(t, time.Duration(expectedSeconds)*time.Second, client.Client.Timeout)
@@ -96,7 +96,7 @@ func TestEmptyBasicAuthSettings(t *testing.T) {
 func setup(t *testing.T, username, password string, requests []testserver.TestRequestHandler) (*GitlabNetClient, func()) {
 	url, cleanup := testserver.StartHttpServer(t, requests)
 
-	httpClient := NewHTTPClient(url, "", "", false, 1)
+	httpClient := NewHTTPClient(url, "", "", "", false, 1)
 
 	client, err := NewGitlabNetClient(username, password, "", httpClient)
 	require.NoError(t, err)

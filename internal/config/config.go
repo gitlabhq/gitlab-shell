@@ -27,16 +27,17 @@ type HttpSettingsConfig struct {
 }
 
 type Config struct {
-	RootDir        string
-	LogFile        string             `yaml:"log_file"`
-	LogFormat      string             `yaml:"log_format"`
-	GitlabUrl      string             `yaml:"gitlab_url"`
-	GitlabTracing  string             `yaml:"gitlab_tracing"`
-	SecretFilePath string             `yaml:"secret_file"`
-	Secret         string             `yaml:"secret"`
-	SslCertDir     string             `yaml:"ssl_cert_dir"`
-	HttpSettings   HttpSettingsConfig `yaml:"http_settings"`
-	HttpClient     *client.HttpClient
+	RootDir               string
+	LogFile               string             `yaml:"log_file"`
+	LogFormat             string             `yaml:"log_format"`
+	GitlabUrl             string             `yaml:"gitlab_url"`
+	GitlabRelativeURLRoot string             `yaml:"gitlab_relative_url_root"`
+	GitlabTracing         string             `yaml:"gitlab_tracing"`
+	SecretFilePath        string             `yaml:"secret_file"`
+	Secret                string             `yaml:"secret"`
+	SslCertDir            string             `yaml:"ssl_cert_dir"`
+	HttpSettings          HttpSettingsConfig `yaml:"http_settings"`
+	HttpClient            *client.HttpClient
 }
 
 func (c *Config) GetHttpClient() *client.HttpClient {
@@ -46,6 +47,7 @@ func (c *Config) GetHttpClient() *client.HttpClient {
 
 	client := client.NewHTTPClient(
 		c.GitlabUrl,
+		c.GitlabRelativeURLRoot,
 		c.HttpSettings.CaFile,
 		c.HttpSettings.CaPath,
 		c.HttpSettings.SelfSignedCert,
