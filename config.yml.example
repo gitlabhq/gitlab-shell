@@ -15,6 +15,10 @@ user: git
 # "http+unix://%2Fpath%2Fto%2Fsocket"
 gitlab_url: "http+unix://%2Fhome%2Fgit%2Fgitlab%2Ftmp%2Fsockets%2Fgitlab-workhorse.socket"
 
+# When a http+unix:// is used in gitlab_url, this is the relative URL root to GitLab.
+# Not used if gitlab_url is http:// or https://.
+# gitlab_relative_url_root: "/"
+
 # See installation.md#using-https for additional HTTPS configuration details.
 http_settings:
 #  read_timeout: 300

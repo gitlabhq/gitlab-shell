@@ -27,12 +27,12 @@ type HttpClient struct {
 	Host string
 }
 
-func NewHTTPClient(gitlabURL, caFile, caPath string, selfSignedCert bool, readTimeoutSeconds uint64) *HttpClient {
+func NewHTTPClient(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, selfSignedCert bool, readTimeoutSeconds uint64) *HttpClient {
 
 	var transport *http.Transport
 	var host string
 	if strings.HasPrefix(gitlabURL, unixSocketProtocol) {
-		transport, host = buildSocketTransport(gitlabURL)
+		transport, host = buildSocketTransport(gitlabURL, gitlabRelativeURLRoot)
 	} else if strings.HasPrefix(gitlabURL, httpProtocol) {
 		transport, host = buildHttpTransport(gitlabURL)
 	} else if strings.HasPrefix(gitlabURL, httpsProtocol) {
@@ -40,7 +40,6 @@ func NewHTTPClient(gitlabURL, caFile, caPath string, selfSignedCert bool, readTi
 	} else {
 		return nil
 	}
-
 
 	c := &http.Client{
 		Transport: correlation.NewInstrumentedRoundTripper(transport),
@@ -52,8 +51,9 @@ func NewHTTPClient(gitlabURL, caFile, caPath string, selfSignedCert bool, readTi
 	return client
 }
 
-func buildSocketTransport(gitlabURL string) (*http.Transport, string) {
+func buildSocketTransport(gitlabURL, gitlabRelativeURLRoot string) (*http.Transport, string) {
 	socketPath := strings.TrimPrefix(gitlabURL, unixSocketProtocol)
+
 	transport := &http.Transport{
 		DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
 			dialer := net.Dialer{}
@@ -61,7 +61,13 @@ func buildSocketTransport(gitlabURL string) (*http.Transport, string) {
 		},
 	}
 
-	return transport, socketBaseUrl
+	host := socketBaseUrl
+	gitlabRelativeURLRoot = strings.Trim(gitlabRelativeURLRoot, "/")
+	if gitlabRelativeURLRoot != "" {
+		host = host + "/" + gitlabRelativeURLRoot
+	}
+
+	return transport, host
 }
 
 func buildHttpsTransport(caFile, caPath string, selfSignedCert bool, gitlabURL string) (*http.Transport, string) {

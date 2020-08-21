@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -21,61 +22,25 @@ func TestClients(t *testing.T) {
 	require.NoError(t, err)
 	defer testDirCleanup()
 
-	requests := []testserver.TestRequestHandler{
-		{
-			Path: "/api/v4/internal/hello",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodGet, r.Method)
-
-				fmt.Fprint(w, "Hello")
-			},
-		},
-		{
-			Path: "/api/v4/internal/post_endpoint",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodPost, r.Method)
-
-				b, err := ioutil.ReadAll(r.Body)
-				defer r.Body.Close()
-
-				require.NoError(t, err)
-
-				fmt.Fprint(w, "Echo: "+string(b))
-			},
-		},
-		{
-			Path: "/api/v4/internal/auth",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				fmt.Fprint(w, r.Header.Get(secretHeaderName))
-			},
-		},
-		{
-			Path: "/api/v4/internal/error",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusBadRequest)
-				body := map[string]string{
-					"message": "Don't do that",
-				}
-				json.NewEncoder(w).Encode(body)
-			},
-		},
-		{
-			Path: "/api/v4/internal/broken",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				panic("Broken")
-			},
-		},
-	}
-
 	testCases := []struct {
-		desc   string
-		caFile string
-		server func(*testing.T, []testserver.TestRequestHandler) (string, func())
+		desc            string
+		relativeURLRoot string
+		caFile          string
+		server          func(*testing.T, []testserver.TestRequestHandler) (string, func())
 	}{
 		{
 			desc:   "Socket client",
 			server: testserver.StartSocketHttpServer,
+		},
+		{
+			desc:            "Socket client with a relative URL at /",
+			relativeURLRoot: "/",
+			server:          testserver.StartSocketHttpServer,
+		},
+		{
+			desc:            "Socket client with relative URL at /gitlab",
+			relativeURLRoot: "/gitlab",
+			server:          testserver.StartSocketHttpServer,
 		},
 		{
 			desc:   "Http client",
@@ -90,12 +55,12 @@ func TestClients(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			url, cleanup := tc.server(t, requests)
+			url, cleanup := tc.server(t, buildRequests(t, tc.relativeURLRoot))
 			defer cleanup()
 
 			secret := "sssh, it's a secret"
 
-			httpClient := NewHTTPClient(url, tc.caFile, "", false, 1)
+			httpClient := NewHTTPClient(url, tc.relativeURLRoot, tc.caFile, "", false, 1)
 
 			client, err := NewGitlabNetClient("", "", secret, httpClient)
 			require.NoError(t, err)
@@ -274,4 +239,62 @@ func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 		require.NoError(t, err)
 		assert.Equal(t, "sssh, it's a secret", string(header))
 	})
+}
+
+func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestRequestHandler {
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/api/v4/internal/hello",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodGet, r.Method)
+
+				fmt.Fprint(w, "Hello")
+			},
+		},
+		{
+			Path: "/api/v4/internal/post_endpoint",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodPost, r.Method)
+
+				b, err := ioutil.ReadAll(r.Body)
+				defer r.Body.Close()
+
+				require.NoError(t, err)
+
+				fmt.Fprint(w, "Echo: "+string(b))
+			},
+		},
+		{
+			Path: "/api/v4/internal/auth",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprint(w, r.Header.Get(secretHeaderName))
+			},
+		},
+		{
+			Path: "/api/v4/internal/error",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				body := map[string]string{
+					"message": "Don't do that",
+				}
+				json.NewEncoder(w).Encode(body)
+			},
+		},
+		{
+			Path: "/api/v4/internal/broken",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				panic("Broken")
+			},
+		},
+	}
+
+	relativeURLRoot = strings.Trim(relativeURLRoot, "/")
+	if relativeURLRoot != "" {
+		for i, r := range requests {
+			requests[i].Path = fmt.Sprintf("/%s%s", relativeURLRoot, r.Path)
+		}
+	}
+
+	return requests
 }
