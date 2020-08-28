@@ -94,10 +94,9 @@ dependency_scanning:
     paths: [gl-dependency-scanning-report.json]
 
 code_navigation:
-  image: golang:1.14.0
+  image: sourcegraph/lsif-go:v1
   allow_failure: true
   script:
-    - go get github.com/sourcegraph/lsif-go/cmd/lsif-go
     - lsif-go
   artifacts:
     reports:
