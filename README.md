@@ -18,25 +18,6 @@ An overview of the four cases described above:
 1. git pull over SSH -> gitlab-shell -> API call to gitlab-rails (Authorization) -> accept or decline -> establish Gitaly session
 1. git push over SSH -> gitlab-shell (git command is not executed yet) -> establish Gitaly session -> (in Gitaly) gitlab-shell pre-receive hook -> API call to gitlab-rails (authorization) -> accept or decline push
 
-## Git hooks
-
-The gitlab-shell repository used to also contain the
-Git hooks that allow GitLab to validate Git pushes (e.g. "is this user
-allowed to push to this protected branch"). These hooks also trigger
-events in GitLab (e.g. to start a CI pipeline after a push).
-
-We are in the process of moving these hooks to Gitaly, because Git hooks
-require direct disk access to Git repositories, and that is only
-possible on Gitaly servers. It makes no sense to have to install
-gitlab-shell on Gitaly servers.
-
-As of GitLab 11.10  [the actual Git hooks are in the Gitaly
-repository](https://gitlab.com/gitlab-org/gitaly/tree/v1.22.0/ruby/vendor/gitlab-shell/hooks),
-but gitlab-shell must still be installed on Gitaly servers because the
-hooks rely on configuration data (e.g. the GitLab internal API URL) that
-is not yet available in Gitaly itself. Also see the [transition
-plan](https://gitlab.com/gitlab-org/gitaly/issues/1226#note_126519133).
-
 ## Code status
 
 [![pipeline status](https://gitlab.com/gitlab-org/gitlab-shell/badges/master/pipeline.svg)](https://gitlab.com/gitlab-org/gitlab-shell/-/pipelines?ref=master)

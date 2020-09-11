@@ -1,4 +1,0 @@
-#!/bin/sh
-echo "The gitlab-shell hooks have been migrated to Gitaly, see https://gitlab.com/gitlab-org/gitaly/issues/1226"
-exit 1
-
