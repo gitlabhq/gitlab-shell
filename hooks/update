@@ -1,4 +1,8 @@
 #!/bin/sh
-echo "The gitlab-shell hooks have been migrated to Gitaly, see https://gitlab.com/gitlab-org/gitaly/issues/1226"
+echo "This gitlab-shell hook has been migrated to Gitaly. See https://gitlab.com/gitlab-org/gitaly/issues/1226."
+echo
+echo "Note that global server hooks still reside in a subdirectory here by default."
+echo "For example, pre-receive.d/ holds custom pre-receive hooks."
+echo "See https://docs.gitlab.com/ee/administration/server_hooks.html#create-a-global-server-hook-for-all-repositories for more information."
 exit 1
 
