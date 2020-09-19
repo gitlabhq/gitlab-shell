@@ -2,6 +2,7 @@ package twofactorrecover
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -127,7 +128,7 @@ func TestExecute(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 			}
 
-			err := cmd.Execute()
+			err := cmd.Execute(context.Background())
 
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedOutput, output.String())

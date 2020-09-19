@@ -1,6 +1,7 @@
 package lfsauthenticate
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -40,7 +41,7 @@ func NewClient(config *config.Config, args *commandargs.Shell) (*Client, error) 
 	return &Client{config: config, client: client, args: args}, nil
 }
 
-func (c *Client) Authenticate(operation, repo, userId string) (*Response, error) {
+func (c *Client) Authenticate(ctx context.Context, operation, repo, userId string) (*Response, error) {
 	request := &Request{Operation: operation, Repo: repo}
 	if c.args.GitlabKeyId != "" {
 		request.KeyId = c.args.GitlabKeyId
@@ -48,7 +49,7 @@ func (c *Client) Authenticate(operation, repo, userId string) (*Response, error)
 		request.UserId = strings.TrimPrefix(userId, "user-")
 	}
 
-	response, err := c.client.Post("/lfs_authenticate", request)
+	response, err := c.client.Post(ctx, "/lfs_authenticate", request)
 	if err != nil {
 		return nil, err
 	}

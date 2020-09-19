@@ -1,6 +1,7 @@
 package authorizedkeys
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 
@@ -32,13 +33,13 @@ func NewClient(config *config.Config) (*Client, error) {
 	return &Client{config: config, client: client}, nil
 }
 
-func (c *Client) GetByKey(key string) (*Response, error) {
+func (c *Client) GetByKey(ctx context.Context, key string) (*Response, error) {
 	path, err := pathWithKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := c.client.Get(path)
+	response, err := c.client.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}

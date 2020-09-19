@@ -1,6 +1,7 @@
 package healthcheck
 
 import (
+	"context"
 	"fmt"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
@@ -18,8 +19,8 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute() error {
-	response, err := c.runCheck()
+func (c *Command) Execute(ctx context.Context) error {
+	response, err := c.runCheck(ctx)
 	if err != nil {
 		return fmt.Errorf("%v: FAILED - %v", apiMessage, err)
 	}
@@ -34,13 +35,13 @@ func (c *Command) Execute() error {
 	return nil
 }
 
-func (c *Command) runCheck() (*healthcheck.Response, error) {
+func (c *Command) runCheck(ctx context.Context) (*healthcheck.Response, error) {
 	client, err := healthcheck.NewClient(c.Config)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := client.Check()
+	response, err := client.Check(ctx)
 	if err != nil {
 		return nil, err
 	}

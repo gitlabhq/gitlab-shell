@@ -2,6 +2,7 @@ package discover
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -83,7 +84,7 @@ func TestExecute(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
 
-			err := cmd.Execute()
+			err := cmd.Execute(context.Background())
 
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedOutput, buffer.String())
@@ -126,7 +127,7 @@ func TestFailingExecute(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
 
-			err := cmd.Execute()
+			err := cmd.Execute(context.Background())
 
 			require.Empty(t, buffer.String())
 			require.EqualError(t, err, tc.expectedError)

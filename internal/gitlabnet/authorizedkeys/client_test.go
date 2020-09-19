@@ -1,6 +1,7 @@
 package authorizedkeys
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -48,7 +49,7 @@ func TestGetByKey(t *testing.T) {
 	client, cleanup := setup(t)
 	defer cleanup()
 
-	result, err := client.GetByKey("key")
+	result, err := client.GetByKey(context.Background(), "key")
 	require.NoError(t, err)
 	require.Equal(t, &Response{Id: 1, Key: "public-key"}, result)
 }
@@ -86,7 +87,7 @@ func TestGetByKeyErrorResponses(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			resp, err := client.GetByKey(tc.key)
+			resp, err := client.GetByKey(context.Background(), tc.key)
 
 			require.EqualError(t, err, tc.expectedError)
 			require.Nil(t, resp)

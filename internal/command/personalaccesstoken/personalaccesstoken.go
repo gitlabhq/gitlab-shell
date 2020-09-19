@@ -1,6 +1,7 @@
 package personalaccesstoken
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -31,13 +32,13 @@ type tokenArgs struct {
 	ExpiresDate string // Calculated, a TTL is passed from command-line.
 }
 
-func (c *Command) Execute() error {
+func (c *Command) Execute(ctx context.Context) error {
 	err := c.parseTokenArgs()
 	if err != nil {
 		return err
 	}
 
-	response, err := c.getPersonalAccessToken()
+	response, err := c.getPersonalAccessToken(ctx)
 	if err != nil {
 		return err
 	}
@@ -76,11 +77,11 @@ func (c *Command) parseTokenArgs() error {
 	return nil
 }
 
-func (c *Command) getPersonalAccessToken() (*personalaccesstoken.Response, error) {
+func (c *Command) getPersonalAccessToken(ctx context.Context) (*personalaccesstoken.Response, error) {
 	client, err := personalaccesstoken.NewClient(c.Config)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.GetPersonalAccessToken(c.Args, c.TokenArgs.Name, &c.TokenArgs.Scopes, c.TokenArgs.ExpiresDate)
+	return client.GetPersonalAccessToken(ctx, c.Args, c.TokenArgs.Name, &c.TokenArgs.Scopes, c.TokenArgs.ExpiresDate)
 }

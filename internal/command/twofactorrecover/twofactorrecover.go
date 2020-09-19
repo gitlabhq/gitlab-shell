@@ -1,6 +1,7 @@
 package twofactorrecover
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -16,9 +17,9 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute() error {
+func (c *Command) Execute(ctx context.Context) error {
 	if c.canContinue() {
-		c.displayRecoveryCodes()
+		c.displayRecoveryCodes(ctx)
 	} else {
 		fmt.Fprintln(c.ReadWriter.Out, "\nNew recovery codes have *not* been generated. Existing codes will remain valid.")
 	}
@@ -38,8 +39,8 @@ func (c *Command) canContinue() bool {
 	return answer == "yes"
 }
 
-func (c *Command) displayRecoveryCodes() {
-	codes, err := c.getRecoveryCodes()
+func (c *Command) displayRecoveryCodes(ctx context.Context) {
+	codes, err := c.getRecoveryCodes(ctx)
 
 	if err == nil {
 		messageWithCodes :=
@@ -54,12 +55,12 @@ func (c *Command) displayRecoveryCodes() {
 	}
 }
 
-func (c *Command) getRecoveryCodes() ([]string, error) {
+func (c *Command) getRecoveryCodes(ctx context.Context) ([]string, error) {
 	client, err := twofactorrecover.NewClient(c.Config)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return client.GetRecoveryCodes(c.Args)
+	return client.GetRecoveryCodes(ctx, c.Args)
 }

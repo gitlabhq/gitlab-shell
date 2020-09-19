@@ -2,6 +2,7 @@ package authorizedkeys
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -97,7 +98,7 @@ func TestExecute(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
 
-			err := cmd.Execute()
+			err := cmd.Execute(context.Background())
 
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedOutput, buffer.String())

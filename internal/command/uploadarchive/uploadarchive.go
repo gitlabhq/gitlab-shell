@@ -1,6 +1,8 @@
 package uploadarchive
 
 import (
+	"context"
+
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/accessverifier"
@@ -14,14 +16,14 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute() error {
+func (c *Command) Execute(ctx context.Context) error {
 	args := c.Args.SshArgs
 	if len(args) != 2 {
 		return disallowedcommand.Error
 	}
 
 	repo := args[1]
-	response, err := c.verifyAccess(repo)
+	response, err := c.verifyAccess(ctx, repo)
 	if err != nil {
 		return err
 	}
@@ -29,8 +31,8 @@ func (c *Command) Execute() error {
 	return c.performGitalyCall(response)
 }
 
-func (c *Command) verifyAccess(repo string) (*accessverifier.Response, error) {
+func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {
 	cmd := accessverifier.Command{c.Config, c.Args, c.ReadWriter}
 
-	return cmd.Verify(c.Args.CommandType, repo)
+	return cmd.Verify(ctx, c.Args.CommandType, repo)
 }

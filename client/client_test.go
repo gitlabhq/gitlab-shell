@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -78,7 +79,7 @@ func TestClients(t *testing.T) {
 func testSuccessfulGet(t *testing.T, client *GitlabNetClient) {
 	t.Run("Successful get", func(t *testing.T) {
 		hook := testhelper.SetupLogger()
-		response, err := client.Get("/hello")
+		response, err := client.Get(context.Background(), "/hello")
 		require.NoError(t, err)
 		require.NotNil(t, response)
 
@@ -104,7 +105,7 @@ func testSuccessfulPost(t *testing.T, client *GitlabNetClient) {
 		hook := testhelper.SetupLogger()
 		data := map[string]string{"key": "value"}
 
-		response, err := client.Post("/post_endpoint", data)
+		response, err := client.Post(context.Background(), "/post_endpoint", data)
 		require.NoError(t, err)
 		require.NotNil(t, response)
 
@@ -128,7 +129,7 @@ func testSuccessfulPost(t *testing.T, client *GitlabNetClient) {
 func testMissing(t *testing.T, client *GitlabNetClient) {
 	t.Run("Missing error for GET", func(t *testing.T) {
 		hook := testhelper.SetupLogger()
-		response, err := client.Get("/missing")
+		response, err := client.Get(context.Background(), "/missing")
 		assert.EqualError(t, err, "Internal API error (404)")
 		assert.Nil(t, response)
 
@@ -144,7 +145,7 @@ func testMissing(t *testing.T, client *GitlabNetClient) {
 
 	t.Run("Missing error for POST", func(t *testing.T) {
 		hook := testhelper.SetupLogger()
-		response, err := client.Post("/missing", map[string]string{})
+		response, err := client.Post(context.Background(), "/missing", map[string]string{})
 		assert.EqualError(t, err, "Internal API error (404)")
 		assert.Nil(t, response)
 
@@ -161,13 +162,13 @@ func testMissing(t *testing.T, client *GitlabNetClient) {
 
 func testErrorMessage(t *testing.T, client *GitlabNetClient) {
 	t.Run("Error with message for GET", func(t *testing.T) {
-		response, err := client.Get("/error")
+		response, err := client.Get(context.Background(), "/error")
 		assert.EqualError(t, err, "Don't do that")
 		assert.Nil(t, response)
 	})
 
 	t.Run("Error with message for POST", func(t *testing.T) {
-		response, err := client.Post("/error", map[string]string{})
+		response, err := client.Post(context.Background(), "/error", map[string]string{})
 		assert.EqualError(t, err, "Don't do that")
 		assert.Nil(t, response)
 	})
@@ -177,7 +178,7 @@ func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 	t.Run("Broken request for GET", func(t *testing.T) {
 		hook := testhelper.SetupLogger()
 
-		response, err := client.Get("/broken")
+		response, err := client.Get(context.Background(), "/broken")
 		assert.EqualError(t, err, "Internal API unreachable")
 		assert.Nil(t, response)
 
@@ -194,7 +195,7 @@ func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 	t.Run("Broken request for POST", func(t *testing.T) {
 		hook := testhelper.SetupLogger()
 
-		response, err := client.Post("/broken", map[string]string{})
+		response, err := client.Post(context.Background(), "/broken", map[string]string{})
 		assert.EqualError(t, err, "Internal API unreachable")
 		assert.Nil(t, response)
 
@@ -211,7 +212,7 @@ func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 
 func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 	t.Run("Authentication headers for GET", func(t *testing.T) {
-		response, err := client.Get("/auth")
+		response, err := client.Get(context.Background(), "/auth")
 		require.NoError(t, err)
 		require.NotNil(t, response)
 
@@ -226,7 +227,7 @@ func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 	})
 
 	t.Run("Authentication headers for POST", func(t *testing.T) {
-		response, err := client.Post("/auth", map[string]string{})
+		response, err := client.Post(context.Background(), "/auth", map[string]string{})
 		require.NoError(t, err)
 		require.NotNil(t, response)
 

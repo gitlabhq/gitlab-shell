@@ -2,6 +2,7 @@ package customaction
 
 import (
 	"bytes"
+	"context"
 	"errors"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
@@ -34,7 +35,7 @@ type Command struct {
 	EOFSent    bool
 }
 
-func (c *Command) Execute(response *accessverifier.Response) error {
+func (c *Command) Execute(ctx context.Context, response *accessverifier.Response) error {
 	data := response.Payload.Data
 	apiEndpoints := data.ApiEndpoints
 
@@ -42,10 +43,10 @@ func (c *Command) Execute(response *accessverifier.Response) error {
 		return errors.New("Custom action error: Empty API endpoints")
 	}
 
-	return c.processApiEndpoints(response)
+	return c.processApiEndpoints(ctx, response)
 }
 
-func (c *Command) processApiEndpoints(response *accessverifier.Response) error {
+func (c *Command) processApiEndpoints(ctx context.Context, response *accessverifier.Response) error {
 	client, err := gitlabnet.GetClient(c.Config)
 
 	if err != nil {
@@ -64,7 +65,7 @@ func (c *Command) processApiEndpoints(response *accessverifier.Response) error {
 
 		log.WithFields(fields).Info("Performing custom action")
 
-		response, err := c.performRequest(client, endpoint, request)
+		response, err := c.performRequest(ctx, client, endpoint, request)
 		if err != nil {
 			return err
 		}
@@ -95,8 +96,8 @@ func (c *Command) processApiEndpoints(response *accessverifier.Response) error {
 	return nil
 }
 
-func (c *Command) performRequest(client *client.GitlabNetClient, endpoint string, request *Request) (*Response, error) {
-	response, err := client.DoRequest(http.MethodPost, endpoint, request)
+func (c *Command) performRequest(ctx context.Context, client *client.GitlabNetClient, endpoint string, request *Request) (*Response, error) {
+	response, err := client.DoRequest(ctx, http.MethodPost, endpoint, request)
 	if err != nil {
 		return nil, err
 	}

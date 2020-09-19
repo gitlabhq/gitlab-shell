@@ -1,6 +1,7 @@
 package discover
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -62,7 +63,7 @@ func TestGetByKeyId(t *testing.T) {
 
 	params := url.Values{}
 	params.Add("key_id", "1")
-	result, err := client.getResponse(params)
+	result, err := client.getResponse(context.Background(), params)
 	assert.NoError(t, err)
 	assert.Equal(t, &Response{UserId: 2, Username: "alex-doe", Name: "Alex Doe"}, result)
 }
@@ -73,7 +74,7 @@ func TestGetByUsername(t *testing.T) {
 
 	params := url.Values{}
 	params.Add("username", "jane-doe")
-	result, err := client.getResponse(params)
+	result, err := client.getResponse(context.Background(), params)
 	assert.NoError(t, err)
 	assert.Equal(t, &Response{UserId: 1, Username: "jane-doe", Name: "Jane Doe"}, result)
 }
@@ -84,7 +85,7 @@ func TestMissingUser(t *testing.T) {
 
 	params := url.Values{}
 	params.Add("username", "missing")
-	result, err := client.getResponse(params)
+	result, err := client.getResponse(context.Background(), params)
 	assert.NoError(t, err)
 	assert.True(t, result.IsAnonymous())
 }
@@ -119,7 +120,7 @@ func TestErrorResponses(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			params := url.Values{}
 			params.Add("username", tc.fakeUsername)
-			resp, err := client.getResponse(params)
+			resp, err := client.getResponse(context.Background(), params)
 
 			assert.EqualError(t, err, tc.expectedError)
 			assert.Nil(t, resp)

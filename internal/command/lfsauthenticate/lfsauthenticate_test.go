@@ -2,6 +2,7 @@ package lfsauthenticate
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -54,7 +55,7 @@ func TestFailedRequests(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 			}
 
-			err := cmd.Execute()
+			err := cmd.Execute(context.Background())
 			require.Error(t, err)
 
 			require.Equal(t, tc.expectedOutput, err.Error())
@@ -146,7 +147,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 			}
 
-			err := cmd.Execute()
+			err := cmd.Execute(context.Background())
 			require.NoError(t, err)
 
 			require.Equal(t, tc.expectedOutput, output.String())

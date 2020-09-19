@@ -1,6 +1,7 @@
 package accessverifier
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -73,7 +74,7 @@ func TestSuccessfulResponses(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			result, err := client.Verify(tc.args, receivePackAction, repo)
+			result, err := client.Verify(context.Background(), tc.args, receivePackAction, repo)
 			require.NoError(t, err)
 
 			response := buildExpectedResponse(tc.who)
@@ -87,7 +88,7 @@ func TestGeoPushGetCustomAction(t *testing.T) {
 	defer cleanup()
 
 	args := &commandargs.Shell{GitlabUsername: "custom"}
-	result, err := client.Verify(args, receivePackAction, repo)
+	result, err := client.Verify(context.Background(), args, receivePackAction, repo)
 	require.NoError(t, err)
 
 	response := buildExpectedResponse("user-1")
@@ -110,7 +111,7 @@ func TestGeoPullGetCustomAction(t *testing.T) {
 	defer cleanup()
 
 	args := &commandargs.Shell{GitlabUsername: "custom"}
-	result, err := client.Verify(args, uploadPackAction, repo)
+	result, err := client.Verify(context.Background(), args, uploadPackAction, repo)
 	require.NoError(t, err)
 
 	response := buildExpectedResponse("user-1")
@@ -157,7 +158,7 @@ func TestErrorResponses(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			args := &commandargs.Shell{GitlabKeyId: tc.fakeId}
-			resp, err := client.Verify(args, receivePackAction, repo)
+			resp, err := client.Verify(context.Background(), args, receivePackAction, repo)
 
 			require.EqualError(t, err, tc.expectedError)
 			require.Nil(t, resp)

@@ -1,6 +1,7 @@
 package authorizedprincipals
 
 import (
+	"context"
 	"fmt"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
@@ -15,7 +16,7 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute() error {
+func (c *Command) Execute(ctx context.Context) error {
 	if err := c.printPrincipalLines(); err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package healthcheck
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -34,8 +35,8 @@ func NewClient(config *config.Config) (*Client, error) {
 	return &Client{config: config, client: client}, nil
 }
 
-func (c *Client) Check() (*Response, error) {
-	resp, err := c.client.Get(checkPath)
+func (c *Client) Check(ctx context.Context) (*Response, error) {
+	resp, err := c.client.Get(ctx, checkPath)
 	if err != nil {
 		return nil, err
 	}

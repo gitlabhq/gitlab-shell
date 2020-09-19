@@ -1,6 +1,7 @@
 package authorizedkeys
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -17,7 +18,7 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute() error {
+func (c *Command) Execute(ctx context.Context) error {
 	// Do and return nothing when the expected and actual user don't match.
 	// This can happen when the user in sshd_config doesn't match the user
 	// trying to login. When nothing is printed, the user will be denied access.
@@ -27,15 +28,15 @@ func (c *Command) Execute() error {
 		return nil
 	}
 
-	if err := c.printKeyLine(); err != nil {
+	if err := c.printKeyLine(ctx); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (c *Command) printKeyLine() error {
-	response, err := c.getAuthorizedKey()
+func (c *Command) printKeyLine(ctx context.Context) error {
+	response, err := c.getAuthorizedKey(ctx)
 	if err != nil {
 		fmt.Fprintln(c.ReadWriter.Out, fmt.Sprintf("# No key was found for %s", c.Args.Key))
 		return nil
@@ -51,11 +52,11 @@ func (c *Command) printKeyLine() error {
 	return nil
 }
 
-func (c *Command) getAuthorizedKey() (*authorizedkeys.Response, error) {
+func (c *Command) getAuthorizedKey(ctx context.Context) (*authorizedkeys.Response, error) {
 	client, err := authorizedkeys.NewClient(c.Config)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.GetByKey(c.Args.Key)
+	return client.GetByKey(ctx, c.Args.Key)
 }

@@ -1,6 +1,7 @@
 package twofactorrecover
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -37,14 +38,14 @@ func NewClient(config *config.Config) (*Client, error) {
 	return &Client{config: config, client: client}, nil
 }
 
-func (c *Client) GetRecoveryCodes(args *commandargs.Shell) ([]string, error) {
-	requestBody, err := c.getRequestBody(args)
+func (c *Client) GetRecoveryCodes(ctx context.Context, args *commandargs.Shell) ([]string, error) {
+	requestBody, err := c.getRequestBody(ctx, args)
 
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := c.client.Post("/two_factor_recovery_codes", requestBody)
+	response, err := c.client.Post(ctx, "/two_factor_recovery_codes", requestBody)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +67,7 @@ func parse(hr *http.Response) ([]string, error) {
 	return response.RecoveryCodes, nil
 }
 
-func (c *Client) getRequestBody(args *commandargs.Shell) (*RequestBody, error) {
+func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell) (*RequestBody, error) {
 	client, err := discover.NewClient(c.config)
 
 	if err != nil {
@@ -77,7 +78,7 @@ func (c *Client) getRequestBody(args *commandargs.Shell) (*RequestBody, error) {
 	if args.GitlabKeyId != "" {
 		requestBody = &RequestBody{KeyId: args.GitlabKeyId}
 	} else {
-		userInfo, err := client.GetByCommandArgs(args)
+		userInfo, err := client.GetByCommandArgs(ctx, args)
 
 		if err != nil {
 			return nil, err
