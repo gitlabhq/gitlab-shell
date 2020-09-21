@@ -2,6 +2,7 @@ package customaction
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -78,7 +79,7 @@ func TestExecuteEOFSent(t *testing.T) {
 		EOFSent:    true,
 	}
 
-	require.NoError(t, cmd.Execute(response))
+	require.NoError(t, cmd.Execute(context.Background(), response))
 
 	// expect printing of info message, "custom" string from the first request
 	// and "output" string from the second request
@@ -148,7 +149,7 @@ func TestExecuteNoEOFSent(t *testing.T) {
 		EOFSent:    false,
 	}
 
-	require.NoError(t, cmd.Execute(response))
+	require.NoError(t, cmd.Execute(context.Background(), response))
 
 	// expect printing of info message, "custom" string from the first request
 	// and "output" string from the second request

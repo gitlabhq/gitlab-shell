@@ -2,6 +2,7 @@ package uploadarchive
 
 import (
 	"bytes"
+	"context"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -38,7 +39,7 @@ func TestUploadPack(t *testing.T) {
 
 	hook := testhelper.SetupLogger()
 
-	err := cmd.Execute()
+	err := cmd.Execute(context.Background())
 	require.NoError(t, err)
 
 	require.Equal(t, "UploadArchive: "+repo, output.String())

@@ -1,6 +1,7 @@
 package personalaccesstoken
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -90,7 +91,7 @@ func TestGetPersonalAccessTokenByKeyId(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabKeyId: "0"}
 	result, err := client.GetPersonalAccessToken(
-		args, "newtoken", &[]string{"read_api", "read_repository"}, "",
+		context.Background(), args, "newtoken", &[]string{"read_api", "read_repository"}, "",
 	)
 	assert.NoError(t, err)
 	response := &Response{
@@ -109,7 +110,7 @@ func TestGetRecoveryCodesByUsername(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabUsername: "jane-doe"}
 	result, err := client.GetPersonalAccessToken(
-		args, "newtoken", &[]string{"api"}, "",
+		context.Background(), args, "newtoken", &[]string{"api"}, "",
 	)
 	assert.NoError(t, err)
 	response := &Response{true, "YXuxvUgCEmeePY3G1YAa", []string{"api"}, "", ""}
@@ -122,7 +123,7 @@ func TestMissingUser(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabKeyId: "1"}
 	_, err := client.GetPersonalAccessToken(
-		args, "newtoken", &[]string{"api"}, "",
+		context.Background(), args, "newtoken", &[]string{"api"}, "",
 	)
 	assert.Equal(t, "missing user", err.Error())
 }
@@ -157,7 +158,7 @@ func TestErrorResponses(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			args := &commandargs.Shell{GitlabKeyId: tc.fakeId}
 			resp, err := client.GetPersonalAccessToken(
-				args, "newtoken", &[]string{"api"}, "",
+				context.Background(), args, "newtoken", &[]string{"api"}, "",
 			)
 
 			assert.EqualError(t, err, tc.expectedError)

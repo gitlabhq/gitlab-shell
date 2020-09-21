@@ -1,6 +1,7 @@
 package personalaccesstoken
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -42,13 +43,13 @@ func NewClient(config *config.Config) (*Client, error) {
 	return &Client{config: config, client: client}, nil
 }
 
-func (c *Client) GetPersonalAccessToken(args *commandargs.Shell, name string, scopes *[]string, expiresAt string) (*Response, error) {
-	requestBody, err := c.getRequestBody(args, name, scopes, expiresAt)
+func (c *Client) GetPersonalAccessToken(ctx context.Context, args *commandargs.Shell, name string, scopes *[]string, expiresAt string) (*Response, error) {
+	requestBody, err := c.getRequestBody(ctx, args, name, scopes, expiresAt)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := c.client.Post("/personal_access_token", requestBody)
+	response, err := c.client.Post(ctx, "/personal_access_token", requestBody)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +71,7 @@ func parse(hr *http.Response) (*Response, error) {
 	return response, nil
 }
 
-func (c *Client) getRequestBody(args *commandargs.Shell, name string, scopes *[]string, expiresAt string) (*RequestBody, error) {
+func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, name string, scopes *[]string, expiresAt string) (*RequestBody, error) {
 	client, err := discover.NewClient(c.config)
 	if err != nil {
 		return nil, err
@@ -83,7 +84,7 @@ func (c *Client) getRequestBody(args *commandargs.Shell, name string, scopes *[]
 		return requestBody, nil
 	}
 
-	userInfo, err := client.GetByCommandArgs(args)
+	userInfo, err := client.GetByCommandArgs(ctx, args)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package healthcheck
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -33,7 +34,7 @@ func TestCheck(t *testing.T) {
 	client, cleanup := setup(t)
 	defer cleanup()
 
-	result, err := client.Check()
+	result, err := client.Check(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, testResponse, result)
 }

@@ -1,6 +1,7 @@
 package lfsauthenticate
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -85,7 +86,7 @@ func TestFailedRequests(t *testing.T) {
 
 			operation := tc.args.SshArgs[2]
 
-			_, err = client.Authenticate(operation, repo, "")
+			_, err = client.Authenticate(context.Background(), operation, repo, "")
 			require.Error(t, err)
 
 			require.Equal(t, tc.expectedOutput, err.Error())
@@ -119,7 +120,7 @@ func TestSuccessfulRequests(t *testing.T) {
 			client, err := NewClient(&config.Config{GitlabUrl: url}, args)
 			require.NoError(t, err)
 
-			response, err := client.Authenticate(operation, repo, "")
+			response, err := client.Authenticate(context.Background(), operation, repo, "")
 			require.NoError(t, err)
 
 			expectedResponse := &Response{

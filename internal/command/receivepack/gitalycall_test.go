@@ -2,6 +2,7 @@ package receivepack
 
 import (
 	"bytes"
+	"context"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -42,7 +43,7 @@ func TestReceivePack(t *testing.T) {
 
 	hook := testhelper.SetupLogger()
 
-	err = cmd.Execute()
+	err = cmd.Execute(context.Background())
 	require.NoError(t, err)
 
 	require.Equal(t, "ReceivePack: "+userId+" "+repo, output.String())

@@ -2,6 +2,7 @@ package receivepack
 
 import (
 	"bytes"
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -18,7 +19,7 @@ func TestForbiddenAccess(t *testing.T) {
 	cmd, _, cleanup := setup(t, "disallowed", requests)
 	defer cleanup()
 
-	err := cmd.Execute()
+	err := cmd.Execute(context.Background())
 	require.Equal(t, "Disallowed by API call", err.Error())
 }
 
@@ -26,7 +27,7 @@ func TestCustomReceivePack(t *testing.T) {
 	cmd, output, cleanup := setup(t, "1", requesthandlers.BuildAllowedWithCustomActionsHandlers(t))
 	defer cleanup()
 
-	require.NoError(t, cmd.Execute())
+	require.NoError(t, cmd.Execute(context.Background()))
 	require.Equal(t, "customoutput", output.String())
 }
 

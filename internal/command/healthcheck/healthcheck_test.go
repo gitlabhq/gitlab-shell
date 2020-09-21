@@ -2,6 +2,7 @@ package healthcheck
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"testing"
@@ -53,7 +54,7 @@ func TestExecute(t *testing.T) {
 		ReadWriter: &readwriter.ReadWriter{Out: buffer},
 	}
 
-	err := cmd.Execute()
+	err := cmd.Execute(context.Background())
 
 	require.NoError(t, err)
 	require.Equal(t, "Internal API available: OK\nRedis available via internal API: OK\n", buffer.String())
@@ -69,7 +70,7 @@ func TestFailingRedisExecute(t *testing.T) {
 		ReadWriter: &readwriter.ReadWriter{Out: buffer},
 	}
 
-	err := cmd.Execute()
+	err := cmd.Execute(context.Background())
 	require.Error(t, err, "Redis available via internal API: FAILED")
 	require.Equal(t, "Internal API available: OK\n", buffer.String())
 }
@@ -84,7 +85,7 @@ func TestFailingAPIExecute(t *testing.T) {
 		ReadWriter: &readwriter.ReadWriter{Out: buffer},
 	}
 
-	err := cmd.Execute()
+	err := cmd.Execute(context.Background())
 	require.Empty(t, buffer.String())
 	require.EqualError(t, err, "Internal API available: FAILED - Internal API error (500)")
 }

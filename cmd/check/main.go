@@ -38,7 +38,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = cmd.Execute(); err != nil {
+	ctx, finished := command.ContextWithCorrelationID()
+	defer finished()
+
+	if err = cmd.Execute(ctx); err != nil {
 		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
 		os.Exit(1)
 	}

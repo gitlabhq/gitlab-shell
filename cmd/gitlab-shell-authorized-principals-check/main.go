@@ -41,7 +41,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = cmd.Execute(); err != nil {
+	ctx, finished := command.ContextWithCorrelationID()
+	defer finished()
+
+	if err = cmd.Execute(ctx); err != nil {
 		console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
 		os.Exit(1)
 	}

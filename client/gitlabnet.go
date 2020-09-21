@@ -11,8 +11,9 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"gitlab.com/gitlab-org/labkit/correlation"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -59,7 +60,7 @@ func normalizePath(path string) string {
 	return path
 }
 
-func newRequest(method, host, path string, data interface{}) (*http.Request, string, error) {
+func newRequest(ctx context.Context, method, host, path string, data interface{}) (*http.Request, string, error) {
 	var jsonReader io.Reader
 	if data != nil {
 		jsonData, err := json.Marshal(data)
@@ -70,19 +71,12 @@ func newRequest(method, host, path string, data interface{}) (*http.Request, str
 		jsonReader = bytes.NewReader(jsonData)
 	}
 
-	correlationID, err := correlation.RandomID()
-	ctx := context.Background()
-
-	if err != nil {
-		log.WithError(err).Warn("unable to generate correlation ID")
-	} else {
-		ctx = correlation.ContextWithCorrelation(ctx, correlationID)
-	}
-
 	request, err := http.NewRequestWithContext(ctx, method, host+path, jsonReader)
 	if err != nil {
 		return nil, "", err
 	}
+
+	correlationID := correlation.ExtractFromContext(ctx)
 
 	return request, correlationID, nil
 }
@@ -102,16 +96,16 @@ func parseError(resp *http.Response) error {
 
 }
 
-func (c *GitlabNetClient) Get(path string) (*http.Response, error) {
-	return c.DoRequest(http.MethodGet, normalizePath(path), nil)
+func (c *GitlabNetClient) Get(ctx context.Context, path string) (*http.Response, error) {
+	return c.DoRequest(ctx, http.MethodGet, normalizePath(path), nil)
 }
 
-func (c *GitlabNetClient) Post(path string, data interface{}) (*http.Response, error) {
-	return c.DoRequest(http.MethodPost, normalizePath(path), data)
+func (c *GitlabNetClient) Post(ctx context.Context, path string, data interface{}) (*http.Response, error) {
+	return c.DoRequest(ctx, http.MethodPost, normalizePath(path), data)
 }
 
-func (c *GitlabNetClient) DoRequest(method, path string, data interface{}) (*http.Response, error) {
-	request, correlationID, err := newRequest(method, c.httpClient.Host, path, data)
+func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, data interface{}) (*http.Response, error) {
+	request, correlationID, err := newRequest(ctx, method, c.httpClient.Host, path, data)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
@@ -51,11 +52,11 @@ func TestBasicAuthSettings(t *testing.T) {
 	client, cleanup := setup(t, username, password, requests)
 	defer cleanup()
 
-	response, err := client.Get("/get_endpoint")
+	response, err := client.Get(context.Background(), "/get_endpoint")
 	require.NoError(t, err)
 	testBasicAuthHeaders(t, response)
 
-	response, err = client.Post("/post_endpoint", nil)
+	response, err = client.Post(context.Background(), "/post_endpoint", nil)
 	require.NoError(t, err)
 	testBasicAuthHeaders(t, response)
 }
@@ -89,7 +90,7 @@ func TestEmptyBasicAuthSettings(t *testing.T) {
 	client, cleanup := setup(t, "", "", requests)
 	defer cleanup()
 
-	_, err := client.Get("/empty_basic_auth")
+	_, err := client.Get(context.Background(), "/empty_basic_auth")
 	require.NoError(t, err)
 }
 

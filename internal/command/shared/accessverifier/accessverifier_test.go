@@ -2,6 +2,7 @@ package accessverifier
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -65,7 +66,7 @@ func TestMissingUser(t *testing.T) {
 	defer cleanup()
 
 	cmd.Args = &commandargs.Shell{GitlabKeyId: "2"}
-	_, err := cmd.Verify(action, repo)
+	_, err := cmd.Verify(context.Background(), action, repo)
 
 	require.Equal(t, "missing user", err.Error())
 }
@@ -75,7 +76,7 @@ func TestConsoleMessages(t *testing.T) {
 	defer cleanup()
 
 	cmd.Args = &commandargs.Shell{GitlabKeyId: "1"}
-	cmd.Verify(action, repo)
+	cmd.Verify(context.Background(), action, repo)
 
 	require.Equal(t, "remote: \nremote: console\nremote: message\nremote: \n", errBuf.String())
 	require.Empty(t, outBuf.String())

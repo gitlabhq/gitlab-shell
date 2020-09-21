@@ -1,6 +1,7 @@
 package lfsauthenticate
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -34,7 +35,7 @@ type Payload struct {
 	ExpiresIn int           `json:"expires_in,omitempty"`
 }
 
-func (c *Command) Execute() error {
+func (c *Command) Execute(ctx context.Context) error {
 	args := c.Args.SshArgs
 	if len(args) < 3 {
 		return disallowedcommand.Error
@@ -49,12 +50,12 @@ func (c *Command) Execute() error {
 		return err
 	}
 
-	accessResponse, err := c.verifyAccess(action, repo)
+	accessResponse, err := c.verifyAccess(ctx, action, repo)
 	if err != nil {
 		return err
 	}
 
-	payload, err := c.authenticate(operation, repo, accessResponse.UserId)
+	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserId)
 	if err != nil {
 		// return nothing just like Ruby's GitlabShell#lfs_authenticate does
 		return nil
@@ -80,19 +81,19 @@ func actionFromOperation(operation string) (commandargs.CommandType, error) {
 	return action, nil
 }
 
-func (c *Command) verifyAccess(action commandargs.CommandType, repo string) (*accessverifier.Response, error) {
+func (c *Command) verifyAccess(ctx context.Context, action commandargs.CommandType, repo string) (*accessverifier.Response, error) {
 	cmd := accessverifier.Command{c.Config, c.Args, c.ReadWriter}
 
-	return cmd.Verify(action, repo)
+	return cmd.Verify(ctx, action, repo)
 }
 
-func (c *Command) authenticate(operation string, repo, userId string) ([]byte, error) {
+func (c *Command) authenticate(ctx context.Context, operation string, repo, userId string) ([]byte, error) {
 	client, err := lfsauthenticate.NewClient(c.Config, c.Args)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := client.Authenticate(operation, repo, userId)
+	response, err := client.Authenticate(ctx, operation, repo, userId)
 	if err != nil {
 		return nil, err
 	}

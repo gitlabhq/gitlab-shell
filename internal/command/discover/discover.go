@@ -1,6 +1,7 @@
 package discover
 
 import (
+	"context"
 	"fmt"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
@@ -15,8 +16,8 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute() error {
-	response, err := c.getUserInfo()
+func (c *Command) Execute(ctx context.Context) error {
+	response, err := c.getUserInfo(ctx)
 	if err != nil {
 		return fmt.Errorf("Failed to get username: %v", err)
 	}
@@ -30,11 +31,11 @@ func (c *Command) Execute() error {
 	return nil
 }
 
-func (c *Command) getUserInfo() (*discover.Response, error) {
+func (c *Command) getUserInfo(ctx context.Context) (*discover.Response, error) {
 	client, err := discover.NewClient(c.Config)
 	if err != nil {
 		return nil, err
 	}
 
-	return client.GetByCommandArgs(c.Args)
+	return client.GetByCommandArgs(ctx, c.Args)
 }

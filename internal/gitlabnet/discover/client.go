@@ -1,6 +1,7 @@
 package discover
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -31,7 +32,7 @@ func NewClient(config *config.Config) (*Client, error) {
 	return &Client{config: config, client: client}, nil
 }
 
-func (c *Client) GetByCommandArgs(args *commandargs.Shell) (*Response, error) {
+func (c *Client) GetByCommandArgs(ctx context.Context, args *commandargs.Shell) (*Response, error) {
 	params := url.Values{}
 	if args.GitlabUsername != "" {
 		params.Add("username", args.GitlabUsername)
@@ -43,13 +44,13 @@ func (c *Client) GetByCommandArgs(args *commandargs.Shell) (*Response, error) {
 		return nil, fmt.Errorf("who='' is invalid")
 	}
 
-	return c.getResponse(params)
+	return c.getResponse(ctx, params)
 }
 
-func (c *Client) getResponse(params url.Values) (*Response, error) {
+func (c *Client) getResponse(ctx context.Context, params url.Values) (*Response, error) {
 	path := "/discover?" + params.Encode()
 
-	response, err := c.client.Get(path)
+	response, err := c.client.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}

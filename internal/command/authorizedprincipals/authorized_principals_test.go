@@ -2,6 +2,7 @@ package authorizedprincipals
 
 import (
 	"bytes"
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -54,7 +55,7 @@ func TestExecute(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
 
-			err := cmd.Execute()
+			err := cmd.Execute(context.Background())
 
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedOutput, buffer.String())

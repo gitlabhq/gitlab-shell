@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -43,7 +44,7 @@ func TestSuccessfulRequests(t *testing.T) {
 			client, cleanup := setupWithRequests(t, tc.caFile, tc.caPath, tc.selfSigned)
 			defer cleanup()
 
-			response, err := client.Get("/hello")
+			response, err := client.Get(context.Background(), "/hello")
 			require.NoError(t, err)
 			require.NotNil(t, response)
 
@@ -80,7 +81,7 @@ func TestFailedRequests(t *testing.T) {
 			client, cleanup := setupWithRequests(t, tc.caFile, tc.caPath, false)
 			defer cleanup()
 
-			_, err := client.Get("/hello")
+			_, err := client.Get(context.Background(), "/hello")
 			require.Error(t, err)
 
 			assert.Equal(t, err.Error(), "Internal API unreachable")

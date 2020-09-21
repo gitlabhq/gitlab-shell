@@ -1,6 +1,7 @@
 package accessverifier
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -77,7 +78,7 @@ func NewClient(config *config.Config) (*Client, error) {
 	return &Client{client: client}, nil
 }
 
-func (c *Client) Verify(args *commandargs.Shell, action commandargs.CommandType, repo string) (*Response, error) {
+func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action commandargs.CommandType, repo string) (*Response, error) {
 	request := &Request{Action: action, Repo: repo, Protocol: protocol, Changes: anyChanges}
 
 	if args.GitlabUsername != "" {
@@ -88,7 +89,7 @@ func (c *Client) Verify(args *commandargs.Shell, action commandargs.CommandType,
 
 	request.CheckIp = sshenv.LocalAddr()
 
-	response, err := c.client.Post("/allowed", request)
+	response, err := c.client.Post(ctx, "/allowed", request)
 	if err != nil {
 		return nil, err
 	}

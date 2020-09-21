@@ -1,6 +1,7 @@
 package accessverifier
 
 import (
+	"context"
 	"errors"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
@@ -18,13 +19,13 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Verify(action commandargs.CommandType, repo string) (*Response, error) {
+func (c *Command) Verify(ctx context.Context, action commandargs.CommandType, repo string) (*Response, error) {
 	client, err := accessverifier.NewClient(c.Config)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := client.Verify(c.Args, action, repo)
+	response, err := client.Verify(ctx, c.Args, action, repo)
 	if err != nil {
 		return nil, err
 	}
