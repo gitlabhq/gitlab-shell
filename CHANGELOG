@@ -14,7 +14,7 @@ v13.4.0
 - Drop Go v1.12 support !401
 
 v13.3.0
-- Upgrade Ruby version to v2.6.6 !390
+- Upgrade Ruby version tdddo v2.6.6 !390
 - Use default puma socket in example config !388
 - Set client name when making requests to Gitaly !387
 - Fix race conditions with logrus testing !385
