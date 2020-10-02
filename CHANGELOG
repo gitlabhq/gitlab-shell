@@ -1,3 +1,9 @@
+v13.8.0
+
+- Update Gitaly module dependency !414
+- Make it possible to propagate correlation ID across processes !413
+- Remove deprecated hooks dir !411
+
 v13.7.0
 - Fix gitlab-shell not handling relative URLs over UNIX sockets !406
 
