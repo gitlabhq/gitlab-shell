@@ -54,7 +54,6 @@ func ContextWithCorrelationID() (context.Context, func()) {
 		if err != nil {
 			log.WithError(err).Warn("unable to generate correlation ID")
 		} else {
-			log.Info("generated random correlation ID")
 			ctx = correlation.ContextWithCorrelation(ctx, correlationID)
 		}
 	}
