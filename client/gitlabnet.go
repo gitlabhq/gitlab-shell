@@ -19,6 +19,7 @@ import (
 const (
 	internalApiPath  = "/api/v4/internal"
 	secretHeaderName = "Gitlab-Shared-Secret"
+	defaultUserAgent = "GitLab-Shell"
 )
 
 type ErrorResponse struct {
@@ -26,8 +27,11 @@ type ErrorResponse struct {
 }
 
 type GitlabNetClient struct {
-	httpClient             *HttpClient
-	user, password, secret string
+	httpClient *HttpClient
+	user       string
+	password   string
+	secret     string
+	userAgent  string
 }
 
 func NewGitlabNetClient(
@@ -46,7 +50,14 @@ func NewGitlabNetClient(
 		user:       user,
 		password:   password,
 		secret:     secret,
+		userAgent:  defaultUserAgent,
 	}, nil
+}
+
+// SetUserAgent overrides the default user agent for the User-Agent header field
+// for subsequent requests for the GitlabNetClient
+func (c *GitlabNetClient) SetUserAgent(ua string) {
+	c.userAgent = ua
 }
 
 func normalizePath(path string) string {
@@ -119,6 +130,7 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	request.Header.Set(secretHeaderName, encodedSecret)
 
 	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("User-Agent", c.userAgent)
 	request.Close = true
 
 	start := time.Now()
