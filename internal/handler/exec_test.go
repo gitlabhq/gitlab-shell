@@ -5,7 +5,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -77,8 +76,8 @@ func TestGetConnMetadata(t *testing.T) {
 
 			for k, v := range tt.want {
 				values := md.Get(k)
-				assert.Equal(t, 1, len(values))
-				assert.Equal(t, v, values[0])
+				require.Equal(t, 1, len(values))
+				require.Equal(t, v, values[0])
 			}
 
 		})

@@ -5,7 +5,6 @@ import (
 	"path"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 )
@@ -110,12 +109,12 @@ func TestParseConfig(t *testing.T) {
 			err := parseConfig([]byte(tc.yaml), &cfg)
 			require.NoError(t, err)
 
-			assert.Equal(t, tc.path, cfg.LogFile)
-			assert.Equal(t, tc.format, cfg.LogFormat)
-			assert.Equal(t, tc.gitlabUrl, cfg.GitlabUrl)
-			assert.Equal(t, tc.secret, cfg.Secret)
-			assert.Equal(t, tc.sslCertDir, cfg.SslCertDir)
-			assert.Equal(t, tc.httpSettings, cfg.HttpSettings)
+			require.Equal(t, tc.path, cfg.LogFile)
+			require.Equal(t, tc.format, cfg.LogFormat)
+			require.Equal(t, tc.gitlabUrl, cfg.GitlabUrl)
+			require.Equal(t, tc.secret, cfg.Secret)
+			require.Equal(t, tc.sslCertDir, cfg.SslCertDir)
+			require.Equal(t, tc.httpSettings, cfg.HttpSettings)
 		})
 	}
 }

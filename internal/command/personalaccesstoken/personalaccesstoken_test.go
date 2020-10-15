@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
@@ -174,13 +173,13 @@ func TestExecute(t *testing.T) {
 			err := cmd.Execute(context.Background())
 
 			if tc.expectedError == "" {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
-				assert.EqualError(t, err, tc.expectedError)
+				require.EqualError(t, err, tc.expectedError)
 			}
 
 			if tc.expectedOutput != "" {
-				assert.Equal(t, tc.expectedOutput, output.String())
+				require.Equal(t, tc.expectedOutput, output.String())
 			}
 		})
 	}

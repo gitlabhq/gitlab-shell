@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 )
@@ -21,7 +20,7 @@ func TestReadTimeout(t *testing.T) {
 	client := NewHTTPClient("http://localhost:3000", "", "", "", false, expectedSeconds)
 
 	require.NotNil(t, client)
-	assert.Equal(t, time.Duration(expectedSeconds)*time.Second, client.Client.Timeout)
+	require.Equal(t, time.Duration(expectedSeconds)*time.Second, client.Client.Timeout)
 }
 
 const (
@@ -66,15 +65,15 @@ func testBasicAuthHeaders(t *testing.T, response *http.Response) {
 
 	require.NotNil(t, response)
 	responseBody, err := ioutil.ReadAll(response.Body)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	headerParts := strings.Split(string(responseBody), " ")
-	assert.Equal(t, "Basic", headerParts[0])
+	require.Equal(t, "Basic", headerParts[0])
 
 	credentials, err := base64.StdEncoding.DecodeString(headerParts[1])
 	require.NoError(t, err)
 
-	assert.Equal(t, username+":"+password, string(credentials))
+	require.Equal(t, username+":"+password, string(credentials))
 }
 
 func TestEmptyBasicAuthSettings(t *testing.T) {
@@ -82,7 +81,7 @@ func TestEmptyBasicAuthSettings(t *testing.T) {
 		{
 			Path: "/api/v4/internal/empty_basic_auth",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, "", r.Header.Get("Authorization"))
+				require.Equal(t, "", r.Header.Get("Authorization"))
 			},
 		},
 	}
@@ -100,13 +99,13 @@ func TestRequestWithUserAgent(t *testing.T) {
 		{
 			Path: "/api/v4/internal/default_user_agent",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, defaultUserAgent, r.UserAgent())
+				require.Equal(t, defaultUserAgent, r.UserAgent())
 			},
 		},
 		{
 			Path: "/api/v4/internal/override_user_agent",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, gitalyUserAgent, r.UserAgent())
+				require.Equal(t, gitalyUserAgent, r.UserAgent())
 			},
 		},
 	}

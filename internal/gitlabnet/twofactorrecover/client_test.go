@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
@@ -87,8 +86,8 @@ func TestGetRecoveryCodesByKeyId(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabKeyId: "0"}
 	result, err := client.GetRecoveryCodes(context.Background(), args)
-	assert.NoError(t, err)
-	assert.Equal(t, []string{"recovery 1", "codes 1"}, result)
+	require.NoError(t, err)
+	require.Equal(t, []string{"recovery 1", "codes 1"}, result)
 }
 
 func TestGetRecoveryCodesByUsername(t *testing.T) {
@@ -97,8 +96,8 @@ func TestGetRecoveryCodesByUsername(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabUsername: "jane-doe"}
 	result, err := client.GetRecoveryCodes(context.Background(), args)
-	assert.NoError(t, err)
-	assert.Equal(t, []string{"recovery 2", "codes 2"}, result)
+	require.NoError(t, err)
+	require.Equal(t, []string{"recovery 2", "codes 2"}, result)
 }
 
 func TestMissingUser(t *testing.T) {
@@ -107,7 +106,7 @@ func TestMissingUser(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabKeyId: "1"}
 	_, err := client.GetRecoveryCodes(context.Background(), args)
-	assert.Equal(t, "missing user", err.Error())
+	require.Equal(t, "missing user", err.Error())
 }
 
 func TestErrorResponses(t *testing.T) {
@@ -141,8 +140,8 @@ func TestErrorResponses(t *testing.T) {
 			args := &commandargs.Shell{GitlabKeyId: tc.fakeId}
 			resp, err := client.GetRecoveryCodes(context.Background(), args)
 
-			assert.EqualError(t, err, tc.expectedError)
-			assert.Nil(t, resp)
+			require.EqualError(t, err, tc.expectedError)
+			require.Nil(t, resp)
 		})
 	}
 }

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
@@ -93,7 +92,7 @@ func TestGetPersonalAccessTokenByKeyId(t *testing.T) {
 	result, err := client.GetPersonalAccessToken(
 		context.Background(), args, "newtoken", &[]string{"read_api", "read_repository"}, "",
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	response := &Response{
 		true,
 		"aAY1G3YPeemECgUvxuXY",
@@ -101,7 +100,7 @@ func TestGetPersonalAccessTokenByKeyId(t *testing.T) {
 		"9001-11-17",
 		"",
 	}
-	assert.Equal(t, response, result)
+	require.Equal(t, response, result)
 }
 
 func TestGetRecoveryCodesByUsername(t *testing.T) {
@@ -112,9 +111,9 @@ func TestGetRecoveryCodesByUsername(t *testing.T) {
 	result, err := client.GetPersonalAccessToken(
 		context.Background(), args, "newtoken", &[]string{"api"}, "",
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	response := &Response{true, "YXuxvUgCEmeePY3G1YAa", []string{"api"}, "", ""}
-	assert.Equal(t, response, result)
+	require.Equal(t, response, result)
 }
 
 func TestMissingUser(t *testing.T) {
@@ -125,7 +124,7 @@ func TestMissingUser(t *testing.T) {
 	_, err := client.GetPersonalAccessToken(
 		context.Background(), args, "newtoken", &[]string{"api"}, "",
 	)
-	assert.Equal(t, "missing user", err.Error())
+	require.Equal(t, "missing user", err.Error())
 }
 
 func TestErrorResponses(t *testing.T) {
@@ -161,8 +160,8 @@ func TestErrorResponses(t *testing.T) {
 				context.Background(), args, "newtoken", &[]string{"api"}, "",
 			)
 
-			assert.EqualError(t, err, tc.expectedError)
-			assert.Nil(t, resp)
+			require.EqualError(t, err, tc.expectedError)
+			require.Nil(t, resp)
 		})
 	}
 }
