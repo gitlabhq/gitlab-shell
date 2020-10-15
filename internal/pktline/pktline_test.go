@@ -70,7 +70,7 @@ func TestScanner(t *testing.T) {
 
 func TestIsDone(t *testing.T) {
 	testCases := []struct {
-		in    string
+		in   string
 		done bool
 	}{
 		{in: "0008abcd", done: false},

@@ -5,7 +5,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
@@ -43,7 +42,7 @@ func TestUploadPack(t *testing.T) {
 
 	require.Equal(t, "UploadPack: "+repo, output.String())
 	entries := hook.AllEntries()
-	assert.Equal(t, 2, len(entries))
+	require.Equal(t, 2, len(entries))
 	require.Contains(t, entries[1].Message, "executing git command")
 	require.Contains(t, entries[1].Message, "command=git-upload-pack")
 	require.Contains(t, entries[1].Message, "gl_key_type=key")
@@ -54,8 +53,8 @@ func TestUploadPack(t *testing.T) {
 		"gitaly-feature-inforef_uploadpack_cache": "false",
 	} {
 		actual := testServer.ReceivedMD[k]
-		assert.Len(t, actual, 1)
-		assert.Equal(t, v, actual[0])
+		require.Len(t, actual, 1)
+		require.Equal(t, v, actual[0])
 	}
-	assert.Empty(t, testServer.ReceivedMD["some-other-ff"])
+	require.Empty(t, testServer.ReceivedMD["some-other-ff"])
 }

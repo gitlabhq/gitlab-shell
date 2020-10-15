@@ -8,7 +8,6 @@ import (
 	"path"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
@@ -51,8 +50,8 @@ func TestSuccessfulRequests(t *testing.T) {
 			defer response.Body.Close()
 
 			responseBody, err := ioutil.ReadAll(response.Body)
-			assert.NoError(t, err)
-			assert.Equal(t, string(responseBody), "Hello")
+			require.NoError(t, err)
+			require.Equal(t, string(responseBody), "Hello")
 		})
 	}
 }
@@ -84,7 +83,7 @@ func TestFailedRequests(t *testing.T) {
 			_, err := client.Get(context.Background(), "/hello")
 			require.Error(t, err)
 
-			assert.Equal(t, err.Error(), "Internal API unreachable")
+			require.Equal(t, err.Error(), "Internal API unreachable")
 		})
 	}
 }

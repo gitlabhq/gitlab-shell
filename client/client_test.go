@@ -12,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
@@ -86,17 +85,17 @@ func testSuccessfulGet(t *testing.T, client *GitlabNetClient) {
 		defer response.Body.Close()
 
 		responseBody, err := ioutil.ReadAll(response.Body)
-		assert.NoError(t, err)
-		assert.Equal(t, string(responseBody), "Hello")
+		require.NoError(t, err)
+		require.Equal(t, string(responseBody), "Hello")
 
 		require.True(t, testhelper.WaitForLogEvent(hook))
 		entries := hook.AllEntries()
-		assert.Equal(t, 1, len(entries))
-		assert.Equal(t, logrus.InfoLevel, entries[0].Level)
-		assert.Contains(t, entries[0].Message, "method=GET")
-		assert.Contains(t, entries[0].Message, "status=200")
-		assert.Contains(t, entries[0].Message, "Finished HTTP request")
-		assert.Contains(t, entries[0].Message, "correlation_id=")
+		require.Equal(t, 1, len(entries))
+		require.Equal(t, logrus.InfoLevel, entries[0].Level)
+		require.Contains(t, entries[0].Message, "method=GET")
+		require.Contains(t, entries[0].Message, "status=200")
+		require.Contains(t, entries[0].Message, "Finished HTTP request")
+		require.Contains(t, entries[0].Message, "correlation_id=")
 	})
 }
 
@@ -112,17 +111,17 @@ func testSuccessfulPost(t *testing.T, client *GitlabNetClient) {
 		defer response.Body.Close()
 
 		responseBody, err := ioutil.ReadAll(response.Body)
-		assert.NoError(t, err)
-		assert.Equal(t, "Echo: {\"key\":\"value\"}", string(responseBody))
+		require.NoError(t, err)
+		require.Equal(t, "Echo: {\"key\":\"value\"}", string(responseBody))
 
 		require.True(t, testhelper.WaitForLogEvent(hook))
 		entries := hook.AllEntries()
-		assert.Equal(t, 1, len(entries))
-		assert.Equal(t, logrus.InfoLevel, entries[0].Level)
-		assert.Contains(t, entries[0].Message, "method=POST")
-		assert.Contains(t, entries[0].Message, "status=200")
-		assert.Contains(t, entries[0].Message, "Finished HTTP request")
-		assert.Contains(t, entries[0].Message, "correlation_id=")
+		require.Equal(t, 1, len(entries))
+		require.Equal(t, logrus.InfoLevel, entries[0].Level)
+		require.Contains(t, entries[0].Message, "method=POST")
+		require.Contains(t, entries[0].Message, "status=200")
+		require.Contains(t, entries[0].Message, "Finished HTTP request")
+		require.Contains(t, entries[0].Message, "correlation_id=")
 	})
 }
 
@@ -130,47 +129,47 @@ func testMissing(t *testing.T, client *GitlabNetClient) {
 	t.Run("Missing error for GET", func(t *testing.T) {
 		hook := testhelper.SetupLogger()
 		response, err := client.Get(context.Background(), "/missing")
-		assert.EqualError(t, err, "Internal API error (404)")
-		assert.Nil(t, response)
+		require.EqualError(t, err, "Internal API error (404)")
+		require.Nil(t, response)
 
 		require.True(t, testhelper.WaitForLogEvent(hook))
 		entries := hook.AllEntries()
-		assert.Equal(t, 1, len(entries))
-		assert.Equal(t, logrus.InfoLevel, entries[0].Level)
-		assert.Contains(t, entries[0].Message, "method=GET")
-		assert.Contains(t, entries[0].Message, "status=404")
-		assert.Contains(t, entries[0].Message, "Internal API error")
-		assert.Contains(t, entries[0].Message, "correlation_id=")
+		require.Equal(t, 1, len(entries))
+		require.Equal(t, logrus.InfoLevel, entries[0].Level)
+		require.Contains(t, entries[0].Message, "method=GET")
+		require.Contains(t, entries[0].Message, "status=404")
+		require.Contains(t, entries[0].Message, "Internal API error")
+		require.Contains(t, entries[0].Message, "correlation_id=")
 	})
 
 	t.Run("Missing error for POST", func(t *testing.T) {
 		hook := testhelper.SetupLogger()
 		response, err := client.Post(context.Background(), "/missing", map[string]string{})
-		assert.EqualError(t, err, "Internal API error (404)")
-		assert.Nil(t, response)
+		require.EqualError(t, err, "Internal API error (404)")
+		require.Nil(t, response)
 
 		require.True(t, testhelper.WaitForLogEvent(hook))
 		entries := hook.AllEntries()
-		assert.Equal(t, 1, len(entries))
-		assert.Equal(t, logrus.InfoLevel, entries[0].Level)
-		assert.Contains(t, entries[0].Message, "method=POST")
-		assert.Contains(t, entries[0].Message, "status=404")
-		assert.Contains(t, entries[0].Message, "Internal API error")
-		assert.Contains(t, entries[0].Message, "correlation_id=")
+		require.Equal(t, 1, len(entries))
+		require.Equal(t, logrus.InfoLevel, entries[0].Level)
+		require.Contains(t, entries[0].Message, "method=POST")
+		require.Contains(t, entries[0].Message, "status=404")
+		require.Contains(t, entries[0].Message, "Internal API error")
+		require.Contains(t, entries[0].Message, "correlation_id=")
 	})
 }
 
 func testErrorMessage(t *testing.T, client *GitlabNetClient) {
 	t.Run("Error with message for GET", func(t *testing.T) {
 		response, err := client.Get(context.Background(), "/error")
-		assert.EqualError(t, err, "Don't do that")
-		assert.Nil(t, response)
+		require.EqualError(t, err, "Don't do that")
+		require.Nil(t, response)
 	})
 
 	t.Run("Error with message for POST", func(t *testing.T) {
 		response, err := client.Post(context.Background(), "/error", map[string]string{})
-		assert.EqualError(t, err, "Don't do that")
-		assert.Nil(t, response)
+		require.EqualError(t, err, "Don't do that")
+		require.Nil(t, response)
 	})
 }
 
@@ -179,34 +178,34 @@ func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 		hook := testhelper.SetupLogger()
 
 		response, err := client.Get(context.Background(), "/broken")
-		assert.EqualError(t, err, "Internal API unreachable")
-		assert.Nil(t, response)
+		require.EqualError(t, err, "Internal API unreachable")
+		require.Nil(t, response)
 
 		require.True(t, testhelper.WaitForLogEvent(hook))
 		entries := hook.AllEntries()
-		assert.Equal(t, 1, len(entries))
-		assert.Equal(t, logrus.InfoLevel, entries[0].Level)
-		assert.Contains(t, entries[0].Message, "method=GET")
-		assert.NotContains(t, entries[0].Message, "status=")
-		assert.Contains(t, entries[0].Message, "Internal API unreachable")
-		assert.Contains(t, entries[0].Message, "correlation_id=")
+		require.Equal(t, 1, len(entries))
+		require.Equal(t, logrus.InfoLevel, entries[0].Level)
+		require.Contains(t, entries[0].Message, "method=GET")
+		require.NotContains(t, entries[0].Message, "status=")
+		require.Contains(t, entries[0].Message, "Internal API unreachable")
+		require.Contains(t, entries[0].Message, "correlation_id=")
 	})
 
 	t.Run("Broken request for POST", func(t *testing.T) {
 		hook := testhelper.SetupLogger()
 
 		response, err := client.Post(context.Background(), "/broken", map[string]string{})
-		assert.EqualError(t, err, "Internal API unreachable")
-		assert.Nil(t, response)
+		require.EqualError(t, err, "Internal API unreachable")
+		require.Nil(t, response)
 
 		require.True(t, testhelper.WaitForLogEvent(hook))
 		entries := hook.AllEntries()
-		assert.Equal(t, 1, len(entries))
-		assert.Equal(t, logrus.InfoLevel, entries[0].Level)
-		assert.Contains(t, entries[0].Message, "method=POST")
-		assert.NotContains(t, entries[0].Message, "status=")
-		assert.Contains(t, entries[0].Message, "Internal API unreachable")
-		assert.Contains(t, entries[0].Message, "correlation_id=")
+		require.Equal(t, 1, len(entries))
+		require.Equal(t, logrus.InfoLevel, entries[0].Level)
+		require.Contains(t, entries[0].Message, "method=POST")
+		require.NotContains(t, entries[0].Message, "status=")
+		require.Contains(t, entries[0].Message, "Internal API unreachable")
+		require.Contains(t, entries[0].Message, "correlation_id=")
 	})
 }
 
@@ -223,7 +222,7 @@ func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 
 		header, err := base64.StdEncoding.DecodeString(string(responseBody))
 		require.NoError(t, err)
-		assert.Equal(t, "sssh, it's a secret", string(header))
+		require.Equal(t, "sssh, it's a secret", string(header))
 	})
 
 	t.Run("Authentication headers for POST", func(t *testing.T) {
@@ -238,7 +237,7 @@ func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 
 		header, err := base64.StdEncoding.DecodeString(string(responseBody))
 		require.NoError(t, err)
-		assert.Equal(t, "sssh, it's a secret", string(header))
+		require.Equal(t, "sssh, it's a secret", string(header))
 	})
 }
 
