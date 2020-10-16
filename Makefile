@@ -1,6 +1,9 @@
 .PHONY: validate verify verify_ruby verify_golang test test_ruby test_golang coverage coverage_golang setup _install build compile check clean
 
 GO_SOURCES := $(shell find . -name '*.go')
+VERSION_STRING := $(shell git describe --match v* 2>/dev/null || cat VERSION 2>/dev/null || echo unknown)
+BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
+GOBUILD_FLAGS := -ldflags "-X main.Version=$(VERSION_STRING) -X main.BuildTime=$(BUILD_TIME)"
 
 validate: verify test
 
@@ -37,7 +40,7 @@ _install:
 build: bin/gitlab-shell
 compile: bin/gitlab-shell
 bin/gitlab-shell: $(GO_SOURCES)
-	GOBIN="$(CURDIR)/bin" go install ./cmd/...
+	GOBIN="$(CURDIR)/bin" go install $(GOBUILD_FLAGS) ./cmd/...
 
 check:
 	bin/check
