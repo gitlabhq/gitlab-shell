@@ -1,3 +1,6 @@
+v13.10.0
+- Add support for -version argument !421
+
 v13.9.0
 
 - Drop "generated random correlation ID" log message !417
