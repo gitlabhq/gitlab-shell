@@ -1,7 +1,7 @@
 .PHONY: validate verify verify_ruby verify_golang test test_ruby test_golang coverage coverage_golang setup _install build compile check clean
 
 GO_SOURCES := $(shell find . -name '*.go')
-VERSION_STRING := $(shell git describe --match v* 2>/dev/null || cat VERSION 2>/dev/null || echo unknown)
+VERSION_STRING := $(shell git describe --match v* 2>/dev/null || awk '$0="v"$0' VERSION 2>/dev/null || echo unknown)
 BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
 GOBUILD_FLAGS := -ldflags "-X main.Version=$(VERSION_STRING) -X main.BuildTime=$(BUILD_TIME)"
 
