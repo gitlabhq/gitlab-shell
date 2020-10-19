@@ -14,11 +14,9 @@ import (
 
 func TestExecute(t *testing.T) {
 	defaultConfig := &config.Config{RootDir: "/tmp"}
-	configWithSslCertDir := &config.Config{RootDir: "/tmp", SslCertDir: "/tmp/certs"}
 
 	testCases := []struct {
 		desc           string
-		config         *config.Config
 		arguments      *commandargs.AuthorizedPrincipals
 		expectedOutput string
 	}{
@@ -26,12 +24,6 @@ func TestExecute(t *testing.T) {
 			desc:           "With single principal",
 			arguments:      &commandargs.AuthorizedPrincipals{KeyId: "key", Principals: []string{"principal"}},
 			expectedOutput: "command=\"/tmp/bin/gitlab-shell username-key\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty principal\n",
-		},
-		{
-			desc:           "With SSL cert dir",
-			config:         configWithSslCertDir,
-			arguments:      &commandargs.AuthorizedPrincipals{KeyId: "key", Principals: []string{"principal"}},
-			expectedOutput: "command=\"SSL_CERT_DIR=/tmp/certs /tmp/bin/gitlab-shell username-key\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty principal\n",
 		},
 		{
 			desc:           "With multiple principals",
@@ -44,13 +36,8 @@ func TestExecute(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			buffer := &bytes.Buffer{}
 
-			config := defaultConfig
-			if tc.config != nil {
-				config = tc.config
-			}
-
 			cmd := &Command{
-				Config:     config,
+				Config:     defaultConfig,
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}

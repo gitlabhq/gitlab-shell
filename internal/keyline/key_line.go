@@ -37,22 +37,9 @@ func NewPrincipalKeyLine(keyId, principal string, config *config.Config) (*KeyLi
 }
 
 func (k *KeyLine) ToString() string {
-	sslCertDirEnvVar := k.sslCertDirEnvVar()
 	command := fmt.Sprintf("%s %s-%s", path.Join(k.Config.RootDir, executable.BinDir, executable.GitlabShell), k.Prefix, k.Id)
 
-	if sslCertDirEnvVar != "" {
-		sslCertDirEnvVar = fmt.Sprintf(`%s `, sslCertDirEnvVar)
-	}
-
-	return fmt.Sprintf(`command="%s%s",%s %s`, sslCertDirEnvVar, command, SshOptions, k.Value)
-}
-
-func (k *KeyLine) sslCertDirEnvVar() string {
-	if k.Config.SslCertDir != "" {
-		return fmt.Sprintf(`SSL_CERT_DIR=%s`, k.Config.SslCertDir)
-	}
-
-	return ""
+	return fmt.Sprintf(`command="%s",%s %s`, command, SshOptions, k.Value)
 }
 
 func newKeyLine(id, value, prefix string, config *config.Config) (*KeyLine, error) {

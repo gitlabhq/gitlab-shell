@@ -70,37 +70,13 @@ func TestFailingNewPrincipalKeyLine(t *testing.T) {
 }
 
 func TestToString(t *testing.T) {
-	testCases := []struct {
-		desc           string
-		keyLine        *KeyLine
-		expectedOutput string
-	}{
-		{
-			desc: "Without SSL cert dir",
-			keyLine: &KeyLine{
-				Id:     "1",
-				Value:  "public-key",
-				Prefix: "key",
-				Config: &config.Config{RootDir: "/tmp"},
-			},
-			expectedOutput: `command="/tmp/bin/gitlab-shell key-1",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty public-key`,
-		},
-		{
-			desc: "With SSL cert dir",
-			keyLine: &KeyLine{
-				Id:     "1",
-				Value:  "public-key",
-				Prefix: "key",
-				Config: &config.Config{RootDir: "/tmp", SslCertDir: "/tmp/certs"},
-			},
-			expectedOutput: `command="SSL_CERT_DIR=/tmp/certs /tmp/bin/gitlab-shell key-1",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty public-key`,
-		},
+	keyLine := &KeyLine{
+		Id:     "1",
+		Value:  "public-key",
+		Prefix: "key",
+		Config: &config.Config{RootDir: "/tmp"},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.desc, func(t *testing.T) {
-			result := tc.keyLine.ToString()
-			require.Equal(t, tc.expectedOutput, result)
-		})
-	}
+	result := keyLine.ToString()
+	require.Equal(t, `command="/tmp/bin/gitlab-shell key-1",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty public-key`, result)
 }

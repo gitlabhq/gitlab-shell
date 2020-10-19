@@ -30,7 +30,8 @@ var (
 	checkExec                = &executable.Executable{Name: executable.Healthcheck}
 	gitlabShellExec          = &executable.Executable{Name: executable.GitlabShell}
 
-	basicConfig = &config.Config{GitlabUrl: "http+unix://gitlab.socket"}
+	basicConfig    = &config.Config{GitlabUrl: "http+unix://gitlab.socket"}
+	advancedConfig = &config.Config{GitlabUrl: "http+unix://gitlab.socket", SslCertDir: "/tmp/certs"}
 )
 
 func buildEnv(command string) map[string]string {
@@ -42,70 +43,100 @@ func buildEnv(command string) map[string]string {
 
 func TestNew(t *testing.T) {
 	testCases := []struct {
-		desc         string
-		executable   *executable.Executable
-		environment  map[string]string
-		arguments    []string
-		expectedType interface{}
+		desc               string
+		executable         *executable.Executable
+		environment        map[string]string
+		arguments          []string
+		config             *config.Config
+		expectedType       interface{}
+		expectedSslCertDir string
 	}{
 		{
-			desc:         "it returns a Discover command",
-			executable:   gitlabShellExec,
-			environment:  buildEnv(""),
-			expectedType: &discover.Command{},
+			desc:               "it returns a Discover command",
+			executable:         gitlabShellExec,
+			environment:        buildEnv(""),
+			config:             basicConfig,
+			expectedType:       &discover.Command{},
+			expectedSslCertDir: "",
 		},
 		{
-			desc:         "it returns a TwoFactorRecover command",
-			executable:   gitlabShellExec,
-			environment:  buildEnv("2fa_recovery_codes"),
-			expectedType: &twofactorrecover.Command{},
+			desc:               "it returns a Discover command with SSL_CERT_DIR env var set",
+			executable:         gitlabShellExec,
+			environment:        buildEnv(""),
+			config:             advancedConfig,
+			expectedType:       &discover.Command{},
+			expectedSslCertDir: "/tmp/certs",
 		},
 		{
-			desc:         "it returns an LfsAuthenticate command",
-			executable:   gitlabShellExec,
-			environment:  buildEnv("git-lfs-authenticate"),
-			expectedType: &lfsauthenticate.Command{},
+			desc:               "it returns a TwoFactorRecover command",
+			executable:         gitlabShellExec,
+			environment:        buildEnv("2fa_recovery_codes"),
+			config:             basicConfig,
+			expectedType:       &twofactorrecover.Command{},
+			expectedSslCertDir: "",
 		},
 		{
-			desc:         "it returns a ReceivePack command",
-			executable:   gitlabShellExec,
-			environment:  buildEnv("git-receive-pack"),
-			expectedType: &receivepack.Command{},
+			desc:               "it returns an LfsAuthenticate command",
+			executable:         gitlabShellExec,
+			environment:        buildEnv("git-lfs-authenticate"),
+			config:             basicConfig,
+			expectedType:       &lfsauthenticate.Command{},
+			expectedSslCertDir: "",
 		},
 		{
-			desc:         "it returns an UploadPack command",
-			executable:   gitlabShellExec,
-			environment:  buildEnv("git-upload-pack"),
-			expectedType: &uploadpack.Command{},
+			desc:               "it returns a ReceivePack command",
+			executable:         gitlabShellExec,
+			environment:        buildEnv("git-receive-pack"),
+			config:             basicConfig,
+			expectedType:       &receivepack.Command{},
+			expectedSslCertDir: "",
 		},
 		{
-			desc:         "it returns an UploadArchive command",
-			executable:   gitlabShellExec,
-			environment:  buildEnv("git-upload-archive"),
-			expectedType: &uploadarchive.Command{},
+			desc:               "it returns an UploadPack command",
+			executable:         gitlabShellExec,
+			environment:        buildEnv("git-upload-pack"),
+			config:             basicConfig,
+			expectedType:       &uploadpack.Command{},
+			expectedSslCertDir: "",
 		},
 		{
-			desc:         "it returns a Healthcheck command",
-			executable:   checkExec,
-			expectedType: &healthcheck.Command{},
+			desc:               "it returns an UploadArchive command",
+			executable:         gitlabShellExec,
+			environment:        buildEnv("git-upload-archive"),
+			config:             basicConfig,
+			expectedType:       &uploadarchive.Command{},
+			expectedSslCertDir: "",
 		},
 		{
-			desc:         "it returns a AuthorizedKeys command",
-			executable:   authorizedKeysExec,
-			arguments:    []string{"git", "git", "key"},
-			expectedType: &authorizedkeys.Command{},
+			desc:               "it returns a Healthcheck command",
+			executable:         checkExec,
+			config:             basicConfig,
+			expectedType:       &healthcheck.Command{},
+			expectedSslCertDir: "",
 		},
 		{
-			desc:         "it returns a AuthorizedPrincipals command",
-			executable:   authorizedPrincipalsExec,
-			arguments:    []string{"key", "principal"},
-			expectedType: &authorizedprincipals.Command{},
+			desc:               "it returns a AuthorizedKeys command",
+			executable:         authorizedKeysExec,
+			arguments:          []string{"git", "git", "key"},
+			config:             basicConfig,
+			expectedType:       &authorizedkeys.Command{},
+			expectedSslCertDir: "",
 		},
 		{
-			desc:         "it returns a PersonalAccessToken command",
-			executable:   gitlabShellExec,
-			environment:  buildEnv("personal_access_token"),
-			expectedType: &personalaccesstoken.Command{},
+			desc:               "it returns a AuthorizedPrincipals command",
+			executable:         authorizedPrincipalsExec,
+			arguments:          []string{"key", "principal"},
+			config:             basicConfig,
+			expectedType:       &authorizedprincipals.Command{},
+			expectedSslCertDir: "",
+		},
+		{
+			desc:               "it returns a PersonalAccessToken command",
+			executable:         gitlabShellExec,
+			environment:        buildEnv("personal_access_token"),
+			config:             basicConfig,
+			expectedType:       &personalaccesstoken.Command{},
+			expectedSslCertDir: "",
 		},
 	}
 
@@ -114,10 +145,12 @@ func TestNew(t *testing.T) {
 			restoreEnv := testhelper.TempEnv(tc.environment)
 			defer restoreEnv()
 
-			command, err := New(tc.executable, tc.arguments, basicConfig, nil)
+			os.Unsetenv("SSL_CERT_DIR")
+			command, err := New(tc.executable, tc.arguments, tc.config, nil)
 
 			require.NoError(t, err)
 			require.IsType(t, tc.expectedType, command)
+			require.Equal(t, tc.expectedSslCertDir, os.Getenv("SSL_CERT_DIR"))
 		})
 	}
 }
