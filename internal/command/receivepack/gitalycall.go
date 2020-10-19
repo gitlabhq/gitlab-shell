@@ -24,7 +24,7 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 
 	request := &pb.SSHReceivePackRequest{
 		Repository:       &response.Gitaly.Repo,
-		GlId:             response.UserId,
+		GlId:             response.Who,
 		GlRepository:     response.Repo,
 		GlUsername:       response.Username,
 		GitProtocol:      os.Getenv(commandargs.GitProtocolEnv),

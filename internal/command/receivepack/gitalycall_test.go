@@ -29,33 +29,57 @@ func TestReceivePack(t *testing.T) {
 	require.NoError(t, err)
 	defer envCleanup()
 
-	output := &bytes.Buffer{}
-	input := &bytes.Buffer{}
-
-	userId := "1"
-	repo := "group/repo"
-
-	cmd := &Command{
-		Config:     &config.Config{GitlabUrl: url},
-		Args:       &commandargs.Shell{GitlabKeyId: userId, CommandType: commandargs.ReceivePack, SshArgs: []string{"git-receive-pack", repo}},
-		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
+	testCases := []struct {
+		username string
+		keyId    string
+	}{
+		{
+			username: "john.doe",
+		},
+		{
+			keyId: "123",
+		},
 	}
 
-	hook := testhelper.SetupLogger()
+	for _, tc := range testCases {
+		output := &bytes.Buffer{}
+		input := &bytes.Buffer{}
+		repo := "group/repo"
 
-	err = cmd.Execute(context.Background())
-	require.NoError(t, err)
+		args := &commandargs.Shell{CommandType: commandargs.ReceivePack, SshArgs: []string{"git-receive-pack", repo}}
 
-	require.Equal(t, "ReceivePack: "+userId+" "+repo, output.String())
+		if tc.username != "" {
+			args.GitlabUsername = tc.username
+		} else {
+			args.GitlabKeyId = tc.keyId
+		}
 
-	require.True(t, testhelper.WaitForLogEvent(hook))
-	entries := hook.AllEntries()
-	require.Equal(t, 2, len(entries))
-	require.Equal(t, logrus.InfoLevel, entries[1].Level)
-	require.Contains(t, entries[1].Message, "executing git command")
-	require.Contains(t, entries[1].Message, "command=git-receive-pack")
-	require.Contains(t, entries[1].Message, "remote_ip=127.0.0.1")
-	require.Contains(t, entries[1].Message, "gl_key_type=key")
-	require.Contains(t, entries[1].Message, "gl_key_id=123")
-	require.Contains(t, entries[1].Message, "correlation_id=")
+		cmd := &Command{
+			Config:     &config.Config{GitlabUrl: url},
+			Args:       args,
+			ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
+		}
+
+		hook := testhelper.SetupLogger()
+
+		err = cmd.Execute(context.Background())
+		require.NoError(t, err)
+
+		if tc.username != "" {
+			require.Equal(t, "ReceivePack: 1 "+repo, output.String())
+		} else {
+			require.Equal(t, "ReceivePack: key-123 "+repo, output.String())
+		}
+
+		require.True(t, testhelper.WaitForLogEvent(hook))
+		entries := hook.AllEntries()
+		require.Equal(t, 2, len(entries))
+		require.Equal(t, logrus.InfoLevel, entries[1].Level)
+		require.Contains(t, entries[1].Message, "executing git command")
+		require.Contains(t, entries[1].Message, "command=git-receive-pack")
+		require.Contains(t, entries[1].Message, "remote_ip=127.0.0.1")
+		require.Contains(t, entries[1].Message, "gl_key_type=key")
+		require.Contains(t, entries[1].Message, "gl_key_id=123")
+		require.Contains(t, entries[1].Message, "correlation_id=")
+	}
 }
