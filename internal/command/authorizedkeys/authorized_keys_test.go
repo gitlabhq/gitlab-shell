@@ -47,11 +47,9 @@ func TestExecute(t *testing.T) {
 	defer cleanup()
 
 	defaultConfig := &config.Config{RootDir: "/tmp", GitlabUrl: url}
-	configWithSslCertDir := &config.Config{RootDir: "/tmp", GitlabUrl: url, SslCertDir: "/tmp/certs"}
 
 	testCases := []struct {
 		desc           string
-		config         *config.Config
 		arguments      *commandargs.AuthorizedKeys
 		expectedOutput string
 	}{
@@ -59,12 +57,6 @@ func TestExecute(t *testing.T) {
 			desc:           "With matching username and key",
 			arguments:      &commandargs.AuthorizedKeys{ExpectedUser: "user", ActualUser: "user", Key: "key"},
 			expectedOutput: "command=\"/tmp/bin/gitlab-shell key-1\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty public-key\n",
-		},
-		{
-			desc:           "With SSL cert dir",
-			config:         configWithSslCertDir,
-			arguments:      &commandargs.AuthorizedKeys{ExpectedUser: "user", ActualUser: "user", Key: "key"},
-			expectedOutput: "command=\"SSL_CERT_DIR=/tmp/certs /tmp/bin/gitlab-shell key-1\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty public-key\n",
 		},
 		{
 			desc:           "When key doesn't match any existing key",
@@ -87,13 +79,8 @@ func TestExecute(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			buffer := &bytes.Buffer{}
 
-			config := defaultConfig
-			if tc.config != nil {
-				config = tc.config
-			}
-
 			cmd := &Command{
-				Config:     config,
+				Config:     defaultConfig,
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
