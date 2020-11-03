@@ -156,6 +156,10 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 		return nil, err
 	}
 
+	if response.ContentLength >= 0 {
+		logger = logger.WithField("content_length_bytes", response.ContentLength)
+	}
+
 	logger.Info("Finished HTTP request")
 
 	return response, nil
