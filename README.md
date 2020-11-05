@@ -48,9 +48,8 @@ Run tests:
     bundle install
     make test
 
-Run gofmt and rubocop:
+Run gofmt:
 
-    bundle install
     make verify
 
 Run both test and verify (the default Makefile target):

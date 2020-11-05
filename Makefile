@@ -7,10 +7,7 @@ GOBUILD_FLAGS := -ldflags "-X main.Version=$(VERSION_STRING) -X main.BuildTime=$
 
 validate: verify test
 
-verify: verify_ruby verify_golang
-
-verify_ruby:
-	bundle exec rubocop
+verify: verify_golang
 
 verify_golang:
 	gofmt -s -l $(GO_SOURCES)
