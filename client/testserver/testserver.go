@@ -2,6 +2,7 @@ package testserver
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"io/ioutil"
 	"log"
 	"net"
@@ -52,7 +53,7 @@ func StartHttpServer(t *testing.T, handlers []TestRequestHandler) (string, func(
 	return server.URL, server.Close
 }
 
-func StartHttpsServer(t *testing.T, handlers []TestRequestHandler) (string, func()) {
+func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath string) (string, func()) {
 	crt := path.Join(testhelper.TestRoot, "certs/valid/server.crt")
 	key := path.Join(testhelper.TestRoot, "certs/valid/server.key")
 
@@ -60,7 +61,22 @@ func StartHttpsServer(t *testing.T, handlers []TestRequestHandler) (string, func
 	cer, err := tls.LoadX509KeyPair(crt, key)
 	require.NoError(t, err)
 
-	server.TLS = &tls.Config{Certificates: []tls.Certificate{cer}}
+	server.TLS = &tls.Config{
+		Certificates: []tls.Certificate{cer},
+	}
+	server.TLS.BuildNameToCertificate()
+
+	if clientCAPath != "" {
+		caCert, err := ioutil.ReadFile(clientCAPath)
+		require.NoError(t, err)
+
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+
+		server.TLS.ClientCAs = caCertPool
+		server.TLS.ClientAuth = tls.RequireAndVerifyClientCert
+	}
+
 	server.StartTLS()
 
 	return server.URL, server.Close
