@@ -69,6 +69,15 @@ func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repo
 		ctx = correlation.ContextWithCorrelation(ctx, response.CorrelationID)
 	}
 
+	md, ok := metadata.FromOutgoingContext(ctx)
+	if !ok {
+		md = metadata.New(nil)
+	}
+	md.Append("user_id", response.UserId)
+	md.Append("username", response.Username)
+	md.Append("remote_ip", sshenv.LocalAddr())
+	ctx = metadata.NewOutgoingContext(ctx, md)
+
 	return ctx, cancel
 }
 
