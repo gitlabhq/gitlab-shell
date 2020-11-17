@@ -2,6 +2,7 @@ include:
   - template: Code-Quality.gitlab-ci.yml
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
 
 variables:
   DOCKER_VERSION: "19.03.0"
@@ -87,4 +88,8 @@ gemnasium-dependency_scanning:
   rules: *workflow_rules
 
 bundler-audit-dependency_scanning:
+  rules: *workflow_rules
+
+# Secret Detection
+secret_detection:
   rules: *workflow_rules
