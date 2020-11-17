@@ -49,7 +49,9 @@ func TestClients(t *testing.T) {
 		{
 			desc:   "Https client",
 			caFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt"),
-			server: testserver.StartHttpsServer,
+			server: func(t *testing.T, handlers []testserver.TestRequestHandler) (string, func()) {
+				return testserver.StartHttpsServer(t, handlers, "")
+			},
 		},
 	}
 

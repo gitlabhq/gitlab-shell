@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/sirupsen/logrus"
 	"gitlab.com/gitlab-org/labkit/correlation"
 )
 
@@ -27,18 +29,59 @@ type HttpClient struct {
 	Host string
 }
 
+type httpClientCfg struct {
+	keyPath, certPath string
+	caFile, caPath    string
+}
+
+func (hcc httpClientCfg) HaveCertAndKey() bool { return hcc.keyPath != "" && hcc.certPath != "" }
+
+// HTTPClientOpt provides options for configuring an HttpClient
+type HTTPClientOpt func(*httpClientCfg)
+
+// WithClientCert will configure the HttpClient to provide client certificates
+// when connecting to a server.
+func WithClientCert(certPath, keyPath string) HTTPClientOpt {
+	return func(hcc *httpClientCfg) {
+		hcc.keyPath = keyPath
+		hcc.certPath = certPath
+	}
+}
+
+// Deprecated: use NewHTTPClientWithOpts - https://gitlab.com/gitlab-org/gitlab-shell/-/issues/484
 func NewHTTPClient(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, selfSignedCert bool, readTimeoutSeconds uint64) *HttpClient {
+	c, err := NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath, selfSignedCert, readTimeoutSeconds, nil)
+	if err != nil {
+		log.WithError(err).Error("new http client with opts")
+	}
+	return c
+}
+
+// NewHTTPClientWithOpts builds an HTTP client using the provided options
+func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, selfSignedCert bool, readTimeoutSeconds uint64, opts []HTTPClientOpt) (*HttpClient, error) {
+	hcc := &httpClientCfg{
+		caFile: caFile,
+		caPath: caPath,
+	}
+
+	for _, opt := range opts {
+		opt(hcc)
+	}
 
 	var transport *http.Transport
 	var host string
+	var err error
 	if strings.HasPrefix(gitlabURL, unixSocketProtocol) {
 		transport, host = buildSocketTransport(gitlabURL, gitlabRelativeURLRoot)
 	} else if strings.HasPrefix(gitlabURL, httpProtocol) {
 		transport, host = buildHttpTransport(gitlabURL)
 	} else if strings.HasPrefix(gitlabURL, httpsProtocol) {
-		transport, host = buildHttpsTransport(caFile, caPath, selfSignedCert, gitlabURL)
+		transport, host, err = buildHttpsTransport(*hcc, selfSignedCert, gitlabURL)
+		if err != nil {
+			return nil, err
+		}
 	} else {
-		return nil
+		return nil, errors.New("unknown GitLab URL prefix")
 	}
 
 	c := &http.Client{
@@ -48,7 +91,7 @@ func NewHTTPClient(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, self
 
 	client := &HttpClient{Client: c, Host: host}
 
-	return client
+	return client, nil
 }
 
 func buildSocketTransport(gitlabURL, gitlabRelativeURLRoot string) (*http.Transport, string) {
@@ -70,36 +113,46 @@ func buildSocketTransport(gitlabURL, gitlabRelativeURLRoot string) (*http.Transp
 	return transport, host
 }
 
-func buildHttpsTransport(caFile, caPath string, selfSignedCert bool, gitlabURL string) (*http.Transport, string) {
+func buildHttpsTransport(hcc httpClientCfg, selfSignedCert bool, gitlabURL string) (*http.Transport, string, error) {
 	certPool, err := x509.SystemCertPool()
 
 	if err != nil {
 		certPool = x509.NewCertPool()
 	}
 
-	if caFile != "" {
-		addCertToPool(certPool, caFile)
+	if hcc.caFile != "" {
+		addCertToPool(certPool, hcc.caFile)
 	}
 
-	if caPath != "" {
-		fis, _ := ioutil.ReadDir(caPath)
+	if hcc.caPath != "" {
+		fis, _ := ioutil.ReadDir(hcc.caPath)
 		for _, fi := range fis {
 			if fi.IsDir() {
 				continue
 			}
 
-			addCertToPool(certPool, filepath.Join(caPath, fi.Name()))
+			addCertToPool(certPool, filepath.Join(hcc.caPath, fi.Name()))
 		}
+	}
+	tlsConfig := &tls.Config{
+		RootCAs:            certPool,
+		InsecureSkipVerify: selfSignedCert,
+	}
+
+	if hcc.HaveCertAndKey() {
+		cert, err := tls.LoadX509KeyPair(hcc.certPath, hcc.keyPath)
+		if err != nil {
+			return nil, "", err
+		}
+		tlsConfig.Certificates = []tls.Certificate{cert}
+		tlsConfig.BuildNameToCertificate()
 	}
 
 	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{
-			RootCAs:            certPool,
-			InsecureSkipVerify: selfSignedCert,
-		},
+		TLSClientConfig: tlsConfig,
 	}
 
-	return transport, gitlabURL
+	return transport, gitlabURL, err
 }
 
 func addCertToPool(certPool *x509.CertPool, fileName string) {
