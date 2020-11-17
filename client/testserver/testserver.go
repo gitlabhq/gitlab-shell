@@ -63,6 +63,7 @@ func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath 
 
 	server.TLS = &tls.Config{
 		Certificates: []tls.Certificate{cer},
+		MinVersion: tls.VersionTLS12,
 	}
 	server.TLS.BuildNameToCertificate()
 
