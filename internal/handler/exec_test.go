@@ -112,13 +112,17 @@ func TestPrepareContext(t *testing.T) {
 				GlProjectPath:                 "group/private",
 			},
 			response: &accessverifier.Response{
+				KeyId:    1,
+				KeyType:  "key",
 				UserId:   "6",
 				Username: "jane.doe",
 			},
 			want: map[string]string{
-				"remote_ip": "10.0.0.1",
+				"key_id":    "1",
+				"key_type":  "key",
 				"user_id":   "6",
 				"username":  "jane.doe",
+				"remote_ip": "10.0.0.1",
 			},
 		},
 	}
