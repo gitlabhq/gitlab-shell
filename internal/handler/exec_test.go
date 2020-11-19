@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"errors"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,6 +12,7 @@ import (
 	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 )
 
 func makeHandler(t *testing.T, err error) func(context.Context, *grpc.ClientConn) (int32, error) {
@@ -124,11 +124,11 @@ func TestPrepareContext(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
+			cleanup, err := testhelper.Setenv("SSH_CONNECTION", tt.sshConnectionEnv)
+			require.NoError(t, err)
+			defer cleanup()
 
-			orig := os.Getenv("SSH_CONNECTION")
-			defer os.Setenv("SSH_CONNECTION", orig)
-			os.Setenv("SSH_CONNECTION", tt.sshConnectionEnv)
+			ctx := context.Background()
 
 			ctx, cancel := tt.gc.PrepareContext(ctx, tt.repo, tt.response, "protocol")
 			defer cancel()
