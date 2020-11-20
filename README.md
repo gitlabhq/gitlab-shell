@@ -18,10 +18,17 @@ An overview of the four cases described above:
 1. git pull over SSH -> gitlab-shell -> API call to gitlab-rails (Authorization) -> accept or decline -> establish Gitaly session
 1. git push over SSH -> gitlab-shell (git command is not executed yet) -> establish Gitaly session -> (in Gitaly) gitlab-shell pre-receive hook -> API call to gitlab-rails (authorization) -> accept or decline push
 
+## Default branch
+
+GitLab Shell is transitioning its default branch from `master` to `main`. For now,
+both branches are valid. All changes go to the `main` branch and are synced manually
+to `master` by the maintainers. We plan to remove the `master` branch as soon as
+possible. The current status is being tracked in [issue 489](https://gitlab.com/gitlab-org/gitlab-shell/-/issues/489).
+
 ## Code status
 
-[![pipeline status](https://gitlab.com/gitlab-org/gitlab-shell/badges/master/pipeline.svg)](https://gitlab.com/gitlab-org/gitlab-shell/-/pipelines?ref=master)
-[![coverage report](https://gitlab.com/gitlab-org/gitlab-shell/badges/master/coverage.svg)](https://gitlab.com/gitlab-org/gitlab-shell/-/pipelines?ref=master)
+[![pipeline status](https://gitlab.com/gitlab-org/gitlab-shell/badges/main/pipeline.svg)](https://gitlab.com/gitlab-org/gitlab-shell/-/pipelines?ref=main)
+[![coverage report](https://gitlab.com/gitlab-org/gitlab-shell/badges/main/coverage.svg)](https://gitlab.com/gitlab-org/gitlab-shell/-/pipelines?ref=main)
 [![Code Climate](https://codeclimate.com/github/gitlabhq/gitlab-shell.svg)](https://codeclimate.com/github/gitlabhq/gitlab-shell)
 
 ## Requirements
@@ -65,7 +72,7 @@ Starting with GitLab 8.12, GitLab supports Git LFS authentication through SSH.
 
 GitLab Shell is versioned by git tags, and the version used by the Rails
 application is stored in
-[`GITLAB_SHELL_VERSION`](https://gitlab.com/gitlab-org/gitlab-ce/blob/master/GITLAB_SHELL_VERSION).
+[`GITLAB_SHELL_VERSION`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/GITLAB_SHELL_VERSION).
 
 For each version, there is a raw version and a tag version:
 
