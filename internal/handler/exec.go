@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -68,6 +69,17 @@ func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repo
 	if response.CorrelationID != "" {
 		ctx = correlation.ContextWithCorrelation(ctx, response.CorrelationID)
 	}
+
+	md, ok := metadata.FromOutgoingContext(ctx)
+	if !ok {
+		md = metadata.New(nil)
+	}
+	md.Append("key_id", strconv.Itoa(response.KeyId))
+	md.Append("key_type", response.KeyType)
+	md.Append("user_id", response.UserId)
+	md.Append("username", response.Username)
+	md.Append("remote_ip", sshenv.LocalAddr())
+	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	return ctx, cancel
 }
