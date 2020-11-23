@@ -69,7 +69,7 @@ go:1.15:
 
 race:
   extends: .test
-  image: golang:1.14
+  image: golang:1.15
   script:
     - make test_golang_race
 
