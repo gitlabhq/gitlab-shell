@@ -60,6 +60,13 @@ go:1.14:
     - make coverage
   coverage: '/\d+.\d+%/'
 
+go:1.15:
+  extends: .test
+  image: golang:1.15
+  after_script:
+    - make coverage
+  coverage: '/\d+.\d+%/'
+
 race:
   extends: .test
   image: golang:1.14
