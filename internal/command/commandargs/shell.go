@@ -11,6 +11,7 @@ import (
 const (
 	Discover            CommandType = "discover"
 	TwoFactorRecover    CommandType = "2fa_recovery_codes"
+	TwoFactorVerify     CommandType = "2fa_verify"
 	LfsAuthenticate     CommandType = "git-lfs-authenticate"
 	ReceivePack         CommandType = "git-receive-pack"
 	UploadPack          CommandType = "git-upload-pack"

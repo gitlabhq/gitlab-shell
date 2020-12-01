@@ -16,6 +16,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/receivepack"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/twofactorrecover"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/twofactorverify"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/uploadarchive"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -73,6 +74,14 @@ func TestNew(t *testing.T) {
 			environment:        buildEnv("2fa_recovery_codes"),
 			config:             basicConfig,
 			expectedType:       &twofactorrecover.Command{},
+			expectedSslCertDir: "",
+		},
+		{
+			desc:               "it returns a TwoFactorVerify command",
+			executable:         gitlabShellExec,
+			environment:        buildEnv("2fa_verify"),
+			config:             basicConfig,
+			expectedType:       &twofactorverify.Command{},
 			expectedSslCertDir: "",
 		},
 		{
