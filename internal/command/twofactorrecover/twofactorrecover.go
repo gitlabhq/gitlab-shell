@@ -3,6 +3,7 @@ package twofactorrecover
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
@@ -10,6 +11,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/twofactorrecover"
 )
+
+const readerLimit = 1024
 
 type Command struct {
 	Config     *config.Config
@@ -34,7 +37,7 @@ func (c *Command) canContinue() bool {
 	fmt.Fprintln(c.ReadWriter.Out, question)
 
 	var answer string
-	fmt.Fscanln(c.ReadWriter.In, &answer)
+	fmt.Fscanln(io.LimitReader(c.ReadWriter.In, readerLimit), &answer)
 
 	return answer == "yes"
 }
