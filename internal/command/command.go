@@ -15,6 +15,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/receivepack"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/twofactorrecover"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/twofactorverify"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/uploadarchive"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -87,6 +88,8 @@ func buildShellCommand(args *commandargs.Shell, config *config.Config, readWrite
 		return &discover.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.TwoFactorRecover:
 		return &twofactorrecover.Command{Config: config, Args: args, ReadWriter: readWriter}
+	case commandargs.TwoFactorVerify:
+		return &twofactorverify.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.LfsAuthenticate:
 		return &lfsauthenticate.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.ReceivePack:
