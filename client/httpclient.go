@@ -137,6 +137,7 @@ func buildHttpsTransport(hcc httpClientCfg, selfSignedCert bool, gitlabURL strin
 	tlsConfig := &tls.Config{
 		RootCAs:            certPool,
 		InsecureSkipVerify: selfSignedCert,
+		MinVersion:         tls.VersionTLS12,
 	}
 
 	if hcc.HaveCertAndKey() {
