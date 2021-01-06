@@ -18,13 +18,6 @@ An overview of the four cases described above:
 1. git pull over SSH -> gitlab-shell -> API call to gitlab-rails (Authorization) -> accept or decline -> establish Gitaly session
 1. git push over SSH -> gitlab-shell (git command is not executed yet) -> establish Gitaly session -> (in Gitaly) gitlab-shell pre-receive hook -> API call to gitlab-rails (authorization) -> accept or decline push
 
-## Default branch
-
-GitLab Shell is transitioning its default branch from `master` to `main`. For now,
-both branches are valid. All changes go to the `main` branch and are synced manually
-to `master` by the maintainers. We plan to remove the `master` branch as soon as
-possible. The current status is being tracked in [issue 489](https://gitlab.com/gitlab-org/gitlab-shell/-/issues/489).
-
 ## Code status
 
 [![pipeline status](https://gitlab.com/gitlab-org/gitlab-shell/badges/main/pipeline.svg)](https://gitlab.com/gitlab-org/gitlab-shell/-/pipelines?ref=main)
