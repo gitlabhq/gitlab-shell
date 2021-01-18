@@ -2,6 +2,7 @@ package uploadpack
 
 import (
 	"context"
+	"os"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
@@ -38,7 +39,14 @@ func (c *Command) Execute(ctx context.Context) error {
 		return customAction.Execute(ctx, response)
 	}
 
-	return c.performGitalyCall(response)
+	var gitProtocolVersion string
+	if c.Args.RemoteAddr != nil {
+		gitProtocolVersion = c.Args.GitProtocolVersion
+	} else {
+		gitProtocolVersion = os.Getenv(commandargs.GitProtocolEnv)
+	}
+
+	return c.performGitalyCall(response, gitProtocolVersion)
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {

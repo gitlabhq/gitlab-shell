@@ -25,7 +25,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	config, err := config.NewFromDir(executable.RootDir)
+	config, err := config.NewFromDirExternal(executable.RootDir)
 	if err != nil {
 		fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting")
 		os.Exit(1)

@@ -61,3 +61,15 @@ audit_usernames: false
 # Distributed Tracing. GitLab-Shell has distributed tracing instrumentation.
 # For more details, visit https://docs.gitlab.com/ee/development/distributed_tracing.html
 # gitlab_tracing: opentracing://driver
+
+# This section configures the built-in SSH server. Ignored when running on OpenSSH.
+sshd:
+  # Address which the SSH server listens on. Defaults to [::]:22.
+  listen: "[::]:22"
+  # Maximum number of concurrent sessions allowed on a single SSH connection. Defaults to 10.
+  concurrent_sessions_limit: 10
+  # SSH host key files. 
+  host_key_files:
+    - /run/secrets/ssh-hostkeys/ssh_host_rsa_key
+    - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key
+    - /run/secrets/ssh-hostkeys/ssh_host_ed25519_key

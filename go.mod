@@ -9,6 +9,8 @@ require (
 	github.com/stretchr/testify v1.4.0
 	gitlab.com/gitlab-org/gitaly v1.68.0
 	gitlab.com/gitlab-org/labkit v0.0.0-20200908084045-45895e129029
+	golang.org/x/crypto v0.0.0-20201216223049-8b5274cf687f
+	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	google.golang.org/grpc v1.24.0
 	gopkg.in/yaml.v2 v2.2.8
 )
