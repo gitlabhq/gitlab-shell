@@ -70,7 +70,7 @@ func ContextWithCorrelationID() (context.Context, func()) {
 func buildCommand(e *executable.Executable, args commandargs.CommandArgs, config *config.Config, readWriter *readwriter.ReadWriter) Command {
 	switch e.Name {
 	case executable.GitlabShell:
-		return buildShellCommand(args.(*commandargs.Shell), config, readWriter)
+		return BuildShellCommand(args.(*commandargs.Shell), config, readWriter)
 	case executable.AuthorizedKeysCheck:
 		return buildAuthorizedKeysCommand(args.(*commandargs.AuthorizedKeys), config, readWriter)
 	case executable.AuthorizedPrincipalsCheck:
@@ -82,7 +82,7 @@ func buildCommand(e *executable.Executable, args commandargs.CommandArgs, config
 	return nil
 }
 
-func buildShellCommand(args *commandargs.Shell, config *config.Config, readWriter *readwriter.ReadWriter) Command {
+func BuildShellCommand(args *commandargs.Shell, config *config.Config, readWriter *readwriter.ReadWriter) Command {
 	switch args.CommandType {
 	case commandargs.Discover:
 		return &discover.Command{Config: config, Args: args, ReadWriter: readWriter}

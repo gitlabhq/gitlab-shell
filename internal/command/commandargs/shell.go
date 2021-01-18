@@ -2,6 +2,7 @@ package commandargs
 
 import (
 	"errors"
+	"net"
 	"os"
 	"regexp"
 
@@ -32,6 +33,10 @@ type Shell struct {
 	GitlabKeyId    string
 	SshArgs        []string
 	CommandType    CommandType
+
+	// Only set when running standalone
+	RemoteAddr         *net.TCPAddr
+	GitProtocolVersion string
 }
 
 func (s *Shell) Parse() error {
@@ -40,7 +45,6 @@ func (s *Shell) Parse() error {
 	}
 
 	s.parseWho()
-	s.defineCommandType()
 
 	return nil
 }
@@ -67,7 +71,7 @@ func (s *Shell) isSshConnection() bool {
 }
 
 func (s *Shell) isValidSshCommand() bool {
-	err := s.parseCommand(os.Getenv("SSH_ORIGINAL_COMMAND"))
+	err := s.ParseCommand(os.Getenv("SSH_ORIGINAL_COMMAND"))
 	return err == nil
 }
 
@@ -107,7 +111,7 @@ func tryParseUsername(argument string) string {
 	return ""
 }
 
-func (s *Shell) parseCommand(commandString string) error {
+func (s *Shell) ParseCommand(commandString string) error {
 	args, err := shellwords.Parse(commandString)
 	if err != nil {
 		return err
@@ -122,6 +126,8 @@ func (s *Shell) parseCommand(commandString string) error {
 	}
 
 	s.SshArgs = args
+
+	s.defineCommandType()
 
 	return nil
 }

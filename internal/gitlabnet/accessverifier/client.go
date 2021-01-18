@@ -87,7 +87,11 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 		request.KeyId = args.GitlabKeyId
 	}
 
-	request.CheckIp = sshenv.LocalAddr()
+	if args.RemoteAddr != nil {
+		request.CheckIp = args.RemoteAddr.IP.String()
+	} else {
+		request.CheckIp = sshenv.LocalAddr()
+	}
 
 	response, err := c.client.Post(ctx, "/allowed", request)
 	if err != nil {

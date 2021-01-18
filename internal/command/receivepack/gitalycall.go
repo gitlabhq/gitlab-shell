@@ -2,7 +2,6 @@ package receivepack
 
 import (
 	"context"
-	"os"
 
 	"google.golang.org/grpc"
 
@@ -13,7 +12,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/handler"
 )
 
-func (c *Command) performGitalyCall(response *accessverifier.Response) error {
+func (c *Command) performGitalyCall(response *accessverifier.Response, gitProtocolVersion string) error {
 	gc := &handler.GitalyCommand{
 		Config:      c.Config,
 		ServiceName: string(commandargs.ReceivePack),
@@ -27,7 +26,7 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 		GlId:             response.Who,
 		GlRepository:     response.Repo,
 		GlUsername:       response.Username,
-		GitProtocol:      os.Getenv(commandargs.GitProtocolEnv),
+		GitProtocol:      gitProtocolVersion,
 		GitConfigOptions: response.GitConfigOptions,
 	}
 
