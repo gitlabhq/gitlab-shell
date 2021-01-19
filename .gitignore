@@ -13,6 +13,7 @@ tags
 custom_hooks
 hooks/*.d
 /go_build
+/bin/gitlab-sshd
 /bin/gitlab-shell
 /bin/gitlab-shell-authorized-keys-check
 /bin/gitlab-shell-authorized-principals-check
