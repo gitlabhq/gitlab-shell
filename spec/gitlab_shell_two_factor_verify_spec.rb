@@ -75,7 +75,7 @@ describe 'bin/gitlab-shell 2fa_verify' do
 
       stdin.puts('123456')
 
-      expect(stdout.flush.read).to eq("\nOTP validation successful. Git operations are allowed for the next 15 minutes.\n")
+      expect(stdout.flush.read).to eq("\nOTP validation successful. Git operations are now allowed.\n")
     end
   end
 end
