@@ -46,7 +46,7 @@ func (c *Command) verifyOTP(ctx context.Context, otp string) error {
 
 	err = client.VerifyOTP(ctx, c.Args, otp)
 	if err == nil {
-		fmt.Fprint(c.ReadWriter.Out, "\nOTP validation successful. Git operations are allowed for the next 15 minutes.\n")
+		fmt.Fprint(c.ReadWriter.Out, "\nOTP validation successful. Git operations are now allowed.\n")
 	} else {
 		fmt.Fprintf(c.ReadWriter.Out, "\nOTP validation failed.\n%v\n", err)
 	}

@@ -74,7 +74,7 @@ func TestExecute(t *testing.T) {
 			arguments: &commandargs.Shell{GitlabKeyId: "1"},
 			answer:    "123456\n",
 			expectedOutput: question +
-				"OTP validation successful. Git operations are allowed for the next 15 minutes.\n",
+				"OTP validation successful. Git operations are now allowed.\n",
 		},
 		{
 			desc:           "With bad response",
