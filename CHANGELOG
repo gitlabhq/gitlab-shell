@@ -1,3 +1,8 @@
+v13.16.0
+
+- RFC: Simple built-in SSH server !394
+- Remove the session duration information from the output of 2fa_verify command !445
+
 v13.15.0
 
 - Update httpclient.go with TLS 1.2 as minimum version !435
