@@ -3,16 +3,16 @@ module gitlab.com/gitlab-org/gitlab-shell
 go 1.13
 
 require (
-	github.com/mattn/go-shellwords v0.0.0-20190425161501-2444a32a19f4
-	github.com/otiai10/copy v1.0.1
-	github.com/sirupsen/logrus v1.6.0
-	github.com/stretchr/testify v1.4.0
+	github.com/mattn/go-shellwords v1.0.11
+	github.com/otiai10/copy v1.4.2
+	github.com/sirupsen/logrus v1.7.0
+	github.com/stretchr/testify v1.6.1
 	gitlab.com/gitlab-org/gitaly v1.68.0
-	gitlab.com/gitlab-org/labkit v0.0.0-20200908084045-45895e129029
-	golang.org/x/crypto v0.0.0-20201216223049-8b5274cf687f
-	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
-	google.golang.org/grpc v1.24.0
-	gopkg.in/yaml.v2 v2.2.8
+	gitlab.com/gitlab-org/labkit v1.3.0
+	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
+	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
+	google.golang.org/grpc v1.35.0
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 // go get tries to enforce semantic version compatibility via module paths.
