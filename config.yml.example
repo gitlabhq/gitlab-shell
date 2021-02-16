@@ -66,6 +66,8 @@ audit_usernames: false
 sshd:
   # Address which the SSH server listens on. Defaults to [::]:22.
   listen: "[::]:22"
+  # Address which the server listens on HTTP for monitoring/health checks. Defaults to localhost:9122.
+  web_listen: "localhost:9122"
   # Maximum number of concurrent sessions allowed on a single SSH connection. Defaults to 10.
   concurrent_sessions_limit: 10
   # SSH host key files. 
