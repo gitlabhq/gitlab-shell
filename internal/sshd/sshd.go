@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
@@ -18,6 +20,46 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/authorizedkeys"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/sync/semaphore"
+)
+
+const (
+	namespace     = "gitlab_shell"
+	sshdSubsystem = "sshd"
+)
+
+func secondsDurationBuckets() []float64 {
+	return []float64{
+		0.005, /* 5ms */
+		0.025, /* 25ms */
+		0.1,   /* 100ms */
+		0.5,   /* 500ms */
+		1.0,   /* 1s */
+		10.0,  /* 10s */
+		30.0,  /* 30s */
+		60.0,  /* 1m */
+		300.0, /* 10m */
+	}
+}
+
+var (
+	sshdConnectionDuration = promauto.NewHistogram(
+		prometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: sshdSubsystem,
+			Name:      "connection_duration_seconds",
+			Help:      "A histogram of latencies for connections to gitlab-shell sshd.",
+			Buckets:   secondsDurationBuckets(),
+		},
+	)
+
+	sshdHitMaxSessions = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: sshdSubsystem,
+			Name:      "concurrent_limited_sessions_total",
+			Help:      "The number of times the concurrent sessions limit was hit in gitlab-shell sshd.",
+		},
+	)
 )
 
 func Run(cfg *config.Config) error {
@@ -108,6 +150,11 @@ func exitSession(ch ssh.Channel, exitStatus uint32) {
 }
 
 func handleConn(nconn net.Conn, sshCfg *ssh.ServerConfig, cfg *config.Config) {
+	begin := time.Now()
+	defer func() {
+		sshdConnectionDuration.Observe(time.Since(begin).Seconds())
+	}()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	defer nconn.Close()
@@ -127,6 +174,7 @@ func handleConn(nconn net.Conn, sshCfg *ssh.ServerConfig, cfg *config.Config) {
 		}
 		if !concurrentSessions.TryAcquire(1) {
 			newChannel.Reject(ssh.ResourceShortage, "too many concurrent sessions")
+			sshdHitMaxSessions.Inc()
 			continue
 		}
 		ch, requests, err := newChannel.Accept()
