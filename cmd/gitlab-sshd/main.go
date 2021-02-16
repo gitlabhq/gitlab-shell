@@ -42,7 +42,6 @@ func main() {
 		}
 	}
 	overrideConfigFromEnvironment(cfg)
-	cfg.ApplyServerDefaults()
 	if err := cfg.IsSane(); err != nil {
 		if *configDir == "" {
 			log.Warn("note: no config-dir provided, using only environment variables")
