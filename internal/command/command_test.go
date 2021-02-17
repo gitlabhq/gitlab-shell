@@ -21,7 +21,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 	"gitlab.com/gitlab-org/labkit/correlation"
 )
 
@@ -35,10 +35,10 @@ var (
 	advancedConfig = &config.Config{GitlabUrl: "http+unix://gitlab.socket", SslCertDir: "/tmp/certs"}
 )
 
-func buildEnv(command string) map[string]string {
-	return map[string]string{
-		"SSH_CONNECTION":       "1",
-		"SSH_ORIGINAL_COMMAND": command,
+func buildEnv(command string) sshenv.Env {
+	return sshenv.Env{
+		IsSSHConnection: true,
+		OriginalCommand: command,
 	}
 }
 
@@ -46,7 +46,7 @@ func TestNew(t *testing.T) {
 	testCases := []struct {
 		desc               string
 		executable         *executable.Executable
-		environment        map[string]string
+		env                sshenv.Env
 		arguments          []string
 		config             *config.Config
 		expectedType       interface{}
@@ -55,7 +55,7 @@ func TestNew(t *testing.T) {
 		{
 			desc:               "it returns a Discover command",
 			executable:         gitlabShellExec,
-			environment:        buildEnv(""),
+			env:                buildEnv(""),
 			config:             basicConfig,
 			expectedType:       &discover.Command{},
 			expectedSslCertDir: "",
@@ -63,7 +63,7 @@ func TestNew(t *testing.T) {
 		{
 			desc:               "it returns a Discover command with SSL_CERT_DIR env var set",
 			executable:         gitlabShellExec,
-			environment:        buildEnv(""),
+			env:                buildEnv(""),
 			config:             advancedConfig,
 			expectedType:       &discover.Command{},
 			expectedSslCertDir: "/tmp/certs",
@@ -71,7 +71,7 @@ func TestNew(t *testing.T) {
 		{
 			desc:               "it returns a TwoFactorRecover command",
 			executable:         gitlabShellExec,
-			environment:        buildEnv("2fa_recovery_codes"),
+			env:                buildEnv("2fa_recovery_codes"),
 			config:             basicConfig,
 			expectedType:       &twofactorrecover.Command{},
 			expectedSslCertDir: "",
@@ -79,7 +79,7 @@ func TestNew(t *testing.T) {
 		{
 			desc:               "it returns a TwoFactorVerify command",
 			executable:         gitlabShellExec,
-			environment:        buildEnv("2fa_verify"),
+			env:                buildEnv("2fa_verify"),
 			config:             basicConfig,
 			expectedType:       &twofactorverify.Command{},
 			expectedSslCertDir: "",
@@ -87,7 +87,7 @@ func TestNew(t *testing.T) {
 		{
 			desc:               "it returns an LfsAuthenticate command",
 			executable:         gitlabShellExec,
-			environment:        buildEnv("git-lfs-authenticate"),
+			env:                buildEnv("git-lfs-authenticate"),
 			config:             basicConfig,
 			expectedType:       &lfsauthenticate.Command{},
 			expectedSslCertDir: "",
@@ -95,7 +95,7 @@ func TestNew(t *testing.T) {
 		{
 			desc:               "it returns a ReceivePack command",
 			executable:         gitlabShellExec,
-			environment:        buildEnv("git-receive-pack"),
+			env:                buildEnv("git-receive-pack"),
 			config:             basicConfig,
 			expectedType:       &receivepack.Command{},
 			expectedSslCertDir: "",
@@ -103,7 +103,7 @@ func TestNew(t *testing.T) {
 		{
 			desc:               "it returns an UploadPack command",
 			executable:         gitlabShellExec,
-			environment:        buildEnv("git-upload-pack"),
+			env:                buildEnv("git-upload-pack"),
 			config:             basicConfig,
 			expectedType:       &uploadpack.Command{},
 			expectedSslCertDir: "",
@@ -111,7 +111,7 @@ func TestNew(t *testing.T) {
 		{
 			desc:               "it returns an UploadArchive command",
 			executable:         gitlabShellExec,
-			environment:        buildEnv("git-upload-archive"),
+			env:                buildEnv("git-upload-archive"),
 			config:             basicConfig,
 			expectedType:       &uploadarchive.Command{},
 			expectedSslCertDir: "",
@@ -142,7 +142,7 @@ func TestNew(t *testing.T) {
 		{
 			desc:               "it returns a PersonalAccessToken command",
 			executable:         gitlabShellExec,
-			environment:        buildEnv("personal_access_token"),
+			env:                buildEnv("personal_access_token"),
 			config:             basicConfig,
 			expectedType:       &personalaccesstoken.Command{},
 			expectedSslCertDir: "",
@@ -151,11 +151,8 @@ func TestNew(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			restoreEnv := testhelper.TempEnv(tc.environment)
-			defer restoreEnv()
-
 			os.Unsetenv("SSL_CERT_DIR")
-			command, err := New(tc.executable, tc.arguments, tc.config, nil)
+			command, err := New(tc.executable, tc.arguments, tc.env, tc.config, nil)
 
 			require.NoError(t, err)
 			require.IsType(t, tc.expectedType, command)
@@ -168,7 +165,7 @@ func TestFailingNew(t *testing.T) {
 	testCases := []struct {
 		desc          string
 		executable    *executable.Executable
-		environment   map[string]string
+		env           sshenv.Env
 		expectedError error
 	}{
 		{
@@ -179,17 +176,14 @@ func TestFailingNew(t *testing.T) {
 		{
 			desc:          "Unknown command given",
 			executable:    gitlabShellExec,
-			environment:   buildEnv("unknown"),
+			env:           buildEnv("unknown"),
 			expectedError: disallowedcommand.Error,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			restoreEnv := testhelper.TempEnv(tc.environment)
-			defer restoreEnv()
-
-			command, err := New(tc.executable, []string{}, basicConfig, nil)
+			command, err := New(tc.executable, []string{}, tc.env, basicConfig, nil)
 			require.Nil(t, command)
 			require.Equal(t, tc.expectedError, err)
 		})

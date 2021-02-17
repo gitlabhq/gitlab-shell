@@ -12,7 +12,7 @@ import (
 	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 )
 
 func makeHandler(t *testing.T, err error) func(context.Context, *grpc.ClientConn) (int32, error) {
@@ -89,12 +89,12 @@ func TestGetConnMetadata(t *testing.T) {
 
 func TestPrepareContext(t *testing.T) {
 	tests := []struct {
-		name             string
-		gc               *GitalyCommand
-		sshConnectionEnv string
-		repo             *pb.Repository
-		response         *accessverifier.Response
-		want             map[string]string
+		name     string
+		gc       *GitalyCommand
+		env      sshenv.Env
+		repo     *pb.Repository
+		response *accessverifier.Response
+		want     map[string]string
 	}{
 		{
 			name: "client_identity",
@@ -102,7 +102,11 @@ func TestPrepareContext(t *testing.T) {
 				Config:  &config.Config{},
 				Address: "tcp://localhost:9999",
 			},
-			sshConnectionEnv: "10.0.0.1 1234 127.0.0.1 5678",
+			env: sshenv.Env{
+				GitProtocolVersion: "protocol",
+				IsSSHConnection:    true,
+				RemoteAddr:         "10.0.0.1",
+			},
 			repo: &pb.Repository{
 				StorageName:                   "default",
 				RelativePath:                  "@hashed/5f/9c/5f9c4ab08cac7457e9111a30e4664920607ea2c115a1433d7be98e97e64244ca.git",
@@ -128,13 +132,9 @@ func TestPrepareContext(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cleanup, err := testhelper.Setenv("SSH_CONNECTION", tt.sshConnectionEnv)
-			require.NoError(t, err)
-			defer cleanup()
-
 			ctx := context.Background()
 
-			ctx, cancel := tt.gc.PrepareContext(ctx, tt.repo, tt.response, "protocol")
+			ctx, cancel := tt.gc.PrepareContext(ctx, tt.repo, tt.response, tt.env)
 			defer cancel()
 
 			md, exists := metadata.FromOutgoingContext(ctx)

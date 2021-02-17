@@ -61,10 +61,10 @@ func (gc *GitalyCommand) RunGitalyCommand(handler GitalyHandlerFunc) error {
 
 // PrepareContext wraps a given context with a correlation ID and logs the command to
 // be run.
-func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repository, response *accessverifier.Response, protocol string) (context.Context, context.CancelFunc) {
+func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repository, response *accessverifier.Response, env sshenv.Env) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
 
-	gc.LogExecution(repository, response, protocol)
+	gc.LogExecution(repository, response, env)
 
 	if response.CorrelationID != "" {
 		ctx = correlation.ContextWithCorrelation(ctx, response.CorrelationID)
@@ -78,13 +78,13 @@ func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repo
 	md.Append("key_type", response.KeyType)
 	md.Append("user_id", response.UserId)
 	md.Append("username", response.Username)
-	md.Append("remote_ip", sshenv.LocalAddr())
+	md.Append("remote_ip", env.RemoteAddr)
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	return ctx, cancel
 }
 
-func (gc *GitalyCommand) LogExecution(repository *pb.Repository, response *accessverifier.Response, protocol string) {
+func (gc *GitalyCommand) LogExecution(repository *pb.Repository, response *accessverifier.Response, env sshenv.Env) {
 	fields := log.Fields{
 		"command":         gc.ServiceName,
 		"correlation_id":  response.CorrelationID,
@@ -92,8 +92,8 @@ func (gc *GitalyCommand) LogExecution(repository *pb.Repository, response *acces
 		"gl_repository":   repository.GlRepository,
 		"user_id":         response.UserId,
 		"username":        response.Username,
-		"git_protocol":    protocol,
-		"remote_ip":       sshenv.LocalAddr(),
+		"git_protocol":    env.GitProtocolVersion,
+		"remote_ip":       env.RemoteAddr,
 		"gl_key_type":     response.KeyType,
 		"gl_key_id":       response.KeyId,
 	}
