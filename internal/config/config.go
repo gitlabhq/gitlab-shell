@@ -18,6 +18,7 @@ const (
 
 type ServerConfig struct {
 	Listen                  string   `yaml:"listen,omitempty"`
+	WebListen               string   `yaml:"web_listen,omitempty"`
 	ConcurrentSessionsLimit int64    `yaml:"concurrent_sessions_limit,omitempty"`
 	HostKeyFiles            []string `yaml:"host_key_files,omitempty"`
 }
@@ -59,6 +60,7 @@ var (
 
 	DefaultServerConfig = ServerConfig{
 		Listen: "[::]:22",
+		WebListen: "localhost:9122",
 		ConcurrentSessionsLimit: 10,
 		HostKeyFiles: []string{
 			"/run/secrets/ssh-hostkeys/ssh_host_rsa_key",
