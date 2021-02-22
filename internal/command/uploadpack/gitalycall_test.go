@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -41,12 +42,16 @@ func TestUploadPack(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "UploadPack: "+repo, output.String())
-	entries := hook.AllEntries()
-	require.Equal(t, 2, len(entries))
-	require.Contains(t, entries[1].Message, "executing git command")
-	require.Contains(t, entries[1].Message, "command=git-upload-pack")
-	require.Contains(t, entries[1].Message, "gl_key_type=key")
-	require.Contains(t, entries[1].Message, "gl_key_id=123")
+	require.Eventually(t, func() bool{
+		entries := hook.AllEntries()
+
+		require.Equal(t, 2, len(entries))
+		require.Contains(t, entries[1].Message, "executing git command")
+		require.Contains(t, entries[1].Message, "command=git-upload-pack")
+		require.Contains(t, entries[1].Message, "gl_key_type=key")
+		require.Contains(t, entries[1].Message, "gl_key_id=123")
+		return true
+	}, time.Second, time.Millisecond)
 
 	for k, v := range map[string]string{
 		"gitaly-feature-cache_invalidator":        "true",
