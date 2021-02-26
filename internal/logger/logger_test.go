@@ -30,3 +30,17 @@ func TestConfigure(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, strings.Contains(string(data), `msg":"this is a test"`))
 }
+
+func TestConfigureWithPermissionError(t *testing.T) {
+	tmpPath, err := ioutil.TempDir(os.TempDir(), "logtest-")
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpPath)
+
+	config := config.Config{
+		LogFile:   tmpPath,
+		LogFormat: "json",
+	}
+
+	Configure(&config)
+	log.Info("this is a test")
+}
