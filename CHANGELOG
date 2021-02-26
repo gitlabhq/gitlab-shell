@@ -1,3 +1,8 @@
+v13.17.0
+
+- Fix gitlab-shell panic when log file not writable !453
+- Add monitoring endpoint to built-in SSH server !449
+
 v13.16.1
 
 - Read limited input when asking to generate new two-factor recovery codes
