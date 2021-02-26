@@ -16,10 +16,10 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
-func initialize(t *testing.T) []testserver.TestRequestHandler {
+func initializeManual(t *testing.T) []testserver.TestRequestHandler {
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/two_factor_otp_check",
+			Path: "/api/v4/internal/two_factor_manual_otp_check",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
@@ -78,35 +78,35 @@ func initialize(t *testing.T) []testserver.TestRequestHandler {
 }
 
 const (
-	otpAttempt = "123456"
+	manualOtpAttempt = "123456"
 )
 
 func TestVerifyOTPByKeyId(t *testing.T) {
-	client := setup(t)
+	client := setupManual(t)
 
 	args := &commandargs.Shell{GitlabKeyId: "0"}
-	err := client.VerifyOTP(context.Background(), args, otpAttempt)
+	_, _, err := client.VerifyOTP(context.Background(), args, manualOtpAttempt)
 	require.NoError(t, err)
 }
 
 func TestVerifyOTPByUsername(t *testing.T) {
-	client := setup(t)
+	client := setupManual(t)
 
 	args := &commandargs.Shell{GitlabUsername: "jane-doe"}
-	err := client.VerifyOTP(context.Background(), args, otpAttempt)
+	_, _, err := client.VerifyOTP(context.Background(), args, manualOtpAttempt)
 	require.NoError(t, err)
 }
 
 func TestErrorMessage(t *testing.T) {
-	client := setup(t)
+	client := setupManual(t)
 
 	args := &commandargs.Shell{GitlabKeyId: "1"}
-	err := client.VerifyOTP(context.Background(), args, otpAttempt)
-	require.Equal(t, "error message", err.Error())
+	_, reason, _ := client.VerifyOTP(context.Background(), args, manualOtpAttempt)
+	require.Equal(t, "error message", reason)
 }
 
 func TestErrorResponses(t *testing.T) {
-	client := setup(t)
+	client := setupManual(t)
 
 	testCases := []struct {
 		desc          string
@@ -133,15 +133,15 @@ func TestErrorResponses(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			args := &commandargs.Shell{GitlabKeyId: tc.fakeId}
-			err := client.VerifyOTP(context.Background(), args, otpAttempt)
+			_, _, err := client.VerifyOTP(context.Background(), args, manualOtpAttempt)
 
 			require.EqualError(t, err, tc.expectedError)
 		})
 	}
 }
 
-func setup(t *testing.T) *Client {
-	requests := initialize(t)
+func setupManual(t *testing.T) *Client {
+	requests := initializeManual(t)
 	url := testserver.StartSocketHttpServer(t, requests)
 
 	client, err := NewClient(&config.Config{GitlabUrl: url})

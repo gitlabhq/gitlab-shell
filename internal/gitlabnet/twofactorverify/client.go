@@ -2,7 +2,6 @@ package twofactorverify
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -38,32 +37,48 @@ func NewClient(config *config.Config) (*Client, error) {
 	return &Client{config: config, client: client}, nil
 }
 
-func (c *Client) VerifyOTP(ctx context.Context, args *commandargs.Shell, otp string) error {
+func (c *Client) VerifyOTP(ctx context.Context, args *commandargs.Shell, otp string) (bool, string, error) {
 	requestBody, err := c.getRequestBody(ctx, args, otp)
 	if err != nil {
-		return err
+		return false, "", err
 	}
 
-	response, err := c.client.Post(ctx, "/two_factor_otp_check", requestBody)
+	response, err := c.client.Post(ctx, "/two_factor_manual_otp_check", requestBody)
 	if err != nil {
-		return err
+		return false, "", err
 	}
 	defer response.Body.Close()
 
 	return parse(response)
 }
 
-func parse(hr *http.Response) error {
+func (c *Client) PushAuth(ctx context.Context, args *commandargs.Shell) (bool, string, error) {
+	// enable push auth in internal rest api
+	requestBody, err := c.getRequestBody(ctx, args, "")
+	if err != nil {
+		return false, "", err
+	}
+
+	response, err := c.client.Post(ctx, "/two_factor_push_otp_check", requestBody)
+	if err != nil {
+		return false, "", err
+	}
+	defer response.Body.Close()
+
+	return parse(response)
+}
+
+func parse(hr *http.Response) (bool, string, error) {
 	response := &Response{}
 	if err := gitlabnet.ParseJSON(hr, response); err != nil {
-		return err
+		return false, "", err
 	}
 
 	if !response.Success {
-		return errors.New(response.Message)
+		return false, response.Message, nil
 	}
 
-	return nil
+	return true, response.Message, nil
 }
 
 func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, otp string) (*RequestBody, error) {
