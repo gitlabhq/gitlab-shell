@@ -5,7 +5,7 @@ include:
   - template: Security/Secret-Detection.gitlab-ci.yml
 
 variables:
-  DOCKER_VERSION: "19.03.0"
+  DOCKER_VERSION: "20.10.3"
 
 workflow:
   rules: &workflow_rules
@@ -25,10 +25,6 @@ default:
   image: docker:${DOCKER_VERSION}
   services:
     - docker:${DOCKER_VERSION}-dind
-  variables:
-    DOCKER_DRIVER: overlay2
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
   tags:
     # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
     - gitlab-org-docker
