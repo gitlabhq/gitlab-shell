@@ -17,7 +17,7 @@ workflow:
     - if: '$CI_COMMIT_TAG'
 
 default:
-  image: golang:1.13
+  image: golang:1.14
   tags:
     - gitlab-org
 
@@ -45,10 +45,6 @@ default:
   script:
     - make verify test
 
-go:1.13:
-  extends: .test
-  image: golang:1.13
-
 go:1.14:
   extends: .test
   image: golang:1.14
@@ -63,9 +59,16 @@ go:1.15:
     - make coverage
   coverage: '/\d+.\d+%/'
 
+go:1.16:
+  extends: .test
+  image: golang:1.16
+  after_script:
+    - make coverage
+  coverage: '/\d+.\d+%/'
+
 race:
   extends: .test
-  image: golang:1.15
+  image: golang:1.16
   script:
     - make test_golang_race
 
