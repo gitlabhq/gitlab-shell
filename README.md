@@ -31,6 +31,9 @@ Ruby to build and test, but not to run.
 
 Download and install the current version of Go from https://golang.org/dl/
 
+We follow the [Golang Release Policy](https://golang.org/doc/devel/release.html#policy)
+of supporting the current stable version and the previous two major versions.
+
 ## Setup
 
     make setup
