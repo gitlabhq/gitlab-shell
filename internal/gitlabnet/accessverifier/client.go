@@ -10,7 +10,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 )
 
 const (
@@ -87,11 +86,7 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 		request.KeyId = args.GitlabKeyId
 	}
 
-	if args.RemoteAddr != nil {
-		request.CheckIp = args.RemoteAddr.IP.String()
-	} else {
-		request.CheckIp = sshenv.LocalAddr()
-	}
+	request.CheckIp = args.Env.RemoteAddr
 
 	response, err := c.client.Post(ctx, "/allowed", request)
 	if err != nil {

@@ -20,6 +20,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"gitlab.com/gitlab-org/labkit/log"
 	"gitlab.com/gitlab-org/labkit/tracing"
@@ -29,8 +30,8 @@ type Command interface {
 	Execute(ctx context.Context) error
 }
 
-func New(e *executable.Executable, arguments []string, config *config.Config, readWriter *readwriter.ReadWriter) (Command, error) {
-	args, err := commandargs.Parse(e, arguments)
+func New(e *executable.Executable, arguments []string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (Command, error) {
+	args, err := commandargs.Parse(e, arguments, env)
 	if err != nil {
 		return nil, err
 	}

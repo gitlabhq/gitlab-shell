@@ -13,6 +13,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper/requesthandlers"
 )
@@ -24,10 +25,6 @@ func TestReceivePack(t *testing.T) {
 	requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)
 	url, cleanup := testserver.StartHttpServer(t, requests)
 	defer cleanup()
-
-	envCleanup, err := testhelper.Setenv("SSH_CONNECTION", "127.0.0.1 0")
-	require.NoError(t, err)
-	defer envCleanup()
 
 	testCases := []struct {
 		username string
@@ -46,7 +43,12 @@ func TestReceivePack(t *testing.T) {
 		input := &bytes.Buffer{}
 		repo := "group/repo"
 
-		args := &commandargs.Shell{CommandType: commandargs.ReceivePack, SshArgs: []string{"git-receive-pack", repo}}
+		env := sshenv.Env{
+			IsSSHConnection: true,
+			OriginalCommand: "git-receive-pack group/repo",
+			RemoteAddr:      "127.0.0.1",
+		}
+		args := &commandargs.Shell{CommandType: commandargs.ReceivePack, SshArgs: []string{"git-receive-pack", repo}, Env: env}
 
 		if tc.username != "" {
 			args.GitlabUsername = tc.username
@@ -62,7 +64,7 @@ func TestReceivePack(t *testing.T) {
 
 		hook := testhelper.SetupLogger()
 
-		err = cmd.Execute(context.Background())
+		err := cmd.Execute(context.Background())
 		require.NoError(t, err)
 
 		if tc.username != "" {

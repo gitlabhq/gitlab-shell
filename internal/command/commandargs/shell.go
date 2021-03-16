@@ -2,11 +2,10 @@ package commandargs
 
 import (
 	"errors"
-	"net"
-	"os"
 	"regexp"
 
 	"github.com/mattn/go-shellwords"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 )
 
 const (
@@ -18,8 +17,6 @@ const (
 	UploadPack          CommandType = "git-upload-pack"
 	UploadArchive       CommandType = "git-upload-archive"
 	PersonalAccessToken CommandType = "personal_access_token"
-
-	GitProtocolEnv = "GIT_PROTOCOL"
 )
 
 var (
@@ -33,10 +30,7 @@ type Shell struct {
 	GitlabKeyId    string
 	SshArgs        []string
 	CommandType    CommandType
-
-	// Only set when running standalone
-	RemoteAddr         *net.TCPAddr
-	GitProtocolVersion string
+	Env            sshenv.Env
 }
 
 func (s *Shell) Parse() error {
@@ -54,24 +48,19 @@ func (s *Shell) GetArguments() []string {
 }
 
 func (s *Shell) validate() error {
-	if !s.isSshConnection() {
+	if !s.Env.IsSSHConnection {
 		return errors.New("Only SSH allowed")
 	}
 
-	if !s.isValidSshCommand() {
+	if !s.isValidSSHCommand() {
 		return errors.New("Invalid SSH command")
 	}
 
 	return nil
 }
 
-func (s *Shell) isSshConnection() bool {
-	ok := os.Getenv("SSH_CONNECTION")
-	return ok != ""
-}
-
-func (s *Shell) isValidSshCommand() bool {
-	err := s.ParseCommand(os.Getenv("SSH_ORIGINAL_COMMAND"))
+func (s *Shell) isValidSSHCommand() bool {
+	err := s.ParseCommand(s.Env.OriginalCommand)
 	return err == nil
 }
 

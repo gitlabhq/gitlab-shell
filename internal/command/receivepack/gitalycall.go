@@ -12,7 +12,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/handler"
 )
 
-func (c *Command) performGitalyCall(response *accessverifier.Response, gitProtocolVersion string) error {
+func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 	gc := &handler.GitalyCommand{
 		Config:      c.Config,
 		ServiceName: string(commandargs.ReceivePack),
@@ -26,12 +26,12 @@ func (c *Command) performGitalyCall(response *accessverifier.Response, gitProtoc
 		GlId:             response.Who,
 		GlRepository:     response.Repo,
 		GlUsername:       response.Username,
-		GitProtocol:      gitProtocolVersion,
+		GitProtocol:      c.Args.Env.GitProtocolVersion,
 		GitConfigOptions: response.GitConfigOptions,
 	}
 
 	return gc.RunGitalyCommand(func(ctx context.Context, conn *grpc.ClientConn) (int32, error) {
-		ctx, cancel := gc.PrepareContext(ctx, request.Repository, response, request.GitProtocol)
+		ctx, cancel := gc.PrepareContext(ctx, request.Repository, response, c.Args.Env)
 		defer cancel()
 
 		rw := c.ReadWriter

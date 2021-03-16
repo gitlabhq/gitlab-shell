@@ -24,7 +24,7 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 	request := &pb.SSHUploadArchiveRequest{Repository: &response.Gitaly.Repo}
 
 	return gc.RunGitalyCommand(func(ctx context.Context, conn *grpc.ClientConn) (int32, error) {
-		ctx, cancel := gc.PrepareContext(ctx, request.Repository, response, "")
+		ctx, cancel := gc.PrepareContext(ctx, request.Repository, response, c.Args.Env)
 		defer cancel()
 
 		rw := c.ReadWriter
