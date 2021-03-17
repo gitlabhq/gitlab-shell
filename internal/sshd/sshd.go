@@ -74,6 +74,8 @@ func Run(cfg *config.Config) error {
 		return fmt.Errorf("failed to listen for connection: %w", err)
 	}
 
+	log.Infof("Listening on %v", sshListener.Addr().String())
+
 	config := &ssh.ServerConfig{
 		PublicKeyCallback: func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
 			if conn.User() != cfg.User {
