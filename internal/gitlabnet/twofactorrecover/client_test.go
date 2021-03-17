@@ -81,8 +81,7 @@ func initialize(t *testing.T) {
 }
 
 func TestGetRecoveryCodesByKeyId(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	args := &commandargs.Shell{GitlabKeyId: "0"}
 	result, err := client.GetRecoveryCodes(context.Background(), args)
@@ -91,8 +90,7 @@ func TestGetRecoveryCodesByKeyId(t *testing.T) {
 }
 
 func TestGetRecoveryCodesByUsername(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	args := &commandargs.Shell{GitlabUsername: "jane-doe"}
 	result, err := client.GetRecoveryCodes(context.Background(), args)
@@ -101,8 +99,7 @@ func TestGetRecoveryCodesByUsername(t *testing.T) {
 }
 
 func TestMissingUser(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	args := &commandargs.Shell{GitlabKeyId: "1"}
 	_, err := client.GetRecoveryCodes(context.Background(), args)
@@ -110,8 +107,7 @@ func TestMissingUser(t *testing.T) {
 }
 
 func TestErrorResponses(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	testCases := []struct {
 		desc          string
@@ -146,12 +142,12 @@ func TestErrorResponses(t *testing.T) {
 	}
 }
 
-func setup(t *testing.T) (*Client, func()) {
+func setup(t *testing.T) *Client {
 	initialize(t)
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	client, err := NewClient(&config.Config{GitlabUrl: url})
 	require.NoError(t, err)
 
-	return client, cleanup
+	return client
 }

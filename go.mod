@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/mattn/go-shellwords v1.0.11
-	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a // indirect
+	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/otiai10/copy v1.4.2
 	github.com/prometheus/client_golang v1.9.0
 	github.com/sirupsen/logrus v1.7.0

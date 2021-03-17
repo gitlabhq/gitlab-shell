@@ -60,8 +60,7 @@ const (
 func TestExecute(t *testing.T) {
 	requests := setup(t)
 
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	testCases := []struct {
 		desc           string

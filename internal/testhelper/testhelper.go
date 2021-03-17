@@ -111,7 +111,7 @@ func WaitForLogEvent(hook *test.Hook) bool {
 			return true
 		}
 
-		time.Sleep(100*time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	return false

@@ -48,8 +48,7 @@ func TestBasicAuthSettings(t *testing.T) {
 		},
 	}
 
-	client, cleanup := setup(t, username, password, requests)
-	defer cleanup()
+	client := setup(t, username, password, requests)
 
 	response, err := client.Get(context.Background(), "/get_endpoint")
 	require.NoError(t, err)
@@ -86,8 +85,7 @@ func TestEmptyBasicAuthSettings(t *testing.T) {
 		},
 	}
 
-	client, cleanup := setup(t, "", "", requests)
-	defer cleanup()
+	client := setup(t, "", "", requests)
 
 	_, err := client.Get(context.Background(), "/empty_basic_auth")
 	require.NoError(t, err)
@@ -110,8 +108,7 @@ func TestRequestWithUserAgent(t *testing.T) {
 		},
 	}
 
-	client, cleanup := setup(t, "", "", requests)
-	defer cleanup()
+	client := setup(t, "", "", requests)
 
 	_, err := client.Get(context.Background(), "/default_user_agent")
 	require.NoError(t, err)
@@ -122,13 +119,13 @@ func TestRequestWithUserAgent(t *testing.T) {
 
 }
 
-func setup(t *testing.T, username, password string, requests []testserver.TestRequestHandler) (*GitlabNetClient, func()) {
-	url, cleanup := testserver.StartHttpServer(t, requests)
+func setup(t *testing.T, username, password string, requests []testserver.TestRequestHandler) *GitlabNetClient {
+	url := testserver.StartHttpServer(t, requests)
 
 	httpClient := NewHTTPClient(url, "", "", "", false, 1)
 
 	client, err := NewGitlabNetClient(username, password, "", httpClient)
 	require.NoError(t, err)
 
-	return client, cleanup
+	return client
 }

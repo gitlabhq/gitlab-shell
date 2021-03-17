@@ -19,12 +19,10 @@ import (
 )
 
 func TestReceivePack(t *testing.T) {
-	gitalyAddress, _, cleanup := testserver.StartGitalyServer(t)
-	defer cleanup()
+	gitalyAddress, _ := testserver.StartGitalyServer(t)
 
 	requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)
-	url, cleanup := testserver.StartHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartHttpServer(t, requests)
 
 	testCases := []struct {
 		username string

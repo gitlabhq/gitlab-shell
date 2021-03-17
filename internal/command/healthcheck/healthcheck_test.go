@@ -45,8 +45,7 @@ func buildTestHandlers(code int, rsp *healthcheck.Response) []testserver.TestReq
 }
 
 func TestExecute(t *testing.T) {
-	url, cleanup := testserver.StartSocketHttpServer(t, okHandlers)
-	defer cleanup()
+	url := testserver.StartSocketHttpServer(t, okHandlers)
 
 	buffer := &bytes.Buffer{}
 	cmd := &Command{
@@ -61,8 +60,7 @@ func TestExecute(t *testing.T) {
 }
 
 func TestFailingRedisExecute(t *testing.T) {
-	url, cleanup := testserver.StartSocketHttpServer(t, badRedisHandlers)
-	defer cleanup()
+	url := testserver.StartSocketHttpServer(t, badRedisHandlers)
 
 	buffer := &bytes.Buffer{}
 	cmd := &Command{
@@ -76,8 +74,7 @@ func TestFailingRedisExecute(t *testing.T) {
 }
 
 func TestFailingAPIExecute(t *testing.T) {
-	url, cleanup := testserver.StartSocketHttpServer(t, brokenHandlers)
-	defer cleanup()
+	url := testserver.StartSocketHttpServer(t, brokenHandlers)
 
 	buffer := &bytes.Buffer{}
 	cmd := &Command{

@@ -18,12 +18,10 @@ import (
 )
 
 func TestUploadPack(t *testing.T) {
-	gitalyAddress, _, cleanup := testserver.StartGitalyServer(t)
-	defer cleanup()
+	gitalyAddress, _ := testserver.StartGitalyServer(t)
 
 	requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)
-	url, cleanup := testserver.StartHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartHttpServer(t, requests)
 
 	output := &bytes.Buffer{}
 	input := &bytes.Buffer{}

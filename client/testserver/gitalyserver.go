@@ -58,9 +58,12 @@ func (s *TestGitalyServer) SSHUploadArchive(stream pb.SSHService_SSHUploadArchiv
 	return nil
 }
 
-func StartGitalyServer(t *testing.T) (string, *TestGitalyServer, func()) {
+func StartGitalyServer(t *testing.T) (string, *TestGitalyServer) {
+	t.Helper()
+
 	tempDir, _ := ioutil.TempDir("", "gitlab-shell-test-api")
 	gitalySocketPath := path.Join(tempDir, "gitaly.sock")
+	t.Cleanup(func() { os.RemoveAll(tempDir) })
 
 	err := os.MkdirAll(filepath.Dir(gitalySocketPath), 0700)
 	require.NoError(t, err)
@@ -74,12 +77,9 @@ func StartGitalyServer(t *testing.T) (string, *TestGitalyServer, func()) {
 	pb.RegisterSSHServiceServer(server, &testServer)
 
 	go server.Serve(listener)
+	t.Cleanup(func() { server.Stop() })
 
 	gitalySocketUrl := "unix:" + gitalySocketPath
-	cleanup := func() {
-		server.Stop()
-		os.RemoveAll(tempDir)
-	}
 
-	return gitalySocketUrl, &testServer, cleanup
+	return gitalySocketUrl, &testServer
 }
