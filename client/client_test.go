@@ -26,7 +26,7 @@ func TestClients(t *testing.T) {
 		desc            string
 		relativeURLRoot string
 		caFile          string
-		server          func(*testing.T, []testserver.TestRequestHandler) (string, func())
+		server          func(*testing.T, []testserver.TestRequestHandler) string
 	}{
 		{
 			desc:   "Socket client",
@@ -49,7 +49,7 @@ func TestClients(t *testing.T) {
 		{
 			desc:   "Https client",
 			caFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt"),
-			server: func(t *testing.T, handlers []testserver.TestRequestHandler) (string, func()) {
+			server: func(t *testing.T, handlers []testserver.TestRequestHandler) string {
 				return testserver.StartHttpsServer(t, handlers, "")
 			},
 		},
@@ -57,8 +57,7 @@ func TestClients(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			url, cleanup := tc.server(t, buildRequests(t, tc.relativeURLRoot))
-			defer cleanup()
+			url := tc.server(t, buildRequests(t, tc.relativeURLRoot))
 
 			secret := "sssh, it's a secret"
 

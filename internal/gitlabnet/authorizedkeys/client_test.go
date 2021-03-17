@@ -46,8 +46,7 @@ func init() {
 }
 
 func TestGetByKey(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	result, err := client.GetByKey(context.Background(), "key")
 	require.NoError(t, err)
@@ -55,8 +54,7 @@ func TestGetByKey(t *testing.T) {
 }
 
 func TestGetByKeyErrorResponses(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	testCases := []struct {
 		desc          string
@@ -95,11 +93,11 @@ func TestGetByKeyErrorResponses(t *testing.T) {
 	}
 }
 
-func setup(t *testing.T) (*Client, func()) {
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
+func setup(t *testing.T) *Client {
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	client, err := NewClient(&config.Config{GitlabUrl: url})
 	require.NoError(t, err)
 
-	return client, cleanup
+	return client
 }

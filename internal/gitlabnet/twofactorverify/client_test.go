@@ -81,8 +81,7 @@ const (
 )
 
 func TestVerifyOTPByKeyId(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	args := &commandargs.Shell{GitlabKeyId: "0"}
 	err := client.VerifyOTP(context.Background(), args, otpAttempt)
@@ -90,8 +89,7 @@ func TestVerifyOTPByKeyId(t *testing.T) {
 }
 
 func TestVerifyOTPByUsername(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	args := &commandargs.Shell{GitlabUsername: "jane-doe"}
 	err := client.VerifyOTP(context.Background(), args, otpAttempt)
@@ -99,8 +97,7 @@ func TestVerifyOTPByUsername(t *testing.T) {
 }
 
 func TestErrorMessage(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	args := &commandargs.Shell{GitlabKeyId: "1"}
 	err := client.VerifyOTP(context.Background(), args, otpAttempt)
@@ -108,8 +105,7 @@ func TestErrorMessage(t *testing.T) {
 }
 
 func TestErrorResponses(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	testCases := []struct {
 		desc          string
@@ -143,12 +139,12 @@ func TestErrorResponses(t *testing.T) {
 	}
 }
 
-func setup(t *testing.T) (*Client, func()) {
+func setup(t *testing.T) *Client {
 	requests := initialize(t)
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	client, err := NewClient(&config.Config{GitlabUrl: url})
 	require.NoError(t, err)
 
-	return client, cleanup
+	return client
 }

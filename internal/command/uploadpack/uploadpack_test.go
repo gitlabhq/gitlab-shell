@@ -16,8 +16,7 @@ import (
 
 func TestForbiddenAccess(t *testing.T) {
 	requests := requesthandlers.BuildDisallowedByApiHandlers(t)
-	url, cleanup := testserver.StartHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartHttpServer(t, requests)
 
 	output := &bytes.Buffer{}
 

@@ -17,12 +17,10 @@ import (
 )
 
 func TestUploadPack(t *testing.T) {
-	gitalyAddress, testServer, cleanup := testserver.StartGitalyServer(t)
-	defer cleanup()
+	gitalyAddress, testServer := testserver.StartGitalyServer(t)
 
 	requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)
-	url, cleanup := testserver.StartHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartHttpServer(t, requests)
 
 	output := &bytes.Buffer{}
 	input := &bytes.Buffer{}
@@ -42,7 +40,7 @@ func TestUploadPack(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "UploadPack: "+repo, output.String())
-	require.Eventually(t, func() bool{
+	require.Eventually(t, func() bool {
 		entries := hook.AllEntries()
 
 		require.Equal(t, 2, len(entries))

@@ -51,8 +51,7 @@ func TestSuccessfulRequests(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			client, cleanup := setupWithRequests(t, tc.caFile, tc.caPath, tc.clientCAPath, tc.clientCertPath, tc.clientKeyPath, tc.selfSigned)
-			defer cleanup()
+			client := setupWithRequests(t, tc.caFile, tc.caPath, tc.clientCAPath, tc.clientCertPath, tc.clientKeyPath, tc.selfSigned)
 
 			response, err := client.Get(context.Background(), "/hello")
 			require.NoError(t, err)
@@ -88,8 +87,7 @@ func TestFailedRequests(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			client, cleanup := setupWithRequests(t, tc.caFile, tc.caPath, "", "", "", false)
-			defer cleanup()
+			client := setupWithRequests(t, tc.caFile, tc.caPath, "", "", "", false)
 
 			_, err := client.Get(context.Background(), "/hello")
 			require.Error(t, err)
@@ -99,7 +97,7 @@ func TestFailedRequests(t *testing.T) {
 	}
 }
 
-func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPath, clientKeyPath string, selfSigned bool) (*GitlabNetClient, func()) {
+func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPath, clientKeyPath string, selfSigned bool) *GitlabNetClient {
 	testDirCleanup, err := testhelper.PrepareTestRootDir()
 	require.NoError(t, err)
 	defer testDirCleanup()
@@ -115,7 +113,7 @@ func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPat
 		},
 	}
 
-	url, cleanup := testserver.StartHttpsServer(t, requests, clientCAPath)
+	url := testserver.StartHttpsServer(t, requests, clientCAPath)
 
 	var opts []HTTPClientOpt
 	if clientCertPath != "" && clientKeyPath != "" {
@@ -128,5 +126,5 @@ func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPat
 	client, err := NewGitlabNetClient("", "", "", httpClient)
 	require.NoError(t, err)
 
-	return client, cleanup
+	return client
 }

@@ -43,8 +43,7 @@ var (
 )
 
 func TestExecute(t *testing.T) {
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	defaultConfig := &config.Config{RootDir: "/tmp", GitlabUrl: url}
 

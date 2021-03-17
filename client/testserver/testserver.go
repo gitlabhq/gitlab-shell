@@ -27,9 +27,12 @@ type TestRequestHandler struct {
 	Handler func(w http.ResponseWriter, r *http.Request)
 }
 
-func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) (string, func()) {
+func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) string {
+	t.Helper()
+
 	err := os.MkdirAll(filepath.Dir(testSocket), 0700)
 	require.NoError(t, err)
+	t.Cleanup(func() { os.RemoveAll(tempDir) })
 
 	socketListener, err := net.Listen("unix", testSocket)
 	require.NoError(t, err)
@@ -44,16 +47,21 @@ func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) (string,
 
 	url := "http+unix://" + testSocket
 
-	return url, cleanupSocket
+	return url
 }
 
-func StartHttpServer(t *testing.T, handlers []TestRequestHandler) (string, func()) {
+func StartHttpServer(t *testing.T, handlers []TestRequestHandler) string {
+	t.Helper()
+
 	server := httptest.NewServer(buildHandler(handlers))
+	t.Cleanup(func() { server.Close() })
 
-	return server.URL, server.Close
+	return server.URL
 }
 
-func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath string) (string, func()) {
+func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath string) string {
+	t.Helper()
+
 	crt := path.Join(testhelper.TestRoot, "certs/valid/server.crt")
 	key := path.Join(testhelper.TestRoot, "certs/valid/server.key")
 
@@ -63,7 +71,7 @@ func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath 
 
 	server.TLS = &tls.Config{
 		Certificates: []tls.Certificate{cer},
-		MinVersion: tls.VersionTLS12,
+		MinVersion:   tls.VersionTLS12,
 	}
 	server.TLS.BuildNameToCertificate()
 
@@ -80,11 +88,9 @@ func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath 
 
 	server.StartTLS()
 
-	return server.URL, server.Close
-}
+	t.Cleanup(func() { server.Close() })
 
-func cleanupSocket() {
-	os.RemoveAll(tempDir)
+	return server.URL
 }
 
 func buildHandler(handlers []TestRequestHandler) http.Handler {

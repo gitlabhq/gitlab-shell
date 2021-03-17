@@ -53,8 +53,7 @@ func buildExpectedResponse(who string) *Response {
 }
 
 func TestSuccessfulResponses(t *testing.T) {
-	client, cleanup := setup(t, "")
-	defer cleanup()
+	client := setup(t, "")
 
 	testCases := []struct {
 		desc string
@@ -84,8 +83,7 @@ func TestSuccessfulResponses(t *testing.T) {
 }
 
 func TestGeoPushGetCustomAction(t *testing.T) {
-	client, cleanup := setup(t, "responses/allowed_with_push_payload.json")
-	defer cleanup()
+	client := setup(t, "responses/allowed_with_push_payload.json")
 
 	args := &commandargs.Shell{GitlabUsername: "custom"}
 	result, err := client.Verify(context.Background(), args, receivePackAction, repo)
@@ -107,8 +105,7 @@ func TestGeoPushGetCustomAction(t *testing.T) {
 }
 
 func TestGeoPullGetCustomAction(t *testing.T) {
-	client, cleanup := setup(t, "responses/allowed_with_pull_payload.json")
-	defer cleanup()
+	client := setup(t, "responses/allowed_with_pull_payload.json")
 
 	args := &commandargs.Shell{GitlabUsername: "custom"}
 	result, err := client.Verify(context.Background(), args, uploadPackAction, repo)
@@ -130,8 +127,7 @@ func TestGeoPullGetCustomAction(t *testing.T) {
 }
 
 func TestErrorResponses(t *testing.T) {
-	client, cleanup := setup(t, "")
-	defer cleanup()
+	client := setup(t, "")
 
 	testCases := []struct {
 		desc          string
@@ -166,7 +162,7 @@ func TestErrorResponses(t *testing.T) {
 	}
 }
 
-func setup(t *testing.T, allowedPayload string) (*Client, func()) {
+func setup(t *testing.T, allowedPayload string) *Client {
 	testDirCleanup, err := testhelper.PrepareTestRootDir()
 	require.NoError(t, err)
 	defer testDirCleanup()
@@ -227,10 +223,10 @@ func setup(t *testing.T, allowedPayload string) (*Client, func()) {
 		},
 	}
 
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	client, err := NewClient(&config.Config{GitlabUrl: url})
 	require.NoError(t, err)
 
-	return client, cleanup
+	return client
 }
