@@ -111,5 +111,7 @@ func (c *Command) verifyOTP(ctx context.Context, otp string) (status string, suc
 		}
 	}
 
+	err = nil
+
 	return
 }
