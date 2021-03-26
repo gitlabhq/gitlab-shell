@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -30,14 +31,31 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 				var requestBody *twofactorverify.RequestBody
 				require.NoError(t, json.Unmarshal(b, &requestBody))
 
+				var body map[string]interface{}
 				switch requestBody.KeyId {
 				case "1":
-					body := map[string]interface{}{
-						"success": true,
+					if requestBody.PushAuth {
+						body = map[string]interface{}{
+							"success": false,
+						}
+					} else {
+						body = map[string]interface{}{
+							"success": true,
+						}
+					}
+					json.NewEncoder(w).Encode(body)
+				case "2":
+					if requestBody.PushAuth {
+						body = map[string]interface{}{
+							"success": true,
+						}
+					} else {
+						// Stall verifyOTP long enough for pushAuth to complete
+						time.Sleep(10 * time.Second)
 					}
 					json.NewEncoder(w).Encode(body)
 				case "error":
-					body := map[string]interface{}{
+					body = map[string]interface{}{
 						"success": false,
 						"message": "error message",
 					}
@@ -69,6 +87,13 @@ func TestExecute(t *testing.T) {
 		answer         string
 		expectedOutput string
 	}{
+		{
+			desc:      "When push is provided",
+			arguments: &commandargs.Shell{GitlabKeyId: "2"},
+			answer:    "",
+			expectedOutput: question +
+				"Push OTP validation successful. Git operations are now allowed.\n",
+		},
 		{
 			desc:      "With a known key id",
 			arguments: &commandargs.Shell{GitlabKeyId: "1"},
@@ -105,8 +130,8 @@ func TestExecute(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			output := &bytes.Buffer{}
-			input := bytes.NewBufferString(tc.answer)
 
+			input := bytes.NewBufferString(tc.answer)
 			cmd := &Command{
 				Config:     &config.Config{GitlabUrl: url},
 				Args:       tc.arguments,

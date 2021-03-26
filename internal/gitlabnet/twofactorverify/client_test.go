@@ -85,7 +85,7 @@ func TestVerifyOTPByKeyId(t *testing.T) {
 	defer cleanup()
 
 	args := &commandargs.Shell{GitlabKeyId: "0"}
-	err := client.VerifyOTP(context.Background(), args, otpAttempt)
+	_, _, err := client.VerifyOTP(context.Background(), args, otpAttempt)
 	require.NoError(t, err)
 }
 
@@ -94,7 +94,7 @@ func TestVerifyOTPByUsername(t *testing.T) {
 	defer cleanup()
 
 	args := &commandargs.Shell{GitlabUsername: "jane-doe"}
-	err := client.VerifyOTP(context.Background(), args, otpAttempt)
+	_, _, err := client.VerifyOTP(context.Background(), args, otpAttempt)
 	require.NoError(t, err)
 }
 
@@ -103,8 +103,8 @@ func TestErrorMessage(t *testing.T) {
 	defer cleanup()
 
 	args := &commandargs.Shell{GitlabKeyId: "1"}
-	err := client.VerifyOTP(context.Background(), args, otpAttempt)
-	require.Equal(t, "error message", err.Error())
+	_, reason, _ := client.VerifyOTP(context.Background(), args, otpAttempt)
+	require.Equal(t, "error message", reason)
 }
 
 func TestErrorResponses(t *testing.T) {
@@ -136,7 +136,7 @@ func TestErrorResponses(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			args := &commandargs.Shell{GitlabKeyId: tc.fakeId}
-			err := client.VerifyOTP(context.Background(), args, otpAttempt)
+			_, _, err := client.VerifyOTP(context.Background(), args, otpAttempt)
 
 			require.EqualError(t, err, tc.expectedError)
 		})
