@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"path"
 	"path/filepath"
+	"sync"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
 	yaml "gopkg.in/yaml.v2"
@@ -46,21 +47,23 @@ type Config struct {
 	SslCertDir     string             `yaml:"ssl_cert_dir"`
 	HttpSettings   HttpSettingsConfig `yaml:"http_settings"`
 	Server         ServerConfig       `yaml:"sshd"`
-	HttpClient     *client.HttpClient `-`
+
+	httpClient     *client.HttpClient
+	httpClientOnce sync.Once
 }
 
 // The defaults to apply before parsing the config file(s).
 var (
 	DefaultConfig = Config{
-		LogFile: "gitlab-shell.log",
+		LogFile:   "gitlab-shell.log",
 		LogFormat: "text",
-		Server: DefaultServerConfig,
-		User: "git",
+		Server:    DefaultServerConfig,
+		User:      "git",
 	}
 
 	DefaultServerConfig = ServerConfig{
-		Listen: "[::]:22",
-		WebListen: "localhost:9122",
+		Listen:                  "[::]:22",
+		WebListen:               "localhost:9122",
 		ConcurrentSessionsLimit: 10,
 		HostKeyFiles: []string{
 			"/run/secrets/ssh-hostkeys/ssh_host_rsa_key",
@@ -70,22 +73,19 @@ var (
 	}
 )
 
-func (c *Config) GetHttpClient() *client.HttpClient {
-	if c.HttpClient != nil {
-		return c.HttpClient
-	}
+func (c *Config) HttpClient() *client.HttpClient {
+	c.httpClientOnce.Do(func() {
+		c.httpClient = client.NewHTTPClient(
+			c.GitlabUrl,
+			c.GitlabRelativeURLRoot,
+			c.HttpSettings.CaFile,
+			c.HttpSettings.CaPath,
+			c.HttpSettings.SelfSignedCert,
+			c.HttpSettings.ReadTimeoutSeconds,
+		)
+	})
 
-	client := client.NewHTTPClient(
-		c.GitlabUrl,
-		c.GitlabRelativeURLRoot,
-		c.HttpSettings.CaFile,
-		c.HttpSettings.CaPath,
-		c.HttpSettings.SelfSignedCert,
-		c.HttpSettings.ReadTimeoutSeconds)
-
-	c.HttpClient = client
-
-	return client
+	return c.httpClient
 }
 
 // NewFromDirExternal returns a new config from a given root dir. It also applies defaults appropriate for
