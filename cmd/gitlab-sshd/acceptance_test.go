@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/mikesmitty/edkey"
+	"github.com/pires/go-proxyproto"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 )
@@ -72,6 +74,7 @@ secret: "0123456789abcdef"
 gitlab_url: "` + gitlabUrl + `"
 sshd:
   listen: "127.0.0.1:0"
+  proxy_protocol: true
   web_listen: ""
   host_key_files:
     - "` + hostKeyPath + `"`)
@@ -89,13 +92,37 @@ func buildClient(t *testing.T, addr string, hostKey ed25519.PublicKey) *ssh.Clie
 	clientSigner, err := ssh.NewSignerFromKey(clientPrivKey)
 	require.NoError(t, err)
 
-	client, err := ssh.Dial("tcp", addr, &ssh.ClientConfig{
+	// Use the proxy protocol to spoof our client address
+	target, err := net.ResolveTCPAddr("tcp", addr)
+	require.NoError(t, err)
+	conn, err := net.DialTCP("tcp", nil, target)
+	require.NoError(t, err)
+	t.Cleanup(func() { conn.Close() })
+
+	// Create a proxyprotocol header or use HeaderProxyFromAddrs() if you
+	// have two conn's
+	header := &proxyproto.Header{
+		Version:           2,
+		Command:           proxyproto.PROXY,
+		TransportProtocol: proxyproto.TCPv4,
+		SourceAddr: &net.TCPAddr{
+			IP:   net.ParseIP("10.1.1.1"),
+			Port: 1000,
+		},
+		DestinationAddr: target,
+	}
+	// After the connection was created write the proxy headers first
+	_, err = header.WriteTo(conn)
+	require.NoError(t, err)
+
+	sshConn, chans, reqs, err := ssh.NewClientConn(conn, addr, &ssh.ClientConfig{
 		User:            "git",
 		Auth:            []ssh.AuthMethod{ssh.PublicKeys(clientSigner)},
 		HostKeyCallback: ssh.FixedHostKey(pubKey),
 	})
 	require.NoError(t, err)
 
+	client := ssh.NewClient(sshConn, chans, reqs)
 	t.Cleanup(func() { client.Close() })
 
 	return client

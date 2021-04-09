@@ -19,6 +19,7 @@ const (
 
 type ServerConfig struct {
 	Listen                  string   `yaml:"listen,omitempty"`
+	ProxyProtocol           bool     `yaml:"proxy_protocol,omitempty"`
 	WebListen               string   `yaml:"web_listen,omitempty"`
 	ConcurrentSessionsLimit int64    `yaml:"concurrent_sessions_limit,omitempty"`
 	HostKeyFiles            []string `yaml:"host_key_files,omitempty"`
