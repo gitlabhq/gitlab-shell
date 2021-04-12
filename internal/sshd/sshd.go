@@ -10,17 +10,20 @@ import (
 	"strconv"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
+	"github.com/pires/go-proxyproto"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/sync/semaphore"
+
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/authorizedkeys"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
-	"golang.org/x/crypto/ssh"
-	"golang.org/x/sync/semaphore"
 )
 
 const (
@@ -73,6 +76,12 @@ func Run(cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to listen for connection: %w", err)
 	}
+	if cfg.Server.ProxyProtocol {
+		sshListener = &proxyproto.Listener{Listener: sshListener}
+
+		log.Info("Proxy protocol is enabled")
+	}
+	defer sshListener.Close()
 
 	log.Infof("Listening on %v", sshListener.Addr().String())
 
