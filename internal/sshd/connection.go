@@ -50,14 +50,16 @@ var (
 type connection struct {
 	begin              time.Time
 	concurrentSessions *semaphore.Weighted
+	remoteAddr         string
 }
 
 type channelHandler func(context.Context, ssh.Channel, <-chan *ssh.Request)
 
-func newConnection(maxSessions int64) *connection {
+func newConnection(maxSessions int64, remoteAddr string) *connection {
 	return &connection{
 		begin:              time.Now(),
 		concurrentSessions: semaphore.NewWeighted(maxSessions),
+		remoteAddr:         remoteAddr,
 	}
 }
 
@@ -83,6 +85,14 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 
 		go func() {
 			defer c.concurrentSessions.Release(1)
+
+			// Prevent a panic in a single session from taking out the whole server
+			defer func() {
+				if err := recover(); err != nil {
+					log.Warnf("panic handling session from %s: recovered: %#+v", c.remoteAddr, err)
+				}
+			}()
+
 			handler(ctx, channel, requests)
 		}()
 	}
