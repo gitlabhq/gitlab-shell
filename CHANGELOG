@@ -1,3 +1,9 @@
+v13.18.0
+
+- Fix thread-safety issues in gitlab-shell !463
+- gitlab-sshd: Support the PROXY protocol !461
+- sshd: Recover from per-session and per-connection panics !464
+
 v13.17.0
 
 - Fix gitlab-shell panic when log file not writable !453
