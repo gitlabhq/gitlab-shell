@@ -93,7 +93,16 @@ func Run(cfg *config.Config) error {
 }
 
 func handleConn(cfg *config.Config, sshCfg *ssh.ServerConfig, nconn net.Conn) {
+	remoteAddr := nconn.RemoteAddr().String()
+
 	defer nconn.Close()
+
+	// Prevent a panic in a single connection from taking out the whole server
+	defer func() {
+		if err := recover(); err != nil {
+			log.Warnf("panic handling connection from %s: recovered: %#+v", remoteAddr, err)
+		}
+	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -106,13 +115,13 @@ func handleConn(cfg *config.Config, sshCfg *ssh.ServerConfig, nconn net.Conn) {
 
 	go ssh.DiscardRequests(reqs)
 
-	conn := newConnection(cfg.Server.ConcurrentSessionsLimit)
+	conn := newConnection(cfg.Server.ConcurrentSessionsLimit, remoteAddr)
 	conn.handle(ctx, chans, func(ctx context.Context, channel ssh.Channel, requests <-chan *ssh.Request) {
 		session := &session{
 			cfg:         cfg,
 			channel:     channel,
 			gitlabKeyId: sconn.Permissions.Extensions["key-id"],
-			remoteAddr:  nconn.RemoteAddr().(*net.TCPAddr).String(),
+			remoteAddr:  remoteAddr,
 		}
 
 		session.handle(ctx, requests)
