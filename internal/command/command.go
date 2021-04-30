@@ -53,7 +53,6 @@ func New(e *executable.Executable, arguments []string, env sshenv.Env, config *c
 // generated.
 func ContextWithCorrelationID() (context.Context, func()) {
 	ctx, finished := tracing.ExtractFromEnv(context.Background())
-	defer finished()
 
 	correlationID := correlation.ExtractFromContext(ctx)
 	if correlationID == "" {
