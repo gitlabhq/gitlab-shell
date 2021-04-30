@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"os"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/authorizedkeys"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/authorizedprincipals"
@@ -37,10 +36,6 @@ func New(e *executable.Executable, arguments []string, env sshenv.Env, config *c
 	}
 
 	if cmd := buildCommand(e, args, config, readWriter); cmd != nil {
-		if config.SslCertDir != "" {
-			os.Setenv("SSL_CERT_DIR", config.SslCertDir)
-		}
-
 		return cmd, nil
 	}
 

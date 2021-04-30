@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
 	"sync"
@@ -74,6 +75,12 @@ var (
 	}
 )
 
+func (c *Config) ApplyGlobalState() {
+	if c.SslCertDir != "" {
+		os.Setenv("SSL_CERT_DIR", c.SslCertDir)
+	}
+}
+
 func (c *Config) HttpClient() *client.HttpClient {
 	c.httpClientOnce.Do(func() {
 		c.httpClient = client.NewHTTPClient(
@@ -96,6 +103,9 @@ func NewFromDirExternal(dir string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	cfg.ApplyGlobalState()
+
 	return cfg, nil
 }
 

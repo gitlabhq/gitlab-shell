@@ -54,6 +54,9 @@ func main() {
 		}
 		log.Fatalf("configuration error: %v", err)
 	}
+
+	cfg.ApplyGlobalState()
+
 	logger.ConfigureStandalone(cfg)
 
 	// Startup monitoring endpoint.
