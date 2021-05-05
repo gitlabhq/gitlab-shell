@@ -12,7 +12,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/handler"
 )
 
-func (c *Command) performGitalyCall(response *accessverifier.Response) error {
+func (c *Command) performGitalyCall(ctx context.Context, response *accessverifier.Response) error {
 	gc := &handler.GitalyCommand{
 		Config:      c.Config,
 		ServiceName: string(commandargs.ReceivePack),
@@ -30,7 +30,7 @@ func (c *Command) performGitalyCall(response *accessverifier.Response) error {
 		GitConfigOptions: response.GitConfigOptions,
 	}
 
-	return gc.RunGitalyCommand(func(ctx context.Context, conn *grpc.ClientConn) (int32, error) {
+	return gc.RunGitalyCommand(ctx, func(ctx context.Context, conn *grpc.ClientConn) (int32, error) {
 		ctx, cancel := gc.PrepareContext(ctx, request.Repository, response, c.Args.Env)
 		defer cancel()
 

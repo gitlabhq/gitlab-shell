@@ -17,6 +17,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/authorizedkeys"
+	"gitlab.com/gitlab-org/labkit/correlation"
 )
 
 func Run(cfg *config.Config) error {
@@ -104,7 +105,7 @@ func handleConn(cfg *config.Config, sshCfg *ssh.ServerConfig, nconn net.Conn) {
 		}
 	}()
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(correlation.ContextWithCorrelation(context.Background(), correlation.SafeRandomID()))
 	defer cancel()
 
 	sconn, chans, reqs, err := ssh.NewServerConn(nconn, sshCfg)

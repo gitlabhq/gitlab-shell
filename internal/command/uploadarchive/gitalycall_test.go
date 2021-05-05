@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/sirupsen/logrus"
-
 	"github.com/stretchr/testify/require"
+	"gitlab.com/gitlab-org/labkit/correlation"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
@@ -36,8 +36,9 @@ func TestUploadPack(t *testing.T) {
 	}
 
 	hook := testhelper.SetupLogger()
+	ctx := correlation.ContextWithCorrelation(context.Background(), "a-correlation-id")
 
-	err := cmd.Execute(context.Background())
+	err := cmd.Execute(ctx)
 	require.NoError(t, err)
 
 	require.Equal(t, "UploadArchive: "+repo, output.String())
@@ -50,4 +51,5 @@ func TestUploadPack(t *testing.T) {
 	require.Contains(t, entries[1].Message, "command=git-upload-archive")
 	require.Contains(t, entries[1].Message, "gl_key_type=key")
 	require.Contains(t, entries[1].Message, "gl_key_id=123")
+	require.Contains(t, entries[1].Message, "correlation_id=a-correlation-id")
 }
