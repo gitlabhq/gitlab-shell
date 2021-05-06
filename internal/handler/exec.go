@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -135,11 +134,6 @@ func getConn(gc *GitalyCommand) (*GitalyConn, error) {
 		connOpts = append(connOpts,
 			grpc.WithPerRPCCredentials(gitalyauth.RPCCredentialsV2(gc.Token)),
 		)
-	}
-
-	// Use a working directory that won't get removed or unmounted.
-	if err := os.Chdir("/"); err != nil {
-		return nil, err
 	}
 
 	// Configure distributed tracing
