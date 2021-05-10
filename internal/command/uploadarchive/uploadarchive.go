@@ -28,7 +28,7 @@ func (c *Command) Execute(ctx context.Context) error {
 		return err
 	}
 
-	return c.performGitalyCall(response)
+	return c.performGitalyCall(ctx, response)
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {

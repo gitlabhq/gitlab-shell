@@ -44,16 +44,15 @@ type GitalyCommand struct {
 // RunGitalyCommand provides a bootstrap for Gitaly commands executed
 // through GitLab-Shell. It ensures that logging, tracing and other
 // common concerns are configured before executing the `handler`.
-func (gc *GitalyCommand) RunGitalyCommand(handler GitalyHandlerFunc) error {
-	gitalyConn, err := getConn(gc)
-
+func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHandlerFunc) error {
+	gitalyConn, err := getConn(ctx, gc)
 	if err != nil {
 		return err
 	}
 
-	_, err = handler(gitalyConn.ctx, gitalyConn.conn)
+	defer gitalyConn.close()
 
-	gitalyConn.close()
+	_, err = handler(gitalyConn.ctx, gitalyConn.conn)
 
 	return err
 }
@@ -62,12 +61,7 @@ func (gc *GitalyCommand) RunGitalyCommand(handler GitalyHandlerFunc) error {
 // be run.
 func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repository, response *accessverifier.Response, env sshenv.Env) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
-
-	gc.LogExecution(repository, response, env)
-
-	if response.CorrelationID != "" {
-		ctx = correlation.ContextWithCorrelation(ctx, response.CorrelationID)
-	}
+	gc.LogExecution(ctx, repository, response, env)
 
 	md, ok := metadata.FromOutgoingContext(ctx)
 	if !ok {
@@ -83,10 +77,10 @@ func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repo
 	return ctx, cancel
 }
 
-func (gc *GitalyCommand) LogExecution(repository *pb.Repository, response *accessverifier.Response, env sshenv.Env) {
+func (gc *GitalyCommand) LogExecution(ctx context.Context, repository *pb.Repository, response *accessverifier.Response, env sshenv.Env) {
 	fields := log.Fields{
 		"command":         gc.ServiceName,
-		"correlation_id":  response.CorrelationID,
+		"correlation_id":  correlation.ExtractFromContext(ctx),
 		"gl_project_path": repository.GlProjectPath,
 		"gl_repository":   repository.GlRepository,
 		"user_id":         response.UserId,
@@ -112,7 +106,7 @@ func withOutgoingMetadata(ctx context.Context, features map[string]string) conte
 	return metadata.NewOutgoingContext(ctx, md)
 }
 
-func getConn(gc *GitalyCommand) (*GitalyConn, error) {
+func getConn(ctx context.Context, gc *GitalyCommand) (*GitalyConn, error) {
 	if gc.Address == "" {
 		return nil, fmt.Errorf("no gitaly_address given")
 	}
@@ -152,10 +146,10 @@ func getConn(gc *GitalyCommand) (*GitalyConn, error) {
 		tracing.WithConnectionString(gc.Config.GitlabTracing),
 	)
 
-	ctx, finished := tracing.ExtractFromEnv(context.Background())
-	ctx = withOutgoingMetadata(ctx, gc.Features)
+	childCtx, finished := tracing.ExtractFromEnv(ctx)
+	childCtx = withOutgoingMetadata(childCtx, gc.Features)
 
-	conn, err := client.Dial(gc.Address, connOpts)
+	conn, err := client.DialContext(childCtx, gc.Address, connOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -166,5 +160,5 @@ func getConn(gc *GitalyCommand) (*GitalyConn, error) {
 		conn.Close()
 	}
 
-	return &GitalyConn{ctx: ctx, conn: conn, close: finish}, nil
+	return &GitalyConn{ctx: childCtx, conn: conn, close: finish}, nil
 }

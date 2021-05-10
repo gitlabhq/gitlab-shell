@@ -30,18 +30,18 @@ func TestRunGitalyCommand(t *testing.T) {
 		Address: "tcp://localhost:9999",
 	}
 
-	err := cmd.RunGitalyCommand(makeHandler(t, nil))
+	err := cmd.RunGitalyCommand(context.Background(), makeHandler(t, nil))
 	require.NoError(t, err)
 
 	expectedErr := errors.New("error")
-	err = cmd.RunGitalyCommand(makeHandler(t, expectedErr))
+	err = cmd.RunGitalyCommand(context.Background(), makeHandler(t, expectedErr))
 	require.Equal(t, err, expectedErr)
 }
 
 func TestMissingGitalyAddress(t *testing.T) {
 	cmd := GitalyCommand{Config: &config.Config{}}
 
-	err := cmd.RunGitalyCommand(makeHandler(t, nil))
+	err := cmd.RunGitalyCommand(context.Background(), makeHandler(t, nil))
 	require.EqualError(t, err, "no gitaly_address given")
 }
 
@@ -70,7 +70,7 @@ func TestGetConnMetadata(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			conn, err := getConn(tt.gc)
+			conn, err := getConn(context.Background(), tt.gc)
 			require.NoError(t, err)
 
 			md, exists := metadata.FromOutgoingContext(conn.ctx)

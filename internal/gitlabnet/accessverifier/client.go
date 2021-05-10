@@ -65,7 +65,6 @@ type Response struct {
 	ConsoleMessages  []string      `json:"gl_console_messages"`
 	Who              string
 	StatusCode       int
-	CorrelationID    string
 }
 
 func NewClient(config *config.Config) (*Client, error) {
@@ -110,8 +109,6 @@ func parse(hr *http.Response, args *commandargs.Shell) (*Response, error) {
 	}
 
 	response.StatusCode = hr.StatusCode
-	// We expect the same correlation ID that we sent
-	response.CorrelationID = hr.Header.Get("X-Request-Id")
 
 	return response, nil
 }
