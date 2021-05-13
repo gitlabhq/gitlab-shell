@@ -58,8 +58,10 @@ func successAPI(t *testing.T) http.Handler {
 			fmt.Fprintf(w, `{"id":1, "key":"%s"}`, r.FormValue("key"))
 		case "/api/v4/internal/discover":
 			fmt.Fprint(w, `{"id": 1000, "name": "Test User", "username": "test-user"}`)
+		case "/api/v4/internal/personal_access_token":
+			fmt.Fprint(w, `{"success": true, "token": "testtoken", "scopes": ["api"], "expires_at": ""}`)
 		default:
-			t.Log("Unexpected request to successAPI!")
+			t.Logf("Unexpected request to successAPI: %s", r.URL.EscapedPath())
 			t.FailNow()
 		}
 	})
@@ -216,4 +218,16 @@ func TestDiscoverSuccess(t *testing.T) {
 	output, err := session.Output("discover")
 	require.NoError(t, err)
 	require.Equal(t, "Welcome to GitLab, @test-user!\n", string(output))
+}
+
+func TestPersonalAccessTokenSuccess(t *testing.T) {
+	client := runSSHD(t, successAPI(t))
+
+	session, err := client.NewSession()
+	require.NoError(t, err)
+	defer session.Close()
+
+	output, err := session.Output("personal_access_token test api")
+	require.NoError(t, err)
+	require.Equal(t, "Token:   testtoken\nScopes:  api\nExpires: never\n", string(output))
 }
