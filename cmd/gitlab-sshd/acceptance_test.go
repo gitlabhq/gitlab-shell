@@ -62,6 +62,8 @@ func successAPI(t *testing.T) http.Handler {
 			fmt.Fprint(w, `{"success": true, "token": "testtoken", "scopes": ["api"], "expires_at": ""}`)
 		case "/api/v4/internal/two_factor_recovery_codes":
 			fmt.Fprint(w, `{"success": true, "recovery_codes": ["code1", "code2"]}`)
+		case "/api/v4/internal/two_factor_otp_check":
+			fmt.Fprint(w, `{"success": true}`)
 		default:
 			t.Logf("Unexpected request to successAPI: %s", r.URL.EscapedPath())
 			t.FailNow()
@@ -275,4 +277,34 @@ During sign in, use one of the codes above when prompted for
 your two-factor code. Then, visit your Profile Settings and add
 a new device so you do not lose access to your account again.
 `, string(output))
+}
+
+func TwoFactorAuthVerifySuccess(t *testing.T) {
+	client := runSSHD(t, successAPI(t))
+
+	session, err := client.NewSession()
+	require.NoError(t, err)
+	defer session.Close()
+
+	stdin, err := session.StdinPipe()
+	require.NoError(t, err)
+
+	stdout, err := session.StdoutPipe()
+	require.NoError(t, err)
+
+	reader := bufio.NewReader(stdout)
+
+	err = session.Start("2fa_verify")
+	require.NoError(t, err)
+
+	line, err := reader.ReadString('\n')
+	require.NoError(t, err)
+	require.Equal(t, "OTP: ", line)
+
+	_, err = fmt.Fprintln(stdin, "otp123")
+	require.NoError(t, err)
+
+	output, err := ioutil.ReadAll(stdout)
+	require.NoError(t, err)
+	require.Equal(t, "OTP validation successful. Git operations are now allowed.\n", string(output))
 }
