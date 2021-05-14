@@ -45,7 +45,7 @@ func TestMissingGitalyAddress(t *testing.T) {
 	require.EqualError(t, err, "no gitaly_address given")
 }
 
-func TestGetConnMetadata(t *testing.T) {
+func TestRunGitalyCommandMetadata(t *testing.T) {
 	tests := []struct {
 		name string
 		gc   *GitalyCommand
@@ -70,19 +70,23 @@ func TestGetConnMetadata(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			conn, err := getConn(context.Background(), tt.gc)
+			cmd := tt.gc
+
+			err := cmd.RunGitalyCommand(context.Background(), func(ctx context.Context, _ *grpc.ClientConn) (int32, error) {
+				md, exists := metadata.FromOutgoingContext(ctx)
+				require.True(t, exists)
+				require.Equal(t, len(tt.want), md.Len())
+
+				for k, v := range tt.want {
+					values := md.Get(k)
+					require.Equal(t, 1, len(values))
+					require.Equal(t, v, values[0])
+				}
+
+				return 0, nil
+			})
+
 			require.NoError(t, err)
-
-			md, exists := metadata.FromOutgoingContext(conn.ctx)
-			require.True(t, exists)
-			require.Equal(t, len(tt.want), md.Len())
-
-			for k, v := range tt.want {
-				values := md.Get(k)
-				require.Equal(t, 1, len(values))
-				require.Equal(t, v, values[0])
-			}
-
 		})
 	}
 }

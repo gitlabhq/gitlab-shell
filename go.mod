@@ -3,6 +3,8 @@ module gitlab.com/gitlab-org/gitlab-shell
 go 1.13
 
 require (
+	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
+	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/mattn/go-shellwords v1.0.11
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/otiai10/copy v1.4.2

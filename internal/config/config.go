@@ -9,8 +9,10 @@ import (
 	"path/filepath"
 	"sync"
 
-	"gitlab.com/gitlab-org/gitlab-shell/client"
+	"gitlab.com/gitlab-org/labkit/tracing"
 	yaml "gopkg.in/yaml.v2"
+
+	"gitlab.com/gitlab-org/gitlab-shell/client"
 )
 
 const (
@@ -83,7 +85,7 @@ func (c *Config) ApplyGlobalState() {
 
 func (c *Config) HttpClient() *client.HttpClient {
 	c.httpClientOnce.Do(func() {
-		c.httpClient = client.NewHTTPClient(
+		client := client.NewHTTPClient(
 			c.GitlabUrl,
 			c.GitlabRelativeURLRoot,
 			c.HttpSettings.CaFile,
@@ -91,6 +93,11 @@ func (c *Config) HttpClient() *client.HttpClient {
 			c.HttpSettings.SelfSignedCert,
 			c.HttpSettings.ReadTimeoutSeconds,
 		)
+
+		tr := client.Transport
+		client.Transport = tracing.NewRoundTripper(tr)
+
+		c.httpClient = client
 	})
 
 	return c.httpClient

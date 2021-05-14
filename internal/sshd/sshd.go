@@ -20,7 +20,7 @@ import (
 	"gitlab.com/gitlab-org/labkit/correlation"
 )
 
-func Run(cfg *config.Config) error {
+func Run(ctx context.Context, cfg *config.Config) error {
 	authorizedKeysClient, err := authorizedkeys.NewClient(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to initialize GitLab client: %w", err)
@@ -47,7 +47,7 @@ func Run(cfg *config.Config) error {
 			if key.Type() == ssh.KeyAlgoDSA {
 				return nil, errors.New("DSA is prohibited")
 			}
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			defer cancel()
 			res, err := authorizedKeysClient.GetByKey(ctx, base64.RawStdEncoding.EncodeToString(key.Marshal()))
 			if err != nil {
@@ -89,11 +89,11 @@ func Run(cfg *config.Config) error {
 			continue
 		}
 
-		go handleConn(cfg, sshCfg, nconn)
+		go handleConn(ctx, cfg, sshCfg, nconn)
 	}
 }
 
-func handleConn(cfg *config.Config, sshCfg *ssh.ServerConfig, nconn net.Conn) {
+func handleConn(ctx context.Context, cfg *config.Config, sshCfg *ssh.ServerConfig, nconn net.Conn) {
 	remoteAddr := nconn.RemoteAddr().String()
 
 	defer nconn.Close()
@@ -105,7 +105,7 @@ func handleConn(cfg *config.Config, sshCfg *ssh.ServerConfig, nconn net.Conn) {
 		}
 	}()
 
-	ctx, cancel := context.WithCancel(correlation.ContextWithCorrelation(context.Background(), correlation.SafeRandomID()))
+	ctx, cancel := context.WithCancel(correlation.ContextWithCorrelation(ctx, correlation.SafeRandomID()))
 	defer cancel()
 
 	sconn, chans, reqs, err := ssh.NewServerConn(nconn, sshCfg)

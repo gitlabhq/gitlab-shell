@@ -6,6 +6,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/logger"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshd"
@@ -59,6 +60,9 @@ func main() {
 
 	logger.ConfigureStandalone(cfg)
 
+	ctx, finished := command.Setup("gitlab-sshd", cfg)
+	defer finished()
+
 	// Startup monitoring endpoint.
 	if cfg.Server.WebListen != "" {
 		go func() {
@@ -71,7 +75,7 @@ func main() {
 		}()
 	}
 
-	if err := sshd.Run(cfg); err != nil {
+	if err := sshd.Run(ctx, cfg); err != nil {
 		log.Fatalf("Failed to start GitLab built-in sshd: %v", err)
 	}
 }

@@ -3,7 +3,8 @@
 GO_SOURCES := $(shell find . -name '*.go')
 VERSION_STRING := $(shell git describe --match v* 2>/dev/null || awk '$0="v"$0' VERSION 2>/dev/null || echo unknown)
 BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
-GOBUILD_FLAGS := -ldflags "-X main.Version=$(VERSION_STRING) -X main.BuildTime=$(BUILD_TIME)"
+BUILD_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver
+GOBUILD_FLAGS := -ldflags "-X main.Version=$(VERSION_STRING) -X main.BuildTime=$(BUILD_TIME)" -tags "$(BUILD_TAGS)"
 
 validate: verify test
 
