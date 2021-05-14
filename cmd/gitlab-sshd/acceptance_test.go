@@ -60,6 +60,8 @@ func successAPI(t *testing.T) http.Handler {
 			fmt.Fprint(w, `{"id": 1000, "name": "Test User", "username": "test-user"}`)
 		case "/api/v4/internal/personal_access_token":
 			fmt.Fprint(w, `{"success": true, "token": "testtoken", "scopes": ["api"], "expires_at": ""}`)
+		case "/api/v4/internal/two_factor_recovery_codes":
+			fmt.Fprint(w, `{"success": true, "recovery_codes": ["code1", "code2"]}`)
 		default:
 			t.Logf("Unexpected request to successAPI: %s", r.URL.EscapedPath())
 			t.FailNow()
@@ -230,4 +232,47 @@ func TestPersonalAccessTokenSuccess(t *testing.T) {
 	output, err := session.Output("personal_access_token test api")
 	require.NoError(t, err)
 	require.Equal(t, "Token:   testtoken\nScopes:  api\nExpires: never\n", string(output))
+}
+
+func TestTwoFactorAuthRecoveryCodesSuccess(t *testing.T) {
+	client := runSSHD(t, successAPI(t))
+
+	session, err := client.NewSession()
+	require.NoError(t, err)
+	defer session.Close()
+
+	stdin, err := session.StdinPipe()
+	require.NoError(t, err)
+
+	stdout, err := session.StdoutPipe()
+	require.NoError(t, err)
+
+	reader := bufio.NewReader(stdout)
+
+	err = session.Start("2fa_recovery_codes")
+	require.NoError(t, err)
+
+	line, err := reader.ReadString('\n')
+	require.NoError(t, err)
+	require.Equal(t, "Are you sure you want to generate new two-factor recovery codes?\n", line)
+
+	line, err = reader.ReadString('\n')
+	require.NoError(t, err)
+	require.Equal(t, "Any existing recovery codes you saved will be invalidated. (yes/no)\n", line)
+
+	_, err = fmt.Fprintln(stdin, "yes")
+	require.NoError(t, err)
+
+	output, err := ioutil.ReadAll(stdout)
+	require.NoError(t, err)
+	require.Equal(t, `
+Your two-factor authentication recovery codes are:
+
+code1
+code2
+
+During sign in, use one of the codes above when prompted for
+your two-factor code. Then, visit your Profile Settings and add
+a new device so you do not lose access to your account again.
+`, string(output))
 }
