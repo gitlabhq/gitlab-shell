@@ -21,6 +21,7 @@ import (
 	"github.com/mikesmitty/edkey"
 	"github.com/pires/go-proxyproto"
 	"github.com/stretchr/testify/require"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -50,6 +51,10 @@ func successAPI(t *testing.T) http.Handler {
 	t.Helper()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		testDirCleanup, err := testhelper.PrepareTestRootDir()
+		require.NoError(t, err)
+		defer testDirCleanup()
+
 		t.Logf("gitlab-api-mock: received request: %s %s", r.Method, r.RequestURI)
 		w.Header().Set("Content-Type", "application/json")
 
@@ -64,6 +69,14 @@ func successAPI(t *testing.T) http.Handler {
 			fmt.Fprint(w, `{"success": true, "recovery_codes": ["code1", "code2"]}`)
 		case "/api/v4/internal/two_factor_otp_check":
 			fmt.Fprint(w, `{"success": true}`)
+		case "/api/v4/internal/allowed":
+			body, err := ioutil.ReadFile(filepath.Join(testhelper.TestRoot, "responses/allowed_without_console_messages.json"))
+			require.NoError(t, err)
+
+			_, err = w.Write(body)
+			require.NoError(t, err)
+		case "/api/v4/internal/lfs_authenticate":
+			fmt.Fprint(w, `{"username": "test-user", "lfs_token": "testlfstoken", "repo_path": "foo", "expires_in": 7200}`)
 		default:
 			t.Logf("Unexpected request to successAPI: %s", r.URL.EscapedPath())
 			t.FailNow()
@@ -307,4 +320,18 @@ func TwoFactorAuthVerifySuccess(t *testing.T) {
 	output, err := ioutil.ReadAll(stdout)
 	require.NoError(t, err)
 	require.Equal(t, "OTP validation successful. Git operations are now allowed.\n", string(output))
+}
+
+func TestGitLfsAuthenticateSuccess(t *testing.T) {
+	client := runSSHD(t, successAPI(t))
+
+	session, err := client.NewSession()
+	require.NoError(t, err)
+	defer session.Close()
+
+	output, err := session.Output("git-lfs-authenticate test-user/repo.git download")
+
+	require.NoError(t, err)
+	require.Equal(t, `{"header":{"Authorization":"Basic dGVzdC11c2VyOnRlc3RsZnN0b2tlbg=="},"href":"/info/lfs","expires_in":7200}
+`, string(output))
 }
