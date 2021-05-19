@@ -77,7 +77,7 @@ code_quality:
   rules: *workflow_rules
 
 code_navigation:
-  image: sourcegraph/lsif-go:v1
+  image: sourcegraph/lsif-go:v1.3.1
   allow_failure: true
   script:
     - lsif-go
