@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"crypto/ed25519"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io"
@@ -16,18 +17,33 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/mikesmitty/edkey"
 	"github.com/pires/go-proxyproto"
 	"github.com/stretchr/testify/require"
+	gitalyClient "gitlab.com/gitlab-org/gitaly/client"
+	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 	"golang.org/x/crypto/ssh"
 )
 
 var (
-	sshdPath = ""
+	sshdPath       = ""
+	gitalyConnInfo *gitalyConnectionInfo
 )
+
+const (
+	testRepo          = "test-gitlab-shell/gitlab-test.git"
+	testRepoNamespace = "test-gitlab-shell"
+	testRepoImportUrl = "https://gitlab.com/gitlab-org/gitlab-test.git"
+)
+
+type gitalyConnectionInfo struct {
+	Address string `json:"address"`
+	Storage string `json:"storage"`
+}
 
 func init() {
 	rootDir := rootDir()
@@ -35,6 +51,11 @@ func init() {
 
 	if _, err := os.Stat(sshdPath); os.IsNotExist(err) {
 		panic(fmt.Errorf("cannot find executable %s. Please run 'make compile'", sshdPath))
+	}
+
+	gci, exists := os.LookupEnv("GITALY_CONNECTION_INFO")
+	if exists {
+		json.Unmarshal([]byte(gci), &gitalyConnInfo)
 	}
 }
 
@@ -45,6 +66,29 @@ func rootDir() string {
 	}
 
 	return filepath.Join(filepath.Dir(currentFile), "..", "..")
+}
+
+func ensureGitalyRepository(t *testing.T) {
+	if os.Getenv("GITALY_CONNECTION_INFO") == "" {
+		t.Skip("GITALY_CONNECTION_INFO is not set")
+	}
+
+	conn, err := gitalyClient.Dial(gitalyConnInfo.Address, gitalyClient.DefaultDialOpts)
+	require.NoError(t, err)
+
+	namespace := pb.NewNamespaceServiceClient(conn)
+	repository := pb.NewRepositoryServiceClient(conn)
+
+	// Remove the repository if it already exists, for consistency
+	rmNsReq := &pb.RemoveNamespaceRequest{StorageName: gitalyConnInfo.Storage, Name: testRepoNamespace}
+	_, err = namespace.RemoveNamespace(context.Background(), rmNsReq)
+	require.NoError(t, err)
+
+	gl_repository := &pb.Repository{StorageName: gitalyConnInfo.Storage, RelativePath: testRepo}
+	createReq := &pb.CreateRepositoryFromURLRequest{Repository: gl_repository, Url: testRepoImportUrl}
+
+	_, err = repository.CreateRepositoryFromURL(context.Background(), createReq)
+	require.NoError(t, err)
 }
 
 func successAPI(t *testing.T) http.Handler {
@@ -73,7 +117,13 @@ func successAPI(t *testing.T) http.Handler {
 			body, err := ioutil.ReadFile(filepath.Join(testhelper.TestRoot, "responses/allowed_without_console_messages.json"))
 			require.NoError(t, err)
 
-			_, err = w.Write(body)
+			response := strings.Replace(string(body), "GITALY_REPOSITORY", testRepo, 1)
+
+			if gitalyConnInfo != nil {
+				response = strings.Replace(response, "GITALY_ADDRESS", gitalyConnInfo.Address, 1)
+			}
+
+			fmt.Fprint(w, response)
 			require.NoError(t, err)
 		case "/api/v4/internal/lfs_authenticate":
 			fmt.Fprint(w, `{"username": "test-user", "lfs_token": "testlfstoken", "repo_path": "foo", "expires_in": 7200}`)
@@ -334,4 +384,25 @@ func TestGitLfsAuthenticateSuccess(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, `{"header":{"Authorization":"Basic dGVzdC11c2VyOnRlc3RsZnN0b2tlbg=="},"href":"/info/lfs","expires_in":7200}
 `, string(output))
+}
+
+func TestGitReceivePackSuccess(t *testing.T) {
+	ensureGitalyRepository(t)
+
+	client := runSSHD(t, successAPI(t))
+
+	session, err := client.NewSession()
+	require.NoError(t, err)
+	defer session.Close()
+
+	output, err := session.Output(fmt.Sprintf("git-receive-pack %s", testRepo))
+	require.NoError(t, err)
+
+	outputLines := strings.Split(string(output), "\n")
+
+	for i := 0; i < (len(outputLines) - 1); i++ {
+		require.Regexp(t, "^[0-9a-f]{44} refs/(heads|tags)/[^ ]+", outputLines[i])
+	}
+
+	require.Equal(t, "0000", outputLines[len(outputLines)-1])
 }
