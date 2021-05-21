@@ -60,6 +60,20 @@ Run both test and verify (the default Makefile target):
     bundle install
     make validate
 
+### Gitaly
+
+Some tests need a Gitaly server. The
+[`docker-compose.yml`](./docker-compose.yml) file will run Gitaly on
+port 8075. To tell the tests where Gitaly is, set
+`GITALY_CONNECTION_INFO`:
+
+    export GITALY_CONNECTION_INFO='{"address": "tcp://localhost:8075", "storage": "default"}'
+    make test
+
+If no `GITALY_CONNECTION_INFO` is set, the test suite will still run, but any
+tests requiring Gitaly will be skipped. They will always run in the CI
+environment.
+
 ## Git LFS remark
 
 Starting with GitLab 8.12, GitLab supports Git LFS authentication through SSH.

@@ -30,6 +30,8 @@ default:
     - gitlab-org-docker
 
 .test:
+  variables:
+    GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
   before_script:
     # Set up the environment to run integration tests (still written in Ruby)
     - apt-get update -qq && apt-get install -y ruby ruby-dev
@@ -42,6 +44,11 @@ default:
     - cp config.yml.example config.yml
     - go version
     - which go
+  services:
+    - name: registry.gitlab.com/gitlab-org/build/cng/gitaly:latest
+      # Disable the hooks so we don't have to stub the GitLab API
+      command: ["bash", "-c", "mkdir -p /home/git/repositories && rm -rf /srv/gitlab-shell/hooks/* && exec /usr/bin/env GITALY_TESTING_NO_GIT_HOOKS=1 /scripts/process-wrapper"]
+      alias: gitaly
   script:
     - make verify test
 
