@@ -44,14 +44,14 @@ auth_file: "/home/git/.ssh/authorized_keys"
 # secret: "supersecret"
 
 # Log file.
-# Default is gitlab-shell.log in the root directory.
-# log_file: "/home/git/gitlab-shell/gitlab-shell.log"
+# Default is gitlab-shell.json in the root directory.
+# log_file: "/home/git/gitlab-shell/gitlab-shell.json"
 
 # Log level. INFO by default
 log_level: INFO
 
-# Log format. 'text' by default
-# log_format: json
+# Log format. 'json' by default
+# log_format: text
 
 # Audit usernames.
 # Set to true to see real usernames in the logs instead of key ids, which is easier to follow, but
@@ -73,7 +73,7 @@ sshd:
   web_listen: "localhost:9122"
   # Maximum number of concurrent sessions allowed on a single SSH connection. Defaults to 10.
   concurrent_sessions_limit: 10
-  # SSH host key files. 
+  # SSH host key files.
   host_key_files:
     - /run/secrets/ssh-hostkeys/ssh_host_rsa_key
     - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key
