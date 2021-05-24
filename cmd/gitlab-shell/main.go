@@ -57,7 +57,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx, finished := command.ContextWithCorrelationID()
+	ctx, finished := command.Setup(executable.Name, config)
 	defer finished()
 
 	if err = cmd.Execute(ctx); err != nil {

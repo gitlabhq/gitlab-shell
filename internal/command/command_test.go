@@ -168,7 +168,7 @@ func TestFailingNew(t *testing.T) {
 	}
 }
 
-func TestContextWithCorrelationID(t *testing.T) {
+func TestSetup(t *testing.T) {
 	testCases := []struct {
 		name                  string
 		additionalEnv         map[string]string
@@ -190,16 +190,20 @@ func TestContextWithCorrelationID(t *testing.T) {
 			resetEnvironment := addAdditionalEnv(tc.additionalEnv)
 			defer resetEnvironment()
 
-			ctx, finished := ContextWithCorrelationID()
+			ctx, finished := Setup("foo", &config.Config{})
+			defer finished()
+
 			require.NotNil(t, ctx, "ctx is nil")
 			require.NotNil(t, finished, "finished is nil")
+
 			correlationID := correlation.ExtractFromContext(ctx)
 			require.NotEmpty(t, correlationID)
-
 			if tc.expectedCorrelationID != "" {
 				require.Equal(t, tc.expectedCorrelationID, correlationID)
 			}
-			defer finished()
+
+			clientName := correlation.ExtractClientNameFromContext(ctx)
+			require.Equal(t, "foo", clientName)
 		})
 	}
 }

@@ -62,6 +62,7 @@ func TestReceivePack(t *testing.T) {
 
 		hook := testhelper.SetupLogger()
 		ctx := correlation.ContextWithCorrelation(context.Background(), "a-correlation-id")
+		ctx = correlation.ContextWithClientName(ctx, "gitlab-shell-tests")
 
 		err := cmd.Execute(ctx)
 		require.NoError(t, err)
