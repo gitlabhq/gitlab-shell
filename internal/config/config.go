@@ -57,8 +57,8 @@ type Config struct {
 // The defaults to apply before parsing the config file(s).
 var (
 	DefaultConfig = Config{
-		LogFile:   "gitlab-shell.log",
-		LogFormat: "text",
+		LogFile:   "gitlab-shell.json",
+		LogFormat: "json",
 		Server:    DefaultServerConfig,
 		User:      "git",
 	}
