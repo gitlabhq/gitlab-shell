@@ -44,14 +44,14 @@ auth_file: "/home/git/.ssh/authorized_keys"
 # secret: "supersecret"
 
 # Log file.
-# Default is gitlab-shell.json in the root directory.
+# Default is gitlab-shell.log in the root directory.
 # log_file: "/home/git/gitlab-shell/gitlab-shell.log"
 
 # Log level. INFO by default
 log_level: INFO
 
-# Log format. 'json' by default
-# log_format: text
+# Log format. 'json' by default, can be changed to 'text' if needed
+# log_format: json
 
 # Audit usernames.
 # Set to true to see real usernames in the logs instead of key ids, which is easier to follow, but
