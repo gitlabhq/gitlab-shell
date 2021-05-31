@@ -407,6 +407,29 @@ func TestGitReceivePackSuccess(t *testing.T) {
 	require.Equal(t, "0000", outputLines[len(outputLines)-1])
 }
 
+func TestGitUploadPackSuccess(t *testing.T) {
+	ensureGitalyRepository(t)
+
+	client := runSSHD(t, successAPI(t))
+
+	session, err := client.NewSession()
+	require.NoError(t, err)
+	defer session.Close()
+
+	output, err := session.Output(fmt.Sprintf("git-upload-pack %s", testRepo))
+	require.NoError(t, err)
+
+	outputLines := strings.Split(string(output), "\n")
+
+	require.Regexp(t, "^[0-9a-f]{44} HEAD.+", outputLines[0])
+
+	for i := 1; i < (len(outputLines) - 1); i++ {
+		require.Regexp(t, "^[0-9a-f]{44} refs/(heads|tags)/[^ ]+", outputLines[i])
+	}
+
+	require.Equal(t, "0000", outputLines[len(outputLines)-1])
+}
+
 func TestGitUploadArchiveSuccess(t *testing.T) {
 	ensureGitalyRepository(t)
 
