@@ -406,3 +406,21 @@ func TestGitReceivePackSuccess(t *testing.T) {
 
 	require.Equal(t, "0000", outputLines[len(outputLines)-1])
 }
+
+func TestGitUploadArchiveSuccess(t *testing.T) {
+	ensureGitalyRepository(t)
+
+	client := runSSHD(t, successAPI(t))
+
+	session, err := client.NewSession()
+	require.NoError(t, err)
+	defer session.Close()
+
+	output, err := session.Output(fmt.Sprintf("git-upload-archive %s", testRepo))
+	require.NoError(t, err)
+
+	outputLines := strings.Split(string(output), "\n")
+
+	require.Equal(t, "0008ACK", outputLines[0])
+	require.Regexp(t, "^0000", outputLines[1])
+}
