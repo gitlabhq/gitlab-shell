@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
+	pb "gitlab.com/gitlab-org/gitaly/v14/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"

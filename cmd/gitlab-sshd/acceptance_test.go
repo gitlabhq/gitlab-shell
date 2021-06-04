@@ -23,8 +23,8 @@ import (
 	"github.com/mikesmitty/edkey"
 	"github.com/pires/go-proxyproto"
 	"github.com/stretchr/testify/require"
-	gitalyClient "gitlab.com/gitlab-org/gitaly/client"
-	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
+	gitalyClient "gitlab.com/gitlab-org/gitaly/v14/client"
+	pb "gitlab.com/gitlab-org/gitaly/v14/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 	"golang.org/x/crypto/ssh"
 )
