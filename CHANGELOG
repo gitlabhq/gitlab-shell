@@ -1,3 +1,10 @@
+v13.19.0
+
+- Don't finish the opentracing span early !466
+- gitlab-sshd: Respect the ssl_cert_dir config !467
+- Stop changing directory to the filesystem root !470
+- Fix opentracing setup for gitlab-sshd !473
+
 v13.18.0
 
 - Fix thread-safety issues in gitlab-shell !463
