@@ -7,7 +7,7 @@ GitLab Shell is not a Unix shell nor a replacement for Bash or Zsh.
 
 When you access the GitLab server over SSH then GitLab Shell will:
 
-1. Limits you to predefined git commands (git push, git pull).
+1. Limit you to predefined git commands (git push, git pull).
 1. Call the GitLab Rails API to check if you are authorized, and what Gitaly server your repository is on
 1. Copy data back and forth between the SSH client and the Gitaly server
 
