@@ -3,6 +3,7 @@ package logger
 import (
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -43,4 +44,28 @@ func TestConfigureWithPermissionError(t *testing.T) {
 
 	Configure(&config)
 	log.Info("this is a test")
+}
+
+func TestLogInUTC(t *testing.T) {
+	tmpFile, err := ioutil.TempFile(os.TempDir(), "logtest-")
+	require.NoError(t, err)
+	defer tmpFile.Close()
+	defer os.Remove(tmpFile.Name())
+
+	config := config.Config{
+		LogFile:   tmpFile.Name(),
+		LogFormat: "json",
+	}
+
+	Configure(&config)
+	log.Info("this is a test")
+
+	data, err := ioutil.ReadFile(tmpFile.Name())
+	require.NoError(t, err)
+
+	utc := `[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z`
+	r, e := regexp.MatchString(utc, string(data))
+
+	require.NoError(t, e)
+	require.True(t, r)
 }

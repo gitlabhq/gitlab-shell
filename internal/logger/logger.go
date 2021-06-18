@@ -10,9 +10,21 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 )
 
+type UTCFormatter struct {
+	log.Formatter
+}
+
+func (u UTCFormatter) Format(e *log.Entry) ([]byte, error) {
+	e.Time = e.Time.UTC()
+
+	return u.Formatter.Format(e)
+}
+
 func configureLogFormat(cfg *config.Config) {
 	if cfg.LogFormat == "json" {
-		log.SetFormatter(&log.JSONFormatter{})
+		log.SetFormatter(UTCFormatter{&log.JSONFormatter{}})
+	} else {
+		log.SetFormatter(UTCFormatter{&log.TextFormatter{}})
 	}
 }
 
