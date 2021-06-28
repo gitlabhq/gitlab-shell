@@ -20,8 +20,8 @@ const (
 )
 
 var (
-	whoKeyRegex      = regexp.MustCompile(`\bkey-(?P<keyid>\d+)\b`)
-	whoUsernameRegex = regexp.MustCompile(`\busername-(?P<username>\S+)\b`)
+	whoKeyRegex      = regexp.MustCompile(`\Akey-(?P<keyid>\d+)\z`)
+	whoUsernameRegex = regexp.MustCompile(`\Ausername-(?P<username>\S+)\z`)
 )
 
 type Shell struct {
