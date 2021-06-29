@@ -108,7 +108,7 @@ describe 'bin/gitlab-shell' do
     end
 
     it 'outputs "Only SSH allowed"' do
-      _, stderr, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-someuser"], env: {})
+      _, stderr, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-someuser"], env: {'SSH_CONNECTION' => ''})
 
       expect(stderr).to eq("Only SSH allowed\n")
       expect(status).not_to be_success
