@@ -34,15 +34,35 @@ Download and install the current version of Go from https://golang.org/dl/
 We follow the [Golang Release Policy](https://golang.org/doc/devel/release.html#policy)
 of supporting the current stable version and the previous two major versions.
 
-## Setup
-
-    make setup
-
 ## Check
 
 Checks if GitLab API access and redis via internal API can be reached:
 
     make check
+
+## Compile
+
+Builds the `gitlab-shell` binaries, placing them into `bin/`.
+
+    make compile
+
+## Install
+
+Builds the `gitlab-shell` binaries and installs them onto the filesystem. The
+default location is `/usr/local`, but can be controlled by use of the `PREFIX`
+and `DESTDIR` environment variables.
+
+    make install
+
+## Setup
+
+This command is intended for use when installing GitLab from source on a single
+machine. In addition to compiling the gitlab-shell binaries, it ensures that
+various paths on the filesystem exist with the correct permissions. Do not run
+it unless instructed to by your installation method documentation.
+
+    make setup
+
 
 ## Testing
 
