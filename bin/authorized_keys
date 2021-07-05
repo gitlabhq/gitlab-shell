@@ -1,9 +1,0 @@
-#!/bin/sh
-
-# Legacy script used for AuthorizedKeysCommand when configured without username.
-# Executes gitlab-shell-authorized-keys-check with "git" as expected and actual
-# username and with the passed key.
-#
-# TODO: Remove this in https://gitlab.com/gitlab-org/gitlab-shell/issues/209.
-
-$(dirname $0)/gitlab-shell-authorized-keys-check git git $1
