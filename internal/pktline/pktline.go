@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"regexp"
 	"strconv"
 )
 
@@ -15,6 +16,8 @@ const (
 	maxPktSize = 0xffff
 	pktDelim   = "0001"
 )
+
+var branchRemovalPktRegexp = regexp.MustCompile(`\A[a-f0-9]{4}[a-f0-9]{40} 0{40} `)
 
 // NewScanner returns a bufio.Scanner that splits on Git pktline boundaries
 func NewScanner(r io.Reader) *bufio.Scanner {
@@ -24,7 +27,16 @@ func NewScanner(r io.Reader) *bufio.Scanner {
 	return scanner
 }
 
-// IsDone detects the special flush packet '0009done\n'
+func IsRefRemoval(pkt []byte) bool {
+	return branchRemovalPktRegexp.Match(pkt)
+}
+
+// IsFlush detects the special flush packet '0000'
+func IsFlush(pkt []byte) bool {
+	return bytes.Equal(pkt, []byte("0000"))
+}
+
+// IsDone detects the special done packet '0009done\n'
 func IsDone(pkt []byte) bool {
 	return bytes.Equal(pkt, PktDone())
 }

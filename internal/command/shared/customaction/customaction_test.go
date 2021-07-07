@@ -46,7 +46,7 @@ func TestExecuteEOFSent(t *testing.T) {
 				require.NoError(t, json.Unmarshal(b, &request))
 
 				require.Equal(t, request.Data.UserId, who)
-				require.Equal(t, "input", string(request.Output))
+				require.Equal(t, "0009input", string(request.Output))
 
 				err = json.NewEncoder(w).Encode(Response{Result: []byte("output")})
 				require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestExecuteEOFSent(t *testing.T) {
 
 	outBuf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}
-	input := bytes.NewBufferString("input")
+	input := bytes.NewBufferString("0009input")
 
 	response := &accessverifier.Response{
 		Who: who,

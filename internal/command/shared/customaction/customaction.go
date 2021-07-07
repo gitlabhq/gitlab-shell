@@ -112,10 +112,32 @@ func (c *Command) performRequest(ctx context.Context, client *client.GitlabNetCl
 }
 
 func (c *Command) readFromStdin() ([]byte, error) {
-	output := new(bytes.Buffer)
-	_, err := io.Copy(output, c.ReadWriter.In)
+	var output []byte
+	var needsPackData bool
 
-	return output.Bytes(), err
+	scanner := pktline.NewScanner(c.ReadWriter.In)
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		output = append(output, line...)
+
+		if pktline.IsFlush(line) {
+			break
+		}
+
+		if !needsPackData && !pktline.IsRefRemoval(line) {
+			needsPackData = true
+		}
+	}
+
+	if needsPackData {
+		packData := new(bytes.Buffer)
+		_, err := io.Copy(packData, c.ReadWriter.In)
+
+		output = append(output, packData.Bytes()...)
+		return output, err
+	} else {
+		return output, nil
+	}
 }
 
 func (c *Command) readFromStdinNoEOF() []byte {
