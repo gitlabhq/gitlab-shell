@@ -1,3 +1,11 @@
+v13.20.0
+
+- Remove bin/authorized_keys !491
+- Add a make install command !490
+- Create PROCESS.md page with Security release process !488
+- Fix the Geo SSH push proxy hanging !487
+- Standardize logging timestamp format !485
+
 v13.19.0
 
 - Don't finish the opentracing span early !466
