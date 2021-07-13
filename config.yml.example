@@ -50,7 +50,7 @@ auth_file: "/home/git/.ssh/authorized_keys"
 # Log level. INFO by default
 log_level: INFO
 
-# Log format. 'text' by default
+# Log format. 'json' by default, can be changed to 'text' if needed
 # log_format: json
 
 # Audit usernames.
@@ -73,7 +73,7 @@ sshd:
   web_listen: "localhost:9122"
   # Maximum number of concurrent sessions allowed on a single SSH connection. Defaults to 10.
   concurrent_sessions_limit: 10
-  # SSH host key files. 
+  # SSH host key files.
   host_key_files:
     - /run/secrets/ssh-hostkeys/ssh_host_rsa_key
     - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key

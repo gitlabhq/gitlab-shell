@@ -60,7 +60,7 @@ type Config struct {
 var (
 	DefaultConfig = Config{
 		LogFile:   "gitlab-shell.log",
-		LogFormat: "text",
+		LogFormat: "json",
 		Server:    DefaultServerConfig,
 		User:      "git",
 	}
