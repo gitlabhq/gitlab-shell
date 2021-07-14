@@ -18,9 +18,7 @@ import (
 )
 
 func TestClients(t *testing.T) {
-	testDirCleanup, err := testhelper.PrepareTestRootDir()
-	require.NoError(t, err)
-	defer testDirCleanup()
+	testhelper.PrepareTestRootDir(t)
 
 	testCases := []struct {
 		desc            string

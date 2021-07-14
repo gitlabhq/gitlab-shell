@@ -163,9 +163,7 @@ func TestErrorResponses(t *testing.T) {
 }
 
 func setup(t *testing.T, allowedPayload string) *Client {
-	testDirCleanup, err := testhelper.PrepareTestRootDir()
-	require.NoError(t, err)
-	defer testDirCleanup()
+	testhelper.PrepareTestRootDir(t)
 
 	body, err := ioutil.ReadFile(path.Join(testhelper.TestRoot, "responses/allowed.json"))
 	require.NoError(t, err)

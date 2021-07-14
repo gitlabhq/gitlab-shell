@@ -7,10 +7,12 @@ import (
 	"path"
 	"runtime"
 	"time"
+	"testing"
 
 	"github.com/otiai10/copy"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -31,42 +33,21 @@ func TempEnv(env map[string]string) func() {
 	}
 }
 
-func PrepareTestRootDir() (func(), error) {
-	if err := os.MkdirAll(TestRoot, 0700); err != nil {
-		return nil, err
-	}
+func PrepareTestRootDir(t *testing.T) {
+	t.Helper()
 
-	var oldWd string
-	cleanup := func() {
-		if oldWd != "" {
-			err := os.Chdir(oldWd)
-			if err != nil {
-				panic(err)
-			}
-		}
+	require.NoError(t, os.MkdirAll(TestRoot, 0700))
 
-		if err := os.RemoveAll(TestRoot); err != nil {
-			panic(err)
-		}
-	}
+	t.Cleanup(func() { os.RemoveAll(TestRoot) })
 
-	if err := copyTestData(); err != nil {
-		cleanup()
-		return nil, err
-	}
+	require.NoError(t, copyTestData())
 
 	oldWd, err := os.Getwd()
-	if err != nil {
-		cleanup()
-		return nil, err
-	}
+	require.NoError(t, err)
 
-	if err := os.Chdir(TestRoot); err != nil {
-		cleanup()
-		return nil, err
-	}
+	t.Cleanup(func() { os.Chdir(oldWd) })
 
-	return cleanup, nil
+	require.NoError(t, os.Chdir(TestRoot))
 }
 
 func copyTestData() error {
