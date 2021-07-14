@@ -95,9 +95,7 @@ func successAPI(t *testing.T) http.Handler {
 	t.Helper()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		testDirCleanup, err := testhelper.PrepareTestRootDir()
-		require.NoError(t, err)
-		defer testDirCleanup()
+		testhelper.PrepareTestRootDir(t)
 
 		t.Logf("gitlab-api-mock: received request: %s %s", r.Method, r.RequestURI)
 		w.Header().Set("Content-Type", "application/json")

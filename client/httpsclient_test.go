@@ -98,9 +98,7 @@ func TestFailedRequests(t *testing.T) {
 }
 
 func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPath, clientKeyPath string, selfSigned bool) *GitlabNetClient {
-	testDirCleanup, err := testhelper.PrepareTestRootDir()
-	require.NoError(t, err)
-	defer testDirCleanup()
+	testhelper.PrepareTestRootDir(t)
 
 	requests := []testserver.TestRequestHandler{
 		{
