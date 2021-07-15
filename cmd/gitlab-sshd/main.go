@@ -76,6 +76,7 @@ func main() {
 				monitoring.Start(
 					monitoring.WithListenerAddress(cfg.Server.WebListen),
 					monitoring.WithBuildInformation(Version, BuildTime),
+					monitoring.WithServeMux(server.MonitoringServeMux()),
 				),
 			)
 		}()
