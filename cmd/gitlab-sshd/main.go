@@ -3,6 +3,10 @@ package main
 import (
 	"flag"
 	"os"
+	"os/signal"
+	"context"
+	"syscall"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -63,6 +67,8 @@ func main() {
 	ctx, finished := command.Setup("gitlab-sshd", cfg)
 	defer finished()
 
+	server := sshd.Server{Config: cfg}
+
 	// Startup monitoring endpoint.
 	if cfg.Server.WebListen != "" {
 		go func() {
@@ -75,7 +81,27 @@ func main() {
 		}()
 	}
 
-	if err := sshd.Run(ctx, cfg); err != nil {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-done
+		signal.Reset(syscall.SIGINT, syscall.SIGTERM)
+
+		log.WithFields(log.Fields{"shutdown_timeout_s": cfg.Server.GracePeriodSeconds, "signal": sig.String()}).Infof("Shutdown initiated")
+
+		server.Shutdown()
+
+		<-time.After(cfg.Server.GracePeriod())
+
+		cancel()
+
+	}()
+
+	if err := server.ListenAndServe(ctx); err != nil {
 		log.Fatalf("Failed to start GitLab built-in sshd: %v", err)
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"gitlab.com/gitlab-org/labkit/tracing"
 	yaml "gopkg.in/yaml.v2"
@@ -25,6 +26,7 @@ type ServerConfig struct {
 	ProxyProtocol           bool     `yaml:"proxy_protocol,omitempty"`
 	WebListen               string   `yaml:"web_listen,omitempty"`
 	ConcurrentSessionsLimit int64    `yaml:"concurrent_sessions_limit,omitempty"`
+	GracePeriodSeconds      uint64    `yaml:"grace_period"`
 	HostKeyFiles            []string `yaml:"host_key_files,omitempty"`
 }
 
@@ -69,6 +71,7 @@ var (
 		Listen:                  "[::]:22",
 		WebListen:               "localhost:9122",
 		ConcurrentSessionsLimit: 10,
+		GracePeriodSeconds: 10,
 		HostKeyFiles: []string{
 			"/run/secrets/ssh-hostkeys/ssh_host_rsa_key",
 			"/run/secrets/ssh-hostkeys/ssh_host_ecdsa_key",
@@ -76,6 +79,10 @@ var (
 		},
 	}
 )
+
+func (sc *ServerConfig) GracePeriod() time.Duration {
+	return time.Duration(sc.GracePeriodSeconds) * time.Second
+}
 
 func (c *Config) ApplyGlobalState() {
 	if c.SslCertDir != "" {
