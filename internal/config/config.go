@@ -26,7 +26,9 @@ type ServerConfig struct {
 	ProxyProtocol           bool     `yaml:"proxy_protocol,omitempty"`
 	WebListen               string   `yaml:"web_listen,omitempty"`
 	ConcurrentSessionsLimit int64    `yaml:"concurrent_sessions_limit,omitempty"`
-	GracePeriodSeconds      uint64    `yaml:"grace_period"`
+	GracePeriodSeconds      uint64   `yaml:"grace_period"`
+	ReadinessProbe          string   `yaml:"readiness_probe"`
+	LivenessProbe           string   `yaml:"liveness_probe"`
 	HostKeyFiles            []string `yaml:"host_key_files,omitempty"`
 }
 
@@ -72,6 +74,8 @@ var (
 		WebListen:               "localhost:9122",
 		ConcurrentSessionsLimit: 10,
 		GracePeriodSeconds: 10,
+		ReadinessProbe: "/start",
+		LivenessProbe: "/health",
 		HostKeyFiles: []string{
 			"/run/secrets/ssh-hostkeys/ssh_host_rsa_key",
 			"/run/secrets/ssh-hostkeys/ssh_host_ecdsa_key",
