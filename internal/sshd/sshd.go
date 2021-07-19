@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 	"sync"
+	"net/http"
 
 	log "github.com/sirupsen/logrus"
 
@@ -21,10 +22,20 @@ import (
 	"gitlab.com/gitlab-org/labkit/correlation"
 )
 
+type status int
+
+const(
+	StatusStarting status = iota
+	StatusReady
+	StatusOnShutdown
+	StatusClosed
+)
+
 type Server struct {
 	Config *config.Config
 
-	onShutdown bool
+	status status
+	statusMu sync.Mutex
 	wg sync.WaitGroup
 	listener net.Listener
 }
@@ -43,9 +54,27 @@ func (s *Server) Shutdown() error {
 		return nil
 	}
 
-	s.onShutdown = true
+	s.changeStatus(StatusOnShutdown)
 
 	return s.listener.Close()
+}
+
+func (s *Server) MonitoringServeMux() *http.ServeMux {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc(s.Config.Server.ReadinessProbe, func(w http.ResponseWriter, r *http.Request) {
+		if s.getStatus() == StatusReady {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}
+	})
+
+	mux.HandleFunc(s.Config.Server.LivenessProbe, func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+	})
+
+	return mux
 }
 
 func (s *Server) listen() error {
@@ -73,10 +102,12 @@ func (s *Server) serve(ctx context.Context) error {
 		return err
 	}
 
+	s.changeStatus(StatusReady)
+
 	for {
 		nconn, err := s.listener.Accept()
 		if err != nil {
-			if s.onShutdown {
+			if s.getStatus() == StatusOnShutdown {
 				break
 			}
 
@@ -90,7 +121,22 @@ func (s *Server) serve(ctx context.Context) error {
 
 	s.wg.Wait()
 
+	s.changeStatus(StatusClosed)
+
 	return nil
+}
+
+func (s *Server) changeStatus(st status) {
+	s.statusMu.Lock()
+	s.status = st
+	s.statusMu.Unlock()
+}
+
+func (s *Server) getStatus() status {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+
+	return s.status
 }
 
 func (s *Server) initConfig(ctx context.Context) (*ssh.ServerConfig, error) {
