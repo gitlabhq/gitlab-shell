@@ -14,6 +14,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/tracing"
 )
 
 const (
@@ -85,7 +86,7 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	}
 
 	c := &http.Client{
-		Transport: correlation.NewInstrumentedRoundTripper(transport),
+		Transport: correlation.NewInstrumentedRoundTripper(tracing.NewRoundTripper(transport)),
 		Timeout:   readTimeout(readTimeoutSeconds),
 	}
 
