@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.com/gitlab-org/labkit/tracing"
 	yaml "gopkg.in/yaml.v2"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
@@ -73,9 +72,9 @@ var (
 		Listen:                  "[::]:22",
 		WebListen:               "localhost:9122",
 		ConcurrentSessionsLimit: 10,
-		GracePeriodSeconds: 10,
-		ReadinessProbe: "/start",
-		LivenessProbe: "/health",
+		GracePeriodSeconds:      10,
+		ReadinessProbe:          "/start",
+		LivenessProbe:           "/health",
 		HostKeyFiles: []string{
 			"/run/secrets/ssh-hostkeys/ssh_host_rsa_key",
 			"/run/secrets/ssh-hostkeys/ssh_host_ecdsa_key",
@@ -96,7 +95,7 @@ func (c *Config) ApplyGlobalState() {
 
 func (c *Config) HttpClient() *client.HttpClient {
 	c.httpClientOnce.Do(func() {
-		client := client.NewHTTPClient(
+		c.httpClient = client.NewHTTPClient(
 			c.GitlabUrl,
 			c.GitlabRelativeURLRoot,
 			c.HttpSettings.CaFile,
@@ -104,11 +103,6 @@ func (c *Config) HttpClient() *client.HttpClient {
 			c.HttpSettings.SelfSignedCert,
 			c.HttpSettings.ReadTimeoutSeconds,
 		)
-
-		tr := client.Transport
-		client.Transport = tracing.NewRoundTripper(tr)
-
-		c.httpClient = client
 	})
 
 	return c.httpClient
