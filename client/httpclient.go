@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"gitlab.com/gitlab-org/labkit/tracing"
+	"gitlab.com/gitlab-org/labkit/log"
 )
 
 const (

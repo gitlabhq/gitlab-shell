@@ -10,12 +10,13 @@ import (
 	"io"
 	"net/http"
 
-	log "github.com/sirupsen/logrus"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/pktline"
+
+	"gitlab.com/gitlab-org/labkit/log"
 )
 
 type Request struct {

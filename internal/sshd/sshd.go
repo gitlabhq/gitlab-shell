@@ -12,13 +12,13 @@ import (
 	"sync"
 	"net/http"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/pires/go-proxyproto"
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/authorizedkeys"
+
+	"gitlab.com/gitlab-org/labkit/log"
 	"gitlab.com/gitlab-org/labkit/correlation"
 )
 
@@ -89,7 +89,7 @@ func (s *Server) listen() error {
 		log.Info("Proxy protocol is enabled")
 	}
 
-	log.Infof("Listening on %v", sshListener.Addr().String())
+	log.WithFields(log.Fields{"tcp_address": sshListener.Addr().String()}).Info("Listening for SSH connections")
 
 	s.listener = sshListener
 
@@ -111,7 +111,7 @@ func (s *Server) serve(ctx context.Context) error {
 				break
 			}
 
-			log.Warnf("Failed to accept connection: %v\n", err)
+			log.WithError(err).Warn("Failed to accept connection")
 			continue
 		}
 
@@ -173,12 +173,12 @@ func (s *Server) initConfig(ctx context.Context) (*ssh.ServerConfig, error) {
 	for _, filename := range s.Config.Server.HostKeyFiles {
 		keyRaw, err := ioutil.ReadFile(filename)
 		if err != nil {
-			log.Warnf("Failed to read host key %v: %v", filename, err)
+			log.WithError(err).Warnf("Failed to read host key %v", filename)
 			continue
 		}
 		key, err := ssh.ParsePrivateKey(keyRaw)
 		if err != nil {
-			log.Warnf("Failed to parse host key %v: %v", filename, err)
+			log.WithError(err).Warnf("Failed to parse host key %v", filename)
 			continue
 		}
 		loadedHostKeys++
@@ -201,7 +201,7 @@ func (s *Server) handleConn(ctx context.Context, sshCfg *ssh.ServerConfig, nconn
 	// Prevent a panic in a single connection from taking out the whole server
 	defer func() {
 		if err := recover(); err != nil {
-			log.Warnf("panic handling connection from %s: recovered: %#+v", remoteAddr, err)
+			log.WithFields(log.Fields{"recovered_error": err}).Warnf("panic handling session from %s", remoteAddr)
 		}
 	}()
 
@@ -210,7 +210,7 @@ func (s *Server) handleConn(ctx context.Context, sshCfg *ssh.ServerConfig, nconn
 
 	sconn, chans, reqs, err := ssh.NewServerConn(nconn, sshCfg)
 	if err != nil {
-		log.Infof("Failed to initialize SSH connection: %v", err)
+		log.WithError(err).Info("Failed to initialize SSH connection")
 		return
 	}
 

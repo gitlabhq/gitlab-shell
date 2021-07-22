@@ -8,19 +8,20 @@ import (
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	log "github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 
 	gitalyauth "gitlab.com/gitlab-org/gitaly/v14/auth"
 	"gitlab.com/gitlab-org/gitaly/v14/client"
 	pb "gitlab.com/gitlab-org/gitaly/v14/proto/go/gitalypb"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
-	"gitlab.com/gitlab-org/labkit/correlation"
 	grpccorrelation "gitlab.com/gitlab-org/labkit/correlation/grpc"
 	grpctracing "gitlab.com/gitlab-org/labkit/tracing/grpc"
+	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/log"
 )
 
 // GitalyHandlerFunc implementations are responsible for making
@@ -75,7 +76,6 @@ func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repo
 func (gc *GitalyCommand) LogExecution(ctx context.Context, repository *pb.Repository, response *accessverifier.Response, env sshenv.Env) {
 	fields := log.Fields{
 		"command":         gc.ServiceName,
-		"correlation_id":  correlation.ExtractFromContext(ctx),
 		"gl_project_path": repository.GlProjectPath,
 		"gl_repository":   repository.GlRepository,
 		"user_id":         response.UserId,
@@ -86,7 +86,7 @@ func (gc *GitalyCommand) LogExecution(ctx context.Context, repository *pb.Reposi
 		"gl_key_id":       response.KeyId,
 	}
 
-	log.WithFields(fields).Info("executing git command")
+	log.WithContextFields(ctx, fields).Info("executing git command")
 }
 
 func withOutgoingMetadata(ctx context.Context, features map[string]string) context.Context {
@@ -108,9 +108,9 @@ func getConn(ctx context.Context, gc *GitalyCommand) (*grpc.ClientConn, error) {
 
 	serviceName := correlation.ExtractClientNameFromContext(ctx)
 	if serviceName == "" {
-		log.Warn("No gRPC service name specified, defaulting to gitlab-shell-unknown")
-
 		serviceName = "gitlab-shell-unknown"
+
+		log.WithFields(log.Fields{"service_name": serviceName}).Warn("No gRPC service name specified, defaulting to gitlab-shell-unknown")
 	}
 
 	serviceName = fmt.Sprintf("%s-%s", serviceName, gc.ServiceName)
