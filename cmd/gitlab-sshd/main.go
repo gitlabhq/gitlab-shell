@@ -8,13 +8,13 @@ import (
 	"syscall"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/logger"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshd"
+
 	"gitlab.com/gitlab-org/labkit/monitoring"
+	"gitlab.com/gitlab-org/labkit/log"
 )
 
 var (
@@ -49,15 +49,16 @@ func main() {
 		var err error
 		cfg, err = config.NewFromDir(*configDir)
 		if err != nil {
-			log.Fatalf("failed to load configuration from specified directory: %v", err)
+			log.WithError(err).Fatal("failed to load configuration from specified directory")
 		}
 	}
 	overrideConfigFromEnvironment(cfg)
 	if err := cfg.IsSane(); err != nil {
 		if *configDir == "" {
-			log.Warn("note: no config-dir provided, using only environment variables")
+			log.WithError(err).Fatal("no config-dir provided, using only environment variables")
+		} else {
+			log.WithError(err).Fatal("configuration error")
 		}
-		log.Fatalf("configuration error: %v", err)
 	}
 
 	cfg.ApplyGlobalState()
@@ -72,13 +73,13 @@ func main() {
 	// Startup monitoring endpoint.
 	if cfg.Server.WebListen != "" {
 		go func() {
-			log.Fatal(
-				monitoring.Start(
-					monitoring.WithListenerAddress(cfg.Server.WebListen),
-					monitoring.WithBuildInformation(Version, BuildTime),
-					monitoring.WithServeMux(server.MonitoringServeMux()),
-				),
+			err := monitoring.Start(
+				monitoring.WithListenerAddress(cfg.Server.WebListen),
+				monitoring.WithBuildInformation(Version, BuildTime),
+				monitoring.WithServeMux(server.MonitoringServeMux()),
 			)
+
+			log.WithError(err).Fatal("monitoring service raised an error")
 		}()
 	}
 
@@ -92,7 +93,7 @@ func main() {
 		sig := <-done
 		signal.Reset(syscall.SIGINT, syscall.SIGTERM)
 
-		log.WithFields(log.Fields{"shutdown_timeout_s": cfg.Server.GracePeriodSeconds, "signal": sig.String()}).Infof("Shutdown initiated")
+		log.WithFields(log.Fields{"shutdown_timeout_s": cfg.Server.GracePeriodSeconds, "signal": sig.String()}).Info("Shutdown initiated")
 
 		server.Shutdown()
 
@@ -103,6 +104,6 @@ func main() {
 	}()
 
 	if err := server.ListenAndServe(ctx); err != nil {
-		log.Fatalf("Failed to start GitLab built-in sshd: %v", err)
+		log.WithError(err).Fatal("Failed to start GitLab built-in sshd")
 	}
 }

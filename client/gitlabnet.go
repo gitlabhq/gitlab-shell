@@ -11,9 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.com/gitlab-org/labkit/correlation"
-
-	log "github.com/sirupsen/logrus"
+	"gitlab.com/gitlab-org/labkit/log"
 )
 
 const (
@@ -71,12 +69,12 @@ func normalizePath(path string) string {
 	return path
 }
 
-func newRequest(ctx context.Context, method, host, path string, data interface{}) (*http.Request, string, error) {
+func newRequest(ctx context.Context, method, host, path string, data interface{}) (*http.Request, error) {
 	var jsonReader io.Reader
 	if data != nil {
 		jsonData, err := json.Marshal(data)
 		if err != nil {
-			return nil, "", err
+			return nil, err
 		}
 
 		jsonReader = bytes.NewReader(jsonData)
@@ -84,12 +82,10 @@ func newRequest(ctx context.Context, method, host, path string, data interface{}
 
 	request, err := http.NewRequestWithContext(ctx, method, host+path, jsonReader)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
-	correlationID := correlation.ExtractFromContext(ctx)
-
-	return request, correlationID, nil
+	return request, nil
 }
 
 func parseError(resp *http.Response) error {
@@ -116,7 +112,7 @@ func (c *GitlabNetClient) Post(ctx context.Context, path string, data interface{
 }
 
 func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, data interface{}) (*http.Response, error) {
-	request, correlationID, err := newRequest(ctx, method, c.httpClient.Host, path, data)
+	request, err := newRequest(ctx, method, c.httpClient.Host, path, data)
 	if err != nil {
 		return nil, err
 	}
@@ -136,12 +132,11 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	start := time.Now()
 	response, err := c.httpClient.Do(request)
 	fields := log.Fields{
-		"correlation_id": correlationID,
 		"method":         method,
 		"url":            request.URL.String(),
 		"duration_ms":    time.Since(start) / time.Millisecond,
 	}
-	logger := log.WithFields(fields)
+	logger := log.WithContextFields(ctx, fields)
 
 	if err != nil {
 		logger.WithError(err).Error("Internal API unreachable")

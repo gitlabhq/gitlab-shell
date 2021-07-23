@@ -4,11 +4,12 @@ import (
 	"context"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/sync/semaphore"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
+
+	"gitlab.com/gitlab-org/labkit/log"
 )
 
 type connection struct {
@@ -42,7 +43,7 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 		}
 		channel, requests, err := newChannel.Accept()
 		if err != nil {
-			log.Infof("Could not accept channel: %v", err)
+			log.WithError(err).Info("could not accept channel")
 			c.concurrentSessions.Release(1)
 			continue
 		}
@@ -53,7 +54,7 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 			// Prevent a panic in a single session from taking out the whole server
 			defer func() {
 				if err := recover(); err != nil {
-					log.Warnf("panic handling session from %s: recovered: %#+v", c.remoteAddr, err)
+					log.WithFields(log.Fields{"recovered_error": err}).Warnf("panic handling session from %s", c.remoteAddr)
 				}
 			}()
 
