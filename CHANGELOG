@@ -1,3 +1,7 @@
+v13.18.1
+
+- Modify regex to prevent partial matches
+
 v13.18.0
 
 - Fix thread-safety issues in gitlab-shell !463
