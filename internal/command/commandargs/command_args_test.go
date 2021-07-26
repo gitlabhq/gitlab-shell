@@ -23,13 +23,18 @@ func TestParseSuccess(t *testing.T) {
 			env:          sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"},
 			arguments:    []string{},
 			expectedArgs: &Shell{Arguments: []string{}, SshArgs: []string{}, CommandType: Discover, Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
-		},
-		{
+		}, {
 			desc:         "It finds the key id in any passed arguments",
 			executable:   &executable.Executable{Name: executable.GitlabShell},
 			env:          sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"},
 			arguments:    []string{"hello", "key-123"},
 			expectedArgs: &Shell{Arguments: []string{"hello", "key-123"}, SshArgs: []string{}, CommandType: Discover, GitlabKeyId: "123", Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
+		}, {
+			desc:         "It finds the key id only if the argument is of <key-id> format",
+			executable:   &executable.Executable{Name: executable.GitlabShell},
+			env:          sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"},
+			arguments:    []string{"hello", "username-key-123"},
+			expectedArgs: &Shell{Arguments: []string{"hello", "username-key-123"}, SshArgs: []string{}, CommandType: Discover, GitlabUsername: "key-123", Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
 		}, {
 			desc:         "It finds the username in any passed arguments",
 			executable:   &executable.Executable{Name: executable.GitlabShell},
