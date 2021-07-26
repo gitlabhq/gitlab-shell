@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
-	"gitlab.com/gitlab-org/labkit/tracing"
 	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/tracing"
 )
 
 const (

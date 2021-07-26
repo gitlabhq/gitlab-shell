@@ -18,10 +18,10 @@ import (
 	gitalyauth "gitlab.com/gitlab-org/gitaly/v14/auth"
 	"gitlab.com/gitlab-org/gitaly/v14/client"
 	pb "gitlab.com/gitlab-org/gitaly/v14/proto/go/gitalypb"
-	grpccorrelation "gitlab.com/gitlab-org/labkit/correlation/grpc"
-	grpctracing "gitlab.com/gitlab-org/labkit/tracing/grpc"
 	"gitlab.com/gitlab-org/labkit/correlation"
+	grpccorrelation "gitlab.com/gitlab-org/labkit/correlation/grpc"
 	"gitlab.com/gitlab-org/labkit/log"
+	grpctracing "gitlab.com/gitlab-org/labkit/tracing/grpc"
 )
 
 // GitalyHandlerFunc implementations are responsible for making
