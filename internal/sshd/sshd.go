@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
-	"strconv"
-	"time"
-	"sync"
 	"net/http"
+	"strconv"
+	"sync"
+	"time"
 
 	"github.com/pires/go-proxyproto"
 	"golang.org/x/crypto/ssh"
@@ -18,13 +18,13 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/authorizedkeys"
 
-	"gitlab.com/gitlab-org/labkit/log"
 	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/log"
 )
 
 type status int
 
-const(
+const (
 	StatusStarting status = iota
 	StatusReady
 	StatusOnShutdown
@@ -34,9 +34,9 @@ const(
 type Server struct {
 	Config *config.Config
 
-	status status
+	status   status
 	statusMu sync.Mutex
-	wg sync.WaitGroup
+	wg       sync.WaitGroup
 	listener net.Listener
 }
 
@@ -71,7 +71,7 @@ func (s *Server) MonitoringServeMux() *http.ServeMux {
 	})
 
 	mux.HandleFunc(s.Config.Server.LivenessProbe, func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusOK)
 	})
 
 	return mux
@@ -190,7 +190,6 @@ func (s *Server) initConfig(ctx context.Context) (*ssh.ServerConfig, error) {
 
 	return sshCfg, nil
 }
-
 
 func (s *Server) handleConn(ctx context.Context, sshCfg *ssh.ServerConfig, nconn net.Conn) {
 	remoteAddr := nconn.RemoteAddr().String()

@@ -13,7 +13,10 @@ validate: verify test
 verify: verify_golang
 
 verify_golang:
-	gofmt -s -l $(GO_SOURCES)
+	gofmt -s -l $(GO_SOURCES) | awk '{ print } END { if (NR > 0) { print "Please run make fmt"; exit 1 } }'
+
+fmt:
+	gofmt -w -s $(GO_SOURCES)
 
 test: test_ruby test_golang
 

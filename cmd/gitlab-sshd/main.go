@@ -1,10 +1,10 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
 	"os/signal"
-	"context"
 	"syscall"
 	"time"
 
@@ -13,8 +13,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/logger"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshd"
 
-	"gitlab.com/gitlab-org/labkit/monitoring"
 	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/monitoring"
 )
 
 var (

@@ -132,9 +132,9 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	start := time.Now()
 	response, err := c.httpClient.Do(request)
 	fields := log.Fields{
-		"method":         method,
-		"url":            request.URL.String(),
-		"duration_ms":    time.Since(start) / time.Millisecond,
+		"method":      method,
+		"url":         request.URL.String(),
+		"duration_ms": time.Since(start) / time.Millisecond,
 	}
 	logger := log.WithContextFields(ctx, fields)
 

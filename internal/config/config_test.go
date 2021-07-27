@@ -4,11 +4,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/require"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stretchr/testify/require"
 
-	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 )
 
 func TestConfigApplyGlobalState(t *testing.T) {

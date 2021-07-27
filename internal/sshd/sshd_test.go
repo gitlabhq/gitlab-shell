@@ -1,10 +1,10 @@
 package sshd
 
 import (
-	"testing"
 	"context"
-	"path"
 	"net/http/httptest"
+	"path"
+	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
@@ -75,7 +75,7 @@ func setupServer(t *testing.T) *Server {
 
 	url := testserver.StartSocketHttpServer(t, []testserver.TestRequestHandler{})
 	srvCfg := config.ServerConfig{
-		Listen: serverUrl,
+		Listen:       serverUrl,
 		HostKeyFiles: []string{path.Join(testhelper.TestRoot, "certs/valid/server.key")},
 	}
 
@@ -85,7 +85,7 @@ func setupServer(t *testing.T) *Server {
 }
 
 func verifyStatus(t *testing.T, s *Server, st status) {
-	for i := 5; i < 500; i+=50 {
+	for i := 5; i < 500; i += 50 {
 		if s.getStatus() == st {
 			break
 		}

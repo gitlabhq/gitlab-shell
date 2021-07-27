@@ -109,7 +109,6 @@ func (c *Config) HttpClient() *client.HttpClient {
 		tr := client.Transport
 		client.Transport = promhttp.InstrumentRoundTripperDuration(metrics.HttpRequestDuration, tr)
 
-
 		c.httpClient = client
 	})
 

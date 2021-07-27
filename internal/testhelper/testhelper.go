@@ -6,8 +6,8 @@ import (
 	"os"
 	"path"
 	"runtime"
-	"time"
 	"testing"
+	"time"
 
 	"github.com/otiai10/copy"
 	"github.com/sirupsen/logrus"
