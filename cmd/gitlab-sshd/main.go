@@ -68,7 +68,10 @@ func main() {
 	ctx, finished := command.Setup("gitlab-sshd", cfg)
 	defer finished()
 
-	server := sshd.Server{Config: cfg}
+	server, err := sshd.NewServer(cfg)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to start GitLab built-in sshd")
+	}
 
 	// Startup monitoring endpoint.
 	if cfg.Server.WebListen != "" {
@@ -104,6 +107,6 @@ func main() {
 	}()
 
 	if err := server.ListenAndServe(ctx); err != nil {
-		log.WithError(err).Fatal("Failed to start GitLab built-in sshd")
+		log.WithError(err).Fatal("GitLab built-in sshd failed to listen for new connections")
 	}
 }
