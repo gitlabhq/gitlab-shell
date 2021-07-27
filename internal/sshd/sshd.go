@@ -29,6 +29,7 @@ const (
 	StatusReady
 	StatusOnShutdown
 	StatusClosed
+	ProxyHeaderTimeout = 90 * time.Second
 )
 
 type Server struct {
@@ -84,7 +85,10 @@ func (s *Server) listen() error {
 	}
 
 	if s.Config.Server.ProxyProtocol {
-		sshListener = &proxyproto.Listener{Listener: sshListener}
+		sshListener = &proxyproto.Listener{
+			Listener:          sshListener,
+			ReadHeaderTimeout: ProxyHeaderTimeout,
+		}
 
 		log.Info("Proxy protocol is enabled")
 	}
