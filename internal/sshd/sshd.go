@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/opentracing/opentracing-go"
 	"github.com/pires/go-proxyproto"
 	"golang.org/x/crypto/ssh"
 
@@ -215,6 +216,9 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 	ctx, cancel := context.WithCancel(correlation.ContextWithCorrelation(ctx, correlation.SafeRandomID()))
 	defer cancel()
+
+	span, ctx := opentracing.StartSpanFromContext(ctx, "SSH connection")
+	defer span.Finish()
 
 	sconn, chans, reqs, err := ssh.NewServerConn(nconn, s.serverConfig(ctx))
 	if err != nil {
