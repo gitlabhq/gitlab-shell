@@ -7,11 +7,8 @@ import (
 	"path"
 	"runtime"
 	"testing"
-	"time"
 
 	"github.com/otiai10/copy"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
 
@@ -74,26 +71,4 @@ func Setenv(key, value string) (func(), error) {
 	oldValue := os.Getenv(key)
 	err := os.Setenv(key, value)
 	return func() { os.Setenv(key, oldValue) }, err
-}
-
-func SetupLogger() *test.Hook {
-	logger, hook := test.NewNullLogger()
-	logrus.SetOutput(logger.Writer())
-
-	return hook
-}
-
-// logrus fires a Goroutine to write the output log, but there's no way to
-// flush all outstanding hooks to fire. We just wait up to a second
-// for an event to appear.
-func WaitForLogEvent(hook *test.Hook) bool {
-	for i := 0; i < 10; i++ {
-		if entry := hook.LastEntry(); entry != nil {
-			return true
-		}
-
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	return false
 }

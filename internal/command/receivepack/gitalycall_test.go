@@ -5,7 +5,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/labkit/correlation"
 
@@ -14,12 +13,11 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper/requesthandlers"
 )
 
 func TestReceivePack(t *testing.T) {
-	gitalyAddress, _ := testserver.StartGitalyServer(t)
+	gitalyAddress, testServer := testserver.StartGitalyServer(t)
 
 	requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)
 	url := testserver.StartHttpServer(t, requests)
@@ -43,10 +41,15 @@ func TestReceivePack(t *testing.T) {
 
 		env := sshenv.Env{
 			IsSSHConnection: true,
-			OriginalCommand: "git-receive-pack group/repo",
+			OriginalCommand: "git-receive-pack " + repo,
 			RemoteAddr:      "127.0.0.1",
 		}
-		args := &commandargs.Shell{CommandType: commandargs.ReceivePack, SshArgs: []string{"git-receive-pack", repo}, Env: env}
+
+		args := &commandargs.Shell{
+			CommandType: commandargs.ReceivePack,
+			SshArgs:     []string{"git-receive-pack", repo},
+			Env:         env,
+		}
 
 		if tc.username != "" {
 			args.GitlabUsername = tc.username
@@ -60,7 +63,6 @@ func TestReceivePack(t *testing.T) {
 			ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
 		}
 
-		hook := testhelper.SetupLogger()
 		ctx := correlation.ContextWithCorrelation(context.Background(), "a-correlation-id")
 		ctx = correlation.ContextWithClientName(ctx, "gitlab-shell-tests")
 
@@ -73,15 +75,20 @@ func TestReceivePack(t *testing.T) {
 			require.Equal(t, "ReceivePack: key-123 "+repo, output.String())
 		}
 
-		require.True(t, testhelper.WaitForLogEvent(hook))
-		entries := hook.AllEntries()
-		require.Equal(t, 2, len(entries))
-		require.Equal(t, logrus.InfoLevel, entries[1].Level)
-		require.Contains(t, entries[1].Message, "executing git command")
-		require.Contains(t, entries[1].Message, "command=git-receive-pack")
-		require.Contains(t, entries[1].Message, "remote_ip=127.0.0.1")
-		require.Contains(t, entries[1].Message, "gl_key_type=key")
-		require.Contains(t, entries[1].Message, "gl_key_id=123")
-		require.Contains(t, entries[1].Message, "correlation_id=a-correlation-id")
+		for k, v := range map[string]string{
+			"gitaly-feature-cache_invalidator":        "true",
+			"gitaly-feature-inforef_uploadpack_cache": "false",
+			"x-gitlab-client-name":                    "gitlab-shell-tests-git-receive-pack",
+			"key_id":                                  "123",
+			"user_id":                                 "1",
+			"remote_ip":                               "127.0.0.1",
+			"key_type":                                "key",
+		} {
+			actual := testServer.ReceivedMD[k]
+			require.Len(t, actual, 1)
+			require.Equal(t, v, actual[0])
+		}
+		require.Empty(t, testServer.ReceivedMD["some-other-ff"])
+		require.Equal(t, testServer.ReceivedMD["x-gitlab-correlation-id"][0], "a-correlation-id")
 	}
 }
