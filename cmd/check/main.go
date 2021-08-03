@@ -31,7 +31,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Configure(config)
+	logCloser := logger.Configure(config)
+	defer logCloser.Close()
 
 	cmd, err := command.New(executable, os.Args[1:], sshenv.Env{}, config, readWriter)
 	if err != nil {

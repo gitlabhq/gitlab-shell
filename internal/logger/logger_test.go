@@ -7,8 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"gitlab.com/gitlab-org/labkit/log"
+
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 )
 
@@ -22,7 +23,9 @@ func TestConfigure(t *testing.T) {
 		LogFormat: "json",
 	}
 
-	Configure(&config)
+	closer := Configure(&config)
+	defer closer.Close()
+
 	log.Info("this is a test")
 
 	tmpFile.Close()
@@ -42,7 +45,9 @@ func TestConfigureWithPermissionError(t *testing.T) {
 		LogFormat: "json",
 	}
 
-	Configure(&config)
+	closer := Configure(&config)
+	defer closer.Close()
+
 	log.Info("this is a test")
 }
 
@@ -57,7 +62,9 @@ func TestLogInUTC(t *testing.T) {
 		LogFormat: "json",
 	}
 
-	Configure(&config)
+	closer := Configure(&config)
+	defer closer.Close()
+
 	log.Info("this is a test")
 
 	data, err := ioutil.ReadFile(tmpFile.Name())

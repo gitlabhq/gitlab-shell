@@ -2,37 +2,54 @@ package logger
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log/syslog"
 	"os"
+	"time"
 
-	log "github.com/sirupsen/logrus"
+	"gitlab.com/gitlab-org/labkit/log"
+
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 )
 
-type UTCFormatter struct {
-	log.Formatter
+func logFmt(inFmt string) string {
+	// Hide the "combined" format, since that makes no sense in gitlab-shell.
+	// The default is JSON when unspecified.
+	if inFmt == "" || inFmt == "combined" {
+		return "json"
+	}
+
+	return inFmt
 }
 
-func (u UTCFormatter) Format(e *log.Entry) ([]byte, error) {
-	e.Time = e.Time.UTC()
+func logFile(inFile string) string {
+	if inFile == "" {
+		return "stderr"
+	}
 
-	return u.Formatter.Format(e)
+	return inFile
 }
 
-func configureLogFormat(cfg *config.Config) {
-	if cfg.LogFormat == "json" {
-		log.SetFormatter(UTCFormatter{&log.JSONFormatter{}})
-	} else {
-		log.SetFormatter(UTCFormatter{&log.TextFormatter{}})
+func buildOpts(cfg *config.Config) []log.LoggerOption {
+	return []log.LoggerOption{
+		log.WithFormatter(logFmt(cfg.LogFormat)),
+		log.WithOutputName(logFile(cfg.LogFile)),
+		log.WithTimezone(time.UTC),
 	}
 }
 
 // Configure configures the logging singleton for operation inside a remote TTY (like SSH). In this
 // mode an empty LogFile is not accepted and syslog is used as a fallback when LogFile could not be
 // opened for writing.
-func Configure(cfg *config.Config) {
-	logFile, err := os.OpenFile(cfg.LogFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+func Configure(cfg *config.Config) io.Closer {
+	var closer io.Closer = ioutil.NopCloser(nil)
+	err := fmt.Errorf("No logfile specified")
+
+	if cfg.LogFile != "" {
+		closer, err = log.Initialize(buildOpts(cfg)...)
+	}
+
 	if err != nil {
 		progName, _ := os.Executable()
 		syslogLogger, syslogLoggerErr := syslog.NewLogger(syslog.LOG_ERR|syslog.LOG_USER, 0)
@@ -44,29 +61,35 @@ func Configure(cfg *config.Config) {
 			fmt.Fprintf(os.Stderr, msg)
 		}
 
-		// Discard logs since a log file was specified but couldn't be opened
-		log.SetOutput(ioutil.Discard)
+		cfg.LogFile = "/dev/null"
+		closer, err = log.Initialize(buildOpts(cfg)...)
+		if err != nil {
+			log.WithError(err).Warn("Unable to configure logging to /dev/null, leaving unconfigured")
+		}
 	}
 
-	log.SetOutput(logFile)
-
-	configureLogFormat(cfg)
+	return closer
 }
 
 // ConfigureStandalone configures the logging singleton for standalone operation. In this mode an
-// empty LogFile is treated as logging to standard output and standard output is used as a fallback
+// empty LogFile is treated as logging to stderr, and standard output is used as a fallback
 // when LogFile could not be opened for writing.
-func ConfigureStandalone(cfg *config.Config) {
-	if cfg.LogFile == "" {
-		return
+func ConfigureStandalone(cfg *config.Config) io.Closer {
+	closer, err1 := log.Initialize(buildOpts(cfg)...)
+	if err1 != nil {
+		var err2 error
+
+		cfg.LogFile = "stdout"
+		closer, err2 = log.Initialize(buildOpts(cfg)...)
+
+		// Output this after the logger has been configured!
+		log.WithError(err1).WithField("log_file", cfg.LogFile).Warn("Unable to configure logging, falling back to STDOUT")
+
+		// LabKit v1.7.0 doesn't have any conditions where logging to "stdout" will fail
+		if err2 != nil {
+			log.WithError(err2).Warn("Unable to configure logging to STDOUT, leaving unconfigured")
+		}
 	}
 
-	logFile, err := os.OpenFile(cfg.LogFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		log.Printf("Unable to configure logging, falling back to stdout: %v", err)
-		return
-	}
-	log.SetOutput(logFile)
-
-	configureLogFormat(cfg)
+	return closer
 }

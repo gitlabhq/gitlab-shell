@@ -46,7 +46,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Configure(config)
+	logCloser := logger.Configure(config)
+	defer logCloser.Close()
 
 	env := sshenv.NewFromEnv()
 	cmd, err := command.New(executable, os.Args[1:], env, config, readWriter)

@@ -63,7 +63,8 @@ func main() {
 
 	cfg.ApplyGlobalState()
 
-	logger.ConfigureStandalone(cfg)
+	logCloser := logger.ConfigureStandalone(cfg)
+	defer logCloser.Close()
 
 	ctx, finished := command.Setup("gitlab-sshd", cfg)
 	defer finished()

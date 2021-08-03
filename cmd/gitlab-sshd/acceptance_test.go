@@ -229,7 +229,7 @@ func startSSHD(t *testing.T, dir string) string {
 	t.Cleanup(func() { pw.Close() })
 
 	scanner := bufio.NewScanner(pr)
-	extractor := regexp.MustCompile(`tcp_address="([0-9a-f\[\]\.:]+)"`)
+	extractor := regexp.MustCompile(`"tcp_address":"([0-9a-f\[\]\.:]+)"`)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cmd := exec.CommandContext(ctx, sshdPath, "-config-dir", dir)
