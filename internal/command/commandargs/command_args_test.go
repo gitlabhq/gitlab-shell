@@ -16,6 +16,7 @@ func TestParseSuccess(t *testing.T) {
 		env          sshenv.Env
 		arguments    []string
 		expectedArgs CommandArgs
+		expectError  bool
 	}{
 		{
 			desc:         "It sets discover as the command when the command string was empty",
@@ -100,10 +101,10 @@ func TestParseSuccess(t *testing.T) {
 			arguments:    []string{"key", "principal-1", "principal-2"},
 			expectedArgs: &AuthorizedPrincipals{Arguments: []string{"key", "principal-1", "principal-2"}, KeyId: "key", Principals: []string{"principal-1", "principal-2"}},
 		}, {
-			desc:         "Unknown executable",
-			executable:   &executable.Executable{Name: "unknown"},
-			arguments:    []string{},
-			expectedArgs: &GenericArgs{Arguments: []string{}},
+			desc:        "Unknown executable",
+			executable:  &executable.Executable{Name: "unknown"},
+			arguments:   []string{},
+			expectError: true,
 		},
 	}
 
@@ -111,8 +112,12 @@ func TestParseSuccess(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			result, err := Parse(tc.executable, tc.arguments, tc.env)
 
-			require.NoError(t, err)
-			require.Equal(t, tc.expectedArgs, result)
+			if !tc.expectError {
+				require.NoError(t, err)
+				require.Equal(t, tc.expectedArgs, result)
+			} else {
+				require.Error(t, err)
+			}
 		})
 	}
 }

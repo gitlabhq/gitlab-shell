@@ -1,6 +1,8 @@
 package commandargs
 
 import (
+	"errors"
+
 	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 )
@@ -13,7 +15,7 @@ type CommandArgs interface {
 }
 
 func Parse(e *executable.Executable, arguments []string, env sshenv.Env) (CommandArgs, error) {
-	var args CommandArgs = &GenericArgs{Arguments: arguments}
+	var args CommandArgs
 
 	switch e.Name {
 	case executable.GitlabShell:
@@ -22,6 +24,10 @@ func Parse(e *executable.Executable, arguments []string, env sshenv.Env) (Comman
 		args = &AuthorizedKeys{Arguments: arguments}
 	case executable.AuthorizedPrincipalsCheck:
 		args = &AuthorizedPrincipals{Arguments: arguments}
+	case executable.Healthcheck:
+		return args, nil
+	default:
+		return nil, errors.New("unknown executable")
 	}
 
 	if err := args.Parse(); err != nil {
