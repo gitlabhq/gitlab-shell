@@ -84,7 +84,10 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 		}
 
 		if _, err := os.Stat(caFile); err != nil {
-			return nil, fmt.Errorf("cannot find cafile '%s': %w", caFile, ErrCafileNotFound)
+			if os.IsNotExist(err) {
+				return nil, fmt.Errorf("cannot find cafile '%s': %w", caFile, ErrCafileNotFound)
+			}
+			return nil, err
 		}
 
 		transport, host, err = buildHttpsTransport(*hcc, selfSignedCert, gitlabURL)
