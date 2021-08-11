@@ -15,6 +15,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
+	"gitlab.com/gitlab-org/labkit/log"
 )
 
 const (
@@ -97,14 +98,18 @@ func (c *Config) ApplyGlobalState() {
 
 func (c *Config) HttpClient() *client.HttpClient {
 	c.httpClientOnce.Do(func() {
-		client := client.NewHTTPClient(
+		client, err := client.NewHTTPClientWithOpts(
 			c.GitlabUrl,
 			c.GitlabRelativeURLRoot,
 			c.HttpSettings.CaFile,
 			c.HttpSettings.CaPath,
 			c.HttpSettings.SelfSignedCert,
 			c.HttpSettings.ReadTimeoutSeconds,
+			nil,
 		)
+		if err != nil {
+			log.WithError(err).Fatal("new http client with opts")
+		}
 
 		tr := client.Transport
 		client.Transport = promhttp.InstrumentRoundTripperDuration(metrics.HttpRequestDuration, tr)
