@@ -1,6 +1,6 @@
 module gitlab.com/gitlab-org/gitlab-shell
 
-go 1.13
+go 1.15
 
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
