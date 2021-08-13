@@ -58,6 +58,7 @@ type Config struct {
 	Server         ServerConfig       `yaml:"sshd"`
 
 	httpClient     *client.HttpClient
+	httpClientErr  error
 	httpClientOnce sync.Once
 }
 
@@ -95,16 +96,21 @@ func (c *Config) ApplyGlobalState() {
 	}
 }
 
-func (c *Config) HttpClient() *client.HttpClient {
+func (c *Config) HttpClient() (*client.HttpClient, error) {
 	c.httpClientOnce.Do(func() {
-		client := client.NewHTTPClient(
+		client, err := client.NewHTTPClientWithOpts(
 			c.GitlabUrl,
 			c.GitlabRelativeURLRoot,
 			c.HttpSettings.CaFile,
 			c.HttpSettings.CaPath,
 			c.HttpSettings.SelfSignedCert,
 			c.HttpSettings.ReadTimeoutSeconds,
+			nil,
 		)
+		if err != nil {
+			c.httpClientErr = err
+			return
+		}
 
 		tr := client.Transport
 		client.Transport = promhttp.InstrumentRoundTripperDuration(metrics.HttpRequestDuration, tr)
@@ -112,7 +118,7 @@ func (c *Config) HttpClient() *client.HttpClient {
 		c.httpClient = client
 	})
 
-	return c.httpClient
+	return c.httpClient, c.httpClientErr
 }
 
 // NewFromDirExternal returns a new config from a given root dir. It also applies defaults appropriate for
