@@ -15,7 +15,6 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
-	"gitlab.com/gitlab-org/labkit/log"
 )
 
 const (
@@ -59,6 +58,7 @@ type Config struct {
 	Server         ServerConfig       `yaml:"sshd"`
 
 	httpClient     *client.HttpClient
+	httpClientErr  error
 	httpClientOnce sync.Once
 }
 
@@ -96,7 +96,7 @@ func (c *Config) ApplyGlobalState() {
 	}
 }
 
-func (c *Config) HttpClient() *client.HttpClient {
+func (c *Config) HttpClient() (*client.HttpClient, error) {
 	c.httpClientOnce.Do(func() {
 		client, err := client.NewHTTPClientWithOpts(
 			c.GitlabUrl,
@@ -108,7 +108,8 @@ func (c *Config) HttpClient() *client.HttpClient {
 			nil,
 		)
 		if err != nil {
-			log.WithError(err).Fatal("new http client with opts")
+			c.httpClientErr = err
+			return
 		}
 
 		tr := client.Transport
@@ -117,7 +118,7 @@ func (c *Config) HttpClient() *client.HttpClient {
 		c.httpClient = client
 	})
 
-	return c.httpClient
+	return c.httpClient, c.httpClientErr
 }
 
 // NewFromDirExternal returns a new config from a given root dir. It also applies defaults appropriate for
