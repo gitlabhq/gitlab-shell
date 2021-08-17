@@ -74,6 +74,13 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	} else if strings.HasPrefix(gitlabURL, httpProtocol) {
 		transport, host = buildHttpTransport(gitlabURL)
 	} else if strings.HasPrefix(gitlabURL, httpsProtocol) {
+		if _, err := os.Stat(caFile); err != nil {
+			if os.IsNotExist(err) {
+				return nil, fmt.Errorf("cannot find cafile '%s': %w", caFile, ErrCafileNotFound)
+			}
+			return nil, err
+		}
+
 		hcc := &httpClientCfg{
 			caFile: caFile,
 			caPath: caPath,
@@ -81,13 +88,6 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 
 		for _, opt := range opts {
 			opt(hcc)
-		}
-
-		if _, err := os.Stat(caFile); err != nil {
-			if os.IsNotExist(err) {
-				return nil, fmt.Errorf("cannot find cafile '%s': %w", caFile, ErrCafileNotFound)
-			}
-			return nil, err
 		}
 
 		transport, host, err = buildHttpsTransport(*hcc, selfSignedCert, gitlabURL)
