@@ -5,9 +5,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -23,6 +25,10 @@ const (
 	httpProtocol              = "http://"
 	httpsProtocol             = "https://"
 	defaultReadTimeoutSeconds = 300
+)
+
+var (
+	ErrCafileNotFound = errors.New("cafile not found")
 )
 
 type HttpClient struct {
@@ -60,15 +66,6 @@ func NewHTTPClient(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, self
 
 // NewHTTPClientWithOpts builds an HTTP client using the provided options
 func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, selfSignedCert bool, readTimeoutSeconds uint64, opts []HTTPClientOpt) (*HttpClient, error) {
-	hcc := &httpClientCfg{
-		caFile: caFile,
-		caPath: caPath,
-	}
-
-	for _, opt := range opts {
-		opt(hcc)
-	}
-
 	var transport *http.Transport
 	var host string
 	var err error
@@ -77,6 +74,22 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	} else if strings.HasPrefix(gitlabURL, httpProtocol) {
 		transport, host = buildHttpTransport(gitlabURL)
 	} else if strings.HasPrefix(gitlabURL, httpsProtocol) {
+		if _, err := os.Stat(caFile); err != nil {
+			if os.IsNotExist(err) {
+				return nil, fmt.Errorf("cannot find cafile '%s': %w", caFile, ErrCafileNotFound)
+			}
+			return nil, err
+		}
+
+		hcc := &httpClientCfg{
+			caFile: caFile,
+			caPath: caPath,
+		}
+
+		for _, opt := range opts {
+			opt(hcc)
+		}
+
 		transport, host, err = buildHttpsTransport(*hcc, selfSignedCert, gitlabURL)
 		if err != nil {
 			return nil, err
