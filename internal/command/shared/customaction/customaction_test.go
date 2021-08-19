@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -23,7 +23,7 @@ func TestExecuteEOFSent(t *testing.T) {
 		{
 			Path: "/geo/proxy/info_refs_receive_pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 
 				var request *Request
@@ -39,7 +39,7 @@ func TestExecuteEOFSent(t *testing.T) {
 		{
 			Path: "/geo/proxy/receive_pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 
 				var request *Request
@@ -92,7 +92,7 @@ func TestExecuteNoEOFSent(t *testing.T) {
 		{
 			Path: "/geo/proxy/info_refs_upload_pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 
 				var request *Request
@@ -108,7 +108,7 @@ func TestExecuteNoEOFSent(t *testing.T) {
 		{
 			Path: "/geo/proxy/upload_pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 
 				var request *Request

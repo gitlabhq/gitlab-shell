@@ -3,7 +3,7 @@ package testserver
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	tempDir, _ = ioutil.TempDir("", "gitlab-shell-test-api")
+	tempDir, _ = os.MkdirTemp("", "gitlab-shell-test-api")
 	testSocket = path.Join(tempDir, "internal.sock")
 )
 
@@ -41,7 +41,7 @@ func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) string {
 		Handler: buildHandler(handlers),
 		// We'll put this server through some nasty stuff we don't want
 		// in our test output
-		ErrorLog: log.New(ioutil.Discard, "", 0),
+		ErrorLog: log.New(io.Discard, "", 0),
 	}
 	go server.Serve(socketListener)
 
@@ -76,7 +76,7 @@ func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath 
 	server.TLS.BuildNameToCertificate()
 
 	if clientCAPath != "" {
-		caCert, err := ioutil.ReadFile(clientCAPath)
+		caCert, err := os.ReadFile(clientCAPath)
 		require.NoError(t, err)
 
 		caCertPool := x509.NewCertPool()

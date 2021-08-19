@@ -2,7 +2,6 @@ package testhelper
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"runtime"
@@ -13,7 +12,7 @@ import (
 )
 
 var (
-	TestRoot, _ = ioutil.TempDir("", "test-gitlab-shell")
+	TestRoot, _ = os.MkdirTemp("", "test-gitlab-shell")
 )
 
 func TempEnv(env map[string]string) func() {

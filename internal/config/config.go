@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path"
@@ -147,7 +146,7 @@ func newFromFile(path string) (*Config, error) {
 	*cfg = DefaultConfig
 	cfg.RootDir = filepath.Dir(path)
 
-	configBytes, err := ioutil.ReadFile(path)
+	configBytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +190,7 @@ func parseSecret(cfg *Config) error {
 		cfg.SecretFilePath = path.Join(cfg.RootDir, cfg.SecretFilePath)
 	}
 
-	secretFileContent, err := ioutil.ReadFile(cfg.SecretFilePath)
+	secretFileContent, err := os.ReadFile(cfg.SecretFilePath)
 	if err != nil {
 		return err
 	}

@@ -3,9 +3,9 @@ package sshd
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path"
 	"testing"
 	"time"
@@ -148,11 +148,11 @@ func setupServer(t *testing.T) *Server {
 }
 
 func clientConfig(t *testing.T) *ssh.ClientConfig {
-	keyRaw, err := ioutil.ReadFile(path.Join(testhelper.TestRoot, "certs/valid/server_authorized_key"))
+	keyRaw, err := os.ReadFile(path.Join(testhelper.TestRoot, "certs/valid/server_authorized_key"))
 	pKey, _, _, _, err := ssh.ParseAuthorizedKey(keyRaw)
 	require.NoError(t, err)
 
-	key, err := ioutil.ReadFile(path.Join(testhelper.TestRoot, "certs/client/key.pem"))
+	key, err := os.ReadFile(path.Join(testhelper.TestRoot, "certs/client/key.pem"))
 	require.NoError(t, err)
 	signer, err := ssh.ParsePrivateKey(key)
 	require.NoError(t, err)

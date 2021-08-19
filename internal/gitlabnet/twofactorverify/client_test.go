@@ -3,10 +3,11 @@ package twofactorverify
 import (
 	"context"
 	"encoding/json"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/discover"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
+
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/discover"
 
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/client"
@@ -20,7 +21,7 @@ func initialize(t *testing.T) []testserver.TestRequestHandler {
 		{
 			Path: "/api/v4/internal/two_factor_otp_check",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 
 				require.NoError(t, err)

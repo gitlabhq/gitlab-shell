@@ -8,7 +8,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -112,7 +111,7 @@ func successAPI(t *testing.T) http.Handler {
 		case "/api/v4/internal/two_factor_otp_check":
 			fmt.Fprint(w, `{"success": true}`)
 		case "/api/v4/internal/allowed":
-			body, err := ioutil.ReadFile(filepath.Join(testhelper.TestRoot, "responses/allowed_without_console_messages.json"))
+			body, err := os.ReadFile(filepath.Join(testhelper.TestRoot, "responses/allowed_without_console_messages.json"))
 			require.NoError(t, err)
 
 			response := strings.Replace(string(body), "GITALY_REPOSITORY", testRepo, 1)
@@ -198,7 +197,7 @@ func buildClient(t *testing.T, addr string, hostKey ed25519.PublicKey) *ssh.Clie
 func configureSSHD(t *testing.T, apiServer string) (string, ed25519.PublicKey) {
 	t.Helper()
 
-	dir, err := ioutil.TempDir("", "gitlab-sshd-acceptance-test-")
+	dir, err := os.MkdirTemp("", "gitlab-sshd-acceptance-test-")
 	require.NoError(t, err)
 	t.Cleanup(func() { os.RemoveAll(dir) })
 
@@ -209,11 +208,11 @@ func configureSSHD(t *testing.T, apiServer string) (string, ed25519.PublicKey) {
 	require.NoError(t, err)
 
 	configFileData := genServerConfig(apiServer, hostKeyFile)
-	require.NoError(t, ioutil.WriteFile(configFile, configFileData, 0644))
+	require.NoError(t, os.WriteFile(configFile, configFileData, 0644))
 
 	block := &pem.Block{Type: "OPENSSH PRIVATE KEY", Bytes: edkey.MarshalED25519PrivateKey(priv)}
 	hostKeyData := pem.EncodeToMemory(block)
-	require.NoError(t, ioutil.WriteFile(hostKeyFile, hostKeyData, 0400))
+	require.NoError(t, os.WriteFile(hostKeyFile, hostKeyData, 0400))
 
 	return dir, pub
 }
@@ -326,7 +325,7 @@ func TestTwoFactorAuthRecoveryCodesSuccess(t *testing.T) {
 	_, err = fmt.Fprintln(stdin, "yes")
 	require.NoError(t, err)
 
-	output, err := ioutil.ReadAll(stdout)
+	output, err := io.ReadAll(stdout)
 	require.NoError(t, err)
 	require.Equal(t, `
 Your two-factor authentication recovery codes are:
@@ -365,7 +364,7 @@ func TwoFactorAuthVerifySuccess(t *testing.T) {
 	_, err = fmt.Fprintln(stdin, "otp123")
 	require.NoError(t, err)
 
-	output, err := ioutil.ReadAll(stdout)
+	output, err := io.ReadAll(stdout)
 	require.NoError(t, err)
 	require.Equal(t, "OTP validation successful. Git operations are now allowed.\n", string(output))
 }

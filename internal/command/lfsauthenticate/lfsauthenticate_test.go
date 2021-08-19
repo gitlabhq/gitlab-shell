@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -70,7 +70,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 		{
 			Path: "/api/v4/internal/lfs_authenticate",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 				require.NoError(t, err)
 
@@ -94,7 +94,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 		{
 			Path: "/api/v4/internal/allowed",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 				require.NoError(t, err)
 

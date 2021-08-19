@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"path"
 	"testing"
@@ -57,7 +57,7 @@ func TestSuccessfulRequests(t *testing.T) {
 
 			defer response.Body.Close()
 
-			responseBody, err := ioutil.ReadAll(response.Body)
+			responseBody, err := io.ReadAll(response.Body)
 			require.NoError(t, err)
 			require.Equal(t, string(responseBody), "Hello")
 		})

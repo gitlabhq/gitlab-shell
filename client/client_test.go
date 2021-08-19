@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"path"
 	"strings"
@@ -83,7 +83,7 @@ func testSuccessfulGet(t *testing.T, client *GitlabNetClient) {
 
 		defer response.Body.Close()
 
-		responseBody, err := ioutil.ReadAll(response.Body)
+		responseBody, err := io.ReadAll(response.Body)
 		require.NoError(t, err)
 		require.Equal(t, string(responseBody), "Hello")
 	})
@@ -99,7 +99,7 @@ func testSuccessfulPost(t *testing.T, client *GitlabNetClient) {
 
 		defer response.Body.Close()
 
-		responseBody, err := ioutil.ReadAll(response.Body)
+		responseBody, err := io.ReadAll(response.Body)
 		require.NoError(t, err)
 		require.Equal(t, "Echo: {\"key\":\"value\"}", string(responseBody))
 	})
@@ -155,7 +155,7 @@ func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 
 		defer response.Body.Close()
 
-		responseBody, err := ioutil.ReadAll(response.Body)
+		responseBody, err := io.ReadAll(response.Body)
 		require.NoError(t, err)
 
 		header, err := base64.StdEncoding.DecodeString(string(responseBody))
@@ -170,7 +170,7 @@ func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 
 		defer response.Body.Close()
 
-		responseBody, err := ioutil.ReadAll(response.Body)
+		responseBody, err := io.ReadAll(response.Body)
 		require.NoError(t, err)
 
 		header, err := base64.StdEncoding.DecodeString(string(responseBody))
@@ -194,7 +194,7 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				require.Equal(t, http.MethodPost, r.Method)
 
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 
 				require.NoError(t, err)

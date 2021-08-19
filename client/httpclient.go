@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -139,7 +138,7 @@ func buildHttpsTransport(hcc httpClientCfg, selfSignedCert bool, gitlabURL strin
 	}
 
 	if hcc.caPath != "" {
-		fis, _ := ioutil.ReadDir(hcc.caPath)
+		fis, _ := os.ReadDir(hcc.caPath)
 		for _, fi := range fis {
 			if fi.IsDir() {
 				continue
@@ -171,7 +170,7 @@ func buildHttpsTransport(hcc httpClientCfg, selfSignedCert bool, gitlabURL strin
 }
 
 func addCertToPool(certPool *x509.CertPool, fileName string) {
-	cert, err := ioutil.ReadFile(fileName)
+	cert, err := os.ReadFile(fileName)
 	if err == nil {
 		certPool.AppendCertsFromPEM(cert)
 	}
