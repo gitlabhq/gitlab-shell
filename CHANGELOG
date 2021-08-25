@@ -1,3 +1,13 @@
+v13.21.0
+
+- Change default logging format to JSON !476
+- Shutdown sshd gracefully !484
+- Provide liveness and readiness probes !494
+- Add tracing instrumentation to http client !495
+- Log same correlation_id on auth keys check of ssh connections !501
+- fix: validate client cert paths exist on disk before proceeding !508
+- Modify regex to prevent partial matches
+
 v13.20.0
 
 - Remove bin/authorized_keys !491
