@@ -2,6 +2,7 @@ package commandargs
 
 import (
 	"errors"
+	"fmt"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
@@ -27,7 +28,7 @@ func Parse(e *executable.Executable, arguments []string, env sshenv.Env) (Comman
 	case executable.Healthcheck:
 		return args, nil
 	default:
-		return nil, errors.New("unknown executable")
+		return nil, errors.New(fmt.Sprintf("unknown executable: %s", e.Name))
 	}
 
 	if err := args.Parse(); err != nil {
