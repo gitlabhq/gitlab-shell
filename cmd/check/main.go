@@ -19,7 +19,7 @@ func main() {
 		ErrOut: os.Stderr,
 	}
 
-	executable, err := executable.New(executable.Healthcheck)
+	executable, err := executable.New(executable.Healthcheck, false)
 	if err != nil {
 		fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
 		os.Exit(1)

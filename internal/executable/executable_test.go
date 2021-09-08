@@ -59,7 +59,7 @@ func TestNewSuccess(t *testing.T) {
 			fake.Setup()
 			defer fake.Cleanup()
 
-			result, err := New("gitlab-shell")
+			result, err := New("gitlab-shell", true)
 
 			require.NoError(t, err)
 			require.Equal(t, result.Name, "gitlab-shell")
@@ -96,7 +96,7 @@ func TestNewFailure(t *testing.T) {
 			fake.Setup()
 			defer fake.Cleanup()
 
-			_, err := New("gitlab-shell")
+			_, err := New("gitlab-shell", true)
 
 			require.Error(t, err)
 		})

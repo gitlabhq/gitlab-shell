@@ -25,8 +25,6 @@ func Parse(e *executable.Executable, arguments []string, env sshenv.Env) (Comman
 		args = &AuthorizedKeys{Arguments: arguments}
 	case executable.AuthorizedPrincipalsCheck:
 		args = &AuthorizedPrincipals{Arguments: arguments}
-	case executable.Healthcheck:
-		return args, nil
 	default:
 		return nil, errors.New(fmt.Sprintf("unknown executable: %s", e.Name))
 	}
