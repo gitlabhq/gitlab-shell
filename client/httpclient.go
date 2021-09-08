@@ -159,7 +159,6 @@ func buildHttpsTransport(hcc httpClientCfg, selfSignedCert bool, gitlabURL strin
 			return nil, "", err
 		}
 		tlsConfig.Certificates = []tls.Certificate{cert}
-		tlsConfig.BuildNameToCertificate()
 	}
 
 	transport := &http.Transport{
