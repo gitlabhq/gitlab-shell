@@ -14,12 +14,11 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/uploadarchive"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 )
 
-func New(e *executable.Executable, arguments []string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
-	args, err := Parse(e, arguments, env)
+func New(arguments []string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
+	args, err := Parse(arguments, env)
 	if err != nil {
 		return nil, err
 	}
@@ -31,7 +30,7 @@ func New(e *executable.Executable, arguments []string, env sshenv.Env, config *c
 	return nil, disallowedcommand.Error
 }
 
-func Parse(e *executable.Executable, arguments []string, env sshenv.Env) (*commandargs.Shell, error) {
+func Parse(arguments []string, env sshenv.Env) (*commandargs.Shell, error) {
 	args := &commandargs.Shell{Arguments: arguments, Env: env}
 
 	if err := args.Parse(); err != nil {

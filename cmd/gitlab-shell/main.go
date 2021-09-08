@@ -51,7 +51,7 @@ func main() {
 	defer logCloser.Close()
 
 	env := sshenv.NewFromEnv()
-	cmd, err := shellCmd.New(executable, os.Args[1:], env, config, readWriter)
+	cmd, err := shellCmd.New(os.Args[1:], env, config, readWriter)
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment

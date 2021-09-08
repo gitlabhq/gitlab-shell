@@ -37,7 +37,7 @@ func TestNew(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			command, err := command.New(tc.executable, tc.arguments, tc.env, tc.config, nil)
+			command, err := command.New(tc.arguments, tc.config, nil)
 
 			require.NoError(t, err)
 			require.IsType(t, tc.expectedType, command)
@@ -64,7 +64,7 @@ func TestParseSuccess(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			result, err := command.Parse(tc.executable, tc.arguments, tc.env)
+			result, err := command.Parse(tc.arguments)
 
 			if !tc.expectError {
 				require.NoError(t, err)
@@ -112,7 +112,7 @@ func TestParseFailure(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			_, err := command.Parse(tc.executable, tc.arguments, tc.env)
+			_, err := command.Parse(tc.arguments)
 
 			require.EqualError(t, err, tc.expectedError)
 		})

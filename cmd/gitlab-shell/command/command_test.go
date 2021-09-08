@@ -95,7 +95,7 @@ func TestNew(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			command, err := cmd.New(tc.executable, tc.arguments, tc.env, tc.config, nil)
+			command, err := cmd.New(tc.arguments, tc.env, tc.config, nil)
 
 			require.NoError(t, err)
 			require.IsType(t, tc.expectedType, command)
@@ -125,7 +125,7 @@ func TestFailingNew(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			command, err := cmd.New(tc.executable, []string{}, tc.env, basicConfig, nil)
+			command, err := cmd.New([]string{}, tc.env, basicConfig, nil)
 			require.Nil(t, command)
 			require.Equal(t, tc.expectedError, err)
 		})
@@ -236,7 +236,7 @@ func TestParseSuccess(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			result, err := cmd.Parse(tc.executable, tc.arguments, tc.env)
+			result, err := cmd.Parse(tc.arguments, tc.env)
 
 			if !tc.expectError {
 				require.NoError(t, err)
@@ -273,7 +273,7 @@ func TestParseFailure(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			_, err := cmd.Parse(tc.executable, tc.arguments, tc.env)
+			_, err := cmd.Parse(tc.arguments, tc.env)
 
 			require.EqualError(t, err, tc.expectedError)
 		})
