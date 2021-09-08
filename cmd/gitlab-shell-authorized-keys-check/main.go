@@ -20,7 +20,7 @@ func main() {
 		ErrOut: os.Stderr,
 	}
 
-	executable, err := executable.New(executable.AuthorizedKeysCheck)
+	executable, err := executable.New(executable.AuthorizedKeysCheck, true)
 	if err != nil {
 		fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
 		os.Exit(1)

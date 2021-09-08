@@ -29,9 +29,13 @@ type Command interface {
 }
 
 func New(e *executable.Executable, arguments []string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (Command, error) {
-	args, err := commandargs.Parse(e, arguments, env)
-	if err != nil {
-		return nil, err
+	var args commandargs.CommandArgs
+	if e.AcceptArgs {
+		var err error
+		args, err = commandargs.Parse(e, arguments, env)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if cmd := buildCommand(e, args, config, readWriter); cmd != nil {

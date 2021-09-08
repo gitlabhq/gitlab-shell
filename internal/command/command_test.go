@@ -26,10 +26,10 @@ import (
 )
 
 var (
-	authorizedKeysExec       = &executable.Executable{Name: executable.AuthorizedKeysCheck}
-	authorizedPrincipalsExec = &executable.Executable{Name: executable.AuthorizedPrincipalsCheck}
-	checkExec                = &executable.Executable{Name: executable.Healthcheck}
-	gitlabShellExec          = &executable.Executable{Name: executable.GitlabShell}
+	authorizedKeysExec       = &executable.Executable{Name: executable.AuthorizedKeysCheck, AcceptArgs: true}
+	authorizedPrincipalsExec = &executable.Executable{Name: executable.AuthorizedPrincipalsCheck, AcceptArgs: true}
+	checkExec                = &executable.Executable{Name: executable.Healthcheck, AcceptArgs: false}
+	gitlabShellExec          = &executable.Executable{Name: executable.GitlabShell, AcceptArgs: true}
 
 	basicConfig    = &config.Config{GitlabUrl: "http+unix://gitlab.socket"}
 	advancedConfig = &config.Config{GitlabUrl: "http+unix://gitlab.socket", SslCertDir: "/tmp/certs"}
