@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	cmd "gitlab.com/gitlab-org/gitlab-shell/cmd/gitlab-shell-authorized-principals-check/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -20,7 +21,7 @@ func main() {
 		ErrOut: os.Stderr,
 	}
 
-	executable, err := executable.New(executable.AuthorizedPrincipalsCheck, true)
+	executable, err := executable.New(executable.AuthorizedPrincipalsCheck)
 	if err != nil {
 		fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
 		os.Exit(1)
@@ -35,7 +36,7 @@ func main() {
 	logCloser := logger.Configure(config)
 	defer logCloser.Close()
 
-	cmd, err := command.New(executable, os.Args[1:], sshenv.Env{}, config, readWriter)
+	cmd, err := cmd.New(executable, os.Args[1:], sshenv.Env{}, config, readWriter)
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment

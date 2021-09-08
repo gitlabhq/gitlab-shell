@@ -6,7 +6,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
+	shellCmd "gitlab.com/gitlab-org/gitlab-shell/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -125,7 +125,7 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) uint32 {
 		ErrOut: s.channel.Stderr(),
 	}
 
-	cmd := command.BuildShellCommand(args, s.cfg, rw)
+	cmd := shellCmd.Build(args, s.cfg, rw)
 	if cmd == nil {
 		s.toStderr("Unknown command: %v\n", args.CommandType)
 		return 128
