@@ -14,8 +14,8 @@ const (
 )
 
 type Executable struct {
-	Name       string
-	RootDir    string
+	Name    string
+	RootDir string
 }
 
 var (
@@ -35,8 +35,8 @@ func New(name string) (*Executable, error) {
 	}
 
 	executable := &Executable{
-		Name:       name,
-		RootDir:    rootDir,
+		Name:    name,
+		RootDir: rootDir,
 	}
 
 	return executable, nil

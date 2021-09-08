@@ -8,7 +8,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 )
 
-
 func New(config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
 	if cmd := build(config, readWriter); cmd != nil {
 		return cmd, nil
