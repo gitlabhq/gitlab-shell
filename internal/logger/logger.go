@@ -3,7 +3,6 @@ package logger
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log/syslog"
 	"os"
 	"time"
@@ -43,7 +42,7 @@ func buildOpts(cfg *config.Config) []log.LoggerOption {
 // mode an empty LogFile is not accepted and syslog is used as a fallback when LogFile could not be
 // opened for writing.
 func Configure(cfg *config.Config) io.Closer {
-	var closer io.Closer = ioutil.NopCloser(nil)
+	var closer io.Closer = io.NopCloser(nil)
 	err := fmt.Errorf("No logfile specified")
 
 	if cfg.LogFile != "" {

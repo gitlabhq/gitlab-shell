@@ -5,9 +5,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -51,7 +51,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 
 	var hostKeys []ssh.Signer
 	for _, filename := range cfg.Server.HostKeyFiles {
-		keyRaw, err := ioutil.ReadFile(filename)
+		keyRaw, err := os.ReadFile(filename)
 		if err != nil {
 			log.WithError(err).Warnf("Failed to read host key %v", filename)
 			continue

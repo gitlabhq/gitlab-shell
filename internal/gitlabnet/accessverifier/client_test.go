@@ -3,8 +3,9 @@ package accessverifier
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"os"
 	"path"
 	"testing"
 
@@ -165,14 +166,14 @@ func TestErrorResponses(t *testing.T) {
 func setup(t *testing.T, allowedPayload string) *Client {
 	testhelper.PrepareTestRootDir(t)
 
-	body, err := ioutil.ReadFile(path.Join(testhelper.TestRoot, "responses/allowed.json"))
+	body, err := os.ReadFile(path.Join(testhelper.TestRoot, "responses/allowed.json"))
 	require.NoError(t, err)
 
 	var bodyWithPayload []byte
 
 	if allowedPayload != "" {
 		allowedWithPayloadPath := path.Join(testhelper.TestRoot, allowedPayload)
-		bodyWithPayload, err = ioutil.ReadFile(allowedWithPayloadPath)
+		bodyWithPayload, err = os.ReadFile(allowedWithPayloadPath)
 		require.NoError(t, err)
 	}
 
@@ -180,7 +181,7 @@ func setup(t *testing.T, allowedPayload string) *Client {
 		{
 			Path: "/api/v4/internal/allowed",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 
 				var requestBody *Request

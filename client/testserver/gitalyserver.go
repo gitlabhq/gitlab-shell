@@ -1,7 +1,6 @@
 package testserver
 
 import (
-	"io/ioutil"
 	"net"
 	"os"
 	"path"
@@ -61,7 +60,7 @@ func (s *TestGitalyServer) SSHUploadArchive(stream pb.SSHService_SSHUploadArchiv
 func StartGitalyServer(t *testing.T) (string, *TestGitalyServer) {
 	t.Helper()
 
-	tempDir, _ := ioutil.TempDir("", "gitlab-shell-test-api")
+	tempDir, _ := os.MkdirTemp("", "gitlab-shell-test-api")
 	gitalySocketPath := path.Join(tempDir, "gitaly.sock")
 	t.Cleanup(func() { os.RemoveAll(tempDir) })
 

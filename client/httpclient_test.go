@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -64,7 +64,7 @@ func testBasicAuthHeaders(t *testing.T, response *http.Response) {
 	defer response.Body.Close()
 
 	require.NotNil(t, response)
-	responseBody, err := ioutil.ReadAll(response.Body)
+	responseBody, err := io.ReadAll(response.Body)
 	require.NoError(t, err)
 
 	headerParts := strings.Split(string(responseBody), " ")

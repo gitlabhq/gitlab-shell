@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestConfigure(t *testing.T) {
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "logtest-")
+	tmpFile, err := os.CreateTemp(os.TempDir(), "logtest-")
 	require.NoError(t, err)
 	defer tmpFile.Close()
 
@@ -30,13 +29,13 @@ func TestConfigure(t *testing.T) {
 
 	tmpFile.Close()
 
-	data, err := ioutil.ReadFile(tmpFile.Name())
+	data, err := os.ReadFile(tmpFile.Name())
 	require.NoError(t, err)
 	require.True(t, strings.Contains(string(data), `msg":"this is a test"`))
 }
 
 func TestConfigureWithPermissionError(t *testing.T) {
-	tmpPath, err := ioutil.TempDir(os.TempDir(), "logtest-")
+	tmpPath, err := os.MkdirTemp(os.TempDir(), "logtest-")
 	require.NoError(t, err)
 	defer os.RemoveAll(tmpPath)
 
@@ -52,7 +51,7 @@ func TestConfigureWithPermissionError(t *testing.T) {
 }
 
 func TestLogInUTC(t *testing.T) {
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "logtest-")
+	tmpFile, err := os.CreateTemp(os.TempDir(), "logtest-")
 	require.NoError(t, err)
 	defer tmpFile.Close()
 	defer os.Remove(tmpFile.Name())
@@ -67,7 +66,7 @@ func TestLogInUTC(t *testing.T) {
 
 	log.Info("this is a test")
 
-	data, err := ioutil.ReadFile(tmpFile.Name())
+	data, err := os.ReadFile(tmpFile.Name())
 	require.NoError(t, err)
 
 	utc := `[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z`

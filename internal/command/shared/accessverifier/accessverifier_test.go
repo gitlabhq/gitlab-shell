@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -27,7 +27,7 @@ func setup(t *testing.T) (*Command, *bytes.Buffer, *bytes.Buffer) {
 		{
 			Path: "/api/v4/internal/allowed",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 
 				var requestBody *accessverifier.Request

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -26,7 +26,7 @@ func setup(t *testing.T) {
 		{
 			Path: "/api/v4/internal/personal_access_token",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 
 				require.NoError(t, err)
