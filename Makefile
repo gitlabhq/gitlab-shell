@@ -8,6 +8,8 @@ GOBUILD_FLAGS := -ldflags "-X main.Version=$(VERSION_STRING) -X main.BuildTime=$
 
 PREFIX ?= /usr/local
 
+build: bin/gitlab-shell
+
 validate: verify test
 
 verify: verify_golang
@@ -40,7 +42,6 @@ setup: _script_install bin/gitlab-shell
 _script_install:
 	bin/install
 
-build: bin/gitlab-shell
 compile: bin/gitlab-shell
 bin/gitlab-shell: $(GO_SOURCES)
 	GOBIN="$(CURDIR)/bin" go install $(GOBUILD_FLAGS) ./cmd/...
