@@ -7,13 +7,12 @@ import (
 	"net/http"
 	"testing"
 
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/discover"
-
 	"github.com/stretchr/testify/require"
-	"gitlab.com/gitlab-org/gitlab-shell/client"
+	gitnet "gitlab.com/gitlab-org/gitaly/v14/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/discover"
 )
 
 func initialize(t *testing.T) []testserver.TestRequestHandler {
@@ -43,7 +42,7 @@ func initialize(t *testing.T) []testserver.TestRequestHandler {
 					require.NoError(t, json.NewEncoder(w).Encode(body))
 				case "2":
 					w.WriteHeader(http.StatusForbidden)
-					body := &client.ErrorResponse{
+					body := &gitnet.ErrorResponse{
 						Message: "Not allowed!",
 					}
 					require.NoError(t, json.NewEncoder(w).Encode(body))

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"gitlab.com/gitlab-org/gitlab-shell/client"
+	gitnet "gitlab.com/gitlab-org/gitaly/v14/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
 )
@@ -16,7 +16,7 @@ const (
 
 type Client struct {
 	config *config.Config
-	client *client.GitlabNetClient
+	client *gitnet.GitlabNetClient
 }
 
 type Response struct {

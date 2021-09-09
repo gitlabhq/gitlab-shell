@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
-
-	"gitlab.com/gitlab-org/gitlab-shell/client"
-
 	"io"
 	"net/http"
 
+	gitnet "gitlab.com/gitlab-org/gitaly/v14/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
@@ -97,7 +95,7 @@ func (c *Command) processApiEndpoints(ctx context.Context, response *accessverif
 	return nil
 }
 
-func (c *Command) performRequest(ctx context.Context, client *client.GitlabNetClient, endpoint string, request *Request) (*Response, error) {
+func (c *Command) performRequest(ctx context.Context, client *gitnet.GitlabNetClient, endpoint string, request *Request) (*Response, error) {
 	response, err := client.DoRequest(ctx, http.MethodPost, endpoint, request)
 	if err != nil {
 		return nil, err

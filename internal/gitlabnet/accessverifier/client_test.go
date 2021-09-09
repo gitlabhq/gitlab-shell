@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	gitnet "gitlab.com/gitlab-org/gitaly/v14/gitlabnet"
 	pb "gitlab.com/gitlab-org/gitaly/v14/proto/go/gitalypb"
-	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -209,7 +209,7 @@ func setup(t *testing.T, allowedPayload string) *Client {
 					require.NoError(t, err)
 				case "2":
 					w.WriteHeader(http.StatusForbidden)
-					errBody := &client.ErrorResponse{
+					errBody := &gitnet.ErrorResponse{
 						Message: "Not allowed!",
 					}
 					require.NoError(t, json.NewEncoder(w).Encode(errBody))

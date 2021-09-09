@@ -8,9 +8,8 @@ import (
 	"net/url"
 	"testing"
 
-	"gitlab.com/gitlab-org/gitlab-shell/client"
-
 	"github.com/stretchr/testify/require"
+	"gitlab.com/gitlab-org/gitaly/v14/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 )
@@ -40,7 +39,7 @@ func init() {
 					json.NewEncoder(w).Encode(body)
 				} else if r.URL.Query().Get("username") == "broken_message" {
 					w.WriteHeader(http.StatusForbidden)
-					body := &client.ErrorResponse{
+					body := &gitlabnet.ErrorResponse{
 						Message: "Not allowed!",
 					}
 					json.NewEncoder(w).Encode(body)

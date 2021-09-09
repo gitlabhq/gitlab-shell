@@ -12,7 +12,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	yaml "gopkg.in/yaml.v2"
 
-	"gitlab.com/gitlab-org/gitlab-shell/client"
+	gitnet "gitlab.com/gitlab-org/gitaly/v14/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
 )
 
@@ -56,7 +56,7 @@ type Config struct {
 	HttpSettings   HttpSettingsConfig `yaml:"http_settings"`
 	Server         ServerConfig       `yaml:"sshd"`
 
-	httpClient     *client.HttpClient
+	httpClient     *gitnet.HttpClient
 	httpClientErr  error
 	httpClientOnce sync.Once
 }
@@ -95,9 +95,9 @@ func (c *Config) ApplyGlobalState() {
 	}
 }
 
-func (c *Config) HttpClient() (*client.HttpClient, error) {
+func (c *Config) HttpClient() (*gitnet.HttpClient, error) {
 	c.httpClientOnce.Do(func() {
-		client, err := client.NewHTTPClientWithOpts(
+		client, err := gitnet.NewHTTPClientWithOpts(
 			c.GitlabUrl,
 			c.GitlabRelativeURLRoot,
 			c.HttpSettings.CaFile,

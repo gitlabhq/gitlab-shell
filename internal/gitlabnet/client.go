@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"gitlab.com/gitlab-org/gitlab-shell/client"
-
+	gitnet "gitlab.com/gitlab-org/gitaly/v14/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 )
 
@@ -14,7 +13,7 @@ var (
 	ParsingError = fmt.Errorf("Parsing failed")
 )
 
-func GetClient(config *config.Config) (*client.GitlabNetClient, error) {
+func GetClient(config *config.Config) (*gitnet.GitlabNetClient, error) {
 	httpClient, err := config.HttpClient()
 	if err != nil {
 		return nil, err
@@ -24,7 +23,7 @@ func GetClient(config *config.Config) (*client.GitlabNetClient, error) {
 		return nil, fmt.Errorf("Unsupported protocol")
 	}
 
-	return client.NewGitlabNetClient(config.HttpSettings.User, config.HttpSettings.Password, config.Secret, httpClient)
+	return gitnet.NewGitlabNetClient(config.HttpSettings.User, config.HttpSettings.Password, config.Secret, httpClient)
 }
 
 func ParseJSON(hr *http.Response, response interface{}) error {

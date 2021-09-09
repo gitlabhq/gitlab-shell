@@ -13,7 +13,10 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type TestGitalyServer struct{ ReceivedMD metadata.MD }
+type TestGitalyServer struct {
+	pb.UnimplementedSSHServiceServer
+	ReceivedMD metadata.MD
+}
 
 func (s *TestGitalyServer) SSHReceivePack(stream pb.SSHService_SSHReceivePackServer) error {
 	req, err := stream.Recv()

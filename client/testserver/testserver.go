@@ -1,8 +1,6 @@
 package testserver
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"io"
 	"log"
 	"net"
@@ -14,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 )
 
 var (
@@ -54,40 +51,6 @@ func StartHttpServer(t *testing.T, handlers []TestRequestHandler) string {
 	t.Helper()
 
 	server := httptest.NewServer(buildHandler(handlers))
-	t.Cleanup(func() { server.Close() })
-
-	return server.URL
-}
-
-func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath string) string {
-	t.Helper()
-
-	crt := path.Join(testhelper.TestRoot, "certs/valid/server.crt")
-	key := path.Join(testhelper.TestRoot, "certs/valid/server.key")
-
-	server := httptest.NewUnstartedServer(buildHandler(handlers))
-	cer, err := tls.LoadX509KeyPair(crt, key)
-	require.NoError(t, err)
-
-	server.TLS = &tls.Config{
-		Certificates: []tls.Certificate{cer},
-		MinVersion:   tls.VersionTLS12,
-	}
-	server.TLS.BuildNameToCertificate()
-
-	if clientCAPath != "" {
-		caCert, err := os.ReadFile(clientCAPath)
-		require.NoError(t, err)
-
-		caCertPool := x509.NewCertPool()
-		caCertPool.AppendCertsFromPEM(caCert)
-
-		server.TLS.ClientCAs = caCertPool
-		server.TLS.ClientAuth = tls.RequireAndVerifyClientCert
-	}
-
-	server.StartTLS()
-
 	t.Cleanup(func() { server.Close() })
 
 	return server.URL
