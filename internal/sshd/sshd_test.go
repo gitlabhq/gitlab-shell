@@ -104,6 +104,22 @@ func TestLivenessProbe(t *testing.T) {
 	require.Equal(t, 200, r.Result().StatusCode)
 }
 
+func TestNewServerWithoutHosts(t *testing.T) {
+	_, err := NewServer(&config.Config{GitlabUrl: "http://localhost"})
+
+	require.Error(t, err)
+	require.Equal(t, "No host keys could be loaded, aborting", err.Error())
+}
+
+func TestInvalidClientConfig(t *testing.T) {
+	setupServer(t)
+
+	cfg := clientConfig(t)
+	cfg.User = "unknown"
+	_, err := ssh.Dial("tcp", serverUrl, cfg)
+	require.Error(t, err)
+}
+
 func setupServer(t *testing.T) *Server {
 	t.Helper()
 
