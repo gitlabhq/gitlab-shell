@@ -32,7 +32,7 @@ func TestHttpClient(t *testing.T) {
 	client, err := config.HttpClient()
 	require.NoError(t, err)
 
-	_, err = client.Get("http://host.com/path")
+	_, err = client.Get(url)
 	require.NoError(t, err)
 
 	ms, err := prometheus.DefaultGatherer.Gather()
