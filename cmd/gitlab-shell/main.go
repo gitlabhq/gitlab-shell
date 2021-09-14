@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	shellCmd "gitlab.com/gitlab-org/gitlab-shell/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -34,7 +35,7 @@ func main() {
 		ErrOut: os.Stderr,
 	}
 
-	executable, err := executable.New(executable.GitlabShell, true)
+	executable, err := executable.New(executable.GitlabShell)
 	if err != nil {
 		fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
 		os.Exit(1)
@@ -50,7 +51,7 @@ func main() {
 	defer logCloser.Close()
 
 	env := sshenv.NewFromEnv()
-	cmd, err := command.New(executable, os.Args[1:], env, config, readWriter)
+	cmd, err := shellCmd.New(os.Args[1:], env, config, readWriter)
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment
