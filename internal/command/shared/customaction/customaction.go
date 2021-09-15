@@ -64,7 +64,7 @@ func (c *Command) processApiEndpoints(ctx context.Context, response *accessverif
 			"endpoint":     endpoint,
 		}
 
-		log.WithFields(fields).Info("Performing custom action")
+		log.WithContextFields(ctx, fields).Info("Performing custom action")
 
 		response, err := c.performRequest(ctx, client, endpoint, request)
 		if err != nil {

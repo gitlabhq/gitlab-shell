@@ -32,12 +32,12 @@ func newServerConfig(cfg *config.Config) (*serverConfig, error) {
 	for _, filename := range cfg.Server.HostKeyFiles {
 		keyRaw, err := os.ReadFile(filename)
 		if err != nil {
-			log.WithError(err).Warnf("Failed to read host key %v", filename)
+			log.WithError(err).WithFields(log.Fields{"filename": filename}).Warn("Failed to read host key")
 			continue
 		}
 		key, err := ssh.ParsePrivateKey(keyRaw)
 		if err != nil {
-			log.WithError(err).Warnf("Failed to parse host key %v", filename)
+			log.WithError(err).WithFields(log.Fields{"filename": filename}).Warn("Failed to parse host key")
 			continue
 		}
 
