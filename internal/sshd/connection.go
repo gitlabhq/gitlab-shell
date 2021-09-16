@@ -54,7 +54,7 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 			// Prevent a panic in a single session from taking out the whole server
 			defer func() {
 				if err := recover(); err != nil {
-					log.WithFields(log.Fields{"recovered_error": err}).Warnf("panic handling session from %s", c.remoteAddr)
+					log.WithContextFields(ctx, log.Fields{"recovered_error": err, "address": c.remoteAddr}).Warn("panic handling session")
 				}
 			}()
 

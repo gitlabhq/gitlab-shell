@@ -110,7 +110,7 @@ func getConn(ctx context.Context, gc *GitalyCommand) (*grpc.ClientConn, error) {
 	if serviceName == "" {
 		serviceName = "gitlab-shell-unknown"
 
-		log.WithFields(log.Fields{"service_name": serviceName}).Warn("No gRPC service name specified, defaulting to gitlab-shell-unknown")
+		log.WithContextFields(ctx, log.Fields{"service_name": serviceName}).Warn("No gRPC service name specified, defaulting to gitlab-shell-unknown")
 	}
 
 	serviceName = fmt.Sprintf("%s-%s", serviceName, gc.ServiceName)

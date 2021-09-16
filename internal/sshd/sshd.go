@@ -47,7 +47,7 @@ func NewServer(cfg *config.Config) (*Server, error) {
 }
 
 func (s *Server) ListenAndServe(ctx context.Context) error {
-	if err := s.listen(); err != nil {
+	if err := s.listen(ctx); err != nil {
 		return err
 	}
 	defer s.listener.Close()
@@ -85,7 +85,7 @@ func (s *Server) MonitoringServeMux() *http.ServeMux {
 	return mux
 }
 
-func (s *Server) listen() error {
+func (s *Server) listen(ctx context.Context) error {
 	sshListener, err := net.Listen("tcp", s.Config.Server.Listen)
 	if err != nil {
 		return fmt.Errorf("failed to listen for connection: %w", err)
@@ -97,10 +97,10 @@ func (s *Server) listen() error {
 			ReadHeaderTimeout: ProxyHeaderTimeout,
 		}
 
-		log.Info("Proxy protocol is enabled")
+		log.ContextLogger(ctx).Info("Proxy protocol is enabled")
 	}
 
-	log.WithFields(log.Fields{"tcp_address": sshListener.Addr().String()}).Info("Listening for SSH connections")
+	log.WithContextFields(ctx, log.Fields{"tcp_address": sshListener.Addr().String()}).Info("Listening for SSH connections")
 
 	s.listener = sshListener
 
@@ -117,7 +117,7 @@ func (s *Server) serve(ctx context.Context) {
 				break
 			}
 
-			log.WithError(err).Warn("Failed to accept connection")
+			log.ContextLogger(ctx).WithError(err).Warn("Failed to accept connection")
 			continue
 		}
 
@@ -152,7 +152,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	// Prevent a panic in a single connection from taking out the whole server
 	defer func() {
 		if err := recover(); err != nil {
-			log.WithFields(log.Fields{"recovered_error": err}).Warnf("panic handling session from %s", remoteAddr)
+			log.WithContextFields(ctx, log.Fields{"recovered_error": err, "address": remoteAddr}).Warn("panic handling session")
 		}
 	}()
 
@@ -161,7 +161,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 	sconn, chans, reqs, err := ssh.NewServerConn(nconn, s.serverConfig.get(ctx))
 	if err != nil {
-		log.WithError(err).Info("Failed to initialize SSH connection")
+		log.ContextLogger(ctx).WithError(err).Info("Failed to initialize SSH connection")
 		return
 	}
 
