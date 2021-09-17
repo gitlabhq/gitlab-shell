@@ -9,7 +9,9 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
+	grpccodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	grpcstatus "google.golang.org/grpc/status"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
@@ -49,6 +51,12 @@ func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHan
 
 	childCtx := withOutgoingMetadata(ctx, gc.Features)
 	_, err = handler(childCtx, conn)
+
+	if err != nil && grpcstatus.Convert(err).Code() == grpccodes.Unavailable {
+		log.WithError(err).Error("Gitaly is unavailable")
+
+		return fmt.Errorf("Git service is temporarily unavailable")
+	}
 
 	return err
 }
