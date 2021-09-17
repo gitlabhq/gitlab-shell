@@ -7,7 +7,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	grpccodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	grpcstatus "google.golang.org/grpc/status"
 
 	pb "gitlab.com/gitlab-org/gitaly/v14/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -43,6 +45,18 @@ func TestMissingGitalyAddress(t *testing.T) {
 
 	err := cmd.RunGitalyCommand(context.Background(), makeHandler(t, nil))
 	require.EqualError(t, err, "no gitaly_address given")
+}
+
+func TestUnavailableGitalyErr(t *testing.T) {
+	cmd := GitalyCommand{
+		Config:  &config.Config{},
+		Address: "tcp://localhost:9999",
+	}
+
+	expectedErr := grpcstatus.Error(grpccodes.Unavailable, "error")
+	err := cmd.RunGitalyCommand(context.Background(), makeHandler(t, expectedErr))
+
+	require.EqualError(t, err, "Git service is temporarily unavailable")
 }
 
 func TestRunGitalyCommandMetadata(t *testing.T) {
