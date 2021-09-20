@@ -145,7 +145,7 @@ func TestHandleShell(t *testing.T) {
 		{
 			desc:             "fails to parse command",
 			cmd:              `\`,
-			errMsg:           "Failed to parse command: invalid command line string\n",
+			errMsg:           "Failed to parse command: Invalid SSH command\nUnknown command: \\\n",
 			gitlabKeyId:      "root",
 			expectedExitCode: 128,
 		}, {
