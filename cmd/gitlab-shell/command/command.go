@@ -30,6 +30,20 @@ func New(arguments []string, env sshenv.Env, config *config.Config, readWriter *
 	return nil, disallowedcommand.Error
 }
 
+func NewWithKey(gitlabKeyId string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
+	args, err := Parse(nil, env)
+	if err != nil {
+		return nil, err
+	}
+
+	args.GitlabKeyId = gitlabKeyId
+	if cmd := Build(args, config, readWriter); cmd != nil {
+		return cmd, nil
+	}
+
+	return nil, disallowedcommand.Error
+}
+
 func Parse(arguments []string, env sshenv.Env) (*commandargs.Shell, error) {
 	args := &commandargs.Shell{Arguments: arguments, Env: env}
 

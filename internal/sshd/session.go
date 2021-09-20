@@ -2,13 +2,14 @@ package sshd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"golang.org/x/crypto/ssh"
 
 	shellCmd "gitlab.com/gitlab-org/gitlab-shell/cmd/gitlab-shell/command"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 )
@@ -104,19 +105,11 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) uint32 {
 		req.Reply(true, []byte{})
 	}
 
-	args := &commandargs.Shell{
-		GitlabKeyId: s.gitlabKeyId,
-		Env: sshenv.Env{
-			IsSSHConnection:    true,
-			OriginalCommand:    s.execCmd,
-			GitProtocolVersion: s.gitProtocolVersion,
-			RemoteAddr:         s.remoteAddr,
-		},
-	}
-
-	if err := args.ParseCommand(s.execCmd); err != nil {
-		s.toStderr("Failed to parse command: %v\n", err.Error())
-		return 128
+	env := sshenv.Env{
+		IsSSHConnection:    true,
+		OriginalCommand:    s.execCmd,
+		GitProtocolVersion: s.gitProtocolVersion,
+		RemoteAddr:         s.remoteAddr,
 	}
 
 	rw := &readwriter.ReadWriter{
@@ -125,9 +118,13 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) uint32 {
 		ErrOut: s.channel.Stderr(),
 	}
 
-	cmd := shellCmd.Build(args, s.cfg, rw)
-	if cmd == nil {
-		s.toStderr("Unknown command: %v\n", args.CommandType)
+	cmd, err := shellCmd.NewWithKey(s.gitlabKeyId, env, s.cfg, rw)
+
+	if err != nil {
+		if !errors.Is(err, disallowedcommand.Error) {
+			s.toStderr("Failed to parse command: %v\n", err.Error())
+		}
+		s.toStderr("Unknown command: %v\n", s.execCmd)
 		return 128
 	}
 
