@@ -46,6 +46,7 @@ type Config struct {
 	RootDir               string
 	LogFile               string `yaml:"log_file,omitempty"`
 	LogFormat             string `yaml:"log_format,omitempty"`
+	LogLevel              string `yaml:"log_level,omitempty"`
 	GitlabUrl             string `yaml:"gitlab_url"`
 	GitlabRelativeURLRoot string `yaml:"gitlab_relative_url_root"`
 	GitlabTracing         string `yaml:"gitlab_tracing"`
@@ -66,6 +67,7 @@ var (
 	DefaultConfig = Config{
 		LogFile:   "gitlab-shell.log",
 		LogFormat: "json",
+		LogLevel:  "info",
 		Server:    DefaultServerConfig,
 		User:      "git",
 	}

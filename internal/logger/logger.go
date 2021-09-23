@@ -35,6 +35,7 @@ func buildOpts(cfg *config.Config) []log.LoggerOption {
 		log.WithFormatter(logFmt(cfg.LogFormat)),
 		log.WithOutputName(logFile(cfg.LogFile)),
 		log.WithTimezone(time.UTC),
+		log.WithLogLevel(cfg.LogLevel),
 	}
 }
 

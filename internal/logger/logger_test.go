@@ -3,7 +3,6 @@ package logger
 import (
 	"os"
 	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -26,12 +25,37 @@ func TestConfigure(t *testing.T) {
 	defer closer.Close()
 
 	log.Info("this is a test")
+	log.WithFields(log.Fields{}).Debug("debug log message")
 
 	tmpFile.Close()
 
 	data, err := os.ReadFile(tmpFile.Name())
 	require.NoError(t, err)
-	require.True(t, strings.Contains(string(data), `msg":"this is a test"`))
+	require.Contains(t, string(data), `msg":"this is a test"`)
+	require.NotContains(t, string(data), `msg:":"debug log message"`)
+}
+
+func TestConfigureWithDebugLogLevel(t *testing.T) {
+	tmpFile, err := os.CreateTemp(os.TempDir(), "logtest-")
+	require.NoError(t, err)
+	defer tmpFile.Close()
+
+	config := config.Config{
+		LogFile:   tmpFile.Name(),
+		LogFormat: "json",
+		LogLevel:  "debug",
+	}
+
+	closer := Configure(&config)
+	defer closer.Close()
+
+	log.WithFields(log.Fields{}).Debug("debug log message")
+
+	tmpFile.Close()
+
+	data, err := os.ReadFile(tmpFile.Name())
+	require.NoError(t, err)
+	require.Contains(t, string(data), `msg":"debug log message"`)
 }
 
 func TestConfigureWithPermissionError(t *testing.T) {
