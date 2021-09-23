@@ -1,3 +1,7 @@
+v13.21.1
+
+- Only validate SSL cert file exists if a value is supplied !527
+
 v13.21.0
 
 - Change default logging format to JSON !476
