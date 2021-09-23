@@ -66,10 +66,11 @@ func TestSuccessfulRequests(t *testing.T) {
 
 func TestFailedRequests(t *testing.T) {
 	testCases := []struct {
-		desc          string
-		caFile        string
-		caPath        string
-		expectedError string
+		desc                   string
+		caFile                 string
+		caPath                 string
+		expectedCaFileNotFound bool
+		expectedError          string
 	}{
 		{
 			desc:          "Invalid CaFile",
@@ -77,18 +78,25 @@ func TestFailedRequests(t *testing.T) {
 			expectedError: "Internal API unreachable",
 		},
 		{
-			desc:   "Invalid CaPath",
-			caPath: path.Join(testhelper.TestRoot, "certs/invalid"),
+			desc:                   "Missing CaFile",
+			caFile:                 path.Join(testhelper.TestRoot, "certs/invalid/missing.crt"),
+			expectedCaFileNotFound: true,
 		},
 		{
-			desc: "Empty config",
+			desc:          "Invalid CaPath",
+			caPath:        path.Join(testhelper.TestRoot, "certs/invalid"),
+			expectedError: "Internal API unreachable",
+		},
+		{
+			desc:          "Empty config",
+			expectedError: "Internal API unreachable",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			client, err := setupWithRequests(t, tc.caFile, tc.caPath, "", "", "", false)
-			if tc.caFile == "" {
+			if tc.expectedCaFileNotFound {
 				require.Error(t, err)
 				require.ErrorIs(t, err, ErrCafileNotFound)
 			} else {

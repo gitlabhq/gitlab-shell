@@ -54,6 +54,22 @@ func WithClientCert(certPath, keyPath string) HTTPClientOpt {
 	}
 }
 
+func validateCaFile(filename string) error {
+	if filename == "" {
+		return nil
+	}
+
+	if _, err := os.Stat(filename); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("cannot find cafile '%s': %w", filename, ErrCafileNotFound)
+		}
+
+		return err
+	}
+
+	return nil
+}
+
 // Deprecated: use NewHTTPClientWithOpts - https://gitlab.com/gitlab-org/gitlab-shell/-/issues/484
 func NewHTTPClient(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, selfSignedCert bool, readTimeoutSeconds uint64) *HttpClient {
 	c, err := NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath, selfSignedCert, readTimeoutSeconds, nil)
@@ -73,10 +89,8 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	} else if strings.HasPrefix(gitlabURL, httpProtocol) {
 		transport, host = buildHttpTransport(gitlabURL)
 	} else if strings.HasPrefix(gitlabURL, httpsProtocol) {
-		if _, err := os.Stat(caFile); err != nil {
-			if os.IsNotExist(err) {
-				return nil, fmt.Errorf("cannot find cafile '%s': %w", caFile, ErrCafileNotFound)
-			}
+		err = validateCaFile(caFile)
+		if err != nil {
 			return nil, err
 		}
 
