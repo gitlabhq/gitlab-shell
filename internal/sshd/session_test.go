@@ -86,7 +86,7 @@ func TestHandleEnv(t *testing.T) {
 			s := &session{gitProtocolVersion: "1"}
 			r := &ssh.Request{Payload: tc.payload}
 
-			require.Equal(t, s.handleEnv(r), tc.expectedResult)
+			require.Equal(t, s.handleEnv(context.Background(), r), tc.expectedResult)
 			require.Equal(t, s.gitProtocolVersion, tc.expectedProtocolVersion)
 		})
 	}
