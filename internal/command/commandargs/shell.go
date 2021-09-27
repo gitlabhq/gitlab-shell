@@ -1,7 +1,7 @@
 package commandargs
 
 import (
-	"errors"
+	"fmt"
 	"regexp"
 
 	"github.com/mattn/go-shellwords"
@@ -49,19 +49,14 @@ func (s *Shell) GetArguments() []string {
 
 func (s *Shell) validate() error {
 	if !s.Env.IsSSHConnection {
-		return errors.New("Only SSH allowed")
+		return fmt.Errorf("Only SSH allowed")
 	}
 
-	if !s.isValidSSHCommand() {
-		return errors.New("Invalid SSH command")
+	if err := s.ParseCommand(s.Env.OriginalCommand); err != nil {
+		return fmt.Errorf("Invalid SSH command: %w", err)
 	}
 
 	return nil
-}
-
-func (s *Shell) isValidSSHCommand() bool {
-	err := s.ParseCommand(s.Env.OriginalCommand)
-	return err == nil
 }
 
 func (s *Shell) parseWho() {
