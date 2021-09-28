@@ -86,7 +86,7 @@ func TestHandleEnv(t *testing.T) {
 			s := &session{gitProtocolVersion: "1"}
 			r := &ssh.Request{Payload: tc.payload}
 
-			require.Equal(t, s.handleEnv(r), tc.expectedResult)
+			require.Equal(t, s.handleEnv(context.Background(), r), tc.expectedResult)
 			require.Equal(t, s.gitProtocolVersion, tc.expectedProtocolVersion)
 		})
 	}
@@ -145,7 +145,7 @@ func TestHandleShell(t *testing.T) {
 		{
 			desc:             "fails to parse command",
 			cmd:              `\`,
-			errMsg:           "Failed to parse command: Invalid SSH command\nUnknown command: \\\n",
+			errMsg:           "Failed to parse command: Invalid SSH command: invalid command line string\nUnknown command: \\\n",
 			gitlabKeyId:      "root",
 			expectedExitCode: 128,
 		}, {

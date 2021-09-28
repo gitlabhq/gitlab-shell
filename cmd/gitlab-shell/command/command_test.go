@@ -267,7 +267,7 @@ func TestParseFailure(t *testing.T) {
 			executable:    &executable.Executable{Name: executable.GitlabShell},
 			env:           sshenv.Env{IsSSHConnection: true, OriginalCommand: `git receive-pack "`},
 			arguments:     []string{},
-			expectedError: "Invalid SSH command",
+			expectedError: "Invalid SSH command: invalid command line string",
 		},
 	}
 
