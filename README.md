@@ -98,6 +98,21 @@ environment.
 
 Starting with GitLab 8.12, GitLab supports Git LFS authentication through SSH.
 
+## Logging Guidelines
+
+In general, it should be possible to determine the structure, but not content,
+of a gitlab-shell or gitlab-sshd session just from inspecting the logs. Some
+guidelines:
+
+- We use [`gitlab.com/gitlab-org/labkit/log`](https://pkg.go.dev/gitlab.com/gitlab-org/labkit/log)
+  for logging functionality
+- **Always** include a correlation ID
+- Log messages should be invariant and unique. Include accessory information in
+  fields, using `log.WithField`, `log.WithFields`, or `log.WithError`.
+- Log success cases as well as error cases
+- Logging too much is better than not logging enough. If a message seems too
+  verbose, consider reducing the log level before removing the message.
+
 ## Releasing
 
 See [PROCESS.md](./PROCESS.md)
