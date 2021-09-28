@@ -29,21 +29,26 @@ func newConnection(maxSessions int64, remoteAddr string) *connection {
 }
 
 func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, handler channelHandler) {
+	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
+
 	defer metrics.SshdConnectionDuration.Observe(time.Since(c.begin).Seconds())
 
 	for newChannel := range chans {
+		ctxlog.WithField("channel_type", newChannel.ChannelType).Info("connection: handle: new channel requested")
 		if newChannel.ChannelType() != "session" {
+			ctxlog.Info("connection: handle: unknown channel type")
 			newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
 			continue
 		}
 		if !c.concurrentSessions.TryAcquire(1) {
+			ctxlog.Info("connection: handle: too many concurrent sessions")
 			newChannel.Reject(ssh.ResourceShortage, "too many concurrent sessions")
 			metrics.SshdHitMaxSessions.Inc()
 			continue
 		}
 		channel, requests, err := newChannel.Accept()
 		if err != nil {
-			log.WithError(err).Info("could not accept channel")
+			ctxlog.WithError(err).Error("connection: handle: accepting channel failed")
 			c.concurrentSessions.Release(1)
 			continue
 		}
@@ -54,11 +59,12 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 			// Prevent a panic in a single session from taking out the whole server
 			defer func() {
 				if err := recover(); err != nil {
-					log.WithContextFields(ctx, log.Fields{"recovered_error": err, "address": c.remoteAddr}).Warn("panic handling session")
+					ctxlog.WithField("recovered_error", err).Warn("panic handling session")
 				}
 			}()
 
 			handler(ctx, channel, requests)
+			ctxlog.Info("connection: handle: done")
 		}()
 	}
 }

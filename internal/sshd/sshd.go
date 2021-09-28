@@ -149,19 +149,23 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	defer s.wg.Done()
 	defer nconn.Close()
 
-	// Prevent a panic in a single connection from taking out the whole server
-	defer func() {
-		if err := recover(); err != nil {
-			log.WithContextFields(ctx, log.Fields{"recovered_error": err, "address": remoteAddr}).Warn("panic handling session")
-		}
-	}()
-
 	ctx, cancel := context.WithCancel(correlation.ContextWithCorrelation(ctx, correlation.SafeRandomID()))
 	defer cancel()
 
+	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": remoteAddr})
+
+	// Prevent a panic in a single connection from taking out the whole server
+	defer func() {
+		if err := recover(); err != nil {
+			ctxlog.Warn("panic handling session")
+		}
+	}()
+
+	ctxlog.Info("server: handleConn: start")
+
 	sconn, chans, reqs, err := ssh.NewServerConn(nconn, s.serverConfig.get(ctx))
 	if err != nil {
-		log.ContextLogger(ctx).WithError(err).Info("Failed to initialize SSH connection")
+		ctxlog.WithError(err).Error("server: handleConn: failed to initialize SSH connection")
 		return
 	}
 
@@ -178,4 +182,6 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 		session.handle(ctx, requests)
 	})
+
+	ctxlog.Info("server: handleConn: done")
 }
