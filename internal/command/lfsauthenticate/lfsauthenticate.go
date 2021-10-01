@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"gitlab.com/gitlab-org/labkit/log"
+
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/accessverifier"
@@ -58,6 +60,11 @@ func (c *Command) Execute(ctx context.Context) error {
 	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserId)
 	if err != nil {
 		// return nothing just like Ruby's GitlabShell#lfs_authenticate does
+		log.WithContextFields(
+			ctx,
+			log.Fields{"operation": operation, "repo": repo, "user_id": accessResponse.UserId},
+		).WithError(err).Debug("lfsauthenticate: execute: LFS authentication failed")
+
 		return nil
 	}
 
