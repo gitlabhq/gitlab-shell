@@ -34,7 +34,7 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 	defer metrics.SshdConnectionDuration.Observe(time.Since(c.begin).Seconds())
 
 	for newChannel := range chans {
-		ctxlog.WithField("channel_type", newChannel.ChannelType).Info("connection: handle: new channel requested")
+		ctxlog.WithField("channel_type", newChannel.ChannelType()).Info("connection: handle: new channel requested")
 		if newChannel.ChannelType() != "session" {
 			ctxlog.Info("connection: handle: unknown channel type")
 			newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
