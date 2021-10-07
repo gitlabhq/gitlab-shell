@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 
 	"gitlab.com/gitlab-org/labkit/log"
 	"golang.org/x/crypto/ssh"
@@ -149,10 +150,16 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) uint32 {
 		return 128
 	}
 
+	cmdName := reflect.TypeOf(cmd).String()
+	ctxlog := log.ContextLogger(ctx)
+	ctxlog.WithFields(log.Fields{"env": env, "command": cmdName}).Info("session: handleShell: executing command")
+
 	if err := cmd.Execute(ctx); err != nil {
 		s.toStderr(ctx, "remote: ERROR: %v\n", err.Error())
 		return 1
 	}
+
+	ctxlog.Info("session: handleShell: command executed successfully")
 
 	return 0
 }
