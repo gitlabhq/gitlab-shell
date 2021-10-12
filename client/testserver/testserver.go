@@ -73,7 +73,6 @@ func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath 
 		Certificates: []tls.Certificate{cer},
 		MinVersion:   tls.VersionTLS12,
 	}
-	server.TLS.BuildNameToCertificate()
 
 	if clientCAPath != "" {
 		caCert, err := os.ReadFile(clientCAPath)
