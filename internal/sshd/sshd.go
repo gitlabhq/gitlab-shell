@@ -94,6 +94,7 @@ func (s *Server) listen(ctx context.Context) error {
 	if s.Config.Server.ProxyProtocol {
 		sshListener = &proxyproto.Listener{
 			Listener:          sshListener,
+			Policy:            unconditionalRequirePolicy,
 			ReadHeaderTimeout: ProxyHeaderTimeout,
 		}
 
@@ -184,4 +185,8 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	})
 
 	ctxlog.Info("server: handleConn: done")
+}
+
+func unconditionalRequirePolicy(_ net.Addr) (proxyproto.Policy, error) {
+	return proxyproto.REQUIRE, nil
 }
