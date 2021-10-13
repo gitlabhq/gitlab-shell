@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 
+	"gitlab.com/gitlab-org/labkit/log"
+
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -18,11 +20,18 @@ type Command struct {
 }
 
 func (c *Command) Execute(ctx context.Context) error {
-	err := c.verifyOTP(ctx, c.getOTP())
+	ctxlog := log.ContextLogger(ctx)
+	ctxlog.Info("twofactorverify: execute: waiting for user input")
+	otp := c.getOTP()
+
+	ctxlog.Info("twofactorverify: execute: verifying entered OTP")
+	err := c.verifyOTP(ctx, otp)
 	if err != nil {
+		ctxlog.WithError(err).Error("twofactorverify: execute: OTP verification failed")
 		return err
 	}
 
+	ctxlog.WithError(err).Info("twofactorverify: execute: OTP verified")
 	return nil
 }
 
