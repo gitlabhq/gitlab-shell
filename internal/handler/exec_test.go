@@ -56,7 +56,7 @@ func TestUnavailableGitalyErr(t *testing.T) {
 	expectedErr := grpcstatus.Error(grpccodes.Unavailable, "error")
 	err := cmd.RunGitalyCommand(context.Background(), makeHandler(t, expectedErr))
 
-	require.EqualError(t, err, "Git service is temporarily unavailable")
+	require.EqualError(t, err, "The git server, Gitaly, is not available at this time. Please contact your administrator.")
 }
 
 func TestRunGitalyCommandMetadata(t *testing.T) {

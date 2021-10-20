@@ -45,17 +45,24 @@ type GitalyCommand struct {
 func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHandlerFunc) error {
 	conn, err := getConn(ctx, gc)
 	if err != nil {
+		log.ContextLogger(ctx).WithError(fmt.Errorf("RunGitalyCommand: %v", err)).Error("Failed to get connection to execute Git command")
+
 		return err
 	}
 	defer conn.Close()
 
 	childCtx := withOutgoingMetadata(ctx, gc.Features)
-	_, err = handler(childCtx, conn)
+	ctxlog := log.ContextLogger(childCtx)
+	exitStatus, err := handler(childCtx, conn)
 
-	if err != nil && grpcstatus.Convert(err).Code() == grpccodes.Unavailable {
-		log.WithError(err).Error("Gitaly is unavailable")
+	if err != nil {
+		if grpcstatus.Convert(err).Code() == grpccodes.Unavailable {
+			ctxlog.WithError(fmt.Errorf("RunGitalyCommand: %v", err)).Error("Gitaly is unavailable")
 
-		return fmt.Errorf("Git service is temporarily unavailable")
+			return fmt.Errorf("The git server, Gitaly, is not available at this time. Please contact your administrator.")
+		}
+
+		ctxlog.WithError(err).WithFields(log.Fields{"exit_status": exitStatus}).Error("Failed to execute Git command")
 	}
 
 	return err
