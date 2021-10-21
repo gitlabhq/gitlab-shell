@@ -14,6 +14,8 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
+
+	"gitlab.com/gitlab-org/labkit/log"
 )
 
 const (
@@ -93,6 +95,8 @@ func (sc *ServerConfig) GracePeriod() time.Duration {
 
 func (c *Config) ApplyGlobalState() {
 	if c.SslCertDir != "" {
+		log.WithFields(log.Fields{"ssl_cert_dir": c.SslCertDir}).Info("SSL_CERT_DIR is configured")
+
 		os.Setenv("SSL_CERT_DIR", c.SslCertDir)
 	}
 }
