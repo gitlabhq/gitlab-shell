@@ -170,6 +170,27 @@ func TestParseSuccess(t *testing.T) {
 			expectedArgs: &commandargs.Shell{Arguments: []string{"hello", "username-key-123"}, SshArgs: []string{}, CommandType: commandargs.Discover, GitlabUsername: "key-123", Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
 		},
 		{
+			desc:         "It finds the key id if the key is listed as the last argument",
+			executable:   &executable.Executable{Name: executable.GitlabShell},
+			env:          sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"},
+			arguments:    []string{"hello", "gitlab-shell -c key-123"},
+			expectedArgs: &commandargs.Shell{Arguments: []string{"hello", "gitlab-shell -c key-123"}, SshArgs: []string{}, CommandType: commandargs.Discover, GitlabKeyId: "123", Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
+		},
+		{
+			desc:         "It finds the username if the username is listed as the last argument",
+			executable:   &executable.Executable{Name: executable.GitlabShell},
+			env:          sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"},
+			arguments:    []string{"hello", "gitlab-shell -c username-jane-doe"},
+			expectedArgs: &commandargs.Shell{Arguments: []string{"hello", "gitlab-shell -c username-jane-doe"}, SshArgs: []string{}, CommandType: commandargs.Discover, GitlabUsername: "jane-doe", Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
+		},
+		{
+			desc:         "It finds the key id only if the last argument is of <key-id> format",
+			executable:   &executable.Executable{Name: executable.GitlabShell},
+			env:          sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"},
+			arguments:    []string{"hello", "gitlab-shell -c username-key-123"},
+			expectedArgs: &commandargs.Shell{Arguments: []string{"hello", "gitlab-shell -c username-key-123"}, SshArgs: []string{}, CommandType: commandargs.Discover, GitlabUsername: "key-123", Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
+		},
+		{
 			desc:         "It finds the username in any passed arguments",
 			executable:   &executable.Executable{Name: executable.GitlabShell},
 			env:          sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"},
