@@ -3,6 +3,7 @@ package commandargs
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/mattn/go-shellwords"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
@@ -73,26 +74,29 @@ func (s *Shell) parseWho() {
 	}
 }
 
-func tryParseKeyId(argument string) string {
-	matchInfo := whoKeyRegex.FindStringSubmatch(argument)
+func tryParse(r *regexp.Regexp, argument string) string {
+	// sshd may execute the session for AuthorizedKeysCommand in multiple ways:
+	// 1. key-id
+	// 2. /path/to/shell -c key-id
+	args := strings.Split(argument, " ")
+	lastArg := args[len(args)-1]
+
+	matchInfo := r.FindStringSubmatch(lastArg)
 	if len(matchInfo) == 2 {
 		// The first element is the full matched string
-		// The second element is the named `keyid`
+		// The second element is the named `keyid` or `username`
 		return matchInfo[1]
 	}
 
 	return ""
 }
 
-func tryParseUsername(argument string) string {
-	matchInfo := whoUsernameRegex.FindStringSubmatch(argument)
-	if len(matchInfo) == 2 {
-		// The first element is the full matched string
-		// The second element is the named `username`
-		return matchInfo[1]
-	}
+func tryParseKeyId(argument string) string {
+	return tryParse(whoKeyRegex, argument)
+}
 
-	return ""
+func tryParseUsername(argument string) string {
+	return tryParse(whoUsernameRegex, argument)
 }
 
 func (s *Shell) ParseCommand(commandString string) error {
