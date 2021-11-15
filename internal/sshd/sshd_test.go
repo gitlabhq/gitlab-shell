@@ -48,8 +48,7 @@ func TestListenAndServe(t *testing.T) {
 }
 
 func TestListenAndServeRejectsPlainConnectionsWhenProxyProtocolEnabled(t *testing.T) {
-	s := setupServerWithProxyProtocolEnabled(t)
-	defer s.Shutdown()
+	setupServerWithProxyProtocolEnabled(t)
 
 	client, err := ssh.Dial("tcp", serverUrl, clientConfig(t))
 	if client != nil {
@@ -57,7 +56,7 @@ func TestListenAndServeRejectsPlainConnectionsWhenProxyProtocolEnabled(t *testin
 	}
 
 	require.Error(t, err, "Expected plain SSH request to be failed")
-	require.Equal(t, err.Error(), "ssh: handshake failed: EOF")
+	require.Regexp(t, "ssh: handshake failed", err.Error())
 }
 
 func TestCorrelationId(t *testing.T) {
@@ -227,14 +226,5 @@ func holdSession(t *testing.T, c *ssh.Client) {
 }
 
 func verifyStatus(t *testing.T, s *Server, st status) {
-	for i := 5; i < 500; i += 50 {
-		if s.getStatus() == st {
-			break
-		}
-
-		// Sleep incrementally ~2s in total
-		time.Sleep(time.Duration(i) * time.Millisecond)
-	}
-
-	require.Equal(t, st, s.getStatus())
+	require.Eventually(t, func() bool { return s.getStatus() == st }, 2*time.Second, time.Millisecond)
 }
