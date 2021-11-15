@@ -1,5 +1,13 @@
 v13.21.0
 
+- Switch to labkit for logging system setup !504
+- Remove some unreliable tests !503
+- Make gofmt check fail if there are any matching files !500
+- Update go-proxyproto to v0.6.0 !499
+- Switch to labkit/log for logging functionality !498
+- Unit tests for internal/sshd/connection.go !497
+- Prometheus metrics for HTTP requests !496
+- Refactor testhelper.PrepareTestRootDir using t.Cleanup !49
 - Change default logging format to JSON !476
 - Shutdown sshd gracefully !484
 - Provide liveness and readiness probes !494
