@@ -1,5 +1,36 @@
+v13.22.0
+
+- Relax key and username matching for sshd !540
+- Add logging to handler/exec.go and config/config.go !539
+- Improve logging for non-git commands !538
+- Update to Go v1.16.9 !537
+- Reject non-proxied connections when proxy protocol is enabled !536
+- Log command invocation !535
+- Fix logging channel type !534
+- Resolve an error-swallowing issue !533
+- Add more logging to gitlab-sshd !531
+- Respect log-level configuration again !530
+- Improve err message given when Gitaly unavailable !526
+- makefile: properly escape '$' in VERSION_STRING !525
+- Add context fields to logging !524
+- Extract server config related code out of sshd.go !523
+- Add TestInvalidClientConfig and TestNewServerWithoutHosts for sshd.go !518
+- Update Ruby version to 2.7.4 and add Go version 1.16.8 for tooling !517
+
+v13.21.1
+
+- Only validate SSL cert file exists if a value is supplied !527
+
 v13.21.0
 
+- Switch to labkit for logging system setup !504
+- Remove some unreliable tests !503
+- Make gofmt check fail if there are any matching files !500
+- Update go-proxyproto to v0.6.0 !499
+- Switch to labkit/log for logging functionality !498
+- Unit tests for internal/sshd/connection.go !497
+- Prometheus metrics for HTTP requests !496
+- Refactor testhelper.PrepareTestRootDir using t.Cleanup !493
 - Change default logging format to JSON !476
 - Shutdown sshd gracefully !484
 - Provide liveness and readiness probes !494
