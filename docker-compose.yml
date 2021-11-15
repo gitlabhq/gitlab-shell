@@ -3,6 +3,6 @@ services:
   gitaly:
     environment:
       - GITALY_TESTING_NO_GIT_HOOKS=1
-    image: registry.gitlab.com/gitlab-org/build/cng/gitaly:latest
+    image: registry.gitlab.com/gitlab-org/build/cng/gitaly:master
     ports:
       - '8075:8075'

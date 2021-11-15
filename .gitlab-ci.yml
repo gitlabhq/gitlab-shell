@@ -45,7 +45,7 @@ default:
     - go version
     - which go
   services:
-    - name: registry.gitlab.com/gitlab-org/build/cng/gitaly:latest
+    - name: registry.gitlab.com/gitlab-org/build/cng/gitaly:master
       # Disable the hooks so we don't have to stub the GitLab API
       command: ["bash", "-c", "mkdir -p /home/git/repositories && rm -rf /srv/gitlab-shell/hooks/* && exec /usr/bin/env GITALY_TESTING_NO_GIT_HOOKS=1 /scripts/process-wrapper"]
       alias: gitaly
