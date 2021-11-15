@@ -30,7 +30,7 @@ v13.21.0
 - Switch to labkit/log for logging functionality !498
 - Unit tests for internal/sshd/connection.go !497
 - Prometheus metrics for HTTP requests !496
-- Refactor testhelper.PrepareTestRootDir using t.Cleanup !49
+- Refactor testhelper.PrepareTestRootDir using t.Cleanup !493
 - Change default logging format to JSON !476
 - Shutdown sshd gracefully !484
 - Provide liveness and readiness probes !494
