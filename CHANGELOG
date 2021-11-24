@@ -1,3 +1,7 @@
+v13.22.1
+
+- Remove SSL_CERT_DIR logging !546
+
 v13.22.0
 
 - Relax key and username matching for sshd !540
