@@ -5,6 +5,9 @@ import (
 	"os"
 	"reflect"
 
+	grpccodes "google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
+
 	"gitlab.com/gitlab-org/labkit/log"
 
 	shellCmd "gitlab.com/gitlab-org/gitlab-shell/cmd/gitlab-shell/command"
@@ -71,7 +74,9 @@ func main() {
 
 	if err := cmd.Execute(ctx); err != nil {
 		ctxlog.WithError(err).Warn("gitlab-shell: main: command execution failed")
-		console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
+		if grpcstatus.Convert(err).Code() != grpccodes.Internal {
+			console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
+		}
 		os.Exit(1)
 	}
 
