@@ -408,17 +408,33 @@ func TestGitUploadPackSuccess(t *testing.T) {
 	ensureGitalyRepository(t)
 
 	client := runSSHD(t, successAPI(t))
-
 	session, err := client.NewSession()
 	require.NoError(t, err)
 	defer session.Close()
 
-	output, err := session.Output(fmt.Sprintf("git-upload-pack %s", testRepo))
+	stdin, err := session.StdinPipe()
+	require.NoError(t, err)
+
+	stdout, err := session.StdoutPipe()
+	require.NoError(t, err)
+
+	reader := bufio.NewReader(stdout)
+
+	err = session.Start(fmt.Sprintf("git-upload-pack %s", testRepo))
+	require.NoError(t, err)
+
+	line, err := reader.ReadString('\n')
+	require.NoError(t, err)
+	require.Regexp(t, "^[0-9a-f]{44} HEAD.+", line)
+
+	// Gracefully close connection
+	_, err = fmt.Fprintln(stdin, "0000")
+	require.NoError(t, err)
+
+	output, err := io.ReadAll(stdout)
 	require.NoError(t, err)
 
 	outputLines := strings.Split(string(output), "\n")
-
-	require.Regexp(t, "^[0-9a-f]{44} HEAD.+", outputLines[0])
 
 	for i := 1; i < (len(outputLines) - 1); i++ {
 		require.Regexp(t, "^[0-9a-f]{44} refs/(heads|tags)/[^ ]+", outputLines[i])
@@ -436,11 +452,29 @@ func TestGitUploadArchiveSuccess(t *testing.T) {
 	require.NoError(t, err)
 	defer session.Close()
 
-	output, err := session.Output(fmt.Sprintf("git-upload-archive %s", testRepo))
+	stdin, err := session.StdinPipe()
 	require.NoError(t, err)
 
-	outputLines := strings.Split(string(output), "\n")
+	stdout, err := session.StdoutPipe()
+	require.NoError(t, err)
 
-	require.Equal(t, "0008ACK", outputLines[0])
-	require.Regexp(t, "^0000", outputLines[1])
+	reader := bufio.NewReader(stdout)
+
+	err = session.Start(fmt.Sprintf("git-upload-archive %s", testRepo))
+	require.NoError(t, err)
+
+	_, err = fmt.Fprintln(stdin, "0012argument HEAD\n0000")
+
+	line, err := reader.ReadString('\n')
+	require.Equal(t, "0008ACK\n", line)
+	require.NoError(t, err)
+
+	// Gracefully close connection
+	_, err = fmt.Fprintln(stdin, "0000")
+	require.NoError(t, err)
+
+	output, err := io.ReadAll(stdout)
+	require.NoError(t, err)
+
+	require.Equal(t, []byte("0000"), output[len(output)-4:])
 }
