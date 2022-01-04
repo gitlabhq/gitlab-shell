@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
@@ -33,41 +34,41 @@ func (c *Command) Execute(ctx context.Context) error {
 		return err
 	}
 
-	verify := make(chan Result)
+	// Create timeout context 
+	// TODO: make timeout configurable
+	const ctxTimeout = 30
+	timeoutCtx, cancel := context.WithTimeout(ctx, ctxTimeout * time.Second)
+	defer cancel()
+
+	// Background push notification with timeout
 	pushauth := make(chan Result)
-
 	go func() {
-		status, success, err := c.verifyOTP(ctx, c.getOTP())
-		verify <- Result{Error: err, Status: status, Success: success}
-	}()
-
-	go func() {
-		status, success, err := c.pushAuth(ctx)
+		defer close(pushauth)
+		status, success, err := c.pushAuth(timeoutCtx)
 		pushauth <- Result{Error: err, Status: status, Success: success}
 	}()
 
-L:
-	for {
-		select {
-		case res := <-verify:
-			if res.Error != nil {
-				return res.Error
-			}
-			fmt.Fprint(c.ReadWriter.Out, res.Status)
-			break L
-		case res := <-pushauth:
-			if res.Success {
-				fmt.Fprint(c.ReadWriter.Out, res.Status)
-				break L
-			} else {
-				// ignore reject from remote, need to wait for user input in this case
-			}
-		}
+	// Also allow manual OTP entry while waiting for push, with same timeout as push
+	verify := make(chan Result)
+	go func() {
+		defer close(verify)
+		status, success, err := c.verifyOTP(timeoutCtx, c.getOTP(timeoutCtx))
+		verify <- Result{Error: err, Status: status, Success: success}
+	}()
+
+	select {
+	case res := <-verify: // manual OTP
+		fmt.Fprint(c.ReadWriter.Out, res.Status)
+		case res := <-pushauth: // push
+		fmt.Fprint(c.ReadWriter.Out, res.Status)
+	case <-timeoutCtx.Done(): // push timed out
+		fmt.Fprint(c.ReadWriter.Out, "OTP verification timed out")
 	}
+
 	return nil
 }
 
-func (c *Command) getOTP() string {
+func (c *Command) getOTP(ctx context.Context) string {
 	prompt := "OTP: "
 	fmt.Fprint(c.ReadWriter.Out, prompt)
 
@@ -77,23 +78,6 @@ func (c *Command) getOTP() string {
 	fmt.Fscanln(reader, &answer)
 
 	return answer
-}
-
-func (c *Command) pushAuth(ctx context.Context) (status string, success bool, err error) {
-	reason := ""
-
-	success, reason, err = c.Client.PushAuth(ctx, c.Args)
-	if success {
-		status = fmt.Sprintf("\nPush OTP validation successful. Git operations are now allowed.\n")
-	} else {
-		if err != nil {
-			status = fmt.Sprintf("\nPush OTP validation failed.\n%v\n", err)
-		} else {
-			status = fmt.Sprintf("\nPush OTP validation failed.\n%v\n", reason)
-		}
-	}
-
-	return
 }
 
 func (c *Command) verifyOTP(ctx context.Context, otp string) (status string, success bool, err error) {
@@ -111,6 +95,23 @@ func (c *Command) verifyOTP(ctx context.Context, otp string) (status string, suc
 	}
 
 	err = nil
+
+	return
+}
+
+func (c *Command) pushAuth(ctx context.Context) (status string, success bool, err error) {
+	reason := ""
+
+	success, reason, err = c.Client.PushAuth(ctx, c.Args)
+	if success {
+		status = fmt.Sprintf("\nPush OTP validation successful. Git operations are now allowed.\n")
+	} else {
+		if err != nil {
+			status = fmt.Sprintf("\nPush OTP validation failed.\n%v\n", err)
+		} else {
+			status = fmt.Sprintf("\nPush OTP validation failed.\n%v\n", reason)
+		}
+	}
 
 	return
 }
