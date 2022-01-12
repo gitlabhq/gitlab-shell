@@ -162,7 +162,10 @@ func buildHttpsTransport(hcc httpClientCfg, selfSignedCert bool, gitlabURL strin
 		}
 	}
 	tlsConfig := &tls.Config{
-		RootCAs:            certPool,
+		RootCAs: certPool,
+		// The self_signed_cert config setting is deprecated
+		// The field and its usage is going to be removed in
+		// https://gitlab.com/gitlab-org/gitlab-shell/-/issues/541
 		InsecureSkipVerify: selfSignedCert,
 		MinVersion:         tls.VersionTLS12,
 	}
