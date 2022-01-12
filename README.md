@@ -1,3 +1,5 @@
+Trigger pipeline run
+
 # GitLab Shell
 
 ## GitLab Shell handles git SSH sessions for GitLab
