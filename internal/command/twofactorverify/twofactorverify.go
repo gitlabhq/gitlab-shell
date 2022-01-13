@@ -59,7 +59,7 @@ func (c *Command) Execute(ctx context.Context) error {
 	select {
 	case res := <-verify: // manual OTP
 		fmt.Fprint(c.ReadWriter.Out, res.Status)
-		case res := <-pushauth: // push
+	case res := <-pushauth: // push
 		fmt.Fprint(c.ReadWriter.Out, res.Status)
 	case <-timeoutCtx.Done(): // push timed out
 		fmt.Fprint(c.ReadWriter.Out, "OTP verification timed out")
