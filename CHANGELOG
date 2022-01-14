@@ -1,3 +1,8 @@
+v13.22.2
+
+- Update to Ruby 2.7.5 !553
+- Deprecate self_signed_cert config setting !552
+
 v13.22.1
 
 - Remove SSL_CERT_DIR logging !546
