@@ -119,7 +119,7 @@ GitLab Shell performs rate-limiting by user account and project for git operatio
 
 The rate-limiter is applied at the git command (plumbing) level. Each command has a rate limit of 600/minute. For example, `git push` has 600/minute and `git pull` has another 600/minute. 
 
-Because they are using the same plumbing command `git-upload-pack`, `git pull` and `git clone are in effect the same command for the purposes of rate limiting.
+Because they are using the same plumbing command `git-upload-pack`, `git pull` and `git clone` are in effect the same command for the purposes of rate-limiting.
 
 There is also a rate-limiter in place in Gitaly, but the calls will never be made to Gitaly if the rate limit is exceeded in Gitlab Shell (Rails).
 
