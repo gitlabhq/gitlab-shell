@@ -121,7 +121,7 @@ The rate limiter is applied at the git command (plumbing) level. Each command ha
 
 Because they are using the same plumbing command `git-upload-pack`, `git pull` and `git clone are in effect the same command for the purposes of rate limiting.
 
-There is also a rate limiter in place in Gitaly, but the calls will never be made to Gitaly if the rate limit is exceeded in Gitlab Shell (Rails).
+There is also a rate-limiter in place in Gitaly, but the calls will never be made to Gitaly if the rate limit is exceeded in Gitlab Shell (Rails).
 
 ## Releasing
 
