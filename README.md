@@ -117,7 +117,7 @@ guidelines:
 
 GitLab Shell performs rate-limiting by user account and project for git operations. GitLab Shell accepts git operation requests and then makes a call to the Rails rate-limiter (backed by Redis). If the `user + project` exceeds the rate limit then GitLab Shell will then drop further connection requests for that `user + project`.
 
-The rate limiter is applied at the git command (plumbing) level. Each command has a rate limit of 600/minute - ie: `git push` has 600/minute and `git pull` has another 600/minute. 
+The rate-limiter is applied at the git command (plumbing) level. Each command has a rate limit of 600/minute. For example, `git push` has 600/minute and `git pull` has another 600/minute. 
 
 Because they are using the same plumbing command `git-upload-pack`, `git pull` and `git clone are in effect the same command for the purposes of rate limiting.
 
