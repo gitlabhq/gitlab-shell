@@ -11,7 +11,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	pb "gitlab.com/gitlab-org/gitaly/v14/proto/go/gitalypb"
-	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -54,7 +53,11 @@ func buildExpectedResponse(who string) *Response {
 }
 
 func TestSuccessfulResponses(t *testing.T) {
-	client := setup(t, "")
+	okResponse := testResponse{body: responseBody(t, "allowed.json"), status: http.StatusOK}
+	client := setup(t,
+		map[string]testResponse{"first": okResponse},
+		map[string]testResponse{"1": okResponse},
+	)
 
 	testCases := []struct {
 		desc string
@@ -84,7 +87,12 @@ func TestSuccessfulResponses(t *testing.T) {
 }
 
 func TestGeoPushGetCustomAction(t *testing.T) {
-	client := setup(t, "responses/allowed_with_push_payload.json")
+	client := setup(t, map[string]testResponse{
+		"custom": {
+			body:   responseBody(t, "allowed_with_push_payload.json"),
+			status: 300,
+		},
+	}, nil)
 
 	args := &commandargs.Shell{GitlabUsername: "custom"}
 	result, err := client.Verify(context.Background(), args, receivePackAction, repo)
@@ -106,7 +114,12 @@ func TestGeoPushGetCustomAction(t *testing.T) {
 }
 
 func TestGeoPullGetCustomAction(t *testing.T) {
-	client := setup(t, "responses/allowed_with_pull_payload.json")
+	client := setup(t, map[string]testResponse{
+		"custom": {
+			body:   responseBody(t, "allowed_with_pull_payload.json"),
+			status: 300,
+		},
+	}, nil)
 
 	args := &commandargs.Shell{GitlabUsername: "custom"}
 	result, err := client.Verify(context.Background(), args, uploadPackAction, repo)
@@ -128,7 +141,11 @@ func TestGeoPullGetCustomAction(t *testing.T) {
 }
 
 func TestErrorResponses(t *testing.T) {
-	client := setup(t, "")
+	client := setup(t, nil, map[string]testResponse{
+		"2": {body: []byte(`{"message":"Not allowed!"}`), status: http.StatusForbidden},
+		"3": {body: []byte(`{"message":"broken json!`), status: http.StatusOK},
+		"4": {status: http.StatusForbidden},
+	})
 
 	testCases := []struct {
 		desc          string
@@ -163,20 +180,21 @@ func TestErrorResponses(t *testing.T) {
 	}
 }
 
-func setup(t *testing.T, allowedPayload string) *Client {
+type testResponse struct {
+	body   []byte
+	status int
+}
+
+func responseBody(t *testing.T, name string) []byte {
+	t.Helper()
 	testhelper.PrepareTestRootDir(t)
-
-	body, err := os.ReadFile(path.Join(testhelper.TestRoot, "responses/allowed.json"))
+	body, err := os.ReadFile(path.Join(testhelper.TestRoot, "responses", name))
 	require.NoError(t, err)
+	return body
+}
 
-	var bodyWithPayload []byte
-
-	if allowedPayload != "" {
-		allowedWithPayloadPath := path.Join(testhelper.TestRoot, allowedPayload)
-		bodyWithPayload, err = os.ReadFile(allowedWithPayloadPath)
-		require.NoError(t, err)
-	}
-
+func setup(t *testing.T, userResponses, keyResponses map[string]testResponse) *Client {
+	t.Helper()
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/allowed",
@@ -187,36 +205,14 @@ func setup(t *testing.T, allowedPayload string) *Client {
 				var requestBody *Request
 				require.NoError(t, json.Unmarshal(b, &requestBody))
 
-				switch requestBody.Username {
-				case "first":
-					_, err = w.Write(body)
+				if tr, ok := userResponses[requestBody.Username]; ok {
+					w.WriteHeader(tr.status)
+					_, err := w.Write(tr.body)
 					require.NoError(t, err)
-				case "second":
-					errBody := map[string]interface{}{
-						"status":  false,
-						"message": "missing user",
-					}
-					require.NoError(t, json.NewEncoder(w).Encode(errBody))
-				case "custom":
-					w.WriteHeader(http.StatusMultipleChoices)
-					_, err = w.Write(bodyWithPayload)
+				} else if tr, ok := keyResponses[requestBody.KeyId]; ok {
+					w.WriteHeader(tr.status)
+					_, err := w.Write(tr.body)
 					require.NoError(t, err)
-				}
-
-				switch requestBody.KeyId {
-				case "1":
-					_, err = w.Write(body)
-					require.NoError(t, err)
-				case "2":
-					w.WriteHeader(http.StatusForbidden)
-					errBody := &client.ErrorResponse{
-						Message: "Not allowed!",
-					}
-					require.NoError(t, json.NewEncoder(w).Encode(errBody))
-				case "3":
-					w.Write([]byte("{ \"message\": \"broken json!\""))
-				case "4":
-					w.WriteHeader(http.StatusForbidden)
 				}
 			},
 		},
