@@ -86,6 +86,41 @@ func TestSuccessfulResponses(t *testing.T) {
 	}
 }
 
+func TestSidechannelFlag(t *testing.T) {
+	okResponse := testResponse{body: responseBody(t, "allowed_sidechannel.json"), status: http.StatusOK}
+	client := setup(t,
+		map[string]testResponse{"first": okResponse},
+		map[string]testResponse{"1": okResponse},
+	)
+
+	testCases := []struct {
+		desc string
+		args *commandargs.Shell
+		who  string
+	}{
+		{
+			desc: "Provide key id within the request",
+			args: &commandargs.Shell{GitlabKeyId: "1"},
+			who:  "key-1",
+		}, {
+			desc: "Provide username within the request",
+			args: &commandargs.Shell{GitlabUsername: "first"},
+			who:  "user-1",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			result, err := client.Verify(context.Background(), tc.args, uploadPackAction, repo)
+			require.NoError(t, err)
+
+			response := buildExpectedResponse(tc.who)
+			response.Gitaly.UseSidechannel = true
+			require.Equal(t, response, result)
+		})
+	}
+}
+
 func TestGeoPushGetCustomAction(t *testing.T) {
 	client := setup(t, map[string]testResponse{
 		"custom": {

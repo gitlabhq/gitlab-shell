@@ -32,10 +32,11 @@ type Request struct {
 }
 
 type Gitaly struct {
-	Repo     pb.Repository     `json:"repository"`
-	Address  string            `json:"address"`
-	Token    string            `json:"token"`
-	Features map[string]string `json:"features"`
+	Repo           pb.Repository     `json:"repository"`
+	Address        string            `json:"address"`
+	Token          string            `json:"token"`
+	Features       map[string]string `json:"features"`
+	UseSidechannel bool              `json:"use_sidechannel"`
 }
 
 type CustomPayloadData struct {
