@@ -21,13 +21,30 @@ func (c *Command) performGitalyCall(ctx context.Context, response *accessverifie
 		Features:    response.Gitaly.Features,
 	}
 
+	if response.Gitaly.UseSidechannel {
+		gc.DialSidechannel = true
+		request := &pb.SSHUploadPackWithSidechannelRequest{
+			Repository:       &response.Gitaly.Repo,
+			GitProtocol:      c.Args.Env.GitProtocolVersion,
+			GitConfigOptions: response.GitConfigOptions,
+		}
+
+		return gc.RunGitalyCommand(ctx, func(ctx context.Context, conn *grpc.ClientConn, registry *client.SidechannelRegistry) (int32, error) {
+			ctx, cancel := gc.PrepareContext(ctx, request.Repository, response, c.Args.Env)
+			defer cancel()
+
+			rw := c.ReadWriter
+			return client.UploadPackWithSidechannel(ctx, conn, registry, rw.In, rw.Out, rw.ErrOut, request)
+		})
+	}
+
 	request := &pb.SSHUploadPackRequest{
 		Repository:       &response.Gitaly.Repo,
 		GitProtocol:      c.Args.Env.GitProtocolVersion,
 		GitConfigOptions: response.GitConfigOptions,
 	}
 
-	return gc.RunGitalyCommand(ctx, func(ctx context.Context, conn *grpc.ClientConn) (int32, error) {
+	return gc.RunGitalyCommand(ctx, func(ctx context.Context, conn *grpc.ClientConn, registry *client.SidechannelRegistry) (int32, error) {
 		ctx, cancel := gc.PrepareContext(ctx, request.Repository, response, c.Args.Env)
 		defer cancel()
 

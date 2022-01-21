@@ -29,21 +29,23 @@ import (
 // GitalyHandlerFunc implementations are responsible for making
 // an appropriate Gitaly call using the provided client and context
 // and returning an error from the Gitaly call.
-type GitalyHandlerFunc func(ctx context.Context, client *grpc.ClientConn) (int32, error)
+type GitalyHandlerFunc func(ctx context.Context, client *grpc.ClientConn, registry *client.SidechannelRegistry) (int32, error)
 
 type GitalyCommand struct {
-	Config      *config.Config
-	ServiceName string
-	Address     string
-	Token       string
-	Features    map[string]string
+	Config          *config.Config
+	ServiceName     string
+	Address         string
+	Token           string
+	Features        map[string]string
+	DialSidechannel bool
 }
 
 // RunGitalyCommand provides a bootstrap for Gitaly commands executed
 // through GitLab-Shell. It ensures that logging, tracing and other
 // common concerns are configured before executing the `handler`.
 func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHandlerFunc) error {
-	conn, err := getConn(ctx, gc)
+	registry := client.NewSidechannelRegistry(log.ContextLogger(ctx))
+	conn, err := getConn(ctx, gc, registry)
 	if err != nil {
 		log.ContextLogger(ctx).WithError(fmt.Errorf("RunGitalyCommand: %v", err)).Error("Failed to get connection to execute Git command")
 
@@ -53,7 +55,7 @@ func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHan
 
 	childCtx := withOutgoingMetadata(ctx, gc.Features)
 	ctxlog := log.ContextLogger(childCtx)
-	exitStatus, err := handler(childCtx, conn)
+	exitStatus, err := handler(childCtx, conn, registry)
 
 	if err != nil {
 		if grpcstatus.Convert(err).Code() == grpccodes.Unavailable {
@@ -116,7 +118,7 @@ func withOutgoingMetadata(ctx context.Context, features map[string]string) conte
 	return metadata.NewOutgoingContext(ctx, md)
 }
 
-func getConn(ctx context.Context, gc *GitalyCommand) (*grpc.ClientConn, error) {
+func getConn(ctx context.Context, gc *GitalyCommand, registry *client.SidechannelRegistry) (*grpc.ClientConn, error) {
 	if gc.Address == "" {
 		return nil, fmt.Errorf("no gitaly_address given")
 	}
@@ -158,6 +160,10 @@ func getConn(ctx context.Context, gc *GitalyCommand) (*grpc.ClientConn, error) {
 		connOpts = append(connOpts,
 			grpc.WithPerRPCCredentials(gitalyauth.RPCCredentialsV2(gc.Token)),
 		)
+	}
+
+	if gc.DialSidechannel {
+		return client.DialSidechannel(ctx, gc.Address, registry, connOpts)
 	}
 
 	return client.DialContext(ctx, gc.Address, connOpts)

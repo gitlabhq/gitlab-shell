@@ -30,7 +30,7 @@ func (c *Command) performGitalyCall(ctx context.Context, response *accessverifie
 		GitConfigOptions: response.GitConfigOptions,
 	}
 
-	return gc.RunGitalyCommand(ctx, func(ctx context.Context, conn *grpc.ClientConn) (int32, error) {
+	return gc.RunGitalyCommand(ctx, func(ctx context.Context, conn *grpc.ClientConn, registry *client.SidechannelRegistry) (int32, error) {
 		ctx, cancel := gc.PrepareContext(ctx, request.Repository, response, c.Args.Env)
 		defer cancel()
 
