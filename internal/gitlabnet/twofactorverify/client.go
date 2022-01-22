@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
@@ -26,7 +27,7 @@ type RequestBody struct {
 	KeyId      string `json:"key_id,omitempty"`
 	UserId     int64  `json:"user_id,omitempty"`
 	OTPAttempt string `json:"otp_attempt"`
-	PushAuth   bool   `json:"push_auth"`
+	PushAuth   string `json:"push_auth"`
 }
 
 func NewClient(config *config.Config) (*Client, error) {
@@ -91,7 +92,7 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, ot
 
 	var requestBody *RequestBody
 	if args.GitlabKeyId != "" {
-		requestBody = &RequestBody{KeyId: args.GitlabKeyId, OTPAttempt: otp, PushAuth: pushauth}
+		requestBody = &RequestBody{KeyId: args.GitlabKeyId, OTPAttempt: otp, PushAuth: strconv.FormatBool(pushauth)}
 	} else {
 		userInfo, err := client.GetByCommandArgs(ctx, args)
 
@@ -99,7 +100,7 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, ot
 			return nil, err
 		}
 
-		requestBody = &RequestBody{UserId: userInfo.UserId, OTPAttempt: otp, PushAuth: pushauth}
+		requestBody = &RequestBody{UserId: userInfo.UserId, OTPAttempt: otp, PushAuth: strconv.FormatBool(pushauth)}
 	}
 
 	return requestBody, nil
