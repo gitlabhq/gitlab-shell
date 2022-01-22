@@ -37,32 +37,67 @@ func (c *Command) Execute(ctx context.Context) error {
 	// Create timeout context 
 	// TODO: make timeout configurable
 	const ctxTimeout = 30
-	timeoutCtx, cancel := context.WithTimeout(ctx, ctxTimeout * time.Second)
-	defer cancel()
+	timeoutCtx, cancelTimeout := context.WithTimeout(ctx, ctxTimeout * time.Second)
+	verifyCtx, cancelVerify := context.WithCancel(timeoutCtx)
+	pushCtx, cancelPush := context.WithCancel(timeoutCtx)
+	defer cancelTimeout()
 
 	// Background push notification with timeout
 	pushauth := make(chan Result)
 	go func() {
 		defer close(pushauth)
-		status, success, err := c.pushAuth(timeoutCtx)
-		pushauth <- Result{Error: err, Status: status, Success: success}
+		status, success, err := c.pushAuth(pushCtx)
+
+		select {
+		case <-pushCtx.Done(): // push cancelled by manual OTP
+			pushauth <- Result{Error: nil, Status: "cancelled", Success: false}
+		default:
+			pushauth <- Result{Error: err, Status: status, Success: success}
+			cancelVerify()
+		}
 	}()
 
 	// Also allow manual OTP entry while waiting for push, with same timeout as push
 	verify := make(chan Result)
 	go func() {
 		defer close(verify)
-		status, success, err := c.verifyOTP(timeoutCtx, c.getOTP(timeoutCtx))
-		verify <- Result{Error: err, Status: status, Success: success}
+		answer := ""
+		answer = c.getOTP(verifyCtx)
+
+		select {
+		case <-verifyCtx.Done(): // manual OTP cancelled by push
+			verify <- Result{Error: nil, Status: "cancelled", Success: false}
+		default:
+			cancelPush()
+			status, success, err := c.verifyOTP(verifyCtx, answer)
+			verify <- Result{Error: err, Status: status, Success: success}
+		}
 	}()
 
-	select {
-	case res := <-verify: // manual OTP
-		fmt.Fprint(c.ReadWriter.Out, res.Status)
-	case res := <-pushauth: // push
-		fmt.Fprint(c.ReadWriter.Out, res.Status)
-	case <-timeoutCtx.Done(): // push timed out
-		fmt.Fprint(c.ReadWriter.Out, "OTP verification timed out")
+	for {
+		select {
+		case res := <-verify: // manual OTP
+			if res.Status == "cancelled" {
+				// verify cancelled; don't print anything
+			} else if res.Status == "" {
+				// channel closed; don't print anything
+			} else {
+				fmt.Fprint(c.ReadWriter.Out, res.Status)
+				return nil
+			}
+		case res := <-pushauth: // push
+			if res.Status == "cancelled" {
+				// push cancelled; don't print anything
+			} else if res.Status == "" {
+				// channel closed; don't print anything
+			} else {
+				fmt.Fprint(c.ReadWriter.Out, res.Status)
+				return nil
+			}
+		case <-timeoutCtx.Done(): // push timed out
+			fmt.Fprint(c.ReadWriter.Out, "\nOTP verification timed out\n")
+			return nil
+		}
 	}
 
 	return nil
