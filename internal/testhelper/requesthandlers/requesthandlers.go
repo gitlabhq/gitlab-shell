@@ -29,6 +29,14 @@ func BuildDisallowedByApiHandlers(t *testing.T) []testserver.TestRequestHandler 
 }
 
 func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testserver.TestRequestHandler {
+	return buildAllowedWithGitalyHandlers(t, gitalyAddress, false)
+}
+
+func BuildAllowedWithGitalyHandlersWithSidechannel(t *testing.T, gitalyAddress string) []testserver.TestRequestHandler {
+	return buildAllowedWithGitalyHandlers(t, gitalyAddress, true)
+}
+
+func buildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string, useSidechannel bool) []testserver.TestRequestHandler {
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/allowed",
@@ -55,6 +63,9 @@ func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testse
 							"some-other-ff":                           "true",
 						},
 					},
+				}
+				if useSidechannel {
+					body["gitaly"].(map[string]interface{})["use_sidechannel"] = true
 				}
 				require.NoError(t, json.NewEncoder(w).Encode(body))
 			},

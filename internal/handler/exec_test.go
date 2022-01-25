@@ -11,14 +11,15 @@ import (
 	"google.golang.org/grpc/metadata"
 	grpcstatus "google.golang.org/grpc/status"
 
+	"gitlab.com/gitlab-org/gitaly/v14/client"
 	pb "gitlab.com/gitlab-org/gitaly/v14/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 )
 
-func makeHandler(t *testing.T, err error) func(context.Context, *grpc.ClientConn) (int32, error) {
-	return func(ctx context.Context, client *grpc.ClientConn) (int32, error) {
+func makeHandler(t *testing.T, err error) func(context.Context, *grpc.ClientConn, *client.SidechannelRegistry) (int32, error) {
+	return func(ctx context.Context, client *grpc.ClientConn, registry *client.SidechannelRegistry) (int32, error) {
 		require.NotNil(t, ctx)
 		require.NotNil(t, client)
 
@@ -86,7 +87,7 @@ func TestRunGitalyCommandMetadata(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := tt.gc
 
-			err := cmd.RunGitalyCommand(context.Background(), func(ctx context.Context, _ *grpc.ClientConn) (int32, error) {
+			err := cmd.RunGitalyCommand(context.Background(), func(ctx context.Context, _ *grpc.ClientConn, _ *client.SidechannelRegistry) (int32, error) {
 				md, exists := metadata.FromOutgoingContext(ctx)
 				require.True(t, exists)
 				require.Equal(t, len(tt.want), md.Len())
