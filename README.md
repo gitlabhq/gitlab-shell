@@ -11,7 +11,7 @@ When you access the GitLab server over SSH then GitLab Shell will:
 1. Call the GitLab Rails API to check if you are authorized, and what Gitaly server your repository is on
 1. Copy data back and forth between the SSH client and the Gitaly server
 
-If you access a GitLab server over HTTP(S) you end up in [gitlab-workhorse](https://gitlab.com/gitlab-org/gitlab-workhorse).
+If you access a GitLab server over HTTP(S) you end up in [gitlab-workhorse](https://gitlab.com/gitlab-org/gitlab/tree/master/workhorse).
 
 An overview of the four cases described above:
 
