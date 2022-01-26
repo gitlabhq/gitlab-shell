@@ -24,13 +24,13 @@ describe 'bin/gitlab-shell 2fa_verify' do
       key_id = params['key_id'] || params['user_id'].to_s
 
       if key_id == '100'
-        if params['push_auth']
+        if params['push_auth'] == "true"
           res.body = { success: false }.to_json
         else
           res.body = { success: true }.to_json
         end
       elsif key_id == '102'
-        if params['push_auth']
+        if params['push_auth'] == "true"
           res.body = { success: true }.to_json
         end
       else
@@ -98,8 +98,6 @@ describe 'bin/gitlab-shell 2fa_verify' do
   def verify_successful_verification_push!(cmd)
     Open3.popen2(env, cmd) do |stdin, stdout|
       expect(stdout.gets(5)).to eq('OTP: ')
-
-      stdin.puts('123456')
 
       expect(stdout.flush.read).to eq("\nPush OTP validation successful. Git operations are now allowed.\n")
     end
