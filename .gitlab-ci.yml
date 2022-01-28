@@ -37,7 +37,7 @@ default:
     - apt-get update -qq && apt-get install -y ruby ruby-dev
     - ruby -v
     - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin
-    - gem install --force --bindir /usr/local/bin bundler -v 2.1.4
+    - gem install --force --bindir /usr/local/bin bundler -v 2.3.6
     - bundle install
     # Now set up to run the Golang tests
     - make build
