@@ -18,3 +18,5 @@ require (
 	google.golang.org/grpc v1.38.0
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+replace golang.org/x/crypto => gitlab.com/gitlab-org/golang-crypto v0.0.0-20220128174055-5be136049a80
