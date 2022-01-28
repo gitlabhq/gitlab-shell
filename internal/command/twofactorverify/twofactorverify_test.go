@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -34,24 +33,8 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 				var body map[string]interface{}
 				switch requestBody.KeyId {
 				case "1":
-					if requestBody.PushAuth {
-						body = map[string]interface{}{
-							"success": false,
-						}
-					} else {
-						body = map[string]interface{}{
-							"success": true,
-						}
-					}
-					json.NewEncoder(w).Encode(body)
-				case "2":
-					if requestBody.PushAuth {
-						body = map[string]interface{}{
-							"success": true,
-						}
-					} else {
-						// Stall verifyOTP long enough for pushAuth to complete
-						time.Sleep(10 * time.Second)
+					body = map[string]interface{}{
+						"success": true,
 					}
 					json.NewEncoder(w).Encode(body)
 				case "error":
@@ -88,18 +71,16 @@ func TestExecute(t *testing.T) {
 		expectedOutput string
 	}{
 		{
-			desc:      "When push is provided",
-			arguments: &commandargs.Shell{GitlabKeyId: "2"},
-			answer:    "",
-			expectedOutput: question +
-				"Push OTP validation successful. Git operations are now allowed.\n",
+			desc:           "When push is provided",
+			arguments:      &commandargs.Shell{GitlabKeyId: "1"},
+			answer:         "",
+			expectedOutput: question + "Push OTP validation successful. Git operations are now allowed.\n",
 		},
 		{
-			desc:      "With a known key id",
-			arguments: &commandargs.Shell{GitlabKeyId: "1"},
-			answer:    "123456\n",
-			expectedOutput: question +
-				"OTP validation successful. Git operations are now allowed.\n",
+			desc:           "With a known key id",
+			arguments:      &commandargs.Shell{GitlabKeyId: "1"},
+			answer:         "123456\n",
+			expectedOutput: question + "OTP validation successful. Git operations are now allowed.\n",
 		},
 		{
 			desc:           "With bad response",
@@ -132,6 +113,10 @@ func TestExecute(t *testing.T) {
 			output := &bytes.Buffer{}
 
 			input := bytes.NewBufferString(tc.answer)
+			if tc.answer == "" { // pushauth test must not provide input otherwise it gets treated as a manual OTP
+				input.Reset()
+			}
+
 			cmd := &Command{
 				Config:     &config.Config{GitlabUrl: url},
 				Args:       tc.arguments,
