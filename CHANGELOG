@@ -1,3 +1,7 @@
+v13.23.1
+
+- Replace golang.org/x/crypto with gitlab-org/golang-crypto !560
+
 v13.23.0
 
 - Add support for SSHUploadPackWithSidechannel RPC !557
