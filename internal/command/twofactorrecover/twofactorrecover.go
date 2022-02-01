@@ -26,7 +26,7 @@ func (c *Command) Execute(ctx context.Context) error {
 	ctxlog := log.ContextLogger(ctx)
 	ctxlog.Debug("twofactorrecover: execute: Waiting for user input")
 
-	if c.canContinue() {
+	if c.getUserAnswer(ctx) == "yes" {
 		ctxlog.Debug("twofactorrecover: execute: User chose to continue")
 		c.displayRecoveryCodes(ctx)
 	} else {
@@ -37,16 +37,18 @@ func (c *Command) Execute(ctx context.Context) error {
 	return nil
 }
 
-func (c *Command) canContinue() bool {
+func (c *Command) getUserAnswer(ctx context.Context) string {
 	question :=
 		"Are you sure you want to generate new two-factor recovery codes?\n" +
 			"Any existing recovery codes you saved will be invalidated. (yes/no)"
 	fmt.Fprintln(c.ReadWriter.Out, question)
 
 	var answer string
-	fmt.Fscanln(io.LimitReader(c.ReadWriter.In, readerLimit), &answer)
+	if _, err := fmt.Fscanln(io.LimitReader(c.ReadWriter.In, readerLimit), &answer); err != nil {
+		log.ContextLogger(ctx).WithError(err).Debug("twofactorrecover: getUserAnswer: Failed to get user input")
+	}
 
-	return answer == "yes"
+	return answer
 }
 
 func (c *Command) displayRecoveryCodes(ctx context.Context) {

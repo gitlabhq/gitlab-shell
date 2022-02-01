@@ -66,8 +66,11 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) {
 		default:
 			// Ignore unknown requests but don't terminate the session
 			shouldContinue = true
+
 			if req.WantReply {
-				req.Reply(false, []byte{})
+				if err := req.Reply(false, []byte{}); err != nil {
+					sessionLog.WithError(err).Debug("session: handle: Failed to reply")
+				}
 			}
 		}
 
@@ -100,7 +103,9 @@ func (s *session) handleEnv(ctx context.Context, req *ssh.Request) bool {
 	}
 
 	if req.WantReply {
-		req.Reply(accepted, []byte{})
+		if err := req.Reply(accepted, []byte{}); err != nil {
+			log.ContextLogger(ctx).WithError(err).Debug("session: handleEnv: Failed to reply")
+		}
 	}
 
 	log.WithContextFields(
@@ -124,8 +129,12 @@ func (s *session) handleExec(ctx context.Context, req *ssh.Request) bool {
 }
 
 func (s *session) handleShell(ctx context.Context, req *ssh.Request) uint32 {
+	ctxlog := log.ContextLogger(ctx)
+
 	if req.WantReply {
-		req.Reply(true, []byte{})
+		if err := req.Reply(true, []byte{}); err != nil {
+			ctxlog.WithError(err).Debug("session: handleShell: Failed to reply")
+		}
 	}
 
 	env := sshenv.Env{
@@ -151,7 +160,6 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) uint32 {
 	}
 
 	cmdName := reflect.TypeOf(cmd).String()
-	ctxlog := log.ContextLogger(ctx)
 	ctxlog.WithFields(log.Fields{"env": env, "command": cmdName}).Info("session: handleShell: executing command")
 
 	if err := cmd.Execute(ctx); err != nil {
