@@ -18,3 +18,4 @@ custom_hooks
 hooks/*.d
 tags
 tmp/*
+vendor
