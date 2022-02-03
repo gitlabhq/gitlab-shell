@@ -22,7 +22,7 @@ type Command struct {
 func (c *Command) Execute(ctx context.Context) error {
 	ctxlog := log.ContextLogger(ctx)
 	ctxlog.Info("twofactorverify: execute: waiting for user input")
-	otp := c.getOTP()
+	otp := c.getOTP(ctx)
 
 	ctxlog.Info("twofactorverify: execute: verifying entered OTP")
 	err := c.verifyOTP(ctx, otp)
@@ -35,14 +35,16 @@ func (c *Command) Execute(ctx context.Context) error {
 	return nil
 }
 
-func (c *Command) getOTP() string {
+func (c *Command) getOTP(ctx context.Context) string {
 	prompt := "OTP: "
 	fmt.Fprint(c.ReadWriter.Out, prompt)
 
 	var answer string
 	otpLength := int64(64)
 	reader := io.LimitReader(c.ReadWriter.In, otpLength)
-	fmt.Fscanln(reader, &answer)
+	if _, err := fmt.Fscanln(reader, &answer); err != nil {
+		log.ContextLogger(ctx).WithError(err).Debug("twofactorverify: getOTP: Failed to get user input")
+	}
 
 	return answer
 }
