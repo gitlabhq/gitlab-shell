@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
@@ -27,7 +26,6 @@ type RequestBody struct {
 	KeyId      string `json:"key_id,omitempty"`
 	UserId     int64  `json:"user_id,omitempty"`
 	OTPAttempt string `json:"otp_attempt"`
-	PushAuth   string `json:"push_auth"`
 }
 
 func NewClient(config *config.Config) (*Client, error) {
@@ -40,12 +38,12 @@ func NewClient(config *config.Config) (*Client, error) {
 }
 
 func (c *Client) VerifyOTP(ctx context.Context, args *commandargs.Shell, otp string) (bool, string, error) {
-	requestBody, err := c.getRequestBody(ctx, args, otp, false)
+	requestBody, err := c.getRequestBody(ctx, args, otp)
 	if err != nil {
 		return false, "", err
 	}
 
-	response, err := c.client.Post(ctx, "/two_factor_otp_check", requestBody)
+	response, err := c.client.Post(ctx, "/two_factor_manual_otp_check", requestBody)
 	if err != nil {
 		return false, "", err
 	}
@@ -56,12 +54,12 @@ func (c *Client) VerifyOTP(ctx context.Context, args *commandargs.Shell, otp str
 
 func (c *Client) PushAuth(ctx context.Context, args *commandargs.Shell) (bool, string, error) {
 	// enable push auth in internal rest api
-	requestBody, err := c.getRequestBody(ctx, args, "", true)
+	requestBody, err := c.getRequestBody(ctx, args, "")
 	if err != nil {
 		return false, "", err
 	}
 
-	response, err := c.client.Post(ctx, "/two_factor_otp_check", requestBody)
+	response, err := c.client.Post(ctx, "/two_factor_push_otp_check", requestBody)
 	if err != nil {
 		return false, "", err
 	}
@@ -83,7 +81,7 @@ func parse(hr *http.Response) (bool, string, error) {
 	return true, response.Message, nil
 }
 
-func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, otp string, pushauth bool) (*RequestBody, error) {
+func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, otp string) (*RequestBody, error) {
 	client, err := discover.NewClient(c.config)
 
 	if err != nil {
@@ -92,7 +90,7 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, ot
 
 	var requestBody *RequestBody
 	if args.GitlabKeyId != "" {
-		requestBody = &RequestBody{KeyId: args.GitlabKeyId, OTPAttempt: otp, PushAuth: strconv.FormatBool(pushauth)}
+		requestBody = &RequestBody{KeyId: args.GitlabKeyId, OTPAttempt: otp}
 	} else {
 		userInfo, err := client.GetByCommandArgs(ctx, args)
 
@@ -100,7 +98,7 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, ot
 			return nil, err
 		}
 
-		requestBody = &RequestBody{UserId: userInfo.UserId, OTPAttempt: otp, PushAuth: strconv.FormatBool(pushauth)}
+		requestBody = &RequestBody{UserId: userInfo.UserId, OTPAttempt: otp}
 	}
 
 	return requestBody, nil
