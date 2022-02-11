@@ -1,3 +1,10 @@
+v13.23.2
+
+- Bump labkit version to 1.12.0 !569
+- Add title and correct copyright notice to license !568
+- Bump go-proxyproto package !563
+- Update Go to version 1.17.6 !562
+
 v13.23.1
 
 - Replace golang.org/x/crypto with gitlab-org/golang-crypto !560
