@@ -18,6 +18,8 @@ An overview of the four cases described above:
 1. git pull over SSH -> gitlab-shell -> API call to gitlab-rails (Authorization) -> accept or decline -> establish Gitaly session
 1. git push over SSH -> gitlab-shell (git command is not executed yet) -> establish Gitaly session -> (in Gitaly) gitlab-shell pre-receive hook -> API call to gitlab-rails (authorization) -> accept or decline push
 
+[Full feature list](/doc/features.md)
+
 ## Code status
 
 [![pipeline status](https://gitlab.com/gitlab-org/gitlab-shell/badges/main/pipeline.svg)](https://gitlab.com/gitlab-org/gitlab-shell/-/pipelines?ref=main)
@@ -93,10 +95,6 @@ port 8075. To tell the tests where Gitaly is, set
 If no `GITALY_CONNECTION_INFO` is set, the test suite will still run, but any
 tests requiring Gitaly will be skipped. They will always run in the CI
 environment.
-
-## Git LFS
-
-Starting with GitLab 8.12, GitLab supports Git LFS authentication through SSH.
 
 ## Logging Guidelines
 
