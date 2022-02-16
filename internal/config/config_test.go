@@ -25,7 +25,7 @@ func TestConfigApplyGlobalState(t *testing.T) {
 	require.Equal(t, "foo", os.Getenv("SSL_CERT_DIR"))
 }
 
-func TestHttpClient(t *testing.T) {
+func TestCustomPrometheusMetrics(t *testing.T) {
 	url := testserver.StartHttpServer(t, []testserver.TestRequestHandler{})
 
 	config := &Config{GitlabUrl: url}
@@ -38,14 +38,19 @@ func TestHttpClient(t *testing.T) {
 	ms, err := prometheus.DefaultGatherer.Gather()
 	require.NoError(t, err)
 
-	lastMetric := ms[0]
-	require.Equal(t, lastMetric.GetName(), "gitlab_shell_http_request_seconds")
+	var actualNames []string
+	for _, m := range ms[0:6] {
+		actualNames = append(actualNames, m.GetName())
+	}
 
-	labels := lastMetric.GetMetric()[0].Label
+	expectedMetricNames := []string{
+		"gitlab_shell_http_in_flight_requests",
+		"gitlab_shell_http_request_duration_seconds",
+		"gitlab_shell_http_requests_total",
+		"gitlab_shell_sshd_concurrent_limited_sessions_total",
+		"gitlab_shell_sshd_connection_duration_seconds",
+		"gitlab_shell_sshd_in_flight_connections",
+	}
 
-	require.Equal(t, "code", labels[0].GetName())
-	require.Equal(t, "404", labels[0].GetValue())
-
-	require.Equal(t, "method", labels[1].GetName())
-	require.Equal(t, "get", labels[1].GetValue())
+	require.Equal(t, expectedMetricNames, actualNames)
 }

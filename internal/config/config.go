@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	yaml "gopkg.in/yaml.v2"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
@@ -114,7 +113,7 @@ func (c *Config) HttpClient() (*client.HttpClient, error) {
 		}
 
 		tr := client.Transport
-		client.Transport = promhttp.InstrumentRoundTripperDuration(metrics.HttpRequestDuration, tr)
+		client.Transport = metrics.NewRoundTripper(tr)
 
 		c.httpClient = client
 	})
