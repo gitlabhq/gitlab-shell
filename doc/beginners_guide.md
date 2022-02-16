@@ -4,79 +4,91 @@ group: Source Code
 info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/engineering/ux/technical-writing/#assignments
 ---
 
-## Beginner's guide to Gitlab Shell contributions
+# Beginner's guide to GitLab Shell contributions
 
-### Check
+## Check
 
-Checks if GitLab API access and redis via internal API can be reached:
+Checks if GitLab API access and Redis via internal API can be reached:
 
-    make check
+```shell
+make check
+```
 
-### Compile
+## Compile
 
 Builds the `gitlab-shell` binaries, placing them into `bin/`.
 
-    make compile
+```shell
+make compile
+```
 
-### Install
+## Install
 
-Builds the `gitlab-shell` binaries and installs them onto the filesystem. The
-default location is `/usr/local`, but can be controlled by use of the `PREFIX`
+Builds the `gitlab-shell` binaries and installs them onto the file system. The
+default location is `/usr/local`, but you can change the location by setting the `PREFIX`
 and `DESTDIR` environment variables.
 
-    make install
+```shell
+make install
+```
 
-### Setup
+## Setup
 
 This command is intended for use when installing GitLab from source on a single
-machine. In addition to compiling the gitlab-shell binaries, it ensures that
-various paths on the filesystem exist with the correct permissions. Do not run
-it unless instructed to by your installation method documentation.
+machine. It compiles the GitLab Shell binaries, and ensures that
+various paths on the file system exist with the correct permissions. Do not run
+this command unless your installation method documentation instructs you to.
 
-    make setup
+```shell
+make setup
+```
 
-
-### Testing
+## Testing
 
 Run tests:
 
-    bundle install
-    make test
+```shell
+bundle install
+make test
+```
 
-Run gofmt:
+Run Gofmt:
 
-    make verify
+```shell
+make verify
+```
 
 Run both test and verify (the default Makefile target):
 
-    bundle install
-    make validate
+```shell
+bundle install
+make validate
+```
 
-### Gitaly
+## Gitaly
 
 Some tests need a Gitaly server. The
-[`docker-compose.yml`](./docker-compose.yml) file will run Gitaly on
-port 8075. To tell the tests where Gitaly is, set
-`GITALY_CONNECTION_INFO`:
+[`docker-compose.yml`](../docker-compose.yml) file runs Gitaly on port 8075.
+To tell the tests where Gitaly is, set `GITALY_CONNECTION_INFO`:
 
-    export GITALY_CONNECTION_INFO='{"address": "tcp://localhost:8075", "storage": "default"}'
-    make test
+```plaintext
+export GITALY_CONNECTION_INFO='{"address": "tcp://localhost:8075", "storage": "default"}'
+make test
+```
 
-If no `GITALY_CONNECTION_INFO` is set, the test suite will still run, but any
-tests requiring Gitaly will be skipped. They will always run in the CI
-environment.
+If no `GITALY_CONNECTION_INFO` is set, the test suite still runs, but any
+tests requiring Gitaly are skipped. The tests always run in the CI environment.
 
-### Logging Guidelines
+## Logging Guidelines
 
-In general, it should be possible to determine the structure, but not content,
-of a gitlab-shell or gitlab-sshd session just from inspecting the logs. Some
-guidelines:
+In general, you can determine the structure, but not content, of a GitLab Shell
+or `gitlab-sshd` session by inspecting the logs. Some guidelines:
 
 - We use [`gitlab.com/gitlab-org/labkit/log`](https://pkg.go.dev/gitlab.com/gitlab-org/labkit/log)
-  for logging functionality
-- **Always** include a correlation ID
+  for logging.
+- Always include a correlation ID.
 - Log messages should be invariant and unique. Include accessory information in
   fields, using `log.WithField`, `log.WithFields`, or `log.WithError`.
-- Log success cases as well as error cases
+- Log both success cases and error cases.
 - Logging too much is better than not logging enough. If a message seems too
   verbose, consider reducing the log level before removing the message.
