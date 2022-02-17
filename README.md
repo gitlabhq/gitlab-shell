@@ -42,81 +42,6 @@ Download and install the current version of Go from https://golang.org/dl/
 We follow the [Golang Release Policy](https://golang.org/doc/devel/release.html#policy)
 of supporting the current stable version and the previous two major versions.
 
-## Check
-
-Checks if GitLab API access and redis via internal API can be reached:
-
-    make check
-
-## Compile
-
-Builds the `gitlab-shell` binaries, placing them into `bin/`.
-
-    make compile
-
-## Install
-
-Builds the `gitlab-shell` binaries and installs them onto the filesystem. The
-default location is `/usr/local`, but can be controlled by use of the `PREFIX`
-and `DESTDIR` environment variables.
-
-    make install
-
-## Setup
-
-This command is intended for use when installing GitLab from source on a single
-machine. In addition to compiling the gitlab-shell binaries, it ensures that
-various paths on the filesystem exist with the correct permissions. Do not run
-it unless instructed to by your installation method documentation.
-
-    make setup
-
-
-## Testing
-
-Run tests:
-
-    bundle install
-    make test
-
-Run gofmt:
-
-    make verify
-
-Run both test and verify (the default Makefile target):
-
-    bundle install
-    make validate
-
-### Gitaly
-
-Some tests need a Gitaly server. The
-[`docker-compose.yml`](./docker-compose.yml) file will run Gitaly on
-port 8075. To tell the tests where Gitaly is, set
-`GITALY_CONNECTION_INFO`:
-
-    export GITALY_CONNECTION_INFO='{"address": "tcp://localhost:8075", "storage": "default"}'
-    make test
-
-If no `GITALY_CONNECTION_INFO` is set, the test suite will still run, but any
-tests requiring Gitaly will be skipped. They will always run in the CI
-environment.
-
-## Logging Guidelines
-
-In general, it should be possible to determine the structure, but not content,
-of a gitlab-shell or gitlab-sshd session just from inspecting the logs. Some
-guidelines:
-
-- We use [`gitlab.com/gitlab-org/labkit/log`](https://pkg.go.dev/gitlab.com/gitlab-org/labkit/log)
-  for logging functionality
-- **Always** include a correlation ID
-- Log messages should be invariant and unique. Include accessory information in
-  fields, using `log.WithField`, `log.WithFields`, or `log.WithError`.
-- Log success cases as well as error cases
-- Logging too much is better than not logging enough. If a message seems too
-  verbose, consider reducing the log level before removing the message.
-
 ## Rate Limiting
 
 GitLab Shell performs rate-limiting by user account and project for git operations. GitLab Shell accepts git operation requests and then makes a call to the Rails rate-limiter (backed by Redis). If the `user + project` exceeds the rate limit then GitLab Shell will then drop further connection requests for that `user + project`.
@@ -133,7 +58,8 @@ See [PROCESS.md](./PROCESS.md)
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
+- See [CONTRIBUTING.md](./CONTRIBUTING.md).
+- See the [beginner's guide](doc/beginners_guide.md).
 
 ## License
 
