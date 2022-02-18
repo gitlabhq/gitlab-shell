@@ -9,9 +9,10 @@ import (
 )
 
 const (
-	namespace     = "gitlab_shell"
-	sshdSubsystem = "sshd"
-	httpSubsystem = "http"
+	namespace       = "gitlab_shell"
+	sshdSubsystem   = "sshd"
+	httpSubsystem   = "http"
+	gitalySubsystem = "gitaly"
 
 	httpInFlightRequestsMetricName       = "in_flight_requests"
 	httpRequestsTotalMetricName          = "requests_total"
@@ -20,6 +21,8 @@ const (
 	sshdConnectionsInFlightName = "in_flight_connections"
 	sshdConnectionDuration      = "connection_duration_seconds"
 	sshdHitMaxSessions          = "concurrent_limited_sessions_total"
+
+	gitalyConnectionsTotalName = "connections_total"
 )
 
 var (
@@ -59,6 +62,16 @@ var (
 			Name:      sshdHitMaxSessions,
 			Help:      "The number of times the concurrent sessions limit was hit in gitlab-shell sshd.",
 		},
+	)
+
+	GitalyConnectionsTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: gitalySubsystem,
+			Name:      gitalyConnectionsTotalName,
+			Help:      "Number of Gitaly connections that have been established",
+		},
+		[]string{"status"},
 	)
 
 	// The metrics and the buckets size are similar to the ones we have for handlers in Labkit

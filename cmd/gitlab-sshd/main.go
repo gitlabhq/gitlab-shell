@@ -69,6 +69,8 @@ func main() {
 	ctx, finished := command.Setup("gitlab-sshd", cfg)
 	defer finished()
 
+	cfg.GitalyClient.InitSidechannelRegistry(ctx)
+
 	server, err := sshd.NewServer(cfg)
 	if err != nil {
 		log.WithError(err).Fatal("Failed to start GitLab built-in sshd")
