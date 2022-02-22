@@ -31,6 +31,9 @@ func newConnection(maxSessions int64, remoteAddr string) *connection {
 func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, handler channelHandler) {
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
 
+	metrics.SshdConnectionsInFlight.Inc()
+	defer metrics.SshdConnectionsInFlight.Dec()
+
 	defer metrics.SshdConnectionDuration.Observe(time.Since(c.begin).Seconds())
 
 	for newChannel := range chans {
