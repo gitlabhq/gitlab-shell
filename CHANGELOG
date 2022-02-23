@@ -1,3 +1,11 @@
+v13.24.0
+
+- Upgrade golang to 1.17.7 !576
+- Add more metrics for gitlab-sshd !574
+- Move code guidelines to doc/beginners_guide.md !572
+- Add docs for full feature list !571
+- Add aqualls as codeowner for docs files !573
+
 v13.23.2
 
 - Bump labkit version to 1.12.0 !569
