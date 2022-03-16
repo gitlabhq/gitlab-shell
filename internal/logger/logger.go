@@ -22,6 +22,14 @@ func logFmt(inFmt string) string {
 	return inFmt
 }
 
+func logLevel(inLevel string) string {
+	if inLevel == "" {
+		return "info"
+	}
+
+	return inLevel
+}
+
 func logFile(inFile string) string {
 	if inFile == "" {
 		return "stderr"
@@ -35,7 +43,7 @@ func buildOpts(cfg *config.Config) []log.LoggerOption {
 		log.WithFormatter(logFmt(cfg.LogFormat)),
 		log.WithOutputName(logFile(cfg.LogFile)),
 		log.WithTimezone(time.UTC),
-		log.WithLogLevel(cfg.LogLevel),
+		log.WithLogLevel(logLevel(cfg.LogLevel)),
 	}
 }
 

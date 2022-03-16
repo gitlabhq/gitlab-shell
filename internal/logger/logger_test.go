@@ -30,9 +30,11 @@ func TestConfigure(t *testing.T) {
 	tmpFile.Close()
 
 	data, err := os.ReadFile(tmpFile.Name())
+	dataStr := string(data)
 	require.NoError(t, err)
-	require.Contains(t, string(data), `msg":"this is a test"`)
-	require.NotContains(t, string(data), `msg:":"debug log message"`)
+	require.Contains(t, dataStr, `"msg":"this is a test"`)
+	require.NotContains(t, dataStr, `"msg":"debug log message"`)
+	require.NotContains(t, dataStr, `"msg":"unknown log level`)
 }
 
 func TestConfigureWithDebugLogLevel(t *testing.T) {
