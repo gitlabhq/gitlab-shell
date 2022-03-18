@@ -68,6 +68,8 @@ func main() {
 	ctx, finished := command.Setup(executable.Name, config)
 	defer finished()
 
+	config.GitalyClient.InitSidechannelRegistry(ctx)
+
 	cmdName := reflect.TypeOf(cmd).String()
 	ctxlog := log.ContextLogger(ctx)
 	ctxlog.WithFields(log.Fields{"env": env, "command": cmdName}).Info("gitlab-shell: main: executing command")

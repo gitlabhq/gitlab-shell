@@ -97,14 +97,17 @@ func TestUploadPack_withSidechannel(t *testing.T) {
 		Env:         env,
 	}
 
+	ctx := correlation.ContextWithCorrelation(context.Background(), "a-correlation-id")
+	ctx = correlation.ContextWithClientName(ctx, "gitlab-shell-tests")
+
+	cfg := &config.Config{GitlabUrl: url}
+	cfg.GitalyClient.InitSidechannelRegistry(ctx)
+
 	cmd := &Command{
-		Config:     &config.Config{GitlabUrl: url},
+		Config:     cfg,
 		Args:       args,
 		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
 	}
-
-	ctx := correlation.ContextWithCorrelation(context.Background(), "a-correlation-id")
-	ctx = correlation.ContextWithClientName(ctx, "gitlab-shell-tests")
 
 	err := cmd.Execute(ctx)
 	require.NoError(t, err)

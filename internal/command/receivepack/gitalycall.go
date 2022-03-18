@@ -13,13 +13,7 @@ import (
 )
 
 func (c *Command) performGitalyCall(ctx context.Context, response *accessverifier.Response) error {
-	gc := &handler.GitalyCommand{
-		Config:      c.Config,
-		ServiceName: string(commandargs.ReceivePack),
-		Address:     response.Gitaly.Address,
-		Token:       response.Gitaly.Token,
-		Features:    response.Gitaly.Features,
-	}
+	gc := handler.NewGitalyCommand(c.Config, string(commandargs.ReceivePack), response)
 
 	request := &pb.SSHReceivePackRequest{
 		Repository:       &response.Gitaly.Repo,
@@ -30,8 +24,8 @@ func (c *Command) performGitalyCall(ctx context.Context, response *accessverifie
 		GitConfigOptions: response.GitConfigOptions,
 	}
 
-	return gc.RunGitalyCommand(ctx, func(ctx context.Context, conn *grpc.ClientConn, registry *client.SidechannelRegistry) (int32, error) {
-		ctx, cancel := gc.PrepareContext(ctx, request.Repository, response, c.Args.Env)
+	return gc.RunGitalyCommand(ctx, func(ctx context.Context, conn *grpc.ClientConn) (int32, error) {
+		ctx, cancel := gc.PrepareContext(ctx, request.Repository, c.Args.Env)
 		defer cancel()
 
 		rw := c.ReadWriter

@@ -12,6 +12,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitaly"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
 )
 
@@ -59,6 +60,8 @@ type Config struct {
 	httpClient     *client.HttpClient
 	httpClientErr  error
 	httpClientOnce sync.Once
+
+	GitalyClient gitaly.Client
 }
 
 // The defaults to apply before parsing the config file(s).
