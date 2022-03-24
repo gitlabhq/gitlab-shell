@@ -78,7 +78,7 @@ sshd:
   web_listen: "localhost:9122"
   # Maximum number of concurrent sessions allowed on a single SSH connection. Defaults to 10.
   concurrent_sessions_limit: 10
-  # The server waits for this time (in seconds) the ongoing connections to complete before shutting down. Defaults to 10.
+  # The server waits for this time (in seconds) for the ongoing connections to complete before shutting down. Defaults to 10.
   grace_period: 10
   # The endpoint that returns 200 OK if the server is ready to receive incoming connections; otherwise, it returns 503 Service Unavailable. Defaults to "/start".
   readiness_probe: "/start"
