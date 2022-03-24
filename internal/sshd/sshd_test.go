@@ -3,6 +3,7 @@ package sshd
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -134,6 +135,33 @@ func TestInvalidServerConfig(t *testing.T) {
 	require.Nil(t, s.Shutdown())
 }
 
+func TestLoginGraceTime(t *testing.T) {
+	s := setupServer(t)
+
+	unauthenticatedRequestStatus := make(chan string)
+	completed := make(chan bool)
+
+	clientCfg := clientConfig(t)
+	clientCfg.HostKeyCallback = func(_ string, _ net.Addr, _ ssh.PublicKey) error {
+		unauthenticatedRequestStatus <- "authentication-started"
+		<-completed // Wait infinitely
+
+		return nil
+	}
+
+	go func() {
+		// Start an SSH connection that never ends
+		ssh.Dial("tcp", serverUrl, clientCfg)
+	}()
+
+	require.Equal(t, "authentication-started", <-unauthenticatedRequestStatus)
+
+	// Verify that the server shutdowns instantly without waiting for any connection to execute
+	// That means that the server doesn't have any connections to wait for
+	require.NoError(t, s.Shutdown())
+	verifyStatus(t, s, StatusClosed)
+}
+
 func setupServer(t *testing.T) *Server {
 	t.Helper()
 
@@ -183,6 +211,7 @@ func setupServerWithConfig(t *testing.T, cfg *config.Config) *Server {
 	cfg.User = user
 	cfg.Server.Listen = serverUrl
 	cfg.Server.ConcurrentSessionsLimit = 1
+	cfg.Server.LoginGraceTimeSeconds = 1
 	cfg.Server.HostKeyFiles = []string{path.Join(testhelper.TestRoot, "certs/valid/server.key")}
 
 	s, err := NewServer(cfg)
