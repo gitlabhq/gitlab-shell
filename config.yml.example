@@ -84,7 +84,7 @@ sshd:
   readiness_probe: "/start"
   # The endpoint that returns 200 OK if the server is alive. Defaults to "/health".
   liveness_probe: "/health"
-  # The server disconnects after this time (in seconds) if the user has not successfully logged in. Defaults to 10.
+  # The server disconnects after this time (in seconds) if the user has not successfully logged in. Defaults to 60.
   login_grace_time: 60
   # SSH host key files.
   host_key_files:
