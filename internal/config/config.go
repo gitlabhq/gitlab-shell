@@ -26,6 +26,7 @@ type ServerConfig struct {
 	ProxyProtocol           bool     `yaml:"proxy_protocol,omitempty"`
 	WebListen               string   `yaml:"web_listen,omitempty"`
 	ConcurrentSessionsLimit int64    `yaml:"concurrent_sessions_limit,omitempty"`
+	LoginGraceTimeSeconds   uint64   `yaml:"login_grace_time"`
 	GracePeriodSeconds      uint64   `yaml:"grace_period"`
 	ReadinessProbe          string   `yaml:"readiness_probe"`
 	LivenessProbe           string   `yaml:"liveness_probe"`
@@ -78,6 +79,7 @@ var (
 		Listen:                  "[::]:22",
 		WebListen:               "localhost:9122",
 		ConcurrentSessionsLimit: 10,
+		LoginGraceTimeSeconds:   60,
 		GracePeriodSeconds:      10,
 		ReadinessProbe:          "/start",
 		LivenessProbe:           "/health",
@@ -88,6 +90,10 @@ var (
 		},
 	}
 )
+
+func (sc *ServerConfig) LoginGraceTime() time.Duration {
+	return time.Duration(sc.LoginGraceTimeSeconds) * time.Second
+}
 
 func (sc *ServerConfig) GracePeriod() time.Duration {
 	return time.Duration(sc.GracePeriodSeconds) * time.Second
