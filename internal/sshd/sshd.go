@@ -194,7 +194,7 @@ func (s *Server) initSSHConnection(ctx context.Context, nconn net.Conn) (sconn *
 	defer func() {
 		// If time.Stop() equals false, that means that AfterFunc has been executed
 		if !timer.Stop() {
-			err = fmt.Errorf("initSSHConnection: ssh handshake timeout")
+			err = fmt.Errorf("initSSHConnection: ssh handshake timeout of %v", s.Config.Server.LoginGraceTime())
 		}
 	}()
 
