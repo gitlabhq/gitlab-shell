@@ -6,6 +6,8 @@ import (
 	"io"
 	"strings"
 
+	"gitlab.com/gitlab-org/labkit/log"
+
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -21,31 +23,41 @@ type Command struct {
 }
 
 func (c *Command) Execute(ctx context.Context) error {
-	if c.canContinue() {
+	ctxlog := log.ContextLogger(ctx)
+	ctxlog.Debug("twofactorrecover: execute: Waiting for user input")
+
+	if c.getUserAnswer(ctx) == "yes" {
+		ctxlog.Debug("twofactorrecover: execute: User chose to continue")
 		c.displayRecoveryCodes(ctx)
 	} else {
+		ctxlog.Debug("twofactorrecover: execute: User chose not to continue")
 		fmt.Fprintln(c.ReadWriter.Out, "\nNew recovery codes have *not* been generated. Existing codes will remain valid.")
 	}
 
 	return nil
 }
 
-func (c *Command) canContinue() bool {
+func (c *Command) getUserAnswer(ctx context.Context) string {
 	question :=
 		"Are you sure you want to generate new two-factor recovery codes?\n" +
 			"Any existing recovery codes you saved will be invalidated. (yes/no)"
 	fmt.Fprintln(c.ReadWriter.Out, question)
 
 	var answer string
-	fmt.Fscanln(io.LimitReader(c.ReadWriter.In, readerLimit), &answer)
+	if _, err := fmt.Fscanln(io.LimitReader(c.ReadWriter.In, readerLimit), &answer); err != nil {
+		log.ContextLogger(ctx).WithError(err).Debug("twofactorrecover: getUserAnswer: Failed to get user input")
+	}
 
-	return answer == "yes"
+	return answer
 }
 
 func (c *Command) displayRecoveryCodes(ctx context.Context) {
+	ctxlog := log.ContextLogger(ctx)
+
 	codes, err := c.getRecoveryCodes(ctx)
 
 	if err == nil {
+		ctxlog.Debug("twofactorrecover: displayRecoveryCodes: recovery codes successfully generated")
 		messageWithCodes :=
 			"\nYour two-factor authentication recovery codes are:\n\n" +
 				strings.Join(codes, "\n") +
@@ -54,6 +66,7 @@ func (c *Command) displayRecoveryCodes(ctx context.Context) {
 				"a new device so you do not lose access to your account again.\n"
 		fmt.Fprint(c.ReadWriter.Out, messageWithCodes)
 	} else {
+		ctxlog.WithError(err).Error("twofactorrecover: displayRecoveryCodes: failed to generate recovery codes")
 		fmt.Fprintf(c.ReadWriter.Out, "\nAn error occurred while trying to generate new recovery codes.\n%v\n", err)
 	}
 }

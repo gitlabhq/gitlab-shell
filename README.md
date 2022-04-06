@@ -1,3 +1,9 @@
+---
+stage: Create
+group: Source Code
+info: To determine the technical writer assigned to the Stage/Group associated with this page, see https://about.gitlab.com/handbook/engineering/ux/technical-writing/#assignments
+---
+
 # GitLab Shell
 
 ## GitLab Shell handles git SSH sessions for GitLab
@@ -7,16 +13,18 @@ GitLab Shell is not a Unix shell nor a replacement for Bash or Zsh.
 
 When you access the GitLab server over SSH then GitLab Shell will:
 
-1. Limits you to predefined git commands (git push, git pull).
+1. Limit you to predefined git commands (git push, git pull).
 1. Call the GitLab Rails API to check if you are authorized, and what Gitaly server your repository is on
 1. Copy data back and forth between the SSH client and the Gitaly server
 
-If you access a GitLab server over HTTP(S) you end up in [gitlab-workhorse](https://gitlab.com/gitlab-org/gitlab-workhorse).
+If you access a GitLab server over HTTP(S) you end up in [gitlab-workhorse](https://gitlab.com/gitlab-org/gitlab/tree/master/workhorse).
 
 An overview of the four cases described above:
 
 1. git pull over SSH -> gitlab-shell -> API call to gitlab-rails (Authorization) -> accept or decline -> establish Gitaly session
 1. git push over SSH -> gitlab-shell (git command is not executed yet) -> establish Gitaly session -> (in Gitaly) gitlab-shell pre-receive hook -> API call to gitlab-rails (authorization) -> accept or decline push
+
+[Full feature list](doc/features.md)
 
 ## Code status
 
@@ -31,62 +39,27 @@ Ruby to build and test, but not to run.
 
 Download and install the current version of Go from https://golang.org/dl/
 
-## Setup
+We follow the [Golang Release Policy](https://golang.org/doc/devel/release.html#policy)
+of supporting the current stable version and the previous two major versions.
 
-    make setup
+## Rate Limiting
 
-## Check
+GitLab Shell performs rate-limiting by user account and project for git operations. GitLab Shell accepts git operation requests and then makes a call to the Rails rate-limiter (backed by Redis). If the `user + project` exceeds the rate limit then GitLab Shell will then drop further connection requests for that `user + project`.
 
-Checks if GitLab API access and redis via internal API can be reached:
+The rate-limiter is applied at the git command (plumbing) level. Each command has a rate limit of 600/minute. For example, `git push` has 600/minute and `git pull` has another 600/minute.
 
-    make check
+Because they are using the same plumbing command `git-upload-pack`, `git pull` and `git clone` are in effect the same command for the purposes of rate-limiting.
 
-## Testing
+There is also a rate-limiter in place in Gitaly, but the calls will never be made to Gitaly if the rate limit is exceeded in Gitlab Shell (Rails).
 
-Run tests:
+## Releasing
 
-    bundle install
-    make test
-
-Run gofmt:
-
-    make verify
-
-Run both test and verify (the default Makefile target):
-
-    bundle install
-    make validate
-
-## Git LFS remark
-
-Starting with GitLab 8.12, GitLab supports Git LFS authentication through SSH.
-
-## Releasing a new version
-
-GitLab Shell is versioned by git tags, and the version used by the Rails
-application is stored in
-[`GITLAB_SHELL_VERSION`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/GITLAB_SHELL_VERSION).
-
-For each version, there is a raw version and a tag version:
-
-- The **raw version** is the version number. For instance, `15.2.8`.
-- The **tag version** is the raw version prefixed with `v`. For instance, `v15.2.8`.
-
-To release a new version of GitLab Shell and have that version available to the
-Rails application:
-
-1. Create a merge request to update the [`CHANGELOG`](CHANGELOG) with the
-   **tag version** and the [`VERSION`](VERSION) file with the **raw version**.
-2. Ask a maintainer to review and merge the merge request. If you're already a
-   maintainer, second maintainer review is not required.
-3. Add a new git tag with the **tag version**.
-4. Update `GITLAB_SHELL_VERSION` in the Rails application to the **raw
-   version**. (Note: this can be done as a separate MR to that, or in and MR
-   that will make use of the latest GitLab Shell changes.)
+See [PROCESS.md](./PROCESS.md)
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
+- See [CONTRIBUTING.md](./CONTRIBUTING.md).
+- See the [beginner's guide](doc/beginners_guide.md).
 
 ## License
 

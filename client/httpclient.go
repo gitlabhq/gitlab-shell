@@ -5,15 +5,17 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
-	"io/ioutil"
+	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/tracing"
 )
 
 const (
@@ -22,6 +24,10 @@ const (
 	httpProtocol              = "http://"
 	httpsProtocol             = "https://"
 	defaultReadTimeoutSeconds = 300
+)
+
+var (
+	ErrCafileNotFound = errors.New("cafile not found")
 )
 
 type HttpClient struct {
@@ -48,6 +54,22 @@ func WithClientCert(certPath, keyPath string) HTTPClientOpt {
 	}
 }
 
+func validateCaFile(filename string) error {
+	if filename == "" {
+		return nil
+	}
+
+	if _, err := os.Stat(filename); err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("cannot find cafile '%s': %w", filename, ErrCafileNotFound)
+		}
+
+		return err
+	}
+
+	return nil
+}
+
 // Deprecated: use NewHTTPClientWithOpts - https://gitlab.com/gitlab-org/gitlab-shell/-/issues/484
 func NewHTTPClient(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, selfSignedCert bool, readTimeoutSeconds uint64) *HttpClient {
 	c, err := NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath, selfSignedCert, readTimeoutSeconds, nil)
@@ -59,15 +81,6 @@ func NewHTTPClient(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, self
 
 // NewHTTPClientWithOpts builds an HTTP client using the provided options
 func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, selfSignedCert bool, readTimeoutSeconds uint64, opts []HTTPClientOpt) (*HttpClient, error) {
-	hcc := &httpClientCfg{
-		caFile: caFile,
-		caPath: caPath,
-	}
-
-	for _, opt := range opts {
-		opt(hcc)
-	}
-
 	var transport *http.Transport
 	var host string
 	var err error
@@ -76,6 +89,20 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	} else if strings.HasPrefix(gitlabURL, httpProtocol) {
 		transport, host = buildHttpTransport(gitlabURL)
 	} else if strings.HasPrefix(gitlabURL, httpsProtocol) {
+		err = validateCaFile(caFile)
+		if err != nil {
+			return nil, err
+		}
+
+		hcc := &httpClientCfg{
+			caFile: caFile,
+			caPath: caPath,
+		}
+
+		for _, opt := range opts {
+			opt(hcc)
+		}
+
 		transport, host, err = buildHttpsTransport(*hcc, selfSignedCert, gitlabURL)
 		if err != nil {
 			return nil, err
@@ -85,7 +112,7 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	}
 
 	c := &http.Client{
-		Transport: correlation.NewInstrumentedRoundTripper(transport),
+		Transport: correlation.NewInstrumentedRoundTripper(tracing.NewRoundTripper(transport)),
 		Timeout:   readTimeout(readTimeoutSeconds),
 	}
 
@@ -125,7 +152,7 @@ func buildHttpsTransport(hcc httpClientCfg, selfSignedCert bool, gitlabURL strin
 	}
 
 	if hcc.caPath != "" {
-		fis, _ := ioutil.ReadDir(hcc.caPath)
+		fis, _ := os.ReadDir(hcc.caPath)
 		for _, fi := range fis {
 			if fi.IsDir() {
 				continue
@@ -135,7 +162,10 @@ func buildHttpsTransport(hcc httpClientCfg, selfSignedCert bool, gitlabURL strin
 		}
 	}
 	tlsConfig := &tls.Config{
-		RootCAs:            certPool,
+		RootCAs: certPool,
+		// The self_signed_cert config setting is deprecated
+		// The field and its usage is going to be removed in
+		// https://gitlab.com/gitlab-org/gitlab-shell/-/issues/541
 		InsecureSkipVerify: selfSignedCert,
 		MinVersion:         tls.VersionTLS12,
 	}
@@ -146,7 +176,6 @@ func buildHttpsTransport(hcc httpClientCfg, selfSignedCert bool, gitlabURL strin
 			return nil, "", err
 		}
 		tlsConfig.Certificates = []tls.Certificate{cert}
-		tlsConfig.BuildNameToCertificate()
 	}
 
 	transport := &http.Transport{
@@ -157,7 +186,7 @@ func buildHttpsTransport(hcc httpClientCfg, selfSignedCert bool, gitlabURL strin
 }
 
 func addCertToPool(certPool *x509.CertPool, fileName string) {
-	cert, err := ioutil.ReadFile(fileName)
+	cert, err := os.ReadFile(fileName)
 	if err == nil {
 		certPool.AppendCertsFromPEM(cert)
 	}

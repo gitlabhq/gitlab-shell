@@ -3,13 +3,21 @@ package main
 import (
 	"fmt"
 	"os"
+	"reflect"
 
+	grpccodes "google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
+
+	"gitlab.com/gitlab-org/labkit/log"
+
+	shellCmd "gitlab.com/gitlab-org/gitlab-shell/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/console"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/logger"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 )
 
 var (
@@ -45,9 +53,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Configure(config)
+	logCloser := logger.Configure(config)
+	defer logCloser.Close()
 
-	cmd, err := command.New(executable, os.Args[1:], config, readWriter)
+	env := sshenv.NewFromEnv()
+	cmd, err := shellCmd.New(os.Args[1:], env, config, readWriter)
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment
@@ -55,11 +65,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx, finished := command.ContextWithCorrelationID()
+	ctx, finished := command.Setup(executable.Name, config)
 	defer finished()
 
-	if err = cmd.Execute(ctx); err != nil {
-		console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
+	config.GitalyClient.InitSidechannelRegistry(ctx)
+
+	cmdName := reflect.TypeOf(cmd).String()
+	ctxlog := log.ContextLogger(ctx)
+	ctxlog.WithFields(log.Fields{"env": env, "command": cmdName}).Info("gitlab-shell: main: executing command")
+
+	if err := cmd.Execute(ctx); err != nil {
+		ctxlog.WithError(err).Warn("gitlab-shell: main: command execution failed")
+		if grpcstatus.Convert(err).Code() != grpccodes.Internal {
+			console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
+		}
 		os.Exit(1)
 	}
+
+	ctxlog.Info("gitlab-shell: main: command executed successfully")
 }

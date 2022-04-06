@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -22,12 +22,12 @@ var (
 	action = commandargs.ReceivePack
 )
 
-func setup(t *testing.T) (*Command, *bytes.Buffer, *bytes.Buffer, func()) {
+func setup(t *testing.T) (*Command, *bytes.Buffer, *bytes.Buffer) {
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/allowed",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 
 				var requestBody *accessverifier.Request
@@ -50,7 +50,7 @@ func setup(t *testing.T) (*Command, *bytes.Buffer, *bytes.Buffer, func()) {
 		},
 	}
 
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	errBuf := &bytes.Buffer{}
 	outBuf := &bytes.Buffer{}
@@ -58,12 +58,11 @@ func setup(t *testing.T) (*Command, *bytes.Buffer, *bytes.Buffer, func()) {
 	readWriter := &readwriter.ReadWriter{Out: outBuf, ErrOut: errBuf}
 	cmd := &Command{Config: &config.Config{GitlabUrl: url}, ReadWriter: readWriter}
 
-	return cmd, errBuf, outBuf, cleanup
+	return cmd, errBuf, outBuf
 }
 
 func TestMissingUser(t *testing.T) {
-	cmd, _, _, cleanup := setup(t)
-	defer cleanup()
+	cmd, _, _ := setup(t)
 
 	cmd.Args = &commandargs.Shell{GitlabKeyId: "2"}
 	_, err := cmd.Verify(context.Background(), action, repo)
@@ -72,8 +71,7 @@ func TestMissingUser(t *testing.T) {
 }
 
 func TestConsoleMessages(t *testing.T) {
-	cmd, errBuf, outBuf, cleanup := setup(t)
-	defer cleanup()
+	cmd, errBuf, outBuf := setup(t)
 
 	cmd.Args = &commandargs.Shell{GitlabKeyId: "1"}
 	cmd.Verify(context.Background(), action, repo)

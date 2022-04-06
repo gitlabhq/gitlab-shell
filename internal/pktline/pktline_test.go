@@ -68,6 +68,40 @@ func TestScanner(t *testing.T) {
 	}
 }
 
+func TestIsRefRemoval(t *testing.T) {
+	testCases := []struct {
+		in        string
+		isRemoval bool
+	}{
+		{in: "003f7217a7c7e582c46cec22a130adf4b9d7d950fba0 7d1665144a3a975c05f1f43902ddaf084e784dbe refs/heads/debug", isRemoval: false},
+		{in: "003f0000000000000000000000000000000000000000 7d1665144a3a975c05f1f43902ddaf084e784dbe refs/heads/debug", isRemoval: false},
+		{in: "003f7217a7c7e582c46cec22a130adf4b9d7d950fba0 0000000000000000000000000000000000000000 refs/heads/debug", isRemoval: true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.in, func(t *testing.T) {
+			require.Equal(t, tc.isRemoval, IsRefRemoval([]byte(tc.in)))
+		})
+	}
+}
+
+func TestIsFlush(t *testing.T) {
+	testCases := []struct {
+		in    string
+		flush bool
+	}{
+		{in: "0008abcd", flush: false},
+		{in: "invalid packet", flush: false},
+		{in: "0000", flush: true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.in, func(t *testing.T) {
+			require.Equal(t, tc.flush, IsFlush([]byte(tc.in)))
+		})
+	}
+}
+
 func TestIsDone(t *testing.T) {
 	testCases := []struct {
 		in   string

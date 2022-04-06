@@ -3,14 +3,14 @@ package accessverifier
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
+	"os"
 	"path"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
-	"gitlab.com/gitlab-org/gitlab-shell/client"
+	pb "gitlab.com/gitlab-org/gitaly/v14/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -53,8 +53,11 @@ func buildExpectedResponse(who string) *Response {
 }
 
 func TestSuccessfulResponses(t *testing.T) {
-	client, cleanup := setup(t, "")
-	defer cleanup()
+	okResponse := testResponse{body: responseBody(t, "allowed.json"), status: http.StatusOK}
+	client := setup(t,
+		map[string]testResponse{"first": okResponse},
+		map[string]testResponse{"1": okResponse},
+	)
 
 	testCases := []struct {
 		desc string
@@ -83,9 +86,48 @@ func TestSuccessfulResponses(t *testing.T) {
 	}
 }
 
+func TestSidechannelFlag(t *testing.T) {
+	okResponse := testResponse{body: responseBody(t, "allowed_sidechannel.json"), status: http.StatusOK}
+	client := setup(t,
+		map[string]testResponse{"first": okResponse},
+		map[string]testResponse{"1": okResponse},
+	)
+
+	testCases := []struct {
+		desc string
+		args *commandargs.Shell
+		who  string
+	}{
+		{
+			desc: "Provide key id within the request",
+			args: &commandargs.Shell{GitlabKeyId: "1"},
+			who:  "key-1",
+		}, {
+			desc: "Provide username within the request",
+			args: &commandargs.Shell{GitlabUsername: "first"},
+			who:  "user-1",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			result, err := client.Verify(context.Background(), tc.args, uploadPackAction, repo)
+			require.NoError(t, err)
+
+			response := buildExpectedResponse(tc.who)
+			response.Gitaly.UseSidechannel = true
+			require.Equal(t, response, result)
+		})
+	}
+}
+
 func TestGeoPushGetCustomAction(t *testing.T) {
-	client, cleanup := setup(t, "responses/allowed_with_push_payload.json")
-	defer cleanup()
+	client := setup(t, map[string]testResponse{
+		"custom": {
+			body:   responseBody(t, "allowed_with_push_payload.json"),
+			status: 300,
+		},
+	}, nil)
 
 	args := &commandargs.Shell{GitlabUsername: "custom"}
 	result, err := client.Verify(context.Background(), args, receivePackAction, repo)
@@ -107,8 +149,12 @@ func TestGeoPushGetCustomAction(t *testing.T) {
 }
 
 func TestGeoPullGetCustomAction(t *testing.T) {
-	client, cleanup := setup(t, "responses/allowed_with_pull_payload.json")
-	defer cleanup()
+	client := setup(t, map[string]testResponse{
+		"custom": {
+			body:   responseBody(t, "allowed_with_pull_payload.json"),
+			status: 300,
+		},
+	}, nil)
 
 	args := &commandargs.Shell{GitlabUsername: "custom"}
 	result, err := client.Verify(context.Background(), args, uploadPackAction, repo)
@@ -130,8 +176,11 @@ func TestGeoPullGetCustomAction(t *testing.T) {
 }
 
 func TestErrorResponses(t *testing.T) {
-	client, cleanup := setup(t, "")
-	defer cleanup()
+	client := setup(t, nil, map[string]testResponse{
+		"2": {body: []byte(`{"message":"Not allowed!"}`), status: http.StatusForbidden},
+		"3": {body: []byte(`{"message":"broken json!`), status: http.StatusOK},
+		"4": {status: http.StatusForbidden},
+	})
 
 	testCases := []struct {
 		desc          string
@@ -166,71 +215,48 @@ func TestErrorResponses(t *testing.T) {
 	}
 }
 
-func setup(t *testing.T, allowedPayload string) (*Client, func()) {
-	testDirCleanup, err := testhelper.PrepareTestRootDir()
+type testResponse struct {
+	body   []byte
+	status int
+}
+
+func responseBody(t *testing.T, name string) []byte {
+	t.Helper()
+	testhelper.PrepareTestRootDir(t)
+	body, err := os.ReadFile(path.Join(testhelper.TestRoot, "responses", name))
 	require.NoError(t, err)
-	defer testDirCleanup()
+	return body
+}
 
-	body, err := ioutil.ReadFile(path.Join(testhelper.TestRoot, "responses/allowed.json"))
-	require.NoError(t, err)
-
-	var bodyWithPayload []byte
-
-	if allowedPayload != "" {
-		allowedWithPayloadPath := path.Join(testhelper.TestRoot, allowedPayload)
-		bodyWithPayload, err = ioutil.ReadFile(allowedWithPayloadPath)
-		require.NoError(t, err)
-	}
-
+func setup(t *testing.T, userResponses, keyResponses map[string]testResponse) *Client {
+	t.Helper()
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/allowed",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 
 				var requestBody *Request
 				require.NoError(t, json.Unmarshal(b, &requestBody))
 
-				switch requestBody.Username {
-				case "first":
-					_, err = w.Write(body)
+				if tr, ok := userResponses[requestBody.Username]; ok {
+					w.WriteHeader(tr.status)
+					_, err := w.Write(tr.body)
 					require.NoError(t, err)
-				case "second":
-					errBody := map[string]interface{}{
-						"status":  false,
-						"message": "missing user",
-					}
-					require.NoError(t, json.NewEncoder(w).Encode(errBody))
-				case "custom":
-					w.WriteHeader(http.StatusMultipleChoices)
-					_, err = w.Write(bodyWithPayload)
+				} else if tr, ok := keyResponses[requestBody.KeyId]; ok {
+					w.WriteHeader(tr.status)
+					_, err := w.Write(tr.body)
 					require.NoError(t, err)
-				}
-
-				switch requestBody.KeyId {
-				case "1":
-					_, err = w.Write(body)
-					require.NoError(t, err)
-				case "2":
-					w.WriteHeader(http.StatusForbidden)
-					errBody := &client.ErrorResponse{
-						Message: "Not allowed!",
-					}
-					require.NoError(t, json.NewEncoder(w).Encode(errBody))
-				case "3":
-					w.Write([]byte("{ \"message\": \"broken json!\""))
-				case "4":
-					w.WriteHeader(http.StatusForbidden)
 				}
 			},
 		},
 	}
 
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	client, err := NewClient(&config.Config{GitlabUrl: url})
 	require.NoError(t, err)
 
-	return client, cleanup
+	return client
 }

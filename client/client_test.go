@@ -5,28 +5,26 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"path"
 	"strings"
 	"testing"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 )
 
 func TestClients(t *testing.T) {
-	testDirCleanup, err := testhelper.PrepareTestRootDir()
-	require.NoError(t, err)
-	defer testDirCleanup()
+	testhelper.PrepareTestRootDir(t)
 
 	testCases := []struct {
 		desc            string
 		relativeURLRoot string
 		caFile          string
-		server          func(*testing.T, []testserver.TestRequestHandler) (string, func())
+		server          func(*testing.T, []testserver.TestRequestHandler) string
 	}{
 		{
 			desc:   "Socket client",
@@ -49,7 +47,7 @@ func TestClients(t *testing.T) {
 		{
 			desc:   "Https client",
 			caFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt"),
-			server: func(t *testing.T, handlers []testserver.TestRequestHandler) (string, func()) {
+			server: func(t *testing.T, handlers []testserver.TestRequestHandler) string {
 				return testserver.StartHttpsServer(t, handlers, "")
 			},
 		},
@@ -57,12 +55,12 @@ func TestClients(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			url, cleanup := tc.server(t, buildRequests(t, tc.relativeURLRoot))
-			defer cleanup()
+			url := tc.server(t, buildRequests(t, tc.relativeURLRoot))
 
 			secret := "sssh, it's a secret"
 
-			httpClient := NewHTTPClient(url, tc.relativeURLRoot, tc.caFile, "", false, 1)
+			httpClient, err := NewHTTPClientWithOpts(url, tc.relativeURLRoot, tc.caFile, "", false, 1, nil)
+			require.NoError(t, err)
 
 			client, err := NewGitlabNetClient("", "", secret, httpClient)
 			require.NoError(t, err)
@@ -79,32 +77,20 @@ func TestClients(t *testing.T) {
 
 func testSuccessfulGet(t *testing.T, client *GitlabNetClient) {
 	t.Run("Successful get", func(t *testing.T) {
-		hook := testhelper.SetupLogger()
 		response, err := client.Get(context.Background(), "/hello")
 		require.NoError(t, err)
 		require.NotNil(t, response)
 
 		defer response.Body.Close()
 
-		responseBody, err := ioutil.ReadAll(response.Body)
+		responseBody, err := io.ReadAll(response.Body)
 		require.NoError(t, err)
 		require.Equal(t, string(responseBody), "Hello")
-
-		require.True(t, testhelper.WaitForLogEvent(hook))
-		entries := hook.AllEntries()
-		require.Equal(t, 1, len(entries))
-		require.Equal(t, logrus.InfoLevel, entries[0].Level)
-		require.Contains(t, entries[0].Message, "method=GET")
-		require.Contains(t, entries[0].Message, "status=200")
-		require.Contains(t, entries[0].Message, "content_length_bytes=")
-		require.Contains(t, entries[0].Message, "Finished HTTP request")
-		require.Contains(t, entries[0].Message, "correlation_id=")
 	})
 }
 
 func testSuccessfulPost(t *testing.T, client *GitlabNetClient) {
 	t.Run("Successful Post", func(t *testing.T) {
-		hook := testhelper.SetupLogger()
 		data := map[string]string{"key": "value"}
 
 		response, err := client.Post(context.Background(), "/post_endpoint", data)
@@ -113,53 +99,23 @@ func testSuccessfulPost(t *testing.T, client *GitlabNetClient) {
 
 		defer response.Body.Close()
 
-		responseBody, err := ioutil.ReadAll(response.Body)
+		responseBody, err := io.ReadAll(response.Body)
 		require.NoError(t, err)
 		require.Equal(t, "Echo: {\"key\":\"value\"}", string(responseBody))
-
-		require.True(t, testhelper.WaitForLogEvent(hook))
-		entries := hook.AllEntries()
-		require.Equal(t, 1, len(entries))
-		require.Equal(t, logrus.InfoLevel, entries[0].Level)
-		require.Contains(t, entries[0].Message, "method=POST")
-		require.Contains(t, entries[0].Message, "status=200")
-		require.Contains(t, entries[0].Message, "content_length_bytes=")
-		require.Contains(t, entries[0].Message, "Finished HTTP request")
-		require.Contains(t, entries[0].Message, "correlation_id=")
 	})
 }
 
 func testMissing(t *testing.T, client *GitlabNetClient) {
 	t.Run("Missing error for GET", func(t *testing.T) {
-		hook := testhelper.SetupLogger()
 		response, err := client.Get(context.Background(), "/missing")
 		require.EqualError(t, err, "Internal API error (404)")
 		require.Nil(t, response)
-
-		require.True(t, testhelper.WaitForLogEvent(hook))
-		entries := hook.AllEntries()
-		require.Equal(t, 1, len(entries))
-		require.Equal(t, logrus.InfoLevel, entries[0].Level)
-		require.Contains(t, entries[0].Message, "method=GET")
-		require.Contains(t, entries[0].Message, "status=404")
-		require.Contains(t, entries[0].Message, "Internal API error")
-		require.Contains(t, entries[0].Message, "correlation_id=")
 	})
 
 	t.Run("Missing error for POST", func(t *testing.T) {
-		hook := testhelper.SetupLogger()
 		response, err := client.Post(context.Background(), "/missing", map[string]string{})
 		require.EqualError(t, err, "Internal API error (404)")
 		require.Nil(t, response)
-
-		require.True(t, testhelper.WaitForLogEvent(hook))
-		entries := hook.AllEntries()
-		require.Equal(t, 1, len(entries))
-		require.Equal(t, logrus.InfoLevel, entries[0].Level)
-		require.Contains(t, entries[0].Message, "method=POST")
-		require.Contains(t, entries[0].Message, "status=404")
-		require.Contains(t, entries[0].Message, "Internal API error")
-		require.Contains(t, entries[0].Message, "correlation_id=")
 	})
 }
 
@@ -179,37 +135,15 @@ func testErrorMessage(t *testing.T, client *GitlabNetClient) {
 
 func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 	t.Run("Broken request for GET", func(t *testing.T) {
-		hook := testhelper.SetupLogger()
-
 		response, err := client.Get(context.Background(), "/broken")
 		require.EqualError(t, err, "Internal API unreachable")
 		require.Nil(t, response)
-
-		require.True(t, testhelper.WaitForLogEvent(hook))
-		entries := hook.AllEntries()
-		require.Equal(t, 1, len(entries))
-		require.Equal(t, logrus.InfoLevel, entries[0].Level)
-		require.Contains(t, entries[0].Message, "method=GET")
-		require.NotContains(t, entries[0].Message, "status=")
-		require.Contains(t, entries[0].Message, "Internal API unreachable")
-		require.Contains(t, entries[0].Message, "correlation_id=")
 	})
 
 	t.Run("Broken request for POST", func(t *testing.T) {
-		hook := testhelper.SetupLogger()
-
 		response, err := client.Post(context.Background(), "/broken", map[string]string{})
 		require.EqualError(t, err, "Internal API unreachable")
 		require.Nil(t, response)
-
-		require.True(t, testhelper.WaitForLogEvent(hook))
-		entries := hook.AllEntries()
-		require.Equal(t, 1, len(entries))
-		require.Equal(t, logrus.InfoLevel, entries[0].Level)
-		require.Contains(t, entries[0].Message, "method=POST")
-		require.NotContains(t, entries[0].Message, "status=")
-		require.Contains(t, entries[0].Message, "Internal API unreachable")
-		require.Contains(t, entries[0].Message, "correlation_id=")
 	})
 }
 
@@ -221,7 +155,7 @@ func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 
 		defer response.Body.Close()
 
-		responseBody, err := ioutil.ReadAll(response.Body)
+		responseBody, err := io.ReadAll(response.Body)
 		require.NoError(t, err)
 
 		header, err := base64.StdEncoding.DecodeString(string(responseBody))
@@ -236,7 +170,7 @@ func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 
 		defer response.Body.Close()
 
-		responseBody, err := ioutil.ReadAll(response.Body)
+		responseBody, err := io.ReadAll(response.Body)
 		require.NoError(t, err)
 
 		header, err := base64.StdEncoding.DecodeString(string(responseBody))
@@ -260,7 +194,7 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				require.Equal(t, http.MethodPost, r.Method)
 
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 
 				require.NoError(t, err)

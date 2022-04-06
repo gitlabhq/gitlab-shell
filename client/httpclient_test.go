@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -17,7 +17,8 @@ import (
 func TestReadTimeout(t *testing.T) {
 	expectedSeconds := uint64(300)
 
-	client := NewHTTPClient("http://localhost:3000", "", "", "", false, expectedSeconds)
+	client, err := NewHTTPClientWithOpts("http://localhost:3000", "", "", "", false, expectedSeconds, nil)
+	require.NoError(t, err)
 
 	require.NotNil(t, client)
 	require.Equal(t, time.Duration(expectedSeconds)*time.Second, client.Client.Timeout)
@@ -48,8 +49,7 @@ func TestBasicAuthSettings(t *testing.T) {
 		},
 	}
 
-	client, cleanup := setup(t, username, password, requests)
-	defer cleanup()
+	client := setup(t, username, password, requests)
 
 	response, err := client.Get(context.Background(), "/get_endpoint")
 	require.NoError(t, err)
@@ -64,7 +64,7 @@ func testBasicAuthHeaders(t *testing.T, response *http.Response) {
 	defer response.Body.Close()
 
 	require.NotNil(t, response)
-	responseBody, err := ioutil.ReadAll(response.Body)
+	responseBody, err := io.ReadAll(response.Body)
 	require.NoError(t, err)
 
 	headerParts := strings.Split(string(responseBody), " ")
@@ -86,8 +86,7 @@ func TestEmptyBasicAuthSettings(t *testing.T) {
 		},
 	}
 
-	client, cleanup := setup(t, "", "", requests)
-	defer cleanup()
+	client := setup(t, "", "", requests)
 
 	_, err := client.Get(context.Background(), "/empty_basic_auth")
 	require.NoError(t, err)
@@ -110,8 +109,7 @@ func TestRequestWithUserAgent(t *testing.T) {
 		},
 	}
 
-	client, cleanup := setup(t, "", "", requests)
-	defer cleanup()
+	client := setup(t, "", "", requests)
 
 	_, err := client.Get(context.Background(), "/default_user_agent")
 	require.NoError(t, err)
@@ -122,13 +120,14 @@ func TestRequestWithUserAgent(t *testing.T) {
 
 }
 
-func setup(t *testing.T, username, password string, requests []testserver.TestRequestHandler) (*GitlabNetClient, func()) {
-	url, cleanup := testserver.StartHttpServer(t, requests)
+func setup(t *testing.T, username, password string, requests []testserver.TestRequestHandler) *GitlabNetClient {
+	url := testserver.StartHttpServer(t, requests)
 
-	httpClient := NewHTTPClient(url, "", "", "", false, 1)
+	httpClient, err := NewHTTPClientWithOpts(url, "", "", "", false, 1, nil)
+	require.NoError(t, err)
 
 	client, err := NewGitlabNetClient(username, password, "", httpClient)
 	require.NoError(t, err)
 
-	return client, cleanup
+	return client
 }

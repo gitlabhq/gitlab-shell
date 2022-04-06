@@ -1,14 +1,19 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	log "github.com/sirupsen/logrus"
-
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/logger"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshd"
+
+	"gitlab.com/gitlab-org/labkit/log"
 	"gitlab.com/gitlab-org/labkit/monitoring"
 )
 
@@ -44,31 +49,67 @@ func main() {
 		var err error
 		cfg, err = config.NewFromDir(*configDir)
 		if err != nil {
-			log.Fatalf("failed to load configuration from specified directory: %v", err)
+			log.WithError(err).Fatal("failed to load configuration from specified directory")
 		}
 	}
 	overrideConfigFromEnvironment(cfg)
 	if err := cfg.IsSane(); err != nil {
 		if *configDir == "" {
-			log.Warn("note: no config-dir provided, using only environment variables")
+			log.WithError(err).Fatal("no config-dir provided, using only environment variables")
+		} else {
+			log.WithError(err).Fatal("configuration error")
 		}
-		log.Fatalf("configuration error: %v", err)
 	}
-	logger.ConfigureStandalone(cfg)
+
+	cfg.ApplyGlobalState()
+
+	logCloser := logger.ConfigureStandalone(cfg)
+	defer logCloser.Close()
+
+	ctx, finished := command.Setup("gitlab-sshd", cfg)
+	defer finished()
+
+	cfg.GitalyClient.InitSidechannelRegistry(ctx)
+
+	server, err := sshd.NewServer(cfg)
+	if err != nil {
+		log.WithError(err).Fatal("Failed to start GitLab built-in sshd")
+	}
 
 	// Startup monitoring endpoint.
 	if cfg.Server.WebListen != "" {
 		go func() {
-			log.Fatal(
-				monitoring.Start(
-					monitoring.WithListenerAddress(cfg.Server.WebListen),
-					monitoring.WithBuildInformation(Version, BuildTime),
-				),
+			err := monitoring.Start(
+				monitoring.WithListenerAddress(cfg.Server.WebListen),
+				monitoring.WithBuildInformation(Version, BuildTime),
+				monitoring.WithServeMux(server.MonitoringServeMux()),
 			)
+
+			log.WithError(err).Fatal("monitoring service raised an error")
 		}()
 	}
 
-	if err := sshd.Run(cfg); err != nil {
-		log.Fatalf("Failed to start GitLab built-in sshd: %v", err)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		sig := <-done
+		signal.Reset(syscall.SIGINT, syscall.SIGTERM)
+
+		log.WithContextFields(ctx, log.Fields{"shutdown_timeout_s": cfg.Server.GracePeriodSeconds, "signal": sig.String()}).Info("Shutdown initiated")
+
+		server.Shutdown()
+
+		<-time.After(cfg.Server.GracePeriod())
+
+		cancel()
+
+	}()
+
+	if err := server.ListenAndServe(ctx); err != nil {
+		log.WithError(err).Fatal("GitLab built-in sshd failed to listen for new connections")
 	}
 }

@@ -57,8 +57,7 @@ func init() {
 }
 
 func TestGetByKeyId(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	params := url.Values{}
 	params.Add("key_id", "1")
@@ -68,8 +67,7 @@ func TestGetByKeyId(t *testing.T) {
 }
 
 func TestGetByUsername(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	params := url.Values{}
 	params.Add("username", "jane-doe")
@@ -79,8 +77,7 @@ func TestGetByUsername(t *testing.T) {
 }
 
 func TestMissingUser(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	params := url.Values{}
 	params.Add("username", "missing")
@@ -90,8 +87,7 @@ func TestMissingUser(t *testing.T) {
 }
 
 func TestErrorResponses(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	testCases := []struct {
 		desc          string
@@ -127,11 +123,11 @@ func TestErrorResponses(t *testing.T) {
 	}
 }
 
-func setup(t *testing.T) (*Client, func()) {
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
+func setup(t *testing.T) *Client {
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	client, err := NewClient(&config.Config{GitlabUrl: url})
 	require.NoError(t, err)
 
-	return client, cleanup
+	return client
 }

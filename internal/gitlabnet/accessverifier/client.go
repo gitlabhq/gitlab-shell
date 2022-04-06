@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	pb "gitlab.com/gitlab-org/gitaly/proto/go/gitalypb"
+	pb "gitlab.com/gitlab-org/gitaly/v14/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 )
 
 const (
@@ -33,10 +32,11 @@ type Request struct {
 }
 
 type Gitaly struct {
-	Repo     pb.Repository     `json:"repository"`
-	Address  string            `json:"address"`
-	Token    string            `json:"token"`
-	Features map[string]string `json:"features"`
+	Repo           pb.Repository     `json:"repository"`
+	Address        string            `json:"address"`
+	Token          string            `json:"token"`
+	Features       map[string]string `json:"features"`
+	UseSidechannel bool              `json:"use_sidechannel"`
 }
 
 type CustomPayloadData struct {
@@ -66,7 +66,6 @@ type Response struct {
 	ConsoleMessages  []string      `json:"gl_console_messages"`
 	Who              string
 	StatusCode       int
-	CorrelationID    string
 }
 
 func NewClient(config *config.Config) (*Client, error) {
@@ -87,11 +86,7 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 		request.KeyId = args.GitlabKeyId
 	}
 
-	if args.RemoteAddr != nil {
-		request.CheckIp = args.RemoteAddr.IP.String()
-	} else {
-		request.CheckIp = sshenv.LocalAddr()
-	}
+	request.CheckIp = args.Env.RemoteAddr
 
 	response, err := c.client.Post(ctx, "/allowed", request)
 	if err != nil {
@@ -115,8 +110,6 @@ func parse(hr *http.Response, args *commandargs.Shell) (*Response, error) {
 	}
 
 	response.StatusCode = hr.StatusCode
-	// We expect the same correlation ID that we sent
-	response.CorrelationID = hr.Header.Get("X-Request-Id")
 
 	return response, nil
 }

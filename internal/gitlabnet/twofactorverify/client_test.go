@@ -3,10 +3,11 @@ package twofactorverify
 import (
 	"context"
 	"encoding/json"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/discover"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
+
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/discover"
 
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/client"
@@ -20,7 +21,7 @@ func initialize(t *testing.T) []testserver.TestRequestHandler {
 		{
 			Path: "/api/v4/internal/two_factor_otp_check",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 
 				require.NoError(t, err)
@@ -81,8 +82,7 @@ const (
 )
 
 func TestVerifyOTPByKeyId(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	args := &commandargs.Shell{GitlabKeyId: "0"}
 	_, _, err := client.VerifyOTP(context.Background(), args, otpAttempt)
@@ -90,8 +90,7 @@ func TestVerifyOTPByKeyId(t *testing.T) {
 }
 
 func TestVerifyOTPByUsername(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	args := &commandargs.Shell{GitlabUsername: "jane-doe"}
 	_, _, err := client.VerifyOTP(context.Background(), args, otpAttempt)
@@ -99,8 +98,7 @@ func TestVerifyOTPByUsername(t *testing.T) {
 }
 
 func TestErrorMessage(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	args := &commandargs.Shell{GitlabKeyId: "1"}
 	_, reason, _ := client.VerifyOTP(context.Background(), args, otpAttempt)
@@ -108,8 +106,7 @@ func TestErrorMessage(t *testing.T) {
 }
 
 func TestErrorResponses(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	testCases := []struct {
 		desc          string
@@ -143,12 +140,12 @@ func TestErrorResponses(t *testing.T) {
 	}
 }
 
-func setup(t *testing.T) (*Client, func()) {
+func setup(t *testing.T) *Client {
 	requests := initialize(t)
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	client, err := NewClient(&config.Config{GitlabUrl: url})
 	require.NoError(t, err)
 
-	return client, cleanup
+	return client
 }

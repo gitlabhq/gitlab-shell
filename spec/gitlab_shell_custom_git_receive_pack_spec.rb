@@ -74,11 +74,11 @@ describe 'Custom bin/gitlab-shell git-receive-pack' do
           expect(stderr.gets).to eq("remote: message\n")
           expect(stderr.gets).to eq(remote_blank_line)
 
-          stdin.puts("input")
+          stdin.puts("0009input")
           stdin.close
 
           expect(stdout.gets(6)).to eq("custom")
-          expect(stdout.flush.read).to eq("input\n")
+          expect(stdout.flush.read).to eq("0009input")
         end
       end
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	cmd "gitlab.com/gitlab-org/gitlab-shell/cmd/gitlab-shell-authorized-keys-check/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -31,9 +32,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger.Configure(config)
+	logCloser := logger.Configure(config)
+	defer logCloser.Close()
 
-	cmd, err := command.New(executable, os.Args[1:], config, readWriter)
+	cmd, err := cmd.New(os.Args[1:], config, readWriter)
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment
@@ -41,7 +43,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx, finished := command.ContextWithCorrelationID()
+	ctx, finished := command.Setup(executable.Name, config)
 	defer finished()
 
 	if err = cmd.Execute(ctx); err != nil {

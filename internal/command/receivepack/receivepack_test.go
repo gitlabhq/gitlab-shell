@@ -16,23 +16,21 @@ import (
 
 func TestForbiddenAccess(t *testing.T) {
 	requests := requesthandlers.BuildDisallowedByApiHandlers(t)
-	cmd, _, cleanup := setup(t, "disallowed", requests)
-	defer cleanup()
+	cmd, _ := setup(t, "disallowed", requests)
 
 	err := cmd.Execute(context.Background())
 	require.Equal(t, "Disallowed by API call", err.Error())
 }
 
 func TestCustomReceivePack(t *testing.T) {
-	cmd, output, cleanup := setup(t, "1", requesthandlers.BuildAllowedWithCustomActionsHandlers(t))
-	defer cleanup()
+	cmd, output := setup(t, "1", requesthandlers.BuildAllowedWithCustomActionsHandlers(t))
 
 	require.NoError(t, cmd.Execute(context.Background()))
 	require.Equal(t, "customoutput", output.String())
 }
 
-func setup(t *testing.T, keyId string, requests []testserver.TestRequestHandler) (*Command, *bytes.Buffer, func()) {
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
+func setup(t *testing.T, keyId string, requests []testserver.TestRequestHandler) (*Command, *bytes.Buffer) {
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	output := &bytes.Buffer{}
 	input := bytes.NewBufferString("input")
@@ -43,5 +41,5 @@ func setup(t *testing.T, keyId string, requests []testserver.TestRequestHandler)
 		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
 	}
 
-	return cmd, output, cleanup
+	return cmd, output
 }

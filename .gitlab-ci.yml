@@ -3,9 +3,12 @@ include:
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
+  - project: 'gitlab-org/quality/pipeline-common'
+    file:
+      - '/ci/danger-review.yml'
 
 variables:
-  DOCKER_VERSION: "19.03.0"
+  DOCKER_VERSION: "20.10.3"
 
 workflow:
   rules: &workflow_rules
@@ -17,7 +20,7 @@ workflow:
     - if: '$CI_COMMIT_TAG'
 
 default:
-  image: golang:1.13
+  image: golang:1.14
   tags:
     - gitlab-org
 
@@ -25,51 +28,46 @@ default:
   image: docker:${DOCKER_VERSION}
   services:
     - docker:${DOCKER_VERSION}-dind
-  variables:
-    DOCKER_DRIVER: overlay2
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_TLS_CERTDIR: ""
   tags:
     # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
     - gitlab-org-docker
 
 .test:
+  variables:
+    GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
   before_script:
     # Set up the environment to run integration tests (still written in Ruby)
     - apt-get update -qq && apt-get install -y ruby ruby-dev
     - ruby -v
     - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin
-    - gem install --force --bindir /usr/local/bin bundler -v 2.1.4
+    - gem install --force --bindir /usr/local/bin bundler -v 2.3.6
     - bundle install
     # Now set up to run the Golang tests
     - make build
     - cp config.yml.example config.yml
     - go version
     - which go
+  services:
+    - name: registry.gitlab.com/gitlab-org/build/cng/gitaly:master
+      # Disable the hooks so we don't have to stub the GitLab API
+      command: ["bash", "-c", "mkdir -p /home/git/repositories && rm -rf /srv/gitlab-shell/hooks/* && exec /usr/bin/env GITALY_TESTING_NO_GIT_HOOKS=1 /scripts/process-wrapper"]
+      alias: gitaly
   script:
     - make verify test
 
-go:1.13:
+tests:
   extends: .test
-  image: golang:1.13
-
-go:1.14:
-  extends: .test
-  image: golang:1.14
-  after_script:
-    - make coverage
-  coverage: '/\d+.\d+%/'
-
-go:1.15:
-  extends: .test
-  image: golang:1.15
+  image: golang:${GO_VERSION}
+  parallel:
+    matrix:
+      - GO_VERSION: ["1.16", "1.17", "1.18"]
   after_script:
     - make coverage
   coverage: '/\d+.\d+%/'
 
 race:
   extends: .test
-  image: golang:1.15
+  image: golang:1.18
   script:
     - make test_golang_race
 
@@ -78,7 +76,7 @@ code_quality:
   rules: *workflow_rules
 
 code_navigation:
-  image: sourcegraph/lsif-go:v1
+  image: sourcegraph/lsif-go:v1.3.1
   allow_failure: true
   script:
     - lsif-go

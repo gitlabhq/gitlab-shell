@@ -4,13 +4,12 @@ import (
 	"bytes"
 	"context"
 	"errors"
-
-	"gitlab.com/gitlab-org/gitlab-shell/client"
-
 	"io"
 	"net/http"
 
-	log "github.com/sirupsen/logrus"
+	"gitlab.com/gitlab-org/labkit/log"
+
+	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
@@ -58,12 +57,12 @@ func (c *Command) processApiEndpoints(ctx context.Context, response *accessverif
 	request.Data.UserId = response.Who
 
 	for _, endpoint := range data.ApiEndpoints {
-		fields := log.Fields{
+		ctxlog := log.WithContextFields(ctx, log.Fields{
 			"primary_repo": data.PrimaryRepo,
 			"endpoint":     endpoint,
-		}
+		})
 
-		log.WithFields(fields).Info("Performing custom action")
+		ctxlog.Info("customaction: processApiEndpoints: Performing custom action")
 
 		response, err := c.performRequest(ctx, client, endpoint, request)
 		if err != nil {
@@ -89,6 +88,10 @@ func (c *Command) processApiEndpoints(ctx context.Context, response *accessverif
 		} else {
 			output = c.readFromStdinNoEOF()
 		}
+		ctxlog.WithFields(log.Fields{
+			"eof_sent":    c.EOFSent,
+			"stdin_bytes": len(output),
+		}).Debug("customaction: processApiEndpoints: stdin buffered")
 
 		request.Output = output
 	}
@@ -112,10 +115,32 @@ func (c *Command) performRequest(ctx context.Context, client *client.GitlabNetCl
 }
 
 func (c *Command) readFromStdin() ([]byte, error) {
-	output := new(bytes.Buffer)
-	_, err := io.Copy(output, c.ReadWriter.In)
+	var output []byte
+	var needsPackData bool
 
-	return output.Bytes(), err
+	scanner := pktline.NewScanner(c.ReadWriter.In)
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		output = append(output, line...)
+
+		if pktline.IsFlush(line) {
+			break
+		}
+
+		if !needsPackData && !pktline.IsRefRemoval(line) {
+			needsPackData = true
+		}
+	}
+
+	if needsPackData {
+		packData := new(bytes.Buffer)
+		_, err := io.Copy(packData, c.ReadWriter.In)
+
+		output = append(output, packData.Bytes()...)
+		return output, err
+	} else {
+		return output, nil
+	}
 }
 
 func (c *Command) readFromStdinNoEOF() []byte {

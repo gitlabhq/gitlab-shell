@@ -31,19 +31,18 @@ var (
 )
 
 func TestCheck(t *testing.T) {
-	client, cleanup := setup(t)
-	defer cleanup()
+	client := setup(t)
 
 	result, err := client.Check(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, testResponse, result)
 }
 
-func setup(t *testing.T) (*Client, func()) {
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
+func setup(t *testing.T) *Client {
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	client, err := NewClient(&config.Config{GitlabUrl: url})
 	require.NoError(t, err)
 
-	return client, cleanup
+	return client
 }

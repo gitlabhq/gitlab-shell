@@ -1,0 +1,22 @@
+{
+  "status": true,
+  "gl_repository": "project-26",
+  "gl_project_path": "group/private",
+  "gl_id": "user-1",
+  "gl_username": "root",
+  "git_config_options": [],
+  "gitaly": {
+    "repository": {
+      "storage_name": "default",
+      "relative_path": "GITALY_REPOSITORY",
+      "git_object_directory": "path/to/git_object_directory",
+      "git_alternate_object_directories": ["path/to/git_alternate_object_directory"],
+      "gl_repository": "project-26",
+      "gl_project_path": "group/private"
+    },
+    "address": "GITALY_ADDRESS",
+    "token": "token"
+  },
+  "git_protocol": "protocol",
+  "gl_console_messages": []
+}

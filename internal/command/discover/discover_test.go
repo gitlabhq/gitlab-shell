@@ -45,8 +45,7 @@ var (
 )
 
 func TestExecute(t *testing.T) {
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	testCases := []struct {
 		desc           string
@@ -93,8 +92,7 @@ func TestExecute(t *testing.T) {
 }
 
 func TestFailingExecute(t *testing.T) {
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	testCases := []struct {
 		desc          string

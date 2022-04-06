@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"gitlab.com/gitlab-org/labkit/log"
+
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -37,6 +39,10 @@ func (c *Command) Execute(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	log.WithContextFields(ctx, log.Fields{
+		"token_args": c.TokenArgs,
+	}).Info("personalaccesstoken: execute: requesting token")
 
 	response, err := c.getPersonalAccessToken(ctx)
 	if err != nil {

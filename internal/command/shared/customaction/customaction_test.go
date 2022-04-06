@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -23,7 +23,7 @@ func TestExecuteEOFSent(t *testing.T) {
 		{
 			Path: "/geo/proxy/info_refs_receive_pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 
 				var request *Request
@@ -39,14 +39,14 @@ func TestExecuteEOFSent(t *testing.T) {
 		{
 			Path: "/geo/proxy/receive_pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 
 				var request *Request
 				require.NoError(t, json.Unmarshal(b, &request))
 
 				require.Equal(t, request.Data.UserId, who)
-				require.Equal(t, "input", string(request.Output))
+				require.Equal(t, "0009input", string(request.Output))
 
 				err = json.NewEncoder(w).Encode(Response{Result: []byte("output")})
 				require.NoError(t, err)
@@ -54,12 +54,11 @@ func TestExecuteEOFSent(t *testing.T) {
 		},
 	}
 
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	outBuf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}
-	input := bytes.NewBufferString("input")
+	input := bytes.NewBufferString("0009input")
 
 	response := &accessverifier.Response{
 		Who: who,
@@ -93,7 +92,7 @@ func TestExecuteNoEOFSent(t *testing.T) {
 		{
 			Path: "/geo/proxy/info_refs_upload_pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 
 				var request *Request
@@ -109,7 +108,7 @@ func TestExecuteNoEOFSent(t *testing.T) {
 		{
 			Path: "/geo/proxy/upload_pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 
 				var request *Request
@@ -124,8 +123,7 @@ func TestExecuteNoEOFSent(t *testing.T) {
 		},
 	}
 
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	outBuf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}

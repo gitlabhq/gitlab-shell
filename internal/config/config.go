@@ -2,13 +2,18 @@ package config
 
 import (
 	"errors"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"path"
 	"path/filepath"
+	"sync"
+	"time"
+
+	yaml "gopkg.in/yaml.v2"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
-	yaml "gopkg.in/yaml.v2"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitaly"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
 )
 
 const (
@@ -18,8 +23,13 @@ const (
 
 type ServerConfig struct {
 	Listen                  string   `yaml:"listen,omitempty"`
+	ProxyProtocol           bool     `yaml:"proxy_protocol,omitempty"`
 	WebListen               string   `yaml:"web_listen,omitempty"`
 	ConcurrentSessionsLimit int64    `yaml:"concurrent_sessions_limit,omitempty"`
+	LoginGraceTimeSeconds   uint64   `yaml:"login_grace_time"`
+	GracePeriodSeconds      uint64   `yaml:"grace_period"`
+	ReadinessProbe          string   `yaml:"readiness_probe"`
+	LivenessProbe           string   `yaml:"liveness_probe"`
 	HostKeyFiles            []string `yaml:"host_key_files,omitempty"`
 }
 
@@ -37,6 +47,7 @@ type Config struct {
 	RootDir               string
 	LogFile               string `yaml:"log_file,omitempty"`
 	LogFormat             string `yaml:"log_format,omitempty"`
+	LogLevel              string `yaml:"log_level,omitempty"`
 	GitlabUrl             string `yaml:"gitlab_url"`
 	GitlabRelativeURLRoot string `yaml:"gitlab_relative_url_root"`
 	GitlabTracing         string `yaml:"gitlab_tracing"`
@@ -46,22 +57,32 @@ type Config struct {
 	SslCertDir     string             `yaml:"ssl_cert_dir"`
 	HttpSettings   HttpSettingsConfig `yaml:"http_settings"`
 	Server         ServerConfig       `yaml:"sshd"`
-	HttpClient     *client.HttpClient `-`
+
+	httpClient     *client.HttpClient
+	httpClientErr  error
+	httpClientOnce sync.Once
+
+	GitalyClient gitaly.Client
 }
 
 // The defaults to apply before parsing the config file(s).
 var (
 	DefaultConfig = Config{
-		LogFile: "gitlab-shell.log",
-		LogFormat: "text",
-		Server: DefaultServerConfig,
-		User: "git",
+		LogFile:   "gitlab-shell.log",
+		LogFormat: "json",
+		LogLevel:  "info",
+		Server:    DefaultServerConfig,
+		User:      "git",
 	}
 
 	DefaultServerConfig = ServerConfig{
-		Listen: "[::]:22",
-		WebListen: "localhost:9122",
+		Listen:                  "[::]:22",
+		WebListen:               "localhost:9122",
 		ConcurrentSessionsLimit: 10,
+		LoginGraceTimeSeconds:   60,
+		GracePeriodSeconds:      10,
+		ReadinessProbe:          "/start",
+		LivenessProbe:           "/health",
 		HostKeyFiles: []string{
 			"/run/secrets/ssh-hostkeys/ssh_host_rsa_key",
 			"/run/secrets/ssh-hostkeys/ssh_host_ecdsa_key",
@@ -70,22 +91,43 @@ var (
 	}
 )
 
-func (c *Config) GetHttpClient() *client.HttpClient {
-	if c.HttpClient != nil {
-		return c.HttpClient
+func (sc *ServerConfig) LoginGraceTime() time.Duration {
+	return time.Duration(sc.LoginGraceTimeSeconds) * time.Second
+}
+
+func (sc *ServerConfig) GracePeriod() time.Duration {
+	return time.Duration(sc.GracePeriodSeconds) * time.Second
+}
+
+func (c *Config) ApplyGlobalState() {
+	if c.SslCertDir != "" {
+		os.Setenv("SSL_CERT_DIR", c.SslCertDir)
 	}
+}
 
-	client := client.NewHTTPClient(
-		c.GitlabUrl,
-		c.GitlabRelativeURLRoot,
-		c.HttpSettings.CaFile,
-		c.HttpSettings.CaPath,
-		c.HttpSettings.SelfSignedCert,
-		c.HttpSettings.ReadTimeoutSeconds)
+func (c *Config) HttpClient() (*client.HttpClient, error) {
+	c.httpClientOnce.Do(func() {
+		client, err := client.NewHTTPClientWithOpts(
+			c.GitlabUrl,
+			c.GitlabRelativeURLRoot,
+			c.HttpSettings.CaFile,
+			c.HttpSettings.CaPath,
+			c.HttpSettings.SelfSignedCert,
+			c.HttpSettings.ReadTimeoutSeconds,
+			nil,
+		)
+		if err != nil {
+			c.httpClientErr = err
+			return
+		}
 
-	c.HttpClient = client
+		tr := client.Transport
+		client.Transport = metrics.NewRoundTripper(tr)
 
-	return client
+		c.httpClient = client
+	})
+
+	return c.httpClient, c.httpClientErr
 }
 
 // NewFromDirExternal returns a new config from a given root dir. It also applies defaults appropriate for
@@ -95,6 +137,9 @@ func NewFromDirExternal(dir string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	cfg.ApplyGlobalState()
+
 	return cfg, nil
 }
 
@@ -111,7 +156,7 @@ func newFromFile(path string) (*Config, error) {
 	*cfg = DefaultConfig
 	cfg.RootDir = filepath.Dir(path)
 
-	configBytes, err := ioutil.ReadFile(path)
+	configBytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +200,7 @@ func parseSecret(cfg *Config) error {
 		cfg.SecretFilePath = path.Join(cfg.RootDir, cfg.SecretFilePath)
 	}
 
-	secretFileContent, err := ioutil.ReadFile(cfg.SecretFilePath)
+	secretFileContent, err := os.ReadFile(cfg.SecretFilePath)
 	if err != nil {
 		return err
 	}

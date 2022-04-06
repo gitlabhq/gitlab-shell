@@ -3,7 +3,7 @@ package lfsauthenticate
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -24,7 +24,7 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 		{
 			Path: "/api/v4/internal/lfs_authenticate",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 				require.NoError(t, err)
 
@@ -54,8 +54,7 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 
 func TestFailedRequests(t *testing.T) {
 	requests := setup(t)
-	url, cleanup := testserver.StartHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartHttpServer(t, requests)
 
 	testCases := []struct {
 		desc           string
@@ -96,8 +95,7 @@ func TestFailedRequests(t *testing.T) {
 
 func TestSuccessfulRequests(t *testing.T) {
 	requests := setup(t)
-	url, cleanup := testserver.StartHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartHttpServer(t, requests)
 
 	testCases := []struct {
 		desc      string

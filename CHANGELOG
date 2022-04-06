@@ -1,3 +1,124 @@
+v13.24.2
+
+- Bump gitaly client !584
+
+v13.24.1
+
+- Default to info level for an empty log-level !579
+- Update Gitaly dependency to v14.9.0-rc1 !578
+- Reuse Gitaly connections and sidechannel !575
+
+v13.24.0
+
+- Upgrade golang to 1.17.7 !576
+- Add more metrics for gitlab-sshd !574
+- Move code guidelines to doc/beginners_guide.md !572
+- Add docs for full feature list !571
+- Add aqualls as codeowner for docs files !573
+
+v13.23.2
+
+- Bump labkit version to 1.12.0 !569
+- Add title and correct copyright notice to license !568
+- Bump go-proxyproto package !563
+- Update Go to version 1.17.6 !562
+
+v13.23.1
+
+- Replace golang.org/x/crypto with gitlab-org/golang-crypto !560
+
+v13.23.0
+
+- Add support for SSHUploadPackWithSidechannel RPC !557
+- Rate limiting documentation !556
+
+v13.22.2
+
+- Update to Ruby 2.7.5 !553
+- Deprecate self_signed_cert config setting !552
+- Send full git request/response in SSHD tests !550
+- Suppress internal errors in client output !549
+- Bump .tool_versions to use Go v1.16.12 !548
+
+v13.22.1
+
+- Remove SSL_CERT_DIR logging !546
+
+v13.22.0
+
+- Relax key and username matching for sshd !540
+- Add logging to handler/exec.go and config/config.go !539
+- Improve logging for non-git commands !538
+- Update to Go v1.16.9 !537
+- Reject non-proxied connections when proxy protocol is enabled !536
+- Log command invocation !535
+- Fix logging channel type !534
+- Resolve an error-swallowing issue !533
+- Add more logging to gitlab-sshd !531
+- Respect log-level configuration again !530
+- Improve err message given when Gitaly unavailable !526
+- makefile: properly escape '$' in VERSION_STRING !525
+- Add context fields to logging !524
+- Extract server config related code out of sshd.go !523
+- Add TestInvalidClientConfig and TestNewServerWithoutHosts for sshd.go !518
+- Update Ruby version to 2.7.4 and add Go version 1.16.8 for tooling !517
+
+v13.21.1
+
+- Only validate SSL cert file exists if a value is supplied !527
+
+v13.21.0
+
+- Switch to labkit for logging system setup !504
+- Remove some unreliable tests !503
+- Make gofmt check fail if there are any matching files !500
+- Update go-proxyproto to v0.6.0 !499
+- Switch to labkit/log for logging functionality !498
+- Unit tests for internal/sshd/connection.go !497
+- Prometheus metrics for HTTP requests !496
+- Refactor testhelper.PrepareTestRootDir using t.Cleanup !493
+- Change default logging format to JSON !476
+- Shutdown sshd gracefully !484
+- Provide liveness and readiness probes !494
+- Add tracing instrumentation to http client !495
+- Log same correlation_id on auth keys check of ssh connections !501
+- fix: validate client cert paths exist on disk before proceeding !508
+- Modify regex to prevent partial matches
+
+v13.20.0
+
+- Remove bin/authorized_keys !491
+- Add a make install command !490
+- Create PROCESS.md page with Security release process !488
+- Fix the Geo SSH push proxy hanging !487
+- Standardize logging timestamp format !485
+
+v13.19.1
+
+- Modify regex to prevent partial matches
+
+v13.19.0
+
+- Don't finish the opentracing span early !466
+- gitlab-sshd: Respect the ssl_cert_dir config !467
+- Stop changing directory to the filesystem root !470
+- Fix opentracing setup for gitlab-sshd !473
+
+v13.18.1
+
+- Modify regex to prevent partial matches
+
+v13.18.0
+
+- Fix thread-safety issues in gitlab-shell !463
+- gitlab-sshd: Support the PROXY protocol !461
+- sshd: Recover from per-session and per-connection panics !464
+
+v13.17.0
+
+- Fix gitlab-shell panic when log file not writable !453
+- Add monitoring endpoint to built-in SSH server !449
+
 v13.16.1
 
 - Read limited input when asking to generate new two-factor recovery codes

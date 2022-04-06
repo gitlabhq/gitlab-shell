@@ -26,6 +26,11 @@ http_settings:
 #  password: somepass
 #  ca_file: /etc/ssl/cert.pem
 #  ca_path: /etc/pki/tls/certs
+#
+#  The self_signed_cert option is deprecated
+#  When it's set to true, any certificate is accepted, which may make machine-in-the-middle attack possible
+#  Certificates specified in ca_file and ca_path are trusted anyway even if they are self-signed
+#  Issue: https://gitlab.com/gitlab-org/gitlab-shell/-/issues/120
   self_signed_cert: false
 
 # File used as authorized_keys for gitlab user
@@ -50,7 +55,7 @@ auth_file: "/home/git/.ssh/authorized_keys"
 # Log level. INFO by default
 log_level: INFO
 
-# Log format. 'text' by default
+# Log format. 'json' by default, can be changed to 'text' if needed
 # log_format: json
 
 # Audit usernames.
@@ -66,11 +71,22 @@ audit_usernames: false
 sshd:
   # Address which the SSH server listens on. Defaults to [::]:22.
   listen: "[::]:22"
+  # Set to true if gitlab-sshd is being fronted by a load balancer that implements
+  # the PROXY protocol.
+  proxy_protocol: false
   # Address which the server listens on HTTP for monitoring/health checks. Defaults to localhost:9122.
   web_listen: "localhost:9122"
   # Maximum number of concurrent sessions allowed on a single SSH connection. Defaults to 10.
   concurrent_sessions_limit: 10
-  # SSH host key files. 
+  # The server waits for this time (in seconds) for the ongoing connections to complete before shutting down. Defaults to 10.
+  grace_period: 10
+  # The endpoint that returns 200 OK if the server is ready to receive incoming connections; otherwise, it returns 503 Service Unavailable. Defaults to "/start".
+  readiness_probe: "/start"
+  # The endpoint that returns 200 OK if the server is alive. Defaults to "/health".
+  liveness_probe: "/health"
+  # The server disconnects after this time (in seconds) if the user has not successfully logged in. Defaults to 60.
+  login_grace_time: 60
+  # SSH host key files.
   host_key_files:
     - /run/secrets/ssh-hostkeys/ssh_host_rsa_key
     - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key

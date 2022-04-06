@@ -6,6 +6,8 @@ import (
 	"io"
 	"time"
 
+	"gitlab.com/gitlab-org/labkit/log"
+
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -26,11 +28,15 @@ type Result struct {
 }
 
 func (c *Command) Execute(ctx context.Context) error {
+	ctxlog := log.ContextLogger(ctx)
+
 	// config.GetHTTPClient isn't thread-safe so save Client in struct for concurrency
 	// workaround until #518 is fixed
 	var err error
 	c.Client, err = twofactorverify.NewClient(c.Config)
+
 	if err != nil {
+		ctxlog.WithError(err).Error("twofactorverify: execute: OTP verification failed")
 		return err
 	}
 
@@ -61,6 +67,7 @@ func (c *Command) Execute(ctx context.Context) error {
 	verify := make(chan Result)
 	go func() {
 		defer close(verify)
+		ctxlog.Info("twofactorverify: execute: waiting for user input")
 		answer := ""
 		answer = c.getOTP(verifyCtx)
 
@@ -69,7 +76,9 @@ func (c *Command) Execute(ctx context.Context) error {
 			verify <- Result{Error: nil, Status: "cancelled", Success: false}
 		default:
 			cancelPush()
+			ctxlog.Info("twofactorverify: execute: verifying entered OTP")
 			status, success, err := c.verifyOTP(verifyCtx, answer)
+			ctxlog.WithError(err).Info("twofactorverify: execute: OTP verified")
 			verify <- Result{Error: err, Status: status, Success: success}
 		}
 	}()
@@ -110,7 +119,9 @@ func (c *Command) getOTP(ctx context.Context) string {
 	var answer string
 	otpLength := int64(64)
 	reader := io.LimitReader(c.ReadWriter.In, otpLength)
-	fmt.Fscanln(reader, &answer)
+	if _, err := fmt.Fscanln(reader, &answer); err != nil {
+		log.ContextLogger(ctx).WithError(err).Debug("twofactorverify: getOTP: Failed to get user input")
+	}
 
 	return answer
 }

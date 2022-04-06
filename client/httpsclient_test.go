@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"path"
 	"testing"
@@ -28,10 +28,7 @@ func TestSuccessfulRequests(t *testing.T) {
 		{
 			desc:   "Valid CaPath",
 			caPath: path.Join(testhelper.TestRoot, "certs/valid"),
-		},
-		{
-			desc:       "Self signed cert option enabled",
-			selfSigned: true,
+			caFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt"),
 		},
 		{
 			desc:       "Invalid cert with self signed cert option enabled",
@@ -51,8 +48,8 @@ func TestSuccessfulRequests(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			client, cleanup := setupWithRequests(t, tc.caFile, tc.caPath, tc.clientCAPath, tc.clientCertPath, tc.clientKeyPath, tc.selfSigned)
-			defer cleanup()
+			client, err := setupWithRequests(t, tc.caFile, tc.caPath, tc.clientCAPath, tc.clientCertPath, tc.clientKeyPath, tc.selfSigned)
+			require.NoError(t, err)
 
 			response, err := client.Get(context.Background(), "/hello")
 			require.NoError(t, err)
@@ -60,7 +57,7 @@ func TestSuccessfulRequests(t *testing.T) {
 
 			defer response.Body.Close()
 
-			responseBody, err := ioutil.ReadAll(response.Body)
+			responseBody, err := io.ReadAll(response.Body)
 			require.NoError(t, err)
 			require.Equal(t, string(responseBody), "Hello")
 		})
@@ -69,40 +66,51 @@ func TestSuccessfulRequests(t *testing.T) {
 
 func TestFailedRequests(t *testing.T) {
 	testCases := []struct {
-		desc   string
-		caFile string
-		caPath string
+		desc                   string
+		caFile                 string
+		caPath                 string
+		expectedCaFileNotFound bool
+		expectedError          string
 	}{
 		{
-			desc:   "Invalid CaFile",
-			caFile: path.Join(testhelper.TestRoot, "certs/invalid/server.crt"),
+			desc:          "Invalid CaFile",
+			caFile:        path.Join(testhelper.TestRoot, "certs/invalid/server.crt"),
+			expectedError: "Internal API unreachable",
 		},
 		{
-			desc:   "Invalid CaPath",
-			caPath: path.Join(testhelper.TestRoot, "certs/invalid"),
+			desc:                   "Missing CaFile",
+			caFile:                 path.Join(testhelper.TestRoot, "certs/invalid/missing.crt"),
+			expectedCaFileNotFound: true,
 		},
 		{
-			desc: "Empty config",
+			desc:          "Invalid CaPath",
+			caPath:        path.Join(testhelper.TestRoot, "certs/invalid"),
+			expectedError: "Internal API unreachable",
+		},
+		{
+			desc:          "Empty config",
+			expectedError: "Internal API unreachable",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			client, cleanup := setupWithRequests(t, tc.caFile, tc.caPath, "", "", "", false)
-			defer cleanup()
+			client, err := setupWithRequests(t, tc.caFile, tc.caPath, "", "", "", false)
+			if tc.expectedCaFileNotFound {
+				require.Error(t, err)
+				require.ErrorIs(t, err, ErrCafileNotFound)
+			} else {
+				_, err = client.Get(context.Background(), "/hello")
+				require.Error(t, err)
 
-			_, err := client.Get(context.Background(), "/hello")
-			require.Error(t, err)
-
-			require.Equal(t, err.Error(), "Internal API unreachable")
+				require.Equal(t, err.Error(), tc.expectedError)
+			}
 		})
 	}
 }
 
-func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPath, clientKeyPath string, selfSigned bool) (*GitlabNetClient, func()) {
-	testDirCleanup, err := testhelper.PrepareTestRootDir()
-	require.NoError(t, err)
-	defer testDirCleanup()
+func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPath, clientKeyPath string, selfSigned bool) (*GitlabNetClient, error) {
+	testhelper.PrepareTestRootDir(t)
 
 	requests := []testserver.TestRequestHandler{
 		{
@@ -115,7 +123,7 @@ func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPat
 		},
 	}
 
-	url, cleanup := testserver.StartHttpsServer(t, requests, clientCAPath)
+	url := testserver.StartHttpsServer(t, requests, clientCAPath)
 
 	var opts []HTTPClientOpt
 	if clientCertPath != "" && clientKeyPath != "" {
@@ -123,10 +131,11 @@ func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPat
 	}
 
 	httpClient, err := NewHTTPClientWithOpts(url, "", caFile, caPath, selfSigned, 1, opts)
-	require.NoError(t, err)
+	if err != nil {
+		return nil, err
+	}
 
 	client, err := NewGitlabNetClient("", "", "", httpClient)
-	require.NoError(t, err)
 
-	return client, cleanup
+	return client, err
 }

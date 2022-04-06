@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -27,7 +27,7 @@ func setup(t *testing.T) {
 		{
 			Path: "/api/v4/internal/two_factor_recovery_codes",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 
 				require.NoError(t, err)
@@ -65,8 +65,7 @@ const (
 func TestExecute(t *testing.T) {
 	setup(t)
 
-	url, cleanup := testserver.StartSocketHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	testCases := []struct {
 		desc           string

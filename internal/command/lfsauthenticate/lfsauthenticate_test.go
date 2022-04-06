@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -21,8 +21,7 @@ import (
 
 func TestFailedRequests(t *testing.T) {
 	requests := requesthandlers.BuildDisallowedByApiHandlers(t)
-	url, cleanup := testserver.StartHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartHttpServer(t, requests)
 
 	testCases := []struct {
 		desc           string
@@ -71,7 +70,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 		{
 			Path: "/api/v4/internal/lfs_authenticate",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 				require.NoError(t, err)
 
@@ -95,7 +94,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 		{
 			Path: "/api/v4/internal/allowed",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := ioutil.ReadAll(r.Body)
+				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 				require.NoError(t, err)
 
@@ -118,8 +117,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 		},
 	}
 
-	url, cleanup := testserver.StartHttpServer(t, requests)
-	defer cleanup()
+	url := testserver.StartHttpServer(t, requests)
 
 	testCases := []struct {
 		desc           string

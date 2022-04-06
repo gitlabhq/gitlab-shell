@@ -3,7 +3,7 @@ package testserver
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	tempDir, _ = ioutil.TempDir("", "gitlab-shell-test-api")
+	tempDir, _ = os.MkdirTemp("", "gitlab-shell-test-api")
 	testSocket = path.Join(tempDir, "internal.sock")
 )
 
@@ -27,9 +27,12 @@ type TestRequestHandler struct {
 	Handler func(w http.ResponseWriter, r *http.Request)
 }
 
-func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) (string, func()) {
+func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) string {
+	t.Helper()
+
 	err := os.MkdirAll(filepath.Dir(testSocket), 0700)
 	require.NoError(t, err)
+	t.Cleanup(func() { os.RemoveAll(tempDir) })
 
 	socketListener, err := net.Listen("unix", testSocket)
 	require.NoError(t, err)
@@ -38,22 +41,27 @@ func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) (string,
 		Handler: buildHandler(handlers),
 		// We'll put this server through some nasty stuff we don't want
 		// in our test output
-		ErrorLog: log.New(ioutil.Discard, "", 0),
+		ErrorLog: log.New(io.Discard, "", 0),
 	}
 	go server.Serve(socketListener)
 
 	url := "http+unix://" + testSocket
 
-	return url, cleanupSocket
+	return url
 }
 
-func StartHttpServer(t *testing.T, handlers []TestRequestHandler) (string, func()) {
+func StartHttpServer(t *testing.T, handlers []TestRequestHandler) string {
+	t.Helper()
+
 	server := httptest.NewServer(buildHandler(handlers))
+	t.Cleanup(func() { server.Close() })
 
-	return server.URL, server.Close
+	return server.URL
 }
 
-func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath string) (string, func()) {
+func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath string) string {
+	t.Helper()
+
 	crt := path.Join(testhelper.TestRoot, "certs/valid/server.crt")
 	key := path.Join(testhelper.TestRoot, "certs/valid/server.key")
 
@@ -63,12 +71,11 @@ func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath 
 
 	server.TLS = &tls.Config{
 		Certificates: []tls.Certificate{cer},
-		MinVersion: tls.VersionTLS12,
+		MinVersion:   tls.VersionTLS12,
 	}
-	server.TLS.BuildNameToCertificate()
 
 	if clientCAPath != "" {
-		caCert, err := ioutil.ReadFile(clientCAPath)
+		caCert, err := os.ReadFile(clientCAPath)
 		require.NoError(t, err)
 
 		caCertPool := x509.NewCertPool()
@@ -80,11 +87,9 @@ func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath 
 
 	server.StartTLS()
 
-	return server.URL, server.Close
-}
+	t.Cleanup(func() { server.Close() })
 
-func cleanupSocket() {
-	os.RemoveAll(tempDir)
+	return server.URL
 }
 
 func buildHandler(handlers []TestRequestHandler) http.Handler {

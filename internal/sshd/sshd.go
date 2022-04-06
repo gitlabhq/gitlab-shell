@@ -2,261 +2,205 @@ package sshd
 
 import (
 	"context"
-	"encoding/base64"
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
-	"strconv"
+	"net/http"
+	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	log "github.com/sirupsen/logrus"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/authorizedkeys"
+	"github.com/pires/go-proxyproto"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/sync/semaphore"
+
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+
+	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/log"
 )
+
+type status int
 
 const (
-	namespace     = "gitlab_shell"
-	sshdSubsystem = "sshd"
+	StatusStarting status = iota
+	StatusReady
+	StatusOnShutdown
+	StatusClosed
+	ProxyHeaderTimeout = 90 * time.Second
 )
 
-func secondsDurationBuckets() []float64 {
-	return []float64{
-		0.005, /* 5ms */
-		0.025, /* 25ms */
-		0.1,   /* 100ms */
-		0.5,   /* 500ms */
-		1.0,   /* 1s */
-		10.0,  /* 10s */
-		30.0,  /* 30s */
-		60.0,  /* 1m */
-		300.0, /* 10m */
-	}
+type Server struct {
+	Config *config.Config
+
+	status       status
+	statusMu     sync.Mutex
+	wg           sync.WaitGroup
+	listener     net.Listener
+	serverConfig *serverConfig
 }
 
-var (
-	sshdConnectionDuration = promauto.NewHistogram(
-		prometheus.HistogramOpts{
-			Namespace: namespace,
-			Subsystem: sshdSubsystem,
-			Name:      "connection_duration_seconds",
-			Help:      "A histogram of latencies for connections to gitlab-shell sshd.",
-			Buckets:   secondsDurationBuckets(),
-		},
-	)
-
-	sshdHitMaxSessions = promauto.NewCounter(
-		prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: sshdSubsystem,
-			Name:      "concurrent_limited_sessions_total",
-			Help:      "The number of times the concurrent sessions limit was hit in gitlab-shell sshd.",
-		},
-	)
-)
-
-func Run(cfg *config.Config) error {
-	authorizedKeysClient, err := authorizedkeys.NewClient(cfg)
+func NewServer(cfg *config.Config) (*Server, error) {
+	serverConfig, err := newServerConfig(cfg)
 	if err != nil {
-		return fmt.Errorf("failed to initialize GitLab client: %w", err)
+		return nil, err
 	}
 
-	sshListener, err := net.Listen("tcp", cfg.Server.Listen)
+	return &Server{Config: cfg, serverConfig: serverConfig}, nil
+}
+
+func (s *Server) ListenAndServe(ctx context.Context) error {
+	if err := s.listen(ctx); err != nil {
+		return err
+	}
+	defer s.listener.Close()
+
+	s.serve(ctx)
+
+	return nil
+}
+
+func (s *Server) Shutdown() error {
+	if s.listener == nil {
+		return nil
+	}
+
+	s.changeStatus(StatusOnShutdown)
+
+	return s.listener.Close()
+}
+
+func (s *Server) MonitoringServeMux() *http.ServeMux {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc(s.Config.Server.ReadinessProbe, func(w http.ResponseWriter, r *http.Request) {
+		if s.getStatus() == StatusReady {
+			w.WriteHeader(http.StatusOK)
+		} else {
+			w.WriteHeader(http.StatusServiceUnavailable)
+		}
+	})
+
+	mux.HandleFunc(s.Config.Server.LivenessProbe, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	return mux
+}
+
+func (s *Server) listen(ctx context.Context) error {
+	sshListener, err := net.Listen("tcp", s.Config.Server.Listen)
 	if err != nil {
 		return fmt.Errorf("failed to listen for connection: %w", err)
 	}
 
-	config := &ssh.ServerConfig{
-		PublicKeyCallback: func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
-			if conn.User() != cfg.User {
-				return nil, errors.New("unknown user")
-			}
-			if key.Type() == ssh.KeyAlgoDSA {
-				return nil, errors.New("DSA is prohibited")
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			defer cancel()
-			res, err := authorizedKeysClient.GetByKey(ctx, base64.RawStdEncoding.EncodeToString(key.Marshal()))
-			if err != nil {
-				return nil, err
-			}
+	if s.Config.Server.ProxyProtocol {
+		sshListener = &proxyproto.Listener{
+			Listener:          sshListener,
+			Policy:            unconditionalRequirePolicy,
+			ReadHeaderTimeout: ProxyHeaderTimeout,
+		}
 
-			return &ssh.Permissions{
-				// Record the public key used for authentication.
-				Extensions: map[string]string{
-					"key-id": strconv.FormatInt(res.Id, 10),
-				},
-			}, nil
-		},
+		log.ContextLogger(ctx).Info("Proxy protocol is enabled")
 	}
 
-	var loadedHostKeys uint
-	for _, filename := range cfg.Server.HostKeyFiles {
-		keyRaw, err := ioutil.ReadFile(filename)
-		if err != nil {
-			log.Warnf("Failed to read host key %v: %v", filename, err)
-			continue
-		}
-		key, err := ssh.ParsePrivateKey(keyRaw)
-		if err != nil {
-			log.Warnf("Failed to parse host key %v: %v", filename, err)
-			continue
-		}
-		loadedHostKeys++
-		config.AddHostKey(key)
-	}
-	if loadedHostKeys == 0 {
-		return fmt.Errorf("No host keys could be loaded, aborting")
-	}
+	log.WithContextFields(ctx, log.Fields{"tcp_address": sshListener.Addr().String()}).Info("Listening for SSH connections")
+
+	s.listener = sshListener
+
+	return nil
+}
+
+func (s *Server) serve(ctx context.Context) {
+	s.changeStatus(StatusReady)
 
 	for {
-		nconn, err := sshListener.Accept()
+		nconn, err := s.listener.Accept()
 		if err != nil {
-			log.Warnf("Failed to accept connection: %v\n", err)
+			if s.getStatus() == StatusOnShutdown {
+				break
+			}
+
+			log.ContextLogger(ctx).WithError(err).Warn("Failed to accept connection")
 			continue
 		}
 
-		go handleConn(nconn, config, cfg)
+		s.wg.Add(1)
+		go s.handleConn(ctx, nconn)
 	}
+
+	s.wg.Wait()
+
+	s.changeStatus(StatusClosed)
 }
 
-type execRequest struct {
-	Command string
+func (s *Server) changeStatus(st status) {
+	s.statusMu.Lock()
+	s.status = st
+	s.statusMu.Unlock()
 }
 
-type exitStatusReq struct {
-	ExitStatus uint32
+func (s *Server) getStatus() status {
+	s.statusMu.Lock()
+	defer s.statusMu.Unlock()
+
+	return s.status
 }
 
-type envRequest struct {
-	Name  string
-	Value string
-}
+func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
+	remoteAddr := nconn.RemoteAddr().String()
 
-func exitSession(ch ssh.Channel, exitStatus uint32) {
-	exitStatusReq := exitStatusReq{
-		ExitStatus: exitStatus,
-	}
-	ch.CloseWrite()
-	ch.SendRequest("exit-status", false, ssh.Marshal(exitStatusReq))
-	ch.Close()
-}
+	defer s.wg.Done()
+	defer nconn.Close()
 
-func handleConn(nconn net.Conn, sshCfg *ssh.ServerConfig, cfg *config.Config) {
-	begin := time.Now()
+	ctx, cancel := context.WithCancel(correlation.ContextWithCorrelation(ctx, correlation.SafeRandomID()))
+	defer cancel()
+
+	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": remoteAddr})
+
+	// Prevent a panic in a single connection from taking out the whole server
 	defer func() {
-		sshdConnectionDuration.Observe(time.Since(begin).Seconds())
+		if err := recover(); err != nil {
+			ctxlog.Warn("panic handling session")
+		}
 	}()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	defer nconn.Close()
-	conn, chans, reqs, err := ssh.NewServerConn(nconn, sshCfg)
+	ctxlog.Info("server: handleConn: start")
+
+	sconn, chans, reqs, err := s.initSSHConnection(ctx, nconn)
 	if err != nil {
-		log.Infof("Failed to initialize SSH connection: %v", err)
+		ctxlog.WithError(err).Error("server: handleConn: failed to initialize SSH connection")
 		return
 	}
 
-	concurrentSessions := semaphore.NewWeighted(cfg.Server.ConcurrentSessionsLimit)
-
 	go ssh.DiscardRequests(reqs)
-	for newChannel := range chans {
-		if newChannel.ChannelType() != "session" {
-			newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
-			continue
-		}
-		if !concurrentSessions.TryAcquire(1) {
-			newChannel.Reject(ssh.ResourceShortage, "too many concurrent sessions")
-			sshdHitMaxSessions.Inc()
-			continue
-		}
-		ch, requests, err := newChannel.Accept()
-		if err != nil {
-			log.Infof("Could not accept channel: %v", err)
-			concurrentSessions.Release(1)
-			continue
+
+	conn := newConnection(s.Config.Server.ConcurrentSessionsLimit, remoteAddr)
+	conn.handle(ctx, chans, func(ctx context.Context, channel ssh.Channel, requests <-chan *ssh.Request) {
+		session := &session{
+			cfg:         s.Config,
+			channel:     channel,
+			gitlabKeyId: sconn.Permissions.Extensions["key-id"],
+			remoteAddr:  remoteAddr,
 		}
 
-		go handleSession(ctx, concurrentSessions, ch, requests, conn, nconn, cfg)
-	}
+		session.handle(ctx, requests)
+	})
+
+	ctxlog.Info("server: handleConn: done")
 }
 
-func handleSession(ctx context.Context, concurrentSessions *semaphore.Weighted, ch ssh.Channel, requests <-chan *ssh.Request, conn *ssh.ServerConn, nconn net.Conn, cfg *config.Config) {
-	defer concurrentSessions.Release(1)
-
-	rw := &readwriter.ReadWriter{
-		Out:    ch,
-		In:     ch,
-		ErrOut: ch.Stderr(),
-	}
-	var gitProtocolVersion string
-
-	for req := range requests {
-		var execCmd string
-		switch req.Type {
-		case "env":
-			var envRequest envRequest
-			if err := ssh.Unmarshal(req.Payload, &envRequest); err != nil {
-				ch.Close()
-				return
-			}
-			var accepted bool
-			if envRequest.Name == commandargs.GitProtocolEnv {
-				gitProtocolVersion = envRequest.Value
-				accepted = true
-			}
-			if req.WantReply {
-				req.Reply(accepted, []byte{})
-			}
-
-		case "exec":
-			var execRequest execRequest
-			if err := ssh.Unmarshal(req.Payload, &execRequest); err != nil {
-				ch.Close()
-				return
-			}
-			execCmd = execRequest.Command
-			fallthrough
-		case "shell":
-			if req.WantReply {
-				req.Reply(true, []byte{})
-			}
-			args := &commandargs.Shell{
-				GitlabKeyId:        conn.Permissions.Extensions["key-id"],
-				RemoteAddr:         nconn.RemoteAddr().(*net.TCPAddr),
-				GitProtocolVersion: gitProtocolVersion,
-			}
-
-			if err := args.ParseCommand(execCmd); err != nil {
-				fmt.Fprintf(ch.Stderr(), "Failed to parse command: %v\n", err.Error())
-				exitSession(ch, 128)
-				return
-			}
-
-			cmd := command.BuildShellCommand(args, cfg, rw)
-			if cmd == nil {
-				fmt.Fprintf(ch.Stderr(), "Unknown command: %v\n", args.CommandType)
-				exitSession(ch, 128)
-				return
-			}
-			if err := cmd.Execute(ctx); err != nil {
-				fmt.Fprintf(ch.Stderr(), "remote: ERROR: %v\n", err.Error())
-				exitSession(ch, 1)
-				return
-			}
-			exitSession(ch, 0)
-			return
-		default:
-			if req.WantReply {
-				req.Reply(false, []byte{})
-			}
+func (s *Server) initSSHConnection(ctx context.Context, nconn net.Conn) (sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, reqs <-chan *ssh.Request, err error) {
+	timer := time.AfterFunc(s.Config.Server.LoginGraceTime(), func() {
+		nconn.Close()
+	})
+	defer func() {
+		// If time.Stop() equals false, that means that AfterFunc has been executed
+		if !timer.Stop() {
+			err = fmt.Errorf("initSSHConnection: ssh handshake timeout of %v", s.Config.Server.LoginGraceTime())
 		}
-	}
+	}()
+
+	return ssh.NewServerConn(nconn, s.serverConfig.get(ctx))
+}
+
+func unconditionalRequirePolicy(_ net.Addr) (proxyproto.Policy, error) {
+	return proxyproto.REQUIRE, nil
 }
