@@ -84,3 +84,13 @@ sshd:
     - /run/secrets/ssh-hostkeys/ssh_host_rsa_key
     - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key
     - /run/secrets/ssh-hostkeys/ssh_host_ed25519_key
+  # This section configures web listeners for monitoring/health checks
+  # It's an array that contains address and TLS config if necessary
+  # web_listeners:
+  #   -
+  #     addr: "127.0.0.1:9122"
+  #     tls:
+  #       certificate: "/path/to/certificate"
+  #       key: "/path/to/private/key"
+  #     min_version: "tls1.2"
+  #     max_version: "tls1.3"

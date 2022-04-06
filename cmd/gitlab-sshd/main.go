@@ -12,9 +12,9 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/logger"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshd"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/sshd/monitoring"
 
 	"gitlab.com/gitlab-org/labkit/log"
-	"gitlab.com/gitlab-org/labkit/monitoring"
 )
 
 var (
@@ -76,17 +76,10 @@ func main() {
 		log.WithError(err).Fatal("Failed to start GitLab built-in sshd")
 	}
 
-	// Startup monitoring endpoint.
-	if cfg.Server.WebListen != "" {
-		go func() {
-			err := monitoring.Start(
-				monitoring.WithListenerAddress(cfg.Server.WebListen),
-				monitoring.WithBuildInformation(Version, BuildTime),
-				monitoring.WithServeMux(server.MonitoringServeMux()),
-			)
-
-			log.WithError(err).Fatal("monitoring service raised an error")
-		}()
+	listenerConfigFromWebListen := config.ListenerConfig{Addr: cfg.Server.WebListen}
+	webServer := &monitoring.WebServer{ListenerConfigs: append(cfg.Server.WebListeners, listenerConfigFromWebListen)}
+	if err := webServer.Start(Version, BuildTime, server); err != nil {
+		log.WithError(err).Fatal("Failed to start monitoring server")
 	}
 
 	ctx, cancel := context.WithCancel(ctx)

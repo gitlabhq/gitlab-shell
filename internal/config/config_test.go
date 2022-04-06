@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -56,4 +57,25 @@ func TestCustomPrometheusMetrics(t *testing.T) {
 	}
 
 	require.Equal(t, expectedMetricNames, actualNames)
+}
+
+func TestNewFromDir(t *testing.T) {
+	testhelper.PrepareTestRootDir(t)
+
+	cfg, err := NewFromDir(testhelper.TestRoot)
+	require.NoError(t, err)
+
+	require.Equal(t, cfg.SecretFilePath, path.Join(testhelper.TestRoot, "gitlab_shell_secret"))
+	require.Equal(t, cfg.Secret, "some.secret.value\n")
+
+	httpsListener, httpListener := cfg.Server.WebListeners[0], cfg.Server.WebListeners[1]
+	require.Equal(t, "127.0.0.1:9122", httpsListener.Addr)
+	require.Equal(t, *httpsListener.Tls, TlsConfig{
+		Certificate: "/path/to/certificate",
+		Key:         "/path/to/key",
+		MinVersion:  "tls1.2",
+		MaxVersion:  "tls1.3",
+	})
+	require.Equal(t, "127.0.0.1:9123", httpListener.Addr)
+	require.Nil(t, httpListener.Tls)
 }

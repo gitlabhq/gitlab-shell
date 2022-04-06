@@ -21,15 +21,28 @@ const (
 	defaultSecretFileName = ".gitlab_shell_secret"
 )
 
+type TlsConfig struct {
+	Certificate string `yaml:"certificate"`
+	Key         string `yaml:"key"`
+	MinVersion  string `yaml:"min_version"`
+	MaxVersion  string `yaml:"max_version"`
+}
+
+type ListenerConfig struct {
+	Addr string     `yaml:"addr"`
+	Tls  *TlsConfig `yaml:"tls"`
+}
+
 type ServerConfig struct {
-	Listen                  string   `yaml:"listen,omitempty"`
-	ProxyProtocol           bool     `yaml:"proxy_protocol,omitempty"`
-	WebListen               string   `yaml:"web_listen,omitempty"`
-	ConcurrentSessionsLimit int64    `yaml:"concurrent_sessions_limit,omitempty"`
-	GracePeriodSeconds      uint64   `yaml:"grace_period"`
-	ReadinessProbe          string   `yaml:"readiness_probe"`
-	LivenessProbe           string   `yaml:"liveness_probe"`
-	HostKeyFiles            []string `yaml:"host_key_files,omitempty"`
+	Listen                  string           `yaml:"listen,omitempty"`
+	ProxyProtocol           bool             `yaml:"proxy_protocol,omitempty"`
+	WebListen               string           `yaml:"web_listen,omitempty"`
+	ConcurrentSessionsLimit int64            `yaml:"concurrent_sessions_limit,omitempty"`
+	GracePeriodSeconds      uint64           `yaml:"grace_period"`
+	ReadinessProbe          string           `yaml:"readiness_probe"`
+	LivenessProbe           string           `yaml:"liveness_probe"`
+	HostKeyFiles            []string         `yaml:"host_key_files,omitempty"`
+	WebListeners            []ListenerConfig `yaml:"web_listeners"`
 }
 
 type HttpSettingsConfig struct {
