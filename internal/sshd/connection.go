@@ -13,7 +13,6 @@ import (
 )
 
 type connection struct {
-	begin              time.Time
 	concurrentSessions *semaphore.Weighted
 	remoteAddr         string
 }
@@ -22,7 +21,6 @@ type channelHandler func(context.Context, ssh.Channel, <-chan *ssh.Request)
 
 func newConnection(maxSessions int64, remoteAddr string) *connection {
 	return &connection{
-		begin:              time.Now(),
 		concurrentSessions: semaphore.NewWeighted(maxSessions),
 		remoteAddr:         remoteAddr,
 	}
@@ -32,9 +30,11 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
 
 	metrics.SshdConnectionsInFlight.Inc()
-	defer metrics.SshdConnectionsInFlight.Dec()
 
-	defer metrics.SshdConnectionDuration.Observe(time.Since(c.begin).Seconds())
+	defer func(started time.Time) {
+		metrics.SshdConnectionsInFlight.Dec()
+		metrics.SshdConnectionDuration.Observe(time.Since(started).Seconds())
+	}(time.Now())
 
 	for newChannel := range chans {
 		ctxlog.WithField("channel_type", newChannel.ChannelType()).Info("connection: handle: new channel requested")
