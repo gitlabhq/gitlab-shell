@@ -22,6 +22,7 @@ type session struct {
 	channel     ssh.Channel
 	gitlabKeyId string
 	remoteAddr  string
+	success     bool
 
 	// State managed by the session
 	execCmd            string
@@ -181,6 +182,8 @@ func (s *session) toStderr(ctx context.Context, format string, args ...interface
 func (s *session) exit(ctx context.Context, status uint32) {
 	log.WithContextFields(ctx, log.Fields{"exit_status": status}).Info("session: exit: exiting")
 	req := exitStatusReq{ExitStatus: status}
+
+	s.success = status == 0
 
 	s.channel.CloseWrite()
 	s.channel.SendRequest("exit-status", false, ssh.Marshal(req))

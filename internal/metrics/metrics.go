@@ -18,30 +18,42 @@ const (
 	httpRequestsTotalMetricName          = "requests_total"
 	httpRequestDurationSecondsMetricName = "request_duration_seconds"
 
-	sshdConnectionsInFlightName = "in_flight_connections"
-	sshdConnectionDuration      = "connection_duration_seconds"
-	sshdHitMaxSessions          = "concurrent_limited_sessions_total"
+	sshdConnectionsInFlightName               = "in_flight_connections"
+	sshdHitMaxSessionsName                    = "concurrent_limited_sessions_total"
+	sshdSessionDurationSecondsName            = "session_duration_seconds"
+	sshdSessionEstablishedDurationSecondsName = "session_established_duration_seconds"
+
+	sliSshdSessionsTotalName       = "gitlab_sli:shell_sshd_sessions:total"
+	sliSshdSessionsErrorsTotalName = "gitlab_sli:shell_sshd_sessions:errors_total"
 
 	gitalyConnectionsTotalName = "connections_total"
 )
 
 var (
-	SshdConnectionDuration = promauto.NewHistogram(
+	SshdSessionDuration = promauto.NewHistogram(
 		prometheus.HistogramOpts{
 			Namespace: namespace,
 			Subsystem: sshdSubsystem,
-			Name:      sshdConnectionDuration,
+			Name:      sshdSessionDurationSecondsName,
 			Help:      "A histogram of latencies for connections to gitlab-shell sshd.",
 			Buckets: []float64{
-				0.005, /* 5ms */
-				0.025, /* 25ms */
-				0.1,   /* 100ms */
-				0.5,   /* 500ms */
-				1.0,   /* 1s */
-				10.0,  /* 10s */
-				30.0,  /* 30s */
-				60.0,  /* 1m */
-				300.0, /* 5m */
+				5.0,  /* 5s */
+				30.0, /* 30s */
+				60.0, /* 1m */
+			},
+		},
+	)
+
+	SshdSessionEstablishedDuration = promauto.NewHistogram(
+		prometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: sshdSubsystem,
+			Name:      sshdSessionEstablishedDurationSecondsName,
+			Help:      "A histogram of latencies until session established to gitlab-shell sshd.",
+			Buckets: []float64{
+				0.5, /* 5ms */
+				1.0, /* 1s */
+				5.0, /* 5s */
 			},
 		},
 	)
@@ -59,8 +71,22 @@ var (
 		prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: sshdSubsystem,
-			Name:      sshdHitMaxSessions,
+			Name:      sshdHitMaxSessionsName,
 			Help:      "The number of times the concurrent sessions limit was hit in gitlab-shell sshd.",
+		},
+	)
+
+	SliSshdSessionsTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: sliSshdSessionsTotalName,
+			Help: "Number of SSH sessions that have been established",
+		},
+	)
+
+	SliSshdSessionsErrorsTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: sliSshdSessionsErrorsTotalName,
+			Help: "Number of SSH sessions that have failed",
 		},
 	)
 
