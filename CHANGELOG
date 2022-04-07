@@ -1,3 +1,9 @@
+v13.25.0
+
+- Fix connections duration metrics !588
+- ci: start integrating go 1.18 into the CI pipelines !587
+- Abort long-running unauthenticated SSH connections !582
+
 v13.24.2
 
 - Bump gitaly client !584
