@@ -40,10 +40,10 @@ func (c *Command) Execute(ctx context.Context) error {
 		return err
 	}
 
-	// Create timeout context 
+	// Create timeout context
 	// TODO: make timeout configurable
 	const ctxTimeout = 30
-	timeoutCtx, cancelTimeout := context.WithTimeout(ctx, ctxTimeout * time.Second)
+	timeoutCtx, cancelTimeout := context.WithTimeout(ctx, ctxTimeout*time.Second)
 	verifyCtx, cancelVerify := context.WithCancel(timeoutCtx)
 	pushCtx, cancelPush := context.WithCancel(timeoutCtx)
 	defer cancelTimeout()
