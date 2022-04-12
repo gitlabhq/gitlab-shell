@@ -10,11 +10,17 @@ import (
 	"path"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
+)
+
+var (
+	secret = []byte("sssh, it's a secret")
 )
 
 func TestClients(t *testing.T) {
@@ -57,12 +63,10 @@ func TestClients(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			url := tc.server(t, buildRequests(t, tc.relativeURLRoot))
 
-			secret := "sssh, it's a secret"
-
 			httpClient, err := NewHTTPClientWithOpts(url, tc.relativeURLRoot, tc.caFile, "", 1, nil)
 			require.NoError(t, err)
 
-			client, err := NewGitlabNetClient("", "", secret, httpClient)
+			client, err := NewGitlabNetClient("", "", string(secret), httpClient)
 			require.NoError(t, err)
 
 			testBrokenRequest(t, client)
@@ -71,6 +75,7 @@ func TestClients(t *testing.T) {
 			testMissing(t, client)
 			testErrorMessage(t, client)
 			testAuthenticationHeader(t, client)
+			testJWTAuthenticationHeader(t, client)
 		})
 	}
 }
@@ -160,7 +165,7 @@ func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 
 		header, err := base64.StdEncoding.DecodeString(string(responseBody))
 		require.NoError(t, err)
-		require.Equal(t, "sssh, it's a secret", string(header))
+		require.Equal(t, secret, header)
 	})
 
 	t.Run("Authentication headers for POST", func(t *testing.T) {
@@ -175,7 +180,44 @@ func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 
 		header, err := base64.StdEncoding.DecodeString(string(responseBody))
 		require.NoError(t, err)
-		require.Equal(t, "sssh, it's a secret", string(header))
+		require.Equal(t, secret, header)
+	})
+}
+
+func testJWTAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
+	verifyJWTToken := func(t *testing.T, response *http.Response) {
+		responseBody, err := io.ReadAll(response.Body)
+		require.NoError(t, err)
+
+		claims := &jwt.RegisteredClaims{}
+		token, err := jwt.ParseWithClaims(string(responseBody), claims, func(token *jwt.Token) (interface{}, error) {
+			return secret, nil
+		})
+		require.NoError(t, err)
+		require.True(t, token.Valid)
+		require.Equal(t, "gitlab-shell", claims.Issuer)
+		require.Equal(t, time.Now().Truncate(time.Second), claims.IssuedAt.Time, time.Second)
+		require.Equal(t, time.Now().Truncate(time.Second).Add(time.Minute), claims.ExpiresAt.Time, time.Second)
+	}
+
+	t.Run("JWT authentication headers for GET", func(t *testing.T) {
+		response, err := client.Get(context.Background(), "/jwt_auth")
+		require.NoError(t, err)
+		require.NotNil(t, response)
+
+		defer response.Body.Close()
+
+		verifyJWTToken(t, response)
+	})
+
+	t.Run("JWT authentication headers for POST", func(t *testing.T) {
+		response, err := client.Post(context.Background(), "/jwt_auth", map[string]string{})
+		require.NoError(t, err)
+		require.NotNil(t, response)
+
+		defer response.Body.Close()
+
+		verifyJWTToken(t, response)
 	})
 }
 
@@ -206,6 +248,12 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 			Path: "/api/v4/internal/auth",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				fmt.Fprint(w, r.Header.Get(secretHeaderName))
+			},
+		},
+		{
+			Path: "/api/v4/internal/jwt_auth",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprint(w, r.Header.Get(apiSecretHeaderName))
 			},
 		},
 		{
