@@ -57,10 +57,10 @@ default:
 
 tests:
   extends: .test
-  image: golang:${GO_VERSION}
+  image: ${GO_IMAGE}
   parallel:
     matrix:
-      - GO_VERSION: ["1.16", "1.17", "1.18"]
+      - GO_IMAGE: ["golang:1.16", "golang:1.17", "golang:1.18", "goboring/golang:1.16.7b7"]
   after_script:
     - make coverage
   coverage: '/\d+.\d+%/'
