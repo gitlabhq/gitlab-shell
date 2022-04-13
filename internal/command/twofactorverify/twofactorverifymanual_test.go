@@ -97,7 +97,7 @@ func TestExecuteManual(t *testing.T) {
 			desc:           "With missing arguments",
 			arguments:      &commandargs.Shell{},
 			answer:         "yes\n",
-			expectedOutput: "\nPush " + manualErrorHeader + "who='' is invalid\n" +"OTP: ",
+			expectedOutput: "\nPush " + manualErrorHeader + "who='' is invalid\n" + "OTP: ",
 		},
 	}
 

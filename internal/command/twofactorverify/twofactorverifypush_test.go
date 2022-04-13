@@ -93,12 +93,6 @@ func TestExecutePush(t *testing.T) {
 			answer:         "",
 			expectedOutput: pushQuestion + pushErrorHeader + "Internal API error (500)\n",
 		},
-		{
-			desc:           "With missing arguments",
-			arguments:      &commandargs.Shell{},
-			answer:         "",
-			expectedOutput: pushQuestion + pushErrorHeader + "who='' is invalid",
-		},
 	}
 
 	for _, tc := range testCases {
