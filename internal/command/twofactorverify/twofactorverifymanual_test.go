@@ -128,12 +128,6 @@ func TestExecuteManual(t *testing.T) {
 			answer:         "yes\n",
 			expectedOutput: manualQuestion + manualErrorHeader + "Internal API error (500)\n",
 		},
-		{
-			desc:           "With missing arguments",
-			arguments:      &commandargs.Shell{},
-			answer:         "yes\n",
-			expectedOutput: manualQuestion + manualErrorHeader + "who='' is invalid\n",
-		},
 	}
 
 	for _, tc := range testCases {

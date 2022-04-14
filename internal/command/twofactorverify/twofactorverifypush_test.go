@@ -76,12 +76,6 @@ func TestExecutePush(t *testing.T) {
 			expectedOutput: pushQuestion + "Push OTP validation successful. Git operations are now allowed.\n",
 		},
 		{
-			desc:           "With bad response",
-			arguments:      &commandargs.Shell{GitlabKeyId: "-1"},
-			answer:         "",
-			expectedOutput: pushQuestion + pushErrorHeader + "Parsing failed\n",
-		},
-		{
 			desc:           "With API returns an error",
 			arguments:      &commandargs.Shell{GitlabKeyId: "error"},
 			answer:         "",
