@@ -39,7 +39,7 @@ func TestCustomPrometheusMetrics(t *testing.T) {
 	require.NoError(t, err)
 
 	var actualNames []string
-	for _, m := range ms[0:6] {
+	for _, m := range ms[0:9] {
 		actualNames = append(actualNames, m.GetName())
 	}
 
@@ -48,8 +48,11 @@ func TestCustomPrometheusMetrics(t *testing.T) {
 		"gitlab_shell_http_request_duration_seconds",
 		"gitlab_shell_http_requests_total",
 		"gitlab_shell_sshd_concurrent_limited_sessions_total",
-		"gitlab_shell_sshd_connection_duration_seconds",
 		"gitlab_shell_sshd_in_flight_connections",
+		"gitlab_shell_sshd_session_duration_seconds",
+		"gitlab_shell_sshd_session_established_duration_seconds",
+		"gitlab_sli:shell_sshd_sessions:errors_total",
+		"gitlab_sli:shell_sshd_sessions:total",
 	}
 
 	require.Equal(t, expectedMetricNames, actualNames)

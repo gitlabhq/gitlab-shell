@@ -2,7 +2,6 @@ package sshd
 
 import (
 	"context"
-	"time"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/sync/semaphore"
@@ -28,13 +27,6 @@ func newConnection(maxSessions int64, remoteAddr string) *connection {
 
 func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, handler channelHandler) {
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
-
-	metrics.SshdConnectionsInFlight.Inc()
-
-	defer func(started time.Time) {
-		metrics.SshdConnectionsInFlight.Dec()
-		metrics.SshdConnectionDuration.Observe(time.Since(started).Seconds())
-	}(time.Now())
 
 	for newChannel := range chans {
 		ctxlog.WithField("channel_type", newChannel.ChannelType()).Info("connection: handle: new channel requested")

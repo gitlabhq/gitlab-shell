@@ -12,6 +12,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"gitlab.com/gitlab-org/labkit/log"
@@ -145,6 +146,20 @@ func (s *Server) getStatus() status {
 }
 
 func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
+	success := false
+
+	metrics.SshdConnectionsInFlight.Inc()
+	started := time.Now()
+	defer func() {
+		metrics.SshdConnectionsInFlight.Dec()
+		metrics.SshdSessionDuration.Observe(time.Since(started).Seconds())
+
+		metrics.SliSshdSessionsTotal.Inc()
+		if !success {
+			metrics.SliSshdSessionsErrorsTotal.Inc()
+		}
+	}()
+
 	remoteAddr := nconn.RemoteAddr().String()
 
 	defer s.wg.Done()
@@ -172,8 +187,12 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 	go ssh.DiscardRequests(reqs)
 
+	var establishSessionDuration float64
 	conn := newConnection(s.Config.Server.ConcurrentSessionsLimit, remoteAddr)
 	conn.handle(ctx, chans, func(ctx context.Context, channel ssh.Channel, requests <-chan *ssh.Request) {
+		establishSessionDuration = time.Since(started).Seconds()
+		metrics.SshdSessionEstablishedDuration.Observe(establishSessionDuration)
+
 		session := &session{
 			cfg:         s.Config,
 			channel:     channel,
@@ -182,9 +201,14 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		}
 
 		session.handle(ctx, requests)
+
+		success = session.success
 	})
 
-	ctxlog.Info("server: handleConn: done")
+	ctxlog.WithFields(log.Fields{
+		"duration_s":                   time.Since(started).Seconds(),
+		"establish_session_duration_s": establishSessionDuration,
+	}).Info("server: handleConn: done")
 }
 
 func (s *Server) initSSHConnection(ctx context.Context, nconn net.Conn) (sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, reqs <-chan *ssh.Request, err error) {

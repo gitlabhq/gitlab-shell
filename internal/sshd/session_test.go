@@ -99,6 +99,7 @@ func TestHandleExec(t *testing.T) {
 		expectedExecCmd    string
 		sentRequestName    string
 		sentRequestPayload []byte
+		success            bool
 	}{
 		{
 			desc:            "invalid payload",
@@ -111,6 +112,7 @@ func TestHandleExec(t *testing.T) {
 			expectedExecCmd:    "discover",
 			sentRequestName:    "exit-status",
 			sentRequestPayload: ssh.Marshal(exitStatusReq{ExitStatus: 0}),
+			success:            true,
 		},
 	}
 
@@ -130,6 +132,7 @@ func TestHandleExec(t *testing.T) {
 			require.Equal(t, false, s.handleExec(context.Background(), r))
 			require.Equal(t, tc.sentRequestName, f.sentRequestName)
 			require.Equal(t, tc.sentRequestPayload, f.sentRequestPayload)
+			require.Equal(t, tc.success, s.success)
 		})
 	}
 }
@@ -141,6 +144,7 @@ func TestHandleShell(t *testing.T) {
 		errMsg           string
 		gitlabKeyId      string
 		expectedExitCode uint32
+		success          bool
 	}{
 		{
 			desc:             "fails to parse command",
