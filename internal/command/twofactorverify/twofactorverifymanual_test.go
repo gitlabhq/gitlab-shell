@@ -48,6 +48,41 @@ func setupManual(t *testing.T) []testserver.TestRequestHandler {
 				}
 			},
 		},
+		{
+			Path: "/api/v4/internal/two_factor_push_otp_check",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				b, err := io.ReadAll(r.Body)
+				defer r.Body.Close()
+
+				require.NoError(t, err)
+
+				var requestBody *twofactorverify.RequestBody
+				require.NoError(t, json.Unmarshal(b, &requestBody))
+
+				var body map[string]interface{}
+				switch requestBody.KeyId {
+				case "1":
+					body = map[string]interface{}{
+						"success": true,
+					}
+					json.NewEncoder(w).Encode(body)
+				case "error":
+					body = map[string]interface{}{
+						"success": false,
+						"message": "error message",
+					}
+					require.NoError(t, json.NewEncoder(w).Encode(body))
+				case "broken":
+					w.WriteHeader(http.StatusInternalServerError)
+				default:
+					body = map[string]interface{}{
+						"success": true,
+						"message": "default message",
+					}
+					json.NewEncoder(w).Encode(body)
+				}
+			},
+		},
 	}
 
 	return requests
@@ -97,7 +132,7 @@ func TestExecuteManual(t *testing.T) {
 			desc:           "With missing arguments",
 			arguments:      &commandargs.Shell{},
 			answer:         "yes\n",
-			expectedOutput: "\nPush " + manualErrorHeader + "who='' is invalid\n" + "OTP: ",
+			expectedOutput: manualQuestion + manualErrorHeader + "who='' is invalid\n",
 		},
 	}
 
