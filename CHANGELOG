@@ -1,3 +1,9 @@
+v13.25.1
+
+- Upgrade golang to 1.17.8 !591
+- Add additional metrics to gitlab-sshd !593
+- Add support for FIPS encryption !597
+
 v13.25.0
 
 - Fix connections duration metrics !588
