@@ -19,5 +19,5 @@ func CheckBoring() {
 		log.Info("FIPS mode is enabled. Using an external SSL library.")
 		return
 	}
-	log.Info("Gitaly was compiled with FIPS mode, but an external SSL library was not enabled.")
+	log.Info("gitlab-shell was compiled with FIPS mode, but an external SSL library was not enabled.")
 }
