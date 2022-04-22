@@ -18,7 +18,6 @@ func TestSuccessfulRequests(t *testing.T) {
 	testCases := []struct {
 		desc                                        string
 		caFile, caPath                              string
-		selfSigned                                  bool
 		clientCAPath, clientCertPath, clientKeyPath string // used for TLS client certs
 	}{
 		{
@@ -31,9 +30,8 @@ func TestSuccessfulRequests(t *testing.T) {
 			caFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt"),
 		},
 		{
-			desc:       "Invalid cert with self signed cert option enabled",
-			caFile:     path.Join(testhelper.TestRoot, "certs/valid/server.crt"),
-			selfSigned: true,
+			desc:   "Invalid cert with self signed cert option enabled",
+			caFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt"),
 		},
 		{
 			desc:   "Client certs with CA",
@@ -48,7 +46,7 @@ func TestSuccessfulRequests(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			client, err := setupWithRequests(t, tc.caFile, tc.caPath, tc.clientCAPath, tc.clientCertPath, tc.clientKeyPath, tc.selfSigned)
+			client, err := setupWithRequests(t, tc.caFile, tc.caPath, tc.clientCAPath, tc.clientCertPath, tc.clientKeyPath)
 			require.NoError(t, err)
 
 			response, err := client.Get(context.Background(), "/hello")
@@ -95,7 +93,7 @@ func TestFailedRequests(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			client, err := setupWithRequests(t, tc.caFile, tc.caPath, "", "", "", false)
+			client, err := setupWithRequests(t, tc.caFile, tc.caPath, "", "", "")
 			if tc.expectedCaFileNotFound {
 				require.Error(t, err)
 				require.ErrorIs(t, err, ErrCafileNotFound)
@@ -109,7 +107,7 @@ func TestFailedRequests(t *testing.T) {
 	}
 }
 
-func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPath, clientKeyPath string, selfSigned bool) (*GitlabNetClient, error) {
+func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPath, clientKeyPath string) (*GitlabNetClient, error) {
 	testhelper.PrepareTestRootDir(t)
 
 	requests := []testserver.TestRequestHandler{
@@ -130,7 +128,7 @@ func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPat
 		opts = append(opts, WithClientCert(clientCertPath, clientKeyPath))
 	}
 
-	httpClient, err := NewHTTPClientWithOpts(url, "", caFile, caPath, selfSigned, 1, opts)
+	httpClient, err := NewHTTPClientWithOpts(url, "", caFile, caPath, 1, opts)
 	if err != nil {
 		return nil, err
 	}

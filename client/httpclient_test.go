@@ -17,7 +17,7 @@ import (
 func TestReadTimeout(t *testing.T) {
 	expectedSeconds := uint64(300)
 
-	client, err := NewHTTPClientWithOpts("http://localhost:3000", "", "", "", false, expectedSeconds, nil)
+	client, err := NewHTTPClientWithOpts("http://localhost:3000", "", "", "", expectedSeconds, nil)
 	require.NoError(t, err)
 
 	require.NotNil(t, client)
@@ -123,7 +123,7 @@ func TestRequestWithUserAgent(t *testing.T) {
 func setup(t *testing.T, username, password string, requests []testserver.TestRequestHandler) *GitlabNetClient {
 	url := testserver.StartHttpServer(t, requests)
 
-	httpClient, err := NewHTTPClientWithOpts(url, "", "", "", false, 1, nil)
+	httpClient, err := NewHTTPClientWithOpts(url, "", "", "", 1, nil)
 	require.NoError(t, err)
 
 	client, err := NewGitlabNetClient(username, password, "", httpClient)

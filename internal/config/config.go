@@ -39,7 +39,6 @@ type HttpSettingsConfig struct {
 	ReadTimeoutSeconds uint64 `yaml:"read_timeout"`
 	CaFile             string `yaml:"ca_file"`
 	CaPath             string `yaml:"ca_path"`
-	SelfSignedCert     bool   `yaml:"self_signed_cert"`
 }
 
 type Config struct {
@@ -112,7 +111,6 @@ func (c *Config) HttpClient() (*client.HttpClient, error) {
 			c.GitlabRelativeURLRoot,
 			c.HttpSettings.CaFile,
 			c.HttpSettings.CaPath,
-			c.HttpSettings.SelfSignedCert,
 			c.HttpSettings.ReadTimeoutSeconds,
 			nil,
 		)

@@ -27,11 +27,6 @@ http_settings:
 #  ca_file: /etc/ssl/cert.pem
 #  ca_path: /etc/pki/tls/certs
 #
-#  The self_signed_cert option is deprecated
-#  When it's set to true, any certificate is accepted, which may make machine-in-the-middle attack possible
-#  Certificates specified in ca_file and ca_path are trusted anyway even if they are self-signed
-#  Issue: https://gitlab.com/gitlab-org/gitlab-shell/-/issues/120
-  self_signed_cert: false
 
 # File used as authorized_keys for gitlab user
 auth_file: "/home/git/.ssh/authorized_keys"
