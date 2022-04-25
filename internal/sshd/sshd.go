@@ -179,12 +179,11 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 	ctxlog.Info("server: handleConn: start")
 
-	sconn, chans, reqs, err := s.initSSHConnection(ctx, nconn)
+	sconn, chans, reqs, err := ssh.NewServerConn(nconn, s.serverConfig.get(ctx))
 	if err != nil {
 		ctxlog.WithError(err).Error("server: handleConn: failed to initialize SSH connection")
 		return
 	}
-
 	go ssh.DiscardRequests(reqs)
 
 	var establishSessionDuration float64
@@ -209,20 +208,6 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		"duration_s":                   time.Since(started).Seconds(),
 		"establish_session_duration_s": establishSessionDuration,
 	}).Info("server: handleConn: done")
-}
-
-func (s *Server) initSSHConnection(ctx context.Context, nconn net.Conn) (sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, reqs <-chan *ssh.Request, err error) {
-	timer := time.AfterFunc(s.Config.Server.LoginGraceTime(), func() {
-		nconn.Close()
-	})
-	defer func() {
-		// If time.Stop() equals false, that means that AfterFunc has been executed
-		if !timer.Stop() {
-			err = fmt.Errorf("initSSHConnection: ssh handshake timeout of %v", s.Config.Server.LoginGraceTime())
-		}
-	}()
-
-	return ssh.NewServerConn(nconn, s.serverConfig.get(ctx))
 }
 
 func unconditionalRequirePolicy(_ net.Addr) (proxyproto.Policy, error) {
