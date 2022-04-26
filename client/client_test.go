@@ -59,7 +59,7 @@ func TestClients(t *testing.T) {
 
 			secret := "sssh, it's a secret"
 
-			httpClient, err := NewHTTPClientWithOpts(url, tc.relativeURLRoot, tc.caFile, "", false, 1, nil)
+			httpClient, err := NewHTTPClientWithOpts(url, tc.relativeURLRoot, tc.caFile, "", 1, nil)
 			require.NoError(t, err)
 
 			client, err := NewGitlabNetClient("", "", secret, httpClient)

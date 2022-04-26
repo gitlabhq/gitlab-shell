@@ -71,8 +71,8 @@ func validateCaFile(filename string) error {
 }
 
 // Deprecated: use NewHTTPClientWithOpts - https://gitlab.com/gitlab-org/gitlab-shell/-/issues/484
-func NewHTTPClient(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, selfSignedCert bool, readTimeoutSeconds uint64) *HttpClient {
-	c, err := NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath, selfSignedCert, readTimeoutSeconds, nil)
+func NewHTTPClient(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, readTimeoutSeconds uint64) *HttpClient {
+	c, err := NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath, readTimeoutSeconds, nil)
 	if err != nil {
 		log.WithError(err).Error("new http client with opts")
 	}
@@ -80,7 +80,7 @@ func NewHTTPClient(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, self
 }
 
 // NewHTTPClientWithOpts builds an HTTP client using the provided options
-func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, selfSignedCert bool, readTimeoutSeconds uint64, opts []HTTPClientOpt) (*HttpClient, error) {
+func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, readTimeoutSeconds uint64, opts []HTTPClientOpt) (*HttpClient, error) {
 	var transport *http.Transport
 	var host string
 	var err error
@@ -103,7 +103,7 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 			opt(hcc)
 		}
 
-		transport, host, err = buildHttpsTransport(*hcc, selfSignedCert, gitlabURL)
+		transport, host, err = buildHttpsTransport(*hcc, gitlabURL)
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +140,7 @@ func buildSocketTransport(gitlabURL, gitlabRelativeURLRoot string) (*http.Transp
 	return transport, host
 }
 
-func buildHttpsTransport(hcc httpClientCfg, selfSignedCert bool, gitlabURL string) (*http.Transport, string, error) {
+func buildHttpsTransport(hcc httpClientCfg, gitlabURL string) (*http.Transport, string, error) {
 	certPool, err := x509.SystemCertPool()
 
 	if err != nil {
@@ -162,12 +162,8 @@ func buildHttpsTransport(hcc httpClientCfg, selfSignedCert bool, gitlabURL strin
 		}
 	}
 	tlsConfig := &tls.Config{
-		RootCAs: certPool,
-		// The self_signed_cert config setting is deprecated
-		// The field and its usage is going to be removed in
-		// https://gitlab.com/gitlab-org/gitlab-shell/-/issues/541
-		InsecureSkipVerify: selfSignedCert,
-		MinVersion:         tls.VersionTLS12,
+		RootCAs:    certPool,
+		MinVersion: tls.VersionTLS12,
 	}
 
 	if hcc.HaveCertAndKey() {
