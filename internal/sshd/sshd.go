@@ -32,7 +32,7 @@ type Server struct {
 	Config *config.Config
 
 	status       status
-	statusMu     sync.Mutex
+	statusMu     sync.RWMutex
 	wg           sync.WaitGroup
 	listener     net.Listener
 	serverConfig *serverConfig
@@ -139,8 +139,8 @@ func (s *Server) changeStatus(st status) {
 }
 
 func (s *Server) getStatus() status {
-	s.statusMu.Lock()
-	defer s.statusMu.Unlock()
+	s.statusMu.RLock()
+	defer s.statusMu.RUnlock()
 
 	return s.status
 }
