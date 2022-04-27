@@ -11,13 +11,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
+
 	"gitlab.com/gitlab-org/labkit/log"
 )
 
 const (
-	internalApiPath  = "/api/v4/internal"
-	secretHeaderName = "Gitlab-Shared-Secret"
-	defaultUserAgent = "GitLab-Shell"
+	internalApiPath     = "/api/v4/internal"
+	secretHeaderName    = "Gitlab-Shared-Secret"
+	apiSecretHeaderName = "Gitlab-Shell-Api-Request"
+	defaultUserAgent    = "GitLab-Shell"
+	jwtTTL              = time.Minute
+	jwtIssuer           = "gitlab-shell"
 )
 
 type ErrorResponse struct {
@@ -121,9 +126,21 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	if user != "" && password != "" {
 		request.SetBasicAuth(user, password)
 	}
+	secretBytes := []byte(c.secret)
 
-	encodedSecret := base64.StdEncoding.EncodeToString([]byte(c.secret))
+	encodedSecret := base64.StdEncoding.EncodeToString(secretBytes)
 	request.Header.Set(secretHeaderName, encodedSecret)
+
+	claims := jwt.RegisteredClaims{
+		Issuer:    jwtIssuer,
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(jwtTTL)),
+	}
+	tokenString, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(secretBytes)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Set(apiSecretHeaderName, tokenString)
 
 	request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("User-Agent", c.userAgent)
