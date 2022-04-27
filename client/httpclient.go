@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
-	"gitlab.com/gitlab-org/labkit/log"
 	"gitlab.com/gitlab-org/labkit/tracing"
 )
 
@@ -68,15 +67,6 @@ func validateCaFile(filename string) error {
 	}
 
 	return nil
-}
-
-// Deprecated: use NewHTTPClientWithOpts - https://gitlab.com/gitlab-org/gitlab-shell/-/issues/484
-func NewHTTPClient(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, readTimeoutSeconds uint64) *HttpClient {
-	c, err := NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath, readTimeoutSeconds, nil)
-	if err != nil {
-		log.WithError(err).Error("new http client with opts")
-	}
-	return c
 }
 
 // NewHTTPClientWithOpts builds an HTTP client using the provided options
