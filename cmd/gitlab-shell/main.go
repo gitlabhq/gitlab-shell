@@ -8,10 +8,10 @@ import (
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
+	"gitlab.com/gitlab-org/labkit/fips"
 	"gitlab.com/gitlab-org/labkit/log"
 
 	shellCmd "gitlab.com/gitlab-org/gitlab-shell/cmd/gitlab-shell/command"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/boring"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -74,7 +74,7 @@ func main() {
 	cmdName := reflect.TypeOf(cmd).String()
 	ctxlog := log.ContextLogger(ctx)
 	ctxlog.WithFields(log.Fields{"env": env, "command": cmdName}).Info("gitlab-shell: main: executing command")
-	boring.CheckBoring()
+	fips.Check()
 
 	if err := cmd.Execute(ctx); err != nil {
 		ctxlog.WithError(err).Warn("gitlab-shell: main: command execution failed")
