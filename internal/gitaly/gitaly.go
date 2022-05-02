@@ -21,10 +21,9 @@ import (
 )
 
 type Command struct {
-	ServiceName     string
-	Address         string
-	Token           string
-	DialSidechannel bool
+	ServiceName string
+	Address     string
+	Token       string
 }
 
 type connectionsCache struct {
@@ -125,9 +124,5 @@ func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.Cli
 		)
 	}
 
-	if cmd.DialSidechannel {
-		return client.DialSidechannel(ctx, cmd.Address, c.SidechannelRegistry, connOpts)
-	}
-
-	return client.DialContext(ctx, cmd.Address, connOpts)
+	return client.DialSidechannel(ctx, cmd.Address, c.SidechannelRegistry, connOpts)
 }

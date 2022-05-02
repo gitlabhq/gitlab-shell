@@ -33,10 +33,9 @@ type GitalyCommand struct {
 
 func NewGitalyCommand(cfg *config.Config, serviceName string, response *accessverifier.Response) *GitalyCommand {
 	gc := gitaly.Command{
-		ServiceName:     serviceName,
-		Address:         response.Gitaly.Address,
-		Token:           response.Gitaly.Token,
-		DialSidechannel: response.Gitaly.UseSidechannel,
+		ServiceName: serviceName,
+		Address:     response.Gitaly.Address,
+		Token:       response.Gitaly.Token,
 	}
 
 	return &GitalyCommand{Config: cfg, Response: response, Command: gc}
