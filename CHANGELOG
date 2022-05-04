@@ -1,3 +1,6 @@
+v14.0.0
+- Always use Gitaly sidechannel connections !567
+
 v13.26.0
 
 - Add JWT token to GitLab Rails request !596
