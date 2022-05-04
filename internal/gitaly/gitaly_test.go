@@ -13,7 +13,7 @@ import (
 func TestPrometheusMetrics(t *testing.T) {
 	metrics.GitalyConnectionsTotal.Reset()
 
-	c := &Client{}
+	c := newClient()
 
 	cmd := Command{ServiceName: "git-upload-pack", Address: "tcp://localhost:9999"}
 	c.newConnection(context.Background(), cmd)
@@ -31,7 +31,7 @@ func TestPrometheusMetrics(t *testing.T) {
 }
 
 func TestCachedConnections(t *testing.T) {
-	c := &Client{}
+	c := newClient()
 
 	require.Len(t, c.cache.connections, 0)
 
@@ -50,4 +50,10 @@ func TestCachedConnections(t *testing.T) {
 	_, err = c.GetConnection(context.Background(), cmd)
 	require.NoError(t, err)
 	require.Len(t, c.cache.connections, 2)
+}
+
+func newClient() *Client {
+	c := &Client{}
+	c.InitSidechannelRegistry(context.Background())
+	return c
 }

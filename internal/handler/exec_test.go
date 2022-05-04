@@ -29,7 +29,7 @@ func makeHandler(t *testing.T, err error) func(context.Context, *grpc.ClientConn
 
 func TestRunGitalyCommand(t *testing.T) {
 	cmd := NewGitalyCommand(
-		&config.Config{},
+		newConfig(),
 		string(commandargs.UploadPack),
 		&accessverifier.Response{
 			Gitaly: accessverifier.Gitaly{Address: "tcp://localhost:9999"},
@@ -46,14 +46,12 @@ func TestRunGitalyCommand(t *testing.T) {
 
 func TestCachingOfGitalyConnections(t *testing.T) {
 	ctx := context.Background()
-	cfg := &config.Config{}
-	cfg.GitalyClient.InitSidechannelRegistry(ctx)
+	cfg := newConfig()
 	response := &accessverifier.Response{
 		Username: "user",
 		Gitaly: accessverifier.Gitaly{
-			Address:        "tcp://localhost:9999",
-			Token:          "token",
-			UseSidechannel: true,
+			Address: "tcp://localhost:9999",
+			Token:   "token",
 		},
 	}
 
@@ -71,7 +69,7 @@ func TestCachingOfGitalyConnections(t *testing.T) {
 }
 
 func TestMissingGitalyAddress(t *testing.T) {
-	cmd := GitalyCommand{Config: &config.Config{}}
+	cmd := GitalyCommand{Config: newConfig()}
 
 	err := cmd.RunGitalyCommand(context.Background(), makeHandler(t, nil))
 	require.EqualError(t, err, "no gitaly_address given")
@@ -79,7 +77,7 @@ func TestMissingGitalyAddress(t *testing.T) {
 
 func TestUnavailableGitalyErr(t *testing.T) {
 	cmd := NewGitalyCommand(
-		&config.Config{},
+		newConfig(),
 		string(commandargs.UploadPack),
 		&accessverifier.Response{
 			Gitaly: accessverifier.Gitaly{Address: "tcp://localhost:9999"},
@@ -101,7 +99,7 @@ func TestRunGitalyCommandMetadata(t *testing.T) {
 		{
 			name: "gitaly_feature_flags",
 			gc: NewGitalyCommand(
-				&config.Config{},
+				newConfig(),
 				string(commandargs.UploadPack),
 				&accessverifier.Response{
 					Gitaly: accessverifier.Gitaly{
@@ -208,4 +206,10 @@ func TestPrepareContext(t *testing.T) {
 
 		})
 	}
+}
+
+func newConfig() *config.Config {
+	cfg := &config.Config{}
+	cfg.GitalyClient.InitSidechannelRegistry(context.Background())
+	return cfg
 }
