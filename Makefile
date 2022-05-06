@@ -7,7 +7,11 @@ BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
 BUILD_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver
 
 ifeq (${FIPS_MODE}, 1)
-    BUILD_TAGS += boringcrypto
+    # boringcrypto tag is added automatically by golang-fips compiler
+    BUILD_TAGS += fips
+    # If the golang-fips compiler is built with CGO_ENABLED=0, this needs to be
+    # explicitly switched on.
+    export CGO_ENABLED=1
 endif
 
 GOBUILD_FLAGS := -ldflags "-X main.Version=$(VERSION_STRING) -X main.BuildTime=$(BUILD_TIME)" -tags "$(BUILD_TAGS)" -mod=mod
