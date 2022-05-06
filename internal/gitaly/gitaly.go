@@ -42,7 +42,11 @@ func (c *Client) InitSidechannelRegistry(ctx context.Context) {
 	c.SidechannelRegistry = gitalyclient.NewSidechannelRegistry(log.ContextLogger(ctx))
 }
 
-func (c *Client) GetConnection(ctx context.Context, cmd Command) (*grpc.ClientConn, error) {
+func (c *Client) GetConnection(ctx context.Context, reuseConnections bool, cmd Command) (*grpc.ClientConn, error) {
+	if !reuseConnections {
+		return c.newConnection(ctx, cmd)
+	}
+
 	c.cache.RLock()
 	conn := c.cache.connections[cmd]
 	c.cache.RUnlock()

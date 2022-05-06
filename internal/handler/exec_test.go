@@ -50,8 +50,9 @@ func TestCachingOfGitalyConnections(t *testing.T) {
 	response := &accessverifier.Response{
 		Username: "user",
 		Gitaly: accessverifier.Gitaly{
-			Address: "tcp://localhost:9999",
-			Token:   "token",
+			Address:          "tcp://localhost:9999",
+			Token:            "token",
+			ReuseConnections: true,
 		},
 	}
 
@@ -69,7 +70,7 @@ func TestCachingOfGitalyConnections(t *testing.T) {
 }
 
 func TestMissingGitalyAddress(t *testing.T) {
-	cmd := GitalyCommand{Config: newConfig()}
+	cmd := GitalyCommand{Config: newConfig(), Response: &accessverifier.Response{}}
 
 	err := cmd.RunGitalyCommand(context.Background(), makeHandler(t, nil))
 	require.EqualError(t, err, "no gitaly_address given")

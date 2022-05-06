@@ -119,5 +119,5 @@ func withOutgoingMetadata(ctx context.Context, features map[string]string) conte
 }
 
 func (gc *GitalyCommand) getConn(ctx context.Context) (*grpc.ClientConn, error) {
-	return gc.Config.GitalyClient.GetConnection(ctx, gc.Command)
+	return gc.Config.GitalyClient.GetConnection(ctx, gc.Response.Gitaly.ReuseConnections, gc.Command)
 }

@@ -37,17 +37,21 @@ func TestCachedConnections(t *testing.T) {
 
 	cmd := Command{ServiceName: "git-upload-pack", Address: "tcp://localhost:9999"}
 
-	conn, err := c.GetConnection(context.Background(), cmd)
+	conn, err := c.GetConnection(context.Background(), false, cmd)
+	require.NoError(t, err)
+	require.Len(t, c.cache.connections, 0)
+
+	conn, err = c.GetConnection(context.Background(), true, cmd)
 	require.NoError(t, err)
 	require.Len(t, c.cache.connections, 1)
 
-	newConn, err := c.GetConnection(context.Background(), cmd)
+	newConn, err := c.GetConnection(context.Background(), true, cmd)
 	require.NoError(t, err)
 	require.Len(t, c.cache.connections, 1)
 	require.Equal(t, conn, newConn)
 
 	cmd = Command{ServiceName: "git-upload-pack", Address: "tcp://localhost:9998"}
-	_, err = c.GetConnection(context.Background(), cmd)
+	_, err = c.GetConnection(context.Background(), true, cmd)
 	require.NoError(t, err)
 	require.Len(t, c.cache.connections, 2)
 }
