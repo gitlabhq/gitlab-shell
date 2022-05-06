@@ -12,7 +12,6 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"gitlab.com/gitlab-org/labkit/log"
@@ -146,68 +145,23 @@ func (s *Server) getStatus() status {
 }
 
 func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
-	success := false
-
-	metrics.SshdConnectionsInFlight.Inc()
-	started := time.Now()
-	defer func() {
-		metrics.SshdConnectionsInFlight.Dec()
-		metrics.SshdSessionDuration.Observe(time.Since(started).Seconds())
-
-		metrics.SliSshdSessionsTotal.Inc()
-		if !success {
-			metrics.SliSshdSessionsErrorsTotal.Inc()
-		}
-	}()
-
-	remoteAddr := nconn.RemoteAddr().String()
-
 	defer s.wg.Done()
 	defer nconn.Close()
 
 	ctx, cancel := context.WithCancel(correlation.ContextWithCorrelation(ctx, correlation.SafeRandomID()))
 	defer cancel()
 
-	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": remoteAddr})
-
-	// Prevent a panic in a single connection from taking out the whole server
-	defer func() {
-		if err := recover(); err != nil {
-			ctxlog.Warn("panic handling session")
-		}
-	}()
-
-	ctxlog.Info("server: handleConn: start")
-
-	sconn, chans, reqs, err := ssh.NewServerConn(nconn, s.serverConfig.get(ctx))
-	if err != nil {
-		ctxlog.WithError(err).Error("server: handleConn: failed to initialize SSH connection")
-		return
-	}
-	go ssh.DiscardRequests(reqs)
-
-	var establishSessionDuration float64
-	conn := newConnection(s.Config.Server.ConcurrentSessionsLimit, remoteAddr)
-	conn.handle(ctx, chans, func(ctx context.Context, channel ssh.Channel, requests <-chan *ssh.Request) {
-		establishSessionDuration = time.Since(started).Seconds()
-		metrics.SshdSessionEstablishedDuration.Observe(establishSessionDuration)
-
+	conn := newConnection(s.Config.Server.ConcurrentSessionsLimit, nconn)
+	conn.handle(ctx, s.serverConfig.get(ctx), func(ctx context.Context, sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) error {
 		session := &session{
 			cfg:         s.Config,
 			channel:     channel,
 			gitlabKeyId: sconn.Permissions.Extensions["key-id"],
-			remoteAddr:  remoteAddr,
+			remoteAddr:  nconn.RemoteAddr().String(),
 		}
 
-		session.handle(ctx, requests)
-
-		success = session.success
+		return session.handle(ctx, requests)
 	})
-
-	ctxlog.WithFields(log.Fields{
-		"duration_s":                   time.Since(started).Seconds(),
-		"establish_session_duration_s": establishSessionDuration,
-	}).Info("server: handleConn: done")
 }
 
 func unconditionalRequirePolicy(_ net.Addr) (proxyproto.Policy, error) {
