@@ -146,19 +146,8 @@ func (s *Server) getStatus() status {
 }
 
 func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
-	success := false
-
 	metrics.SshdConnectionsInFlight.Inc()
-	started := time.Now()
-	defer func() {
-		metrics.SshdConnectionsInFlight.Dec()
-		metrics.SshdSessionDuration.Observe(time.Since(started).Seconds())
-
-		metrics.SliSshdSessionsTotal.Inc()
-		if !success {
-			metrics.SliSshdSessionsErrorsTotal.Inc()
-		}
-	}()
+	defer metrics.SshdConnectionsInFlight.Dec()
 
 	remoteAddr := nconn.RemoteAddr().String()
 
@@ -174,6 +163,8 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	defer func() {
 		if err := recover(); err != nil {
 			ctxlog.Warn("panic handling session")
+
+			metrics.SliSshdSessionsErrorsTotal.Inc()
 		}
 	}()
 
@@ -181,11 +172,12 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 	sconn, chans, reqs, err := ssh.NewServerConn(nconn, s.serverConfig.get(ctx))
 	if err != nil {
-		ctxlog.WithError(err).Error("server: handleConn: failed to initialize SSH connection")
+		ctxlog.WithError(err).Warn("server: handleConn: failed to initialize SSH connection")
 		return
 	}
 	go ssh.DiscardRequests(reqs)
 
+	started := time.Now()
 	var establishSessionDuration float64
 	conn := newConnection(s.Config.Server.ConcurrentSessionsLimit, remoteAddr)
 	conn.handle(ctx, chans, func(ctx context.Context, channel ssh.Channel, requests <-chan *ssh.Request) {
@@ -199,9 +191,11 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 			remoteAddr:  remoteAddr,
 		}
 
+		metrics.SliSshdSessionsTotal.Inc()
 		session.handle(ctx, requests)
-
-		success = session.success
+		if !session.success {
+			metrics.SliSshdSessionsErrorsTotal.Inc()
+		}
 	})
 
 	ctxlog.WithFields(log.Fields{
