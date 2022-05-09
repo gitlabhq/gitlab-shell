@@ -5,6 +5,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/sync/semaphore"
+	"sync"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
 
@@ -28,6 +29,7 @@ func newConnection(maxSessions int64, remoteAddr string) *connection {
 func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, handler channelHandler) {
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
 
+	var wg sync.WaitGroup
 	for newChannel := range chans {
 		ctxlog.WithField("channel_type", newChannel.ChannelType()).Info("connection: handle: new channel requested")
 		if newChannel.ChannelType() != "session" {
@@ -48,8 +50,10 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 			continue
 		}
 
+		wg.Add(1)
 		go func() {
 			defer c.concurrentSessions.Release(1)
+			defer wg.Done()
 
 			// Prevent a panic in a single session from taking out the whole server
 			defer func() {
@@ -62,4 +66,5 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 			ctxlog.Info("connection: handle: done")
 		}()
 	}
+	wg.Wait()
 }
