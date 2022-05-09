@@ -196,8 +196,8 @@ func testJWTAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 		require.NoError(t, err)
 		require.True(t, token.Valid)
 		require.Equal(t, "gitlab-shell", claims.Issuer)
-		require.Equal(t, time.Now().Truncate(time.Second), claims.IssuedAt.Time, time.Second)
-		require.Equal(t, time.Now().Truncate(time.Second).Add(time.Minute), claims.ExpiresAt.Time, time.Second)
+		require.WithinDuration(t, time.Now().Truncate(time.Second), claims.IssuedAt.Time, time.Second)
+		require.WithinDuration(t, time.Now().Truncate(time.Second).Add(time.Minute), claims.ExpiresAt.Time, time.Second)
 	}
 
 	t.Run("JWT authentication headers for GET", func(t *testing.T) {
