@@ -14,6 +14,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
 )
 
@@ -180,6 +181,51 @@ func TestErrorResponses(t *testing.T) {
 	}
 }
 
+func TestCheckIP(t *testing.T) {
+	testCases := []struct {
+		desc            string
+		remoteAddr      string
+		expectedCheckIp string
+	}{
+		{
+			desc:            "IPv4 address",
+			remoteAddr:      "18.245.0.42",
+			expectedCheckIp: "18.245.0.42",
+		},
+		{
+			desc:            "IPv6 address",
+			remoteAddr:      "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+			expectedCheckIp: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+		},
+		{
+			desc:            "Host and port",
+			remoteAddr:      "18.245.0.42:6345",
+			expectedCheckIp: "18.245.0.42",
+		},
+		{
+			desc:            "IPv6 host and port",
+			remoteAddr:      "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:80",
+			expectedCheckIp: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+		},
+		{
+			desc:            "Bad remote addr",
+			remoteAddr:      "[127.0",
+			expectedCheckIp: "[127.0",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			client := setupWithApiInspector(t,
+				func(r *Request) {
+					require.Equal(t, tc.expectedCheckIp, r.CheckIp)
+				})
+
+			sshEnv := sshenv.Env{RemoteAddr: tc.remoteAddr}
+			client.Verify(context.Background(), &commandargs.Shell{Env: sshEnv}, uploadPackAction, repo)
+		})
+	}
+}
+
 type testResponse struct {
 	body   []byte
 	status int
@@ -214,6 +260,32 @@ func setup(t *testing.T, userResponses, keyResponses map[string]testResponse) *C
 					_, err := w.Write(tr.body)
 					require.NoError(t, err)
 				}
+			},
+		},
+	}
+
+	url := testserver.StartSocketHttpServer(t, requests)
+
+	client, err := NewClient(&config.Config{GitlabUrl: url})
+	require.NoError(t, err)
+
+	return client
+}
+
+func setupWithApiInspector(t *testing.T, inspector func(*Request)) *Client {
+	t.Helper()
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/api/v4/internal/allowed",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				b, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+
+				var requestBody *Request
+				err = json.Unmarshal(b, &requestBody)
+				require.NoError(t, err)
+
+				inspector(requestBody)
 			},
 		},
 	}
