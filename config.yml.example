@@ -69,6 +69,9 @@ sshd:
   # Set to true if gitlab-sshd is being fronted by a load balancer that implements
   # the PROXY protocol.
   proxy_protocol: false
+  # Proxy protocol policy ("use", "require", "reject", "ignore"), "use" is the default value
+  # Values: https://github.com/pires/go-proxyproto/blob/195fedcfbfc1be163f3a0d507fac1709e9d81fed/policy.go#L20
+  proxy_policy: "use"
   # Address which the server listens on HTTP for monitoring/health checks. Defaults to localhost:9122.
   web_listen: "localhost:9122"
   # Maximum number of concurrent sessions allowed on a single SSH connection. Defaults to 10.
