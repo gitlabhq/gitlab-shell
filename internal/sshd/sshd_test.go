@@ -3,6 +3,7 @@ package sshd
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pires/go-proxyproto"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 
@@ -48,15 +50,101 @@ func TestListenAndServe(t *testing.T) {
 }
 
 func TestListenAndServeRejectsPlainConnectionsWhenProxyProtocolEnabled(t *testing.T) {
-	setupServerWithProxyProtocolEnabled(t)
+	target, err := net.ResolveTCPAddr("tcp", serverUrl)
+	require.NoError(t, err)
 
-	client, err := ssh.Dial("tcp", serverUrl, clientConfig(t))
-	if client != nil {
-		client.Close()
+	header := &proxyproto.Header{
+		Version:           2,
+		Command:           proxyproto.PROXY,
+		TransportProtocol: proxyproto.TCPv4,
+		SourceAddr: &net.TCPAddr{
+			IP:   net.ParseIP("10.1.1.1"),
+			Port: 1000,
+		},
+		DestinationAddr: target,
 	}
 
-	require.Error(t, err, "Expected plain SSH request to be failed")
-	require.Regexp(t, "ssh: handshake failed", err.Error())
+	testCases := []struct {
+		desc        string
+		proxyPolicy string
+		header      *proxyproto.Header
+		isRejected  bool
+	}{
+		{
+			desc:        "USE (default) without a header",
+			proxyPolicy: "",
+			header:      nil,
+			isRejected:  false,
+		},
+		{
+			desc:        "USE (default) with a header",
+			proxyPolicy: "",
+			header:      header,
+			isRejected:  false,
+		},
+		{
+			desc:        "REQUIRE without a header",
+			proxyPolicy: "require",
+			header:      nil,
+			isRejected:  true,
+		},
+		{
+			desc:        "REQUIRE with a header",
+			proxyPolicy: "require",
+			header:      header,
+			isRejected:  false,
+		},
+		{
+			desc:        "REJECT without a header",
+			proxyPolicy: "reject",
+			header:      nil,
+			isRejected:  false,
+		},
+		{
+			desc:        "REJECT with a header",
+			proxyPolicy: "reject",
+			header:      header,
+			isRejected:  true,
+		},
+		{
+			desc:        "IGNORE without a header",
+			proxyPolicy: "ignore",
+			header:      nil,
+			isRejected:  false,
+		},
+		{
+			desc:        "IGNORE with a header",
+			proxyPolicy: "ignore",
+			header:      header,
+			isRejected:  false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			setupServerWithConfig(t, &config.Config{Server: config.ServerConfig{ProxyProtocol: true, ProxyPolicy: tc.proxyPolicy}})
+
+			conn, err := net.DialTCP("tcp", nil, target)
+			require.NoError(t, err)
+
+			if tc.header != nil {
+				_, err := header.WriteTo(conn)
+				require.NoError(t, err)
+			}
+
+			sshConn, _, _, err := ssh.NewClientConn(conn, serverUrl, clientConfig(t))
+			if sshConn != nil {
+				sshConn.Close()
+			}
+
+			if tc.isRejected {
+				require.Error(t, err, "Expected plain SSH request to be failed")
+				require.Regexp(t, "ssh: handshake failed", err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
 }
 
 func TestCorrelationId(t *testing.T) {
@@ -138,12 +226,6 @@ func setupServer(t *testing.T) *Server {
 	t.Helper()
 
 	return setupServerWithConfig(t, nil)
-}
-
-func setupServerWithProxyProtocolEnabled(t *testing.T) *Server {
-	t.Helper()
-
-	return setupServerWithConfig(t, &config.Config{Server: config.ServerConfig{ProxyProtocol: true}})
 }
 
 func setupServerWithConfig(t *testing.T, cfg *config.Config) *Server {

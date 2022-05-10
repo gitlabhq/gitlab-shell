@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -95,7 +96,7 @@ func (s *Server) listen(ctx context.Context) error {
 	if s.Config.Server.ProxyProtocol {
 		sshListener = &proxyproto.Listener{
 			Listener:          sshListener,
-			Policy:            unconditionalRequirePolicy,
+			Policy:            s.requirePolicy,
 			ReadHeaderTimeout: ProxyHeaderTimeout,
 		}
 
@@ -204,6 +205,17 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	}).Info("server: handleConn: done")
 }
 
-func unconditionalRequirePolicy(_ net.Addr) (proxyproto.Policy, error) {
-	return proxyproto.REQUIRE, nil
+func (s *Server) requirePolicy(_ net.Addr) (proxyproto.Policy, error) {
+	// Set the Policy value based on config
+	// Values are taken from https://github.com/pires/go-proxyproto/blob/195fedcfbfc1be163f3a0d507fac1709e9d81fed/policy.go#L20
+	switch strings.ToLower(s.Config.Server.ProxyPolicy) {
+	case "require":
+		return proxyproto.REQUIRE, nil
+	case "ignore":
+		return proxyproto.IGNORE, nil
+	case "reject":
+		return proxyproto.REJECT, nil
+	default:
+		return proxyproto.USE, nil
+	}
 }
