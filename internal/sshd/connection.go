@@ -2,6 +2,7 @@ package sshd
 
 import (
 	"context"
+	"time"
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/sync/semaphore"
@@ -49,6 +50,10 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 		}
 
 		go func() {
+			defer func(started time.Time) {
+				metrics.SshdSessionDuration.Observe(time.Since(started).Seconds())
+			}(time.Now())
+
 			defer c.concurrentSessions.Release(1)
 
 			// Prevent a panic in a single session from taking out the whole server
