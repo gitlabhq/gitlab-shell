@@ -7,27 +7,40 @@ import (
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/sync/semaphore"
 
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
 
 	"gitlab.com/gitlab-org/labkit/log"
 )
 
+const KeepAliveMsg = "keepalive@openssh.com"
+
 type connection struct {
+	cfg                *config.Config
 	concurrentSessions *semaphore.Weighted
 	remoteAddr         string
+	sconn              *ssh.ServerConn
 }
 
 type channelHandler func(context.Context, ssh.Channel, <-chan *ssh.Request)
 
-func newConnection(maxSessions int64, remoteAddr string) *connection {
+func newConnection(cfg *config.Config, remoteAddr string, sconn *ssh.ServerConn) *connection {
 	return &connection{
-		concurrentSessions: semaphore.NewWeighted(maxSessions),
+		cfg:                cfg,
+		concurrentSessions: semaphore.NewWeighted(cfg.Server.ConcurrentSessionsLimit),
 		remoteAddr:         remoteAddr,
+		sconn:              sconn,
 	}
 }
 
 func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, handler channelHandler) {
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
+
+	if c.cfg.Server.ClientAliveIntervalSeconds > 0 {
+		ticker := time.NewTicker(c.cfg.Server.ClientAliveInterval())
+		defer ticker.Stop()
+		go c.sendKeepAliveMsg(ctx, ticker)
+	}
 
 	for newChannel := range chans {
 		ctxlog.WithField("channel_type", newChannel.ChannelType()).Info("connection: handle: new channel requested")
@@ -66,5 +79,20 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 			handler(ctx, channel, requests)
 			ctxlog.Info("connection: handle: done")
 		}()
+	}
+}
+
+func (c *connection) sendKeepAliveMsg(ctx context.Context, ticker *time.Ticker) {
+	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			ctxlog.Debug("session: handleShell: send keepalive message to a client")
+
+			c.sconn.SendRequest(KeepAliveMsg, true, nil)
+		}
 	}
 }

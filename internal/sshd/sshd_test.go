@@ -265,6 +265,7 @@ func setupServerWithConfig(t *testing.T, cfg *config.Config) *Server {
 	cfg.User = user
 	cfg.Server.Listen = serverUrl
 	cfg.Server.ConcurrentSessionsLimit = 1
+	cfg.Server.ClientAliveIntervalSeconds = 15
 	cfg.Server.HostKeyFiles = []string{path.Join(testhelper.TestRoot, "certs/valid/server.key")}
 
 	s, err := NewServer(cfg)

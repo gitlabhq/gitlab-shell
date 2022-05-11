@@ -3,10 +3,14 @@ package sshd
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
+
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 )
 
 type rejectCall struct {
@@ -47,8 +51,32 @@ func (f *fakeNewChannel) ExtraData() []byte {
 	return f.extraData
 }
 
+type fakeConn struct {
+	ssh.Conn
+
+	sentRequestName string
+	mu              sync.Mutex
+}
+
+func (f *fakeConn) SentRequestName() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	return f.sentRequestName
+}
+
+func (f *fakeConn) SendRequest(name string, wantReply bool, payload []byte) (bool, []byte, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	f.sentRequestName = name
+
+	return true, nil, nil
+}
+
 func setup(sessionsNum int64, newChannel *fakeNewChannel) (*connection, chan ssh.NewChannel) {
-	conn := newConnection(sessionsNum, "127.0.0.1:50000")
+	cfg := &config.Config{Server: config.ServerConfig{ConcurrentSessionsLimit: sessionsNum, ClientAliveIntervalSeconds: 1}}
+	conn := newConnection(cfg, "127.0.0.1:50000", &ssh.ServerConn{&fakeConn{}, nil})
 
 	chans := make(chan ssh.NewChannel, 1)
 	chans <- newChannel
@@ -144,4 +172,17 @@ func TestAcceptSessionFails(t *testing.T) {
 	defer conn.concurrentSessions.Release(1)
 
 	require.False(t, channelHandled)
+}
+
+func TestClientAliveInterval(t *testing.T) {
+	f := &fakeConn{}
+
+	conn := newConnection(&config.Config{}, "127.0.0.1:50000", &ssh.ServerConn{f, nil})
+
+	ticker := time.NewTicker(time.Millisecond)
+	defer ticker.Stop()
+
+	go conn.sendKeepAliveMsg(context.Background(), ticker)
+
+	require.Eventually(t, func() bool { return KeepAliveMsg == f.SentRequestName() }, time.Second, time.Millisecond)
 }
