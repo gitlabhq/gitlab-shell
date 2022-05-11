@@ -1,4 +1,12 @@
+v14.1.0
+
+- Make PROXY policy configurable !619
+- Exclude authentication errors from apdex !611
+- Fix check_ip argument when gitlab-sshd used with PROXY protocol !616
+- Use labkit for FIPS check !607
+
 v14.0.0
+
 - Always use Gitaly sidechannel connections !567
 
 v13.26.0
