@@ -199,9 +199,11 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		}
 	})
 
+	reason := sconn.Wait()
 	ctxlog.WithFields(log.Fields{
 		"duration_s":                   time.Since(started).Seconds(),
 		"establish_session_duration_s": establishSessionDuration,
+		"reason":                       reason,
 	}).Info("server: handleConn: done")
 }
 
