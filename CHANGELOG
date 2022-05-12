@@ -1,3 +1,8 @@
+v14.2.0
+
+- Implement ClientKeepAlive option !622
+- build: bump go-proxyproto to 0.6.2 !610
+
 v14.1.1
 
 - Log the error that happens on sconn.Wait() !613
