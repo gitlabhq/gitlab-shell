@@ -180,7 +180,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 	started := time.Now()
 	var establishSessionDuration float64
-	conn := newConnection(s.Config.Server.ConcurrentSessionsLimit, remoteAddr)
+	conn := newConnection(s.Config, remoteAddr, sconn)
 	conn.handle(ctx, chans, func(ctx context.Context, channel ssh.Channel, requests <-chan *ssh.Request) {
 		establishSessionDuration = time.Since(started).Seconds()
 		metrics.SshdSessionEstablishedDuration.Observe(establishSessionDuration)
