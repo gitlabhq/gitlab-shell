@@ -92,9 +92,6 @@ gosec-sast:
 gemnasium-dependency_scanning:
   rules: *workflow_rules
 
-bundler-audit-dependency_scanning:
-  rules: *workflow_rules
-
 # Secret Detection
 secret_detection:
   rules: *workflow_rules
