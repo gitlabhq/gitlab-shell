@@ -55,12 +55,7 @@ type fakeConn struct {
 	ssh.Conn
 
 	sentRequestName string
-	waitErr         error
 	mu              sync.Mutex
-}
-
-func (f *fakeConn) Wait() error {
-	return f.waitErr
 }
 
 func (f *fakeConn) SentRequestName() string {

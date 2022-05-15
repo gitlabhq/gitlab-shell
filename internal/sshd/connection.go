@@ -15,19 +15,25 @@ import (
 
 const KeepAliveMsg = "keepalive@openssh.com"
 
+var EOFTimeout = 10 * time.Second
+
 type connection struct {
 	cfg                *config.Config
 	concurrentSessions *semaphore.Weighted
 	remoteAddr         string
 	sconn              *ssh.ServerConn
+	maxSessions        int64
 }
 
 type channelHandler func(context.Context, ssh.Channel, <-chan *ssh.Request) error
 
 func newConnection(cfg *config.Config, remoteAddr string, sconn *ssh.ServerConn) *connection {
+	maxSessions := cfg.Server.ConcurrentSessionsLimit
+
 	return &connection{
 		cfg:                cfg,
-		concurrentSessions: semaphore.NewWeighted(cfg.Server.ConcurrentSessionsLimit),
+		maxSessions:        maxSessions,
+		concurrentSessions: semaphore.NewWeighted(maxSessions),
 		remoteAddr:         remoteAddr,
 		sconn:              sconn,
 	}
@@ -85,6 +91,14 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 			ctxlog.Info("connection: handle: done")
 		}()
 	}
+
+	// When a connection has been prematurely closed we block execution until all concurrent sessions are released
+	// in order to allow Gitaly complete the operations and close all the channels gracefully.
+	// If it didn't happen within timeout, we unblock the execution
+	// Related issue: https://gitlab.com/gitlab-org/gitlab-shell/-/issues/563
+	ctx, cancel := context.WithTimeout(ctx, EOFTimeout)
+	defer cancel()
+	c.concurrentSessions.Acquire(ctx, c.maxSessions)
 }
 
 func (c *connection) sendKeepAliveMsg(ctx context.Context, ticker *time.Ticker) {
