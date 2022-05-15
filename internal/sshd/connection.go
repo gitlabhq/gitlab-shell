@@ -22,7 +22,7 @@ type connection struct {
 	sconn              *ssh.ServerConn
 }
 
-type channelHandler func(context.Context, ssh.Channel, <-chan *ssh.Request)
+type channelHandler func(context.Context, ssh.Channel, <-chan *ssh.Request) error
 
 func newConnection(cfg *config.Config, remoteAddr string, sconn *ssh.ServerConn) *connection {
 	return &connection{
@@ -76,7 +76,12 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 				}
 			}()
 
-			handler(ctx, channel, requests)
+			metrics.SliSshdSessionsTotal.Inc()
+			err := handler(ctx, channel, requests)
+			if err != nil {
+				metrics.SliSshdSessionsErrorsTotal.Inc()
+			}
+
 			ctxlog.Info("connection: handle: done")
 		}()
 	}

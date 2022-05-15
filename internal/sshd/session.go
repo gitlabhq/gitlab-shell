@@ -22,7 +22,6 @@ type session struct {
 	channel     ssh.Channel
 	gitlabKeyId string
 	remoteAddr  string
-	success     bool
 
 	// State managed by the session
 	execCmd            string
@@ -42,11 +41,12 @@ type exitStatusReq struct {
 	ExitStatus uint32
 }
 
-func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) {
+func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) error {
 	ctxlog := log.ContextLogger(ctx)
 
 	ctxlog.Debug("session: handle: entering request loop")
 
+	var err error
 	for req := range requests {
 		sessionLog := ctxlog.WithFields(log.Fields{
 			"bytesize":   len(req.Payload),
@@ -58,12 +58,14 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) {
 		var shouldContinue bool
 		switch req.Type {
 		case "env":
-			shouldContinue = s.handleEnv(ctx, req)
+			shouldContinue, err = s.handleEnv(ctx, req)
 		case "exec":
-			shouldContinue = s.handleExec(ctx, req)
+			shouldContinue, err = s.handleExec(ctx, req)
 		case "shell":
 			shouldContinue = false
-			s.exit(ctx, s.handleShell(ctx, req))
+			var status uint32
+			status, err = s.handleShell(ctx, req)
+			s.exit(ctx, status)
 		default:
 			// Ignore unknown requests but don't terminate the session
 			shouldContinue = true
@@ -84,15 +86,17 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) {
 	}
 
 	ctxlog.Debug("session: handle: exiting request loop")
+
+	return err
 }
 
-func (s *session) handleEnv(ctx context.Context, req *ssh.Request) bool {
+func (s *session) handleEnv(ctx context.Context, req *ssh.Request) (bool, error) {
 	var accepted bool
 	var envRequest envRequest
 
 	if err := ssh.Unmarshal(req.Payload, &envRequest); err != nil {
 		log.ContextLogger(ctx).WithError(err).Error("session: handleEnv: failed to unmarshal request")
-		return false
+		return false, err
 	}
 
 	switch envRequest.Name {
@@ -113,23 +117,24 @@ func (s *session) handleEnv(ctx context.Context, req *ssh.Request) bool {
 		ctx, log.Fields{"accepted": accepted, "env_request": envRequest},
 	).Debug("session: handleEnv: processed")
 
-	return true
+	return true, nil
 }
 
-func (s *session) handleExec(ctx context.Context, req *ssh.Request) bool {
+func (s *session) handleExec(ctx context.Context, req *ssh.Request) (bool, error) {
 	var execRequest execRequest
 	if err := ssh.Unmarshal(req.Payload, &execRequest); err != nil {
-		return false
+		return false, err
 	}
 
 	s.execCmd = execRequest.Command
 
-	s.exit(ctx, s.handleShell(ctx, req))
+	status, err := s.handleShell(ctx, req)
+	s.exit(ctx, status)
 
-	return false
+	return false, err
 }
 
-func (s *session) handleShell(ctx context.Context, req *ssh.Request) uint32 {
+func (s *session) handleShell(ctx context.Context, req *ssh.Request) (uint32, error) {
 	ctxlog := log.ContextLogger(ctx)
 
 	if req.WantReply {
@@ -157,7 +162,7 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) uint32 {
 			s.toStderr(ctx, "Failed to parse command: %v\n", err.Error())
 		}
 		s.toStderr(ctx, "Unknown command: %v\n", s.execCmd)
-		return 128
+		return 128, err
 	}
 
 	cmdName := reflect.TypeOf(cmd).String()
@@ -165,12 +170,12 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) uint32 {
 
 	if err := cmd.Execute(ctx); err != nil {
 		s.toStderr(ctx, "remote: ERROR: %v\n", err.Error())
-		return 1
+		return 1, err
 	}
 
 	ctxlog.Info("session: handleShell: command executed successfully")
 
-	return 0
+	return 0, nil
 }
 
 func (s *session) toStderr(ctx context.Context, format string, args ...interface{}) {
@@ -182,8 +187,6 @@ func (s *session) toStderr(ctx context.Context, format string, args ...interface
 func (s *session) exit(ctx context.Context, status uint32) {
 	log.WithContextFields(ctx, log.Fields{"exit_status": status}).Info("session: exit: exiting")
 	req := exitStatusReq{ExitStatus: status}
-
-	s.success = status == 0
 
 	s.channel.CloseWrite()
 	s.channel.SendRequest("exit-status", false, ssh.Marshal(req))

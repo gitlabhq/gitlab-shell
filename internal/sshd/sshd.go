@@ -181,7 +181,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	started := time.Now()
 	var establishSessionDuration float64
 	conn := newConnection(s.Config, remoteAddr, sconn)
-	conn.handle(ctx, chans, func(ctx context.Context, channel ssh.Channel, requests <-chan *ssh.Request) {
+	conn.handle(ctx, chans, func(ctx context.Context, channel ssh.Channel, requests <-chan *ssh.Request) error {
 		establishSessionDuration = time.Since(started).Seconds()
 		metrics.SshdSessionEstablishedDuration.Observe(establishSessionDuration)
 
@@ -192,11 +192,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 			remoteAddr:  remoteAddr,
 		}
 
-		metrics.SliSshdSessionsTotal.Inc()
-		session.handle(ctx, requests)
-		if !session.success {
-			metrics.SliSshdSessionsErrorsTotal.Inc()
-		}
+		return session.handle(ctx, requests)
 	})
 
 	reason := sconn.Wait()

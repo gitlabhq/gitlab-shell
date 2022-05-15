@@ -55,7 +55,12 @@ type fakeConn struct {
 	ssh.Conn
 
 	sentRequestName string
+	waitErr         error
 	mu              sync.Mutex
+}
+
+func (f *fakeConn) Wait() error {
+	return f.waitErr
 }
 
 func (f *fakeConn) SentRequestName() string {
@@ -90,7 +95,7 @@ func TestPanicDuringSessionIsRecovered(t *testing.T) {
 
 	numSessions := 0
 	require.NotPanics(t, func() {
-		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) {
+		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
 			numSessions += 1
 			close(chans)
 			panic("This is a panic")
@@ -128,8 +133,9 @@ func TestTooManySessions(t *testing.T) {
 	defer cancel()
 
 	go func() {
-		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) {
+		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
 			<-ctx.Done() // Keep the accepted channel open until the end of the test
+			return nil
 		})
 	}()
 
@@ -142,9 +148,10 @@ func TestAcceptSessionSucceeds(t *testing.T) {
 	conn, chans := setup(1, newChannel)
 
 	channelHandled := false
-	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) {
+	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
 		channelHandled = true
 		close(chans)
+		return nil
 	})
 
 	require.True(t, channelHandled)
@@ -160,8 +167,9 @@ func TestAcceptSessionFails(t *testing.T) {
 
 	channelHandled := false
 	go func() {
-		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) {
+		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
 			channelHandled = true
+			return nil
 		})
 	}()
 
