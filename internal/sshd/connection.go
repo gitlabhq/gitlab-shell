@@ -6,6 +6,8 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/sync/semaphore"
+	grpccodes "google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
@@ -85,7 +87,11 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 			metrics.SliSshdSessionsTotal.Inc()
 			err := handler(ctx, channel, requests)
 			if err != nil {
-				metrics.SliSshdSessionsErrorsTotal.Inc()
+				if grpcstatus.Convert(err).Code() == grpccodes.Canceled {
+					metrics.SshdCanceledSessions.Inc()
+				} else {
+					metrics.SliSshdSessionsErrorsTotal.Inc()
+				}
 			}
 
 			ctxlog.Info("connection: handle: done")

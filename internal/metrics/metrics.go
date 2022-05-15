@@ -22,6 +22,7 @@ const (
 	sshdHitMaxSessionsName                    = "concurrent_limited_sessions_total"
 	sshdSessionDurationSecondsName            = "session_duration_seconds"
 	sshdSessionEstablishedDurationSecondsName = "session_established_duration_seconds"
+	sshdCanceledSessionsName                  = "canceled_sessions"
 
 	sliSshdSessionsTotalName       = "gitlab_sli:shell_sshd_sessions:total"
 	sliSshdSessionsErrorsTotalName = "gitlab_sli:shell_sshd_sessions:errors_total"
@@ -73,6 +74,15 @@ var (
 			Subsystem: sshdSubsystem,
 			Name:      sshdHitMaxSessionsName,
 			Help:      "The number of times the concurrent sessions limit was hit in gitlab-shell sshd.",
+		},
+	)
+
+	SshdCanceledSessions = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: sshdSubsystem,
+			Name:      sshdCanceledSessionsName,
+			Help:      "The number of canceled gitlab-sshd sessions.",
 		},
 	)
 
