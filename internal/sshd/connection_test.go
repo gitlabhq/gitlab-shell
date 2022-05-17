@@ -7,10 +7,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
+	grpccodes "google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
 )
 
 type rejectCall struct {
@@ -90,7 +94,7 @@ func TestPanicDuringSessionIsRecovered(t *testing.T) {
 
 	numSessions := 0
 	require.NotPanics(t, func() {
-		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) {
+		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
 			numSessions += 1
 			close(chans)
 			panic("This is a panic")
@@ -128,8 +132,9 @@ func TestTooManySessions(t *testing.T) {
 	defer cancel()
 
 	go func() {
-		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) {
+		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
 			<-ctx.Done() // Keep the accepted channel open until the end of the test
+			return nil
 		})
 	}()
 
@@ -142,9 +147,10 @@ func TestAcceptSessionSucceeds(t *testing.T) {
 	conn, chans := setup(1, newChannel)
 
 	channelHandled := false
-	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) {
+	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
 		channelHandled = true
 		close(chans)
+		return nil
 	})
 
 	require.True(t, channelHandled)
@@ -160,8 +166,9 @@ func TestAcceptSessionFails(t *testing.T) {
 
 	channelHandled := false
 	go func() {
-		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) {
+		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
 			channelHandled = true
+			return nil
 		})
 	}()
 
@@ -185,4 +192,34 @@ func TestClientAliveInterval(t *testing.T) {
 	go conn.sendKeepAliveMsg(context.Background(), ticker)
 
 	require.Eventually(t, func() bool { return KeepAliveMsg == f.SentRequestName() }, time.Second, time.Millisecond)
+}
+
+func TestSessionsMetrics(t *testing.T) {
+	// Unfortunately, there is no working way to reset Counter (not CounterVec)
+	// https://pkg.go.dev/github.com/prometheus/client_golang/prometheus#pkg-index
+	initialSessionsTotal := testutil.ToFloat64(metrics.SliSshdSessionsTotal)
+	initialSessionsErrorTotal := testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal)
+	initialCanceledSessions := testutil.ToFloat64(metrics.SshdCanceledSessions)
+
+	newChannel := &fakeNewChannel{channelType: "session"}
+
+	conn, chans := setup(1, newChannel)
+	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
+		close(chans)
+		return errors.New("custom error")
+	})
+
+	require.InDelta(t, initialSessionsTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
+	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
+	require.InDelta(t, initialCanceledSessions, testutil.ToFloat64(metrics.SshdCanceledSessions), 0.1)
+
+	conn, chans = setup(1, newChannel)
+	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
+		close(chans)
+		return grpcstatus.Error(grpccodes.Canceled, "error")
+	})
+
+	require.InDelta(t, initialSessionsTotal+2, testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
+	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
+	require.InDelta(t, initialCanceledSessions+1, testutil.ToFloat64(metrics.SshdCanceledSessions), 0.1)
 }
