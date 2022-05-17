@@ -8,7 +8,7 @@ include:
       - '/ci/danger-review.yml'
 
 variables:
-  DOCKER_VERSION: "20.10.3"
+  DOCKER_VERSION: "20.10.15"
 
 workflow:
   rules: &workflow_rules
