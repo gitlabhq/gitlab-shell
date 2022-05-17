@@ -1,3 +1,8 @@
+v14.3.0
+
+- Remove deprecated bundler-audit !626
+- Wait until all Gitaly sessions are executed !624
+
 v14.2.0
 
 - Implement ClientKeepAlive option !622
