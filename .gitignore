@@ -19,3 +19,4 @@ hooks/*.d
 tags
 tmp/*
 vendor
+.DS_Store
