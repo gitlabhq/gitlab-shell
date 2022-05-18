@@ -1,3 +1,7 @@
+v14.3.1
+
+- Exclude API errors from error rate !630
+
 v14.3.0
 
 - Remove deprecated bundler-audit !626
