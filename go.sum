@@ -888,8 +888,8 @@ gitlab.com/gitlab-org/gitaly/v14 v14.9.0-rc5.0.20220329111719-51da8bc17059 h1:X7
 gitlab.com/gitlab-org/gitaly/v14 v14.9.0-rc5.0.20220329111719-51da8bc17059/go.mod h1:uX1qhFKBDuPqATlpMcFL2dKDiX8D/tbUg7CYWx7OXt4=
 gitlab.com/gitlab-org/gitlab-shell v1.9.8-0.20201117050822-3f9890ef73dc/go.mod h1:5QSTbpAHY2v0iIH5uHh2KA9w7sPUqPmnLjDApI/sv1U=
 gitlab.com/gitlab-org/gitlab-shell v1.9.8-0.20210720163109-50da611814d2/go.mod h1:QWDYBwuy24qGMandtCngLRPzFgnGPg6LSNoJWPKmJMc=
-gitlab.com/gitlab-org/golang-crypto v0.0.0-20220128174055-5be136049a80 h1:rVzTLlEDlX/ocWqNxeuxb9XklLzmI9FdP0teRqkSg00=
-gitlab.com/gitlab-org/golang-crypto v0.0.0-20220128174055-5be136049a80/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
+gitlab.com/gitlab-org/golang-crypto v0.0.0-20220518204012-9dd4a7273aac h1:qNUzqBTbEGGjF5Fp0NWz3rNmqamwchxM+QKUZYeOS1c=
+gitlab.com/gitlab-org/golang-crypto v0.0.0-20220518204012-9dd4a7273aac/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 gitlab.com/gitlab-org/labkit v0.0.0-20190221122536-0c3fc7cdd57c/go.mod h1:rYhLgfrbEcyfinG+R3EvKu6bZSsmwQqcXzLfHWSfUKM=
 gitlab.com/gitlab-org/labkit v0.0.0-20200908084045-45895e129029/go.mod h1:SNfxkfUwVNECgtmluVayv0GWFgEjjBs5AzgsowPQuo0=
 gitlab.com/gitlab-org/labkit v1.0.0/go.mod h1:nohrYTSLDnZix0ebXZrbZJjymRar8HeV2roWL5/jw2U=
