@@ -2,6 +2,7 @@ package sshd
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -9,6 +10,7 @@ import (
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
+	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
 
@@ -90,7 +92,10 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 				if grpcstatus.Convert(err).Code() == grpccodes.Canceled {
 					metrics.SshdCanceledSessions.Inc()
 				} else {
-					metrics.SliSshdSessionsErrorsTotal.Inc()
+					var apiError *client.ApiError
+					if !errors.As(err, &apiError) {
+						metrics.SliSshdSessionsErrorsTotal.Inc()
+					}
 				}
 			}
 

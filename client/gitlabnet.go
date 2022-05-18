@@ -37,6 +37,14 @@ type GitlabNetClient struct {
 	userAgent  string
 }
 
+type ApiError struct {
+	Msg string
+}
+
+func (e *ApiError) Error() string {
+	return e.Msg
+}
+
 func NewGitlabNetClient(
 	user,
 	password,
@@ -101,9 +109,9 @@ func parseError(resp *http.Response) error {
 	parsedResponse := &ErrorResponse{}
 
 	if err := json.NewDecoder(resp.Body).Decode(parsedResponse); err != nil {
-		return fmt.Errorf("Internal API error (%v)", resp.StatusCode)
+		return &ApiError{fmt.Sprintf("Internal API error (%v)", resp.StatusCode)}
 	} else {
-		return fmt.Errorf(parsedResponse.Message)
+		return &ApiError{parsedResponse.Message}
 	}
 
 }
@@ -157,7 +165,7 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 
 	if err != nil {
 		logger.WithError(err).Error("Internal API unreachable")
-		return nil, fmt.Errorf("Internal API unreachable")
+		return nil, &ApiError{"Internal API unreachable"}
 	}
 
 	if response != nil {
