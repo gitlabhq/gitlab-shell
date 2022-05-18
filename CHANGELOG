@@ -1,3 +1,8 @@
+v14.4.0
+
+- Allow configuring SSH server algorithms !633
+- Update gitlab-org/golang-crypto module version !632
+
 v14.3.1
 
 - Exclude API errors from error rate !630
