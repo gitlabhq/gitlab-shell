@@ -52,6 +52,44 @@ Because they are using the same plumbing command `git-upload-pack`, `git pull` a
 
 There is also a rate-limiter in place in Gitaly, but the calls will never be made to Gitaly if the rate limit is exceeded in Gitlab Shell (Rails).
 
+## GitLab SaaS
+
+A diagram of the flow of `gitlab-shell` on GitLab.com:
+
+```mermaid
+graph LR
+    a2 --> b2
+    a2  --> b3
+    a2 --> b4
+    b2 --> c1
+    b3 --> c1
+    b4 --> c1
+    c2 --> d1
+    c2 --> d2
+    c2 --> d3
+    d1 --> e1
+    d2 --> e1
+    d3 --> e1
+    a1[Cloudflare] --> a2[TCP<br/> load balancer]
+    e1[Git]
+
+    subgraph HAProxy Fleet
+    b2[HAProxy]
+    b3[HAProxy]
+    b4[HAProxy]
+    end
+
+    subgraph GKE
+    c1[Internal TCP<br/> load balancer<br/>port 2222] --> c2[GitLab-shell<br/> pods]
+    end
+
+    subgraph Gitaly
+    d1[Gitaly]
+    d2[Gitaly]
+    d3[Gitaly]
+    end
+```
+
 ## Releasing
 
 See [PROCESS.md](./PROCESS.md)
