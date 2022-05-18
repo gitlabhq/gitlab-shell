@@ -16,6 +16,14 @@ import (
 	"gitlab.com/gitlab-org/labkit/log"
 )
 
+var supportedMACs = []string{
+	"hmac-sha2-256-etm@openssh.com",
+	"hmac-sha2-512-etm@openssh.com",
+	"hmac-sha2-256",
+	"hmac-sha2-512",
+	"hmac-sha1",
+}
+
 type serverConfig struct {
 	cfg                  *config.Config
 	hostKeys             []ssh.Signer
@@ -84,6 +92,20 @@ func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
 				},
 			}, nil
 		},
+	}
+
+	if len(s.cfg.Server.MACs) > 0 {
+		sshCfg.MACs = s.cfg.Server.MACs
+	} else {
+		sshCfg.MACs = supportedMACs
+	}
+
+	if len(s.cfg.Server.KexAlgorithms) > 0 {
+		sshCfg.KeyExchanges = s.cfg.Server.KexAlgorithms
+	}
+
+	if len(s.cfg.Server.Ciphers) > 0 {
+		sshCfg.Ciphers = s.cfg.Server.Ciphers
 	}
 
 	for _, key := range s.hostKeys {
