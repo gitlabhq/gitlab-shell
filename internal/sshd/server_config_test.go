@@ -80,6 +80,67 @@ func TestFailedGetAuthKey(t *testing.T) {
 	}
 }
 
+func TestDefaultAlgorithms(t *testing.T) {
+	srvCfg := &serverConfig{cfg: &config.Config{}}
+	sshServerConfig := srvCfg.get(context.Background())
+
+	require.Equal(t, supportedMACs, sshServerConfig.MACs)
+	require.Nil(t, sshServerConfig.KeyExchanges)
+	require.Nil(t, sshServerConfig.Ciphers)
+
+	sshServerConfig.SetDefaults()
+
+	require.Equal(t, supportedMACs, sshServerConfig.MACs)
+
+	defaultKeyExchanges := []string{
+		"curve25519-sha256",
+		"curve25519-sha256@libssh.org",
+		"ecdh-sha2-nistp256",
+		"ecdh-sha2-nistp384",
+		"ecdh-sha2-nistp521",
+		"diffie-hellman-group14-sha256",
+		"diffie-hellman-group14-sha1",
+	}
+	require.Equal(t, defaultKeyExchanges, sshServerConfig.KeyExchanges)
+
+	defaultCiphers := []string{
+		"aes128-gcm@openssh.com",
+		"chacha20-poly1305@openssh.com",
+		"aes256-gcm@openssh.com",
+		"aes128-ctr",
+		"aes192-ctr",
+		"aes256-ctr",
+	}
+	require.Equal(t, defaultCiphers, sshServerConfig.Ciphers)
+}
+
+func TestCustomAlgorithms(t *testing.T) {
+	customMACs := []string{"hmac-sha2-512-etm@openssh.com"}
+	customKexAlgos := []string{"curve25519-sha256"}
+	customCiphers := []string{"aes256-gcm@openssh.com"}
+
+	srvCfg := &serverConfig{
+		cfg: &config.Config{
+			Server: config.ServerConfig{
+				MACs:          customMACs,
+				KexAlgorithms: customKexAlgos,
+				Ciphers:       customCiphers,
+			},
+		},
+	}
+	sshServerConfig := srvCfg.get(context.Background())
+
+	require.Equal(t, customMACs, sshServerConfig.MACs)
+	require.Equal(t, customKexAlgos, sshServerConfig.KeyExchanges)
+	require.Equal(t, customCiphers, sshServerConfig.Ciphers)
+
+	sshServerConfig.SetDefaults()
+
+	require.Equal(t, customMACs, sshServerConfig.MACs)
+	require.Equal(t, customKexAlgos, sshServerConfig.KeyExchanges)
+	require.Equal(t, customCiphers, sshServerConfig.Ciphers)
+}
+
 func rsaPublicKey(t *testing.T) ssh.PublicKey {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)

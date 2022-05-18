@@ -32,6 +32,9 @@ type ServerConfig struct {
 	ReadinessProbe             string   `yaml:"readiness_probe"`
 	LivenessProbe              string   `yaml:"liveness_probe"`
 	HostKeyFiles               []string `yaml:"host_key_files,omitempty"`
+	MACs                       []string `yaml:"macs"`
+	KexAlgorithms              []string `yaml:"kex_algorithms"`
+	Ciphers                    []string `yaml:"ciphers"`
 }
 
 type HttpSettingsConfig struct {
