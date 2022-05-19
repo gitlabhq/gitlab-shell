@@ -80,6 +80,8 @@ sshd:
   client_alive_interval: 15
   # The server waits for this time (in seconds) for the ongoing connections to complete before shutting down. Defaults to 10.
   grace_period: 10
+  # A short timeout to decide to abort the connection if the protocol header is not seen within it. Defaults to 500ms
+  proxy_header_timeout: 500ms
   # The endpoint that returns 200 OK if the server is ready to receive incoming connections; otherwise, it returns 503 Service Unavailable. Defaults to "/start".
   readiness_probe: "/start"
   # The endpoint that returns 200 OK if the server is alive. Defaults to "/health".

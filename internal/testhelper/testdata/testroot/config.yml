@@ -1,0 +1,4 @@
+sshd:
+  grace_period: 10
+  client_alive_interval: 1m
+  proxy_header_timeout: 500ms

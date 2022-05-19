@@ -26,7 +26,6 @@ const (
 	StatusReady
 	StatusOnShutdown
 	StatusClosed
-	ProxyHeaderTimeout = 90 * time.Second
 )
 
 type Server struct {
@@ -97,7 +96,7 @@ func (s *Server) listen(ctx context.Context) error {
 		sshListener = &proxyproto.Listener{
 			Listener:          sshListener,
 			Policy:            s.requirePolicy,
-			ReadHeaderTimeout: ProxyHeaderTimeout,
+			ReadHeaderTimeout: time.Duration(s.Config.Server.ProxyHeaderTimeout),
 		}
 
 		log.ContextLogger(ctx).Info("Proxy protocol is enabled")

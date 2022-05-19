@@ -99,11 +99,12 @@ func main() {
 		sig := <-done
 		signal.Reset(syscall.SIGINT, syscall.SIGTERM)
 
-		log.WithContextFields(ctx, log.Fields{"shutdown_timeout_s": cfg.Server.GracePeriodSeconds, "signal": sig.String()}).Info("Shutdown initiated")
+		gracePeriod := time.Duration(cfg.Server.GracePeriod)
+		log.WithContextFields(ctx, log.Fields{"shutdown_timeout_s": gracePeriod.Seconds(), "signal": sig.String()}).Info("Shutdown initiated")
 
 		server.Shutdown()
 
-		<-time.After(cfg.Server.GracePeriod())
+		<-time.After(gracePeriod)
 
 		cancel()
 

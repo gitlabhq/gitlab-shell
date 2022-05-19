@@ -21,20 +21,23 @@ const (
 	defaultSecretFileName = ".gitlab_shell_secret"
 )
 
+type yamlDuration time.Duration
+
 type ServerConfig struct {
-	Listen                     string   `yaml:"listen,omitempty"`
-	ProxyProtocol              bool     `yaml:"proxy_protocol,omitempty"`
-	ProxyPolicy                string   `yaml:"proxy_policy,omitempty"`
-	WebListen                  string   `yaml:"web_listen,omitempty"`
-	ConcurrentSessionsLimit    int64    `yaml:"concurrent_sessions_limit,omitempty"`
-	ClientAliveIntervalSeconds int64    `yaml:"client_alive_interval,omitempty"`
-	GracePeriodSeconds         uint64   `yaml:"grace_period"`
-	ReadinessProbe             string   `yaml:"readiness_probe"`
-	LivenessProbe              string   `yaml:"liveness_probe"`
-	HostKeyFiles               []string `yaml:"host_key_files,omitempty"`
-	MACs                       []string `yaml:"macs"`
-	KexAlgorithms              []string `yaml:"kex_algorithms"`
-	Ciphers                    []string `yaml:"ciphers"`
+	Listen                  string       `yaml:"listen,omitempty"`
+	ProxyProtocol           bool         `yaml:"proxy_protocol,omitempty"`
+	ProxyPolicy             string       `yaml:"proxy_policy,omitempty"`
+	WebListen               string       `yaml:"web_listen,omitempty"`
+	ConcurrentSessionsLimit int64        `yaml:"concurrent_sessions_limit,omitempty"`
+	ClientAliveInterval     yamlDuration `yaml:"client_alive_interval,omitempty"`
+	GracePeriod             yamlDuration `yaml:"grace_period"`
+	ProxyHeaderTimeout      yamlDuration `yaml:"proxy_header_timeout"`
+	ReadinessProbe          string       `yaml:"readiness_probe"`
+	LivenessProbe           string       `yaml:"liveness_probe"`
+	HostKeyFiles            []string     `yaml:"host_key_files,omitempty"`
+	MACs                    []string     `yaml:"macs"`
+	KexAlgorithms           []string     `yaml:"kex_algorithms"`
+	Ciphers                 []string     `yaml:"ciphers"`
 }
 
 type HttpSettingsConfig struct {
@@ -79,13 +82,14 @@ var (
 	}
 
 	DefaultServerConfig = ServerConfig{
-		Listen:                     "[::]:22",
-		WebListen:                  "localhost:9122",
-		ConcurrentSessionsLimit:    10,
-		GracePeriodSeconds:         10,
-		ClientAliveIntervalSeconds: 15,
-		ReadinessProbe:             "/start",
-		LivenessProbe:              "/health",
+		Listen:                  "[::]:22",
+		WebListen:               "localhost:9122",
+		ConcurrentSessionsLimit: 10,
+		GracePeriod:             yamlDuration(10 * time.Second),
+		ClientAliveInterval:     yamlDuration(15 * time.Second),
+		ProxyHeaderTimeout:      yamlDuration(500 * time.Millisecond),
+		ReadinessProbe:          "/start",
+		LivenessProbe:           "/health",
 		HostKeyFiles: []string{
 			"/run/secrets/ssh-hostkeys/ssh_host_rsa_key",
 			"/run/secrets/ssh-hostkeys/ssh_host_ecdsa_key",
@@ -94,12 +98,15 @@ var (
 	}
 )
 
-func (sc *ServerConfig) ClientAliveInterval() time.Duration {
-	return time.Duration(sc.ClientAliveIntervalSeconds) * time.Second
-}
+func (d *yamlDuration) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var intDuration int
+	if err := unmarshal(&intDuration); err != nil {
+		return unmarshal((*time.Duration)(d))
+	}
 
-func (sc *ServerConfig) GracePeriod() time.Duration {
-	return time.Duration(sc.GracePeriodSeconds) * time.Second
+	*d = yamlDuration(time.Duration(intDuration) * time.Second)
+
+	return nil
 }
 
 func (c *Config) ApplyGlobalState() {

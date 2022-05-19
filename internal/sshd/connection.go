@@ -46,8 +46,8 @@ func newConnection(cfg *config.Config, remoteAddr string, sconn *ssh.ServerConn)
 func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, handler channelHandler) {
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
 
-	if c.cfg.Server.ClientAliveIntervalSeconds > 0 {
-		ticker := time.NewTicker(c.cfg.Server.ClientAliveInterval())
+	if c.cfg.Server.ClientAliveInterval > 0 {
+		ticker := time.NewTicker(time.Duration(c.cfg.Server.ClientAliveInterval))
 		defer ticker.Stop()
 		go c.sendKeepAliveMsg(ctx, ticker)
 	}
