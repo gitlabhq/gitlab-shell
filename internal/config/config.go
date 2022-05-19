@@ -31,6 +31,7 @@ type ServerConfig struct {
 	ConcurrentSessionsLimit int64        `yaml:"concurrent_sessions_limit,omitempty"`
 	ClientAliveInterval     yamlDuration `yaml:"client_alive_interval,omitempty"`
 	GracePeriod             yamlDuration `yaml:"grace_period"`
+	ProxyHeaderTimeout      yamlDuration `yaml:"proxy_header_timeout"`
 	ReadinessProbe          string       `yaml:"readiness_probe"`
 	LivenessProbe           string       `yaml:"liveness_probe"`
 	HostKeyFiles            []string     `yaml:"host_key_files,omitempty"`
@@ -86,6 +87,7 @@ var (
 		ConcurrentSessionsLimit: 10,
 		GracePeriod:             yamlDuration(10 * time.Second),
 		ClientAliveInterval:     yamlDuration(15 * time.Second),
+		ProxyHeaderTimeout:      yamlDuration(500 * time.Millisecond),
 		ReadinessProbe:          "/start",
 		LivenessProbe:           "/health",
 		HostKeyFiles: []string{

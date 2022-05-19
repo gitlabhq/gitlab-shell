@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
+	yaml "gopkg.in/yaml.v2"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
@@ -67,14 +67,15 @@ func TestNewFromDir(t *testing.T) {
 	cfg, err := NewFromDir(testhelper.TestRoot)
 	require.NoError(t, err)
 
-	require.Equal(t, 10 * time.Second, time.Duration(cfg.Server.GracePeriod))
-	require.Equal(t, 1 * time.Minute, time.Duration(cfg.Server.ClientAliveInterval))
+	require.Equal(t, 10*time.Second, time.Duration(cfg.Server.GracePeriod))
+	require.Equal(t, 1*time.Minute, time.Duration(cfg.Server.ClientAliveInterval))
+	require.Equal(t, 500*time.Millisecond, time.Duration(cfg.Server.ProxyHeaderTimeout))
 }
 
 func TestYAMLDuration(t *testing.T) {
-	testCases := []struct{
-		desc string
-		data string
+	testCases := []struct {
+		desc     string
+		data     string
 		duration time.Duration
 	}{
 		{"seconds assumed by default", "duration: 10", 10 * time.Second},
