@@ -3,7 +3,9 @@ package config
 import (
 	"os"
 	"testing"
+	"time"
 
+	yaml "gopkg.in/yaml.v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 
@@ -57,4 +59,40 @@ func TestCustomPrometheusMetrics(t *testing.T) {
 	}
 
 	require.Equal(t, expectedMetricNames, actualNames)
+}
+
+func TestNewFromDir(t *testing.T) {
+	testhelper.PrepareTestRootDir(t)
+
+	cfg, err := NewFromDir(testhelper.TestRoot)
+	require.NoError(t, err)
+
+	require.Equal(t, 10 * time.Second, time.Duration(cfg.Server.GracePeriod))
+	require.Equal(t, 1 * time.Minute, time.Duration(cfg.Server.ClientAliveInterval))
+}
+
+func TestYAMLDuration(t *testing.T) {
+	testCases := []struct{
+		desc string
+		data string
+		duration time.Duration
+	}{
+		{"seconds assumed by default", "duration: 10", 10 * time.Second},
+		{"milliseconds are parsed", "duration: 500ms", 500 * time.Millisecond},
+		{"minutes are parsed", "duration: 1m", 1 * time.Minute},
+	}
+
+	type durationCfg struct {
+		Duration yamlDuration `yaml:"duration"`
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			var cfg durationCfg
+			err := yaml.Unmarshal([]byte(tc.data), &cfg)
+			require.NoError(t, err)
+
+			require.Equal(t, tc.duration, time.Duration(cfg.Duration))
+		})
+	}
 }

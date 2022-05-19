@@ -80,7 +80,7 @@ func (f *fakeConn) SendRequest(name string, wantReply bool, payload []byte) (boo
 }
 
 func setup(sessionsNum int64, newChannel *fakeNewChannel) (*connection, chan ssh.NewChannel) {
-	cfg := &config.Config{Server: config.ServerConfig{ConcurrentSessionsLimit: sessionsNum, ClientAliveIntervalSeconds: 1}}
+	cfg := &config.Config{Server: config.ServerConfig{ConcurrentSessionsLimit: sessionsNum}}
 	conn := newConnection(cfg, "127.0.0.1:50000", &ssh.ServerConn{&fakeConn{}, nil})
 
 	chans := make(chan ssh.NewChannel, 1)

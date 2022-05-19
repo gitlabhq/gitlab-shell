@@ -1,0 +1,3 @@
+sshd:
+  grace_period: 10
+  client_alive_interval: 1m
