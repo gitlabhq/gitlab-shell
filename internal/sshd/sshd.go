@@ -181,7 +181,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		}
 	}()
 
-	ctxlog.Info("server: handleConn: start")
+	ctxlog.Debug("server: handleConn: start")
 
 	sconn, chans, reqs, err := ssh.NewServerConn(nconn, s.serverConfig.get(ctx))
 	if err != nil {
