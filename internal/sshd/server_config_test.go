@@ -85,7 +85,7 @@ func TestDefaultAlgorithms(t *testing.T) {
 	sshServerConfig := srvCfg.get(context.Background())
 
 	require.Equal(t, supportedMACs, sshServerConfig.MACs)
-	require.Nil(t, sshServerConfig.KeyExchanges)
+	require.Equal(t, supportedKeyExchanges, sshServerConfig.KeyExchanges)
 	require.Nil(t, sshServerConfig.Ciphers)
 
 	sshServerConfig.SetDefaults()
@@ -99,7 +99,6 @@ func TestDefaultAlgorithms(t *testing.T) {
 		"ecdh-sha2-nistp384",
 		"ecdh-sha2-nistp521",
 		"diffie-hellman-group14-sha256",
-		"diffie-hellman-group14-sha1",
 	}
 	require.Equal(t, defaultKeyExchanges, sshServerConfig.KeyExchanges)
 
