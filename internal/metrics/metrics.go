@@ -77,15 +77,6 @@ var (
 		},
 	)
 
-	SshdCanceledSessions = promauto.NewCounter(
-		prometheus.CounterOpts{
-			Namespace: namespace,
-			Subsystem: sshdSubsystem,
-			Name:      sshdCanceledSessionsName,
-			Help:      "The number of canceled gitlab-sshd sessions.",
-		},
-	)
-
 	SliSshdSessionsTotal = promauto.NewCounter(
 		prometheus.CounterOpts{
 			Name: sliSshdSessionsTotalName,

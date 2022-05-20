@@ -89,14 +89,7 @@ func (c *connection) handle(ctx context.Context, chans <-chan ssh.NewChannel, ha
 			metrics.SliSshdSessionsTotal.Inc()
 			err := handler(ctx, channel, requests)
 			if err != nil {
-				if grpcstatus.Convert(err).Code() == grpccodes.Canceled {
-					metrics.SshdCanceledSessions.Inc()
-				} else {
-					var apiError *client.ApiError
-					if !errors.As(err, &apiError) {
-						metrics.SliSshdSessionsErrorsTotal.Inc()
-					}
-				}
+				c.trackError(err)
 			}
 
 			ctxlog.Info("connection: handle: done")
@@ -125,4 +118,18 @@ func (c *connection) sendKeepAliveMsg(ctx context.Context, ticker *time.Ticker) 
 			c.sconn.SendRequest(KeepAliveMsg, true, nil)
 		}
 	}
+}
+
+func (c *connection) trackError(err error) {
+	var apiError *client.ApiError
+	if errors.As(err, &apiError) {
+		return
+	}
+
+	grpcCode := grpcstatus.Code(err)
+	if grpcCode == grpccodes.Canceled || grpcCode == grpccodes.Unavailable {
+		return
+	}
+
+	metrics.SliSshdSessionsErrorsTotal.Inc()
 }
