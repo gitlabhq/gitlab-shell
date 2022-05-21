@@ -58,13 +58,11 @@ func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHan
 	exitStatus, err := handler(childCtx, conn)
 
 	if err != nil {
-		if grpcstatus.Convert(err).Code() == grpccodes.Unavailable {
-			ctxlog.WithError(fmt.Errorf("RunGitalyCommand: %v", err)).Error("Gitaly is unavailable")
-
-			return fmt.Errorf("The git server, Gitaly, is not available at this time. Please contact your administrator.")
-		}
-
 		ctxlog.WithError(err).WithFields(log.Fields{"exit_status": exitStatus}).Error("Failed to execute Git command")
+
+		if grpcstatus.Code(err) == grpccodes.Unavailable {
+			return grpcstatus.Error(grpccodes.Unavailable, "The git server, Gitaly, is not available at this time. Please contact your administrator.")
+		}
 	}
 
 	return err

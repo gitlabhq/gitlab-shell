@@ -13,6 +13,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/console"
 )
 
 type fakeChannel struct {
@@ -160,14 +161,14 @@ func TestHandleShell(t *testing.T) {
 		{
 			desc:              "fails to parse command",
 			cmd:               `\`,
-			errMsg:            "Failed to parse command: Invalid SSH command: invalid command line string\nUnknown command: \\\n",
+			errMsg:            "ERROR: Failed to parse command: Invalid SSH command: invalid command line string\n",
 			gitlabKeyId:       "root",
 			expectedErrString: "Invalid SSH command: invalid command line string",
 			expectedExitCode:  128,
 		}, {
 			desc:              "specified command is unknown",
 			cmd:               "unknown-command",
-			errMsg:            "Unknown command: unknown-command\n",
+			errMsg:            "ERROR: Unknown command: unknown-command\n",
 			gitlabKeyId:       "root",
 			expectedErrString: "Disallowed command",
 			expectedExitCode:  128,
@@ -175,7 +176,7 @@ func TestHandleShell(t *testing.T) {
 			desc:              "fails to parse command",
 			cmd:               "discover",
 			gitlabKeyId:       "",
-			errMsg:            "remote: ERROR: Failed to get username: who='' is invalid\n",
+			errMsg:            "ERROR: Failed to get username: who='' is invalid\n",
 			expectedErrString: "Failed to get username: who='' is invalid",
 			expectedExitCode:  1,
 		}, {
@@ -208,7 +209,14 @@ func TestHandleShell(t *testing.T) {
 			}
 
 			require.Equal(t, tc.expectedExitCode, exitCode)
-			require.Equal(t, tc.errMsg, out.String())
+
+			formattedErr := &bytes.Buffer{}
+			if tc.errMsg != "" {
+				console.DisplayWarningMessage(tc.errMsg, formattedErr)
+				require.Equal(t, formattedErr.String(), out.String())
+			} else {
+				require.Equal(t, tc.errMsg, out.String())
+			}
 		})
 	}
 }

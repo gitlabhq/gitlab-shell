@@ -8,11 +8,14 @@ import (
 
 	"gitlab.com/gitlab-org/labkit/log"
 	"golang.org/x/crypto/ssh"
+	grpccodes "google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
 
 	shellCmd "gitlab.com/gitlab-org/gitlab-shell/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/console"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 )
 
@@ -158,10 +161,12 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (uint32, er
 
 	cmd, err := shellCmd.NewWithKey(s.gitlabKeyId, env, s.cfg, rw)
 	if err != nil {
-		if !errors.Is(err, disallowedcommand.Error) {
-			s.toStderr(ctx, "Failed to parse command: %v\n", err.Error())
+		if errors.Is(err, disallowedcommand.Error) {
+			s.toStderr(ctx, "ERROR: Unknown command: %v\n", s.execCmd)
+		} else {
+			s.toStderr(ctx, "ERROR: Failed to parse command: %v\n", err.Error())
 		}
-		s.toStderr(ctx, "Unknown command: %v\n", s.execCmd)
+
 		return 128, err
 	}
 
@@ -169,7 +174,11 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (uint32, er
 	ctxlog.WithFields(log.Fields{"env": env, "command": cmdName}).Info("session: handleShell: executing command")
 
 	if err := cmd.Execute(ctx); err != nil {
-		s.toStderr(ctx, "remote: ERROR: %v\n", err.Error())
+		grpcStatus := grpcstatus.Convert(err)
+		if grpcStatus.Code() != grpccodes.Internal {
+			s.toStderr(ctx, "ERROR: %v\n", grpcStatus.Message())
+		}
+
 		return 1, err
 	}
 
@@ -181,7 +190,7 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (uint32, er
 func (s *session) toStderr(ctx context.Context, format string, args ...interface{}) {
 	out := fmt.Sprintf(format, args...)
 	log.WithContextFields(ctx, log.Fields{"stderr": out}).Debug("session: toStderr: output")
-	fmt.Fprint(s.channel.Stderr(), out)
+	console.DisplayWarningMessage(out, s.channel.Stderr())
 }
 
 func (s *session) exit(ctx context.Context, status uint32) {
