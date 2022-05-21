@@ -86,7 +86,6 @@ var (
 		WebListen:               "localhost:9122",
 		ConcurrentSessionsLimit: 10,
 		GracePeriod:             yamlDuration(10 * time.Second),
-		ClientAliveInterval:     yamlDuration(15 * time.Second),
 		ProxyHeaderTimeout:      yamlDuration(500 * time.Millisecond),
 		ReadinessProbe:          "/start",
 		LivenessProbe:           "/health",

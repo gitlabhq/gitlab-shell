@@ -76,7 +76,7 @@ sshd:
   web_listen: "localhost:9122"
   # Maximum number of concurrent sessions allowed on a single SSH connection. Defaults to 10.
   concurrent_sessions_limit: 10
-  # Sets an interval after which server will send keepalive message to a client
+  # Sets an interval after which server will send keepalive message to a client. Disabled by default
   client_alive_interval: 15
   # The server waits for this time (in seconds) for the ongoing connections to complete before shutting down. Defaults to 10.
   grace_period: 10
