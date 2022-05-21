@@ -103,6 +103,7 @@ func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
 				},
 			}, nil
 		},
+		ServerVersion: "SSH-2.0-GitLab-SSHD",
 	}
 
 	if len(s.cfg.Server.MACs) > 0 {
