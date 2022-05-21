@@ -11,6 +11,7 @@ require (
 	github.com/otiai10/copy v1.4.2
 	github.com/pires/go-proxyproto v0.6.2
 	github.com/prometheus/client_golang v1.12.1
+	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	gitlab.com/gitlab-org/gitaly/v14 v14.9.0-rc5.0.20220329111719-51da8bc17059
 	gitlab.com/gitlab-org/labkit v1.14.0
@@ -59,7 +60,6 @@ require (
 	github.com/prometheus/procfs v0.7.3 // indirect
 	github.com/sebest/xff v0.0.0-20210106013422-671bd2870b3a // indirect
 	github.com/shirou/gopsutil/v3 v3.21.2 // indirect
-	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/tklauser/go-sysconf v0.3.4 // indirect
 	github.com/tklauser/numcpus v0.2.1 // indirect

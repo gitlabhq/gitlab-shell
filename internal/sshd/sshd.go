@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/pires/go-proxyproto"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -36,6 +37,18 @@ type Server struct {
 	wg           sync.WaitGroup
 	listener     net.Listener
 	serverConfig *serverConfig
+}
+
+func logSSHInitError(ctxlog *logrus.Entry, err error) {
+	msg := "server: handleConn: failed to initialize SSH connection"
+
+	logger := ctxlog.WithError(err)
+
+	if strings.Contains(err.Error(), "no common algorithm for host key") {
+		logger.Debug(msg)
+	} else {
+		logger.Warn(msg)
+	}
 }
 
 func NewServer(cfg *config.Config) (*Server, error) {
@@ -168,11 +181,11 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		}
 	}()
 
-	ctxlog.Info("server: handleConn: start")
+	ctxlog.Debug("server: handleConn: start")
 
 	sconn, chans, reqs, err := ssh.NewServerConn(nconn, s.serverConfig.get(ctx))
 	if err != nil {
-		ctxlog.WithError(err).Warn("server: handleConn: failed to initialize SSH connection")
+		logSSHInitError(ctxlog, err)
 		return
 	}
 	go ssh.DiscardRequests(reqs)
