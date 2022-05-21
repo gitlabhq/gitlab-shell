@@ -200,7 +200,6 @@ func TestSessionsMetrics(t *testing.T) {
 	// https://pkg.go.dev/github.com/prometheus/client_golang/prometheus#pkg-index
 	initialSessionsTotal := testutil.ToFloat64(metrics.SliSshdSessionsTotal)
 	initialSessionsErrorTotal := testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal)
-	initialCanceledSessions := testutil.ToFloat64(metrics.SshdCanceledSessions)
 
 	newChannel := &fakeNewChannel{channelType: "session"}
 
@@ -212,17 +211,15 @@ func TestSessionsMetrics(t *testing.T) {
 
 	require.InDelta(t, initialSessionsTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
 	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
-	require.InDelta(t, initialCanceledSessions, testutil.ToFloat64(metrics.SshdCanceledSessions), 0.1)
 
 	conn, chans = setup(1, newChannel)
 	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
 		close(chans)
-		return grpcstatus.Error(grpccodes.Canceled, "error")
+		return grpcstatus.Error(grpccodes.Canceled, "canceled")
 	})
 
 	require.InDelta(t, initialSessionsTotal+2, testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
 	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
-	require.InDelta(t, initialCanceledSessions+1, testutil.ToFloat64(metrics.SshdCanceledSessions), 0.1)
 
 	conn, chans = setup(1, newChannel)
 	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
@@ -232,5 +229,13 @@ func TestSessionsMetrics(t *testing.T) {
 
 	require.InDelta(t, initialSessionsTotal+3, testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
 	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
-	require.InDelta(t, initialCanceledSessions+1, testutil.ToFloat64(metrics.SshdCanceledSessions), 0.1)
+
+	conn, chans = setup(1, newChannel)
+	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
+		close(chans)
+		return grpcstatus.Error(grpccodes.Unavailable, "unavailable")
+	})
+
+	require.InDelta(t, initialSessionsTotal+4, testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
+	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
 }

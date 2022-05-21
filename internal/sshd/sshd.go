@@ -44,7 +44,7 @@ func logSSHInitError(ctxlog *logrus.Entry, err error) {
 
 	logger := ctxlog.WithError(err)
 
-	if strings.Contains(err.Error(), "no common algorithm for host key") {
+	if strings.Contains(err.Error(), "no common algorithm for host key") || err.Error() == "EOF" {
 		logger.Debug(msg)
 	} else {
 		logger.Warn(msg)
