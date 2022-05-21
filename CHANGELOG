@@ -1,3 +1,12 @@
+v14.6.0
+
+- Exclude Gitaly unavailable error from error rate !641
+- Downgrade auth EOF messages from warning to debug !641
+- Display constistently in gitlab-sshd and gitlab-shell !641
+- Downgrade host key mismatch messages from warning to debug !639
+- Introduce a GitLab-SSHD server version during handshake !640
+- Narrow supported kex algorithms !638
+
 v14.5.0
 
 - Make ProxyHeaderTimeout configurable !635
