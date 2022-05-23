@@ -21,7 +21,7 @@ const (
 	defaultSecretFileName = ".gitlab_shell_secret"
 )
 
-type yamlDuration time.Duration
+type YamlDuration time.Duration
 
 type ServerConfig struct {
 	Listen                  string       `yaml:"listen,omitempty"`
@@ -29,9 +29,10 @@ type ServerConfig struct {
 	ProxyPolicy             string       `yaml:"proxy_policy,omitempty"`
 	WebListen               string       `yaml:"web_listen,omitempty"`
 	ConcurrentSessionsLimit int64        `yaml:"concurrent_sessions_limit,omitempty"`
-	ClientAliveInterval     yamlDuration `yaml:"client_alive_interval,omitempty"`
-	GracePeriod             yamlDuration `yaml:"grace_period"`
-	ProxyHeaderTimeout      yamlDuration `yaml:"proxy_header_timeout"`
+	ClientAliveInterval     YamlDuration `yaml:"client_alive_interval,omitempty"`
+	GracePeriod             YamlDuration `yaml:"grace_period"`
+	ProxyHeaderTimeout      YamlDuration `yaml:"proxy_header_timeout"`
+	LoginGraceTime          YamlDuration `yaml:"login_grace_time"`
 	ReadinessProbe          string       `yaml:"readiness_probe"`
 	LivenessProbe           string       `yaml:"liveness_probe"`
 	HostKeyFiles            []string     `yaml:"host_key_files,omitempty"`
@@ -85,9 +86,10 @@ var (
 		Listen:                  "[::]:22",
 		WebListen:               "localhost:9122",
 		ConcurrentSessionsLimit: 10,
-		GracePeriod:             yamlDuration(10 * time.Second),
-		ClientAliveInterval:     yamlDuration(15 * time.Second),
-		ProxyHeaderTimeout:      yamlDuration(500 * time.Millisecond),
+		GracePeriod:             YamlDuration(10 * time.Second),
+		ClientAliveInterval:     YamlDuration(15 * time.Second),
+		ProxyHeaderTimeout:      YamlDuration(500 * time.Millisecond),
+		LoginGraceTime:          YamlDuration(60 * time.Second),
 		ReadinessProbe:          "/start",
 		LivenessProbe:           "/health",
 		HostKeyFiles: []string{
@@ -98,13 +100,13 @@ var (
 	}
 )
 
-func (d *yamlDuration) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (d *YamlDuration) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var intDuration int
 	if err := unmarshal(&intDuration); err != nil {
 		return unmarshal((*time.Duration)(d))
 	}
 
-	*d = yamlDuration(time.Duration(intDuration) * time.Second)
+	*d = YamlDuration(time.Duration(intDuration) * time.Second)
 
 	return nil
 }

@@ -251,6 +251,39 @@ func TestClosingHangedConnections(t *testing.T) {
 	verifyStatus(t, s, StatusClosed)
 }
 
+func TestLoginGraceTime(t *testing.T) {
+	cfg := &config.Config{
+		Server: config.ServerConfig{
+			LoginGraceTime: config.YamlDuration(50 * time.Millisecond),
+		},
+	}
+	s := setupServerWithConfig(t, cfg)
+
+	unauthenticatedRequestStatus := make(chan string)
+	completed := make(chan bool)
+
+	clientCfg := clientConfig(t)
+	clientCfg.HostKeyCallback = func(_ string, _ net.Addr, _ ssh.PublicKey) error {
+		unauthenticatedRequestStatus <- "authentication-started"
+		<-completed // Wait infinitely
+
+		return nil
+	}
+
+	go func() {
+		// Start an SSH connection that never ends
+		ssh.Dial("tcp", serverUrl, clientCfg)
+	}()
+
+	require.Equal(t, "authentication-started", <-unauthenticatedRequestStatus)
+
+	// Shutdown the server and verify that it's closed
+	// If LoginGraceTime doesn't work, then the connection that runs infinitely, will stop it from closing.
+	// The close won't happen until the context is canceled like in TestClosingHangedConnections
+	require.NoError(t, s.Shutdown())
+	verifyStatus(t, s, StatusClosed)
+}
+
 func setupServer(t *testing.T) *Server {
 	t.Helper()
 
