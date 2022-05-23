@@ -122,6 +122,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 				metrics.SshdSessionDuration.Observe(time.Since(started).Seconds())
 			}(time.Now())
 			c.establishSessionDuration = time.Since(c.started).Seconds()
+			metrics.SshdSessionEstablishedDuration.Observe(c.establishSessionDuration)
 
 			defer c.concurrentSessions.Release(1)
 
