@@ -32,6 +32,7 @@ var (
 		"ecdh-sha2-nistp384",
 		"ecdh-sha2-nistp521",
 		"diffie-hellman-group14-sha256",
+		"diffie-hellman-group14-sha1",
 	}
 )
 
