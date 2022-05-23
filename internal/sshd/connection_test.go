@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/sync/semaphore"
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
@@ -81,7 +82,7 @@ func (f *fakeConn) SendRequest(name string, wantReply bool, payload []byte) (boo
 
 func setup(sessionsNum int64, newChannel *fakeNewChannel) (*connection, chan ssh.NewChannel) {
 	cfg := &config.Config{Server: config.ServerConfig{ConcurrentSessionsLimit: sessionsNum}}
-	conn := newConnection(cfg, "127.0.0.1:50000", &ssh.ServerConn{&fakeConn{}, nil})
+	conn := &connection{cfg: cfg, concurrentSessions: semaphore.NewWeighted(sessionsNum)}
 
 	chans := make(chan ssh.NewChannel, 1)
 	chans <- newChannel
@@ -95,7 +96,7 @@ func TestPanicDuringSessionIsRecovered(t *testing.T) {
 
 	numSessions := 0
 	require.NotPanics(t, func() {
-		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
+		conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 			numSessions += 1
 			close(chans)
 			panic("This is a panic")
@@ -113,7 +114,7 @@ func TestUnknownChannelType(t *testing.T) {
 	conn, chans := setup(1, newChannel)
 
 	go func() {
-		conn.handle(context.Background(), chans, nil)
+		conn.handleRequests(context.Background(), nil, chans, nil)
 	}()
 
 	rejectionData := <-rejectCh
@@ -133,7 +134,7 @@ func TestTooManySessions(t *testing.T) {
 	defer cancel()
 
 	go func() {
-		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
+		conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 			<-ctx.Done() // Keep the accepted channel open until the end of the test
 			return nil
 		})
@@ -148,7 +149,7 @@ func TestAcceptSessionSucceeds(t *testing.T) {
 	conn, chans := setup(1, newChannel)
 
 	channelHandled := false
-	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
+	conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 		channelHandled = true
 		close(chans)
 		return nil
@@ -167,7 +168,7 @@ func TestAcceptSessionFails(t *testing.T) {
 
 	channelHandled := false
 	go func() {
-		conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
+		conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 			channelHandled = true
 			return nil
 		})
@@ -185,12 +186,11 @@ func TestAcceptSessionFails(t *testing.T) {
 func TestClientAliveInterval(t *testing.T) {
 	f := &fakeConn{}
 
-	conn := newConnection(&config.Config{}, "127.0.0.1:50000", &ssh.ServerConn{f, nil})
-
 	ticker := time.NewTicker(time.Millisecond)
 	defer ticker.Stop()
 
-	go conn.sendKeepAliveMsg(context.Background(), ticker)
+	conn := &connection{}
+	go conn.sendKeepAliveMsg(context.Background(), &ssh.ServerConn{f, nil}, ticker)
 
 	require.Eventually(t, func() bool { return KeepAliveMsg == f.SentRequestName() }, time.Second, time.Millisecond)
 }
@@ -204,7 +204,7 @@ func TestSessionsMetrics(t *testing.T) {
 	newChannel := &fakeNewChannel{channelType: "session"}
 
 	conn, chans := setup(1, newChannel)
-	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
+	conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 		close(chans)
 		return errors.New("custom error")
 	})
@@ -213,7 +213,7 @@ func TestSessionsMetrics(t *testing.T) {
 	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
 
 	conn, chans = setup(1, newChannel)
-	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
+	conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 		close(chans)
 		return grpcstatus.Error(grpccodes.Canceled, "canceled")
 	})
@@ -222,7 +222,7 @@ func TestSessionsMetrics(t *testing.T) {
 	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
 
 	conn, chans = setup(1, newChannel)
-	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
+	conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 		close(chans)
 		return &client.ApiError{"api error"}
 	})
@@ -231,7 +231,7 @@ func TestSessionsMetrics(t *testing.T) {
 	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
 
 	conn, chans = setup(1, newChannel)
-	conn.handle(context.Background(), chans, func(context.Context, ssh.Channel, <-chan *ssh.Request) error {
+	conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 		close(chans)
 		return grpcstatus.Error(grpccodes.Unavailable, "unavailable")
 	})
