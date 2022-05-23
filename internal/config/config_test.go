@@ -83,7 +83,7 @@ func TestYAMLDuration(t *testing.T) {
 	}
 
 	type durationCfg struct {
-		Duration yamlDuration `yaml:"duration"`
+		Duration YamlDuration `yaml:"duration"`
 	}
 
 	for _, tc := range testCases {

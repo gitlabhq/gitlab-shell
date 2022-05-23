@@ -76,10 +76,12 @@ sshd:
   web_listen: "localhost:9122"
   # Maximum number of concurrent sessions allowed on a single SSH connection. Defaults to 10.
   concurrent_sessions_limit: 10
-  # Sets an interval after which server will send keepalive message to a client
+  # Sets an interval after which server will send keepalive message to a client. Defaults to 15s.
   client_alive_interval: 15
-  # The server waits for this time (in seconds) for the ongoing connections to complete before shutting down. Defaults to 10.
+  # The server waits for this time for the ongoing connections to complete before shutting down. Defaults to 10s.
   grace_period: 10
+  # The server disconnects after this time if the user has not successfully logged in. Defaults to 60s.
+  login_grace_time: 60
   # A short timeout to decide to abort the connection if the protocol header is not seen within it. Defaults to 500ms
   proxy_header_timeout: 500ms
   # The endpoint that returns 200 OK if the server is ready to receive incoming connections; otherwise, it returns 503 Service Unavailable. Defaults to "/start".

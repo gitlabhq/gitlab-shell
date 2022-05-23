@@ -71,10 +71,14 @@ func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handl
 }
 
 func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfig) (*ssh.ServerConn, <-chan ssh.NewChannel, error) {
+	if c.cfg.Server.LoginGraceTime > 0 {
+		c.nconn.SetDeadline(time.Now().Add(time.Duration(c.cfg.Server.LoginGraceTime)))
+		defer c.nconn.SetDeadline(time.Time{})
+	}
+
 	sconn, chans, reqs, err := ssh.NewServerConn(c.nconn, srvCfg)
 	if err != nil {
 		msg := "connection: initServerConn: failed to initialize SSH connection"
-
 		logger := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr}).WithError(err)
 
 		if strings.Contains(err.Error(), "no common algorithm for host key") || err.Error() == "EOF" {
@@ -118,6 +122,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 				metrics.SshdSessionDuration.Observe(time.Since(started).Seconds())
 			}(time.Now())
 			c.establishSessionDuration = time.Since(c.started).Seconds()
+			metrics.SshdSessionEstablishedDuration.Observe(c.establishSessionDuration)
 
 			defer c.concurrentSessions.Release(1)
 
