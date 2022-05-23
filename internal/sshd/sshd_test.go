@@ -222,6 +222,35 @@ func TestInvalidServerConfig(t *testing.T) {
 	require.Nil(t, s.Shutdown())
 }
 
+func TestClosingHangedConnections(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	s := setupServerWithContext(t, nil, ctx)
+
+	unauthenticatedRequestStatus := make(chan string)
+	completed := make(chan bool)
+
+	clientCfg := clientConfig(t)
+	clientCfg.HostKeyCallback = func(_ string, _ net.Addr, _ ssh.PublicKey) error {
+		unauthenticatedRequestStatus <- "authentication-started"
+		<-completed // Wait infinitely
+
+		return nil
+	}
+
+	go func() {
+		// Start an SSH connection that never ends
+		ssh.Dial("tcp", serverUrl, clientCfg)
+	}()
+
+	require.Equal(t, "authentication-started", <-unauthenticatedRequestStatus)
+
+	require.NoError(t, s.Shutdown())
+	cancel()
+	verifyStatus(t, s, StatusClosed)
+}
+
 func setupServer(t *testing.T) *Server {
 	t.Helper()
 
@@ -229,6 +258,12 @@ func setupServer(t *testing.T) *Server {
 }
 
 func setupServerWithConfig(t *testing.T, cfg *config.Config) *Server {
+	t.Helper()
+
+	return setupServerWithContext(t, cfg, context.Background())
+}
+
+func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Context) *Server {
 	t.Helper()
 
 	requests := []testserver.TestRequestHandler{
@@ -270,7 +305,7 @@ func setupServerWithConfig(t *testing.T, cfg *config.Config) *Server {
 	s, err := NewServer(cfg)
 	require.NoError(t, err)
 
-	go func() { require.NoError(t, s.ListenAndServe(context.Background())) }()
+	go func() { require.NoError(t, s.ListenAndServe(ctx)) }()
 	t.Cleanup(func() { s.Shutdown() })
 
 	verifyStatus(t, s, StatusReady)

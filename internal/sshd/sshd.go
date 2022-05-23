@@ -146,17 +146,19 @@ func (s *Server) getStatus() status {
 }
 
 func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
+	defer s.wg.Done()
+
 	metrics.SshdConnectionsInFlight.Inc()
 	defer metrics.SshdConnectionsInFlight.Dec()
 
-	remoteAddr := nconn.RemoteAddr().String()
-
-	defer s.wg.Done()
-	defer nconn.Close()
-
 	ctx, cancel := context.WithCancel(correlation.ContextWithCorrelation(ctx, correlation.SafeRandomID()))
 	defer cancel()
+	go func() {
+		<-ctx.Done()
+		nconn.Close() // Close the connection when context is cancelled
+	}()
 
+	remoteAddr := nconn.RemoteAddr().String()
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": remoteAddr})
 	ctxlog.Debug("server: handleConn: start")
 
