@@ -1,3 +1,8 @@
+v14.7.0
+
+- Abort long-running unauthenticated SSH connections !647
+- Close the connection when context is canceled !646
+
 v14.6.1
 
 - Return support for diffie-hellman-group14-sha1 !644
