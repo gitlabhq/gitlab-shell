@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/pires/go-proxyproto"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
@@ -37,18 +36,6 @@ type Server struct {
 	wg           sync.WaitGroup
 	listener     net.Listener
 	serverConfig *serverConfig
-}
-
-func logSSHInitError(ctxlog *logrus.Entry, err error) {
-	msg := "server: handleConn: failed to initialize SSH connection"
-
-	logger := ctxlog.WithError(err)
-
-	if strings.Contains(err.Error(), "no common algorithm for host key") || err.Error() == "EOF" {
-		logger.Debug(msg)
-	} else {
-		logger.Warn(msg)
-	}
 }
 
 func NewServer(cfg *config.Config) (*Server, error) {
@@ -159,18 +146,21 @@ func (s *Server) getStatus() status {
 }
 
 func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
+	defer s.wg.Done()
+
 	metrics.SshdConnectionsInFlight.Inc()
 	defer metrics.SshdConnectionsInFlight.Dec()
 
-	remoteAddr := nconn.RemoteAddr().String()
-
-	defer s.wg.Done()
-	defer nconn.Close()
-
 	ctx, cancel := context.WithCancel(correlation.ContextWithCorrelation(ctx, correlation.SafeRandomID()))
 	defer cancel()
+	go func() {
+		<-ctx.Done()
+		nconn.Close() // Close the connection when context is cancelled
+	}()
 
+	remoteAddr := nconn.RemoteAddr().String()
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": remoteAddr})
+	ctxlog.Debug("server: handleConn: start")
 
 	// Prevent a panic in a single connection from taking out the whole server
 	defer func() {
@@ -181,22 +171,8 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		}
 	}()
 
-	ctxlog.Debug("server: handleConn: start")
-
-	sconn, chans, reqs, err := ssh.NewServerConn(nconn, s.serverConfig.get(ctx))
-	if err != nil {
-		logSSHInitError(ctxlog, err)
-		return
-	}
-	go ssh.DiscardRequests(reqs)
-
-	started := time.Now()
-	var establishSessionDuration float64
-	conn := newConnection(s.Config, remoteAddr, sconn)
-	conn.handle(ctx, chans, func(ctx context.Context, channel ssh.Channel, requests <-chan *ssh.Request) error {
-		establishSessionDuration = time.Since(started).Seconds()
-		metrics.SshdSessionEstablishedDuration.Observe(establishSessionDuration)
-
+	conn := newConnection(s.Config, nconn)
+	conn.handle(ctx, s.serverConfig.get(ctx), func(sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) error {
 		session := &session{
 			cfg:         s.Config,
 			channel:     channel,
@@ -206,13 +182,6 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 		return session.handle(ctx, requests)
 	})
-
-	reason := sconn.Wait()
-	ctxlog.WithFields(log.Fields{
-		"duration_s":                   time.Since(started).Seconds(),
-		"establish_session_duration_s": establishSessionDuration,
-		"reason":                       reason,
-	}).Info("server: handleConn: done")
 }
 
 func (s *Server) requirePolicy(_ net.Addr) (proxyproto.Policy, error) {
