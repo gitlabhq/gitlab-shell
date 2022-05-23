@@ -1,3 +1,7 @@
+v14.6.1
+
+- Return support for diffie-hellman-group14-sha1 !644
+
 v14.6.0
 
 - Exclude Gitaly unavailable error from error rate !641
