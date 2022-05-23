@@ -18,21 +18,21 @@ import (
 
 var (
 	supportedMACs = []string{
-		"hmac-sha2-256-etm@openssh.com",
-		"hmac-sha2-512-etm@openssh.com",
-		"hmac-sha2-256",
-		"hmac-sha2-512",
-		"hmac-sha1",
+		ssh.MacAlgoHmacSHA2256ETM,
+		ssh.MacAlgoHmacSHA2512ETM,
+		ssh.MacAlgoHmacSHA2256,
+		ssh.MacAlgoHmacSHA2512,
+		ssh.MacAlgoHmacSHA1,
 	}
 
 	supportedKeyExchanges = []string{
-		"curve25519-sha256",
-		"curve25519-sha256@libssh.org",
-		"ecdh-sha2-nistp256",
-		"ecdh-sha2-nistp384",
-		"ecdh-sha2-nistp521",
-		"diffie-hellman-group14-sha256",
-		"diffie-hellman-group14-sha1",
+		ssh.KexAlgoCurve25519SHA256,
+		ssh.KexAlgoCurve25519SHA256LibSSH,
+		ssh.KexAlgoECDH256,
+		ssh.KexAlgoECDH384,
+		ssh.KexAlgoECDH521,
+		ssh.KexAlgoDH14SHA256,
+		ssh.KexAlgoDH14SHA1,
 	}
 )
 
