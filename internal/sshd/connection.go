@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/sync/semaphore"
 	grpccodes "google.golang.org/grpc/codes"
@@ -136,7 +137,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			metrics.SliSshdSessionsTotal.Inc()
 			err := handler(sconn, channel, requests)
 			if err != nil {
-				c.trackError(err)
+				c.trackError(ctxlog, err)
 			}
 
 			ctxlog.Info("connection: handleRequests: done")
@@ -167,7 +168,7 @@ func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn
 	}
 }
 
-func (c *connection) trackError(err error) {
+func (c *connection) trackError(ctxlog *logrus.Entry, err error) {
 	var apiError *client.ApiError
 	if errors.As(err, &apiError) {
 		return
@@ -179,4 +180,5 @@ func (c *connection) trackError(err error) {
 	}
 
 	metrics.SliSshdSessionsErrorsTotal.Inc()
+	ctxlog.WithError(err).Warn("connection: session error")
 }
