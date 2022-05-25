@@ -25,13 +25,11 @@ const KeepAliveMsg = "keepalive@openssh.com"
 var EOFTimeout = 10 * time.Second
 
 type connection struct {
-	cfg                      *config.Config
-	concurrentSessions       *semaphore.Weighted
-	nconn                    net.Conn
-	maxSessions              int64
-	remoteAddr               string
-	started                  time.Time
-	establishSessionDuration float64
+	cfg                *config.Config
+	concurrentSessions *semaphore.Weighted
+	nconn              net.Conn
+	maxSessions        int64
+	remoteAddr         string
 }
 
 type channelHandler func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error
@@ -45,7 +43,6 @@ func newConnection(cfg *config.Config, nconn net.Conn) *connection {
 		concurrentSessions: semaphore.NewWeighted(maxSessions),
 		nconn:              nconn,
 		remoteAddr:         nconn.RemoteAddr().String(),
-		started:            time.Now(),
 	}
 }
 
@@ -64,11 +61,7 @@ func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handl
 	c.handleRequests(ctx, sconn, chans, handler)
 
 	reason := sconn.Wait()
-	log.WithContextFields(ctx, log.Fields{
-		"duration_s":                   time.Since(c.started).Seconds(),
-		"establish_session_duration_s": c.establishSessionDuration,
-		"reason":                       reason,
-	}).Info("server: handleConn: done")
+	log.WithContextFields(ctx, log.Fields{"reason": reason}).Info("server: handleConn: done")
 }
 
 func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfig) (*ssh.ServerConn, <-chan ssh.NewChannel, error) {
@@ -120,10 +113,10 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 
 		go func() {
 			defer func(started time.Time) {
-				metrics.SshdSessionDuration.Observe(time.Since(started).Seconds())
+				duration := time.Since(started).Seconds()
+				metrics.SshdSessionDuration.Observe(duration)
+				ctxlog.WithFields(log.Fields{"duration_s": duration}).Info("connection: handleRequests: done")
 			}(time.Now())
-			c.establishSessionDuration = time.Since(c.started).Seconds()
-			metrics.SshdSessionEstablishedDuration.Observe(c.establishSessionDuration)
 
 			defer c.concurrentSessions.Release(1)
 
@@ -139,8 +132,6 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			if err != nil {
 				c.trackError(ctxlog, err)
 			}
-
-			ctxlog.Info("connection: handleRequests: done")
 		}()
 	}
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"time"
 
 	"gitlab.com/gitlab-org/labkit/log"
 	"golang.org/x/crypto/ssh"
@@ -16,6 +17,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/console"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
 )
 
@@ -29,6 +31,7 @@ type session struct {
 	// State managed by the session
 	execCmd            string
 	gitProtocolVersion string
+	started            time.Time
 }
 
 type execRequest struct {
@@ -171,7 +174,12 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (uint32, er
 	}
 
 	cmdName := reflect.TypeOf(cmd).String()
-	ctxlog.WithFields(log.Fields{"env": env, "command": cmdName}).Info("session: handleShell: executing command")
+
+	establishSessionDuration := time.Since(s.started).Seconds()
+	ctxlog.WithFields(log.Fields{
+		"env": env, "command": cmdName, "established_session_duration_s": establishSessionDuration,
+	}).Info("session: handleShell: executing command")
+	metrics.SshdSessionEstablishedDuration.Observe(establishSessionDuration)
 
 	if err := cmd.Execute(ctx); err != nil {
 		grpcStatus := grpcstatus.Convert(err)
