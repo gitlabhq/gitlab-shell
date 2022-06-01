@@ -14,6 +14,7 @@ import (
 	grpcstatus "google.golang.org/grpc/status"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
 
@@ -162,6 +163,10 @@ func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn
 func (c *connection) trackError(ctxlog *logrus.Entry, err error) {
 	var apiError *client.ApiError
 	if errors.As(err, &apiError) {
+		return
+	}
+
+	if errors.Is(err, disallowedcommand.Error) {
 		return
 	}
 
