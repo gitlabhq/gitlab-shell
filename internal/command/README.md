@@ -23,4 +23,8 @@ A command is executed by running the `Execute` method. The execution logic mostl
 - If a command is related to Git operations, establish a connection with Gitaly using [handler](https://gitlab.com/gitlab-org/gitlab-shell/-/tree/main/internal/handler) and [gitaly](https://gitlab.com/gitlab-org/gitlab-shell/-/tree/main/internal/gitaly) packages and provide two-way communication between Gitaly and the client.
 - Return results to the client.
 
-[cmd/gitlab-shell/command](https://gitlab.com/gitlab-org/gitlab-shell/-/tree/main/cmd/gitlab-shell/command) is using this package to build a particular command based on the passed arguments.
+This package is being used to build a particular command based on the passed arguments in the following files that are under `cmd` directory:
+- [cmd/gitlab-shell/command](https://gitlab.com/gitlab-org/gitlab-shell/-/tree/main/cmd/gitlab-shell/command)
+- [cmd/check/command](https://gitlab.com/gitlab-org/gitlab-shell/-/tree/main/cmd/check/command)
+- [cmd/gitlab-shell-authorized-keys-check/command](https://gitlab.com/gitlab-org/gitlab-shell/-/tree/main/cmd/gitlab-shell-authorized-keys-check/command)
+- [cmd/gitlab-shell-authorized-principals-check/command](https://gitlab.com/gitlab-org/gitlab-shell/-/tree/main/cmd/gitlab-shell-authorized-principals-check/command)
