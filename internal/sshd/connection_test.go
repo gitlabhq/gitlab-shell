@@ -221,6 +221,7 @@ func TestSessionsMetrics(t *testing.T) {
 		{"unavailable Gitaly", grpcstatus.Error(grpccodes.Unavailable, "unavailable")},
 		{"api error", &client.ApiError{"api error"}},
 		{"disallowed command", disallowedcommand.Error},
+		{"not our ref", grpcstatus.Error(grpccodes.Internal, `rpc error: code = Internal desc = cmd wait: exit status 128, stderr: "fatal: git upload-pack: not our ref 9106d18f6a1b8022f6517f479696f3e3ea5e68c1"`)},
 	} {
 		t.Run(ignoredError.desc, func(t *testing.T) {
 			conn, chans = setup(1, newChannel)
