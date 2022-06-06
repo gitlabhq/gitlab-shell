@@ -21,7 +21,10 @@ import (
 	"gitlab.com/gitlab-org/labkit/log"
 )
 
-const KeepAliveMsg = "keepalive@openssh.com"
+const (
+	KeepAliveMsg   = "keepalive@openssh.com"
+	NotOurRefError = `exit status 128, stderr: "fatal: git upload-pack: not our ref `
+)
 
 var EOFTimeout = 10 * time.Second
 
@@ -172,6 +175,8 @@ func (c *connection) trackError(ctxlog *logrus.Entry, err error) {
 
 	grpcCode := grpcstatus.Code(err)
 	if grpcCode == grpccodes.Canceled || grpcCode == grpccodes.Unavailable {
+		return
+	} else if grpcCode == grpccodes.Internal && strings.Contains(err.Error(), NotOurRefError) {
 		return
 	}
 
