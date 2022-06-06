@@ -15,6 +15,7 @@ import (
 	grpcstatus "google.golang.org/grpc/status"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
 )
@@ -212,30 +213,24 @@ func TestSessionsMetrics(t *testing.T) {
 	require.InDelta(t, initialSessionsTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
 	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
 
-	conn, chans = setup(1, newChannel)
-	conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
-		close(chans)
-		return grpcstatus.Error(grpccodes.Canceled, "canceled")
-	})
+	for i, ignoredError := range []struct {
+		desc string
+		err  error
+	}{
+		{"canceled requests", grpcstatus.Error(grpccodes.Canceled, "canceled")},
+		{"unavailable Gitaly", grpcstatus.Error(grpccodes.Unavailable, "unavailable")},
+		{"api error", &client.ApiError{"api error"}},
+		{"disallowed command", disallowedcommand.Error},
+	} {
+		t.Run(ignoredError.desc, func(t *testing.T) {
+			conn, chans = setup(1, newChannel)
+			conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
+				close(chans)
+				return ignoredError.err
+			})
 
-	require.InDelta(t, initialSessionsTotal+2, testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
-	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
-
-	conn, chans = setup(1, newChannel)
-	conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
-		close(chans)
-		return &client.ApiError{"api error"}
-	})
-
-	require.InDelta(t, initialSessionsTotal+3, testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
-	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
-
-	conn, chans = setup(1, newChannel)
-	conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
-		close(chans)
-		return grpcstatus.Error(grpccodes.Unavailable, "unavailable")
-	})
-
-	require.InDelta(t, initialSessionsTotal+4, testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
-	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
+			require.InDelta(t, initialSessionsTotal+2+float64(i), testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
+			require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
+		})
+	}
 }
