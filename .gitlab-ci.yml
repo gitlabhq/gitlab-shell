@@ -9,6 +9,7 @@ include:
 
 variables:
   DOCKER_VERSION: "20.10.15"
+  BUNDLE_FROZEN: "true"
 
 workflow:
   rules: &workflow_rules
