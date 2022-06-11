@@ -99,3 +99,7 @@ sshd:
     - /run/secrets/ssh-hostkeys/ssh_host_rsa_key
     - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key
     - /run/secrets/ssh-hostkeys/ssh_host_ed25519_key
+  host_key_certs:
+    - /run/secrets/ssh-hostkeys/ssh_host_rsa_key-cert.pub
+    - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key-cert.pub
+    - /run/secrets/ssh-hostkeys/ssh_host_ed25519_key-cert.pub

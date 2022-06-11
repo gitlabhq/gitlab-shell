@@ -39,17 +39,14 @@ var (
 type serverConfig struct {
 	cfg                  *config.Config
 	hostKeys             []ssh.Signer
+	hostKeyToCertMap     map[string]*ssh.Certificate
 	authorizedKeysClient *authorizedkeys.Client
 }
 
-func newServerConfig(cfg *config.Config) (*serverConfig, error) {
-	authorizedKeysClient, err := authorizedkeys.NewClient(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize GitLab client: %w", err)
-	}
-
+func parseHostKeys(keyFiles []string) []ssh.Signer {
 	var hostKeys []ssh.Signer
-	for _, filename := range cfg.Server.HostKeyFiles {
+
+	for _, filename := range keyFiles {
 		keyRaw, err := os.ReadFile(filename)
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{"filename": filename}).Warn("Failed to read host key")
@@ -63,11 +60,70 @@ func newServerConfig(cfg *config.Config) (*serverConfig, error) {
 
 		hostKeys = append(hostKeys, key)
 	}
+
+	return hostKeys
+}
+
+func parseHostCerts(hostKeys []ssh.Signer, certFiles []string) map[string]*ssh.Certificate {
+	keyToCertMap := map[string]*ssh.Certificate{}
+	hostKeyIndex := make(map[string]int)
+
+	for index, hostKey := range hostKeys {
+		hostKeyIndex[string(hostKey.PublicKey().Marshal())] = index
+	}
+
+	for _, filename := range certFiles {
+		keyRaw, err := os.ReadFile(filename)
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{"filename": filename}).Warn("failed to read host certificate")
+			continue
+		}
+		publicKey, _, _, _, err := ssh.ParseAuthorizedKey(keyRaw)
+		if err != nil {
+			log.WithError(err).WithFields(log.Fields{"filename": filename}).Warn("failed to parse host certificate")
+			continue
+		}
+
+		cert, ok := publicKey.(*ssh.Certificate)
+		if !ok {
+			log.WithFields(log.Fields{"filename": filename}).Warn("failed to decode host certificate")
+			continue
+		}
+
+		hostRawKey := string(cert.Key.Marshal())
+		index, found := hostKeyIndex[hostRawKey]
+		if found {
+			keyToCertMap[hostRawKey] = cert
+
+			certSigner, err := ssh.NewCertSigner(cert, hostKeys[index])
+			if err != nil {
+				log.WithError(err).WithFields(log.Fields{"filename": filename}).Warn("the host certificate doesn't match the host private key")
+				continue
+			}
+
+			hostKeys[index] = certSigner
+		} else {
+			log.WithFields(log.Fields{"filename": filename}).Warnf("no matching private key for certificate %s", filename)
+		}
+	}
+
+	return keyToCertMap
+}
+
+func newServerConfig(cfg *config.Config) (*serverConfig, error) {
+	authorizedKeysClient, err := authorizedkeys.NewClient(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize GitLab client: %w", err)
+	}
+
+	hostKeys := parseHostKeys(cfg.Server.HostKeyFiles)
 	if len(hostKeys) == 0 {
 		return nil, fmt.Errorf("No host keys could be loaded, aborting")
 	}
 
-	return &serverConfig{cfg: cfg, authorizedKeysClient: authorizedKeysClient, hostKeys: hostKeys}, nil
+	hostKeyToCertMap := parseHostCerts(hostKeys, cfg.Server.HostCertFiles)
+
+	return &serverConfig{cfg: cfg, authorizedKeysClient: authorizedKeysClient, hostKeys: hostKeys, hostKeyToCertMap: hostKeyToCertMap}, nil
 }
 
 func (s *serverConfig) getAuthKey(ctx context.Context, user string, key ssh.PublicKey) (*authorizedkeys.Response, error) {
