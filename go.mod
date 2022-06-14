@@ -81,4 +81,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
 
-replace golang.org/x/crypto => gitlab.com/gitlab-org/golang-crypto v0.0.0-20220518204012-9dd4a7273aac
+replace golang.org/x/crypto => gitlab.com/gitlab-org/golang-crypto v0.0.0-20220616060731-4818747c9fed
