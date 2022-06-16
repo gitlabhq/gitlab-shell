@@ -1,3 +1,7 @@
+v14.7.4
+
+- gitlab-sshd: Update crypto module to fix RSA keys with old gpg-agent !662
+
 v14.7.3
 
 - Ignore "not our ref" errors from gitlab-sshd error metrics !656
