@@ -66,7 +66,6 @@ install: compile
 	mkdir -p $(DESTDIR)$(PREFIX)/bin/
 	install -m755 bin/check $(DESTDIR)$(PREFIX)/bin/check
 	install -m755 bin/gitlab-shell $(DESTDIR)$(PREFIX)/bin/gitlab-shell
-	install -m755 bin/gitlab-shell $(DESTDIR)$(PREFIX)/bin/gitlab-shell-authorized-keys-check
-	install -m755 bin/gitlab-shell $(DESTDIR)$(PREFIX)/bin/gitlab-shell-authorized-principals-check
-	install -m755 bin/gitlab-shell $(DESTDIR)$(PREFIX)/bin/gitlab-sshd
-
+	install -m755 bin/gitlab-shell-authorized-keys-check $(DESTDIR)$(PREFIX)/bin/gitlab-shell-authorized-keys-check
+	install -m755 bin/gitlab-shell-authorized-principals-check $(DESTDIR)$(PREFIX)/bin/gitlab-shell-authorized-principals-check
+	install -m755 bin/gitlab-sshd $(DESTDIR)$(PREFIX)/bin/gitlab-sshd
