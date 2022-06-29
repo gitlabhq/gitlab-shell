@@ -5,6 +5,7 @@ import (
 	"crypto/dsa"
 	"crypto/rand"
 	"crypto/rsa"
+	"os"
 	"path"
 	"testing"
 
@@ -20,6 +21,45 @@ func TestNewServerConfigWithoutHosts(t *testing.T) {
 
 	require.Error(t, err)
 	require.Equal(t, "No host keys could be loaded, aborting", err.Error())
+}
+
+func TestHostKeyAndCerts(t *testing.T) {
+	testhelper.PrepareTestRootDir(t)
+
+	srvCfg := config.ServerConfig{
+		Listen:                  "127.0.0.1",
+		ConcurrentSessionsLimit: 1,
+		HostKeyFiles: []string{
+			path.Join(testhelper.TestRoot, "certs/valid/server.key"),
+		},
+		HostCertFiles: []string{
+			path.Join(testhelper.TestRoot, "certs/valid/server-cert.pub"),
+			path.Join(testhelper.TestRoot, "certs/valid/server2-cert.pub"),
+			path.Join(testhelper.TestRoot, "certs/invalid/server-cert.pub"),
+			path.Join(testhelper.TestRoot, "certs/invalid-path.key"),
+			path.Join(testhelper.TestRoot, "certs/invalid/server.crt"),
+		},
+	}
+
+	cfg, err := newServerConfig(
+		&config.Config{GitlabUrl: "http://localhost", User: "user", Server: srvCfg},
+	)
+	require.NoError(t, err)
+
+	require.Len(t, cfg.hostKeys, 1)
+	require.Len(t, cfg.hostKeyToCertMap, 1)
+
+	// Check that the entry is pointing to the server's public key
+	data, err := os.ReadFile(path.Join(testhelper.TestRoot, "certs/valid/server.pub"))
+	require.NoError(t, err)
+
+	publicKey, _, _, _, err := ssh.ParseAuthorizedKey(data)
+	require.NoError(t, err)
+	require.NotNil(t, publicKey)
+	cert, ok := cfg.hostKeyToCertMap[string(publicKey.Marshal())]
+	require.True(t, ok)
+	require.NotNil(t, cert)
+	require.Equal(t, cert, cfg.hostKeys[0].PublicKey())
 }
 
 func TestFailedAuthorizedKeysClient(t *testing.T) {
