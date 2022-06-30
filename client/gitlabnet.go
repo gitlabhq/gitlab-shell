@@ -41,6 +41,9 @@ type ApiError struct {
 	Msg string
 }
 
+// To use as the key in a Context to set an X-Forwarded-For header in a request
+type OriginalRemoteIPContextKey struct{}
+
 func (e *ApiError) Error() string {
 	return e.Msg
 }
@@ -149,6 +152,11 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 		return nil, err
 	}
 	request.Header.Set(apiSecretHeaderName, tokenString)
+
+	originalRemoteIP, ok := ctx.Value(OriginalRemoteIPContextKey{}).(string)
+	if ok {
+		request.Header.Add("X-Forwarded-For", originalRemoteIP)
+	}
 
 	request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("User-Agent", c.userAgent)

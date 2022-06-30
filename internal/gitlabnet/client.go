@@ -3,6 +3,7 @@ package gitlabnet
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/client"
@@ -33,4 +34,19 @@ func ParseJSON(hr *http.Response, response interface{}) error {
 	}
 
 	return nil
+}
+
+func ParseIP(remoteAddr string) string {
+	// The remoteAddr field can be filled by:
+	// 1. An IP address via the SSH_CONNECTION environment variable
+	// 2. A host:port combination via the PROXY protocol
+	ip, _, err := net.SplitHostPort(remoteAddr)
+
+	// If we don't have a port or can't parse this address for some reason,
+	// just return the original string.
+	if err != nil {
+		return remoteAddr
+	}
+
+	return ip
 }
