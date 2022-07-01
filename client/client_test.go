@@ -76,6 +76,7 @@ func TestClients(t *testing.T) {
 			testErrorMessage(t, client)
 			testAuthenticationHeader(t, client)
 			testJWTAuthenticationHeader(t, client)
+			testXForwardedForHeader(t, client)
 		})
 	}
 }
@@ -221,6 +222,21 @@ func testJWTAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 	})
 }
 
+func testXForwardedForHeader(t *testing.T, client *GitlabNetClient) {
+	t.Run("X-Forwarded-For Header inserted if original address in context", func(t *testing.T) {
+		ctx := context.WithValue(context.Background(), OriginalRemoteIPContextKey{}, "196.7.0.238")
+		response, err := client.Get(ctx, "/x_forwarded_for")
+		require.NoError(t, err)
+		require.NotNil(t, response)
+
+		defer response.Body.Close()
+
+		responseBody, err := io.ReadAll(response.Body)
+		require.NoError(t, err)
+		require.Equal(t, "196.7.0.238", string(responseBody))
+	})
+}
+
 func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestRequestHandler {
 	requests := []testserver.TestRequestHandler{
 		{
@@ -254,6 +270,12 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 			Path: "/api/v4/internal/jwt_auth",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				fmt.Fprint(w, r.Header.Get(apiSecretHeaderName))
+			},
+		},
+		{
+			Path: "/api/v4/internal/x_forwarded_for",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprint(w, r.Header.Get("X-Forwarded-For"))
 			},
 		},
 		{

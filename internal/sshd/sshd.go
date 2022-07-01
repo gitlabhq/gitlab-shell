@@ -12,7 +12,9 @@ import (
 	"github.com/pires/go-proxyproto"
 	"golang.org/x/crypto/ssh"
 
+	"gitlab.com/gitlab-org/gitlab-shell/client"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
@@ -145,13 +147,26 @@ func (s *Server) getStatus() status {
 	return s.status
 }
 
+func contextWithValues(parent context.Context, nconn net.Conn) context.Context {
+	ctx := correlation.ContextWithCorrelation(parent, correlation.SafeRandomID())
+
+	// If we're dealing with a PROXY connection, register the original requester's IP
+	mconn, ok := nconn.(*proxyproto.Conn)
+	if ok {
+		ip := gitlabnet.ParseIP(mconn.Raw().RemoteAddr().String())
+		ctx = context.WithValue(ctx, client.OriginalRemoteIPContextKey{}, ip)
+	}
+
+	return ctx
+}
+
 func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	defer s.wg.Done()
 
 	metrics.SshdConnectionsInFlight.Inc()
 	defer metrics.SshdConnectionsInFlight.Dec()
 
-	ctx, cancel := context.WithCancel(correlation.ContextWithCorrelation(ctx, correlation.SafeRandomID()))
+	ctx, cancel := context.WithCancel(contextWithValues(ctx, nconn))
 	defer cancel()
 	go func() {
 		<-ctx.Done()

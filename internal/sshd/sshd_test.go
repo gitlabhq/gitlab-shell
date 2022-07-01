@@ -27,6 +27,7 @@ const (
 
 var (
 	correlationId = ""
+	xForwardedFor = ""
 )
 
 func TestListenAndServe(t *testing.T) {
@@ -63,6 +64,10 @@ func TestListenAndServeRejectsPlainConnectionsWhenProxyProtocolEnabled(t *testin
 		},
 		DestinationAddr: target,
 	}
+	xForwardedFor = "127.0.0.1"
+	defer func() {
+		xForwardedFor = "" // Cleanup for other test cases
+	}()
 
 	testCases := []struct {
 		desc        string
@@ -132,9 +137,9 @@ func TestListenAndServeRejectsPlainConnectionsWhenProxyProtocolEnabled(t *testin
 				require.NoError(t, err)
 			}
 
-			sshConn, _, _, err := ssh.NewClientConn(conn, serverUrl, clientConfig(t))
+			sshConn, sshChans, sshRequs, err := ssh.NewClientConn(conn, serverUrl, clientConfig(t))
 			if sshConn != nil {
-				sshConn.Close()
+				defer sshConn.Close()
 			}
 
 			if tc.isRejected {
@@ -142,6 +147,10 @@ func TestListenAndServeRejectsPlainConnectionsWhenProxyProtocolEnabled(t *testin
 				require.Regexp(t, "ssh: handshake failed", err.Error())
 			} else {
 				require.NoError(t, err)
+				client := ssh.NewClient(sshConn, sshChans, sshRequs)
+				defer client.Close()
+
+				holdSession(t, client)
 			}
 		})
 	}
@@ -306,6 +315,7 @@ func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Contex
 				correlationId = r.Header.Get("X-Request-Id")
 
 				require.NotEmpty(t, correlationId)
+				require.Equal(t, xForwardedFor, r.Header.Get("X-Forwarded-For"))
 
 				fmt.Fprint(w, `{"id": 1000, "key": "key"}`)
 			},
@@ -313,6 +323,7 @@ func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Contex
 			Path: "/api/v4/internal/discover",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				require.Equal(t, correlationId, r.Header.Get("X-Request-Id"))
+				require.Equal(t, xForwardedFor, r.Header.Get("X-Forwarded-For"))
 
 				fmt.Fprint(w, `{"id": 1000, "name": "Test User", "username": "test-user"}`)
 			},
