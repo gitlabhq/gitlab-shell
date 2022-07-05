@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v2"
 
-	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 )
 
 func TestConfigApplyGlobalState(t *testing.T) {

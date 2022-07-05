@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/mattn/go-shellwords"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
 const (

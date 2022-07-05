@@ -4,12 +4,12 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gitlab.com/gitlab-org/gitlab-shell/cmd/gitlab-shell-authorized-keys-check/command"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/authorizedkeys"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell-authorized-keys-check/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/authorizedkeys"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
 var (

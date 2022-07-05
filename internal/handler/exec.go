@@ -11,10 +11,10 @@ import (
 	"google.golang.org/grpc/metadata"
 	grpcstatus "google.golang.org/grpc/status"
 
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitaly"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitaly"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 
 	pb "gitlab.com/gitlab-org/gitaly/v14/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/labkit/log"

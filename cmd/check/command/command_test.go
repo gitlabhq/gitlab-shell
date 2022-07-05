@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gitlab.com/gitlab-org/gitlab-shell/cmd/check/command"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/healthcheck"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/cmd/check/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/healthcheck"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
 var (

@@ -6,9 +6,9 @@ import (
 	"net"
 	"net/http"
 
-	"gitlab.com/gitlab-org/gitlab-shell/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
 var (

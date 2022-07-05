@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 	gitalyClient "gitlab.com/gitlab-org/gitaly/v14/client"
 	pb "gitlab.com/gitlab-org/gitaly/v14/proto/go/gitalypb"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 	"golang.org/x/crypto/ssh"
 )
 

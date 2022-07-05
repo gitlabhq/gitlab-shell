@@ -13,10 +13,10 @@ import (
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
-	"gitlab.com/gitlab-org/gitlab-shell/client"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 
 	"gitlab.com/gitlab-org/labkit/log"
 )

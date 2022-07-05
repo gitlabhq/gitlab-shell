@@ -10,8 +10,8 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/authorizedkeys"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedkeys"
 
 	"gitlab.com/gitlab-org/labkit/log"
 )

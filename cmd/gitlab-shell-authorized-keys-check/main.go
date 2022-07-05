@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"os"
 
-	cmd "gitlab.com/gitlab-org/gitlab-shell/cmd/gitlab-shell-authorized-keys-check/command"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/console"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/logger"
+	cmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell-authorized-keys-check/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/console"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
 )
 
 func main() {

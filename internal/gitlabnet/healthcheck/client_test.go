@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 
 	"github.com/stretchr/testify/require"
 )
