@@ -7,13 +7,13 @@ import (
 	"net/http"
 	"testing"
 
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/discover"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 
 	"github.com/stretchr/testify/require"
-	"gitlab.com/gitlab-org/gitlab-shell/client"
-	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
 func initialize(t *testing.T) []testserver.TestRequestHandler {

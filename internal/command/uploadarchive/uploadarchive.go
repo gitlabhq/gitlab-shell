@@ -3,11 +3,11 @@ package uploadarchive
 import (
 	"context"
 
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/accessverifier"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
 type Command struct {

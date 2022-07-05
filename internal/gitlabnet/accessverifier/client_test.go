@@ -11,11 +11,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 	pb "gitlab.com/gitlab-org/gitaly/v14/proto/go/gitalypb"
-	"gitlab.com/gitlab-org/gitlab-shell/client/testserver"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/testhelper"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 )
 
 var (

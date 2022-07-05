@@ -1,4 +1,4 @@
-module gitlab.com/gitlab-org/gitlab-shell
+module gitlab.com/gitlab-org/gitlab-shell/v14
 
 go 1.17
 

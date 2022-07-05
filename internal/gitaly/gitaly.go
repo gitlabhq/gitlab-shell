@@ -17,7 +17,7 @@ import (
 	"gitlab.com/gitlab-org/labkit/log"
 	grpctracing "gitlab.com/gitlab-org/labkit/tracing/grpc"
 
-	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
 
 type Command struct {

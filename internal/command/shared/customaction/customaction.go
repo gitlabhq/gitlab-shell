@@ -9,12 +9,12 @@ import (
 
 	"gitlab.com/gitlab-org/labkit/log"
 
-	"gitlab.com/gitlab-org/gitlab-shell/client"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/accessverifier"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/pktline"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
 )
 
 type Request struct {

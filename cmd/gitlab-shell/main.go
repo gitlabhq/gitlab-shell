@@ -11,14 +11,14 @@ import (
 	"gitlab.com/gitlab-org/labkit/fips"
 	"gitlab.com/gitlab-org/labkit/log"
 
-	shellCmd "gitlab.com/gitlab-org/gitlab-shell/cmd/gitlab-shell/command"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/console"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/logger"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
+	shellCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/console"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
 var (

@@ -11,9 +11,9 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	"gitlab.com/gitlab-org/gitlab-shell/client"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/gitaly"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitaly"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
 
 const (

@@ -1,20 +1,20 @@
 package command
 
 import (
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/discover"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/lfsauthenticate"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/personalaccesstoken"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/receivepack"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/twofactorrecover"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/twofactorverify"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/uploadarchive"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/uploadpack"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/discover"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/lfsauthenticate"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/personalaccesstoken"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/receivepack"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/twofactorrecover"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/twofactorverify"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/uploadarchive"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/uploadpack"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
 func New(arguments []string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {

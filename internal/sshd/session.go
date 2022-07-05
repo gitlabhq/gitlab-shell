@@ -12,13 +12,13 @@ import (
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
-	shellCmd "gitlab.com/gitlab-org/gitlab-shell/cmd/gitlab-shell/command"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/shared/disallowedcommand"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/console"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/metrics"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/sshenv"
+	shellCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/console"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
 type session struct {

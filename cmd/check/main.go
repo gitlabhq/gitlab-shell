@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	checkCmd "gitlab.com/gitlab-org/gitlab-shell/cmd/check/command"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/executable"
-	"gitlab.com/gitlab-org/gitlab-shell/internal/logger"
+	checkCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/check/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
 )
 
 func main() {
