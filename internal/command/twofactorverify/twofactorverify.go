@@ -46,55 +46,47 @@ func (c *Command) Execute(ctx context.Context) error {
 	timeoutCtx, cancelTimeout := context.WithTimeout(ctx, ctxTimeout*time.Second)
 	defer cancelTimeout()
 
+	// Create result channel
+	resultC := make(chan Result)
+
 	// Background push notification with timeout
-	pushauth := make(chan Result)
 	go func() {
-		defer close(pushauth)
+		defer close(resultC)
 		status, success, err := c.pushAuth(timeoutCtx)
 
 		select {
 		case <-timeoutCtx.Done(): // push cancelled by manual OTP
-			pushauth <- Result{Error: nil, Status: "cancelled", Success: false}
+			resultC <- Result{Error: nil, Status: "cancelled", Success: false}
 		default:
-			pushauth <- Result{Error: err, Status: status, Success: success}
+			resultC <- Result{Error: err, Status: status, Success: success}
 			cancelTimeout()
 		}
 	}()
 
 	// Also allow manual OTP entry while waiting for push, with same timeout as push
-	verify := make(chan Result)
 	go func() {
-		defer close(verify)
+		defer close(resultC)
 		ctxlog.Info("twofactorverify: execute: waiting for user input")
 		answer := ""
 		answer = c.getOTP(timeoutCtx)
 
 		select {
 		case <-timeoutCtx.Done(): // manual OTP cancelled by push
-			verify <- Result{Error: nil, Status: "cancelled", Success: false}
+			resultC <- Result{Error: nil, Status: "cancelled", Success: false}
 		default:
 			cancelTimeout()
 			ctxlog.Info("twofactorverify: execute: verifying entered OTP")
 			status, success, err := c.verifyOTP(timeoutCtx, answer)
 			ctxlog.WithError(err).Info("twofactorverify: execute: OTP verified")
-			verify <- Result{Error: err, Status: status, Success: success}
+			resultC <- Result{Error: err, Status: status, Success: success}
 		}
 	}()
 
 	for {
 		select {
-		case res := <-verify: // manual OTP
+		case res := <-resultC:
 			if res.Status == "cancelled" {
-				// verify cancelled; don't print anything
-			} else if res.Status == "" {
-				// channel closed; don't print anything
-			} else {
-				fmt.Fprint(c.ReadWriter.Out, res.Status)
-				return nil
-			}
-		case res := <-pushauth: // push
-			if res.Status == "cancelled" {
-				// push cancelled; don't print anything
+				// request cancelled; don't print anything
 			} else if res.Status == "" {
 				// channel closed; don't print anything
 			} else {
