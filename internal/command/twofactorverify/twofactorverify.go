@@ -44,22 +44,20 @@ func (c *Command) Execute(ctx context.Context) error {
 	// TODO: make timeout configurable
 	const ctxTimeout = 30
 	timeoutCtx, cancelTimeout := context.WithTimeout(ctx, ctxTimeout*time.Second)
-	verifyCtx, cancelVerify := context.WithCancel(timeoutCtx)
-	pushCtx, cancelPush := context.WithCancel(timeoutCtx)
 	defer cancelTimeout()
 
 	// Background push notification with timeout
 	pushauth := make(chan Result)
 	go func() {
 		defer close(pushauth)
-		status, success, err := c.pushAuth(pushCtx)
+		status, success, err := c.pushAuth(timeoutCtx)
 
 		select {
-		case <-pushCtx.Done(): // push cancelled by manual OTP
+		case <-timeoutCtx.Done(): // push cancelled by manual OTP
 			pushauth <- Result{Error: nil, Status: "cancelled", Success: false}
 		default:
 			pushauth <- Result{Error: err, Status: status, Success: success}
-			cancelVerify()
+			cancelTimeout()
 		}
 	}()
 
@@ -69,15 +67,15 @@ func (c *Command) Execute(ctx context.Context) error {
 		defer close(verify)
 		ctxlog.Info("twofactorverify: execute: waiting for user input")
 		answer := ""
-		answer = c.getOTP(verifyCtx)
+		answer = c.getOTP(timeoutCtx)
 
 		select {
-		case <-verifyCtx.Done(): // manual OTP cancelled by push
+		case <-timeoutCtx.Done(): // manual OTP cancelled by push
 			verify <- Result{Error: nil, Status: "cancelled", Success: false}
 		default:
-			cancelPush()
+			cancelTimeout()
 			ctxlog.Info("twofactorverify: execute: verifying entered OTP")
-			status, success, err := c.verifyOTP(verifyCtx, answer)
+			status, success, err := c.verifyOTP(timeoutCtx, answer)
 			ctxlog.WithError(err).Info("twofactorverify: execute: OTP verified")
 			verify <- Result{Error: err, Status: status, Success: success}
 		}
