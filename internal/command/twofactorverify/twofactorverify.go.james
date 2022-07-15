@@ -1,0 +1,233 @@
+package twofactorverify
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"sync"
+	"time"
+
+	"gitlab.com/gitlab-org/labkit/log"
+
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/internal/gitlabnet/twofactorverify"
+)
+
+type Command struct {
+	Config     *config.Config
+	Client     *twofactorverify.Client
+	Args       *commandargs.Shell
+	ReadWriter *readwriter.ReadWriter
+}
+
+type Result struct {
+	Error   error
+	Status  string
+	Success bool
+}
+
+// A context to be used as a merged context for both push && OTP entry
+type waitContext struct {
+	mu		sync.Mutex
+	mainCtx	context.Context
+	ctx		context.Context
+	done	chan struct {}
+	err 	error
+}
+
+
+var (
+	mu              sync.RWMutex
+	// TODO: make timeout configurable
+	ctxMaxTime = time.Second + 30
+)
+
+func (c *Command) Execute(ctx context.Context) error {
+	ctxlog := log.ContextLogger(ctx)
+
+	// config.GetHTTPClient isn't thread-safe so save Client in struct for concurrency
+	// workaround until #518 is fixed
+	var err error
+	c.Client, err = twofactorverify.NewClient(c.Config)
+
+	if err != nil {
+		ctxlog.WithError(err).Error("twofactorverify: execute: OTP verification failed")
+		return err
+	}
+	//var mainCancel context.CancelFunc
+	//mainContext, mainCancel = context.WithCancel(ctx)
+	timeoutCtx, timeoutCancel := context.WithTimeout(ctx, ctxMaxTime)
+	defer timeoutCancel()
+
+	// Create Result Channel
+	// It seems to me that if we use the same channel for each request & defer it multiple times things will fail. So I'm not doing that.
+	//resultChannel := make(chan Result)
+
+	// Time before forced task cancellation
+	timeoutCh := time.After(ctxMaxTime)
+
+	// Send push Auth Request
+	pushAuth := make(chan Result)
+	go func() {
+		defer close(pushAuth)
+		status, success, err := c.pushAuth(timeoutCtx)
+		ctxlog.Info("pushAuth.status = ", status)
+		ctxlog.Info("pushAuth.success = ", success)
+		ctxlog.Info("pushAuth.err = ", err)
+		select {
+		case <-timeoutCtx.Done(): // push cancelled by manual OTP
+			resultC <- Result{Error: nil, Status: "cancelled", Success: false}
+		default:
+			resultC <- Result{Error: err, Status: status, Success: success}
+			cancelTimeout()
+		}
+
+	}()
+
+	// Send OTP Auth Request
+	otpAuth := make(chan Result)
+	go func(){
+		defer close(otpAuth)
+		ctxlog.Info("twofactorverify: waiting for user input.")
+		otpAnswer := c.getOTP(mainCtx)
+		ctxlog.Info("otpAnswer = ", otpAnswer)
+	}()
+
+
+
+	//
+	//// Wait until tasks completed or time.After event occurred.
+	select {
+	case <- tasksCancelled:
+		ctxlog.Info("case tasksCancelled")
+		ctxlog.Info(pushAuth)
+	case <- timeoutCh:
+		ctxlog.Info("case Timeout")
+		// Wait until all done.
+		<-tasksCancelled
+	}
+	//
+	////timeoutCtx, cancelTimeout := context.WithTimeout(ctx, ctxTimeout)
+	//context, cancelVerify := context.WithCancel(timeoutCtx)
+	//pushCtx, cancelPush := context.WithCancel(timeoutCtx)
+	//defer cancelTimeout()
+	//
+	//// Background push notification with timeout
+	//pushauth := make(chan Result)
+	//go func() {
+	//	defer close(pushauth)
+	//	status, success, err := c.pushAuth(pushCtx)
+	//
+	//	select {
+	//	case <-pushCtx.Done(): // push cancelled by manual OTP
+	//		pushauth <- Result{Error: nil, Status: "cancelled", Success: false}
+	//	default:
+	//		pushauth <- Result{Error: err, Status: status, Success: success}
+	//		cancelVerify()
+	//	}
+	//}()
+	//
+	//// Also allow manual OTP entry while waiting for push, with same timeout as push
+	//verify := make(chan Result)
+	//go func() {
+	//	defer close(verify)
+	//	ctxlog.Info("twofactorverify: execute: waiting for user input")
+	//	answer := ""
+	//	answer = c.getOTP(verifyCtx)
+	//
+	//	select {
+	//	case <-verifyCtx.Done(): // manual OTP cancelled by push
+	//		verify <- Result{Error: nil, Status: "cancelled", Success: false}
+	//	default:
+	//		cancelPush()
+	//		ctxlog.Info("twofactorverify: execute: verifying entered OTP")
+	//		status, success, err := c.verifyOTP(verifyCtx, answer)
+	//		ctxlog.WithError(err).Info("twofactorverify: execute: OTP verified")
+	//		verify <- Result{Error: err, Status: status, Success: success}
+	//	}
+	//}()
+	//
+	//for {
+	//	select {
+	//	case res := <-verify: // manual OTP
+	//		if res.Status == "cancelled" {
+	//			// verify cancelled; don't print anything
+	//		} else if res.Status == "" {
+	//			// channel closed; don't print anything
+	//		} else {
+	//			fmt.Fprint(c.ReadWriter.Out, res.Status)
+	//			return nil
+	//		}
+	//	case res := <-pushauth: // push
+	//		if res.Status == "cancelled" {
+	//			// push cancelled; don't print anything
+	//		} else if res.Status == "" {
+	//			// channel closed; don't print anything
+	//		} else {
+	//			fmt.Fprint(c.ReadWriter.Out, res.Status)
+	//			return nil
+	//		}
+	//	case <-timeoutCtx.Done(): // push timed out
+	//		fmt.Fprint(c.ReadWriter.Out, "\nOTP verification timed out\n")
+	//		return nil
+	//	}
+	//}
+	//
+	return nil
+}
+
+
+func (c *Command) getOTP(ctx context.Context) string {
+	prompt := "OTP: "
+	fmt.Fprint(c.ReadWriter.Out, prompt)
+
+	var answer string
+	otpLength := int64(64)
+	reader := io.LimitReader(c.ReadWriter.In, otpLength)
+	if _, err := fmt.Fscanln(reader, &answer); err != nil {
+		log.ContextLogger(ctx).WithError(err).Debug("twofactorverify: getOTP: Failed to get user input")
+	}
+
+	return answer
+}
+
+func (c *Command) verifyOTP(ctx context.Context, otp string) (status string, success bool, err error) {
+	reason := ""
+
+	success, reason, err = c.Client.VerifyOTP(ctx, c.Args, otp)
+	fmt.Println("success = " , success)
+	fmt.Println("reason = ", reason)
+	fmt.Println("err = ", err)
+	if success {
+		status = fmt.Sprintf("\nOTP validation successful. Git operations are now allowed.\n")
+	} else {
+		if err != nil {
+			status = fmt.Sprintf("\nOTP validation failed.\n%v\n", err)
+		} else {
+			status = fmt.Sprintf("\nOTP validation failed.\n%v\n", reason)
+		}
+	}
+
+	err = nil
+
+	return
+}
+
+func (c *Command) pushAuth(ctx context.Context) (status string, success bool, err error) {
+	reason := ""
+
+	success, reason, err = c.Client.PushAuth(ctx, c.Args)
+	if success {
+		status = fmt.Sprintf("\nPush OTP validation successful. Git operations are now allowed.\n")
+	} else {
+		if err != nil {
+			status = fmt.Sprintf("\nPush OTP validation failed.\n%v\n", err)
+		} else {
+			status = fmt.Sprintf("\nPush OTP validation failed.\n%v\n", reason)
+		}
+	}
+
+	return
+}
