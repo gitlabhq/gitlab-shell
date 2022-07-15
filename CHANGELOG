@@ -1,3 +1,7 @@
+v14.9.0
+
+- Update LabKit library to v1.16.0 !668
+
 v14.8.0
 
 - go: Bump major version to v14 !666
