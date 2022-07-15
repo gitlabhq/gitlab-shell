@@ -225,9 +225,10 @@ func TestSessionsMetrics(t *testing.T) {
 	} {
 		t.Run(ignoredError.desc, func(t *testing.T) {
 			conn, chans = setup(1, newChannel)
+			ignored := ignoredError.err
 			conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 				close(chans)
-				return ignoredError.err
+				return ignored
 			})
 
 			require.InDelta(t, initialSessionsTotal+2+float64(i), testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
