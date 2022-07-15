@@ -148,87 +148,132 @@ func (c *Command) Execute(ctx context.Context) error {
 		return err
 	}
 
-	// Create timeout context
-	myctx, mycancel := context.WithCancel(ctx)
-	defer mycancel()
+	waitGroup := sync.WaitGroup{}
 
-	otpAuth := make(chan Result)
+	myctx, cancelCtx := context.WithTimeout(ctx, ctxMaxTime)
+	defer cancelCtx()
+	//myctx, mycancel := context.WithCancel(timeoutCtx)
+
+
+
+	// Also allow manual OTP entry while waiting for push, with same timeout as push
+	otpChannel := make(chan Result)
+	waitGroup.Add(1)
+	//defer close(otpChannel)
+
 	go func() {
-		defer close(otpAuth)
+		defer waitGroup.Done()
 		ctxlog.Info("twofactorverify: execute: waiting for user input")
 		otpAnswer := c.getOTP(myctx)
 
 		select {
 		case <-ctx.Done(): // manual OTP cancelled by push
-			otpAuth <- Result{Error: nil, Status: "cancelled", Success: false}
+			otpChannel <- Result{Error: nil, Status: "cancelled", Success: false}
 		default:
 			status, success, err := c.verifyOTP(myctx, otpAnswer)
-			otpAuth <- Result{Error: err, Status: status, Success: success}
+			otpChannel <- Result{Error: err, Status: status, Success: success}
+		}
+		//cancelCtx()
+	}()
+	//// Background push notification with timeout
+	pushChannel := make(chan Result)
+	waitGroup.Add(1)
+	go func() {
+		defer waitGroup.Done()
+		//defer close(pushChannel)
+		ctxlog.Info("twofactorverify: execute: waiting for push auth")
+		//status, success, err := c.pushAuth(myctx)
+		//ctxlog.WithError(err).Info("twofactorverify: execute: push auth verified")
+
+		select {
+		case <-myctx.Done(): // push cancelled by manual OTP
+			// skip writing to channel
+			pushChannel <- Result{Error: nil, Status: "cancelled", Success: false}
+			ctxlog.Info("twofactorverify: execute: push auth cancelled")
+		//default:
+		//	pushChannel <- Result{Error: err, Status: status, Success: success}
 		}
 	}()
-	for {
+	//for {
 		select {
-		case res := <- otpAuth:
-			if len(res.Status) > 0 && res.Status != "cancelled"{
-				fmt.Fprint(c.ReadWriter.Out, res.Status)
-				return nil
-			}
+			case res := <-otpChannel:
+				//fmt.Println("Received from otpChannel => ", res)
+				if len(res.Status) > 0 && res.Status != "cancelled" {
+					fmt.Fprint(c.ReadWriter.Out, res.Status)
+					return nil
+				}
+			case res := <-pushChannel:
+			    if len(res.Status) > 0 && res.Status != "cancelled" {
+					//fmt.Println("Received from pushChannel => ", res)
+					fmt.Println("res.Status == ", res.Status, " -> ", len(res.Status))
+			//		//fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+			//		//fmt.Println(res)
+			//		//fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+					fmt.Fprint(c.ReadWriter.Out, res.Status)
+					return nil
+				}
+			//case <- myctx.Done():
+			//	fmt.Fprint(c.ReadWriter.Out, "\nOTP verification timed out\n")
+			//	return nil
+
 		}
-	}
+
+	waitGroup.Wait()
+	//}
 
 	return nil
 }
-
-func (c Command) processCmd(ctx context.Context, cancelTimeout context.CancelFunc) (result Result) {
-	ctxlog := log.ContextLogger(ctx)
-
-	otpAuth := make(chan Result)
-	go func() {
-		defer close(otpAuth)
-		ctxlog.Info("twofactorverify: execute: waiting for user input")
-		otpAnswer := c.getOTP(ctx)
-
-		select {
-			case <-ctx.Done(): // manual OTP cancelled by push
-				fmt.Println("otpAuth.ctx.Done()")
-				otpAuth <- Result{Error: nil, Status: "cancelled", Success: false}
-				fmt.Println("----------------------------------------------------")
-				fmt.Println("otpAuth = ", otpAuth)
-				fmt.Println("----------------------------------------------------")
-			default:
-				fmt.Println("otpAuth.default")
-				cancelTimeout()
-				fmt.Println("Call c.verifyOTP(", ctx, ", ", otpAnswer, ")")
-				status, success, err := c.verifyOTP(ctx, otpAnswer)
-				fmt.Println("otpAnswer.status = ", status)
-				fmt.Println("otpAnswer.success = ", success)
-				fmt.Println("otpAnswer.err = ", err)
-				otpAuth <- Result{Error: err, Status: status, Success: success}
-				fmt.Println("----------------------------------------------------")
-				fmt.Println("otpAuth = ", otpAuth)
-				fmt.Println("----------------------------------------------------")
-		}
-	}()
-	for {
-		//fmt.Println("for loop")
-		select {
-			case res := <- otpAuth:
-				fmt.Println(res)
-				//fmt.Println("-------------")
-				//fmt.Println("otpAuth = ", ores)
-				//fmt.Println("-------------")
-				if len(res.Status) > 0 && res.Status != "cancelled"{
-					//fmt.Println("-------------")
-					//fmt.Println("otpAuth = ", res.Status)
-					//fmt.Println("-------------")
-					return res
-				}
-		}
-	}
-	return
-}
-
-
+//
+//func (c Command) processCmd(ctx context.Context, cancelTimeout context.CancelFunc) (result Result) {
+//	ctxlog := log.ContextLogger(ctx)
+//
+//	otpAuth := make(chan Result)
+//	go func() {
+//		defer close(otpAuth)
+//		ctxlog.Info("twofactorverify: execute: waiting for user input")
+//		otpAnswer := c.getOTP(ctx)
+//
+//		select {
+//			case <-ctx.Done(): // manual OTP cancelled by push
+//				fmt.Println("otpAuth.ctx.Done()")
+//				otpAuth <- Result{Error: nil, Status: "cancelled", Success: false}
+//				fmt.Println("----------------------------------------------------")
+//				fmt.Println("otpAuth = ", otpAuth)
+//				fmt.Println("----------------------------------------------------")
+//			default:
+//				fmt.Println("otpAuth.default")
+//				cancelTimeout()
+//				fmt.Println("Call c.verifyOTP(", ctx, ", ", otpAnswer, ")")
+//				status, success, err := c.verifyOTP(ctx, otpAnswer)
+//				fmt.Println("otpAnswer.status = ", status)
+//				fmt.Println("otpAnswer.success = ", success)
+//				fmt.Println("otpAnswer.err = ", err)
+//				otpAuth <- Result{Error: err, Status: status, Success: success}
+//				fmt.Println("----------------------------------------------------")
+//				fmt.Println("otpAuth = ", otpAuth)
+//				fmt.Println("----------------------------------------------------")
+//		}
+//	}()
+//	for {
+//		//fmt.Println("for loop")
+//		select {
+//			case res := <- otpAuth:
+//				fmt.Println(res)
+//				//fmt.Println("-------------")
+//				//fmt.Println("otpAuth = ", ores)
+//				//fmt.Println("-------------")
+//				if len(res.Status) > 0 && res.Status != "cancelled"{
+//					//fmt.Println("-------------")
+//					//fmt.Println("otpAuth = ", res.Status)
+//					//fmt.Println("-------------")
+//					return res
+//				}
+//		}
+//	}
+//	return
+//}
+//
+//
 
 
 func (c *Command) getOTP(ctx context.Context) string {
@@ -248,13 +293,13 @@ func (c *Command) getOTP(ctx context.Context) string {
 
 func (c *Command) verifyOTP(ctx context.Context, otp string) (status string, success bool, err error) {
 	reason := ""
-	fmt.Println("verifyOTP(", ctx, ", ", c.Args, ", ",otp,")")
+	//fmt.Println("verifyOTP(", ctx, ", ", c.Args, ", ",otp,")")
 	success, reason, err = c.Client.VerifyOTP(ctx, c.Args, otp)
-	fmt.Println("----------------------------------------------------")
-	fmt.Println("verifyOTP.status = ", status)
-	fmt.Println("verifyOTP.success = ", success)
-	fmt.Println("verifyOTP.err = ", err)
-	fmt.Println("----------------------------------------------------")
+	//fmt.Println("----------------------------------------------------")
+	//fmt.Println("verifyOTP.status = ", status)
+	//fmt.Println("verifyOTP.success = ", success)
+	//fmt.Println("verifyOTP.err = ", err)
+	//fmt.Println("----------------------------------------------------")
 	if success {
 		status = fmt.Sprintf("\nOTP validation successful. Git operations are now allowed.\n")
 	} else {

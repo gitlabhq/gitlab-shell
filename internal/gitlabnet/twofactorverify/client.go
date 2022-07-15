@@ -44,11 +44,11 @@ func (c *Client) VerifyOTP(ctx context.Context, args *commandargs.Shell, otp str
 	}
 
 	response, err := c.client.Post(ctx, "/two_factor_manual_otp_check", requestBody)
-	fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-	fmt.Println("c.client = ", c.client)
-	fmt.Println("client.VerifyOTP.response = ", response)
-	fmt.Println("client.VerifyOTP.err = ", err)
-	fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+	//fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+	//fmt.Println("c.client = ", c.client)
+	//fmt.Println("client.VerifyOTP.response = ", response)
+	//fmt.Println("client.VerifyOTP.err = ", err)
+	//fmt.Println("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
 	if err != nil {
 		return false, "", err
 	}
