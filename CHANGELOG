@@ -1,3 +1,7 @@
+v14.10.0
+
+- Implement Push Auth support for 2FA verification !454
+
 v14.9.0
 
 - Update LabKit library to v1.16.0 !668
