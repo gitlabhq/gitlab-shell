@@ -26,7 +26,7 @@ type Response struct {
 type RequestBody struct {
 	KeyId      string `json:"key_id,omitempty"`
 	UserId     int64  `json:"user_id,omitempty"`
-	OTPAttempt string `json:"otp_attempt"`
+	OTPAttempt string `json:"otp_attempt,omitempty"`
 }
 
 func NewClient(config *config.Config) (*Client, error) {
@@ -44,7 +44,22 @@ func (c *Client) VerifyOTP(ctx context.Context, args *commandargs.Shell, otp str
 		return err
 	}
 
-	response, err := c.client.Post(ctx, "/two_factor_otp_check", requestBody)
+	response, err := c.client.Post(ctx, "/two_factor_manual_otp_check", requestBody)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	return parse(response)
+}
+
+func (c *Client) PushAuth(ctx context.Context, args *commandargs.Shell) error {
+	requestBody, err := c.getRequestBody(ctx, args, "")
+	if err != nil {
+		return err
+	}
+
+	response, err := c.client.Post(ctx, "/two_factor_push_otp_check", requestBody)
 	if err != nil {
 		return err
 	}

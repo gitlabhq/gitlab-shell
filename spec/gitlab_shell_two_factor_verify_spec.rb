@@ -11,71 +11,115 @@ describe 'bin/gitlab-shell 2fa_verify' do
       'SSH_ORIGINAL_COMMAND' => '2fa_verify' }
   end
 
+  let(:correct_otp) { '123456' }
+
   before(:context) do
     write_config('gitlab_url' => "http+unix://#{CGI.escape(tmp_socket_path)}")
   end
 
   def mock_server(server)
-    server.mount_proc('/api/v4/internal/two_factor_otp_check') do |req, res|
+    server.mount_proc('/api/v4/internal/two_factor_manual_otp_check') do |req, res|
       res.content_type = 'application/json'
       res.status = 200
 
       params = JSON.parse(req.body)
-      key_id = params['key_id'] || params['user_id'].to_s
 
-      if key_id == '100'
-        res.body = { success: true }.to_json
-      else
+      res.body = if params['otp_attempt'] == correct_otp
+                   { success: true }.to_json
+                 else
+                   { success: false, message: 'boom!' }.to_json
+                 end
+    end
+
+    server.mount_proc('/api/v4/internal/two_factor_push_otp_check') do |req, res|
+      res.content_type = 'application/json'
+      res.status = 200
+
+      params = JSON.parse(req.body)
+      id = params['key_id'] || params['user_id'].to_s
+
+      if id == '100'
         res.body = { success: false, message: 'boom!' }.to_json
+      else
+        res.body = { success: true }.to_json
       end
     end
 
-    server.mount_proc('/api/v4/internal/discover') do |_, res|
+    server.mount_proc('/api/v4/internal/discover') do |req, res|
       res.status = 200
       res.content_type = 'application/json'
-      res.body = { id: 100, name: 'Some User', username: 'someuser' }.to_json
+
+      if req.query['username'] == 'someone'
+        res.body = { id: 100, name: 'Some User', username: 'someuser' }.to_json
+      else
+        res.body = { id: 101, name: 'Another User', username: 'another' }.to_json
+      end
     end
   end
 
-  describe 'command' do
-    context 'when key is provided' do
-      let(:cmd) { "#{gitlab_shell_path} key-100" }
+  describe 'entering OTP manually' do
+    let(:cmd) { "#{gitlab_shell_path} key-100" }
 
-      it 'prints a successful verification message' do
-        verify_successful_verification!(cmd)
+    context 'when key is provided' do
+      it 'asks a user for a correct OTP' do
+        verify_successful_otp_verification!(cmd)
       end
     end
 
     context 'when username is provided' do
       let(:cmd) { "#{gitlab_shell_path} username-someone" }
 
-      it 'prints a successful verification message' do
-        verify_successful_verification!(cmd)
+      it 'asks a user for a correct OTP' do
+        verify_successful_otp_verification!(cmd)
       end
     end
 
-    context 'when API error occurs' do
-      let(:cmd) { "#{gitlab_shell_path} key-101" }
+    it 'shows an error when an invalid otp is provided' do
+      Open3.popen2(env, cmd) do |stdin, stdout|
+        asks_for_otp(stdout)
+        stdin.puts('000000')
 
-      it 'prints the error message' do
-        Open3.popen2(env, cmd) do |stdin, stdout|
-          expect(stdout.gets(5)).to eq('OTP: ')
-
-          stdin.puts('123456')
-
-          expect(stdout.flush.read).to eq("\nOTP validation failed.\nboom!\n")
-        end
+        expect(stdout.flush.read).to eq("\nOTP validation failed: boom!\n")
       end
     end
   end
 
-  def verify_successful_verification!(cmd)
-    Open3.popen2(env, cmd) do |stdin, stdout|
-      expect(stdout.gets(5)).to eq('OTP: ')
+  describe 'authorizing via push' do
+    context 'when key is provided' do
+      let(:cmd) { "#{gitlab_shell_path} key-101" }
 
-      stdin.puts('123456')
+      it 'asks a user for a correct OTP' do
+        verify_successful_push_verification!(cmd)
+      end
+    end
+
+    context 'when username is provided' do
+      let(:cmd) { "#{gitlab_shell_path} username-another" }
+
+      it 'asks a user for a correct OTP' do
+        verify_successful_push_verification!(cmd)
+      end
+    end
+  end
+
+  def verify_successful_otp_verification!(cmd)
+    Open3.popen2(env, cmd) do |stdin, stdout|
+      asks_for_otp(stdout)
+      stdin.puts(correct_otp)
 
       expect(stdout.flush.read).to eq("\nOTP validation successful. Git operations are now allowed.\n")
     end
+  end
+
+  def verify_successful_push_verification!(cmd)
+    Open3.popen2(env, cmd) do |stdin, stdout|
+      asks_for_otp(stdout)
+
+      expect(stdout.flush.read).to eq("\nOTP has been validated by Push Authentication. Git operations are now allowed.\n")
+    end
+  end
+
+  def asks_for_otp(stdout)
+    expect(stdout.gets(5)).to eq('OTP: ')
   end
 end
