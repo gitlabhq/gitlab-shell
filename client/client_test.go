@@ -77,6 +77,7 @@ func TestClients(t *testing.T) {
 			testAuthenticationHeader(t, client)
 			testJWTAuthenticationHeader(t, client)
 			testXForwardedForHeader(t, client)
+			testHostWithTrailingSlash(t, client)
 		})
 	}
 }
@@ -235,6 +236,16 @@ func testXForwardedForHeader(t *testing.T, client *GitlabNetClient) {
 		require.NoError(t, err)
 		require.Equal(t, "196.7.0.238", string(responseBody))
 	})
+}
+
+func testHostWithTrailingSlash(t *testing.T, client *GitlabNetClient) {
+	oldHost := client.httpClient.Host
+	client.httpClient.Host = oldHost + "/"
+
+	testSuccessfulGet(t, client)
+	testSuccessfulPost(t, client)
+
+	client.httpClient.Host = oldHost
 }
 
 func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestRequestHandler {
