@@ -85,6 +85,10 @@ func normalizePath(path string) string {
 	return path
 }
 
+func appendPath(host string, path string) string {
+	return strings.TrimSuffix(host, "/") + "/" + strings.TrimPrefix(path, "/")
+}
+
 func newRequest(ctx context.Context, method, host, path string, data interface{}) (*http.Request, error) {
 	var jsonReader io.Reader
 	if data != nil {
@@ -96,7 +100,7 @@ func newRequest(ctx context.Context, method, host, path string, data interface{}
 		jsonReader = bytes.NewReader(jsonData)
 	}
 
-	request, err := http.NewRequestWithContext(ctx, method, host+path, jsonReader)
+	request, err := http.NewRequestWithContext(ctx, method, appendPath(host, path), jsonReader)
 	if err != nil {
 		return nil, err
 	}
