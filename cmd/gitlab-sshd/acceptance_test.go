@@ -387,12 +387,25 @@ func TestGitReceivePackSuccess(t *testing.T) {
 	ensureGitalyRepository(t)
 
 	client := runSSHD(t, successAPI(t))
-
 	session, err := client.NewSession()
 	require.NoError(t, err)
 	defer session.Close()
 
-	output, err := session.Output(fmt.Sprintf("git-receive-pack %s", testRepo))
+	stdin, err := session.StdinPipe()
+	require.NoError(t, err)
+
+	stdout, err := session.StdoutPipe()
+	require.NoError(t, err)
+
+	err = session.Start(fmt.Sprintf("git-receive-pack %s", testRepo))
+	require.NoError(t, err)
+
+	// Gracefully close connection
+	_, err = fmt.Fprintln(stdin, "0000")
+	require.NoError(t, err)
+	stdin.Close()
+
+	output, err := io.ReadAll(stdout)
 	require.NoError(t, err)
 
 	outputLines := strings.Split(string(output), "\n")
