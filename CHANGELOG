@@ -1,3 +1,8 @@
+v14.11.0
+
+- Update Gitaly to v15 !676
+- Fixed extra slashes in API request paths generated for geo !673
+
 v14.10.0
 
 - Implement Push Auth support for 2FA verification !454
