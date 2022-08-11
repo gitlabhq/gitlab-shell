@@ -5,5 +5,5 @@ group :development, :test do
 end
 
 group :development, :danger do
-  gem 'gitlab-dangerfiles', '~> 3.0.0'
+  gem 'gitlab-dangerfiles', '~> 3.5.1'
 end
