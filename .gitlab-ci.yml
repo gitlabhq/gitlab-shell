@@ -61,7 +61,7 @@ tests:
   image: golang:${GO_VERSION}
   parallel:
     matrix:
-      - GO_VERSION: ["1.17", "1.18"]
+      - GO_VERSION: ["1.17", "1.18", "1.19"]
   after_script:
     - make coverage
   coverage: '/\d+.\d+%/'
