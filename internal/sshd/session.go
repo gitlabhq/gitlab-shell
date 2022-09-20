@@ -66,8 +66,12 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) erro
 		case "env":
 			shouldContinue, err = s.handleEnv(ctx, req)
 		case "exec":
+			// The command has been executed as `ssh user@host command` or `exec` channel has been used
+			// in the app implementation
 			shouldContinue, err = s.handleExec(ctx, req)
 		case "shell":
+			// The command has been entered into the shell or `shell` channel has been used
+			// in the app implementation
 			shouldContinue = false
 			var status uint32
 			status, err = s.handleShell(ctx, req)
