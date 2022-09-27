@@ -141,9 +141,7 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	if user != "" && password != "" {
 		request.SetBasicAuth(user, password)
 	}
-	secretBytes := []byte(c.secret)
-
-	encodedSecret := base64.StdEncoding.EncodeToString(secretBytes)
+	encodedSecret := base64.StdEncoding.EncodeToString([]byte(c.secret))
 	request.Header.Set(secretHeaderName, encodedSecret)
 
 	claims := jwt.RegisteredClaims{
@@ -151,6 +149,7 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		ExpiresAt: jwt.NewNumericDate(time.Now().Add(jwtTTL)),
 	}
+	secretBytes := []byte(strings.TrimSpace(c.secret))
 	tokenString, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(secretBytes)
 	if err != nil {
 		return nil, err

@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	secret = []byte("sssh, it's a secret")
+	secret = "sssh, it's a secret"
 )
 
 func TestClients(t *testing.T) {
@@ -31,24 +31,29 @@ func TestClients(t *testing.T) {
 		relativeURLRoot string
 		caFile          string
 		server          func(*testing.T, []testserver.TestRequestHandler) string
+		secret          string
 	}{
 		{
 			desc:   "Socket client",
 			server: testserver.StartSocketHttpServer,
+			secret: secret,
 		},
 		{
 			desc:            "Socket client with a relative URL at /",
 			relativeURLRoot: "/",
 			server:          testserver.StartSocketHttpServer,
+			secret:          secret,
 		},
 		{
 			desc:            "Socket client with relative URL at /gitlab",
 			relativeURLRoot: "/gitlab",
 			server:          testserver.StartSocketHttpServer,
+			secret:          secret,
 		},
 		{
 			desc:   "Http client",
 			server: testserver.StartHttpServer,
+			secret: secret,
 		},
 		{
 			desc:   "Https client",
@@ -56,6 +61,15 @@ func TestClients(t *testing.T) {
 			server: func(t *testing.T, handlers []testserver.TestRequestHandler) string {
 				return testserver.StartHttpsServer(t, handlers, "")
 			},
+			secret: secret,
+		},
+		{
+			desc:   "Secret with newlines",
+			caFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt"),
+			server: func(t *testing.T, handlers []testserver.TestRequestHandler) string {
+				return testserver.StartHttpsServer(t, handlers, "")
+			},
+			secret: "\n" + secret + "\n",
 		},
 	}
 
@@ -66,7 +80,7 @@ func TestClients(t *testing.T) {
 			httpClient, err := NewHTTPClientWithOpts(url, tc.relativeURLRoot, tc.caFile, "", 1, nil)
 			require.NoError(t, err)
 
-			client, err := NewGitlabNetClient("", "", string(secret), httpClient)
+			client, err := NewGitlabNetClient("", "", tc.secret, httpClient)
 			require.NoError(t, err)
 
 			testBrokenRequest(t, client)
@@ -74,7 +88,7 @@ func TestClients(t *testing.T) {
 			testSuccessfulPost(t, client)
 			testMissing(t, client)
 			testErrorMessage(t, client)
-			testAuthenticationHeader(t, client)
+			testAuthenticationHeader(t, tc.secret, client)
 			testJWTAuthenticationHeader(t, client)
 			testXForwardedForHeader(t, client)
 			testHostWithTrailingSlash(t, client)
@@ -154,7 +168,7 @@ func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 	})
 }
 
-func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
+func testAuthenticationHeader(t *testing.T, secret string, client *GitlabNetClient) {
 	t.Run("Authentication headers for GET", func(t *testing.T) {
 		response, err := client.Get(context.Background(), "/auth")
 		require.NoError(t, err)
@@ -167,7 +181,7 @@ func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 
 		header, err := base64.StdEncoding.DecodeString(string(responseBody))
 		require.NoError(t, err)
-		require.Equal(t, secret, header)
+		require.Equal(t, secret, string(header))
 	})
 
 	t.Run("Authentication headers for POST", func(t *testing.T) {
@@ -182,7 +196,7 @@ func testAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 
 		header, err := base64.StdEncoding.DecodeString(string(responseBody))
 		require.NoError(t, err)
-		require.Equal(t, secret, header)
+		require.Equal(t, secret, string(header))
 	})
 }
 
@@ -193,7 +207,7 @@ func testJWTAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 
 		claims := &jwt.RegisteredClaims{}
 		token, err := jwt.ParseWithClaims(string(responseBody), claims, func(token *jwt.Token) (interface{}, error) {
-			return secret, nil
+			return []byte(secret), nil
 		})
 		require.NoError(t, err)
 		require.True(t, token.Valid)
