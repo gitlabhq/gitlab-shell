@@ -1,3 +1,10 @@
+v14.12.0
+
+- Trim secret before signing JWT tokens !686
+- Bump .tool-versions to use Go 1.18.6 !685
+- Update Gitaly to 15.4.0-rc2 !681
+- Test against Golang v1.19 !680
+
 v14.11.0
 
 - Update Gitaly to v15 !676
