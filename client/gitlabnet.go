@@ -3,7 +3,6 @@ package client
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -141,8 +140,6 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	if user != "" && password != "" {
 		request.SetBasicAuth(user, password)
 	}
-	encodedSecret := base64.StdEncoding.EncodeToString([]byte(c.secret))
-	request.Header.Set(secretHeaderName, encodedSecret)
 
 	claims := jwt.RegisteredClaims{
 		Issuer:    jwtIssuer,
