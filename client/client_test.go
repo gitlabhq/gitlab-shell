@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -88,7 +87,6 @@ func TestClients(t *testing.T) {
 			testSuccessfulPost(t, client)
 			testMissing(t, client)
 			testErrorMessage(t, client)
-			testAuthenticationHeader(t, tc.secret, client)
 			testJWTAuthenticationHeader(t, client)
 			testXForwardedForHeader(t, client)
 			testHostWithTrailingSlash(t, client)
@@ -165,38 +163,6 @@ func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 		response, err := client.Post(context.Background(), "/broken", map[string]string{})
 		require.EqualError(t, err, "Internal API unreachable")
 		require.Nil(t, response)
-	})
-}
-
-func testAuthenticationHeader(t *testing.T, secret string, client *GitlabNetClient) {
-	t.Run("Authentication headers for GET", func(t *testing.T) {
-		response, err := client.Get(context.Background(), "/auth")
-		require.NoError(t, err)
-		require.NotNil(t, response)
-
-		defer response.Body.Close()
-
-		responseBody, err := io.ReadAll(response.Body)
-		require.NoError(t, err)
-
-		header, err := base64.StdEncoding.DecodeString(string(responseBody))
-		require.NoError(t, err)
-		require.Equal(t, secret, string(header))
-	})
-
-	t.Run("Authentication headers for POST", func(t *testing.T) {
-		response, err := client.Post(context.Background(), "/auth", map[string]string{})
-		require.NoError(t, err)
-		require.NotNil(t, response)
-
-		defer response.Body.Close()
-
-		responseBody, err := io.ReadAll(response.Body)
-		require.NoError(t, err)
-
-		header, err := base64.StdEncoding.DecodeString(string(responseBody))
-		require.NoError(t, err)
-		require.Equal(t, secret, string(header))
 	})
 }
 
