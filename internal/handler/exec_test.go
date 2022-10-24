@@ -16,6 +16,9 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 func makeHandler(t *testing.T, err error) func(context.Context, *grpc.ClientConn) (int32, error) {
@@ -86,6 +89,21 @@ func TestUnavailableGitalyErr(t *testing.T) {
 
 	err := cmd.RunGitalyCommand(context.Background(), makeHandler(t, grpcstatus.Error(grpccodes.Unavailable, "error")))
 	require.Equal(t, err, grpcstatus.Error(grpccodes.Unavailable, "The git server, Gitaly, is not available at this time. Please contact your administrator."))
+}
+
+func TestGitalyLimitErr(t *testing.T) {
+	cmd := NewGitalyCommand(
+		newConfig(),
+		string(commandargs.UploadPack),
+		&accessverifier.Response{
+			Gitaly: accessverifier.Gitaly{Address: "tcp://localhost:9999"},
+		},
+	)
+	limitErr := errWithDetail(t, &pb.LimitError{
+		ErrorMessage: "concurrency queue wait time reached",
+		RetryAfter:   durationpb.New(0)})
+	err := cmd.RunGitalyCommand(context.Background(), makeHandler(t, limitErr))
+	require.Equal(t, err, grpcstatus.Error(grpccodes.Unavailable, "GitLab is currently unable to handle this request due to load."))
 }
 
 func TestRunGitalyCommandMetadata(t *testing.T) {
@@ -210,4 +228,17 @@ func newConfig() *config.Config {
 	cfg := &config.Config{}
 	cfg.GitalyClient.InitSidechannelRegistry(context.Background())
 	return cfg
+}
+
+// errWithDetail adds the given details to the error if it is a gRPC status whose code is not OK.
+func errWithDetail(t *testing.T, detail proto.Message) error {
+	st := grpcstatus.New(grpccodes.Unavailable, "too busy")
+
+	proto := st.Proto()
+	marshaled, err := anypb.New(detail)
+	require.NoError(t, err)
+
+	proto.Details = append(proto.Details, marshaled)
+
+	return grpcstatus.ErrorProto(proto)
 }

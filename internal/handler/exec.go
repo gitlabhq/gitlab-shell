@@ -41,6 +41,24 @@ func NewGitalyCommand(cfg *config.Config, serviceName string, response *accessve
 	return &GitalyCommand{Config: cfg, Response: response, Command: gc}
 }
 
+// processGitalyError handles errors that come back from Gitaly that may be a
+// LimitError. A LimitError is returned by Gitaly when it is at its limit in
+// handling requests. Since this is a known error, we should print a sensible
+// error message to the end user.
+func processGitalyError(statusErr error) error {
+	if st, ok := grpcstatus.FromError(statusErr); ok {
+		details := st.Details()
+		for _, detail := range details {
+			switch detail.(type) {
+			case *pb.LimitError:
+				return grpcstatus.Error(grpccodes.Unavailable, "GitLab is currently unable to handle this request due to load.")
+			}
+		}
+	}
+
+	return grpcstatus.Error(grpccodes.Unavailable, "The git server, Gitaly, is not available at this time. Please contact your administrator.")
+}
+
 // RunGitalyCommand provides a bootstrap for Gitaly commands executed
 // through GitLab-Shell. It ensures that logging, tracing and other
 // common concerns are configured before executing the `handler`.
@@ -61,7 +79,7 @@ func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHan
 		ctxlog.WithError(err).WithFields(log.Fields{"exit_status": exitStatus}).Error("Failed to execute Git command")
 
 		if grpcstatus.Code(err) == grpccodes.Unavailable {
-			return grpcstatus.Error(grpccodes.Unavailable, "The git server, Gitaly, is not available at this time. Please contact your administrator.")
+			return processGitalyError(err)
 		}
 	}
 
