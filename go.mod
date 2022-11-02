@@ -10,7 +10,7 @@ require (
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/otiai10/copy v1.4.2
 	github.com/pires/go-proxyproto v0.6.2
-	github.com/prometheus/client_golang v1.12.2
+	github.com/prometheus/client_golang v1.13.1
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0
 	gitlab.com/gitlab-org/gitaly/v15 v15.4.0-rc2
@@ -60,8 +60,8 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
-	github.com/prometheus/common v0.32.1 // indirect
-	github.com/prometheus/procfs v0.7.3 // indirect
+	github.com/prometheus/common v0.37.0 // indirect
+	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/sebest/xff v0.0.0-20210106013422-671bd2870b3a // indirect
 	github.com/shirou/gopsutil/v3 v3.21.2 // indirect
 	github.com/tinylib/msgp v1.1.2 // indirect
@@ -86,3 +86,5 @@ require (
 )
 
 replace golang.org/x/crypto => gitlab.com/gitlab-org/golang-crypto v0.0.0-20220616060731-4818747c9fed
+
+exclude github.com/prometheus/client_golang v1.12.1
