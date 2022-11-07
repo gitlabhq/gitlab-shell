@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pires/go-proxyproto"
+	proxyproto "github.com/pires/go-proxyproto"
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
@@ -97,7 +97,7 @@ func (s *Server) listen(ctx context.Context) error {
 	if s.Config.Server.ProxyProtocol {
 		sshListener = &proxyproto.Listener{
 			Listener:          sshListener,
-			Policy:            s.requirePolicy,
+			Policy:            s.requirePolicy(),
 			ReadHeaderTimeout: time.Duration(s.Config.Server.ProxyHeaderTimeout),
 		}
 
@@ -200,17 +200,23 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	})
 }
 
-func (s *Server) requirePolicy(_ net.Addr) (proxyproto.Policy, error) {
+func (s *Server) requirePolicy() proxyproto.PolicyFunc {
 	// Set the Policy value based on config
 	// Values are taken from https://github.com/pires/go-proxyproto/blob/195fedcfbfc1be163f3a0d507fac1709e9d81fed/policy.go#L20
 	switch strings.ToLower(s.Config.Server.ProxyPolicy) {
 	case "require":
-		return proxyproto.REQUIRE, nil
+		return staticProxyPolicy(proxyproto.REQUIRE)
 	case "ignore":
-		return proxyproto.IGNORE, nil
+		return staticProxyPolicy(proxyproto.IGNORE)
 	case "reject":
-		return proxyproto.REJECT, nil
+		return staticProxyPolicy(proxyproto.REJECT)
 	default:
-		return proxyproto.USE, nil
+		return staticProxyPolicy(proxyproto.USE)
+	}
+}
+
+func staticProxyPolicy(policy proxyproto.Policy) proxyproto.PolicyFunc {
+	return func(_ net.Addr) (proxyproto.Policy, error) {
+		return policy, nil
 	}
 }
