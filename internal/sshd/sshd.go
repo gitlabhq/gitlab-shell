@@ -201,6 +201,10 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 }
 
 func (s *Server) requirePolicy() proxyproto.PolicyFunc {
+	if len(s.Config.Server.ProxyAllowed) > 0 {
+		return proxyproto.MustStrictWhiteListPolicy(s.Config.Server.ProxyAllowed)
+	}
+
 	// Set the Policy value based on config
 	// Values are taken from https://github.com/pires/go-proxyproto/blob/195fedcfbfc1be163f3a0d507fac1709e9d81fed/policy.go#L20
 	switch strings.ToLower(s.Config.Server.ProxyPolicy) {

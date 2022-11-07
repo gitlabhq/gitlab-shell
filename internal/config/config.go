@@ -27,6 +27,7 @@ type ServerConfig struct {
 	Listen                  string       `yaml:"listen,omitempty"`
 	ProxyProtocol           bool         `yaml:"proxy_protocol,omitempty"`
 	ProxyPolicy             string       `yaml:"proxy_policy,omitempty"`
+	ProxyAllowed            []string     `yaml:"proxy_allowed,omitempty"`
 	WebListen               string       `yaml:"web_listen,omitempty"`
 	ConcurrentSessionsLimit int64        `yaml:"concurrent_sessions_limit,omitempty"`
 	ClientAliveInterval     YamlDuration `yaml:"client_alive_interval,omitempty"`
