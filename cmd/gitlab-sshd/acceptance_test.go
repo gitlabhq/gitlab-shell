@@ -477,6 +477,7 @@ func TestGitUploadArchiveSuccess(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = fmt.Fprintln(stdin, "0012argument HEAD\n0000")
+	require.NoError(t, err)
 
 	line, err := reader.ReadString('\n')
 	require.Equal(t, "0008ACK\n", line)
