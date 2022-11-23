@@ -9,8 +9,8 @@
     "repository": {
       "storage_name": "default",
       "relative_path": "GITALY_REPOSITORY",
-      "git_object_directory": "path/to/git_object_directory",
-      "git_alternate_object_directories": ["path/to/git_alternate_object_directory"],
+      "git_object_directory": "objects/",
+      "git_alternate_object_directories": ["objects/"],
       "gl_repository": "project-26",
       "gl_project_path": "group/private"
     },
