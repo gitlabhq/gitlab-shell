@@ -99,54 +99,6 @@ graph LR
     end
 ```
 
-## Commands
-
-- `make check`: Checks if GitLab API access and Redis (via internal API) can be reached
-- `make compile`: Builds the `gitlab-shell` binaries, placing them into `bin/`.
-- `make install`: Builds the `gitlab-shell` binaries and installs them onto the
-  file system. The default location is `/usr/local`, but you can change it with the `PREFIX`
-  and `DESTDIR` environment variables.
-- `make setup`: Don't run this command unless instructed to by your installation method
-  documentation. Used when installing GitLab from source on a single machine. Compiles
-  the `gitlab-shell` binaries, and ensures that file system paths exist and contain
-  correct permissions.
-
-## Testing
-
-Run tests:
-
-```shell
-bundle install
-make test
-```
-
-Run `gofmt`:
-
-```shell
-make verify
-```
-
-Run both test and verify (the default Makefile target):
-
-```shell
-bundle install
-make validate
-```
-
-### Gitaly requirements for tests
-
-Some tests need a Gitaly server. The
-[`docker-compose.yml`](docker-compose.yml) file runs Gitaly on port 8075.
-To tell the tests the location of Gitaly, set `GITALY_CONNECTION_INFO`:
-
-```plaintext
-export GITALY_CONNECTION_INFO='{"address": "tcp://localhost:8075", "storage": "default"}'
-make test
-```
-
-If no `GITALY_CONNECTION_INFO` is set, the test suite still runs, but any
-tests requiring Gitaly are skipped. These tests always run in the CI environment.
-
 ## Releasing
 
 See [PROCESS.md](./PROCESS.md)
