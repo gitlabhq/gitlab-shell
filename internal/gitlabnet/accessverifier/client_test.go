@@ -56,7 +56,7 @@ func buildExpectedResponse(who string) *Response {
 func TestSuccessfulResponses(t *testing.T) {
 	okResponse := testResponse{body: responseBody(t, "allowed.json"), status: http.StatusOK}
 	client := setup(t,
-		map[string]testResponse{"first": okResponse},
+		map[string]testResponse{"first": okResponse, "test@TEST.TEST": okResponse},
 		map[string]testResponse{"1": okResponse},
 	)
 
@@ -72,6 +72,10 @@ func TestSuccessfulResponses(t *testing.T) {
 		}, {
 			desc: "Provide username within the request",
 			args: &commandargs.Shell{GitlabUsername: "first"},
+			who:  "user-1",
+		}, {
+			desc: "Provide krb5principal within the request",
+			args: &commandargs.Shell{GitlabKrb5Principal: "test@TEST.TEST"},
 			who:  "user-1",
 		},
 	}
@@ -252,6 +256,10 @@ func setup(t *testing.T, userResponses, keyResponses map[string]testResponse) *C
 				require.NoError(t, json.Unmarshal(b, &requestBody))
 
 				if tr, ok := userResponses[requestBody.Username]; ok {
+					w.WriteHeader(tr.status)
+					_, err := w.Write(tr.body)
+					require.NoError(t, err)
+				} else if tr, ok := userResponses[requestBody.Krb5Principal]; ok {
 					w.WriteHeader(tr.status)
 					_, err := w.Write(tr.body)
 					require.NoError(t, err)

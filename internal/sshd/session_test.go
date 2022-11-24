@@ -130,21 +130,29 @@ func TestHandleExec(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			out := &bytes.Buffer{}
-			f := &fakeChannel{stdErr: out}
-			s := &session{
-				gitlabKeyId: "root",
-				channel:     f,
-				cfg:         &config.Config{GitlabUrl: url},
+			sessions := []*session{
+				{
+					gitlabKeyId: "root",
+					cfg:         &config.Config{GitlabUrl: url},
+				},
+				{
+					gitlabKrb5Principal: "test@TEST.TEST",
+					cfg:                 &config.Config{GitlabUrl: url},
+				},
 			}
-			r := &ssh.Request{Payload: tc.payload}
+			for _, s := range sessions {
+				out := &bytes.Buffer{}
+				f := &fakeChannel{stdErr: out}
+				r := &ssh.Request{Payload: tc.payload}
 
-			shouldContinue, err := s.handleExec(context.Background(), r)
+				s.channel = f
+				shouldContinue, err := s.handleExec(context.Background(), r)
 
-			require.Equal(t, tc.expectedErr, err)
-			require.Equal(t, false, shouldContinue)
-			require.Equal(t, tc.sentRequestName, f.sentRequestName)
-			require.Equal(t, tc.sentRequestPayload, f.sentRequestPayload)
+				require.Equal(t, tc.expectedErr, err)
+				require.Equal(t, false, shouldContinue)
+				require.Equal(t, tc.sentRequestName, f.sentRequestName)
+				require.Equal(t, tc.sentRequestPayload, f.sentRequestPayload)
+			}
 		})
 	}
 }

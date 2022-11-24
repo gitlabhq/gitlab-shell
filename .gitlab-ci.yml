@@ -38,7 +38,7 @@ default:
     GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
   before_script:
     # Set up the environment to run integration tests (still written in Ruby)
-    - apt-get update -qq && apt-get install -y ruby ruby-dev
+    - apt-get update -qq && apt-get install -y ruby ruby-dev libkrb5-dev
     - ruby -v
     - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin
     - gem install --force --bindir /usr/local/bin bundler -v 2.3.6
@@ -80,6 +80,7 @@ code_navigation:
   image: sourcegraph/lsif-go:v1.9
   allow_failure: true
   script:
+    - apt-get update -qq && apt-get install -y libkrb5-dev
     - lsif-go
   artifacts:
     reports:

@@ -26,12 +26,13 @@ var (
 )
 
 type Shell struct {
-	Arguments      []string
-	GitlabUsername string
-	GitlabKeyId    string
-	SshArgs        []string
-	CommandType    CommandType
-	Env            sshenv.Env
+	Arguments           []string
+	GitlabUsername      string
+	GitlabKeyId         string
+	GitlabKrb5Principal string
+	SshArgs             []string
+	CommandType         CommandType
+	Env                 sshenv.Env
 }
 
 func (s *Shell) Parse() error {
