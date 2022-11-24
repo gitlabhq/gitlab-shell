@@ -50,7 +50,7 @@ func TestListenAndServe(t *testing.T) {
 	verifyStatus(t, s, StatusClosed)
 }
 
-func TestListenAndServeRejectsPlainConnectionsWhenProxyProtocolEnabled(t *testing.T) {
+func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {
 	target, err := net.ResolveTCPAddr("tcp", serverUrl)
 	require.NoError(t, err)
 
@@ -70,10 +70,11 @@ func TestListenAndServeRejectsPlainConnectionsWhenProxyProtocolEnabled(t *testin
 	}()
 
 	testCases := []struct {
-		desc        string
-		proxyPolicy string
-		header      *proxyproto.Header
-		isRejected  bool
+		desc         string
+		proxyPolicy  string
+		proxyAllowed []string
+		header       *proxyproto.Header
+		isRejected   bool
 	}{
 		{
 			desc:        "USE (default) without a header",
@@ -123,11 +124,65 @@ func TestListenAndServeRejectsPlainConnectionsWhenProxyProtocolEnabled(t *testin
 			header:      header,
 			isRejected:  false,
 		},
+		{
+			desc:         "Allow-listed IP with a header",
+			proxyAllowed: []string{"127.0.0.1"},
+			header:       header,
+			isRejected:   false,
+		},
+		{
+			desc:         "Allow-listed IP without a header",
+			proxyAllowed: []string{"127.0.0.1"},
+			header:       nil,
+			isRejected:   false,
+		},
+		{
+			desc:         "Allow-listed range with a header",
+			proxyAllowed: []string{"127.0.0.0/24"},
+			header:       header,
+			isRejected:   false,
+		},
+		{
+			desc:         "Allow-listed range without a header",
+			proxyAllowed: []string{"127.0.0.0/24"},
+			header:       nil,
+			isRejected:   false,
+		},
+		{
+			desc:         "Not allow-listed IP with a header",
+			proxyAllowed: []string{"192.168.1.1"},
+			header:       header,
+			isRejected:   true,
+		},
+		{
+			desc:         "Not allow-listed IP without a header",
+			proxyAllowed: []string{"192.168.1.1"},
+			header:       nil,
+			isRejected:   false,
+		},
+		{
+			desc:         "Not allow-listed range with a header",
+			proxyAllowed: []string{"192.168.1.0/24"},
+			header:       header,
+			isRejected:   true,
+		},
+		{
+			desc:         "Not allow-listed range without a header",
+			proxyAllowed: []string{"192.168.1.0/24"},
+			header:       nil,
+			isRejected:   false,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			setupServerWithConfig(t, &config.Config{Server: config.ServerConfig{ProxyProtocol: true, ProxyPolicy: tc.proxyPolicy}})
+			setupServerWithConfig(t, &config.Config{
+				Server: config.ServerConfig{
+					ProxyProtocol: true,
+					ProxyPolicy:   tc.proxyPolicy,
+					ProxyAllowed:  tc.proxyAllowed,
+				},
+			})
 
 			conn, err := net.DialTCP("tcp", nil, target)
 			require.NoError(t, err)
