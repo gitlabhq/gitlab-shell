@@ -177,7 +177,7 @@ func TestCanceledContext(t *testing.T) {
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},
 		Args:       &commandargs.Shell{GitlabKeyId: "wait_infinitely"},
-		ReadWriter: &readwriter.ReadWriter{Out: output, In: &bytes.Buffer{}},
+		ReadWriter: &readwriter.ReadWriter{Out: output, In: &blockingReader{}},
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
