@@ -10,6 +10,9 @@ include:
 variables:
   DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
+  GO_VERSION: "1.18"
+  DEBIAN_VERSION: "bullseye"
+  RUBY_VERSION: "2.7"
 
 workflow:
   rules: &workflow_rules
@@ -21,7 +24,7 @@ workflow:
     - if: '$CI_COMMIT_TAG'
 
 default:
-  image: golang:1.14
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-ruby-${RUBY_VERSION}-golang-${GO_VERSION}:git-2.36
   tags:
     - gitlab-org
 
@@ -38,12 +41,7 @@ default:
     GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
   before_script:
     # Set up the environment to run integration tests (still written in Ruby)
-    - apt-get update -qq && apt-get install -y ruby ruby-dev
-    - ruby -v
-    - export PATH=~/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/go/bin
-    - gem install --force --bindir /usr/local/bin bundler -v 2.3.6
     - bundle install
-    # Now set up to run the Golang tests
     - make build
     - cp config.yml.example config.yml
     - go version
@@ -58,7 +56,6 @@ default:
 
 tests:
   extends: .test
-  image: golang:${GO_VERSION}
   parallel:
     matrix:
       - GO_VERSION: ["1.17", "1.18", "1.19"]
@@ -68,7 +65,6 @@ tests:
 
 race:
   extends: .test
-  image: golang:1.18
   script:
     - make test_golang_race
 
