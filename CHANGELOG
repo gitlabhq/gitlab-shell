@@ -1,3 +1,17 @@
+v14.14.0
+
+- Add developer documentation to sshd package !683
+- Improve error message for Gitaly `LimitError`s !691
+- Drop 1.16 compatibility in go.sum !692
+- Bump x/text to 0.3.8 !692
+- Update prometheus package to 1.13.1 !692
+  Restrict IP access for PROXY protocol !693
+- Fix broken Gitaly integration tests !694
+- Clean up .gitlab-ci.yml file !695
+- Use the images provided by Gitlab to run tests !698
+- Use Ruby 2.7.7 as the default !699
+- Use blocking reader to fix race in test !700
+
 v14.13.0
 
 - Update .tool-versions to Go 1.18.7 !688
