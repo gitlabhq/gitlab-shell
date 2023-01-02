@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"gitlab.com/gitlab-org/labkit/tracing"
 )
@@ -25,12 +26,10 @@ const (
 	defaultReadTimeoutSeconds = 300
 )
 
-var (
-	ErrCafileNotFound = errors.New("cafile not found")
-)
+var ErrCafileNotFound = errors.New("cafile not found")
 
 type HttpClient struct {
-	*http.Client
+	*retryablehttp.Client
 	Host string
 }
 
@@ -101,10 +100,15 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 		return nil, errors.New("unknown GitLab URL prefix")
 	}
 
-	c := &http.Client{
-		Transport: correlation.NewInstrumentedRoundTripper(tracing.NewRoundTripper(transport)),
-		Timeout:   readTimeout(readTimeoutSeconds),
+	c := retryablehttp.NewClient()
+	c.RetryMax = 0                                          // Retry logic is disabled by default
+	if os.Getenv("FF_GITLAB_SHELL_RETRYABLE_HTTP") == "1" { // Feature toggle for enabling retries on GitLab client.
+		c.RetryMax = 2
+		c.RetryWaitMax = 15 * time.Second
 	}
+	c.Logger = nil
+	c.HTTPClient.Transport = correlation.NewInstrumentedRoundTripper(tracing.NewRoundTripper(transport))
+	c.HTTPClient.Timeout = readTimeout(readTimeoutSeconds)
 
 	client := &HttpClient{Client: c, Host: host}
 
@@ -132,7 +136,6 @@ func buildSocketTransport(gitlabURL, gitlabRelativeURLRoot string) (*http.Transp
 
 func buildHttpsTransport(hcc httpClientCfg, gitlabURL string) (*http.Transport, string, error) {
 	certPool, err := x509.SystemCertPool()
-
 	if err != nil {
 		certPool = x509.NewCertPool()
 	}

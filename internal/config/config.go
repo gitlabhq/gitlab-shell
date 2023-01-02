@@ -134,8 +134,8 @@ func (c *Config) HttpClient() (*client.HttpClient, error) {
 			return
 		}
 
-		tr := client.Transport
-		client.Transport = metrics.NewRoundTripper(tr)
+		tr := client.HTTPClient.Transport
+		client.HTTPClient.Transport = metrics.NewRoundTripper(tr)
 
 		c.httpClient = client
 	})

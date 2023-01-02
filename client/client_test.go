@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
+	"os"
 	"path"
 	"strings"
 	"testing"
@@ -18,9 +20,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 )
 
-var (
-	secret = "sssh, it's a secret"
-)
+var secret = "sssh, it's a secret"
 
 func TestClients(t *testing.T) {
 	testhelper.PrepareTestRootDir(t)
@@ -69,6 +69,11 @@ func TestClients(t *testing.T) {
 				return testserver.StartHttpsServer(t, handlers, "")
 			},
 			secret: "\n" + secret + "\n",
+		},
+		{
+			desc:   "Retry client",
+			server: testserver.StartRetryHttpServer,
+			secret: secret,
 		},
 	}
 
@@ -296,4 +301,44 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 	}
 
 	return requests
+}
+
+func TestRetryableHTTPFeatureToggle(t *testing.T) {
+	t.Run("retryable http off", func(t *testing.T) {
+		os.Setenv("FF_GITLAB_SHELL_RETRYABLE_HTTP", "0")
+		reqAttempts := 0
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			reqAttempts++
+			w.WriteHeader(500)
+		}))
+		defer srv.Close()
+
+		httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, nil)
+		require.NoError(t, err)
+		client, err := NewGitlabNetClient("", "", "", httpClient)
+		require.NoError(t, err)
+
+		_, err = client.Get(context.Background(), "/")
+		require.EqualError(t, err, "Internal API unreachable")
+		require.Equal(t, 1, reqAttempts)
+	})
+
+	t.Run("retryable http on", func(t *testing.T) {
+		os.Setenv("FF_GITLAB_SHELL_RETRYABLE_HTTP", "1")
+		reqAttempts := 0
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			reqAttempts++
+			w.WriteHeader(500)
+		}))
+		defer srv.Close()
+
+		httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, nil)
+		require.NoError(t, err)
+		client, err := NewGitlabNetClient("", "", "", httpClient)
+		require.NoError(t, err)
+
+		_, err = client.Get(context.Background(), "/")
+		require.EqualError(t, err, "Internal API unreachable")
+		require.Equal(t, 3, reqAttempts)
+	})
 }

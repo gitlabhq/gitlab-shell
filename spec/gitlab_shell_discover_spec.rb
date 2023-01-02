@@ -124,7 +124,7 @@ describe 'bin/gitlab-shell' do
     it 'returns an error message when the API call fails without a message' do
       _, stderr, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-broken"])
 
-      expect(stderr).to match(/Failed to get username: Internal API error \(500\)/)
+      expect(stderr).to match(/Failed to get username: Internal API unreachable/)
       expect(status).not_to be_success
     end
   end

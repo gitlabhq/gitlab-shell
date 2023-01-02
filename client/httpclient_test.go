@@ -21,7 +21,7 @@ func TestReadTimeout(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotNil(t, client)
-	require.Equal(t, time.Duration(expectedSeconds)*time.Second, client.Client.Timeout)
+	require.Equal(t, time.Duration(expectedSeconds)*time.Second, client.HTTPClient.Timeout)
 }
 
 const (

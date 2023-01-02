@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/hashicorp/go-retryablehttp"
 
 	"gitlab.com/gitlab-org/labkit/log"
 )
@@ -88,7 +89,7 @@ func appendPath(host string, path string) string {
 	return strings.TrimSuffix(host, "/") + "/" + strings.TrimPrefix(path, "/")
 }
 
-func newRequest(ctx context.Context, method, host, path string, data interface{}) (*http.Request, error) {
+func newRequest(ctx context.Context, method, host, path string, data interface{}) (*retryablehttp.Request, error) {
 	var jsonReader io.Reader
 	if data != nil {
 		jsonData, err := json.Marshal(data)
@@ -99,7 +100,7 @@ func newRequest(ctx context.Context, method, host, path string, data interface{}
 		jsonReader = bytes.NewReader(jsonData)
 	}
 
-	request, err := http.NewRequestWithContext(ctx, method, appendPath(host, path), jsonReader)
+	request, err := retryablehttp.NewRequestWithContext(ctx, method, appendPath(host, path), jsonReader)
 	if err != nil {
 		return nil, err
 	}
