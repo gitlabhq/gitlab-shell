@@ -6,6 +6,24 @@ info: To determine the technical writer assigned to the Stage/Group associated w
 
 # Beginner's guide to GitLab Shell contributions
 
+In order to build the binaries a single `make` command can be run:
+
+```shell
+make
+```
+
+If the command fails due to an error in `gssapi`, make sure that a `Kerberos` implementation is installed. For MacOS it's:
+
+```shell
+brew install heimdal
+```
+
+It may also require specifying `CGO_CFLAGS`:
+
+```shell
+CGO_CFLAGS="-I/opt/homebrew/opt/heimdal/include" make
+```
+
 ## Check
 
 Checks if GitLab API access and Redis via internal API can be reached:
