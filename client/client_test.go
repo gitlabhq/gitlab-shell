@@ -315,11 +315,13 @@ func TestRetryableHTTPFeatureToggle(t *testing.T) {
 
 		httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, nil)
 		require.NoError(t, err)
+		require.NotNil(t, httpClient.HTTPClient)
+		require.Nil(t, httpClient.RetryableHTTP)
 		client, err := NewGitlabNetClient("", "", "", httpClient)
 		require.NoError(t, err)
 
 		_, err = client.Get(context.Background(), "/")
-		require.EqualError(t, err, "Internal API unreachable")
+		require.EqualError(t, err, "Internal API error (500)")
 		require.Equal(t, 1, reqAttempts)
 	})
 
@@ -334,6 +336,8 @@ func TestRetryableHTTPFeatureToggle(t *testing.T) {
 
 		httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, nil)
 		require.NoError(t, err)
+		require.Nil(t, httpClient.HTTPClient)
+		require.NotNil(t, httpClient.RetryableHTTP)
 		client, err := NewGitlabNetClient("", "", "", httpClient)
 		require.NoError(t, err)
 

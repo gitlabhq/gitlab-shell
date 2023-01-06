@@ -74,7 +74,7 @@ func TestFailedRequests(t *testing.T) {
 		{
 			desc:           "With API fails",
 			args:           &commandargs.Shell{GitlabKeyId: "broken", CommandType: commandargs.LfsAuthenticate, SshArgs: []string{"git-lfs-authenticate", repo, "download"}},
-			expectedOutput: "Internal API unreachable",
+			expectedOutput: "Internal API error (500)",
 		},
 	}
 

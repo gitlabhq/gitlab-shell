@@ -18,7 +18,9 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/twofactorrecover"
 )
 
-var requests []testserver.TestRequestHandler
+var (
+	requests []testserver.TestRequestHandler
+)
 
 func setup(t *testing.T) {
 	requests = []testserver.TestRequestHandler{
@@ -97,7 +99,7 @@ func TestExecute(t *testing.T) {
 			desc:           "With API fails",
 			arguments:      &commandargs.Shell{GitlabKeyId: "broken"},
 			answer:         "yes\n",
-			expectedOutput: question + errorHeader + "Internal API unreachable\n",
+			expectedOutput: question + errorHeader + "Internal API error (500)\n",
 		},
 		{
 			desc:           "With missing arguments",

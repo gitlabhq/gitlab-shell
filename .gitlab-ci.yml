@@ -64,6 +64,13 @@ tests:
     - make coverage
   coverage: '/\d+.\d+%/'
 
+tests-integration-retryableHttp:
+  extends: .test
+  variables:
+    FF_GITLAB_SHELL_RETRYABLE_HTTP: '1'
+  script:
+    - make test_ruby
+
 race:
   extends: .test
   script:

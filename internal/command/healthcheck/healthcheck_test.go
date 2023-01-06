@@ -84,5 +84,5 @@ func TestFailingAPIExecute(t *testing.T) {
 
 	err := cmd.Execute(context.Background())
 	require.Empty(t, buffer.String())
-	require.EqualError(t, err, "Internal API available: FAILED - Internal API unreachable")
+	require.EqualError(t, err, "Internal API available: FAILED - Internal API error (500)")
 }

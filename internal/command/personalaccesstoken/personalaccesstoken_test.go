@@ -17,7 +17,9 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/personalaccesstoken"
 )
 
-var requests []testserver.TestRequestHandler
+var (
+	requests []testserver.TestRequestHandler
+)
 
 func setup(t *testing.T) {
 	requests = []testserver.TestRequestHandler{
@@ -145,7 +147,7 @@ func TestExecute(t *testing.T) {
 				GitlabKeyId: "broken",
 				SshArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
 			},
-			expectedError: "Internal API unreachable",
+			expectedError: "Internal API error (500)",
 		},
 		{
 			desc: "Without KeyID or User",
