@@ -51,14 +51,14 @@ default:
       # Disable the hooks so we don't have to stub the GitLab API
       command: ["bash", "-c", "mkdir -p /home/git/repositories && rm -rf /srv/gitlab-shell/hooks/* && exec /usr/bin/env GITALY_TESTING_NO_GIT_HOOKS=1 /scripts/process-wrapper"]
       alias: gitaly
-  script:
-    - make verify test
 
 tests:
   extends: .test
   parallel:
     matrix:
       - GO_VERSION: ["1.17", "1.18", "1.19"]
+  script:
+    - make verify test
   after_script:
     - make coverage
   coverage: '/\d+.\d+%/'
