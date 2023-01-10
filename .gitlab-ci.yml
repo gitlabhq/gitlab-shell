@@ -57,6 +57,7 @@ tests:
   parallel:
     matrix:
       - GO_VERSION: ["1.17", "1.18", "1.19"]
+      - RUBY_VERSION: ["2.7", "3.0"]
   script:
     - make verify test
   after_script:
