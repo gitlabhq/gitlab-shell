@@ -59,6 +59,35 @@ func StartHttpServer(t *testing.T, handlers []TestRequestHandler) string {
 	return server.URL
 }
 
+func StartRetryHttpServer(t *testing.T, handlers []TestRequestHandler) string {
+	os.Setenv("FF_GITLAB_SHELL_RETRYABLE_HTTP", "1")
+	attempts := map[string]int{}
+
+	retryMiddileware := func(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			attempts[r.URL.String()+r.Method]++
+			if attempts[r.URL.String()+r.Method] == 1 {
+				w.WriteHeader(500)
+				return
+			}
+
+			http.HandlerFunc(next).ServeHTTP(w, r)
+		})
+	}
+	t.Helper()
+
+	h := http.NewServeMux()
+
+	for _, handler := range handlers {
+		h.Handle(handler.Path, retryMiddileware(handler.Handler))
+	}
+
+	server := httptest.NewServer(h)
+	t.Cleanup(func() { server.Close() })
+
+	return server.URL
+}
+
 func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath string) string {
 	t.Helper()
 

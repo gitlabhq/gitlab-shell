@@ -134,8 +134,14 @@ func (c *Config) HttpClient() (*client.HttpClient, error) {
 			return
 		}
 
-		tr := client.Transport
-		client.Transport = metrics.NewRoundTripper(tr)
+		if client.HTTPClient != nil {
+			tr := client.HTTPClient.Transport
+			client.HTTPClient.Transport = metrics.NewRoundTripper(tr)
+		}
+		if os.Getenv("FF_GITLAB_SHELL_RETRYABLE_HTTP") == "1" && client.RetryableHTTP != nil {
+			tr := client.RetryableHTTP.HTTPClient.Transport
+			client.RetryableHTTP.HTTPClient.Transport = metrics.NewRoundTripper(tr)
+		}
 
 		c.httpClient = client
 	})

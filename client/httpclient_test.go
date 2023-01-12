@@ -21,7 +21,13 @@ func TestReadTimeout(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotNil(t, client)
-	require.Equal(t, time.Duration(expectedSeconds)*time.Second, client.Client.Timeout)
+	if client.HTTPClient != nil {
+		require.Equal(t, time.Duration(expectedSeconds)*time.Second, client.HTTPClient.Timeout)
+	}
+
+	if client.RetryableHTTP != nil {
+		require.Equal(t, time.Duration(expectedSeconds)*time.Second, client.RetryableHTTP.HTTPClient.Timeout)
+	}
 }
 
 const (
@@ -117,7 +123,6 @@ func TestRequestWithUserAgent(t *testing.T) {
 	client.SetUserAgent(gitalyUserAgent)
 	_, err = client.Get(context.Background(), "/override_user_agent")
 	require.NoError(t, err)
-
 }
 
 func setup(t *testing.T, username, password string, requests []testserver.TestRequestHandler) *GitlabNetClient {
