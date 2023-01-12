@@ -1,3 +1,9 @@
+v14.15.0
+
+- Incorporate older edits to README !696
+- Upgrade to Ruby 3.x !706
+- feat: retry on http error !703
+
 v14.14.0
 
 - Add developer documentation to sshd package !683
@@ -5,7 +11,7 @@ v14.14.0
 - Drop 1.16 compatibility in go.sum !692
 - Bump x/text to 0.3.8 !692
 - Update prometheus package to 1.13.1 !692
-  Restrict IP access for PROXY protocol !693
+- Restrict IP access for PROXY protocol !693
 - Fix broken Gitaly integration tests !694
 - Clean up .gitlab-ci.yml file !695
 - Use the images provided by Gitlab to run tests !698
