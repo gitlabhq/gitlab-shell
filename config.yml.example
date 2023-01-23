@@ -107,3 +107,11 @@ sshd:
     - /run/secrets/ssh-hostkeys/ssh_host_rsa_key-cert.pub
     - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key-cert.pub
     - /run/secrets/ssh-hostkeys/ssh_host_ed25519_key-cert.pub
+  # GSSAPI-related settings
+  gssapi:
+    # Enable the gssapi-with-mic authentication method. Defaults to false.
+    enabled: false
+    # Keytab path. Defaults to "", system default (usually /etc/krb5.keytab).
+    keytab: ""
+    # The Kerberos service name to be used by sshd. Defaults to "", accepts any service name in keytab file.
+    service_principal_name: ""

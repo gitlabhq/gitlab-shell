@@ -13,6 +13,7 @@ import (
 	grpcstatus "google.golang.org/grpc/status"
 
 	shellCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
@@ -23,10 +24,11 @@ import (
 
 type session struct {
 	// State set up by the connection
-	cfg         *config.Config
-	channel     ssh.Channel
-	gitlabKeyId string
-	remoteAddr  string
+	cfg                 *config.Config
+	channel             ssh.Channel
+	gitlabKeyId         string
+	gitlabKrb5Principal string
+	remoteAddr          string
 
 	// State managed by the session
 	execCmd            string
@@ -166,7 +168,14 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (uint32, er
 		ErrOut: s.channel.Stderr(),
 	}
 
-	cmd, err := shellCmd.NewWithKey(s.gitlabKeyId, env, s.cfg, rw)
+	var cmd command.Command
+	var err error
+
+	if s.gitlabKrb5Principal != "" {
+		cmd, err = shellCmd.NewWithKrb5Principal(s.gitlabKrb5Principal, env, s.cfg, rw)
+	} else {
+		cmd, err = shellCmd.NewWithKey(s.gitlabKeyId, env, s.cfg, rw)
+	}
 	if err != nil {
 		if errors.Is(err, disallowedcommand.Error) {
 			s.toStderr(ctx, "ERROR: Unknown command: %v\n", s.execCmd)
