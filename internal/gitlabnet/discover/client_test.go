@@ -38,6 +38,13 @@ func init() {
 						Name:     "Jane Doe",
 					}
 					json.NewEncoder(w).Encode(body)
+				} else if r.URL.Query().Get("krb5principal") == "john-doe@TEST.TEST" {
+					body := &Response{
+						UserId:   3,
+						Username: "john-doe",
+						Name:     "John Doe",
+					}
+					json.NewEncoder(w).Encode(body)
 				} else if r.URL.Query().Get("username") == "broken_message" {
 					w.WriteHeader(http.StatusForbidden)
 					body := &client.ErrorResponse{
@@ -74,6 +81,16 @@ func TestGetByUsername(t *testing.T) {
 	result, err := client.getResponse(context.Background(), params)
 	require.NoError(t, err)
 	require.Equal(t, &Response{UserId: 1, Username: "jane-doe", Name: "Jane Doe"}, result)
+}
+
+func TestGetByKrb5Principal(t *testing.T) {
+	client := setup(t)
+
+	params := url.Values{}
+	params.Add("krb5principal", "john-doe@TEST.TEST")
+	result, err := client.getResponse(context.Background(), params)
+	require.NoError(t, err)
+	require.Equal(t, &Response{UserId: 3, Username: "john-doe", Name: "John Doe"}, result)
 }
 
 func TestMissingUser(t *testing.T) {

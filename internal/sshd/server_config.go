@@ -146,6 +146,26 @@ func (s *serverConfig) getAuthKey(ctx context.Context, user string, key ssh.Publ
 }
 
 func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
+	var gssapiWithMICConfig *ssh.GSSAPIWithMICConfig
+	if s.cfg.Server.GSSAPI.Enabled {
+		gssapiWithMICConfig = &ssh.GSSAPIWithMICConfig{
+			AllowLogin: func(conn ssh.ConnMetadata, srcName string) (*ssh.Permissions, error) {
+				if conn.User() != s.cfg.User {
+					return nil, fmt.Errorf("unknown user")
+				}
+
+				return &ssh.Permissions{
+					// Record the Kerberos principal used for authentication.
+					Extensions: map[string]string{
+						"krb5principal": srcName,
+					},
+				}, nil
+			},
+			Server: &OSGSSAPIServer{
+				ServicePrincipalName: s.cfg.Server.GSSAPI.ServicePrincipalName,
+			},
+		}
+	}
 	sshCfg := &ssh.ServerConfig{
 		PublicKeyCallback: func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
 			res, err := s.getAuthKey(ctx, conn.User(), key)
@@ -160,7 +180,8 @@ func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
 				},
 			}, nil
 		},
-		ServerVersion: "SSH-2.0-GitLab-SSHD",
+		GSSAPIWithMICConfig: gssapiWithMICConfig,
+		ServerVersion:       "SSH-2.0-GitLab-SSHD",
 	}
 
 	if len(s.cfg.Server.MACs) > 0 {

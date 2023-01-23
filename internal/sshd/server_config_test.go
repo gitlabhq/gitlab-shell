@@ -171,6 +171,52 @@ func TestCustomAlgorithms(t *testing.T) {
 	require.Equal(t, customCiphers, sshServerConfig.Ciphers)
 }
 
+func TestGSSAPIWithMIC(t *testing.T) {
+	srvCfg := &serverConfig{
+		cfg: &config.Config{
+			Server: config.ServerConfig{
+				GSSAPI: config.GSSAPIConfig{
+					Enabled:              true,
+					ServicePrincipalName: "host/test@TEST.TEST",
+				},
+			},
+		},
+	}
+	sshServerConfig := srvCfg.get(context.Background())
+	server := sshServerConfig.GSSAPIWithMICConfig.Server.(*OSGSSAPIServer)
+
+	require.NotNil(t, sshServerConfig.GSSAPIWithMICConfig)
+	require.NotNil(t, sshServerConfig.GSSAPIWithMICConfig.AllowLogin)
+	require.NotNil(t, server)
+	require.Equal(t, server.ServicePrincipalName, "host/test@TEST.TEST")
+
+	sshServerConfig.SetDefaults()
+
+	require.NotNil(t, sshServerConfig.GSSAPIWithMICConfig)
+	require.NotNil(t, sshServerConfig.GSSAPIWithMICConfig.AllowLogin)
+	require.NotNil(t, server)
+	require.Equal(t, server.ServicePrincipalName, "host/test@TEST.TEST")
+}
+
+func TestGSSAPIWithMICDisabled(t *testing.T) {
+	srvCfg := &serverConfig{
+		cfg: &config.Config{
+			Server: config.ServerConfig{
+				GSSAPI: config.GSSAPIConfig{
+					Enabled: false,
+				},
+			},
+		},
+	}
+	sshServerConfig := srvCfg.get(context.Background())
+
+	require.Nil(t, sshServerConfig.GSSAPIWithMICConfig)
+
+	sshServerConfig.SetDefaults()
+
+	require.Nil(t, sshServerConfig.GSSAPIWithMICConfig)
+}
+
 func rsaPublicKey(t *testing.T) ssh.PublicKey {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)

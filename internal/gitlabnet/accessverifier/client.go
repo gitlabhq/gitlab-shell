@@ -22,13 +22,14 @@ type Client struct {
 }
 
 type Request struct {
-	Action   commandargs.CommandType `json:"action"`
-	Repo     string                  `json:"project"`
-	Changes  string                  `json:"changes"`
-	Protocol string                  `json:"protocol"`
-	KeyId    string                  `json:"key_id,omitempty"`
-	Username string                  `json:"username,omitempty"`
-	CheckIp  string                  `json:"check_ip,omitempty"`
+	Action        commandargs.CommandType `json:"action"`
+	Repo          string                  `json:"project"`
+	Changes       string                  `json:"changes"`
+	Protocol      string                  `json:"protocol"`
+	KeyId         string                  `json:"key_id,omitempty"`
+	Username      string                  `json:"username,omitempty"`
+	Krb5Principal string                  `json:"krb5principal,omitempty"`
+	CheckIp       string                  `json:"check_ip,omitempty"`
 }
 
 type Gitaly struct {
@@ -81,6 +82,8 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 
 	if args.GitlabUsername != "" {
 		request.Username = args.GitlabUsername
+	} else if args.GitlabKrb5Principal != "" {
+		request.Krb5Principal = args.GitlabKrb5Principal
 	} else {
 		request.KeyId = args.GitlabKeyId
 	}

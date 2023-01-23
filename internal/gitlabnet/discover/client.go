@@ -38,6 +38,8 @@ func (c *Client) GetByCommandArgs(ctx context.Context, args *commandargs.Shell) 
 		params.Add("username", args.GitlabUsername)
 	} else if args.GitlabKeyId != "" {
 		params.Add("key_id", args.GitlabKeyId)
+	} else if args.GitlabKrb5Principal != "" {
+		params.Add("krb5principal", args.GitlabKrb5Principal)
 	} else {
 		// There was no 'who' information, this  matches the ruby error
 		// message.

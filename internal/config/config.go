@@ -23,6 +23,13 @@ const (
 
 type YamlDuration time.Duration
 
+type GSSAPIConfig struct {
+	Enabled              bool   `yaml:"enabled,omitempty"`
+	Keytab               string `yaml:"keytab,omitempty"`
+	ServicePrincipalName string `yaml:"service_principal_name,omitempty"`
+	LibPath              string
+}
+
 type ServerConfig struct {
 	Listen                  string       `yaml:"listen,omitempty"`
 	ProxyProtocol           bool         `yaml:"proxy_protocol,omitempty"`
@@ -41,6 +48,7 @@ type ServerConfig struct {
 	MACs                    []string     `yaml:"macs"`
 	KexAlgorithms           []string     `yaml:"kex_algorithms"`
 	Ciphers                 []string     `yaml:"ciphers"`
+	GSSAPI                  GSSAPIConfig `yaml:"gssapi,omitempty"`
 }
 
 type HttpSettingsConfig struct {
