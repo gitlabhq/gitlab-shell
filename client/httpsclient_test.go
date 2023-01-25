@@ -123,7 +123,7 @@ func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPat
 
 	url := testserver.StartHttpsServer(t, requests, clientCAPath)
 
-	var opts []HTTPClientOpt
+	opts := defaultHttpOpts
 	if clientCertPath != "" && clientKeyPath != "" {
 		opts = append(opts, WithClientCert(clientCertPath, clientKeyPath))
 	}

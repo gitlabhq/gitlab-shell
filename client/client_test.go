@@ -20,7 +20,10 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 )
 
-var secret = "sssh, it's a secret"
+var (
+	secret          = "sssh, it's a secret"
+	defaultHttpOpts = []HTTPClientOpt{WithHTTPRetryOpts(time.Millisecond, time.Millisecond, 2)}
+)
 
 func TestClients(t *testing.T) {
 	testhelper.PrepareTestRootDir(t)
@@ -81,7 +84,7 @@ func TestClients(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			url := tc.server(t, buildRequests(t, tc.relativeURLRoot))
 
-			httpClient, err := NewHTTPClientWithOpts(url, tc.relativeURLRoot, tc.caFile, "", 1, nil)
+			httpClient, err := NewHTTPClientWithOpts(url, tc.relativeURLRoot, tc.caFile, "", 1, defaultHttpOpts)
 			require.NoError(t, err)
 
 			client, err := NewGitlabNetClient("", "", tc.secret, httpClient)
@@ -313,7 +316,7 @@ func TestRetryableHTTPFeatureToggle(t *testing.T) {
 		}))
 		defer srv.Close()
 
-		httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, nil)
+		httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, defaultHttpOpts)
 		require.NoError(t, err)
 		require.NotNil(t, httpClient.HTTPClient)
 		require.Nil(t, httpClient.RetryableHTTP)
@@ -334,7 +337,7 @@ func TestRetryableHTTPFeatureToggle(t *testing.T) {
 		}))
 		defer srv.Close()
 
-		httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, nil)
+		httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, defaultHttpOpts)
 		require.NoError(t, err)
 		require.Nil(t, httpClient.HTTPClient)
 		require.NotNil(t, httpClient.RetryableHTTP)
