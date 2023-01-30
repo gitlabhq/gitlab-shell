@@ -150,6 +150,84 @@ func (c *GitlabNetClient) Post(ctx context.Context, path string, data interface{
 	return c.DoRequest(ctx, http.MethodPost, normalizePath(path), data)
 }
 
+func (c *GitlabNetClient) prepareRequest(request *http.Request) error {
+	user, password := c.user, c.password
+	if user != "" && password != "" {
+		request.SetBasicAuth(user, password)
+	}
+
+	claims := jwt.RegisteredClaims{
+		Issuer:    jwtIssuer,
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(jwtTTL)),
+	}
+	secretBytes := []byte(strings.TrimSpace(c.secret))
+	tokenString, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(secretBytes)
+	if err != nil {
+		return err
+	}
+	request.Header.Set(apiSecretHeaderName, tokenString)
+
+	originalRemoteIP, ok := request.Context().Value(OriginalRemoteIPContextKey{}).(string)
+	if ok {
+		request.Header.Add("X-Forwarded-For", originalRemoteIP)
+	}
+
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Add("User-Agent", c.userAgent)
+	request.Close = true
+
+	return nil
+}
+
+func processResult(request *http.Request, response *http.Response, start time.Time, respErr error) error {
+	fields := log.Fields{
+		"method":      request.Method,
+		"url":         request.URL.String(),
+		"duration_ms": time.Since(start) / time.Millisecond,
+	}
+	logger := log.WithContextFields(request.Context(), fields)
+
+	if respErr != nil {
+		logger.WithError(respErr).Error("Internal API unreachable")
+		return &ApiError{"Internal API unreachable"}
+	}
+
+	if response != nil {
+		logger = logger.WithField("status", response.StatusCode)
+	}
+	if err := parseError(response); err != nil {
+		logger.WithError(err).Error("Internal API error")
+		return err
+	}
+
+	if response.ContentLength >= 0 {
+		logger = logger.WithField("content_length_bytes", response.ContentLength)
+	}
+
+	logger.Info("Finished HTTP request")
+
+	return nil
+}
+
+func (c *GitlabNetClient) AppendPath(path string) string {
+	return appendPath(c.httpClient.Host, path)
+}
+
+func (c *GitlabNetClient) DoRawRequest(request *http.Request) (*http.Response, error) {
+	c.prepareRequest(request)
+
+	start := time.Now()
+
+	response, respErr := c.httpClient.HTTPClient.Do(request)
+
+	if err := processResult(request, response, start, respErr); err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
 func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, data interface{}) (*http.Response, error) {
 	request, err := newRequest(ctx, method, c.httpClient.Host, path, data)
 	if err != nil {
@@ -161,37 +239,8 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 		return nil, err
 	}
 
-	user, password := c.user, c.password
-	if user != "" && password != "" {
-		request.SetBasicAuth(user, password)
-		retryableRequest.SetBasicAuth(user, password)
-	}
-
-	claims := jwt.RegisteredClaims{
-		Issuer:    jwtIssuer,
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(jwtTTL)),
-	}
-	secretBytes := []byte(strings.TrimSpace(c.secret))
-	tokenString, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(secretBytes)
-	if err != nil {
-		return nil, err
-	}
-	request.Header.Set(apiSecretHeaderName, tokenString)
-	retryableRequest.Header.Set(apiSecretHeaderName, tokenString)
-
-	originalRemoteIP, ok := ctx.Value(OriginalRemoteIPContextKey{}).(string)
-	if ok {
-		request.Header.Add("X-Forwarded-For", originalRemoteIP)
-		retryableRequest.Header.Add("X-Forwarded-For", originalRemoteIP)
-	}
-
-	request.Header.Add("Content-Type", "application/json")
-	retryableRequest.Header.Add("Content-Type", "application/json")
-	request.Header.Add("User-Agent", c.userAgent)
-	retryableRequest.Header.Add("User-Agent", c.userAgent)
-	request.Close = true
-	retryableRequest.Close = true
+	c.prepareRequest(request)
+	c.prepareRequest(retryableRequest.Request)
 
 	start := time.Now()
 
@@ -203,31 +252,10 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	if os.Getenv("FF_GITLAB_SHELL_RETRYABLE_HTTP") == "1" && c.httpClient.RetryableHTTP != nil {
 		response, respErr = c.httpClient.RetryableHTTP.Do(retryableRequest)
 	}
-	fields := log.Fields{
-		"method":      method,
-		"url":         request.URL.String(),
-		"duration_ms": time.Since(start) / time.Millisecond,
-	}
-	logger := log.WithContextFields(ctx, fields)
 
-	if respErr != nil {
-		logger.WithError(respErr).Error("Internal API unreachable")
-		return nil, &ApiError{"Internal API unreachable"}
-	}
-
-	if response != nil {
-		logger = logger.WithField("status", response.StatusCode)
-	}
-	if err := parseError(response); err != nil {
-		logger.WithError(err).Error("Internal API error")
+	if err := processResult(request, response, start, respErr); err != nil {
 		return nil, err
 	}
 
-	if response.ContentLength >= 0 {
-		logger = logger.WithField("content_length_bytes", response.ContentLength)
-	}
-
-	logger.Info("Finished HTTP request")
-
-	return response, nil
+	return response, err
 }

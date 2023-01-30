@@ -1,11 +1,11 @@
 package customaction
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"io"
 	"net/http"
+	"mime/multipart"
 
 	"gitlab.com/gitlab-org/labkit/log"
 
@@ -18,14 +18,12 @@ import (
 )
 
 type Request struct {
-	SecretToken []byte                           `json:"secret_token"`
 	Data        accessverifier.CustomPayloadData `json:"data"`
-	Output      []byte                           `json:"output"`
+	Output  io.Reader
 }
 
 type Response struct {
 	Result  []byte `json:"result"`
-	Message string `json:"message"`
 }
 
 type Command struct {
@@ -54,7 +52,7 @@ func (c *Command) processApiEndpoints(ctx context.Context, response *accessverif
 
 	data := response.Payload.Data
 	request := &Request{Data: data}
-	request.Data.UserId = response.Who
+        request.Data.UserId = response.Who
 
 	for _, endpoint := range data.ApiEndpoints {
 		ctxlog := log.WithContextFields(ctx, log.Fields{
@@ -64,64 +62,82 @@ func (c *Command) processApiEndpoints(ctx context.Context, response *accessverif
 
 		ctxlog.Info("customaction: processApiEndpoints: Performing custom action")
 
-		response, err := c.performRequest(ctx, client, endpoint, request)
+		httpRequest, err := c.prepareRequest(ctx, client.AppendPath(endpoint), request)
 		if err != nil {
 			return err
 		}
 
-		// Print to os.Stdout the result contained in the response
-		//
-		if err = c.displayResult(response.Result); err != nil {
+		if err := c.performRequest(ctx, client, httpRequest); err != nil {
 			return err
 		}
 
 		// In the context of the git push sequence of events, it's necessary to read
 		// stdin in order to capture output to pass onto subsequent commands
-		//
-		var output []byte
-
 		if c.EOFSent {
-			output, err = c.readFromStdin()
-			if err != nil {
-				return err
-			}
+			var w *io.PipeWriter
+			request.Output, w = io.Pipe()
+
+			go c.readFromStdin(w)
 		} else {
-			output = c.readFromStdinNoEOF()
+			// output = c.readFromStdinNoEOF()
 		}
 		ctxlog.WithFields(log.Fields{
 			"eof_sent":    c.EOFSent,
-			"stdin_bytes": len(output),
+			// "stdin_bytes": len(output),
 		}).Debug("customaction: processApiEndpoints: stdin buffered")
-
-		request.Output = output
 	}
 
 	return nil
 }
 
-func (c *Command) performRequest(ctx context.Context, client *client.GitlabNetClient, endpoint string, request *Request) (*Response, error) {
-	response, err := client.DoRequest(ctx, http.MethodPost, endpoint, request)
+func (c *Command) prepareRequest(ctx context.Context, endpoint string, request *Request) (*http.Request, error) {
+	body, pipeWriter := io.Pipe()
+	writer := multipart.NewWriter(pipeWriter)
+
+	go func() {
+		writer.WriteField("data[gl_id]", request.Data.UserId)
+		writer.WriteField("data[primary_repo]", request.Data.PrimaryRepo)
+
+		if request.Output != nil {
+			// Ignore errors, but may want to log them in a channel
+			binaryPart, _ := writer.CreateFormFile("output", "git-receive-pack")
+			io.Copy(binaryPart, request.Output)
+		}
+
+		writer.Close()
+		pipeWriter.Close()
+	}()
+
+	httpRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, body)
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	httpRequest.Header.Set("Content-Type", writer.FormDataContentType())
 
-	cr := &Response{}
-	if err := gitlabnet.ParseJSON(response, cr); err != nil {
-		return nil, err
-	}
-
-	return cr, nil
+	return httpRequest, nil
 }
 
-func (c *Command) readFromStdin() ([]byte, error) {
-	var output []byte
+func (c *Command) performRequest(ctx context.Context, client *client.GitlabNetClient, request *http.Request) error {
+	response, err := client.DoRawRequest(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if _, err := io.Copy(c.ReadWriter.Out, response.Body); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Command) readFromStdin(w *io.PipeWriter) {
 	var needsPackData bool
 
 	scanner := pktline.NewScanner(c.ReadWriter.In)
 	for scanner.Scan() {
 		line := scanner.Bytes()
-		output = append(output, line...)
+		w.Write(line)
 
 		if pktline.IsFlush(line) {
 			break
@@ -133,14 +149,10 @@ func (c *Command) readFromStdin() ([]byte, error) {
 	}
 
 	if needsPackData {
-		packData := new(bytes.Buffer)
-		_, err := io.Copy(packData, c.ReadWriter.In)
-
-		output = append(output, packData.Bytes()...)
-		return output, err
-	} else {
-		return output, nil
+		io.Copy(w, c.ReadWriter.In)
 	}
+
+	w.Close()
 }
 
 func (c *Command) readFromStdinNoEOF() []byte {
@@ -157,9 +169,4 @@ func (c *Command) readFromStdinNoEOF() []byte {
 	}
 
 	return output
-}
-
-func (c *Command) displayResult(result []byte) error {
-	_, err := io.Copy(c.ReadWriter.Out, bytes.NewReader(result))
-	return err
 }
