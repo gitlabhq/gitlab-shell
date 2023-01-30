@@ -24,6 +24,9 @@ const (
 	httpProtocol              = "http://"
 	httpsProtocol             = "https://"
 	defaultReadTimeoutSeconds = 300
+	defaultRetryWaitMin       = time.Second
+	defaultRetryWaitMax       = 15 * time.Second
+	defaultRetryMax           = 2
 )
 
 var ErrCafileNotFound = errors.New("cafile not found")
@@ -35,8 +38,10 @@ type HttpClient struct {
 }
 
 type httpClientCfg struct {
-	keyPath, certPath string
-	caFile, caPath    string
+	keyPath, certPath          string
+	caFile, caPath             string
+	retryWaitMin, retryWaitMax time.Duration
+	retryMax                   int
 }
 
 func (hcc httpClientCfg) HaveCertAndKey() bool { return hcc.keyPath != "" && hcc.certPath != "" }
@@ -50,6 +55,14 @@ func WithClientCert(certPath, keyPath string) HTTPClientOpt {
 	return func(hcc *httpClientCfg) {
 		hcc.keyPath = keyPath
 		hcc.certPath = certPath
+	}
+}
+
+func WithHTTPRetryOpts(waitMin, waitMax time.Duration, maxAttempts int) HTTPClientOpt {
+	return func(hcc *httpClientCfg) {
+		hcc.retryWaitMin = waitMin
+		hcc.retryWaitMax = waitMax
+		hcc.retryMax = maxAttempts
 	}
 }
 
@@ -71,6 +84,18 @@ func validateCaFile(filename string) error {
 
 // NewHTTPClientWithOpts builds an HTTP client using the provided options
 func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, readTimeoutSeconds uint64, opts []HTTPClientOpt) (*HttpClient, error) {
+	hcc := &httpClientCfg{
+		caFile:       caFile,
+		caPath:       caPath,
+		retryWaitMin: defaultRetryWaitMin,
+		retryWaitMax: defaultRetryWaitMax,
+		retryMax:     defaultRetryMax,
+	}
+
+	for _, opt := range opts {
+		opt(hcc)
+	}
+
 	var transport *http.Transport
 	var host string
 	var err error
@@ -82,15 +107,6 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 		err = validateCaFile(caFile)
 		if err != nil {
 			return nil, err
-		}
-
-		hcc := &httpClientCfg{
-			caFile: caFile,
-			caPath: caPath,
-		}
-
-		for _, opt := range opts {
-			opt(hcc)
 		}
 
 		transport, host, err = buildHttpsTransport(*hcc, gitlabURL)
@@ -110,8 +126,9 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 
 	if os.Getenv("FF_GITLAB_SHELL_RETRYABLE_HTTP") == "1" {
 		c := retryablehttp.NewClient()
-		c.RetryMax = 2
-		c.RetryWaitMax = 15 * time.Second
+		c.RetryMax = hcc.retryMax
+		c.RetryWaitMax = hcc.retryWaitMax
+		c.RetryWaitMin = hcc.retryWaitMin
 		c.Logger = nil
 		c.HTTPClient.Transport = correlation.NewInstrumentedRoundTripper(tracing.NewRoundTripper(transport))
 		c.HTTPClient.Timeout = readTimeout(readTimeoutSeconds)
