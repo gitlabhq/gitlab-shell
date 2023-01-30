@@ -32,7 +32,6 @@ const (
 var ErrCafileNotFound = errors.New("cafile not found")
 
 type HttpClient struct {
-	HTTPClient    *http.Client
 	RetryableHTTP *retryablehttp.Client
 	Host          string
 }
@@ -117,28 +116,15 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 		return nil, errors.New("unknown GitLab URL prefix")
 	}
 
-	c := &http.Client{
-		Transport: correlation.NewInstrumentedRoundTripper(tracing.NewRoundTripper(transport)),
-		Timeout:   readTimeout(readTimeoutSeconds),
-	}
+	c := retryablehttp.NewClient()
+	c.RetryMax = hcc.retryMax
+	c.RetryWaitMax = hcc.retryWaitMax
+	c.RetryWaitMin = hcc.retryWaitMin
+	c.Logger = nil
+	c.HTTPClient.Transport = correlation.NewInstrumentedRoundTripper(tracing.NewRoundTripper(transport))
+	c.HTTPClient.Timeout = readTimeout(readTimeoutSeconds)
 
-	client := &HttpClient{HTTPClient: c, Host: host}
-
-	if os.Getenv("FF_GITLAB_SHELL_RETRYABLE_HTTP") == "1" {
-		c := retryablehttp.NewClient()
-		c.RetryMax = hcc.retryMax
-		c.RetryWaitMax = hcc.retryWaitMax
-		c.RetryWaitMin = hcc.retryWaitMin
-		c.Logger = nil
-		c.HTTPClient.Transport = correlation.NewInstrumentedRoundTripper(tracing.NewRoundTripper(transport))
-		c.HTTPClient.Timeout = readTimeout(readTimeoutSeconds)
-
-		client = &HttpClient{RetryableHTTP: c, Host: host}
-	}
-
-	if client.HTTPClient == nil && client.RetryableHTTP == nil {
-		panic("client/httpclient.go did not set http client")
-	}
+	client := &HttpClient{RetryableHTTP: c, Host: host}
 
 	return client, nil
 }

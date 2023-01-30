@@ -28,48 +28,38 @@ func TestConfigApplyGlobalState(t *testing.T) {
 }
 
 func TestCustomPrometheusMetrics(t *testing.T) {
-	for _, ffValue := range []string{"0", "1"} {
-		t.Run("FF_GITLAB_SHELL_RETRYABLE_HTTP="+ffValue, func(t *testing.T) {
-			os.Setenv("FF_GITLAB_SHELL_RETRYABLE_HTTP", ffValue)
-			url := testserver.StartHttpServer(t, []testserver.TestRequestHandler{})
+	url := testserver.StartHttpServer(t, []testserver.TestRequestHandler{})
 
-			config := &Config{GitlabUrl: url}
-			client, err := config.HttpClient()
-			require.NoError(t, err)
+	config := &Config{GitlabUrl: url}
+	client, err := config.HttpClient()
+	require.NoError(t, err)
 
-			if client.HTTPClient != nil {
-				_, err = client.HTTPClient.Get(url)
-				require.NoError(t, err)
-			}
-
-			if os.Getenv("FF_GITLAB_SHELL_RETRYABLE_HTTP") == "1" && client.RetryableHTTP != nil {
-				_, err = client.RetryableHTTP.Get(url)
-				require.NoError(t, err)
-			}
-
-			ms, err := prometheus.DefaultGatherer.Gather()
-			require.NoError(t, err)
-
-			var actualNames []string
-			for _, m := range ms[0:9] {
-				actualNames = append(actualNames, m.GetName())
-			}
-
-			expectedMetricNames := []string{
-				"gitlab_shell_http_in_flight_requests",
-				"gitlab_shell_http_request_duration_seconds",
-				"gitlab_shell_http_requests_total",
-				"gitlab_shell_sshd_concurrent_limited_sessions_total",
-				"gitlab_shell_sshd_in_flight_connections",
-				"gitlab_shell_sshd_session_duration_seconds",
-				"gitlab_shell_sshd_session_established_duration_seconds",
-				"gitlab_sli:shell_sshd_sessions:errors_total",
-				"gitlab_sli:shell_sshd_sessions:total",
-			}
-
-			require.Equal(t, expectedMetricNames, actualNames)
-		})
+	if client.RetryableHTTP != nil {
+		_, err = client.RetryableHTTP.Get(url)
+		require.NoError(t, err)
 	}
+
+	ms, err := prometheus.DefaultGatherer.Gather()
+	require.NoError(t, err)
+
+	var actualNames []string
+	for _, m := range ms[0:9] {
+		actualNames = append(actualNames, m.GetName())
+	}
+
+	expectedMetricNames := []string{
+		"gitlab_shell_http_in_flight_requests",
+		"gitlab_shell_http_request_duration_seconds",
+		"gitlab_shell_http_requests_total",
+		"gitlab_shell_sshd_concurrent_limited_sessions_total",
+		"gitlab_shell_sshd_in_flight_connections",
+		"gitlab_shell_sshd_session_duration_seconds",
+		"gitlab_shell_sshd_session_established_duration_seconds",
+		"gitlab_sli:shell_sshd_sessions:errors_total",
+		"gitlab_sli:shell_sshd_sessions:total",
+	}
+
+	require.Equal(t, expectedMetricNames, actualNames)
 }
 
 func TestNewFromDir(t *testing.T) {
