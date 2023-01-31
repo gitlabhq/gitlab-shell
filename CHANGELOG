@@ -1,3 +1,9 @@
+v14.16.0
+
+- feat: make retryable http default client !710
+- Add support for the gssapi-with-mic auth method !682
+- docs: Truncate pages, point users to GitLab repo !705
+
 v14.15.0
 
 - Incorporate older edits to README !696
