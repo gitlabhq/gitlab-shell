@@ -60,7 +60,6 @@ func StartHttpServer(t *testing.T, handlers []TestRequestHandler) string {
 }
 
 func StartRetryHttpServer(t *testing.T, handlers []TestRequestHandler) string {
-	os.Setenv("FF_GITLAB_SHELL_RETRYABLE_HTTP", "1")
 	attempts := map[string]int{}
 
 	retryMiddileware := func(next func(w http.ResponseWriter, r *http.Request)) http.Handler {

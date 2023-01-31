@@ -16,33 +16,31 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
-var (
-	requests = []testserver.TestRequestHandler{
-		{
-			Path: "/api/v4/internal/discover",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Query().Get("key_id") == "1" || r.URL.Query().Get("username") == "alex-doe" {
-					body := map[string]interface{}{
-						"id":       2,
-						"username": "alex-doe",
-						"name":     "Alex Doe",
-					}
-					json.NewEncoder(w).Encode(body)
-				} else if r.URL.Query().Get("username") == "broken_message" {
-					body := map[string]string{
-						"message": "Forbidden!",
-					}
-					w.WriteHeader(http.StatusForbidden)
-					json.NewEncoder(w).Encode(body)
-				} else if r.URL.Query().Get("username") == "broken" {
-					w.WriteHeader(http.StatusInternalServerError)
-				} else {
-					fmt.Fprint(w, "null")
+var requests = []testserver.TestRequestHandler{
+	{
+		Path: "/api/v4/internal/discover",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Query().Get("key_id") == "1" || r.URL.Query().Get("username") == "alex-doe" {
+				body := map[string]interface{}{
+					"id":       2,
+					"username": "alex-doe",
+					"name":     "Alex Doe",
 				}
-			},
+				json.NewEncoder(w).Encode(body)
+			} else if r.URL.Query().Get("username") == "broken_message" {
+				body := map[string]string{
+					"message": "Forbidden!",
+				}
+				w.WriteHeader(http.StatusForbidden)
+				json.NewEncoder(w).Encode(body)
+			} else if r.URL.Query().Get("username") == "broken" {
+				w.WriteHeader(http.StatusInternalServerError)
+			} else {
+				fmt.Fprint(w, "null")
+			}
 		},
-	}
-)
+	},
+}
 
 func TestExecute(t *testing.T) {
 	url := testserver.StartSocketHttpServer(t, requests)
@@ -112,7 +110,7 @@ func TestFailingExecute(t *testing.T) {
 		{
 			desc:          "When the API fails",
 			arguments:     &commandargs.Shell{GitlabUsername: "broken"},
-			expectedError: "Failed to get username: Internal API error (500)",
+			expectedError: "Failed to get username: Internal API unreachable",
 		},
 	}
 

@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"path"
 	"strings"
 	"testing"
@@ -306,46 +305,21 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 	return requests
 }
 
-func TestRetryableHTTPFeatureToggle(t *testing.T) {
-	t.Run("retryable http off", func(t *testing.T) {
-		os.Setenv("FF_GITLAB_SHELL_RETRYABLE_HTTP", "0")
-		reqAttempts := 0
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			reqAttempts++
-			w.WriteHeader(500)
-		}))
-		defer srv.Close()
+func TestRetryOnFailure(t *testing.T) {
+	reqAttempts := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reqAttempts++
+		w.WriteHeader(500)
+	}))
+	defer srv.Close()
 
-		httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, defaultHttpOpts)
-		require.NoError(t, err)
-		require.NotNil(t, httpClient.HTTPClient)
-		require.Nil(t, httpClient.RetryableHTTP)
-		client, err := NewGitlabNetClient("", "", "", httpClient)
-		require.NoError(t, err)
+	httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, defaultHttpOpts)
+	require.NoError(t, err)
+	require.NotNil(t, httpClient.RetryableHTTP)
+	client, err := NewGitlabNetClient("", "", "", httpClient)
+	require.NoError(t, err)
 
-		_, err = client.Get(context.Background(), "/")
-		require.EqualError(t, err, "Internal API error (500)")
-		require.Equal(t, 1, reqAttempts)
-	})
-
-	t.Run("retryable http on", func(t *testing.T) {
-		os.Setenv("FF_GITLAB_SHELL_RETRYABLE_HTTP", "1")
-		reqAttempts := 0
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			reqAttempts++
-			w.WriteHeader(500)
-		}))
-		defer srv.Close()
-
-		httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, defaultHttpOpts)
-		require.NoError(t, err)
-		require.Nil(t, httpClient.HTTPClient)
-		require.NotNil(t, httpClient.RetryableHTTP)
-		client, err := NewGitlabNetClient("", "", "", httpClient)
-		require.NoError(t, err)
-
-		_, err = client.Get(context.Background(), "/")
-		require.EqualError(t, err, "Internal API unreachable")
-		require.Equal(t, 3, reqAttempts)
-	})
+	_, err = client.Get(context.Background(), "/")
+	require.EqualError(t, err, "Internal API unreachable")
+	require.Equal(t, 3, reqAttempts)
 }
