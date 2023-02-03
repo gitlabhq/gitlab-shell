@@ -1,3 +1,7 @@
+v14.17.0
+
+- Bump golang to 1.18.9 !712
+
 v14.16.0
 
 - feat: make retryable http default client !710
