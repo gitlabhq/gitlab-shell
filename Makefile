@@ -24,7 +24,7 @@ GOBUILD_FLAGS := -ldflags "-X main.Version=$(VERSION_STRING) -X main.BuildTime=$
 
 PREFIX ?= /usr/local
 
-build: bin/gitlab-shell bin/gitlab-sshd
+build: compile
 
 validate: verify test
 
