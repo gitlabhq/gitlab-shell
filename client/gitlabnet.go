@@ -12,8 +12,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/hashicorp/go-retryablehttp"
-
-	"gitlab.com/gitlab-org/labkit/log"
 )
 
 const (
@@ -107,7 +105,11 @@ func newRequest(ctx context.Context, method, host, path string, data interface{}
 	return request, nil
 }
 
-func parseError(resp *http.Response) error {
+func parseError(resp *http.Response, respErr error) error {
+	if respErr != nil {
+		return &ApiError{"Internal API unreachable"}
+	}
+
 	if resp.StatusCode >= 200 && resp.StatusCode <= 399 {
 		return nil
 	}
@@ -127,6 +129,15 @@ func (c *GitlabNetClient) Get(ctx context.Context, path string) (*http.Response,
 
 func (c *GitlabNetClient) Post(ctx context.Context, path string, data interface{}) (*http.Response, error) {
 	return c.DoRequest(ctx, http.MethodPost, normalizePath(path), data)
+}
+
+func (c *GitlabNetClient) Do(request *http.Request) (*http.Response, error) {
+	response, err := c.httpClient.RetryableHTTP.HTTPClient.Do(request)
+	if err := parseError(response, err); err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
 
 func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, data interface{}) (*http.Response, error) {
@@ -152,43 +163,13 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	}
 	request.Header.Set(apiSecretHeaderName, tokenString)
 
-	originalRemoteIP, ok := ctx.Value(OriginalRemoteIPContextKey{}).(string)
-	if ok {
-		request.Header.Add("X-Forwarded-For", originalRemoteIP)
-	}
-
 	request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("User-Agent", c.userAgent)
-	request.Close = true
-
-	start := time.Now()
 
 	response, err := c.httpClient.RetryableHTTP.Do(request)
-	fields := log.Fields{
-		"method":      method,
-		"url":         request.URL.String(),
-		"duration_ms": time.Since(start) / time.Millisecond,
-	}
-	logger := log.WithContextFields(ctx, fields)
-
-	if err != nil {
-		logger.WithError(err).Error("Internal API unreachable")
-		return nil, &ApiError{"Internal API unreachable"}
-	}
-
-	if response != nil {
-		logger = logger.WithField("status", response.StatusCode)
-	}
-	if err := parseError(response); err != nil {
-		logger.WithError(err).Error("Internal API error")
+	if err := parseError(response, err); err != nil {
 		return nil, err
 	}
-
-	if response.ContentLength >= 0 {
-		logger = logger.WithField("content_length_bytes", response.ContentLength)
-	}
-
-	logger.Info("Finished HTTP request")
 
 	return response, nil
 }

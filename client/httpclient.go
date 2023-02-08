@@ -14,8 +14,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
-	"gitlab.com/gitlab-org/labkit/correlation"
-	"gitlab.com/gitlab-org/labkit/tracing"
 )
 
 const (
@@ -121,7 +119,7 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	c.RetryWaitMax = hcc.retryWaitMax
 	c.RetryWaitMin = hcc.retryWaitMin
 	c.Logger = nil
-	c.HTTPClient.Transport = correlation.NewInstrumentedRoundTripper(tracing.NewRoundTripper(transport))
+	c.HTTPClient.Transport = newTransport(transport)
 	c.HTTPClient.Timeout = readTimeout(readTimeoutSeconds)
 
 	client := &HttpClient{RetryableHTTP: c, Host: host}
