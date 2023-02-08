@@ -24,7 +24,7 @@ GOBUILD_FLAGS := -ldflags "-X main.Version=$(VERSION_STRING) -X main.BuildTime=$
 
 PREFIX ?= /usr/local
 
-build: bin/gitlab-shell
+build: compile
 
 validate: verify test
 
@@ -58,9 +58,12 @@ setup: _script_install bin/gitlab-shell
 _script_install:
 	bin/install
 
-compile: bin/gitlab-shell
+compile: bin/gitlab-shell bin/gitlab-sshd
 bin/gitlab-shell: $(GO_SOURCES)
 	GOBIN="$(CURDIR)/bin" go install $(GOBUILD_FLAGS) ./cmd/...
+
+bin/gitlab-sshd: $(GO_SOURCES)
+	GOBIN="$(CURDIR)/bin" go install $(GOBUILD_FLAGS) ./cmd/gitlab-sshd
 
 check:
 	bin/check
