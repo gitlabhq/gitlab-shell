@@ -1,0 +1,29 @@
+{
+	"status": true,
+	"gl_repository": "project-26",
+	"gl_project_path": "group/private",
+	"gl_id": "user-1",
+	"gl_username": "root",
+	"git_config_options": [],
+	"gitaly": {
+		"repository": {
+			"storage_name": "default",
+			"relative_path": "GITALY_REPOSITORY",
+			"git_object_directory": "objects/",
+			"git_alternate_object_directories": ["objects/"],
+			"gl_repository": "project-26",
+			"gl_project_path": "group/private"
+		},
+		"address": "GITALY_ADDRESS",
+		"token": "token"
+	},
+	"payload" : {
+		"data": {
+			"geo_proxy_direct_to_primary": true,
+			"request_headers": { "Authorization": "Bearer token" },
+			"primary_repo":  "PRIMARY_REPO"
+	        }
+        },
+	"git_protocol": "protocol",
+	"gl_console_messages": ["console", "message"]
+}
