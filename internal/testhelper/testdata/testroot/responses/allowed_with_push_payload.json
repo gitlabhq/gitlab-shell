@@ -21,6 +21,8 @@
     "action": "geo_proxy_to_primary",
 		"data": {
 			"api_endpoints": ["geo/proxy_git_ssh/info_refs_receive_pack", "geo/proxy_git_ssh/receive_pack"],
+			"geo_proxy_direct_to_primary": true,
+			"request_headers": { "Authorization": "Bearer token" },
 			"gl_username":   "custom",
 			"primary_repo":  "https://repo/path"
     }
