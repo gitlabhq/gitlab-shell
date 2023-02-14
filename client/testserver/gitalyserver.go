@@ -85,30 +85,51 @@ func (s *TestGitalyServer) SSHUploadArchive(stream pb.SSHService_SSHUploadArchiv
 	return nil
 }
 
-func StartGitalyServer(t *testing.T) (string, *TestGitalyServer) {
+func StartGitalyServer(t *testing.T, network string) (string, *TestGitalyServer) {
 	t.Helper()
 
-	tempDir, _ := os.MkdirTemp("", "gitlab-shell-test-api")
-	gitalySocketPath := path.Join(tempDir, "gitaly.sock")
-	t.Cleanup(func() { os.RemoveAll(tempDir) })
+	switch network {
+	case "unix":
+		tempDir, _ := os.MkdirTemp("", "gitlab-shell-test-api")
+		gitalySocketPath := path.Join(tempDir, "gitaly.sock")
+		t.Cleanup(func() { require.NoError(t, os.RemoveAll(tempDir)) })
 
-	err := os.MkdirAll(filepath.Dir(gitalySocketPath), 0700)
-	require.NoError(t, err)
+		err := os.MkdirAll(filepath.Dir(gitalySocketPath), 0700)
+		require.NoError(t, err)
 
+		addr, testServer := doStartTestServer(t, "unix", gitalySocketPath)
+		return fmt.Sprintf("unix:%s", addr), testServer
+
+	case "tcp":
+		addr, testServer := doStartTestServer(t, "tcp", "127.0.0.1:0")
+		return fmt.Sprintf("tcp://%s", addr), testServer
+
+	case "dns":
+		addr, testServer := doStartTestServer(t, "tcp", "127.0.0.1:0")
+		// gRPC URL with DNS scheme follows this format: https://grpc.github.io/grpc/core/md_doc_naming.html
+		// When the authority is dropped, the URL have 3 splashes.
+		return fmt.Sprintf("dns:///%s", addr), testServer
+
+	default:
+		panic(fmt.Sprintf("Unsupported network %s", network))
+	}
+}
+
+func doStartTestServer(t *testing.T, network string, path string) (string, *TestGitalyServer) {
 	server := grpc.NewServer(
 		client.SidechannelServer(log.ContextLogger(context.Background()), insecure.NewCredentials()),
 	)
 
-	listener, err := net.Listen("unix", gitalySocketPath)
+	listener, err := net.Listen(network, path)
 	require.NoError(t, err)
 
 	testServer := TestGitalyServer{}
 	pb.RegisterSSHServiceServer(server, &testServer)
 
-	go server.Serve(listener)
+	go func() {
+		require.NoError(t, server.Serve(listener))
+	}()
 	t.Cleanup(func() { server.Stop() })
 
-	gitalySocketUrl := "unix:" + gitalySocketPath
-
-	return gitalySocketUrl, &testServer
+	return listener.Addr().String(), &testServer
 }
