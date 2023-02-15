@@ -56,7 +56,7 @@ tests:
   extends: .test
   parallel:
     matrix:
-      - GO_VERSION: ["golang-1.17", "golang-1.18", "golang-1.19"]
+      - GO_VERSION: ["golang-1.18", "golang-1.19"]
       - RUBY_VERSION: ["ruby-2.7", "ruby-3.0"]
   script:
     - make verify test
