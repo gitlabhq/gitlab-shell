@@ -1,3 +1,10 @@
+v14.18.0
+
+- Perform HTTP request to primary on Geo push !716
+- sshd: exclude gssapi when building without cgo !720
+- Add DNS discovery support for Gitaly/Praefect !717
+- Add bin/gitlab-sshd as an explicit Makefile target !714
+
 v14.17.0
 
 - Bump golang to 1.18.9 !712
