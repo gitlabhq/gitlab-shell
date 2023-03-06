@@ -34,6 +34,9 @@ type Command struct {
 	EOFSent    bool
 }
 
+// When `geo_proxy_direct_to_primary` feature flag is enabled, a Git over HTTP direct request
+// to primary repo is performed instead of proxying the request through Gitlab Rails.
+// After the feature flag is enabled by default and removed, this package will be removed along with it.
 func (c *Command) Execute(ctx context.Context, response *accessverifier.Response) error {
 	data := response.Payload.Data
 	apiEndpoints := data.ApiEndpoints
