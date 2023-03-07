@@ -8,7 +8,13 @@ BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
 BUILD_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver
 
 ifeq (${FIPS_MODE}, 1)
-    # boringcrypto tag is added automatically by golang-fips compiler
+    # Go 1.19 now requires GOEXPERIMENT=boringcrypto for FIPS compilation.
+    # See https://github.com/golang/go/issues/51940 for more details.
+    BORINGCRYPTO_SUPPORT := $(shell GOEXPERIMENT=boringcrypto go version &> /dev/null; echo $$?)
+    ifeq ($(BORINGCRYPTO_SUPPORT), 0)
+        GOBUILD_ENV=GOEXPERIMENT=boringcrypto
+    endif
+
     BUILD_TAGS += fips
     # If the golang-fips compiler is built with CGO_ENABLED=0, this needs to be
     # explicitly switched on.
@@ -60,10 +66,10 @@ _script_install:
 
 compile: bin/gitlab-shell bin/gitlab-sshd
 bin/gitlab-shell: $(GO_SOURCES)
-	GOBIN="$(CURDIR)/bin" go install $(GOBUILD_FLAGS) ./cmd/...
+	GOBIN="$(CURDIR)/bin" $(GOBUILD_ENV) go install $(GOBUILD_FLAGS) ./cmd/...
 
 bin/gitlab-sshd: $(GO_SOURCES)
-	GOBIN="$(CURDIR)/bin" go install $(GOBUILD_FLAGS) ./cmd/gitlab-sshd
+	GOBIN="$(CURDIR)/bin" $(GOBUILD_ENV) go install $(GOBUILD_FLAGS) ./cmd/gitlab-sshd
 
 check:
 	bin/check
