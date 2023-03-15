@@ -118,6 +118,7 @@ func successAPI(t *testing.T) http.Handler {
 
 			if gitalyConnInfo != nil {
 				response = strings.Replace(response, "GITALY_ADDRESS", gitalyConnInfo.Address, 1)
+				response = strings.Replace(response, "GITALY_STORAGE", gitalyConnInfo.Storage, 1)
 			}
 
 			fmt.Fprint(w, response)

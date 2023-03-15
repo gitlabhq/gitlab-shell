@@ -7,7 +7,7 @@
   "git_config_options": [],
   "gitaly": {
     "repository": {
-      "storage_name": "default",
+      "storage_name": "GITALY_STORAGE",
       "relative_path": "GITALY_REPOSITORY",
       "git_object_directory": "objects/",
       "git_alternate_object_directories": ["objects/"],
