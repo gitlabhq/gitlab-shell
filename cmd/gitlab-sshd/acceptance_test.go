@@ -24,8 +24,12 @@ import (
 	"github.com/stretchr/testify/require"
 	gitalyClient "gitlab.com/gitlab-org/gitaly/v15/client"
 	pb "gitlab.com/gitlab-org/gitaly/v15/proto/go/gitalypb"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
+	"gitlab.com/gitlab-org/gitaly/v15/streamio"
 	"golang.org/x/crypto/ssh"
+	"google.golang.org/grpc"
+
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 )
 
 var (
@@ -67,7 +71,7 @@ func rootDir() string {
 	return filepath.Join(filepath.Dir(currentFile), "..", "..")
 }
 
-func ensureGitalyRepository(t *testing.T) {
+func ensureGitalyRepository(t *testing.T) (*grpc.ClientConn, *pb.Repository) {
 	if os.Getenv("GITALY_CONNECTION_INFO") == "" {
 		t.Skip("GITALY_CONNECTION_INFO is not set")
 	}
@@ -83,23 +87,99 @@ func ensureGitalyRepository(t *testing.T) {
 	_, err = namespace.RemoveNamespace(context.Background(), rmNsReq)
 	require.NoError(t, err)
 
-	gl_repository := &pb.Repository{StorageName: gitalyConnInfo.Storage, RelativePath: testRepo}
-	createReq := &pb.CreateRepositoryFromURLRequest{Repository: gl_repository, Url: testRepoImportUrl}
+	glRepository := &pb.Repository{StorageName: gitalyConnInfo.Storage, RelativePath: testRepo}
+	createReq := &pb.CreateRepositoryFromURLRequest{Repository: glRepository, Url: testRepoImportUrl}
 
 	_, err = repository.CreateRepositoryFromURL(context.Background(), createReq)
 	require.NoError(t, err)
+
+	return conn, glRepository
 }
 
-func successAPI(t *testing.T) http.Handler {
+func startGitOverHTTPServer(t *testing.T) string {
+	ctx := context.Background()
+	conn, glRepository := ensureGitalyRepository(t)
+	client := pb.NewSmartHTTPServiceClient(conn)
+
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/info/refs",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				rpcRequest := &pb.InfoRefsRequest{
+					Repository: glRepository,
+				}
+
+				var reader io.Reader
+				switch r.URL.Query().Get("service") {
+				case "git-receive-pack":
+					stream, err := client.InfoRefsReceivePack(ctx, rpcRequest)
+					require.NoError(t, err)
+					reader = streamio.NewReader(func() ([]byte, error) {
+						resp, err := stream.Recv()
+						return resp.GetData(), err
+					})
+				default:
+					t.FailNow()
+				}
+
+				_, err := io.Copy(w, reader)
+				require.NoError(t, err)
+			},
+		},
+		{
+			Path: "/git-receive-pack",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				body, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+				defer r.Body.Close()
+
+				require.Equal(t, string(body), "0000")
+			},
+		},
+	}
+
+	return testserver.StartHttpServer(t, requests)
+}
+
+func buildAllowedResponse(t *testing.T, filename string) string {
+	testhelper.PrepareTestRootDir(t)
+
+	body, err := os.ReadFile(filepath.Join(testhelper.TestRoot, filename))
+	require.NoError(t, err)
+
+	response := strings.Replace(string(body), "GITALY_REPOSITORY", testRepo, 1)
+
+	if gitalyConnInfo != nil {
+		response = strings.Replace(response, "GITALY_ADDRESS", gitalyConnInfo.Address, 1)
+		response = strings.Replace(response, "GITALY_STORAGE", gitalyConnInfo.Storage, 1)
+	}
+
+	return response
+}
+
+type customHandler struct {
+	url    string
+	caller http.HandlerFunc
+}
+
+func successAPI(t *testing.T, handlers ...customHandler) http.Handler {
 	t.Helper()
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		testhelper.PrepareTestRootDir(t)
-
 		t.Logf("gitlab-api-mock: received request: %s %s", r.Method, r.RequestURI)
 		w.Header().Set("Content-Type", "application/json")
 
-		switch r.URL.EscapedPath() {
+		url := r.URL.EscapedPath()
+
+		for _, handler := range handlers {
+			if url == handler.url {
+				handler.caller(w, r)
+
+				return
+			}
+		}
+
+		switch url {
 		case "/api/v4/internal/authorized_keys":
 			fmt.Fprintf(w, `{"id":1, "key":"%s"}`, r.FormValue("key"))
 		case "/api/v4/internal/discover":
@@ -111,17 +191,9 @@ func successAPI(t *testing.T) http.Handler {
 		case "/api/v4/internal/two_factor_otp_check":
 			fmt.Fprint(w, `{"success": true}`)
 		case "/api/v4/internal/allowed":
-			body, err := os.ReadFile(filepath.Join(testhelper.TestRoot, "responses/allowed_without_console_messages.json"))
-			require.NoError(t, err)
+			response := buildAllowedResponse(t, "responses/allowed_without_console_messages.json")
 
-			response := strings.Replace(string(body), "GITALY_REPOSITORY", testRepo, 1)
-
-			if gitalyConnInfo != nil {
-				response = strings.Replace(response, "GITALY_ADDRESS", gitalyConnInfo.Address, 1)
-				response = strings.Replace(response, "GITALY_STORAGE", gitalyConnInfo.Storage, 1)
-			}
-
-			fmt.Fprint(w, response)
+			_, err := fmt.Fprint(w, response)
 			require.NoError(t, err)
 		case "/api/v4/internal/lfs_authenticate":
 			fmt.Fprint(w, `{"username": "test-user", "lfs_token": "testlfstoken", "repo_path": "foo", "expires_in": 7200}`)
@@ -388,6 +460,51 @@ func TestGitReceivePackSuccess(t *testing.T) {
 	ensureGitalyRepository(t)
 
 	client := runSSHD(t, successAPI(t))
+	session, err := client.NewSession()
+	require.NoError(t, err)
+	defer session.Close()
+
+	stdin, err := session.StdinPipe()
+	require.NoError(t, err)
+
+	stdout, err := session.StdoutPipe()
+	require.NoError(t, err)
+
+	err = session.Start(fmt.Sprintf("git-receive-pack %s", testRepo))
+	require.NoError(t, err)
+
+	// Gracefully close connection
+	_, err = fmt.Fprintln(stdin, "0000")
+	require.NoError(t, err)
+	stdin.Close()
+
+	output, err := io.ReadAll(stdout)
+	require.NoError(t, err)
+
+	outputLines := strings.Split(string(output), "\n")
+
+	for i := 0; i < (len(outputLines) - 1); i++ {
+		require.Regexp(t, "^[0-9a-f]{44} refs/(heads|tags)/[^ ]+", outputLines[i])
+	}
+
+	require.Equal(t, "0000", outputLines[len(outputLines)-1])
+}
+
+func TestGeoGitReceivePackSuccess(t *testing.T) {
+	url := startGitOverHTTPServer(t)
+
+	handler := customHandler{
+		url: "/api/v4/internal/allowed",
+		caller: func(w http.ResponseWriter, _ *http.Request) {
+			response := buildAllowedResponse(t, "responses/allowed_with_geo_push_payload.json")
+			response = strings.Replace(response, "PRIMARY_REPO", url, 1)
+
+			w.WriteHeader(300)
+			_, err := fmt.Fprint(w, response)
+			require.NoError(t, err)
+		},
+	}
+	client := runSSHD(t, successAPI(t, handler))
 	session, err := client.NewSession()
 	require.NoError(t, err)
 	defer session.Close()
