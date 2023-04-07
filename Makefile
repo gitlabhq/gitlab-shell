@@ -16,8 +16,10 @@ ifeq (${FIPS_MODE}, 1)
 endif
 
 ifeq (${OS}, Darwin) # Mac OS
+    BREW_PREFIX := $(shell brew --prefix 2>/dev/null || echo "/opt/homebrew")
+
     # To be able to compile gssapi library
-    export CGO_CFLAGS="-I/opt/homebrew/opt/heimdal/include"
+    export CGO_CFLAGS="-I$(BREW_PREFIX)/opt/heimdal/include"
 endif
 
 GOBUILD_FLAGS := -ldflags "-X main.Version=$(VERSION_STRING) -X main.BuildTime=$(BUILD_TIME)" -tags "$(BUILD_TAGS)" -mod=mod
