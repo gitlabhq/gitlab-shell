@@ -182,21 +182,11 @@ func successAPI(t *testing.T, handlers ...customHandler) http.Handler {
 		switch url {
 		case "/api/v4/internal/authorized_keys":
 			fmt.Fprintf(w, `{"id":1, "key":"%s"}`, r.FormValue("key"))
-		case "/api/v4/internal/discover":
-			fmt.Fprint(w, `{"id": 1000, "name": "Test User", "username": "test-user"}`)
-		case "/api/v4/internal/personal_access_token":
-			fmt.Fprint(w, `{"success": true, "token": "testtoken", "scopes": ["api"], "expires_at": ""}`)
-		case "/api/v4/internal/two_factor_recovery_codes":
-			fmt.Fprint(w, `{"success": true, "recovery_codes": ["code1", "code2"]}`)
-		case "/api/v4/internal/two_factor_otp_check":
-			fmt.Fprint(w, `{"success": true}`)
 		case "/api/v4/internal/allowed":
 			response := buildAllowedResponse(t, "responses/allowed_without_console_messages.json")
 
 			_, err := fmt.Fprint(w, response)
 			require.NoError(t, err)
-		case "/api/v4/internal/lfs_authenticate":
-			fmt.Fprint(w, `{"username": "test-user", "lfs_token": "testlfstoken", "repo_path": "foo", "expires_in": 7200}`)
 		default:
 			t.Logf("Unexpected request to successAPI: %s", r.URL.EscapedPath())
 			t.FailNow()
@@ -346,7 +336,13 @@ func runSSHD(t *testing.T, apiHandler http.Handler) *ssh.Client {
 }
 
 func TestDiscoverSuccess(t *testing.T) {
-	client := runSSHD(t, successAPI(t))
+	handler := customHandler{
+		url: "/api/v4/internal/discover",
+		caller: func(w http.ResponseWriter, _ *http.Request) {
+			fmt.Fprint(w, `{"id": 1000, "name": "Test User", "username": "test-user"}`)
+		},
+	}
+	client := runSSHD(t, successAPI(t, handler))
 
 	session, err := client.NewSession()
 	require.NoError(t, err)
@@ -358,7 +354,13 @@ func TestDiscoverSuccess(t *testing.T) {
 }
 
 func TestPersonalAccessTokenSuccess(t *testing.T) {
-	client := runSSHD(t, successAPI(t))
+	handler := customHandler{
+		url: "/api/v4/internal/personal_access_token",
+		caller: func(w http.ResponseWriter, _ *http.Request) {
+			fmt.Fprint(w, `{"success": true, "token": "testtoken", "scopes": ["api"], "expires_at": ""}`)
+		},
+	}
+	client := runSSHD(t, successAPI(t, handler))
 
 	session, err := client.NewSession()
 	require.NoError(t, err)
@@ -370,7 +372,13 @@ func TestPersonalAccessTokenSuccess(t *testing.T) {
 }
 
 func TestTwoFactorAuthRecoveryCodesSuccess(t *testing.T) {
-	client := runSSHD(t, successAPI(t))
+	handler := customHandler{
+		url: "/api/v4/internal/two_factor_recovery_codes",
+		caller: func(w http.ResponseWriter, _ *http.Request) {
+			fmt.Fprint(w, `{"success": true, "recovery_codes": ["code1", "code2"]}`)
+		},
+	}
+	client := runSSHD(t, successAPI(t, handler))
 
 	session, err := client.NewSession()
 	require.NoError(t, err)
@@ -413,7 +421,13 @@ a new device so you do not lose access to your account again.
 }
 
 func TwoFactorAuthVerifySuccess(t *testing.T) {
-	client := runSSHD(t, successAPI(t))
+	handler := customHandler{
+		url: "/api/v4/internal/two_factor_otp_check",
+		caller: func(w http.ResponseWriter, _ *http.Request) {
+			fmt.Fprint(w, `{"success": true}`)
+		},
+	}
+	client := runSSHD(t, successAPI(t, handler))
 
 	session, err := client.NewSession()
 	require.NoError(t, err)
@@ -443,7 +457,13 @@ func TwoFactorAuthVerifySuccess(t *testing.T) {
 }
 
 func TestGitLfsAuthenticateSuccess(t *testing.T) {
-	client := runSSHD(t, successAPI(t))
+	handler := customHandler{
+		url: "/api/v4/internal/lfs_authenticate",
+		caller: func(w http.ResponseWriter, _ *http.Request) {
+			fmt.Fprint(w, `{"username": "test-user", "lfs_token": "testlfstoken", "repo_path": "foo", "expires_in": 7200}`)
+		},
+	}
+	client := runSSHD(t, successAPI(t, handler))
 
 	session, err := client.NewSession()
 	require.NoError(t, err)
