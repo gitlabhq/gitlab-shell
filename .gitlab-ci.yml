@@ -93,3 +93,34 @@ gemnasium-dependency_scanning:
 # Secret Detection
 secret_detection:
   rules: *workflow_rules
+
+build-package-and-qa:
+  trigger:
+    project: 'gitlab-org/build/omnibus-gitlab-mirror'
+    branch: 'master'
+    strategy: depend
+  inherit:
+    variables: false
+  variables:
+    GITLAB_SHELL_VERSION: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
+    TOP_UPSTREAM_SOURCE_PROJECT: $CI_PROJECT_PATH
+    TOP_UPSTREAM_SOURCE_REF: $CI_COMMIT_REF_NAME
+    TOP_UPSTREAM_SOURCE_JOB: $CI_JOB_URL
+    ee: "true"
+  rules:
+    # For MRs that change dependencies, we want to automatically ensure builds
+    # aren't broken. In such cases, we don't want the QA tests to be run
+    # automatically, but still available for developers to manually run.
+    - if: '$CI_MERGE_REQUEST_IID'
+      changes:
+        - go.sum
+      variables:
+        BUILD_ON_ALL_OS: "true"
+        MANUAL_QA_TEST: "true"
+      allow_failure: false
+    # For other MRs, we still provide this job as a manual job for developers
+    # to obtain a package for testing and run QA tests.
+    - if: '$CI_MERGE_REQUEST_IID'
+      when: manual
+      allow_failure: true
+  needs: []
