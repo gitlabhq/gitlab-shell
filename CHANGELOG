@@ -1,3 +1,16 @@
+v14.19.0
+
+- Bump go to 1.19.9 !730
+- Update golang-crypto fork version !729
+- Add build-package-and-qa job !728
+- refactor: success api on acceptance tests !727
+- Make the boringcrypto check POSIX shell compliant !725
+- Fix CGO_CFLAGS to use output from `brew --prefix` !724
+- Acceptance test for Geo Push !719
+- Configure Gitaly storage acceptance tests !723
+- Prepare for Go 1.19 FIPS support !721
+- Make golang 1.19 the default !718
+
 v14.18.0
 
 - Perform HTTP request to primary on Geo push !716
