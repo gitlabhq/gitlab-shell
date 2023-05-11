@@ -111,7 +111,7 @@ func TestExecute(t *testing.T) {
 			},
 			expectedOutput: "Token:   YXuxvUgCEmeePY3G1YAa\n" +
 				"Scopes:  read_api,read_repository\n" +
-				"Expires: never\n",
+				"Expires: 9001-11-17\n",
 		},
 		{
 			desc: "With a ttl argument",
