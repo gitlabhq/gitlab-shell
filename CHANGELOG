@@ -1,3 +1,7 @@
+v14.20.0
+
+- Configure a default ttl for personal access tokens !736
+
 v14.19.0
 
 - Bump go to 1.19.9 !730
