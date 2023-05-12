@@ -2,6 +2,7 @@ require_relative 'spec_helper'
 
 require 'json'
 require 'open3'
+require 'date'
 
 describe 'bin/gitlab-shell personal_access_token' do
   include_context 'gitlab shell'
@@ -24,7 +25,7 @@ describe 'bin/gitlab-shell personal_access_token' do
           success: true,
           token: 'aAY1G3YPeemECgUvxuXY',
           scopes: params['scopes'],
-          expires_at: (params['expires_at'] && '9001-12-01')
+          expires_at: params['expires_at']
         }.to_json
       end
     end
@@ -78,23 +79,23 @@ describe 'bin/gitlab-shell personal_access_token' do
     context 'without a ttl argument' do
       let(:args) { 'newtoken api' }
 
-      it 'prints a token without an expiration date' do
+      it 'prints a token with a 30 day expiration date' do
         expect(output).to eq(<<~OUTPUT)
           Token:   aAY1G3YPeemECgUvxuXY
           Scopes:  api
-          Expires: never
+          Expires: #{(Date.today + 30).iso8601}
         OUTPUT
       end
     end
 
     context 'with a ttl argument' do
-      let(:args) { 'newtoken read_api,read_user 30' }
+      let(:args) { 'newtoken read_api,read_user 60' }
 
       it 'prints a token with an expiration date' do
         expect(output).to eq(<<~OUTPUT)
           Token:   aAY1G3YPeemECgUvxuXY
           Scopes:  read_api,read_user
-          Expires: 9001-12-01
+          Expires: #{(Date.today + 61).iso8601}
         OUTPUT
       end
     end

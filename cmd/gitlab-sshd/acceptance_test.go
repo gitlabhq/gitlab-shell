@@ -357,7 +357,7 @@ func TestPersonalAccessTokenSuccess(t *testing.T) {
 	handler := customHandler{
 		url: "/api/v4/internal/personal_access_token",
 		caller: func(w http.ResponseWriter, _ *http.Request) {
-			fmt.Fprint(w, `{"success": true, "token": "testtoken", "scopes": ["api"], "expires_at": ""}`)
+			fmt.Fprint(w, `{"success": true, "token": "testtoken", "scopes": ["api"], "expires_at": "9001-01-01"}`)
 		},
 	}
 	client := runSSHD(t, successAPI(t, handler))
@@ -368,7 +368,7 @@ func TestPersonalAccessTokenSuccess(t *testing.T) {
 
 	output, err := session.Output("personal_access_token test api")
 	require.NoError(t, err)
-	require.Equal(t, "Token:   testtoken\nScopes:  api\nExpires: never\n", string(output))
+	require.Equal(t, "Token:   testtoken\nScopes:  api\nExpires: 9001-01-01\n", string(output))
 }
 
 func TestTwoFactorAuthRecoveryCodesSuccess(t *testing.T) {

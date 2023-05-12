@@ -51,11 +51,7 @@ func (c *Command) Execute(ctx context.Context) error {
 
 	fmt.Fprint(c.ReadWriter.Out, "Token:   "+response.Token+"\n")
 	fmt.Fprint(c.ReadWriter.Out, "Scopes:  "+strings.Join(response.Scopes, ",")+"\n")
-	if response.ExpiresAt == "" {
-		fmt.Fprint(c.ReadWriter.Out, "Expires: never\n")
-	} else {
-		fmt.Fprint(c.ReadWriter.Out, "Expires: "+response.ExpiresAt+"\n")
-	}
+	fmt.Fprint(c.ReadWriter.Out, "Expires: "+response.ExpiresAt+"\n")
 	return nil
 }
 
@@ -69,6 +65,7 @@ func (c *Command) parseTokenArgs() error {
 	}
 
 	if len(c.Args.SshArgs) < 4 {
+		c.TokenArgs.ExpiresDate = time.Now().AddDate(0, 0, 30).Format(expiresDateFormat)
 		return nil
 	}
 	rawTTL := c.Args.SshArgs[3]
