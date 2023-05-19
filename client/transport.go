@@ -55,7 +55,11 @@ func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 	return response, nil
 }
 
-func newTransport(next http.RoundTripper) http.RoundTripper {
+func DefaultTransport() http.RoundTripper {
+	return http.DefaultTransport.(*http.Transport).Clone()
+}
+
+func NewTransport(next http.RoundTripper) http.RoundTripper {
 	t := &transport{next: next}
 	return correlation.NewInstrumentedRoundTripper(tracing.NewRoundTripper(t))
 }

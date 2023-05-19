@@ -119,7 +119,7 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	c.RetryWaitMax = hcc.retryWaitMax
 	c.RetryWaitMin = hcc.retryWaitMin
 	c.Logger = nil
-	c.HTTPClient.Transport = newTransport(transport)
+	c.HTTPClient.Transport = NewTransport(transport)
 	c.HTTPClient.Timeout = readTimeout(readTimeoutSeconds)
 
 	client := &HttpClient{RetryableHTTP: c, Host: host}
