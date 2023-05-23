@@ -34,11 +34,7 @@ type PushCommand struct {
 // 6. Return the output to the user
 func (c *PushCommand) Execute(ctx context.Context) error {
 	data := c.Response.Payload.Data
-	client, err := git.NewClient(c.Config, data.PrimaryRepo, data.RequestHeaders)
-	if err != nil {
-		return err
-	}
-
+	client := &git.Client{Url: data.PrimaryRepo, Headers: data.RequestHeaders}
 	if err := c.requestInfoRefs(ctx, client); err != nil {
 		return err
 	}

@@ -2,32 +2,25 @@ package git
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 )
 
-type Client struct {
-	url     string
-	headers map[string]string
-	client  *client.GitlabNetClient
+var httpClient = &http.Client{
+	Transport: client.NewTransport(client.DefaultTransport()),
 }
 
-func NewClient(cfg *config.Config, url string, headers map[string]string) (*Client, error) {
-	client, err := gitlabnet.GetClient(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("Error creating http client: %v", err)
-	}
+const repoUnavailableErrMsg = "Remote repository is unavailable"
 
-	return &Client{client: client, headers: headers, url: url}, nil
+type Client struct {
+	Url     string
+	Headers map[string]string
 }
 
 func (c *Client) InfoRefs(ctx context.Context, service string) (*http.Response, error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, c.url+"/info/refs?service="+service, nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, c.Url+"/info/refs?service="+service, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +29,7 @@ func (c *Client) InfoRefs(ctx context.Context, service string) (*http.Response, 
 }
 
 func (c *Client) ReceivePack(ctx context.Context, body io.Reader) (*http.Response, error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.url+"/git-receive-pack", body)
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.Url+"/git-receive-pack", body)
 	if err != nil {
 		return nil, err
 	}
@@ -47,10 +40,14 @@ func (c *Client) ReceivePack(ctx context.Context, body io.Reader) (*http.Respons
 }
 
 func (c *Client) do(request *http.Request) (*http.Response, error) {
-
-	for k, v := range c.headers {
+	for k, v := range c.Headers {
 		request.Header.Add(k, v)
 	}
 
-	return c.client.Do(request)
+	response, err := httpClient.Do(request)
+	if err != nil || response.StatusCode >= 400 {
+		return nil, &client.ApiError{repoUnavailableErrMsg}
+	}
+
+	return response, nil
 }

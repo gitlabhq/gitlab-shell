@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	httpclient "gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
 var customHeaders = map[string]string{
@@ -50,6 +50,21 @@ func TestReceivePack(t *testing.T) {
 	require.Equal(t, "git-receive-pack: content", string(body))
 }
 
+func TestFailedHTTPRequest(t *testing.T) {
+	client := &Client{
+		Url:     testserver.StartHttpServer(t, []testserver.TestRequestHandler{}),
+		Headers: customHeaders,
+	}
+
+	response, err := client.InfoRefs(context.Background(), "git-receive-pack")
+	require.Nil(t, response)
+	require.Error(t, err)
+
+	var apiErr *httpclient.ApiError
+	require.ErrorAs(t, err, &apiErr)
+	require.EqualError(t, err, repoUnavailableErrMsg)
+}
+
 func setup(t *testing.T) *Client {
 	requests := []testserver.TestRequestHandler{
 		{
@@ -80,9 +95,10 @@ func setup(t *testing.T) *Client {
 		},
 	}
 
-	url := testserver.StartHttpServer(t, requests)
-	client, err := NewClient(&config.Config{GitlabUrl: url}, url, customHeaders)
-	require.NoError(t, err)
+	client := &Client{
+		Url:     testserver.StartHttpServer(t, requests),
+		Headers: customHeaders,
+	}
 
 	return client
 }

@@ -51,7 +51,7 @@ func TestExecuteWithFailedInfoRefs(t *testing.T) {
 		{
 			desc:        "request failed",
 			statusCode:  http.StatusForbidden,
-			expectedErr: "Internal API error (403)",
+			expectedErr: "Remote repository is unavailable",
 		}, {
 			desc:            "unexpected response",
 			statusCode:      http.StatusOK,
@@ -108,7 +108,7 @@ func TestExecuteWithFailedReceivePack(t *testing.T) {
 
 	err := cmd.Execute(context.Background())
 	require.Error(t, err)
-	require.Equal(t, "Internal API error (403)", err.Error())
+	require.Equal(t, "Remote repository is unavailable", err.Error())
 }
 
 func setup(t *testing.T, receivePackStatusCode int) (string, io.Reader) {
