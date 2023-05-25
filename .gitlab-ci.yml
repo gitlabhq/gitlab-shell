@@ -12,7 +12,7 @@ variables:
   BUNDLE_FROZEN: "true"
   GO_VERSION: "golang-1.18"
   DEBIAN_VERSION: "bullseye"
-  RUBY_VERSION: "ruby-2.7"
+  RUBY_VERSION: "ruby-3.2"
 
 workflow:
   rules: &workflow_rules
@@ -57,7 +57,6 @@ tests:
   parallel:
     matrix:
       - GO_VERSION: ["golang-1.18", "golang-1.19"]
-      - RUBY_VERSION: ["ruby-3.0", "ruby-3.2"]
   script:
     - make verify test
   after_script:
