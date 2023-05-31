@@ -17,7 +17,7 @@ require (
 	github.com/stretchr/testify v1.8.2
 	gitlab.com/gitlab-org/gitaly/v15 v15.11.6
 	gitlab.com/gitlab-org/labkit v1.18.0
-	golang.org/x/crypto v0.7.0
+	golang.org/x/crypto v0.9.0
 	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.54.0
 	google.golang.org/protobuf v1.30.0
