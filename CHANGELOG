@@ -1,3 +1,7 @@
+v14.22.0
+
+- Update dependency ruby to v3.2.2 !743
+
 v14.21.0
 
 - Use a separate HTTP Client for Geo requests !739
