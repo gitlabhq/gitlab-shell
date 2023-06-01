@@ -10,7 +10,7 @@ include:
 variables:
   DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
-  GO_VERSION: "golang-1.18"
+  GO_VERSION: "golang-1.20"
   DEBIAN_VERSION: "bullseye"
   RUBY_VERSION: "ruby-3.2"
 
