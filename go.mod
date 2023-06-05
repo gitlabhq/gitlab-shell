@@ -13,7 +13,7 @@ require (
 	github.com/otiai10/copy v1.11.0
 	github.com/pires/go-proxyproto v0.6.2
 	github.com/prometheus/client_golang v1.15.1
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
 	gitlab.com/gitlab-org/gitaly/v15 v15.11.6
 	gitlab.com/gitlab-org/labkit v1.18.0
