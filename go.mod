@@ -3,7 +3,6 @@ module gitlab.com/gitlab-org/gitlab-shell/v14
 go 1.18
 
 require (
-	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
