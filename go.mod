@@ -24,6 +24,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
+require github.com/Microsoft/go-winio v0.6.0 // indirect
+
 require (
 	cloud.google.com/go v0.110.0 // indirect
 	cloud.google.com/go/compute v1.19.1 // indirect
@@ -33,8 +35,7 @@ require (
 	cloud.google.com/go/trace v1.9.0 // indirect
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14 // indirect
 	github.com/DataDog/datadog-go v4.4.0+incompatible // indirect
-	github.com/DataDog/sketches-go v1.0.0 // indirect
-	github.com/Microsoft/go-winio v0.6.0 // indirect
+	github.com/DataDog/sketches-go v1.0.0 // indirect; indirect github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/aws/aws-sdk-go v1.44.200 // indirect
 	github.com/beevik/ntp v1.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

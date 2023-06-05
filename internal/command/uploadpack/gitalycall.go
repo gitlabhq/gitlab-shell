@@ -12,7 +12,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/handler"
 )
 
-func (c *Command) performGitalyCall(ctx context.Context, response *accessverifier.Response) error {
+func (c *Command) performGitalyCall(ctx context.Context, response *accessverifier.Response) (*pb.PackfileNegotiationStatistics, error) {
 	gc := handler.NewGitalyCommand(c.Config, string(commandargs.UploadPack), response)
 
 	request := &pb.SSHUploadPackWithSidechannelRequest{
@@ -21,12 +21,24 @@ func (c *Command) performGitalyCall(ctx context.Context, response *accessverifie
 		GitConfigOptions: response.GitConfigOptions,
 	}
 
-	return gc.RunGitalyCommand(ctx, func(ctx context.Context, conn *grpc.ClientConn) (int32, error) {
+	var stats *pb.PackfileNegotiationStatistics
+	err := gc.RunGitalyCommand(ctx, func(ctx context.Context, conn *grpc.ClientConn) (int32, error) {
 		ctx, cancel := gc.PrepareContext(ctx, request.Repository, c.Args.Env)
 		defer cancel()
 
 		registry := c.Config.GitalyClient.SidechannelRegistry
 		rw := c.ReadWriter
-		return client.UploadPackWithSidechannel(ctx, conn, registry, rw.In, rw.Out, rw.ErrOut, request)
+
+		var (
+			result client.UploadPackResult
+			err    error
+		)
+		result, err = client.UploadPackWithSidechannelWithResult(ctx, conn, registry, rw.In, rw.Out, rw.ErrOut, request)
+		if err == nil {
+			stats = result.PackfileNegotiationStatistics
+		}
+		return result.ExitCode, err
 	})
+
+	return stats, err
 }
