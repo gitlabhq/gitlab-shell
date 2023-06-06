@@ -22,9 +22,9 @@ import (
 	"github.com/mikesmitty/edkey"
 	"github.com/pires/go-proxyproto"
 	"github.com/stretchr/testify/require"
-	gitalyClient "gitlab.com/gitlab-org/gitaly/v15/client"
-	pb "gitlab.com/gitlab-org/gitaly/v15/proto/go/gitalypb"
-	"gitlab.com/gitlab-org/gitaly/v15/streamio"
+	gitalyClient "gitlab.com/gitlab-org/gitaly/v16/client"
+	pb "gitlab.com/gitlab-org/gitaly/v16/proto/go/gitalypb"
+	"gitlab.com/gitlab-org/gitaly/v16/streamio"
 	"golang.org/x/crypto/ssh"
 	"google.golang.org/grpc"
 

@@ -16,7 +16,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 
-	pb "gitlab.com/gitlab-org/gitaly/v15/proto/go/gitalypb"
+	pb "gitlab.com/gitlab-org/gitaly/v16/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/labkit/log"
 )
 
