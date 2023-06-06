@@ -7,7 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
-	yaml "gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v3"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
