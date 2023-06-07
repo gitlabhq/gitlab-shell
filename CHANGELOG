@@ -1,3 +1,19 @@
+v14.23.0
+
+- Update module github.com/golang-jwt/jwt/v4 to v5 !759
+- Update module gopkg.in/yaml.v2 to v3 !763
+- Update module gitlab.com/gitlab-org/gitaly/v15 to v16 !762
+- Update logrus to v1.9.3 !760
+- Update module golang.org/x/sync to v0.2.0 !757
+- Update module github.com/pires/go-proxyproto to v0.7.0 !752
+- Update module google.golang.org/grpc to v1.55.0 !758
+- Update module github.com/prometheus/client_golang to v1.15.1 !756
+- Update module github.com/otiai10/copy to v1.11.0 !751
+- Make golang 1.20 the default for gitlab-shell development and CI !750
+- Update module golang.org/x/crypto to v0.9.0 !742
+- Update dependency golang to v1.20.4 !748
+- Update module github.com/hashicorp/go-retryablehttp to v0.7.2 !745
+
 v14.22.0
 
 - Update dependency ruby to v3.2.2 !743
