@@ -376,6 +376,8 @@ gitlab.com/gitlab-org/golang-crypto v0.0.0-20230504124748-218ebedc75c6 h1:g9NLyh
 gitlab.com/gitlab-org/golang-crypto v0.0.0-20230504124748-218ebedc75c6/go.mod h1:mRqEX+O9/h5TFCrQhkgjo2yKi0yYA+9ecGkdQoHrywE=
 gitlab.com/gitlab-org/labkit v1.18.0 h1:uYCIqDt/5V1hLIecTR4UNc1sD2+xiYplyKeyfpNN26A=
 gitlab.com/gitlab-org/labkit v1.18.0/go.mod h1:nlLJvKgXcIclqWMI+rga2TckNBVHOtRCHMxBoVByNoE=
+gitlab.com/gitlab-org/labkit v1.19.0 h1:7j5NOHE42R0Eu3Bj2BgfbGf4aN2HXMTmCN7H2wcqqyA=
+gitlab.com/gitlab-org/labkit v1.19.0/go.mod h1:zeATDAaSBelPcPLbTTq8J3ZJEHyPTLVBM1q3nva+/W4=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.22.2/go.mod h1:yxeiOL68Rb0Xd1ddK5vPZ/oVn4vY4Ynel7k9FzqtOIw=
