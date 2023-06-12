@@ -1,10 +1,10 @@
 source 'https://rubygems.org'
 
 group :development, :test do
-  gem 'rspec', '~> 3.8.0'
-  gem 'webrick', '~> 1.7'
+  gem 'rspec', '~> 3.12.0'
+  gem 'webrick', '~> 1.8', '>= 1.8.1'
 end
 
 group :development, :danger do
-  gem 'gitlab-dangerfiles', '~> 3.5.1'
+  gem 'gitlab-dangerfiles', '~> 3.10.0'
 end
