@@ -180,7 +180,6 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 	remoteAddr := nconn.RemoteAddr().String()
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": remoteAddr})
-	ctxlog.Debug("server: handleConn: start")
 
 	// Prevent a panic in a single connection from taking out the whole server
 	defer func() {

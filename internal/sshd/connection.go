@@ -51,6 +51,8 @@ func newConnection(cfg *config.Config, nconn net.Conn) *connection {
 }
 
 func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handler channelHandler) {
+	log.WithContextFields(ctx, log.Fields{}).Info("server: handleConn: start")
+
 	sconn, chans, err := c.initServerConn(ctx, srvCfg)
 	if err != nil {
 		return
