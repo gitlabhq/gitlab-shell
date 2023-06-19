@@ -190,7 +190,9 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		}
 	}()
 
+	started := time.Now()
 	conn := newConnection(s.Config, nconn)
+
 	conn.handle(ctx, s.serverConfig.get(ctx), func(sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) error {
 		session := &session{
 			cfg:                 s.Config,
@@ -198,7 +200,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 			gitlabKeyId:         sconn.Permissions.Extensions["key-id"],
 			gitlabKrb5Principal: sconn.Permissions.Extensions["krb5principal"],
 			remoteAddr:          remoteAddr,
-			started:             time.Now(),
+			started:             started,
 		}
 
 		return session.handle(ctx, requests)
