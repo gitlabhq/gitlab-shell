@@ -205,6 +205,8 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 		return session.handle(ctx, requests)
 	})
+
+	ctxlog.WithFields(log.Fields{"duration_s": time.Since(started).Seconds()}).Info("access: finish")
 }
 
 func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
