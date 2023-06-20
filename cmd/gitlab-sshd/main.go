@@ -109,7 +109,6 @@ func main() {
 		<-time.After(gracePeriod)
 
 		cancel()
-
 	}()
 
 	if err := server.ListenAndServe(ctx); err != nil {
