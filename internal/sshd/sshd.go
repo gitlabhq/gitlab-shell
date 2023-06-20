@@ -180,7 +180,6 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 	remoteAddr := nconn.RemoteAddr().String()
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": remoteAddr})
-	ctxlog.Debug("server: handleConn: start")
 
 	// Prevent a panic in a single connection from taking out the whole server
 	defer func() {
@@ -191,7 +190,9 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		}
 	}()
 
+	started := time.Now()
 	conn := newConnection(s.Config, nconn)
+
 	conn.handle(ctx, s.serverConfig.get(ctx), func(sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) error {
 		session := &session{
 			cfg:                 s.Config,
@@ -199,11 +200,13 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 			gitlabKeyId:         sconn.Permissions.Extensions["key-id"],
 			gitlabKrb5Principal: sconn.Permissions.Extensions["krb5principal"],
 			remoteAddr:          remoteAddr,
-			started:             time.Now(),
+			started:             started,
 		}
 
 		return session.handle(ctx, requests)
 	})
+
+	ctxlog.WithFields(log.Fields{"duration_s": time.Since(started).Seconds()}).Info("access: finish")
 }
 
 func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
