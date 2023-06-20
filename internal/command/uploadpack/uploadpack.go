@@ -17,16 +17,16 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SshArgs
 	if len(args) != 2 {
-		return disallowedcommand.Error
+		return ctx, disallowedcommand.Error
 	}
 
 	repo := args[1]
 	response, err := c.verifyAccess(ctx, repo)
 	if err != nil {
-		return err
+		return ctx, err
 	}
 
 	if response.IsCustomAction() {
@@ -35,10 +35,10 @@ func (c *Command) Execute(ctx context.Context) error {
 			ReadWriter: c.ReadWriter,
 			EOFSent:    false,
 		}
-		return customAction.Execute(ctx, response)
+		return ctx, customAction.Execute(ctx, response)
 	}
 
-	return c.performGitalyCall(ctx, response)
+	return ctx, c.performGitalyCall(ctx, response)
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {

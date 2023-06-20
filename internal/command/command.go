@@ -9,7 +9,7 @@ import (
 )
 
 type Command interface {
-	Execute(ctx context.Context) error
+	Execute(ctx context.Context) (context.Context, error)
 }
 
 // Setup() initializes tracing from the configuration file and generates a

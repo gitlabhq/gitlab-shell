@@ -18,14 +18,15 @@ func TestForbiddenAccess(t *testing.T) {
 	requests := requesthandlers.BuildDisallowedByApiHandlers(t)
 	cmd, _ := setup(t, "disallowed", requests)
 
-	err := cmd.Execute(context.Background())
+	_, err := cmd.Execute(context.Background())
 	require.Equal(t, "Disallowed by API call", err.Error())
 }
 
 func TestCustomReceivePack(t *testing.T) {
 	cmd, output := setup(t, "1", requesthandlers.BuildAllowedWithCustomActionsHandlers(t))
 
-	require.NoError(t, cmd.Execute(context.Background()))
+	_, err := cmd.Execute(context.Background())
+	require.NoError(t, err)
 	require.Equal(t, "customoutput", output.String())
 }
 

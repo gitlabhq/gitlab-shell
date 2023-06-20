@@ -36,7 +36,7 @@ type connection struct {
 	remoteAddr         string
 }
 
-type channelHandler func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error
+type channelHandler func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error)
 
 func newConnection(cfg *config.Config, nconn net.Conn) *connection {
 	maxSessions := cfg.Server.ConcurrentSessionsLimit
@@ -94,7 +94,7 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 	return sconn, chans, err
 }
 
-func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, handler channelHandler) {
+func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, handler channelHandler) context.Context {
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
 
 	for newChannel := range chans {
@@ -134,7 +134,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			}()
 
 			metrics.SliSshdSessionsTotal.Inc()
-			err := handler(sconn, channel, requests)
+			ctx, err = handler(ctx, sconn, channel, requests)
 			if err != nil {
 				c.trackError(ctxlog, err)
 			}
@@ -148,6 +148,8 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 	ctx, cancel := context.WithTimeout(ctx, EOFTimeout)
 	defer cancel()
 	c.concurrentSessions.Acquire(ctx, c.maxSessions)
+
+	return ctx
 }
 
 func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn, ticker *time.Ticker) {

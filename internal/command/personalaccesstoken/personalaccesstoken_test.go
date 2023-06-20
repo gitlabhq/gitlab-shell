@@ -167,7 +167,7 @@ func TestExecute(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 			}
 
-			err := cmd.Execute(context.Background())
+			_, err := cmd.Execute(context.Background())
 
 			if tc.expectedError == "" {
 				require.NoError(t, err)

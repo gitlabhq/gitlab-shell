@@ -193,7 +193,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	started := time.Now()
 	conn := newConnection(s.Config, nconn)
 
-	conn.handle(ctx, s.serverConfig.get(ctx), func(sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) error {
+	conn.handle(ctx, s.serverConfig.get(ctx), func(ctx context.Context, sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) (context.Context, error) {
 		session := &session{
 			cfg:                 s.Config,
 			channel:             channel,

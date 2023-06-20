@@ -16,10 +16,10 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	response, err := c.getUserInfo(ctx)
 	if err != nil {
-		return fmt.Errorf("Failed to get username: %v", err)
+		return ctx, fmt.Errorf("Failed to get username: %v", err)
 	}
 
 	if response.IsAnonymous() {
@@ -28,7 +28,7 @@ func (c *Command) Execute(ctx context.Context) error {
 		fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, @%s!\n", response.Username)
 	}
 
-	return nil
+	return ctx, nil
 }
 
 func (c *Command) getUserInfo(ctx context.Context) (*discover.Response, error) {

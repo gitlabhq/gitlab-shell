@@ -26,6 +26,6 @@ func TestForbiddenAccess(t *testing.T) {
 		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 	}
 
-	err := cmd.Execute(context.Background())
+	_, err := cmd.Execute(context.Background())
 	require.Equal(t, "Disallowed by API call", err.Error())
 }

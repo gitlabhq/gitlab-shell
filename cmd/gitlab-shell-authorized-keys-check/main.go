@@ -46,7 +46,7 @@ func main() {
 	ctx, finished := command.Setup(executable.Name, config)
 	defer finished()
 
-	if err = cmd.Execute(ctx); err != nil {
+	if ctx, err = cmd.Execute(ctx); err != nil {
 		console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
 		os.Exit(1)
 	}

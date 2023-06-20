@@ -19,20 +19,20 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	response, err := c.runCheck(ctx)
 	if err != nil {
-		return fmt.Errorf("%v: FAILED - %v", apiMessage, err)
+		return ctx, fmt.Errorf("%v: FAILED - %v", apiMessage, err)
 	}
 
 	fmt.Fprintf(c.ReadWriter.Out, "%v: OK\n", apiMessage)
 
 	if !response.Redis {
-		return fmt.Errorf("%v: FAILED", redisMessage)
+		return ctx, fmt.Errorf("%v: FAILED", redisMessage)
 	}
 
 	fmt.Fprintf(c.ReadWriter.Out, "%v: OK\n", redisMessage)
-	return nil
+	return ctx, nil
 }
 
 func (c *Command) runCheck(ctx context.Context) (*healthcheck.Response, error) {

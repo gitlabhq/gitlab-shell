@@ -160,7 +160,7 @@ func TestExecute(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 			}
 
-			err := cmd.Execute(context.Background())
+			_, err := cmd.Execute(context.Background())
 
 			require.NoError(t, err)
 			require.Equal(t, prompt+"\n"+tc.expectedOutput, output.String())
@@ -183,7 +183,10 @@ func TestCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	errCh := make(chan error)
-	go func() { errCh <- cmd.Execute(ctx) }()
+	go func() {
+		_, err := cmd.Execute(ctx)
+		errCh <- err
+	}()
 	cancel()
 
 	require.NoError(t, <-errCh)
