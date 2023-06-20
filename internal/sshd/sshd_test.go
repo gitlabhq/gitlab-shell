@@ -348,6 +348,25 @@ func TestLoginGraceTime(t *testing.T) {
 	verifyStatus(t, s, StatusClosed)
 }
 
+func TestExtractMetaDataFromContext(t *testing.T) {
+	rootNameSpace := "flightjs"
+	project := fmt.Sprintf("%s/Flight", rootNameSpace)
+	username := "alex-doe"
+	ctxWithMetaData := context.WithValue(context.Background(), "metaData", config.NewMetaData(project, username))
+
+	metaData := extractMetaDataFromContext(ctxWithMetaData)
+
+	require.Equal(t, config.MetaData{Project: project, Username: username, RootNamespace: rootNameSpace}, metaData)
+}
+
+func TestExtractMetaDataFromContextWithoutMetaData(t *testing.T) {
+	ctxWithMetaData := context.Background()
+
+	metaData := extractMetaDataFromContext(ctxWithMetaData)
+
+	require.Equal(t, config.MetaData{}, metaData)
+}
+
 func setupServer(t *testing.T) *Server {
 	t.Helper()
 

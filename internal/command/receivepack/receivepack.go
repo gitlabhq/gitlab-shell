@@ -30,6 +30,11 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
+	ctxWithMetaData := context.WithValue(ctx, "metaData", config.NewMetaData(
+		response.Gitaly.Repo.GlProjectPath,
+		response.Username,
+	))
+
 	if response.IsCustomAction() {
 		// When `geo_proxy_direct_to_primary` feature flag is enabled, a Git over HTTP direct request
 		// to primary repo is performed instead of proxying the request through Gitlab Rails.
@@ -42,7 +47,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 				Response:   response,
 			}
 
-			return ctx, cmd.Execute(ctx)
+			return ctxWithMetaData, cmd.Execute(ctx)
 		}
 
 		customAction := customaction.Command{
@@ -50,10 +55,10 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 			ReadWriter: c.ReadWriter,
 			EOFSent:    true,
 		}
-		return ctx, customAction.Execute(ctx, response)
+		return ctxWithMetaData, customAction.Execute(ctx, response)
 	}
 
-	return ctx, c.performGitalyCall(ctx, response)
+	return ctxWithMetaData, c.performGitalyCall(ctx, response)
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {

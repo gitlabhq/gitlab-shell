@@ -151,13 +151,14 @@ func TestAcceptSessionSucceeds(t *testing.T) {
 	ctx := context.Background()
 
 	channelHandled := false
-	conn.handleRequests(ctx, nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
+	returnedCtx := conn.handleRequests(ctx, nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
 		channelHandled = true
 		close(chans)
 		return ctx, nil
 	})
 
 	require.True(t, channelHandled)
+	require.NotNil(t, returnedCtx)
 }
 
 func TestAcceptSessionFails(t *testing.T) {

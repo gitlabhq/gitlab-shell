@@ -193,7 +193,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	started := time.Now()
 	conn := newConnection(s.Config, nconn)
 
-	conn.handle(ctx, s.serverConfig.get(ctx), func(ctx context.Context, sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) (context.Context, error) {
+	ctxWithMetaData := conn.handle(ctx, s.serverConfig.get(ctx), func(ctx context.Context, sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) (context.Context, error) {
 		session := &session{
 			cfg:                 s.Config,
 			channel:             channel,
@@ -206,7 +206,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		return session.handle(ctx, requests)
 	})
 
-	ctxlog.WithFields(log.Fields{"duration_s": time.Since(started).Seconds()}).Info("access: finish")
+	ctxlog.WithFields(log.Fields{"duration_s": time.Since(started).Seconds(), "meta": extractMetaDataFromContext(ctxWithMetaData)}).Info("access: finish")
 }
 
 func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
@@ -226,6 +226,16 @@ func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
 	default:
 		return staticProxyPolicy(proxyproto.USE), nil
 	}
+}
+
+func extractMetaDataFromContext(ctx context.Context) config.MetaData {
+	metaData := config.MetaData{}
+
+	if ctx.Value("metaData") != nil {
+		metaData = ctx.Value("metaData").(config.MetaData)
+	}
+
+	return metaData
 }
 
 func staticProxyPolicy(policy proxyproto.Policy) proxyproto.PolicyFunc {

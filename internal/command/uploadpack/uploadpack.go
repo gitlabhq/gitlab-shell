@@ -29,16 +29,22 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
+	metaData := config.NewMetaData(
+		response.Gitaly.Repo.GlProjectPath,
+		response.Username,
+	)
+	ctxWithMetaData := context.WithValue(ctx, "metaData", metaData)
+
 	if response.IsCustomAction() {
 		customAction := customaction.Command{
 			Config:     c.Config,
 			ReadWriter: c.ReadWriter,
 			EOFSent:    false,
 		}
-		return ctx, customAction.Execute(ctx, response)
+		return ctxWithMetaData, customAction.Execute(ctx, response)
 	}
 
-	return ctx, c.performGitalyCall(ctx, response)
+	return ctxWithMetaData, c.performGitalyCall(ctx, response)
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {

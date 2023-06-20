@@ -50,12 +50,12 @@ func newConnection(cfg *config.Config, nconn net.Conn) *connection {
 	}
 }
 
-func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handler channelHandler) {
+func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handler channelHandler) context.Context {
 	log.WithContextFields(ctx, log.Fields{}).Info("server: handleConn: start")
 
 	sconn, chans, err := c.initServerConn(ctx, srvCfg)
 	if err != nil {
-		return
+		return ctx
 	}
 
 	if c.cfg.Server.ClientAliveInterval > 0 {
@@ -64,10 +64,12 @@ func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handl
 		go c.sendKeepAliveMsg(ctx, sconn, ticker)
 	}
 
-	c.handleRequests(ctx, sconn, chans, handler)
+	ctxWithMetaData := c.handleRequests(ctx, sconn, chans, handler)
 
 	reason := sconn.Wait()
 	log.WithContextFields(ctx, log.Fields{"reason": reason}).Info("server: handleConn: done")
+
+	return ctxWithMetaData
 }
 
 func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfig) (*ssh.ServerConn, <-chan ssh.NewChannel, error) {
@@ -95,6 +97,7 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 }
 
 func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, handler channelHandler) context.Context {
+	ctxWithMetaData := ctx
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
 
 	for newChannel := range chans {
@@ -134,7 +137,8 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			}()
 
 			metrics.SliSshdSessionsTotal.Inc()
-			ctx, err = handler(ctx, sconn, channel, requests)
+			ctxWithMetaData, err = handler(ctx, sconn, channel, requests)
+
 			if err != nil {
 				c.trackError(ctxlog, err)
 			}
@@ -149,7 +153,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 	defer cancel()
 	c.concurrentSessions.Acquire(ctx, c.maxSessions)
 
-	return ctx
+	return ctxWithMetaData
 }
 
 func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn, ticker *time.Ticker) {

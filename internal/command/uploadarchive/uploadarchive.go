@@ -28,7 +28,13 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	return ctx, c.performGitalyCall(ctx, response)
+	metaData := config.NewMetaData(
+		response.Gitaly.Repo.GlProjectPath,
+		response.Username,
+	)
+	ctxWithMetaData := context.WithValue(ctx, "metaData", metaData)
+
+	return ctxWithMetaData, c.performGitalyCall(ctx, response)
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {

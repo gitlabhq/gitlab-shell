@@ -14,6 +14,21 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper/requesthandlers"
 )
 
+func TestAllowedAccess(t *testing.T) {
+	gitalyAddress, _ := testserver.StartGitalyServer(t, "unix")
+	requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)
+	cmd, _ := setup(t, "1", requests)
+	cmd.Config.GitalyClient.InitSidechannelRegistry(context.Background())
+
+	ctxWithMetaData, err := cmd.Execute(context.Background())
+
+	require.NoError(t, err)
+	metaData := ctxWithMetaData.Value("metaData").(config.MetaData)
+	require.Equal(t, "alex-doe", metaData.Username)
+	require.Equal(t, "group/project-path", metaData.Project)
+	require.Equal(t, "group", metaData.RootNamespace)
+}
+
 func TestForbiddenAccess(t *testing.T) {
 	requests := requesthandlers.BuildDisallowedByApiHandlers(t)
 	cmd, _ := setup(t, "disallowed", requests)

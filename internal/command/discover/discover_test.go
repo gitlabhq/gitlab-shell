@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -46,29 +47,29 @@ func TestExecute(t *testing.T) {
 	url := testserver.StartSocketHttpServer(t, requests)
 
 	testCases := []struct {
-		desc           string
-		arguments      *commandargs.Shell
-		expectedOutput string
+		desc             string
+		arguments        *commandargs.Shell
+		expectedUsername string
 	}{
 		{
-			desc:           "With a known username",
-			arguments:      &commandargs.Shell{GitlabUsername: "alex-doe"},
-			expectedOutput: "Welcome to GitLab, @alex-doe!\n",
+			desc:             "With a known username",
+			arguments:        &commandargs.Shell{GitlabUsername: "alex-doe"},
+			expectedUsername: "@alex-doe",
 		},
 		{
-			desc:           "With a known key id",
-			arguments:      &commandargs.Shell{GitlabKeyId: "1"},
-			expectedOutput: "Welcome to GitLab, @alex-doe!\n",
+			desc:             "With a known key id",
+			arguments:        &commandargs.Shell{GitlabKeyId: "1"},
+			expectedUsername: "@alex-doe",
 		},
 		{
-			desc:           "With an unknown key",
-			arguments:      &commandargs.Shell{GitlabKeyId: "-1"},
-			expectedOutput: "Welcome to GitLab, Anonymous!\n",
+			desc:             "With an unknown key",
+			arguments:        &commandargs.Shell{GitlabKeyId: "-1"},
+			expectedUsername: "Anonymous",
 		},
 		{
-			desc:           "With an unknown username",
-			arguments:      &commandargs.Shell{GitlabUsername: "unknown"},
-			expectedOutput: "Welcome to GitLab, Anonymous!\n",
+			desc:             "With an unknown username",
+			arguments:        &commandargs.Shell{GitlabUsername: "unknown"},
+			expectedUsername: "Anonymous",
 		},
 	}
 
@@ -81,10 +82,14 @@ func TestExecute(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
 
-			_, err := cmd.Execute(context.Background())
+			ctxWithMetaData, err := cmd.Execute(context.Background())
+
+			expectedOutput := fmt.Sprintf("Welcome to GitLab, %s!\n", tc.expectedUsername)
+			expectedUsername := strings.TrimLeft(tc.expectedUsername, "@")
 
 			require.NoError(t, err)
-			require.Equal(t, tc.expectedOutput, buffer.String())
+			require.Equal(t, expectedOutput, buffer.String())
+			require.Equal(t, expectedUsername, ctxWithMetaData.Value("metaData").(config.MetaData).Username)
 		})
 	}
 }
