@@ -98,3 +98,40 @@ func TestYAMLDuration(t *testing.T) {
 		})
 	}
 }
+
+func TestNewMetaData(t *testing.T) {
+	testCases := []struct {
+		desc                  string
+		project               string
+		username              string
+		expectedRootNamespace string
+	}{
+		{
+			desc:                  "Project under single namespace",
+			project:               "flightjs/Flight",
+			username:              "@alex-doe",
+			expectedRootNamespace: "flightjs",
+		},
+		{
+			desc:                  "Project under single odd namespace",
+			project:               "flightjs///Flight",
+			username:              "@alex-doe",
+			expectedRootNamespace: "flightjs",
+		},
+		{
+			desc:                  "Project under deeper namespace",
+			project:               "flightjs/one/Flight",
+			username:              "@alex-doe",
+			expectedRootNamespace: "flightjs",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			metaData := NewMetaData(tc.project, tc.username)
+			require.Equal(t, tc.project, metaData.Project)
+			require.Equal(t, tc.username, metaData.Username)
+			require.Equal(t, tc.expectedRootNamespace, metaData.RootNamespace)
+		})
+	}
+}
