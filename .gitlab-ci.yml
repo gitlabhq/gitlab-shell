@@ -123,3 +123,25 @@ build-package-and-qa:
       when: manual
       allow_failure: true
   needs: []
+
+modules:tidy:
+  needs: ['modules:download']
+  script:
+    - go mod tidy
+    - git diff --exit-code go.mod go.sum
+
+modules:download:
+  parallel:
+    matrix:
+      - GO_VERSION: ["golang-1.18", "golang-1.19", "golang-1.20"]
+  script:
+    - go mod download
+  cache:
+    key:
+      prefix: $GO_VERSION
+      files:
+        - go.mod
+        - go.sum
+    paths:
+      - .GOPATH/pkg/mod/
+    policy: push
