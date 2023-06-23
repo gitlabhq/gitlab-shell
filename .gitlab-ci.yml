@@ -7,12 +7,17 @@ include:
     file:
       - '/ci/danger-review.yml'
 
-variables:
+.default_variables: &default_variables
   DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
   GO_VERSION: "golang-1.20"
+  GOPATH: $CI_PROJECT_DIR/.GOPATH
   DEBIAN_VERSION: "bullseye"
   RUBY_VERSION: "ruby-3.2"
+  BUNDLE_PATH: vendor/ruby
+
+variables:
+  <<: *default_variables
 
 workflow:
   rules: &workflow_rules
@@ -36,12 +41,58 @@ default:
     # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
     - gitlab-org-docker
 
-.test:
+.test_job_variables: &test_job_variables
+  GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
+
+.cached-job:
   variables:
-    GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
+    <<: *default_variables
+  cache:
+    - key:
+        prefix: $GO_VERSION-cache
+        files:
+          - go.mod
+          - go.sum
+      paths:
+        - .GOPATH/pkg/mod/
+    - key:
+        prefix: $RUBY_VERSION-cache
+        files:
+          - Gemfile.lock
+      paths:
+        - ${BUNDLE_PATH}
+
+################################################################################
+# Prepare jobs
+################################################################################
+
+bundle:install:
+  stage: prepare
+  extends: .cached-job
+  script:
+    - bundle install --jobs $(nproc)
+
+modules:download:
+  stage: prepare
+  extends: .cached-job
+  parallel:
+    matrix:
+      - GO_VERSION: ["golang-1.18", "golang-1.19", "golang-1.20"]
+  script:
+    - go mod download
+
+################################################################################
+# Test jobs
+################################################################################
+
+.test-job:
+  needs: ['bundle:install', 'modules:download']
+  variables:
+    <<: *default_variables
+    <<: *test_job_variables
   before_script:
     # Set up the environment to run integration tests (still written in Ruby)
-    - bundle install
+    - bundle install --quiet --jobs $(nproc)
     - make build
     - cp config.yml.example config.yml
     - go version
@@ -53,7 +104,9 @@ default:
       alias: gitaly
 
 tests:
-  extends: .test
+  extends:
+    - .cached-job
+    - .test-job
   parallel:
     matrix:
       - GO_VERSION: ["golang-1.18", "golang-1.19", "golang-1.20"]
@@ -64,7 +117,9 @@ tests:
   coverage: '/\d+.\d+%/'
 
 race:
-  extends: .test
+  extends:
+    - .cached-job
+    - .test-job
   parallel:
     matrix:
       - GO_VERSION: ["golang-1.18", "golang-1.19", "golang-1.20"]
@@ -127,24 +182,39 @@ build-package-and-qa:
       allow_failure: true
   needs: []
 
+bundle:install:
+  extends: .cached-job
+  script:
+    - bundle install --jobs $(nproc)
+
 modules:tidy:
   needs: ['modules:download']
   script:
     - go mod tidy
     - git diff --exit-code go.mod go.sum
 
+.cached-job:
+  variables:
+    <<: *default_variables
+  cache:
+    - key:
+        prefix: go-cache-$GO_VERSION
+        files:
+          - go.mod
+          - go.sum
+      paths:
+        - .GOPATH/pkg/mod/
+    - key:
+        prefix: ruby-cache-$GO_VERSION
+        files:
+          - Gemfile.lock
+      paths:
+        - vendor/ruby
+
 modules:download:
+  extends: .cached-job
   parallel:
     matrix:
       - GO_VERSION: ["golang-1.18", "golang-1.19", "golang-1.20"]
   script:
     - go mod download
-  cache:
-    key:
-      prefix: $GO_VERSION
-      files:
-        - go.mod
-        - go.sum
-    paths:
-      - .GOPATH/pkg/mod/
-    policy: push
