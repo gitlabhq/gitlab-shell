@@ -7,6 +7,10 @@ include:
     file:
       - '/ci/danger-review.yml'
 
+stages:
+  - prepare
+  - test
+
 .default_variables: &default_variables
   DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
@@ -182,39 +186,8 @@ build-package-and-qa:
       allow_failure: true
   needs: []
 
-bundle:install:
-  extends: .cached-job
-  script:
-    - bundle install --jobs $(nproc)
-
 modules:tidy:
   needs: ['modules:download']
   script:
     - go mod tidy
     - git diff --exit-code go.mod go.sum
-
-.cached-job:
-  variables:
-    <<: *default_variables
-  cache:
-    - key:
-        prefix: go-cache-$GO_VERSION
-        files:
-          - go.mod
-          - go.sum
-      paths:
-        - .GOPATH/pkg/mod/
-    - key:
-        prefix: ruby-cache-$GO_VERSION
-        files:
-          - Gemfile.lock
-      paths:
-        - vendor/ruby
-
-modules:download:
-  extends: .cached-job
-  parallel:
-    matrix:
-      - GO_VERSION: ["golang-1.18", "golang-1.19", "golang-1.20"]
-  script:
-    - go mod download
