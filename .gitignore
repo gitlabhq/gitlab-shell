@@ -1,5 +1,6 @@
 *.log
 *.swp
+.DS_Store
 .bundle
 .bundle/
 .gitlab_shell_secret
@@ -19,4 +20,3 @@ hooks/*.d
 tags
 tmp/*
 vendor
-.DS_Store
