@@ -96,7 +96,6 @@ modules:download:
     <<: *test_job_variables
   before_script:
     # Set up the environment to run integration tests (still written in Ruby)
-    - bundle install --quiet --jobs $(nproc)
     - make build
     - cp config.yml.example config.yml
     - go version
