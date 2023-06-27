@@ -2,7 +2,7 @@
 
 FIPS_MODE ?= 0
 OS := $(shell uname)
-GO_SOURCES := $(shell find . -path ./.GOPATH -prune -o -name '*.go' -print)
+GO_SOURCES := $(shell git ls-files \*.go)
 VERSION_STRING := $(shell git describe --match v* 2>/dev/null || awk '$$0="v"$$0' VERSION 2>/dev/null || echo unknown)
 BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
 BUILD_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver
