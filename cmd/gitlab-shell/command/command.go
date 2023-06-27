@@ -1,6 +1,8 @@
 package command
 
 import (
+	"strings"
+
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/discover"
@@ -16,6 +18,32 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
+
+type MetaData struct {
+	Username      string `json:"username"`
+	Project       string `json:"project,omitempty"`
+	RootNamespace string `json:"root_namespace,omitempty"`
+}
+
+func NewMetaData(project, username string) MetaData {
+	rootNameSpace := ""
+
+	if len(project) > 0 {
+		splitFn := func(c rune) bool {
+			return c == '/'
+		}
+		m := strings.FieldsFunc(project, splitFn)
+		if len(m) > 0 {
+			rootNameSpace = m[0]
+		}
+	}
+
+	return MetaData{
+		Username:      username,
+		Project:       project,
+		RootNamespace: rootNameSpace,
+	}
+}
 
 func New(arguments []string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
 	args, err := Parse(arguments, env)

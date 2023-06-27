@@ -14,6 +14,7 @@ import (
 	grpcstatus "google.golang.org/grpc/status"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
@@ -36,7 +37,7 @@ type connection struct {
 	remoteAddr         string
 }
 
-type channelHandler func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error
+type channelHandler func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (command.MetaData, error)
 
 func newConnection(cfg *config.Config, nconn net.Conn) *connection {
 	maxSessions := cfg.Server.ConcurrentSessionsLimit
@@ -50,12 +51,14 @@ func newConnection(cfg *config.Config, nconn net.Conn) *connection {
 	}
 }
 
-func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handler channelHandler) {
+func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handler channelHandler) command.MetaData {
+	metaData := command.MetaData{}
+
 	log.WithContextFields(ctx, log.Fields{}).Info("server: handleConn: start")
 
 	sconn, chans, err := c.initServerConn(ctx, srvCfg)
 	if err != nil {
-		return
+		return metaData
 	}
 
 	if c.cfg.Server.ClientAliveInterval > 0 {
@@ -64,10 +67,12 @@ func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handl
 		go c.sendKeepAliveMsg(ctx, sconn, ticker)
 	}
 
-	c.handleRequests(ctx, sconn, chans, handler)
+	metaData = c.handleRequests(ctx, sconn, chans, handler)
 
 	reason := sconn.Wait()
 	log.WithContextFields(ctx, log.Fields{"reason": reason}).Info("server: handleConn: done")
+
+	return metaData
 }
 
 func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfig) (*ssh.ServerConn, <-chan ssh.NewChannel, error) {
@@ -94,7 +99,8 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 	return sconn, chans, err
 }
 
-func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, handler channelHandler) {
+func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, handler channelHandler) command.MetaData {
+	metaData := command.MetaData{}
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
 
 	for newChannel := range chans {
@@ -134,7 +140,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			}()
 
 			metrics.SliSshdSessionsTotal.Inc()
-			err := handler(sconn, channel, requests)
+			metaData, err = handler(sconn, channel, requests)
 			if err != nil {
 				c.trackError(ctxlog, err)
 			}
@@ -148,6 +154,8 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 	ctx, cancel := context.WithTimeout(ctx, EOFTimeout)
 	defer cancel()
 	c.concurrentSessions.Acquire(ctx, c.maxSessions)
+
+	return metaData
 }
 
 func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn, ticker *time.Ticker) {

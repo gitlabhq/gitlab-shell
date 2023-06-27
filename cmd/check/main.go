@@ -43,7 +43,7 @@ func main() {
 	ctx, finished := command.Setup(executable.Name, config)
 	defer finished()
 
-	if err = cmd.Execute(ctx); err != nil {
+	if _, err = cmd.Execute(ctx); err != nil {
 		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
 		os.Exit(1)
 	}

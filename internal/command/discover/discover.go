@@ -6,6 +6,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
@@ -16,10 +17,10 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (*accessverifier.Response, error) {
 	response, err := c.getUserInfo(ctx)
 	if err != nil {
-		return fmt.Errorf("Failed to get username: %v", err)
+		return nil, fmt.Errorf("Failed to get username: %v", err)
 	}
 
 	if response.IsAnonymous() {
@@ -28,7 +29,7 @@ func (c *Command) Execute(ctx context.Context) error {
 		fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, @%s!\n", response.Username)
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (c *Command) getUserInfo(ctx context.Context) (*discover.Response, error) {

@@ -12,6 +12,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/personalaccesstoken"
 )
@@ -34,10 +35,10 @@ type tokenArgs struct {
 	ExpiresDate string // Calculated, a TTL is passed from command-line.
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (*accessverifier.Response, error) {
 	err := c.parseTokenArgs()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	log.WithContextFields(ctx, log.Fields{
@@ -46,13 +47,14 @@ func (c *Command) Execute(ctx context.Context) error {
 
 	response, err := c.getPersonalAccessToken(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fmt.Fprint(c.ReadWriter.Out, "Token:   "+response.Token+"\n")
 	fmt.Fprint(c.ReadWriter.Out, "Scopes:  "+strings.Join(response.Scopes, ",")+"\n")
 	fmt.Fprint(c.ReadWriter.Out, "Expires: "+response.ExpiresAt+"\n")
-	return nil
+
+	return nil, nil
 }
 
 func (c *Command) parseTokenArgs() error {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/healthcheck"
 )
@@ -19,20 +20,20 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (*accessverifier.Response, error) {
 	response, err := c.runCheck(ctx)
 	if err != nil {
-		return fmt.Errorf("%v: FAILED - %v", apiMessage, err)
+		return nil, fmt.Errorf("%v: FAILED - %v", apiMessage, err)
 	}
 
 	fmt.Fprintf(c.ReadWriter.Out, "%v: OK\n", apiMessage)
 
 	if !response.Redis {
-		return fmt.Errorf("%v: FAILED", redisMessage)
+		return nil, fmt.Errorf("%v: FAILED", redisMessage)
 	}
 
 	fmt.Fprintf(c.ReadWriter.Out, "%v: OK\n", redisMessage)
-	return nil
+	return nil, nil
 }
 
 func (c *Command) runCheck(ctx context.Context) (*healthcheck.Response, error) {

@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	shellCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
@@ -193,7 +194,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	started := time.Now()
 	conn := newConnection(s.Config, nconn)
 
-	conn.handle(ctx, s.serverConfig.get(ctx), func(sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) error {
+	metaData := conn.handle(ctx, s.serverConfig.get(ctx), func(sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) (shellCmd.MetaData, error) {
 		session := &session{
 			cfg:                 s.Config,
 			channel:             channel,
@@ -206,7 +207,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		return session.handle(ctx, requests)
 	})
 
-	ctxlog.WithFields(log.Fields{"duration_s": time.Since(started).Seconds()}).Info("access: finish")
+	ctxlog.WithFields(log.Fields{"duration_s": time.Since(started).Seconds(), "meta": metaData}).Info("access: finish")
 }
 
 func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {

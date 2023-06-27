@@ -10,6 +10,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/twofactorverify"
 )
@@ -25,10 +26,10 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (*accessverifier.Response, error) {
 	client, err := twofactorverify.NewClient(c.Config)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
@@ -67,7 +68,7 @@ func (c *Command) Execute(ctx context.Context) error {
 	log.WithContextFields(ctx, log.Fields{"message": message}).Info("Two factor verify command finished")
 	fmt.Fprintf(c.ReadWriter.Out, "\n%v\n", message)
 
-	return nil
+	return nil, nil
 }
 
 func (c *Command) getOTP(ctx context.Context) (string, error) {

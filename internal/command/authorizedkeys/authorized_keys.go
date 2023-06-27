@@ -7,6 +7,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedkeys"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/keyline"
@@ -18,21 +19,21 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (*accessverifier.Response, error) {
 	// Do and return nothing when the expected and actual user don't match.
 	// This can happen when the user in sshd_config doesn't match the user
 	// trying to login. When nothing is printed, the user will be denied access.
 	if c.Args.ExpectedUser != c.Args.ActualUser {
 		// TODO: Log this event once we have a consistent way to log in Go.
 		// See https://gitlab.com/gitlab-org/gitlab-shell/issues/192 for more info.
-		return nil
+		return nil, nil
 	}
 
 	if err := c.printKeyLine(ctx); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (c *Command) printKeyLine(ctx context.Context) error {

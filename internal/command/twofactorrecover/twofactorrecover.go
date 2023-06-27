@@ -10,6 +10,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/twofactorrecover"
 )
@@ -22,7 +23,7 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (*accessverifier.Response, error) {
 	ctxlog := log.ContextLogger(ctx)
 	ctxlog.Debug("twofactorrecover: execute: Waiting for user input")
 
@@ -34,7 +35,7 @@ func (c *Command) Execute(ctx context.Context) error {
 		fmt.Fprintln(c.ReadWriter.Out, "\nNew recovery codes have *not* been generated. Existing codes will remain valid.")
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (c *Command) getUserAnswer(ctx context.Context) string {

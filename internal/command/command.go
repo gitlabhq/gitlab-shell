@@ -3,13 +3,14 @@ package command
 import (
 	"context"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"gitlab.com/gitlab-org/labkit/tracing"
 )
 
 type Command interface {
-	Execute(ctx context.Context) error
+	Execute(ctx context.Context) (*accessverifier.Response, error)
 }
 
 // Setup() initializes tracing from the configuration file and generates a

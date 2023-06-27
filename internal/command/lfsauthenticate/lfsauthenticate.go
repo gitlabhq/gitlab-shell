@@ -37,10 +37,10 @@ type Payload struct {
 	ExpiresIn int           `json:"expires_in,omitempty"`
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (*accessverifier.Response, error) {
 	args := c.Args.SshArgs
 	if len(args) < 3 {
-		return disallowedcommand.Error
+		return nil, disallowedcommand.Error
 	}
 
 	// e.g. git-lfs-authenticate user/repo.git download
@@ -49,12 +49,12 @@ func (c *Command) Execute(ctx context.Context) error {
 
 	action, err := actionFromOperation(operation)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	accessResponse, err := c.verifyAccess(ctx, action, repo)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserId)
@@ -65,12 +65,12 @@ func (c *Command) Execute(ctx context.Context) error {
 			log.Fields{"operation": operation, "repo": repo, "user_id": accessResponse.UserId},
 		).WithError(err).Debug("lfsauthenticate: execute: LFS authentication failed")
 
-		return nil
+		return accessResponse, nil
 	}
 
 	fmt.Fprintf(c.ReadWriter.Out, "%s\n", payload)
 
-	return nil
+	return accessResponse, nil
 }
 
 func actionFromOperation(operation string) (commandargs.CommandType, error) {
