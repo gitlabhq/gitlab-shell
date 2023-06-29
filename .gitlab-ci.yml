@@ -43,27 +43,37 @@ default:
     # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
     - gitlab-org-docker
 
+.cached-go: &cached_go
+  - key:
+      prefix: $GO_VERSION-cache
+      files:
+        - go.mod
+        - go.sum
+    policy: $POLICY
+    paths:
+      - .GOPATH/pkg/mod/
+
+.cached-ruby: &cached_ruby
+  - key:
+      prefix: $RUBY_VERSION-cache
+      files:
+        - Gemfile.lock
+    policy: $POLICY
+    paths:
+      - ${BUNDLE_PATH}
 
 .cached-go-job:
   cache:
-    - key:
-        prefix: $GO_VERSION-cache
-        files:
-          - go.mod
-          - go.sum
-      policy: $POLICY
-      paths:
-        - .GOPATH/pkg/mod/
+    - *cached_go
 
 .cached-ruby-job:
   cache:
-    - key:
-        prefix: $RUBY_VERSION-cache
-        files:
-          - Gemfile.lock
-      policy: $POLICY
-      paths:
-        - ${BUNDLE_PATH}
+    - *cached_ruby
+
+.cached-job:
+  cache:
+    - *cached_go
+    - *cached_ruby
 
 .go-matrix-job:
   parallel:
@@ -114,8 +124,7 @@ modules:download:
 
 tests:
   extends:
-    - .cached-go-job
-    - .cached-ruby-job
+    - .cached-job
     - .go-matrix-job
     - .test-job
   script:
