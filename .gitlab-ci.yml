@@ -11,7 +11,7 @@ stages:
   - prepare
   - test
 
-.default_variables: &default_variables
+variables:
   DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
   GO_VERSION: "golang-1.20"
@@ -19,9 +19,6 @@ stages:
   DEBIAN_VERSION: "bullseye"
   RUBY_VERSION: "ruby-3.2"
   BUNDLE_PATH: vendor/ruby
-
-variables:
-  <<: *default_variables
 
 workflow:
   rules: &workflow_rules
@@ -45,12 +42,8 @@ default:
     # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
     - gitlab-org-docker
 
-.test_job_variables: &test_job_variables
-  GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
 
 .cached-job:
-  variables:
-    <<: *default_variables
   cache:
     - key:
         prefix: $GO_VERSION-cache
@@ -96,8 +89,7 @@ modules:download:
 .test-job:
   needs: ['bundle:install', 'modules:download']
   variables:
-    <<: *default_variables
-    <<: *test_job_variables
+    GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
   before_script:
     # Set up the environment to run integration tests (still written in Ruby)
     - make build
