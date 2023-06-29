@@ -19,6 +19,7 @@ variables:
   DEBIAN_VERSION: "bullseye"
   RUBY_VERSION: "ruby-3.2"
   BUNDLE_PATH: vendor/ruby
+  POLICY: pull
 
 workflow:
   rules: &workflow_rules
@@ -43,19 +44,24 @@ default:
     - gitlab-org-docker
 
 
-.cached-job:
+.cached-go-job:
   cache:
     - key:
         prefix: $GO_VERSION-cache
         files:
           - go.mod
           - go.sum
+      policy: $POLICY
       paths:
         - .GOPATH/pkg/mod/
+
+.cached-ruby-job:
+  cache:
     - key:
         prefix: $RUBY_VERSION-cache
         files:
           - Gemfile.lock
+      policy: $POLICY
       paths:
         - ${BUNDLE_PATH}
 
@@ -70,15 +76,19 @@ default:
 
 bundle:install:
   stage: prepare
-  extends: .cached-job
+  extends: .cached-ruby-job
+  variables:
+    POLICY: pull-push
   script:
     - bundle install --jobs $(nproc)
 
 modules:download:
   stage: prepare
   extends:
-    - .cached-job
+    - .cached-go-job
     - .go-matrix-job
+  variables:
+    POLICY: pull-push
   script:
     - go mod download
 
@@ -104,7 +114,8 @@ modules:download:
 
 tests:
   extends:
-    - .cached-job
+    - .cached-go-job
+    - .cached-ruby-job
     - .go-matrix-job
     - .test-job
   script:
@@ -115,7 +126,7 @@ tests:
 
 race:
   extends:
-    - .cached-job
+    - .cached-go-job
     - .go-matrix-job
     - .test-job
   script:
