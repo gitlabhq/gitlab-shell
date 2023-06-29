@@ -7,12 +7,18 @@ include:
     file:
       - '/ci/danger-review.yml'
 
+stages:
+  - prepare
+  - test
+
 variables:
   DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
   GO_VERSION: "golang-1.20"
+  GOPATH: $CI_PROJECT_DIR/.GOPATH
   DEBIAN_VERSION: "bullseye"
   RUBY_VERSION: "ruby-3.2"
+  BUNDLE_PATH: vendor/ruby
 
 workflow:
   rules: &workflow_rules
@@ -36,12 +42,56 @@ default:
     # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
     - gitlab-org-docker
 
-.test:
+
+.cached-job:
+  cache:
+    - key:
+        prefix: $GO_VERSION-cache
+        files:
+          - go.mod
+          - go.sum
+      paths:
+        - .GOPATH/pkg/mod/
+    - key:
+        prefix: $RUBY_VERSION-cache
+        files:
+          - Gemfile.lock
+      paths:
+        - ${BUNDLE_PATH}
+
+.go-matrix-job:
+  parallel:
+    matrix:
+      - GO_VERSION: ["golang-1.18", "golang-1.19", "golang-1.20"]
+
+################################################################################
+# Prepare jobs
+################################################################################
+
+bundle:install:
+  stage: prepare
+  extends: .cached-job
+  script:
+    - bundle install --jobs $(nproc)
+
+modules:download:
+  stage: prepare
+  extends:
+    - .cached-job
+    - .go-matrix-job
+  script:
+    - go mod download
+
+################################################################################
+# Test jobs
+################################################################################
+
+.test-job:
+  needs: ['bundle:install', 'modules:download']
   variables:
     GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
   before_script:
     # Set up the environment to run integration tests (still written in Ruby)
-    - bundle install
     - make build
     - cp config.yml.example config.yml
     - go version
@@ -53,10 +103,10 @@ default:
       alias: gitaly
 
 tests:
-  extends: .test
-  parallel:
-    matrix:
-      - GO_VERSION: ["golang-1.18", "golang-1.19", "golang-1.20"]
+  extends:
+    - .cached-job
+    - .go-matrix-job
+    - .test-job
   script:
     - make verify test
   after_script:
@@ -64,7 +114,10 @@ tests:
   coverage: '/\d+.\d+%/'
 
 race:
-  extends: .test
+  extends:
+    - .cached-job
+    - .go-matrix-job
+    - .test-job
   script:
     - make test_golang_race
 
@@ -129,19 +182,3 @@ modules:tidy:
   script:
     - go mod tidy
     - git diff --exit-code go.mod go.sum
-
-modules:download:
-  parallel:
-    matrix:
-      - GO_VERSION: ["golang-1.18", "golang-1.19", "golang-1.20"]
-  script:
-    - go mod download
-  cache:
-    key:
-      prefix: $GO_VERSION
-      files:
-        - go.mod
-        - go.sum
-    paths:
-      - .GOPATH/pkg/mod/
-    policy: push
