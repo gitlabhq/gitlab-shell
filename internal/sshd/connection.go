@@ -64,7 +64,12 @@ func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handl
 		go c.sendKeepAliveMsg(ctx, sconn, ticker)
 	}
 
-	ctxWithLogMetadata := c.handleRequests(ctx, sconn, chans, handler)
+	ctxWithLogMetadataChan := make(chan context.Context)
+	defer close(ctxWithLogMetadataChan)
+
+	go c.handleRequests(ctx, sconn, chans, ctxWithLogMetadataChan, handler)
+
+	ctxWithLogMetadata := <-ctxWithLogMetadataChan
 
 	reason := sconn.Wait()
 	log.WithContextFields(ctx, log.Fields{"reason": reason}).Info("server: handleConn: done")
@@ -96,23 +101,25 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 	return sconn, chans, err
 }
 
-func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, handler channelHandler) context.Context {
-	ctxWithLogMetadata := ctx
+func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, ctxWithLogMetadataChan chan<- context.Context, handler channelHandler) {
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
 
 	for newChannel := range chans {
 		ctxlog.WithField("channel_type", newChannel.ChannelType()).Info("connection: handle: new channel requested")
+
 		if newChannel.ChannelType() != "session" {
 			ctxlog.Info("connection: handleRequests: unknown channel type")
 			newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
 			continue
 		}
+
 		if !c.concurrentSessions.TryAcquire(1) {
 			ctxlog.Info("connection: handleRequests: too many concurrent sessions")
 			newChannel.Reject(ssh.ResourceShortage, "too many concurrent sessions")
 			metrics.SshdHitMaxSessions.Inc()
 			continue
 		}
+
 		channel, requests, err := newChannel.Accept()
 		if err != nil {
 			ctxlog.WithError(err).Error("connection: handleRequests: accepting channel failed")
@@ -137,11 +144,12 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			}()
 
 			metrics.SliSshdSessionsTotal.Inc()
-			ctxWithLogMetadata, err = handler(ctx, sconn, channel, requests)
-
+			ctxWithLogMetadata, err := handler(ctx, sconn, channel, requests)
 			if err != nil {
 				c.trackError(ctxlog, err)
 			}
+
+			ctxWithLogMetadataChan <- ctxWithLogMetadata
 		}()
 	}
 
@@ -152,8 +160,6 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 	ctx, cancel := context.WithTimeout(ctx, EOFTimeout)
 	defer cancel()
 	c.concurrentSessions.Acquire(ctx, c.maxSessions)
-
-	return ctxWithLogMetadata
 }
 
 func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn, ticker *time.Ticker) {

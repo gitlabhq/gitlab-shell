@@ -81,23 +81,25 @@ func (f *fakeConn) SendRequest(name string, wantReply bool, payload []byte) (boo
 	return true, nil, nil
 }
 
-func setup(sessionsNum int64, newChannel *fakeNewChannel) (*connection, chan ssh.NewChannel) {
+func setup(sessionsNum int64, newChannel *fakeNewChannel) (*connection, chan ssh.NewChannel, chan<- context.Context) {
 	cfg := &config.Config{Server: config.ServerConfig{ConcurrentSessionsLimit: sessionsNum}}
 	conn := &connection{cfg: cfg, concurrentSessions: semaphore.NewWeighted(sessionsNum)}
 
 	chans := make(chan ssh.NewChannel, 1)
 	chans <- newChannel
 
-	return conn, chans
+	ctxWithLogMetadataChan := make(chan context.Context)
+
+	return conn, chans, ctxWithLogMetadataChan
 }
 
 func TestPanicDuringSessionIsRecovered(t *testing.T) {
 	newChannel := &fakeNewChannel{channelType: "session"}
-	conn, chans := setup(1, newChannel)
+	conn, chans, ctxWithLogMetadataChan := setup(1, newChannel)
 
 	numSessions := 0
 	require.NotPanics(t, func() {
-		conn.handleRequests(context.Background(), nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
+		conn.handleRequests(context.Background(), nil, chans, ctxWithLogMetadataChan, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
 			numSessions += 1
 			close(chans)
 			panic("This is a panic")
@@ -112,10 +114,10 @@ func TestUnknownChannelType(t *testing.T) {
 	defer close(rejectCh)
 
 	newChannel := &fakeNewChannel{channelType: "unknown session", rejectCh: rejectCh}
-	conn, chans := setup(1, newChannel)
+	conn, chans, ctxWithLogMetadataChan := setup(1, newChannel)
 
 	go func() {
-		conn.handleRequests(context.Background(), nil, chans, nil)
+		conn.handleRequests(context.Background(), nil, chans, ctxWithLogMetadataChan, nil)
 	}()
 
 	rejectionData := <-rejectCh
@@ -129,13 +131,13 @@ func TestTooManySessions(t *testing.T) {
 	defer close(rejectCh)
 
 	newChannel := &fakeNewChannel{channelType: "session", rejectCh: rejectCh}
-	conn, chans := setup(1, newChannel)
+	conn, chans, ctxWithLogMetadataChan := setup(1, newChannel)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	go func() {
-		conn.handleRequests(context.Background(), nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
+		conn.handleRequests(context.Background(), nil, chans, ctxWithLogMetadataChan, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
 			<-ctx.Done() // Keep the accepted channel open until the end of the test
 			return ctx, nil
 		})
@@ -147,18 +149,17 @@ func TestTooManySessions(t *testing.T) {
 
 func TestAcceptSessionSucceeds(t *testing.T) {
 	newChannel := &fakeNewChannel{channelType: "session"}
-	conn, chans := setup(1, newChannel)
+	conn, chans, ctxWithLogMetadataChan := setup(1, newChannel)
 	ctx := context.Background()
 
 	channelHandled := false
-	returnedCtx := conn.handleRequests(ctx, nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
+	conn.handleRequests(ctx, nil, chans, ctxWithLogMetadataChan, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
 		channelHandled = true
 		close(chans)
 		return ctx, nil
 	})
 
 	require.True(t, channelHandled)
-	require.NotNil(t, returnedCtx)
 }
 
 func TestAcceptSessionFails(t *testing.T) {
@@ -167,12 +168,12 @@ func TestAcceptSessionFails(t *testing.T) {
 
 	acceptErr := errors.New("some failure")
 	newChannel := &fakeNewChannel{channelType: "session", acceptCh: acceptCh, acceptErr: acceptErr}
-	conn, chans := setup(1, newChannel)
+	conn, chans, ctxWithLogMetadataChan := setup(1, newChannel)
 	ctx := context.Background()
 
 	channelHandled := false
 	go func() {
-		conn.handleRequests(ctx, nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
+		conn.handleRequests(ctx, nil, chans, ctxWithLogMetadataChan, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
 			channelHandled = true
 			return ctx, nil
 		})
@@ -206,10 +207,10 @@ func TestSessionsMetrics(t *testing.T) {
 	initialSessionsErrorTotal := testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal)
 
 	newChannel := &fakeNewChannel{channelType: "session"}
-	conn, chans := setup(1, newChannel)
+	conn, chans, ctxWithLogMetadataChan := setup(1, newChannel)
 	ctx := context.Background()
 
-	conn.handleRequests(ctx, nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
+	conn.handleRequests(ctx, nil, chans, ctxWithLogMetadataChan, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
 		close(chans)
 		return ctx, errors.New("custom error")
 	})
@@ -228,11 +229,11 @@ func TestSessionsMetrics(t *testing.T) {
 		{"not our ref", grpcstatus.Error(grpccodes.Internal, `rpc error: code = Internal desc = cmd wait: exit status 128, stderr: "fatal: git upload-pack: not our ref 9106d18f6a1b8022f6517f479696f3e3ea5e68c1"`)},
 	} {
 		t.Run(ignoredError.desc, func(t *testing.T) {
-			conn, chans = setup(1, newChannel)
+			conn, chans, ctxWithLogMetadataChan := setup(1, newChannel)
 			ignored := ignoredError.err
 			ctx := context.Background()
 
-			conn.handleRequests(ctx, nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
+			conn.handleRequests(ctx, nil, chans, ctxWithLogMetadataChan, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error) {
 				close(chans)
 				return ctx, ignored
 			})
