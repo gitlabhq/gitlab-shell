@@ -3,6 +3,7 @@ package uploadarchive
 import (
 	"context"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
@@ -28,13 +29,13 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	metaData := config.NewMetaData(
+	metaData := command.NewLogMetadata(
 		response.Gitaly.Repo.GlProjectPath,
 		response.Username,
 	)
-	ctxWithMetaData := context.WithValue(ctx, "metaData", metaData)
+	ctxWithLogMetadata := context.WithValue(ctx, "metaData", metaData)
 
-	return ctxWithMetaData, c.performGitalyCall(ctx, response)
+	return ctxWithLogMetadata, c.performGitalyCall(ctx, response)
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {

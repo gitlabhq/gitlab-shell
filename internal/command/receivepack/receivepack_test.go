@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
@@ -20,10 +21,10 @@ func TestAllowedAccess(t *testing.T) {
 	cmd, _ := setup(t, "1", requests)
 	cmd.Config.GitalyClient.InitSidechannelRegistry(context.Background())
 
-	ctxWithMetaData, err := cmd.Execute(context.Background())
+	ctxWithLogMetadata, err := cmd.Execute(context.Background())
 
 	require.NoError(t, err)
-	metaData := ctxWithMetaData.Value("metaData").(config.MetaData)
+	metaData := ctxWithLogMetadata.Value("metaData").(command.LogMetadata)
 	require.Equal(t, "alex-doe", metaData.Username)
 	require.Equal(t, "group/project-path", metaData.Project)
 	require.Equal(t, "group", metaData.RootNamespace)

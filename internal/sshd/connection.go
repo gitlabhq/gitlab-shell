@@ -64,12 +64,12 @@ func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handl
 		go c.sendKeepAliveMsg(ctx, sconn, ticker)
 	}
 
-	ctxWithMetaData := c.handleRequests(ctx, sconn, chans, handler)
+	ctxWithLogMetadata := c.handleRequests(ctx, sconn, chans, handler)
 
 	reason := sconn.Wait()
 	log.WithContextFields(ctx, log.Fields{"reason": reason}).Info("server: handleConn: done")
 
-	return ctxWithMetaData
+	return ctxWithLogMetadata
 }
 
 func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfig) (*ssh.ServerConn, <-chan ssh.NewChannel, error) {
@@ -97,7 +97,7 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 }
 
 func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, handler channelHandler) context.Context {
-	ctxWithMetaData := ctx
+	ctxWithLogMetadata := ctx
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
 
 	for newChannel := range chans {
@@ -137,7 +137,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			}()
 
 			metrics.SliSshdSessionsTotal.Inc()
-			ctxWithMetaData, err = handler(ctx, sconn, channel, requests)
+			ctxWithLogMetadata, err = handler(ctx, sconn, channel, requests)
 
 			if err != nil {
 				c.trackError(ctxlog, err)
@@ -153,7 +153,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 	defer cancel()
 	c.concurrentSessions.Acquire(ctx, c.maxSessions)
 
-	return ctxWithMetaData
+	return ctxWithLogMetadata
 }
 
 func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn, ticker *time.Ticker) {

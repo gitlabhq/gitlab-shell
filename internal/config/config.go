@@ -6,7 +6,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -83,12 +82,6 @@ type Config struct {
 	GitalyClient gitaly.Client
 }
 
-type MetaData struct {
-	Username      string `json:"username"`
-	Project       string `json:"project,omitempty"`
-	RootNamespace string `json:"root_namespace,omitempty"`
-}
-
 // The defaults to apply before parsing the config file(s).
 var (
 	DefaultConfig = Config{
@@ -116,26 +109,6 @@ var (
 		},
 	}
 )
-
-func NewMetaData(project, username string) MetaData {
-	rootNameSpace := ""
-
-	if len(project) > 0 {
-		splitFn := func(c rune) bool {
-			return c == '/'
-		}
-		m := strings.FieldsFunc(project, splitFn)
-		if len(m) > 0 {
-			rootNameSpace = m[0]
-		}
-	}
-
-	return MetaData{
-		Username:      username,
-		Project:       project,
-		RootNamespace: rootNameSpace,
-	}
-}
 
 func (d *YamlDuration) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var intDuration int

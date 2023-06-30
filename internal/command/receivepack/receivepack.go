@@ -3,6 +3,7 @@ package receivepack
 import (
 	"context"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/githttp"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
@@ -30,7 +31,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	ctxWithMetaData := context.WithValue(ctx, "metaData", config.NewMetaData(
+	ctxWithLogMetadata := context.WithValue(ctx, "metaData", command.NewLogMetadata(
 		response.Gitaly.Repo.GlProjectPath,
 		response.Username,
 	))
@@ -47,7 +48,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 				Response:   response,
 			}
 
-			return ctxWithMetaData, cmd.Execute(ctx)
+			return ctxWithLogMetadata, cmd.Execute(ctx)
 		}
 
 		customAction := customaction.Command{
@@ -55,10 +56,10 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 			ReadWriter: c.ReadWriter,
 			EOFSent:    true,
 		}
-		return ctxWithMetaData, customAction.Execute(ctx, response)
+		return ctxWithLogMetadata, customAction.Execute(ctx, response)
 	}
 
-	return ctxWithMetaData, c.performGitalyCall(ctx, response)
+	return ctxWithLogMetadata, c.performGitalyCall(ctx, response)
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {

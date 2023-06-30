@@ -16,6 +16,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 )
@@ -352,19 +353,19 @@ func TestExtractMetaDataFromContext(t *testing.T) {
 	rootNameSpace := "flightjs"
 	project := fmt.Sprintf("%s/Flight", rootNameSpace)
 	username := "alex-doe"
-	ctxWithMetaData := context.WithValue(context.Background(), "metaData", config.NewMetaData(project, username))
+	ctxWithLogMetadata := context.WithValue(context.Background(), "metaData", command.NewLogMetadata(project, username))
 
-	metaData := extractMetaDataFromContext(ctxWithMetaData)
+	metaData := extractMetaDataFromContext(ctxWithLogMetadata)
 
-	require.Equal(t, config.MetaData{Project: project, Username: username, RootNamespace: rootNameSpace}, metaData)
+	require.Equal(t, command.LogMetadata{Project: project, Username: username, RootNamespace: rootNameSpace}, metaData)
 }
 
 func TestExtractMetaDataFromContextWithoutMetaData(t *testing.T) {
-	ctxWithMetaData := context.Background()
+	ctxWithLogMetadata := context.Background()
 
-	metaData := extractMetaDataFromContext(ctxWithMetaData)
+	metaData := extractMetaDataFromContext(ctxWithLogMetadata)
 
-	require.Equal(t, config.MetaData{}, metaData)
+	require.Equal(t, command.LogMetadata{}, metaData)
 }
 
 func setupServer(t *testing.T) *Server {

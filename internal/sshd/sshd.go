@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
@@ -193,7 +194,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	started := time.Now()
 	conn := newConnection(s.Config, nconn)
 
-	ctxWithMetaData := conn.handle(ctx, s.serverConfig.get(ctx), func(ctx context.Context, sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) (context.Context, error) {
+	ctxWithLogMetadata := conn.handle(ctx, s.serverConfig.get(ctx), func(ctx context.Context, sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) (context.Context, error) {
 		session := &session{
 			cfg:                 s.Config,
 			channel:             channel,
@@ -206,7 +207,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		return session.handle(ctx, requests)
 	})
 
-	ctxlog.WithFields(log.Fields{"duration_s": time.Since(started).Seconds(), "meta": extractMetaDataFromContext(ctxWithMetaData)}).Info("access: finish")
+	ctxlog.WithFields(log.Fields{"duration_s": time.Since(started).Seconds(), "meta": extractMetaDataFromContext(ctxWithLogMetadata)}).Info("access: finish")
 }
 
 func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
@@ -228,11 +229,11 @@ func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
 	}
 }
 
-func extractMetaDataFromContext(ctx context.Context) config.MetaData {
-	metaData := config.MetaData{}
+func extractMetaDataFromContext(ctx context.Context) command.LogMetadata {
+	metaData := command.LogMetadata{}
 
 	if ctx.Value("metaData") != nil {
-		metaData = ctx.Value("metaData").(config.MetaData)
+		metaData = ctx.Value("metaData").(command.LogMetadata)
 	}
 
 	return metaData
