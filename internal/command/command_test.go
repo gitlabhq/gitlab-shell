@@ -88,19 +88,19 @@ func TestNewLogMetadata(t *testing.T) {
 		{
 			desc:                  "Project under single namespace",
 			project:               "flightjs/Flight",
-			username:              "@alex-doe",
+			username:              "alex-doe",
 			expectedRootNamespace: "flightjs",
 		},
 		{
 			desc:                  "Project under single odd namespace",
 			project:               "flightjs///Flight",
-			username:              "@alex-doe",
+			username:              "alex-doe",
 			expectedRootNamespace: "flightjs",
 		},
 		{
 			desc:                  "Project under deeper namespace",
 			project:               "flightjs/one/Flight",
-			username:              "@alex-doe",
+			username:              "alex-doe",
 			expectedRootNamespace: "flightjs",
 		},
 	}
