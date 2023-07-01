@@ -236,3 +236,9 @@ func TestSessionsMetrics(t *testing.T) {
 		})
 	}
 }
+
+func eventuallyInDelta(t *testing.T, expected, actual, delta float64) {
+	require.Eventually(t, func() bool {
+		return ((expected - actual) < delta)
+	}, 1*time.Second, time.Millisecond)
+}
