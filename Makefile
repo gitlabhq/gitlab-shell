@@ -111,15 +111,15 @@ bin/gitlab-sshd: bin $(GO_SOURCES)
 	go build $(GOBUILD_FLAGS) -o $(CURDIR)/bin/gitlab-sshd ./cmd/gitlab-sshd
 
 check:
-	bin/check
+	bin/gitlab-shell-check
 
 clean:
-	rm -f bin/check bin/gitlab-shell bin/gitlab-shell-authorized-keys-check bin/gitlab-shell-authorized-principals-check bin/gitlab-sshd
+	rm -f bin/*
 
 install: compile
 	mkdir -p $(DESTDIR)$(PREFIX)/bin/
-	install -m755 bin/check $(DESTDIR)$(PREFIX)/bin/check
-	install -m755 bin/gitlab-shell $(DESTDIR)$(PREFIX)/bin/gitlab-shell
-	install -m755 bin/gitlab-shell-authorized-keys-check $(DESTDIR)$(PREFIX)/bin/gitlab-shell-authorized-keys-check
-	install -m755 bin/gitlab-shell-authorized-principals-check $(DESTDIR)$(PREFIX)/bin/gitlab-shell-authorized-principals-check
-	install -m755 bin/gitlab-sshd $(DESTDIR)$(PREFIX)/bin/gitlab-sshd
+	install -m755 bin/gitlab-shell-check $(DESTDIR)$(PREFIX)/bin/
+	install -m755 bin/gitlab-shell $(DESTDIR)$(PREFIX)/bin/
+	install -m755 bin/gitlab-shell-authorized-keys-check $(DESTDIR)$(PREFIX)/bin/
+	install -m755 bin/gitlab-shell-authorized-principals-check $(DESTDIR)$(PREFIX)/bin/
+	install -m755 bin/gitlab-sshd $(DESTDIR)$(PREFIX)/bin/
