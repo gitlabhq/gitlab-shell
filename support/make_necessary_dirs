@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Load ROOT_PATH and access the minimum necessary config file
-require_relative '../support/gitlab_config'
+require_relative 'gitlab_config'
 
 config = GitlabConfig.new
 key_dir = File.dirname("#{config.auth_file}")
