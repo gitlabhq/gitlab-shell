@@ -31,7 +31,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	ctxWithLogMetadata := context.WithValue(ctx, "metaData", command.NewLogMetadata(
+	ctxWithLogMetadata := context.WithValue(ctx, "metadata", command.NewLogMetadata(
 		response.Gitaly.Repo.GlProjectPath,
 		response.Username,
 	))

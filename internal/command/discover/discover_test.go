@@ -90,7 +90,7 @@ func TestExecute(t *testing.T) {
 
 			require.NoError(t, err)
 			require.Equal(t, expectedOutput, buffer.String())
-			require.Equal(t, expectedUsername, ctxWithLogMetadata.Value("metaData").(command.LogMetadata).Username)
+			require.Equal(t, expectedUsername, ctxWithLogMetadata.Value("metadata").(command.LogMetadata).Username)
 		})
 	}
 }

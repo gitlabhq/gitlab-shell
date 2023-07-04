@@ -230,13 +230,13 @@ func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
 }
 
 func extractMetaDataFromContext(ctx context.Context) command.LogMetadata {
-	metaData := command.LogMetadata{}
+	metadata := command.LogMetadata{}
 
-	if ctx.Value("metaData") != nil {
-		metaData = ctx.Value("metaData").(command.LogMetadata)
+	if ctx.Value("metadata") != nil {
+		metadata = ctx.Value("metadata").(command.LogMetadata)
 	}
 
-	return metaData
+	return metadata
 }
 
 func staticProxyPolicy(policy proxyproto.Policy) proxyproto.PolicyFunc {

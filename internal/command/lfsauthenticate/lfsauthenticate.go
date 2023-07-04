@@ -58,11 +58,11 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	metaData := command.NewLogMetadata(
+	metadata := command.NewLogMetadata(
 		accessResponse.Gitaly.Repo.GlProjectPath,
 		accessResponse.Username,
 	)
-	ctxWithLogMetadata := context.WithValue(ctx, "metaData", metaData)
+	ctxWithLogMetadata := context.WithValue(ctx, "metadata", metadata)
 
 	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserId)
 	if err != nil {

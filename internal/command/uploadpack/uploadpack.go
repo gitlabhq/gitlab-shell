@@ -30,11 +30,11 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	metaData := command.NewLogMetadata(
+	metadata := command.NewLogMetadata(
 		response.Gitaly.Repo.GlProjectPath,
 		response.Username,
 	)
-	ctxWithLogMetadata := context.WithValue(ctx, "metaData", metaData)
+	ctxWithLogMetadata := context.WithValue(ctx, "metadata", metadata)
 
 	if response.IsCustomAction() {
 		customAction := customaction.Command{

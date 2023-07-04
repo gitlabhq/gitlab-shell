@@ -107,10 +107,10 @@ func TestNewLogMetadata(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			metaData := NewLogMetadata(tc.project, tc.username)
-			require.Equal(t, tc.project, metaData.Project)
-			require.Equal(t, tc.username, metaData.Username)
-			require.Equal(t, tc.expectedRootNamespace, metaData.RootNamespace)
+			metadata := NewLogMetadata(tc.project, tc.username)
+			require.Equal(t, tc.project, metadata.Project)
+			require.Equal(t, tc.username, metadata.Username)
+			require.Equal(t, tc.expectedRootNamespace, metadata.RootNamespace)
 		})
 	}
 }

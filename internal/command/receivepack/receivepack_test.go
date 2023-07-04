@@ -24,10 +24,10 @@ func TestAllowedAccess(t *testing.T) {
 	ctxWithLogMetadata, err := cmd.Execute(context.Background())
 
 	require.NoError(t, err)
-	metaData := ctxWithLogMetadata.Value("metaData").(command.LogMetadata)
-	require.Equal(t, "alex-doe", metaData.Username)
-	require.Equal(t, "group/project-path", metaData.Project)
-	require.Equal(t, "group", metaData.RootNamespace)
+	metadata := ctxWithLogMetadata.Value("metadata").(command.LogMetadata)
+	require.Equal(t, "alex-doe", metadata.Username)
+	require.Equal(t, "group/project-path", metadata.Project)
+	require.Equal(t, "group", metadata.RootNamespace)
 }
 
 func TestForbiddenAccess(t *testing.T) {
