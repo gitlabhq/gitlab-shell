@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/cmd/check/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell-check/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/healthcheck"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"

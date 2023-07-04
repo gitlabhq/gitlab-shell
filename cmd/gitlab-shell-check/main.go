@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	checkCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/check/command"
+	checkCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell-check/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
