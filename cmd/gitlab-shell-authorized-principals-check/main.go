@@ -13,7 +13,21 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
 )
 
+var (
+	// Version is the current version of gitlab-shell
+	Version = "(unknown version)" // Set at build time in the Makefile
+	// BuildTime signifies the time the binary was build
+	BuildTime = "19700101.000000" // Set at build time in the Makefile
+)
+
 func main() {
+	// We can't use the flag library because gitlab-shell receives other arguments
+	// that confuse the parser.
+	if len(os.Args) == 2 && os.Args[1] == "-version" {
+		fmt.Printf("gitlab-shell %s-%s\n", Version, BuildTime)
+		os.Exit(0)
+	}
+
 	readWriter := &readwriter.ReadWriter{
 		Out:    os.Stdout,
 		In:     os.Stdin,
