@@ -96,9 +96,8 @@ ${GOLANGCI_LINT_FILE}:
 
 setup: make_necessary_dirs bin/gitlab-shell
 
-make_necessary_dirs: _script_install
-_script_install:
-	bin/install
+make_necessary_dirs:
+	support/make_necessary_dirs
 
 compile: bin/gitlab-shell bin/gitlab-sshd
 
