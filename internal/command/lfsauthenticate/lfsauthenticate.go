@@ -8,6 +8,7 @@ import (
 
 	"gitlab.com/gitlab-org/labkit/log"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
@@ -57,6 +58,12 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
+	metaData := command.NewLogMetadata(
+		accessResponse.Gitaly.Repo.GlProjectPath,
+		accessResponse.Username,
+	)
+	ctxWithLogMetadata := context.WithValue(ctx, "metaData", metaData)
+
 	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserId)
 	if err != nil {
 		// return nothing just like Ruby's GitlabShell#lfs_authenticate does
@@ -65,12 +72,12 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 			log.Fields{"operation": operation, "repo": repo, "user_id": accessResponse.UserId},
 		).WithError(err).Debug("lfsauthenticate: execute: LFS authentication failed")
 
-		return ctx, nil
+		return ctxWithLogMetadata, nil
 	}
 
 	fmt.Fprintf(c.ReadWriter.Out, "%s\n", payload)
 
-	return ctx, nil
+	return ctxWithLogMetadata, nil
 }
 
 func actionFromOperation(operation string) (commandargs.CommandType, error) {
