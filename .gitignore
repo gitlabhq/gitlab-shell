@@ -7,11 +7,7 @@
 .gitlab_shell_secret
 .idea
 /*.log*
-/bin/check
-/bin/gitlab-shell
-/bin/gitlab-shell-authorized-keys-check
-/bin/gitlab-shell-authorized-principals-check
-/bin/gitlab-sshd
+/bin/*
 /gl-code-quality-report.json
 /go_build
 /support/bin/golangci-*
