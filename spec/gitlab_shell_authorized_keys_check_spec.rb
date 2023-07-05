@@ -4,8 +4,7 @@ describe 'bin/gitlab-shell-authorized-keys-check' do
   include_context 'gitlab shell'
 
   def tmp_socket_path
-    # This has to be a relative path shorter than 100 bytes due to
-    # limitations in how Unix sockets work.
+    # This has to be a relative path shorter than 100 bytes due to limitations in how Unix sockets work.
     'tmp/gitlab-shell-authorized-keys-check-socket'
   end
 
