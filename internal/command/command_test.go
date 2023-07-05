@@ -77,3 +77,40 @@ func addAdditionalEnv(envMap map[string]string) func() {
 
 	}
 }
+
+func TestNewLogMetadata(t *testing.T) {
+	testCases := []struct {
+		desc                  string
+		project               string
+		username              string
+		expectedRootNamespace string
+	}{
+		{
+			desc:                  "Project under single namespace",
+			project:               "flightjs/Flight",
+			username:              "alex-doe",
+			expectedRootNamespace: "flightjs",
+		},
+		{
+			desc:                  "Project under single odd namespace",
+			project:               "flightjs///Flight",
+			username:              "alex-doe",
+			expectedRootNamespace: "flightjs",
+		},
+		{
+			desc:                  "Project under deeper namespace",
+			project:               "flightjs/one/Flight",
+			username:              "alex-doe",
+			expectedRootNamespace: "flightjs",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			metadata := NewLogMetadata(tc.project, tc.username)
+			require.Equal(t, tc.project, metadata.Project)
+			require.Equal(t, tc.username, metadata.Username)
+			require.Equal(t, tc.expectedRootNamespace, metadata.RootNamespace)
+		})
+	}
+}

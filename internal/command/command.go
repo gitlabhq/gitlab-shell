@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"strings"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/labkit/correlation"
@@ -9,7 +10,13 @@ import (
 )
 
 type Command interface {
-	Execute(ctx context.Context) error
+	Execute(ctx context.Context) (context.Context, error)
+}
+
+type LogMetadata struct {
+	Username      string `json:"username"`
+	Project       string `json:"project,omitempty"`
+	RootNamespace string `json:"root_namespace,omitempty"`
 }
 
 // Setup() initializes tracing from the configuration file and generates a
@@ -45,5 +52,25 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 	return ctx, func() {
 		finished()
 		closer.Close()
+	}
+}
+
+func NewLogMetadata(project, username string) LogMetadata {
+	rootNameSpace := ""
+
+	if len(project) > 0 {
+		splitFn := func(c rune) bool {
+			return c == '/'
+		}
+		m := strings.FieldsFunc(project, splitFn)
+		if len(m) > 0 {
+			rootNameSpace = m[0]
+		}
+	}
+
+	return LogMetadata{
+		Username:      username,
+		Project:       project,
+		RootNamespace: rootNameSpace,
 	}
 }

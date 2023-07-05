@@ -132,7 +132,7 @@ func TestExecute(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 			}
 
-			err := cmd.Execute(context.Background())
+			_, err := cmd.Execute(context.Background())
 
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedOutput, output.String())

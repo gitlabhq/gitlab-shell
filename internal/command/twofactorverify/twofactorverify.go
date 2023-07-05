@@ -25,10 +25,10 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	client, err := twofactorverify.NewClient(c.Config)
 	if err != nil {
-		return err
+		return ctx, err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, timeout)
@@ -67,7 +67,7 @@ func (c *Command) Execute(ctx context.Context) error {
 	log.WithContextFields(ctx, log.Fields{"message": message}).Info("Two factor verify command finished")
 	fmt.Fprintf(c.ReadWriter.Out, "\n%v\n", message)
 
-	return nil
+	return ctx, nil
 }
 
 func (c *Command) getOTP(ctx context.Context) (string, error) {

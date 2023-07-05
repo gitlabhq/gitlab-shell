@@ -16,12 +16,12 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	if err := c.printPrincipalLines(); err != nil {
-		return err
+		return ctx, err
 	}
 
-	return nil
+	return ctx, nil
 }
 
 func (c *Command) printPrincipalLines() error {

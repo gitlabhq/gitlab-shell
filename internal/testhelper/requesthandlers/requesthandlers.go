@@ -38,6 +38,7 @@ func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testse
 					"gl_id":       "1",
 					"gl_key_type": "key",
 					"gl_key_id":   123,
+					"gl_username": "alex-doe",
 					"gitaly": map[string]interface{}{
 						"repository": map[string]interface{}{
 							"storage_name":                     "storage_name",

@@ -22,7 +22,7 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	ctxlog := log.ContextLogger(ctx)
 	ctxlog.Debug("twofactorrecover: execute: Waiting for user input")
 
@@ -34,7 +34,7 @@ func (c *Command) Execute(ctx context.Context) error {
 		fmt.Fprintln(c.ReadWriter.Out, "\nNew recovery codes have *not* been generated. Existing codes will remain valid.")
 	}
 
-	return nil
+	return ctx, nil
 }
 
 func (c *Command) getUserAnswer(ctx context.Context) string {

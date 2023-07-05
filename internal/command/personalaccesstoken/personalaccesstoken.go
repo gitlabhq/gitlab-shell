@@ -34,10 +34,10 @@ type tokenArgs struct {
 	ExpiresDate string // Calculated, a TTL is passed from command-line.
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	err := c.parseTokenArgs()
 	if err != nil {
-		return err
+		return ctx, err
 	}
 
 	log.WithContextFields(ctx, log.Fields{
@@ -46,13 +46,14 @@ func (c *Command) Execute(ctx context.Context) error {
 
 	response, err := c.getPersonalAccessToken(ctx)
 	if err != nil {
-		return err
+		return ctx, err
 	}
 
 	fmt.Fprint(c.ReadWriter.Out, "Token:   "+response.Token+"\n")
 	fmt.Fprint(c.ReadWriter.Out, "Scopes:  "+strings.Join(response.Scopes, ",")+"\n")
 	fmt.Fprint(c.ReadWriter.Out, "Expires: "+response.ExpiresAt+"\n")
-	return nil
+
+	return ctx, nil
 }
 
 func (c *Command) parseTokenArgs() error {

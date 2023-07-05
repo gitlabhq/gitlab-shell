@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
@@ -16,19 +17,24 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	response, err := c.getUserInfo(ctx)
 	if err != nil {
-		return fmt.Errorf("Failed to get username: %v", err)
+		return ctx, fmt.Errorf("Failed to get username: %v", err)
 	}
 
+	metadata := command.LogMetadata{}
 	if response.IsAnonymous() {
+		metadata.Username = "Anonymous"
 		fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, Anonymous!\n")
 	} else {
+		metadata.Username = response.Username
 		fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, @%s!\n", response.Username)
 	}
 
-	return nil
+	ctxWithLogMetadata := context.WithValue(ctx, "metadata", metadata)
+
+	return ctxWithLogMetadata, nil
 }
 
 func (c *Command) getUserInfo(ctx context.Context) (*discover.Response, error) {

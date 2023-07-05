@@ -16,6 +16,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 )
@@ -346,6 +347,25 @@ func TestLoginGraceTime(t *testing.T) {
 	// The close won't happen until the context is canceled like in TestClosingHangedConnections
 	require.NoError(t, s.Shutdown())
 	verifyStatus(t, s, StatusClosed)
+}
+
+func TestExtractMetaDataFromContext(t *testing.T) {
+	rootNameSpace := "flightjs"
+	project := fmt.Sprintf("%s/Flight", rootNameSpace)
+	username := "alex-doe"
+	ctxWithLogMetadata := context.WithValue(context.Background(), "metadata", command.NewLogMetadata(project, username))
+
+	metadata := extractMetaDataFromContext(ctxWithLogMetadata)
+
+	require.Equal(t, command.LogMetadata{Project: project, Username: username, RootNamespace: rootNameSpace}, metadata)
+}
+
+func TestExtractMetaDataFromContextWithoutMetaData(t *testing.T) {
+	ctxWithLogMetadata := context.Background()
+
+	metadata := extractMetaDataFromContext(ctxWithLogMetadata)
+
+	require.Equal(t, command.LogMetadata{}, metadata)
 }
 
 func setupServer(t *testing.T) *Server {

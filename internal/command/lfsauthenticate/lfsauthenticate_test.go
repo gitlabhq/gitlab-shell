@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
@@ -54,7 +55,7 @@ func TestFailedRequests(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 			}
 
-			err := cmd.Execute(context.Background())
+			_, err := cmd.Execute(context.Background())
 			require.Error(t, err)
 
 			require.Equal(t, tc.expectedOutput, err.Error())
@@ -109,8 +110,14 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 				}
 
 				body := map[string]interface{}{
-					"gl_id":  glId,
-					"status": true,
+					"gl_id":       glId,
+					"status":      true,
+					"gl_username": "alex-doe",
+					"gitaly": map[string]interface{}{
+						"repository": map[string]interface{}{
+							"gl_project_path": "group/project-path",
+						},
+					},
 				}
 				require.NoError(t, json.NewEncoder(w).Encode(body))
 			},
@@ -145,10 +152,15 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 			}
 
-			err := cmd.Execute(context.Background())
-			require.NoError(t, err)
+			ctxWithLogMetadata, err := cmd.Execute(context.Background())
 
+			require.NoError(t, err)
 			require.Equal(t, tc.expectedOutput, output.String())
+
+			metadata := ctxWithLogMetadata.Value("metadata").(command.LogMetadata)
+			require.Equal(t, "alex-doe", metadata.Username)
+			require.Equal(t, "group/project-path", metadata.Project)
+			require.Equal(t, "group", metadata.RootNamespace)
 		})
 	}
 }

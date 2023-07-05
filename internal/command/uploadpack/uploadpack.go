@@ -3,6 +3,7 @@ package uploadpack
 import (
 	"context"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
@@ -17,17 +18,23 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SshArgs
 	if len(args) != 2 {
-		return disallowedcommand.Error
+		return ctx, disallowedcommand.Error
 	}
 
 	repo := args[1]
 	response, err := c.verifyAccess(ctx, repo)
 	if err != nil {
-		return err
+		return ctx, err
 	}
+
+	metadata := command.NewLogMetadata(
+		response.Gitaly.Repo.GlProjectPath,
+		response.Username,
+	)
+	ctxWithLogMetadata := context.WithValue(ctx, "metadata", metadata)
 
 	if response.IsCustomAction() {
 		customAction := customaction.Command{
@@ -35,10 +42,10 @@ func (c *Command) Execute(ctx context.Context) error {
 			ReadWriter: c.ReadWriter,
 			EOFSent:    false,
 		}
-		return customAction.Execute(ctx, response)
+		return ctxWithLogMetadata, customAction.Execute(ctx, response)
 	}
 
-	return c.performGitalyCall(ctx, response)
+	return ctxWithLogMetadata, c.performGitalyCall(ctx, response)
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {

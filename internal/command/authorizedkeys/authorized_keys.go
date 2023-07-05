@@ -18,21 +18,21 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	// Do and return nothing when the expected and actual user don't match.
 	// This can happen when the user in sshd_config doesn't match the user
 	// trying to login. When nothing is printed, the user will be denied access.
 	if c.Args.ExpectedUser != c.Args.ActualUser {
 		// TODO: Log this event once we have a consistent way to log in Go.
 		// See https://gitlab.com/gitlab-org/gitlab-shell/issues/192 for more info.
-		return nil
+		return ctx, nil
 	}
 
 	if err := c.printKeyLine(ctx); err != nil {
-		return err
+		return ctx, err
 	}
 
-	return nil
+	return ctx, nil
 }
 
 func (c *Command) printKeyLine(ctx context.Context) error {

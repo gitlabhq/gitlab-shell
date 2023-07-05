@@ -76,7 +76,7 @@ func main() {
 	ctxlog.WithFields(log.Fields{"env": env, "command": cmdName}).Info("gitlab-shell: main: executing command")
 	fips.Check()
 
-	if err := cmd.Execute(ctx); err != nil {
+	if _, err := cmd.Execute(ctx); err != nil {
 		ctxlog.WithError(err).Warn("gitlab-shell: main: command execution failed")
 		if grpcstatus.Convert(err).Code() != grpccodes.Internal {
 			console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)

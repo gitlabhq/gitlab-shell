@@ -146,7 +146,7 @@ func TestHandleExec(t *testing.T) {
 				r := &ssh.Request{Payload: tc.payload}
 
 				s.channel = f
-				shouldContinue, err := s.handleExec(context.Background(), r)
+				_, shouldContinue, err := s.handleExec(context.Background(), r)
 
 				require.Equal(t, tc.expectedErr, err)
 				require.Equal(t, false, shouldContinue)
@@ -210,7 +210,7 @@ func TestHandleShell(t *testing.T) {
 			}
 			r := &ssh.Request{}
 
-			exitCode, err := s.handleShell(context.Background(), r)
+			_, exitCode, err := s.handleShell(context.Background(), r)
 
 			if tc.expectedErrString != "" {
 				require.Equal(t, tc.expectedErrString, err.Error())
