@@ -2,6 +2,7 @@ package command
 
 import (
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -74,7 +75,6 @@ func addAdditionalEnv(envMap map[string]string) func() {
 		for _, k := range unsetValues {
 			os.Unsetenv(k)
 		}
-
 	}
 }
 
@@ -113,4 +113,18 @@ func TestNewLogMetadata(t *testing.T) {
 			require.Equal(t, tc.expectedRootNamespace, metadata.RootNamespace)
 		})
 	}
+}
+
+func TestCheckForVersionFlag(t *testing.T) {
+	if os.Getenv("GITLAB_SHELL_TEST_CHECK_FOR_VERSION_FLAG") == "1" {
+		CheckForVersionFlag([]string{"test", "-version"}, "1.2.3", "456")
+		return
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=TestCheckForVersionFlag")
+	cmd.Env = append(os.Environ(), "GITLAB_SHELL_TEST_CHECK_FOR_VERSION_FLAG=1")
+	out, err := cmd.Output()
+
+	require.Nil(t, err)
+	require.Equal(t, "test 1.2.3-456\n", string(out))
 }

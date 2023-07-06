@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,7 +19,6 @@ import (
 
 var (
 	configDir = flag.String("config-dir", "", "The directory the config is in")
-	version   = flag.Bool("version", false, "Prints current version")
 
 	// Version is the current version of gitlab-shell
 	Version = "(unknown version)" // Set at build time in the Makefile
@@ -41,16 +39,12 @@ func overrideConfigFromEnvironment(cfg *config.Config) {
 	if gitlabLogFormat := os.Getenv("GITLAB_LOG_FORMAT"); gitlabLogFormat != "" {
 		cfg.LogFormat = gitlabLogFormat
 	}
-	return
 }
 
 func main() {
-	flag.Parse()
+	command.CheckForVersionFlag(os.Args, Version, BuildTime)
 
-	if *version {
-		fmt.Printf("gitlab-sshd %s-%s\n", Version, BuildTime)
-		os.Exit(0)
-	}
+	flag.Parse()
 
 	cfg := new(config.Config)
 	if *configDir != "" {
