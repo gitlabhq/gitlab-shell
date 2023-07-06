@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
 
 	checkCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/check/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
@@ -23,7 +24,7 @@ func main() {
 	// We can't use the flag library because gitlab-shell receives other arguments
 	// that confuse the parser.
 	if len(os.Args) == 2 && os.Args[1] == "-version" {
-		fmt.Printf("check %s-%s\n", Version, BuildTime)
+		fmt.Printf("%s %s-%s\n", path.Base(os.Args[0]), Version, BuildTime)
 		os.Exit(0)
 	}
 
