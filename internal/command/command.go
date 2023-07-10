@@ -2,6 +2,9 @@ package command
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path"
 	"strings"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
@@ -17,6 +20,17 @@ type LogMetadata struct {
 	Username      string `json:"username"`
 	Project       string `json:"project,omitempty"`
 	RootNamespace string `json:"root_namespace,omitempty"`
+}
+
+func CheckForVersionFlag(osArgs []string, version, buildTime string) {
+	// We can't use the flag library because gitlab-shell receives other arguments
+	// that confuse the parser.
+	//
+	// See: https://gitlab.com/gitlab-org/gitlab-shell/-/merge_requests/800#note_1459474735
+	if len(osArgs) == 2 && osArgs[1] == "-version" {
+		fmt.Printf("%s %s-%s\n", path.Base(osArgs[0]), version, buildTime)
+		os.Exit(0)
+	}
 }
 
 // Setup() initializes tracing from the configuration file and generates a

@@ -29,12 +29,7 @@ var (
 )
 
 func main() {
-	// We can't use the flag library because gitlab-shell receives other arguments
-	// that confuse the parser.
-	if len(os.Args) == 2 && os.Args[1] == "-version" {
-		fmt.Printf("gitlab-shell %s-%s\n", Version, BuildTime)
-		os.Exit(0)
-	}
+	command.CheckForVersionFlag(os.Args, Version, BuildTime)
 
 	readWriter := &readwriter.ReadWriter{
 		Out:    os.Stdout,
