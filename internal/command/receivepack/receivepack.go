@@ -59,7 +59,9 @@ func (c *Command) Execute(ctx context.Context) error {
 		return err
 	}
 
-	gitauditevent.Audit(ctx, c.Args.CommandType, c.Config, response, nil /* keep nil for `git-receive-pack`*/)
+	if response.NeedAudit {
+		gitauditevent.Audit(ctx, c.Args.CommandType, c.Config, response, nil /* keep nil for `git-receive-pack`*/)
+	}
 	return nil
 }
 

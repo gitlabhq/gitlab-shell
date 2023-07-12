@@ -68,6 +68,8 @@ type Response struct {
 	ConsoleMessages  []string      `json:"gl_console_messages"`
 	Who              string
 	StatusCode       int
+	// NeedAudit indicates whether git event should be audited to rails.
+	NeedAudit bool `json:"need_audit"`
 }
 
 func NewClient(config *config.Config) (*Client, error) {

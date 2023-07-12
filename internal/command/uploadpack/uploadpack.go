@@ -44,7 +44,9 @@ func (c *Command) Execute(ctx context.Context) error {
 		return err
 	}
 
-	gitauditevent.Audit(ctx, c.Args.CommandType, c.Config, response, stats)
+	if response.NeedAudit {
+		gitauditevent.Audit(ctx, c.Args.CommandType, c.Config, response, stats)
+	}
 	return nil
 }
 
