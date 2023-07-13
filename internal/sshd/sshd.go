@@ -194,7 +194,8 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	started := time.Now()
 	conn := newConnection(s.Config, nconn)
 
-	ctxWithLogMetadata := conn.handle(ctx, s.serverConfig.get(ctx), func(ctx context.Context, sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) (context.Context, error) {
+	var ctxWithLogMetadata context.Context
+	conn.handle(ctx, s.serverConfig.get(ctx), func(ctx context.Context, sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) error {
 		session := &session{
 			cfg:                 s.Config,
 			channel:             channel,
@@ -204,7 +205,10 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 			started:             started,
 		}
 
-		return session.handle(ctx, requests)
+		var err error
+		ctxWithLogMetadata, err = session.handle(ctx, requests)
+
+		return err
 	})
 
 	ctxlog.WithFields(log.Fields{"duration_s": time.Since(started).Seconds(), "meta": extractMetaDataFromContext(ctxWithLogMetadata)}).Info("access: finish")
