@@ -1,3 +1,39 @@
+v14.24.0
+
+- Bump golang to 1.20.6 !808
+- Ensure all binaries respond to -version !800
+- Update module google.golang.org/grpc to v1.56.2 !804
+- Update module golang.org/x/crypto to v0.11.0 !803
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.1.2 !802
+- Add support for gotestsum !796
+- Log 'access: finish' line with additional metadata !783
+- Ensure prometheus counter has time to increment !795
+- Use both go and ruby cache for test jobs !793
+- Split caching of go and ruby jobs !792
+- Optimise Ruby and Go based CI jobs !787
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.1.1 !794
+- Update module google.golang.org/protobuf to v1.31.0 !789
+- Update dependency gitlab-dangerfiles to '~> 3.11.0' !788
+- New modules:tidy and modules:download jobs !784
+- Update module google.golang.org/grpc to v1.56.1 !786
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.1.0 !785
+- Tidy up go.mod and go.sum !781
+- Create a 'msg: "access"' log entry at the completion of work, including a `duration_s` field !782
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.0.5 !779
+- Update module github.com/otiai10/copy to v1.12.0 !780
+- Ensure test cache is not used for 'go test' !778
+- Update module google.golang.org/grpc to v1.56.0 !777
+- Update module github.com/prometheus/client_golang to v1.16.0 !776
+- Update module gitlab.com/gitlab-org/labkit to v1.19.0 !771
+- Update module golang.org/x/sync to v0.3.0 !775
+- Update module golang.org/x/crypto to v0.10.0 !774
+- Update Ruby dependencies !773
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.0.4 !772
+- Update dependency golang to v1.20.5 !768
+- Use gitlab-shell maintainers group instead for CODEOWNERS !770
+- Update module github.com/golang-jwt/jwt/v4 to v5 !759
+- Update module github.com/hashicorp/go-retryablehttp to v0.7.4 !767
+
 v14.23.0
 
 - Update module github.com/golang-jwt/jwt/v4 to v5 !759
