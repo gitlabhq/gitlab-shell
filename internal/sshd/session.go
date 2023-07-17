@@ -28,6 +28,8 @@ type session struct {
 	channel             ssh.Channel
 	gitlabKeyId         string
 	gitlabKrb5Principal string
+	gitlabUsername      string
+	namespace           string
 	remoteAddr          string
 
 	// State managed by the session
@@ -162,6 +164,7 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 		OriginalCommand:    s.execCmd,
 		GitProtocolVersion: s.gitProtocolVersion,
 		RemoteAddr:         s.remoteAddr,
+		NamespacePath:      s.namespace,
 	}
 
 	rw := &readwriter.ReadWriter{
@@ -175,6 +178,8 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 
 	if s.gitlabKrb5Principal != "" {
 		cmd, err = shellCmd.NewWithKrb5Principal(s.gitlabKrb5Principal, env, s.cfg, rw)
+	} else if s.gitlabUsername != "" {
+		cmd, err = shellCmd.NewWithUsername(s.gitlabUsername, env, s.cfg, rw)
 	} else {
 		cmd, err = shellCmd.NewWithKey(s.gitlabKeyId, env, s.cfg, rw)
 	}

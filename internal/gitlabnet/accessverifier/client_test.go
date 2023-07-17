@@ -19,9 +19,11 @@ import (
 )
 
 var (
+	namespace         = "group"
 	repo              = "group/private"
 	receivePackAction = commandargs.ReceivePack
 	uploadPackAction  = commandargs.UploadPack
+	defaultEnv        = sshenv.Env{NamespacePath: namespace}
 )
 
 func buildExpectedResponse(who string) *Response {
@@ -71,7 +73,7 @@ func TestSuccessfulResponses(t *testing.T) {
 			who:  "key-1",
 		}, {
 			desc: "Provide username within the request",
-			args: &commandargs.Shell{GitlabUsername: "first"},
+			args: &commandargs.Shell{GitlabUsername: "first", Env: defaultEnv},
 			who:  "user-1",
 		}, {
 			desc: "Provide krb5principal within the request",
@@ -99,7 +101,7 @@ func TestGeoPushGetCustomAction(t *testing.T) {
 		},
 	}, nil)
 
-	args := &commandargs.Shell{GitlabUsername: "custom"}
+	args := &commandargs.Shell{GitlabUsername: "custom", Env: defaultEnv}
 	result, err := client.Verify(context.Background(), args, receivePackAction, repo)
 	require.NoError(t, err)
 
@@ -128,7 +130,7 @@ func TestGeoPullGetCustomAction(t *testing.T) {
 		},
 	}, nil)
 
-	args := &commandargs.Shell{GitlabUsername: "custom"}
+	args := &commandargs.Shell{GitlabUsername: "custom", Env: defaultEnv}
 	result, err := client.Verify(context.Background(), args, uploadPackAction, repo)
 	require.NoError(t, err)
 
@@ -261,6 +263,7 @@ func setup(t *testing.T, userResponses, keyResponses map[string]testResponse) *C
 					w.WriteHeader(tr.status)
 					_, err := w.Write(tr.body)
 					require.NoError(t, err)
+					require.Equal(t, namespace, requestBody.NamespacePath)
 				} else if tr, ok := userResponses[requestBody.Krb5Principal]; ok {
 					w.WriteHeader(tr.status)
 					_, err := w.Write(tr.body)

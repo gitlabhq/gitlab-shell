@@ -30,6 +30,9 @@ type Request struct {
 	Username      string                  `json:"username,omitempty"`
 	Krb5Principal string                  `json:"krb5principal,omitempty"`
 	CheckIp       string                  `json:"check_ip,omitempty"`
+	// NamespacePath is the full path of the namespace in which the authenticated
+	// user is allowed to perform operation.
+	NamespacePath string `json:"namespace_path,omitempty"`
 }
 
 type Gitaly struct {
@@ -80,7 +83,13 @@ func NewClient(config *config.Config) (*Client, error) {
 }
 
 func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action commandargs.CommandType, repo string) (*Response, error) {
-	request := &Request{Action: action, Repo: repo, Protocol: protocol, Changes: anyChanges}
+	request := &Request{
+		Action:        action,
+		Repo:          repo,
+		Protocol:      protocol,
+		Changes:       anyChanges,
+		NamespacePath: args.Env.NamespacePath,
+	}
 
 	if args.GitlabUsername != "" {
 		request.Username = args.GitlabUsername

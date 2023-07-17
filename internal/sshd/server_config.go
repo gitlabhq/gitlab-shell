@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedcerts"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedkeys"
 
 	"gitlab.com/gitlab-org/labkit/log"
@@ -37,10 +39,11 @@ var (
 )
 
 type serverConfig struct {
-	cfg                  *config.Config
-	hostKeys             []ssh.Signer
-	hostKeyToCertMap     map[string]*ssh.Certificate
-	authorizedKeysClient *authorizedkeys.Client
+	cfg                   *config.Config
+	hostKeys              []ssh.Signer
+	hostKeyToCertMap      map[string]*ssh.Certificate
+	authorizedKeysClient  *authorizedkeys.Client
+	authorizedCertsClient *authorizedcerts.Client
 }
 
 func parseHostKeys(keyFiles []string) []ssh.Signer {
@@ -113,7 +116,12 @@ func parseHostCerts(hostKeys []ssh.Signer, certFiles []string) map[string]*ssh.C
 func newServerConfig(cfg *config.Config) (*serverConfig, error) {
 	authorizedKeysClient, err := authorizedkeys.NewClient(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize GitLab client: %w", err)
+		return nil, fmt.Errorf("failed to initialize authorized keys client: %w", err)
+	}
+
+	authorizedCertsClient, err := authorizedcerts.NewClient(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize authorized certs client: %w", err)
 	}
 
 	hostKeys := parseHostKeys(cfg.Server.HostKeyFiles)
@@ -123,10 +131,16 @@ func newServerConfig(cfg *config.Config) (*serverConfig, error) {
 
 	hostKeyToCertMap := parseHostCerts(hostKeys, cfg.Server.HostCertFiles)
 
-	return &serverConfig{cfg: cfg, authorizedKeysClient: authorizedKeysClient, hostKeys: hostKeys, hostKeyToCertMap: hostKeyToCertMap}, nil
+	return &serverConfig{
+		cfg:                   cfg,
+		authorizedKeysClient:  authorizedKeysClient,
+		authorizedCertsClient: authorizedCertsClient,
+		hostKeys:              hostKeys,
+		hostKeyToCertMap:      hostKeyToCertMap,
+	}, nil
 }
 
-func (s *serverConfig) getAuthKey(ctx context.Context, user string, key ssh.PublicKey) (*authorizedkeys.Response, error) {
+func (s *serverConfig) handleUserKey(ctx context.Context, user string, key ssh.PublicKey) (*ssh.Permissions, error) {
 	if user != s.cfg.User {
 		return nil, fmt.Errorf("unknown user")
 	}
@@ -134,15 +148,60 @@ func (s *serverConfig) getAuthKey(ctx context.Context, user string, key ssh.Publ
 		return nil, fmt.Errorf("DSA is prohibited")
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
 	res, err := s.authorizedKeysClient.GetByKey(ctx, base64.RawStdEncoding.EncodeToString(key.Marshal()))
 	if err != nil {
 		return nil, err
 	}
 
-	return res, nil
+	return &ssh.Permissions{
+		// Record the public key used for authentication.
+		Extensions: map[string]string{
+			"key-id": strconv.FormatInt(res.Id, 10),
+		},
+	}, nil
+}
+
+func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, cert *ssh.Certificate) (*ssh.Permissions, error) {
+	fingerprint := ssh.FingerprintSHA256(cert.SignatureKey)
+
+	if cert.CertType != ssh.UserCert {
+		return nil, fmt.Errorf("handleUserCertificate: cert has type %d", cert.CertType)
+	}
+
+	certChecker := &ssh.CertChecker{}
+	if err := certChecker.CheckCert(user, cert); err != nil {
+		return nil, err
+	}
+
+	logger := log.WithContextFields(ctx,
+		log.Fields{
+			"ssh_user":               user,
+			"public_key_fingerprint": ssh.FingerprintSHA256(cert),
+			"signing_ca_fingerprint": fingerprint,
+			"certificate_identity":   cert.KeyId,
+		},
+	)
+
+	res, err := s.authorizedCertsClient.GetByKey(ctx, cert.KeyId, strings.TrimPrefix(fingerprint, "SHA256:"))
+	if err != nil {
+		logger.WithError(err).Warn("user certificate is not signed by a trusted key")
+
+		return nil, err
+	}
+
+	logger.WithFields(
+		log.Fields{
+			"certificate_username":  res.Username,
+			"certificate_namespace": res.Namespace,
+		},
+	).Info("user certificate is signed by a trusted key")
+
+	return &ssh.Permissions{
+		Extensions: map[string]string{
+			"username":  res.Username,
+			"namespace": res.Namespace,
+		},
+	}, nil
 }
 
 func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
@@ -166,19 +225,18 @@ func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
 			},
 		}
 	}
+
 	sshCfg := &ssh.ServerConfig{
 		PublicKeyCallback: func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
-			res, err := s.getAuthKey(ctx, conn.User(), key)
-			if err != nil {
-				return nil, err
+			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			defer cancel()
+
+			cert, ok := key.(*ssh.Certificate)
+			if ok {
+				return s.handleUserCertificate(ctx, conn.User(), cert)
 			}
 
-			return &ssh.Permissions{
-				// Record the public key used for authentication.
-				Extensions: map[string]string{
-					"key-id": strconv.FormatInt(res.Id, 10),
-				},
-			}, nil
+			return s.handleUserKey(ctx, conn.User(), key)
 		},
 		GSSAPIWithMICConfig: gssapiWithMICConfig,
 		ServerVersion:       "SSH-2.0-GitLab-SSHD",
