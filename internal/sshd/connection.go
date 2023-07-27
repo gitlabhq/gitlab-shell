@@ -36,7 +36,7 @@ type connection struct {
 	remoteAddr         string
 }
 
-type channelHandler func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) (context.Context, error)
+type channelHandler func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error
 
 func newConnection(cfg *config.Config, nconn net.Conn) *connection {
 	maxSessions := cfg.Server.ConcurrentSessionsLimit
@@ -50,12 +50,12 @@ func newConnection(cfg *config.Config, nconn net.Conn) *connection {
 	}
 }
 
-func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handler channelHandler) context.Context {
+func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handler channelHandler) {
 	log.WithContextFields(ctx, log.Fields{}).Info("server: handleConn: start")
 
 	sconn, chans, err := c.initServerConn(ctx, srvCfg)
 	if err != nil {
-		return ctx
+		return
 	}
 
 	if c.cfg.Server.ClientAliveInterval > 0 {
@@ -64,17 +64,10 @@ func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handl
 		go c.sendKeepAliveMsg(ctx, sconn, ticker)
 	}
 
-	ctxWithLogMetadataChan := make(chan context.Context)
-	defer close(ctxWithLogMetadataChan)
-
-	go c.handleRequests(ctx, sconn, chans, ctxWithLogMetadataChan, handler)
-
-	ctxWithLogMetadata := <-ctxWithLogMetadataChan
+	c.handleRequests(ctx, sconn, chans, handler)
 
 	reason := sconn.Wait()
 	log.WithContextFields(ctx, log.Fields{"reason": reason}).Info("server: handleConn: done")
-
-	return ctxWithLogMetadata
 }
 
 func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfig) (*ssh.ServerConn, <-chan ssh.NewChannel, error) {
@@ -101,7 +94,7 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 	return sconn, chans, err
 }
 
-func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, ctxWithLogMetadataChan chan<- context.Context, handler channelHandler) {
+func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, handler channelHandler) {
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
 
 	for newChannel := range chans {
@@ -144,12 +137,10 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			}()
 
 			metrics.SliSshdSessionsTotal.Inc()
-			ctxWithLogMetadata, err := handler(ctx, sconn, channel, requests)
+			err := handler(ctx, sconn, channel, requests)
 			if err != nil {
 				c.trackError(ctxlog, err)
 			}
-
-			ctxWithLogMetadataChan <- ctxWithLogMetadata
 		}()
 	}
 
