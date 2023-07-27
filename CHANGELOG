@@ -1,3 +1,9 @@
+v14.24.1
+
+- Return metadata context without using channels !810
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.2.0 !813
+- Update dependency gitlab-dangerfiles to '~> 3.12.0' !811
+
 v14.24.0
 
 - Bump golang to 1.20.6 !808
