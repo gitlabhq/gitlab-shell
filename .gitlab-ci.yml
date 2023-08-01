@@ -78,7 +78,7 @@ default:
 .go-matrix-job:
   parallel:
     matrix:
-      - GO_VERSION: ["golang-1.18", "golang-1.19", "golang-1.20"]
+      - GO_VERSION: ["golang-1.19", "golang-1.20"]
 
 ################################################################################
 # Prepare jobs
