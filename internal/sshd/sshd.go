@@ -195,6 +195,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	conn := newConnection(s.Config, nconn)
 
 	var ctxWithLogMetadata context.Context
+
 	conn.handle(ctx, s.serverConfig.get(ctx), func(ctx context.Context, sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) error {
 		session := &session{
 			cfg:                 s.Config,
@@ -235,6 +236,10 @@ func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
 
 func extractMetaDataFromContext(ctx context.Context) command.LogMetadata {
 	metadata := command.LogMetadata{}
+
+	if ctx == nil {
+		return metadata
+	}
 
 	if ctx.Value("metadata") != nil {
 		metadata = ctx.Value("metadata").(command.LogMetadata)
