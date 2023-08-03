@@ -8,6 +8,7 @@ BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
 BUILD_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver
 
 GOTESTSUM_VERSION := 1.10.0
+GOTESTSUM_FILE := support/bin/gotestsum-${GOTESTSUM_VERSION}
 
 export GOFLAGS := -mod=readonly
 
@@ -59,12 +60,12 @@ test_ruby:
 test_golang:
 	go test -cover -coverprofile=cover.out -count 1 ./...
 
-test_golang_fancy: bin/gotestsum-${GOTESTSUM_VERSION}
-	@./bin/gotestsum-${GOTESTSUM_VERSION} --junitfile ./cover.xml --format pkgname -- -coverprofile=./cover.out -covermode=atomic -count 1 ./...
+test_golang_fancy: ${GOTESTSUM_FILE}
+	@./${GOTESTSUM_FILE} --junitfile ./cover.xml --format pkgname -- -coverprofile=./cover.out -covermode=atomic -count 1 ./...
 
-bin/gotestsum-${GOTESTSUM_VERSION}:
-	@mkdir -p bin
-	@curl -L https://github.com/gotestyourself/gotestsum/releases/download/v${GOTESTSUM_VERSION}/gotestsum_${GOTESTSUM_VERSION}_${OS}_amd64.tar.gz | tar -zOxf - gotestsum > ./bin/gotestsum-${GOTESTSUM_VERSION} && chmod +x ./bin/gotestsum-${GOTESTSUM_VERSION}
+${GOTESTSUM_FILE}:
+	mkdir -p $(shell dirname ${GOTESTSUM_FILE})
+	curl -L https://github.com/gotestyourself/gotestsum/releases/download/v${GOTESTSUM_VERSION}/gotestsum_${GOTESTSUM_VERSION}_${OS}_amd64.tar.gz | tar -zOxf - gotestsum > ${GOTESTSUM_FILE} && chmod +x ${GOTESTSUM_FILE}
 
 test_golang_race:
 	go test -race -count 1 ./...
