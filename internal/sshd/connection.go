@@ -132,7 +132,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			// Prevent a panic in a single session from taking out the whole server
 			defer func() {
 				if err := recover(); err != nil {
-					ctxlog.WithField("recovered_error", err).Warn("panic handling session")
+					ctxlog.WithField("recovered_error", err).Error("panic handling session")
 				}
 			}()
 
