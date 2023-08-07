@@ -185,7 +185,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	// Prevent a panic in a single connection from taking out the whole server
 	defer func() {
 		if err := recover(); err != nil {
-			ctxlog.Warn("panic handling session")
+			ctxlog.WithField("recovered_error", err).Warn("panic handling session")
 
 			metrics.SliSshdSessionsErrorsTotal.Inc()
 		}
