@@ -1,3 +1,11 @@
+v14.26.0
+
+- Include error and log as Error when recovering !825
+- Fix the established session metric !826
+- Require Go 1.19 and drop use of golang-crypto fork !806
+- Update dependency gitlab-dangerfiles to '~> 3.13.0' !824
+- Create gotestsum in support/bin and ignore !825
+
 v14.25.0
 
 - Ensure context is not nil before processing !820
