@@ -203,7 +203,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 			gitlabKeyId:         sconn.Permissions.Extensions["key-id"],
 			gitlabKrb5Principal: sconn.Permissions.Extensions["krb5principal"],
 			remoteAddr:          remoteAddr,
-			started:             started,
+			started:             time.Now(),
 		}
 
 		var err error
