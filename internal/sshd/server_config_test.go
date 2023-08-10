@@ -192,35 +192,52 @@ func TestUserCertificateHandling(t *testing.T) {
 	testCases := []struct {
 		desc                string
 		cert                *ssh.Certificate
+		featureFlagValue    string
 		expectedErr         error
 		expectedPermissions *ssh.Permissions
 	}{
 		{
-			desc:        "wrong cert type",
-			cert:        userCert(t, ssh.HostCert, time.Now().Add(time.Hour)),
-			expectedErr: errors.New("handleUserCertificate: cert has type 2"),
+			desc:             "wrong cert type",
+			cert:             userCert(t, ssh.HostCert, time.Now().Add(time.Hour)),
+			featureFlagValue: "1",
+			expectedErr:      errors.New("handleUserCertificate: cert has type 2"),
 		}, {
-			desc:        "expired cert",
-			cert:        userCert(t, ssh.UserCert, time.Now().Add(-time.Hour)),
-			expectedErr: errors.New("ssh: cert has expired"),
+			desc:             "expired cert",
+			cert:             userCert(t, ssh.UserCert, time.Now().Add(-time.Hour)),
+			featureFlagValue: "1",
+			expectedErr:      errors.New("ssh: cert has expired"),
 		}, {
-			desc:        "API error",
-			cert:        userCert(t, ssh.UserCert, time.Now().Add(time.Hour)),
-			expectedErr: &client.ApiError{Msg: "Internal API unreachable"},
+			desc:             "API error",
+			cert:             userCert(t, ssh.UserCert, time.Now().Add(time.Hour)),
+			featureFlagValue: "1",
+			expectedErr:      &client.ApiError{Msg: "Internal API unreachable"},
 		}, {
-			desc: "successful request",
-			cert: validUserCert,
+			desc:             "successful request",
+			cert:             validUserCert,
+			featureFlagValue: "1",
 			expectedPermissions: &ssh.Permissions{
 				Extensions: map[string]string{
 					"username":  "root",
 					"namespace": "namespace",
 				},
 			},
+		}, {
+			desc:                "feature flag is not enabled",
+			cert:                validUserCert,
+			expectedErr:         errors.New("handleUserCertificate: feature is disabled"),
+			expectedPermissions: nil,
+		}, {
+			desc:                "feature flag is disabled",
+			cert:                validUserCert,
+			featureFlagValue:    "0",
+			expectedErr:         errors.New("handleUserCertificate: feature is disabled"),
+			expectedPermissions: nil,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
+			t.Setenv("FF_GITLAB_SHELL_SSH_CERTIFICATES", tc.featureFlagValue)
 			permissions, err := cfg.handleUserCertificate(context.Background(), "user", tc.cert)
 			require.Equal(t, tc.expectedErr, err)
 			require.Equal(t, tc.expectedPermissions, permissions)

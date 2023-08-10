@@ -162,6 +162,10 @@ func (s *serverConfig) handleUserKey(ctx context.Context, user string, key ssh.P
 }
 
 func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, cert *ssh.Certificate) (*ssh.Permissions, error) {
+	if os.Getenv("FF_GITLAB_SHELL_SSH_CERTIFICATES") != "1" {
+		return nil, fmt.Errorf("handleUserCertificate: feature is disabled")
+	}
+
 	fingerprint := ssh.FingerprintSHA256(cert.SignatureKey)
 
 	if cert.CertType != ssh.UserCert {
