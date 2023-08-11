@@ -12,6 +12,8 @@ stages:
   - test
 
 variables:
+  FF_USE_FASTZIP: 'true'
+  TRANSFER_METER_FREQUENCY: "1s"
   DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
   GO_VERSION: "golang-1.20"
@@ -45,7 +47,7 @@ default:
 
 .cached-go: &cached_go
   - key:
-      prefix: $GO_VERSION-cache-2
+      prefix: $GO_VERSION-cache
       files:
         - go.mod
         - go.sum
@@ -55,7 +57,7 @@ default:
 
 .cached-ruby: &cached_ruby
   - key:
-      prefix: $RUBY_VERSION-cache-2
+      prefix: $RUBY_VERSION-cache
       files:
         - Gemfile.lock
     policy: $POLICY
@@ -64,25 +66,15 @@ default:
 
 .cached-go-job:
   variables:
-    FF_USE_FASTZIP: "true"
     CACHE_COMPRESSION_LEVEL: "fastest"
-    TRANSFER_METER_FREQUENCY: "1s"
   cache:
     - *cached_go
 
 .cached-ruby-job:
-  variables:
-    FF_USE_FASTZIP: "true"
-    CACHE_COMPRESSION_LEVEL: "fastest"
-    TRANSFER_METER_FREQUENCY: "1s"
   cache:
     - *cached_ruby
 
 .cached-job:
-  variables:
-    FF_USE_FASTZIP: "true"
-    CACHE_COMPRESSION_LEVEL: "fastest"
-    TRANSFER_METER_FREQUENCY: "1s"
   cache:
     - *cached_go
     - *cached_ruby
