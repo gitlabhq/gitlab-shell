@@ -45,7 +45,7 @@ default:
 
 .cached-go: &cached_go
   - key:
-      prefix: $GO_VERSION-cache-1
+      prefix: $GO_VERSION-cache-2
       files:
         - go.mod
         - go.sum
@@ -55,7 +55,7 @@ default:
 
 .cached-ruby: &cached_ruby
   - key:
-      prefix: $RUBY_VERSION-cache-1
+      prefix: $RUBY_VERSION-cache-2
       files:
         - Gemfile.lock
     policy: $POLICY
@@ -63,10 +63,18 @@ default:
       - ${BUNDLE_PATH}
 
 .cached-go-job:
+  variables:
+    FF_USE_FASTZIP: "true"
+    CACHE_COMPRESSION_LEVEL: "fastest"
+    TRANSFER_METER_FREQUENCY: "1s"
   cache:
     - *cached_go
 
 .cached-ruby-job:
+  variables:
+    FF_USE_FASTZIP: "true"
+    CACHE_COMPRESSION_LEVEL: "fastest"
+    TRANSFER_METER_FREQUENCY: "1s"
   cache:
     - *cached_ruby
 
