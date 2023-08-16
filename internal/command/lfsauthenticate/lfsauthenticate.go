@@ -58,11 +58,11 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	metadata := command.NewLogMetadata(
+	logData := command.NewLogData(
 		accessResponse.Gitaly.Repo.GlProjectPath,
 		accessResponse.Username,
 	)
-	ctxWithLogMetadata := context.WithValue(ctx, "metadata", metadata)
+	ctxWithLogData := context.WithValue(ctx, "logData", logData)
 
 	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserId)
 	if err != nil {
@@ -72,12 +72,12 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 			log.Fields{"operation": operation, "repo": repo, "user_id": accessResponse.UserId},
 		).WithError(err).Debug("lfsauthenticate: execute: LFS authentication failed")
 
-		return ctxWithLogMetadata, nil
+		return ctxWithLogData, nil
 	}
 
 	fmt.Fprintf(c.ReadWriter.Out, "%s\n", payload)
 
-	return ctxWithLogMetadata, nil
+	return ctxWithLogData, nil
 }
 
 func actionFromOperation(operation string) (commandargs.CommandType, error) {

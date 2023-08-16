@@ -83,14 +83,14 @@ func TestExecute(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
 
-			ctxWithLogMetadata, err := cmd.Execute(context.Background())
+			ctxWithLogData, err := cmd.Execute(context.Background())
 
 			expectedOutput := fmt.Sprintf("Welcome to GitLab, %s!\n", tc.expectedUsername)
 			expectedUsername := strings.TrimLeft(tc.expectedUsername, "@")
 
 			require.NoError(t, err)
 			require.Equal(t, expectedOutput, buffer.String())
-			require.Equal(t, expectedUsername, ctxWithLogMetadata.Value("metadata").(command.LogMetadata).Username)
+			require.Equal(t, expectedUsername, ctxWithLogData.Value("logData").(command.LogData).Username)
 		})
 	}
 }

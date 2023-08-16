@@ -78,7 +78,7 @@ func addAdditionalEnv(envMap map[string]string) func() {
 	}
 }
 
-func TestNewLogMetadata(t *testing.T) {
+func TestNewLogData(t *testing.T) {
 	testCases := []struct {
 		desc                  string
 		project               string
@@ -107,10 +107,10 @@ func TestNewLogMetadata(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			metadata := NewLogMetadata(tc.project, tc.username)
-			require.Equal(t, tc.project, metadata.Project)
-			require.Equal(t, tc.username, metadata.Username)
-			require.Equal(t, tc.expectedRootNamespace, metadata.RootNamespace)
+			data := NewLogData(tc.project, tc.username)
+			require.Equal(t, tc.username, data.Username)
+			require.Equal(t, tc.project, data.Meta.Project)
+			require.Equal(t, tc.expectedRootNamespace, data.Meta.RootNamespace)
 		})
 	}
 }
