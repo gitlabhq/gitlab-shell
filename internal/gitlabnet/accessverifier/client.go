@@ -40,12 +40,13 @@ type Gitaly struct {
 }
 
 type CustomPayloadData struct {
-	ApiEndpoints            []string          `json:"api_endpoints"`
-	Username                string            `json:"gl_username"`
-	PrimaryRepo             string            `json:"primary_repo"`
-	UserId                  string            `json:"gl_id,omitempty"`
-	RequestHeaders          map[string]string `json:"request_headers"`
-	GeoProxyDirectToPrimary bool              `json:"geo_proxy_direct_to_primary"`
+	ApiEndpoints                 []string          `json:"api_endpoints"`
+	Username                     string            `json:"gl_username"`
+	PrimaryRepo                  string            `json:"primary_repo"`
+	UserId                       string            `json:"gl_id,omitempty"`
+	RequestHeaders               map[string]string `json:"request_headers"`
+	GeoProxyDirectToPrimary      bool              `json:"geo_proxy_direct_to_primary"`
+	GeoProxyFetchDirectToPrimary bool              `json:"geo_proxy_fetch_direct_to_primary"`
 }
 
 type CustomPayload struct {
