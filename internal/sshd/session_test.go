@@ -132,8 +132,12 @@ func TestHandleExec(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			sessions := []*session{
 				{
-					gitlabKeyId: "root",
+					gitlabKeyId: "id",
 					cfg:         &config.Config{GitlabUrl: url},
+				},
+				{
+					gitlabUsername: "root",
+					cfg:            &config.Config{GitlabUrl: url},
 				},
 				{
 					gitlabKrb5Principal: "test@TEST.TEST",

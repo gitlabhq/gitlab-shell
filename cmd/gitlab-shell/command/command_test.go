@@ -300,3 +300,16 @@ func TestParseFailure(t *testing.T) {
 		})
 	}
 }
+
+func TestNewWithUsername(t *testing.T) {
+	env := sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-receive-pack 'group/repo'"}
+	c, err := cmd.NewWithUsername("username", env, nil, nil)
+	require.NoError(t, err)
+	require.IsType(t, &receivepack.Command{}, c)
+	require.Equal(t, c.(*receivepack.Command).Args.GitlabUsername, "username")
+
+	env = sshenv.Env{IsSSHConnection: true, OriginalCommand: "invalid"}
+	c, err = cmd.NewWithUsername("username", env, nil, nil)
+	require.Error(t, err)
+	require.Nil(t, c)
+}
