@@ -21,13 +21,13 @@ func TestAllowedAccess(t *testing.T) {
 	cmd, _ := setup(t, "1", requests)
 	cmd.Config.GitalyClient.InitSidechannelRegistry(context.Background())
 
-	ctxWithLogMetadata, err := cmd.Execute(context.Background())
+	ctxWithLogData, err := cmd.Execute(context.Background())
 
 	require.NoError(t, err)
-	metadata := ctxWithLogMetadata.Value("metadata").(command.LogMetadata)
-	require.Equal(t, "alex-doe", metadata.Username)
-	require.Equal(t, "group/project-path", metadata.Project)
-	require.Equal(t, "group", metadata.RootNamespace)
+	data := ctxWithLogData.Value("logData").(command.LogData)
+	require.Equal(t, "alex-doe", data.Username)
+	require.Equal(t, "group/project-path", data.Meta.Project)
+	require.Equal(t, "group", data.Meta.RootNamespace)
 }
 
 func TestForbiddenAccess(t *testing.T) {

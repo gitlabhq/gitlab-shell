@@ -23,18 +23,18 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, fmt.Errorf("Failed to get username: %v", err)
 	}
 
-	metadata := command.LogMetadata{}
+	logData := command.LogData{}
 	if response.IsAnonymous() {
-		metadata.Username = "Anonymous"
+		logData.Username = "Anonymous"
 		fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, Anonymous!\n")
 	} else {
-		metadata.Username = response.Username
+		logData.Username = response.Username
 		fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, @%s!\n", response.Username)
 	}
 
-	ctxWithLogMetadata := context.WithValue(ctx, "metadata", metadata)
+	ctxWithLogData := context.WithValue(ctx, "logData", logData)
 
-	return ctxWithLogMetadata, nil
+	return ctxWithLogData, nil
 }
 
 func (c *Command) getUserInfo(ctx context.Context) (*discover.Response, error) {

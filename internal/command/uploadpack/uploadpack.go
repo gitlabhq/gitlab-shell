@@ -30,11 +30,11 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	metadata := command.NewLogMetadata(
+	logData := command.NewLogData(
 		response.Gitaly.Repo.GlProjectPath,
 		response.Username,
 	)
-	ctxWithLogMetadata := context.WithValue(ctx, "metadata", metadata)
+	ctxWithLogData := context.WithValue(ctx, "logData", logData)
 
 	if response.IsCustomAction() {
 		customAction := customaction.Command{
@@ -42,10 +42,10 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 			ReadWriter: c.ReadWriter,
 			EOFSent:    false,
 		}
-		return ctxWithLogMetadata, customAction.Execute(ctx, response)
+		return ctxWithLogData, customAction.Execute(ctx, response)
 	}
 
-	return ctxWithLogMetadata, c.performGitalyCall(ctx, response)
+	return ctxWithLogData, c.performGitalyCall(ctx, response)
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {

@@ -350,28 +350,28 @@ func TestLoginGraceTime(t *testing.T) {
 }
 
 func TestExtractMetaDataFromContext(t *testing.T) {
+	username := "alex-doe"
 	rootNameSpace := "flightjs"
 	project := fmt.Sprintf("%s/Flight", rootNameSpace)
-	username := "alex-doe"
-	ctx := context.WithValue(context.Background(), "metadata", command.NewLogMetadata(project, username))
+	ctx := context.WithValue(context.Background(), "logData", command.NewLogData(project, username))
 
-	metadata := extractMetaDataFromContext(ctx)
+	data := extractDataFromContext(ctx)
 
-	require.Equal(t, command.LogMetadata{Project: project, Username: username, RootNamespace: rootNameSpace}, metadata)
+	require.Equal(t, command.LogData{Username: username, Meta: command.LogMetadata{Project: project, RootNamespace: rootNameSpace}}, data)
 }
 
 func TestExtractMetaDataFromContextWithoutMetaData(t *testing.T) {
-	metadata := extractMetaDataFromContext(context.Background())
+	data := extractDataFromContext(context.Background())
 
-	require.Equal(t, command.LogMetadata{}, metadata)
+	require.Equal(t, command.LogData{}, data)
 }
 
 func TestExtractMetaDataFromNilContext(t *testing.T) {
 	var ctx context.Context
 
-	metadata := extractMetaDataFromContext(ctx)
+	data := extractDataFromContext(ctx)
 
-	require.Equal(t, command.LogMetadata{}, metadata)
+	require.Equal(t, command.LogData{}, data)
 }
 
 func setupServer(t *testing.T) *Server {

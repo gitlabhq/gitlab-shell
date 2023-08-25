@@ -17,9 +17,13 @@ type Command interface {
 }
 
 type LogMetadata struct {
-	Username      string `json:"username"`
 	Project       string `json:"project,omitempty"`
 	RootNamespace string `json:"root_namespace,omitempty"`
+}
+
+type LogData struct {
+	Username string      `json:"username"`
+	Meta     LogMetadata `json:"meta"`
 }
 
 func CheckForVersionFlag(osArgs []string, version, buildTime string) {
@@ -69,7 +73,7 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 	}
 }
 
-func NewLogMetadata(project, username string) LogMetadata {
+func NewLogData(project, username string) LogData {
 	rootNameSpace := ""
 
 	if len(project) > 0 {
@@ -82,9 +86,11 @@ func NewLogMetadata(project, username string) LogMetadata {
 		}
 	}
 
-	return LogMetadata{
-		Username:      username,
-		Project:       project,
-		RootNamespace: rootNameSpace,
+	return LogData{
+		Username: username,
+		Meta: LogMetadata{
+			Project:       project,
+			RootNamespace: rootNameSpace,
+		},
 	}
 }

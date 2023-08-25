@@ -52,7 +52,7 @@ type exitStatusReq struct {
 }
 
 func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (context.Context, error) {
-	ctxWithLogMetadata := ctx
+	ctxWithLogData := ctx
 	ctxlog := log.ContextLogger(ctx)
 
 	ctxlog.Debug("session: handle: entering request loop")
@@ -73,13 +73,13 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (con
 		case "exec":
 			// The command has been executed as `ssh user@host command` or `exec` channel has been used
 			// in the app implementation
-			ctxWithLogMetadata, shouldContinue, err = s.handleExec(ctx, req)
+			ctxWithLogData, shouldContinue, err = s.handleExec(ctx, req)
 		case "shell":
 			// The command has been entered into the shell or `shell` channel has been used
 			// in the app implementation
 			shouldContinue = false
 			var status uint32
-			ctxWithLogMetadata, status, err = s.handleShell(ctx, req)
+			ctxWithLogData, status, err = s.handleShell(ctx, req)
 			s.exit(ctx, status)
 		default:
 			// Ignore unknown requests but don't terminate the session
@@ -102,7 +102,7 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (con
 
 	ctxlog.Debug("session: handle: exiting request loop")
 
-	return ctxWithLogMetadata, err
+	return ctxWithLogData, err
 }
 
 func (s *session) handleEnv(ctx context.Context, req *ssh.Request) (bool, error) {
@@ -144,10 +144,10 @@ func (s *session) handleExec(ctx context.Context, req *ssh.Request) (context.Con
 
 	s.execCmd = execRequest.Command
 
-	ctxWithLogMetadata, status, err := s.handleShell(ctx, req)
-	s.exit(ctxWithLogMetadata, status)
+	ctxWithLogData, status, err := s.handleShell(ctx, req)
+	s.exit(ctxWithLogData, status)
 
-	return ctxWithLogMetadata, false, err
+	return ctxWithLogData, false, err
 }
 
 func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Context, uint32, error) {
@@ -201,7 +201,7 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 	}).Info("session: handleShell: executing command")
 	metrics.SshdSessionEstablishedDuration.Observe(establishSessionDuration)
 
-	ctxWithLogMetadata, err := cmd.Execute(ctx)
+	ctxWithLogData, err := cmd.Execute(ctx)
 	if err != nil {
 		grpcStatus := grpcstatus.Convert(err)
 		if grpcStatus.Code() != grpccodes.Internal {
@@ -213,7 +213,7 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 
 	ctxlog.Info("session: handleShell: command executed successfully")
 
-	return ctxWithLogMetadata, 0, nil
+	return ctxWithLogData, 0, nil
 }
 
 func (s *session) toStderr(ctx context.Context, format string, args ...interface{}) {
