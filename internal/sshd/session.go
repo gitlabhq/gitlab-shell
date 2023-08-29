@@ -167,8 +167,10 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 		NamespacePath:      s.namespace,
 	}
 
+	countingWriter := &readwriter.CountingWriter{W: s.channel}
+
 	rw := &readwriter.ReadWriter{
-		Out:    &readwriter.CountingWriter{W: s.channel},
+		Out:    countingWriter,
 		In:     s.channel,
 		ErrOut: s.channel.Stderr(),
 	}
@@ -183,6 +185,7 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 	} else {
 		cmd, err = shellCmd.NewWithKey(s.gitlabKeyId, env, s.cfg, rw)
 	}
+
 	if err != nil {
 		if errors.Is(err, disallowedcommand.Error) {
 			s.toStderr(ctx, "ERROR: Unknown command: %v\n", s.execCmd)
@@ -202,6 +205,12 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 	metrics.SshdSessionEstablishedDuration.Observe(establishSessionDuration)
 
 	ctxWithLogData, err := cmd.Execute(ctx)
+
+	logData := extractDataFromContext(ctxWithLogData)
+	logData.WrittenBytes = countingWriter.N
+
+	ctxWithLogData = context.WithValue(ctx, "logData", logData)
+
 	if err != nil {
 		grpcStatus := grpcstatus.Convert(err)
 		if grpcStatus.Code() != grpccodes.Internal {
