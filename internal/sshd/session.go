@@ -168,7 +168,7 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 	}
 
 	rw := &readwriter.ReadWriter{
-		Out:    s.channel,
+		Out:    &readwriter.CountingWriter{W: s.channel},
 		In:     s.channel,
 		ErrOut: s.channel.Stderr(),
 	}
