@@ -217,8 +217,9 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	logData := extractDataFromContext(ctxWithLogData)
 
 	ctxlog.WithFields(log.Fields{
-		"duration_s": time.Since(started).Seconds(),
-		"meta":       logData.Meta,
+		"duration_s":    time.Since(started).Seconds(),
+		"written_bytes": logData.WrittenBytes,
+		"meta":          logData.Meta,
 	}).Info("access: finish")
 }
 

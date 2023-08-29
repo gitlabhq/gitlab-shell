@@ -22,8 +22,9 @@ type LogMetadata struct {
 }
 
 type LogData struct {
-	Username string      `json:"username"`
-	Meta     LogMetadata `json:"meta"`
+	Username     string      `json:"username"`
+	WrittenBytes int64       `json:"written_bytes"`
+	Meta         LogMetadata `json:"meta"`
 }
 
 func CheckForVersionFlag(osArgs []string, version, buildTime string) {
@@ -87,7 +88,8 @@ func NewLogData(project, username string) LogData {
 	}
 
 	return LogData{
-		Username: username,
+		Username:     username,
+		WrittenBytes: 0,
 		Meta: LogMetadata{
 			Project:       project,
 			RootNamespace: rootNameSpace,
