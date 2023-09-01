@@ -23,7 +23,7 @@ func main() {
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)
 
 	readWriter := &readwriter.ReadWriter{
-		Out:    os.Stdout,
+		Out:    &readwriter.CountingWriter{W: os.Stdout},
 		In:     os.Stdin,
 		ErrOut: os.Stderr,
 	}
