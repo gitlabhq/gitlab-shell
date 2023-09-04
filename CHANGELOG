@@ -1,3 +1,17 @@
+v14.27.0
+
+- Workaround to allow gitaly service to start !838
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.3.1 !837
+- Resolve "GitLab sshd should include data transfer bytes in logs" !831
+- Update dependency golang to v1.21.0 !828
+- Log metadata refactor !832
+- Support authentication using SSH Certificates !812
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.3.0 !833
+- Implement geo_proxy_direct_to_primary feature flag !834
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.2.4 !830
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.2.2 !818
+- Add Go v1.21 to CI !829
+
 v14.26.0
 
 - Include error and log as Error when recovering !825
