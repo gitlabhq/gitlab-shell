@@ -19,6 +19,7 @@ cover.out
 cover.xml
 custom_hooks
 hooks/*.d
+/support/bin/golangci-*
 /support/bin/gotestsum-*
 tags
 tmp/*
