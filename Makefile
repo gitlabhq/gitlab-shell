@@ -1,4 +1,4 @@
-.PHONY: validate verify verify_ruby verify_golang test test_ruby test_golang test_fancy test_golang_fancy coverage coverage_golang setup _script_install build compile check clean install
+.PHONY: validate verify verify_ruby verify_golang test test_ruby test_golang test_fancy test_golang_fancy coverage coverage_golang setup _script_install build compile check clean install lint
 
 FIPS_MODE ?= 0
 OS := $(shell uname | tr A-Z a-z)
@@ -9,6 +9,9 @@ BUILD_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver
 
 GOTESTSUM_VERSION := 1.10.0
 GOTESTSUM_FILE := support/bin/gotestsum-${GOTESTSUM_VERSION}
+
+GOLANGCI_LINT_VERSION := 1.54.2
+GOLANGCI_LINT_FILE := support/bin/golangci-lint-${GOLANGCI_LINT_VERSION}
 
 export GOFLAGS := -mod=readonly
 
@@ -74,6 +77,13 @@ coverage: coverage_golang
 
 coverage_golang:
 	[ -f cover.out ] && go tool cover -func cover.out
+
+lint: ${GOLANGCI_LINT_FILE}
+	${GOLANGCI_LINT_FILE} run --issues-exit-code 0 --print-issued-lines=false ${GOLANGCI_LINT_ARGS}
+
+${GOLANGCI_LINT_FILE}:
+	mkdir -p $(shell dirname ${GOLANGCI_LINT_FILE})
+	curl -L https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-amd64.tar.gz | tar --strip-components 1 -zOxf - golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-amd64/golangci-lint > ${GOLANGCI_LINT_FILE} && chmod +x ${GOLANGCI_LINT_FILE}
 
 setup: _script_install bin/gitlab-shell
 
