@@ -79,7 +79,7 @@ coverage_golang:
 	[ -f cover.out ] && go tool cover -func cover.out
 
 lint: ${GOLANGCI_LINT_FILE}
-	${GOLANGCI_LINT_FILE} run --issues-exit-code 0 --print-issued-lines=false
+	${GOLANGCI_LINT_FILE} run --issues-exit-code 0 --print-issued-lines=false ${GOLANGCI_LINT_ARGS}
 
 ${GOLANGCI_LINT_FILE}:
 	mkdir -p $(shell dirname ${GOLANGCI_LINT_FILE})
