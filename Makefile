@@ -7,10 +7,14 @@ VERSION_STRING := $(shell git describe --match v* 2>/dev/null || awk '$$0="v"$$0
 BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
 BUILD_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver
 
+ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/')
+
 GOTESTSUM_VERSION := 1.10.0
+GOTESTSUM_VERSION_ARCH ?= ${ARCH}
 GOTESTSUM_FILE := support/bin/gotestsum-${GOTESTSUM_VERSION}
 
 GOLANGCI_LINT_VERSION := 1.54.2
+GOLANGCI_LINT_ARCH ?= ${ARCH}
 GOLANGCI_LINT_FILE := support/bin/golangci-lint-${GOLANGCI_LINT_VERSION}
 
 export GOFLAGS := -mod=readonly
@@ -68,7 +72,7 @@ test_golang_fancy: ${GOTESTSUM_FILE}
 
 ${GOTESTSUM_FILE}:
 	mkdir -p $(shell dirname ${GOTESTSUM_FILE})
-	curl -L https://github.com/gotestyourself/gotestsum/releases/download/v${GOTESTSUM_VERSION}/gotestsum_${GOTESTSUM_VERSION}_${OS}_amd64.tar.gz | tar -zOxf - gotestsum > ${GOTESTSUM_FILE} && chmod +x ${GOTESTSUM_FILE}
+	curl -L https://github.com/gotestyourself/gotestsum/releases/download/v${GOTESTSUM_VERSION}/gotestsum_${GOTESTSUM_VERSION}_${OS}_${GOTESTSUM_VERSION_ARCH}.tar.gz | tar -zOxf - gotestsum > ${GOTESTSUM_FILE} && chmod +x ${GOTESTSUM_FILE}
 
 test_golang_race:
 	go test -race -count 1 ./...
@@ -83,7 +87,7 @@ lint: ${GOLANGCI_LINT_FILE}
 
 ${GOLANGCI_LINT_FILE}:
 	mkdir -p $(shell dirname ${GOLANGCI_LINT_FILE})
-	curl -L https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-amd64.tar.gz | tar --strip-components 1 -zOxf - golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-amd64/golangci-lint > ${GOLANGCI_LINT_FILE} && chmod +x ${GOLANGCI_LINT_FILE}
+	curl -L https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${GOLANGCI_LINT_ARCH}.tar.gz | tar --strip-components 1 -zOxf - golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${GOLANGCI_LINT_ARCH}/golangci-lint > ${GOLANGCI_LINT_FILE} && chmod +x ${GOLANGCI_LINT_FILE}
 
 setup: _script_install bin/gitlab-shell
 
