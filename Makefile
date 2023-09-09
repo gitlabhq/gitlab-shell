@@ -7,7 +7,7 @@ VERSION_STRING := $(shell git describe --match v* 2>/dev/null || awk '$$0="v"$$0
 BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
 BUILD_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver
 
-ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/')
+ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' | sed -e 's/aarch64/arm64/')
 
 GOTESTSUM_VERSION := 1.10.0
 GOTESTSUM_VERSION_ARCH ?= ${ARCH}
