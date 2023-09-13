@@ -16,13 +16,19 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 )
 
+var cloneResponse = `0090want 11d731b83788cd556abea7b465c6bee52d89923c multi_ack_detailed side-band-64k thin-pack ofs-delta deepen-since deepen-not agent=git/2.41.0
+0032want e56497bb5f03a90a51293fc6d516788730953899
+00000009done
+`
+
 func TestPullExecute(t *testing.T) {
 	url := setupPull(t, http.StatusOK)
 	output := &bytes.Buffer{}
+	input := strings.NewReader(cloneResponse)
 
 	cmd := &PullCommand{
 		Config:     &config.Config{GitlabUrl: url},
-		ReadWriter: &readwriter.ReadWriter{Out: output, In: nil},
+		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 		Response: &accessverifier.Response{
 			Payload: accessverifier.CustomPayload{
 				Data: accessverifier.CustomPayloadData{PrimaryRepo: url},
@@ -88,10 +94,11 @@ func TestPullExecuteWithFailedInfoRefs(t *testing.T) {
 func TestExecuteWithFailedUploadPack(t *testing.T) {
 	url := setupPull(t, http.StatusForbidden)
 	output := &bytes.Buffer{}
+	input := strings.NewReader(cloneResponse)
 
 	cmd := &PullCommand{
 		Config:     &config.Config{GitlabUrl: url},
-		ReadWriter: &readwriter.ReadWriter{Out: output, In: nil},
+		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 		Response: &accessverifier.Response{
 			Payload: accessverifier.CustomPayload{
 				Data: accessverifier.CustomPayloadData{PrimaryRepo: url},
@@ -105,17 +112,7 @@ func TestExecuteWithFailedUploadPack(t *testing.T) {
 }
 
 func setupPull(t *testing.T, uploadPackStatusCode int) string {
-	infoRefs := "001f# service=git-upload-pack\n" + flush + infoRefsWithoutPrefix
-	uploadPackPrefix := "00ab4c9d98d7750fa65db8ddcc60a89ef919f7a179f9 df505c066e4e63a801268a84627d7e8f7e033c7a " +
-		"refs/heads/main123 report-status-v2 side-band-64k object-format=sha1 agent=git/2.39.1"
-	uploadPackData := "PACK some uploaded data"
-
-	// Imitate response data via multiple packets
-	response := io.MultiReader(
-		strings.NewReader(uploadPackPrefix),
-		strings.NewReader(flush),
-		strings.NewReader(uploadPackData),
-	)
+	infoRefs := "001e# service=git-upload-pack\n" + flush + infoRefsWithoutPrefix
 
 	requests := []testserver.TestRequestHandler{
 		{
@@ -129,11 +126,12 @@ func setupPull(t *testing.T, uploadPackStatusCode int) string {
 		{
 			Path: "/git-upload-pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				data, err := io.ReadAll(response)
+				body, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 				defer r.Body.Close()
 
-				require.Equal(t, uploadPackPrefix+flush+uploadPackData, string(data))
+				require.True(t, strings.HasSuffix(string(body), "0009done\n"))
+
 				w.WriteHeader(uploadPackStatusCode)
 			},
 		},
