@@ -39,6 +39,17 @@ func (c *Client) ReceivePack(ctx context.Context, body io.Reader) (*http.Respons
 	return c.do(request)
 }
 
+func (c *Client) UploadPack(ctx context.Context, body io.Reader) (*http.Response, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.Url+"/git-upload-pack", body)
+	if err != nil {
+		return nil, err
+	}
+	request.Header.Add("Content-Type", "application/x-git-upload-pack-request")
+	request.Header.Add("Accept", "application/x-git-upload-pack-result")
+
+	return c.do(request)
+}
+
 func (c *Client) do(request *http.Request) (*http.Response, error) {
 	for k, v := range c.Headers {
 		request.Header.Add(k, v)
