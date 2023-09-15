@@ -1,3 +1,13 @@
+v14.28.0
+
+- Add PullCommand to githttp package !836
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.3.3 !849
+- Fix `make lint` on aarch64 platforms !848
+- Update dependency golang to v1.21.1 !844
+- Update module google.golang.org/grpc to v1.58.0 !845
+- Add golangci-lint to CI job !839
+- Update module golang.org/x/crypto to v0.13.0 !842
+
 v14.27.0
 
 - Workaround to allow gitaly service to start !838
