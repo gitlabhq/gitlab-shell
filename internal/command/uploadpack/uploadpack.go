@@ -2,6 +2,7 @@ package uploadpack
 
 import (
 	"context"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/githttp"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
@@ -37,6 +38,16 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	ctxWithLogData := context.WithValue(ctx, "logData", logData)
 
 	if response.IsCustomAction() {
+		if response.Payload.Data.GeoProxyFetchDirectToPrimary {
+			cmd := githttp.PullCommand{
+				Config:     c.Config,
+				ReadWriter: c.ReadWriter,
+				Response:   response,
+			}
+
+			return ctxWithLogData, cmd.Execute(ctx)
+		}
+
 		customAction := customaction.Command{
 			Config:     c.Config,
 			ReadWriter: c.ReadWriter,

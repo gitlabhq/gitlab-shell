@@ -50,6 +50,20 @@ func TestReceivePack(t *testing.T) {
 	require.Equal(t, "git-receive-pack: content", string(body))
 }
 
+func TestUploadPack(t *testing.T) {
+	client := setup(t)
+
+	refsBody := "0032want 0a53e9ddeaddad63ad106860237bbf53411d11a7\n"
+	response, err := client.UploadPack(context.Background(), bytes.NewReader([]byte(refsBody)))
+	require.NoError(t, err)
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	require.NoError(t, err)
+
+	require.Equal(t, "git-upload-pack: content", string(body))
+}
+
 func TestFailedHTTPRequest(t *testing.T) {
 	client := &Client{
 		Url:     testserver.StartHttpServer(t, []testserver.TestRequestHandler{}),
@@ -83,7 +97,6 @@ func setup(t *testing.T) *Client {
 				require.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
 				require.Equal(t, "application/x-git-receive-pack-request", r.Header.Get("Content-Type"))
 				require.Equal(t, "application/x-git-receive-pack-result", r.Header.Get("Accept"))
-				require.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
 
 				body, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
@@ -91,6 +104,21 @@ func setup(t *testing.T) *Client {
 
 				w.Write([]byte("git-receive-pack: "))
 				w.Write(body)
+			},
+		},
+		{
+			Path: "/git-upload-pack",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
+				require.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
+				require.Equal(t, "application/x-git-upload-pack-request", r.Header.Get("Content-Type"))
+				require.Equal(t, "application/x-git-upload-pack-result", r.Header.Get("Accept"))
+
+				_, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+				defer r.Body.Close()
+
+				w.Write([]byte("git-upload-pack: content"))
 			},
 		},
 	}
