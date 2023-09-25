@@ -12,6 +12,8 @@ stages:
   - test
 
 variables:
+  FF_USE_FASTZIP: 'true'
+  TRANSFER_METER_FREQUENCY: "1s"
   DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
   GO_VERSION: "golang-1.20"
@@ -63,6 +65,8 @@ default:
       - ${BUNDLE_PATH}
 
 .cached-go-job:
+  variables:
+    CACHE_COMPRESSION_LEVEL: "fastest"
   cache:
     - *cached_go
 
