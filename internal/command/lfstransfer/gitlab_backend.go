@@ -155,6 +155,66 @@ func (b *GitlabBackend) Batch(op string, pointers []transfer.BatchItem, args tra
 	return items, nil
 }
 
+func (b *GitlabBackend) parseAndCheckBatchArgs(op, oid, id, token string) (href string, headers map[string]string, err error) {
+	if id == "" {
+		return "", nil, &errCustom{
+			err:     transfer.ErrParseError,
+			message: "missing id",
+		}
+	}
+	if token == "" {
+		return "", nil, &errCustom{
+			err:     transfer.ErrUnauthorized,
+			message: "missing token",
+		}
+	}
+	idBinary, err := base64.StdEncoding.DecodeString(id)
+	if err != nil {
+		return "", nil, &errCustom{
+			err:     transfer.ErrParseError,
+			message: "invalid id",
+		}
+	}
+	tokenBinary, err := base64.StdEncoding.DecodeString(token)
+	if err != nil {
+		return "", nil, &errCustom{
+			err:     transfer.ErrParseError,
+			message: "invalid token",
+		}
+	}
+	h := hmac.New(sha256.New, []byte(b.config.Secret))
+	h.Write(idBinary)
+	if !hmac.Equal(tokenBinary, h.Sum(nil)) {
+		return "", nil, &errCustom{
+			err:     transfer.ErrForbidden,
+			message: "token hash mismatch",
+		}
+	}
+
+	idData := &idData{}
+	err = json.Unmarshal(idBinary, idData)
+	if err != nil {
+		return "", nil, &errCustom{
+			err:     transfer.ErrParseError,
+			message: "invalid id",
+		}
+	}
+	if idData.Operation != op {
+		return "", nil, &errCustom{
+			err:     transfer.ErrForbidden,
+			message: "invalid operation",
+		}
+	}
+	if idData.Oid != oid {
+		return "", nil, &errCustom{
+			err:     transfer.ErrForbidden,
+			message: "invalid oid",
+		}
+	}
+
+	return idData.Href, idData.Headers, nil
+}
+
 func (b *GitlabBackend) StartUpload(oid string, r io.Reader, args transfer.Args) (io.Closer, error) {
 	io.Copy(io.Discard, r)
 	return nil, newErrUnsupported("put-object")
@@ -169,7 +229,11 @@ func (b *GitlabBackend) Verify(oid string, args transfer.Args) (transfer.Status,
 }
 
 func (b *GitlabBackend) Download(oid string, args transfer.Args) (fs.File, error) {
-	return nil, newErrUnsupported("get-object")
+	href, headers, err := b.parseAndCheckBatchArgs("download", oid, args["id"], args["token"])
+	if err != nil {
+		return nil, err
+	}
+	return b.client.GetObject(oid, href, headers)
 }
 
 func (b *GitlabBackend) LockBackend(args transfer.Args) transfer.LockBackend {
