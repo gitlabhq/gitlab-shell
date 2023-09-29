@@ -14,6 +14,7 @@ const (
 	TwoFactorRecover    CommandType = "2fa_recovery_codes"
 	TwoFactorVerify     CommandType = "2fa_verify"
 	LfsAuthenticate     CommandType = "git-lfs-authenticate"
+	LfsTransfer         CommandType = "git-lfs-transfer"
 	ReceivePack         CommandType = "git-receive-pack"
 	UploadPack          CommandType = "git-upload-pack"
 	UploadArchive       CommandType = "git-upload-archive"
