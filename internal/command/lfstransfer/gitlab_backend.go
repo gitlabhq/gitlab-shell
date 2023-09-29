@@ -2,6 +2,10 @@ package lfstransfer
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -9,6 +13,7 @@ import (
 	"github.com/charmbracelet/git-lfs-transfer/transfer"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/lfstransfer"
 )
 
 type errCustom struct {
@@ -41,19 +46,102 @@ type GitlabBackend struct {
 	config *config.Config
 	args   *commandargs.Shell
 	auth   *GitlabAuthentication
+	client *lfstransfer.Client
+}
+
+type idData struct {
+	Operation string            `json:"operation"`
+	Oid       string            `json:"oid"`
+	Href      string            `json:"href"`
+	Headers   map[string]string `json:"headers,omitempty"`
 }
 
 func NewGitlabBackend(ctx context.Context, config *config.Config, args *commandargs.Shell, auth *GitlabAuthentication) (*GitlabBackend, error) {
+	client, err := lfstransfer.NewClient(config, args, auth.href, auth.auth)
+	if err != nil {
+		return nil, err
+	}
 	return &GitlabBackend{
 		ctx,
 		config,
 		args,
 		auth,
+		client,
 	}, nil
 }
 
+func (b *GitlabBackend) issueBatchArgs(op string, oid string, href string, headers map[string]string) (id string, token string, err error) {
+	data := &idData{
+		Operation: op,
+		Oid:       oid,
+		Href:      href,
+		Headers:   headers,
+	}
+	dataBinary, err := json.Marshal(data)
+	if err != nil {
+		return "", "", err
+	}
+
+	h := hmac.New(sha256.New, []byte(b.config.Secret))
+	_, err = h.Write(dataBinary)
+	if err != nil {
+		return "", "", err
+	}
+	id = base64.StdEncoding.EncodeToString(dataBinary)
+	token = base64.StdEncoding.EncodeToString(h.Sum(nil))
+	return id, token, nil
+}
+
 func (b *GitlabBackend) Batch(op string, pointers []transfer.BatchItem, args transfer.Args) ([]transfer.BatchItem, error) {
-	return nil, newErrUnsupported("batch")
+	if op != "download" {
+		return nil, newErrUnsupported("upload batch")
+	}
+
+	reqObjects := make([]*lfstransfer.BatchObject, 0)
+	for _, pointer := range pointers {
+		reqObject := &lfstransfer.BatchObject{
+			Oid:  pointer.Oid,
+			Size: pointer.Size,
+		}
+		reqObjects = append(reqObjects, reqObject)
+	}
+	refName := args["refname"]
+	hashAlgo := args["hash-algo"]
+	res, err := b.client.Batch(op, reqObjects, refName, hashAlgo)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]transfer.BatchItem, 0)
+	for _, retObject := range res.Objects {
+		var present bool
+		var action *lfstransfer.BatchAction
+		var args transfer.Args
+		if action, present = retObject.Actions[op]; present {
+			id, token, err := b.issueBatchArgs(op, retObject.Oid, action.Href, action.Header)
+			if err != nil {
+				return nil, err
+			}
+			args = transfer.Args{
+				"id":    id,
+				"token": token,
+			}
+		}
+		if op == "upload" {
+			present = !present
+		}
+		batchItem := transfer.BatchItem{
+			Pointer: transfer.Pointer{
+				Oid:  retObject.Oid,
+				Size: retObject.Size,
+			},
+			Present: present,
+			Args:    args,
+		}
+		items = append(items, batchItem)
+	}
+
+	return items, nil
 }
 
 func (b *GitlabBackend) StartUpload(oid string, r io.Reader, args transfer.Args) (io.Closer, error) {

@@ -2,10 +2,15 @@ package lfstransfer
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"testing"
 
@@ -16,6 +21,21 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/lfsauthenticate"
+)
+
+const (
+	largeFileContents      = "This is a large file\n"
+	evenLargerFileContents = "This is an even larger file\n"
+)
+
+var (
+	largeFileLen  = len(largeFileContents)
+	largeFileHash = sha256.Sum256([]byte(largeFileContents))
+	largeFileOid  = hex.EncodeToString(largeFileHash[:])
+
+	evenLargerFileLen  = len(evenLargerFileContents)
+	evenLargerFileHash = sha256.Sum256([]byte(evenLargerFileContents))
+	evenLargerFileOid  = hex.EncodeToString(evenLargerFileHash[:])
 )
 
 func setupWaitGroup(t *testing.T, cmd *Command) *sync.WaitGroup {
@@ -249,19 +269,64 @@ func TestLfsTransferNoPermissions(t *testing.T) {
 }
 
 func TestLfsTransferBatchDownload(t *testing.T) {
-	_, cmd, pl, _ := setup(t, "rw", "group/repo", "download")
+	url, cmd, pl, _ := setup(t, "rw", "group/repo", "download")
 	wg := setupWaitGroup(t, cmd)
 	negotiateVersion(t, pl)
 
 	writeCommandArgsAndTextData(t, pl, "batch", nil, []string{
 		"00000000 0",
+		fmt.Sprintf("%s %d", largeFileOid, largeFileLen),
+		fmt.Sprintf("%s %d", evenLargerFileOid, evenLargerFileLen),
 	})
 	status, args, data := readStatusArgsAndTextData(t, pl)
-	require.Equal(t, "status 405", status)
+	require.Equal(t, "status 200", status)
 	require.Empty(t, args)
-	require.Equal(t, []string{
-		"error: batch is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
-	}, data)
+	require.Equal(t, "00000000 0 noop", data[0])
+
+	largeFileArgs := strings.Split(data[1], " ")
+	require.Equal(t, 5, len(largeFileArgs))
+	require.Equal(t, largeFileOid, largeFileArgs[0])
+	require.Equal(t, fmt.Sprint(largeFileLen), largeFileArgs[1])
+	require.Equal(t, "download", largeFileArgs[2])
+
+	var idArg string
+	var tokenArg string
+	for _, arg := range largeFileArgs[3:] {
+		switch {
+		case strings.HasPrefix(arg, "id="):
+			idArg = arg
+		case strings.HasPrefix(arg, "token="):
+			tokenArg = arg
+		default:
+			require.Fail(t, "Unexpected batch item argument: %v", arg)
+		}
+	}
+
+	idBase64, found := strings.CutPrefix(idArg, "id=")
+	require.True(t, found)
+	idBinary, err := base64.StdEncoding.DecodeString(idBase64)
+	require.NoError(t, err)
+	var id map[string]interface{}
+	require.NoError(t, json.Unmarshal(idBinary, &id))
+	require.Equal(t, map[string]interface{}{
+		"operation": "download",
+		"oid":       largeFileOid,
+		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
+		"headers": map[string]interface{}{
+			"Authorization": "Basic 1234567890",
+			"Content-Type":  "application/octet-stream",
+		},
+	}, id)
+
+	h := hmac.New(sha256.New, []byte("very secret"))
+	h.Write(idBinary)
+	tokenBase64, found := strings.CutPrefix(tokenArg, "token=")
+	require.True(t, found)
+	tokenBinary, err := base64.StdEncoding.DecodeString(tokenBase64)
+	require.NoError(t, err)
+	require.Equal(t, h.Sum(nil), tokenBinary)
+
+	require.Equal(t, fmt.Sprintf("%s %d noop", evenLargerFileOid, evenLargerFileLen), data[2])
 
 	quit(t, pl)
 	wg.Wait()
@@ -279,7 +344,7 @@ func TestLfsTransferBatchUpload(t *testing.T) {
 	require.Equal(t, "status 405", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: batch is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
+		"error: upload batch is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
 	}, data)
 
 	quit(t, pl)
@@ -459,6 +524,66 @@ func setup(t *testing.T, keyId string, repo string, op string) (string, *Command
 				} else {
 					w.WriteHeader(http.StatusForbidden)
 				}
+			},
+		},
+		{
+			Path: "/group/repo/info/lfs/objects/batch",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("john:sometoken"))), r.Header.Get("Authorization"))
+
+				var requestBody map[string]interface{}
+				json.NewDecoder(r.Body).Decode(&requestBody)
+
+				reqObjects := requestBody["objects"].([]interface{})
+				retObjects := make([]map[string]interface{}, 0)
+				for _, o := range reqObjects {
+					reqObject := o.(map[string]interface{})
+					retObject := map[string]interface{}{
+						"oid": reqObject["oid"],
+					}
+					switch reqObject["oid"] {
+					case largeFileOid:
+						retObject["size"] = largeFileLen
+						if op == "download" {
+							retObject["actions"] = map[string]interface{}{
+								"download": map[string]interface{}{
+									"href": fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
+									"header": map[string]interface{}{
+										"Authorization": "Basic 1234567890",
+										"Content-Type":  "application/octet-stream",
+									},
+								},
+							}
+						}
+					case evenLargerFileOid:
+						require.Equal(t, evenLargerFileLen, int(reqObject["size"].(float64)))
+						retObject["size"] = evenLargerFileLen
+						if op == "upload" {
+							retObject["actions"] = map[string]interface{}{
+								"upload": map[string]interface{}{
+									"href": fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
+									"header": map[string]interface{}{
+										"Authorization": "Basic 1234567890",
+										"Content-Type":  "application/octet-stream",
+									},
+								},
+							}
+						}
+					default:
+						retObject["size"] = reqObject["size"]
+						retObject["error"] = map[string]interface{}{
+							"code":    404,
+							"message": "Not found",
+						}
+					}
+					retObjects = append(retObjects, retObject)
+				}
+
+				retBody := map[string]interface{}{
+					"objects": retObjects,
+				}
+				body, _ := json.Marshal(retBody)
+				w.Write(body)
 			},
 		},
 	}
