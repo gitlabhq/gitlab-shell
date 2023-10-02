@@ -231,7 +231,8 @@ func (b *GitlabBackend) FinishUpload(_ io.Closer, _ transfer.Args) error {
 }
 
 func (b *GitlabBackend) Verify(_ string, _ transfer.Args) (transfer.Status, error) {
-	return nil, newErrUnsupported("verify-object")
+	// Not needed, all verification is done in upload step.
+	return transfer.SuccessStatus(), nil
 }
 
 func (b *GitlabBackend) Download(oid string, args transfer.Args) (fs.File, error) {

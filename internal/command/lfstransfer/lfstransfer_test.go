@@ -742,12 +742,8 @@ func TestLfsTransferVerifyObject(t *testing.T) {
 	negotiateVersion(t, pl)
 
 	writeCommandArgs(t, pl, "verify-object 00000000", []string{"size=0"})
-	status, args, data := readStatusArgsAndTextData(t, pl)
-	require.Equal(t, "status 405", status)
-	require.Empty(t, args)
-	require.Equal(t, []string{
-		"error: verify-object is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
-	}, data)
+	status := readStatus(t, pl)
+	require.Equal(t, "status 200", status)
 
 	quit(t, pl)
 	wg.Wait()
