@@ -32,9 +32,7 @@ func (s *TestGitalyServer) SSHReceivePack(stream pb.SSHService_SSHReceivePackSer
 	s.ReceivedMD, _ = metadata.FromIncomingContext(stream.Context())
 
 	response := []byte("ReceivePack: " + req.GlId + " " + req.Repository.GlRepository)
-	stream.Send(&pb.SSHReceivePackResponse{Stdout: response})
-
-	return nil
+	return stream.Send(&pb.SSHReceivePackResponse{Stdout: response})
 }
 
 func (s *TestGitalyServer) SSHUploadPack(stream pb.SSHService_SSHUploadPackServer) error {
@@ -46,9 +44,7 @@ func (s *TestGitalyServer) SSHUploadPack(stream pb.SSHService_SSHUploadPackServe
 	s.ReceivedMD, _ = metadata.FromIncomingContext(stream.Context())
 
 	response := []byte("UploadPack: " + req.Repository.GlRepository)
-	stream.Send(&pb.SSHUploadPackResponse{Stdout: response})
-
-	return nil
+	return stream.Send(&pb.SSHUploadPackResponse{Stdout: response})
 }
 
 func (s *TestGitalyServer) SSHUploadPackWithSidechannel(ctx context.Context, req *pb.SSHUploadPackWithSidechannelRequest) (*pb.SSHUploadPackWithSidechannelResponse, error) {
@@ -80,9 +76,7 @@ func (s *TestGitalyServer) SSHUploadArchive(stream pb.SSHService_SSHUploadArchiv
 	s.ReceivedMD, _ = metadata.FromIncomingContext(stream.Context())
 
 	response := []byte("UploadArchive: " + req.Repository.GlRepository)
-	stream.Send(&pb.SSHUploadArchiveResponse{Stdout: response})
-
-	return nil
+	return stream.Send(&pb.SSHUploadArchiveResponse{Stdout: response})
 }
 
 func StartGitalyServer(t *testing.T, network string) (string, *TestGitalyServer) {
