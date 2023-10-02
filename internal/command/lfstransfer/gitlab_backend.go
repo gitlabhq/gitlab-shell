@@ -101,10 +101,6 @@ func (b *GitlabBackend) issueBatchArgs(op string, oid string, href string, heade
 }
 
 func (b *GitlabBackend) Batch(op string, pointers []transfer.BatchItem, args transfer.Args) ([]transfer.BatchItem, error) {
-	if op != "download" {
-		return nil, newErrUnsupported("upload batch")
-	}
-
 	reqObjects := make([]*lfstransfer.BatchObject, 0)
 
 	for _, pointer := range pointers {
@@ -215,13 +211,23 @@ func (b *GitlabBackend) parseAndCheckBatchArgs(op, oid, id, token string) (href 
 	return idData.Href, idData.Headers, nil
 }
 
+type uploadCloser struct{}
+
+func (c *uploadCloser) Close() error {
+	return nil
+}
+
 func (b *GitlabBackend) StartUpload(oid string, r io.Reader, args transfer.Args) (io.Closer, error) {
-	io.Copy(io.Discard, r)
-	return nil, newErrUnsupported("put-object")
+	href, headers, err := b.parseAndCheckBatchArgs("upload", oid, args["id"], args["token"])
+	if err != nil {
+		io.Copy(io.Discard, r)
+		return nil, err
+	}
+	return &uploadCloser{}, b.client.PutObject(oid, href, headers, r)
 }
 
 func (b *GitlabBackend) FinishUpload(state io.Closer, args transfer.Args) error {
-	return newErrUnsupported("put-object")
+	return nil
 }
 
 func (b *GitlabBackend) Verify(oid string, args transfer.Args) (transfer.Status, error) {

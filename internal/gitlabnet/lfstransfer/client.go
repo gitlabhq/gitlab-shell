@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/charmbracelet/git-lfs-transfer/transfer"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
@@ -179,4 +180,27 @@ func (c *Client) GetObject(oid, href string, headers map[string]string) (fs.File
 			reader: res.Body,
 		},
 	}, nil
+}
+
+func (c *Client) PutObject(oid, href string, headers map[string]string, r io.Reader) error {
+	req, err := http.NewRequest(http.MethodPut, href, r)
+	if err != nil {
+		return err
+	}
+	for key, value := range headers {
+		req.Header.Add(key, value)
+	}
+
+	client := http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	if res.StatusCode == 404 {
+		return transfer.ErrNotFound
+	}
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		return errors.New("internal error")
+	}
+	return nil
 }
