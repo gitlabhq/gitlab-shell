@@ -267,7 +267,12 @@ func (l *gitlabLock) Unlock() error {
 }
 
 func (l *gitlabLock) AsArguments() []string {
-	return nil
+	return []string{
+		fmt.Sprintf("id=%s", l.id),
+		fmt.Sprintf("path=%s", l.path),
+		fmt.Sprintf("locked-at=%s", l.timestamp.Format(time.RFC3339)),
+		fmt.Sprintf("ownername=%s", l.owner),
+	}
 }
 
 func (l *gitlabLock) AsLockSpec(useOwnerID bool) ([]string, error) {
@@ -305,8 +310,19 @@ type gitlabLockBackend struct {
 	args   map[string]string
 }
 
-func (b *gitlabLockBackend) Create(_ string, _ string) (transfer.Lock, error) {
-	return nil, newErrUnsupported("lock")
+func (b *gitlabLockBackend) Create(path string, refname string) (transfer.Lock, error) {
+	l, err := b.client.Lock(path, refname)
+	var lock *gitlabLock
+	if l != nil {
+		lock = &gitlabLock{
+			gitlabLockBackend: b,
+			id:                l.ID,
+			path:              l.Path,
+			timestamp:         l.LockedAt,
+			owner:             l.Owner.Name,
+		}
+	}
+	return lock, err
 }
 
 func (b *gitlabLockBackend) Unlock(_ transfer.Lock) error {

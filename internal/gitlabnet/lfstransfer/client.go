@@ -101,6 +101,15 @@ func (f *downloadedFile) Stat() (fs.FileInfo, error) {
 	return &f.downloadedFileInfo, nil
 }
 
+type lockRequest struct {
+	Path string    `json:"path"`
+	Ref  *batchRef `json:"ref,omitempty"`
+}
+
+type lockResponse struct {
+	Lock *Lock `json:"lock"`
+}
+
 type listLocksVerifyRequest struct {
 	Cursor string    `json:"cursor,omitempty"`
 	Limit  int       `json:"limit"`
@@ -241,6 +250,63 @@ func (c *Client) PutObject(oid, href string, headers map[string]string, r io.Rea
 		return fmt.Errorf("internal error (%d)", res.StatusCode)
 	}
 	return nil
+}
+
+func (c *Client) Lock(path, refname string) (*Lock, error) {
+	var ref *batchRef
+	if refname != "" {
+		ref = &batchRef{
+			Name: refname,
+		}
+	}
+	body := &lockRequest{
+		Path: path,
+		Ref:  ref,
+	}
+	jsonData, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	jsonReader := bytes.NewReader(jsonData)
+
+	req, err := http.NewRequest(http.MethodPost, c.href+"/locks", jsonReader)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
+	req.Header.Set("Authorization", c.auth)
+
+	client := http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+
+	switch {
+	case res.StatusCode >= 200 && res.StatusCode <= 299:
+		response := &lockResponse{}
+		if err := gitlabnet.ParseJSON(res, response); err != nil {
+			return nil, err
+		}
+
+		return response.Lock, nil
+	case res.StatusCode == http.StatusForbidden:
+		return nil, transfer.ErrForbidden
+	case res.StatusCode == http.StatusNotFound:
+		return nil, transfer.ErrNotFound
+	case res.StatusCode == http.StatusConflict:
+		response := &lockResponse{}
+		if err := gitlabnet.ParseJSON(res, response); err != nil {
+			return nil, err
+		}
+
+		return response.Lock, transfer.ErrConflict
+	default:
+		return nil, fmt.Errorf("internal error")
+	}
 }
 
 func (c *Client) ListLocksVerify(path, id, cursor string, limit int, ref string) (*ListLocksVerifyResponse, error) {

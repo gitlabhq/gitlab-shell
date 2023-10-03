@@ -756,13 +756,54 @@ func TestLfsTransferLock(t *testing.T) {
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
-	writeCommandArgs(t, pl, "lock", []string{"path=large/file"})
+	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/1"})
 	status, args, data := readStatusArgsAndTextData(t, pl)
-	require.Equal(t, "status 405", status)
+	require.Equal(t, "status 409", status)
+	require.Equal(t, []string{
+		"id=lock1",
+		"path=/large/file/1",
+		"locked-at=2023-10-03T13:56:20Z",
+		"ownername=johndoe",
+	}, args)
+	require.Equal(t, []string{
+		"conflict",
+	}, data)
+
+	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/2"})
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: lock is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
+		"error: forbidden",
 	}, data)
+
+	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/3"})
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 500", status)
+	require.Empty(t, args)
+	require.Equal(t, []string{
+		"internal error",
+	}, data)
+
+	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/4"})
+	status, args = readStatusArgs(t, pl)
+	require.Equal(t, "status 201", status)
+	require.Equal(t, []string{
+		"id=lock4",
+		"path=/large/file/4",
+		"locked-at=2023-10-03T13:56:20Z",
+		"ownername=johndoe",
+	}, args)
+
+	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/5", "refname=refs/heads/main"})
+	status, args = readStatusArgs(t, pl)
+	require.Equal(t, "status 201", status)
+	require.Equal(t, []string{
+		"id=lock5",
+		"path=/large/file/5",
+		"locked-at=2023-10-03T13:56:20Z",
+		"ownername=johndoe",
+	}, args)
 
 	quit(t, pl)
 	wg.Wait()
@@ -1243,8 +1284,66 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 						limit = l
 					}
 					bodyJSON.Locks, bodyJSON.NextCursor = listLocks(r.URL.Query().Get("cursor"), limit, r.URL.Query().Get("refspec"), r.URL.Query().Get("id"), r.URL.Query().Get("path"))
-
 					require.NoError(t, json.NewEncoder(w).Encode(bodyJSON))
+				case http.MethodPost:
+					var body map[string]interface{}
+					reader := json.NewDecoder(r.Body)
+					reader.Decode(&body)
+
+					var response map[string]interface{}
+					switch body["path"] {
+					case "/large/file/1":
+						response = map[string]interface{}{
+							"lock": map[string]interface{}{
+								"id":        "lock1",
+								"path":      "/large/file/1",
+								"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+								"owner": map[string]interface{}{
+									"name": "johndoe",
+								},
+							},
+							"message": "already created lock",
+						}
+						w.WriteHeader(http.StatusConflict)
+					case "/large/file/2":
+						response = map[string]interface{}{
+							"message": "no permission",
+						}
+						w.WriteHeader(http.StatusForbidden)
+					case "/large/file/4":
+						response = map[string]interface{}{
+							"lock": map[string]interface{}{
+								"id":        "lock4",
+								"path":      "/large/file/4",
+								"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+								"owner": map[string]interface{}{
+									"name": "johndoe",
+								},
+							},
+						}
+						w.WriteHeader(http.StatusCreated)
+					case "/large/file/5":
+						ref := body["ref"].(map[string]interface{})
+						require.Equal(t, "refs/heads/main", ref["name"])
+						response = map[string]interface{}{
+							"lock": map[string]interface{}{
+								"id":        "lock5",
+								"path":      "/large/file/5",
+								"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+								"owner": map[string]interface{}{
+									"name": "johndoe",
+								},
+							},
+						}
+						w.WriteHeader(http.StatusCreated)
+					default:
+						response = map[string]interface{}{
+							"message": "internal error",
+						}
+						w.WriteHeader(http.StatusInternalServerError)
+					}
+					writer := json.NewEncoder(w)
+					writer.Encode(response)
 				}
 			},
 		},
