@@ -10,9 +10,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/git-lfs/pktline"
 	"github.com/stretchr/testify/require"
@@ -783,21 +785,259 @@ func TestLfsTransferUnlock(t *testing.T) {
 	wg.Wait()
 }
 
-func TestLfsTransferListLock(t *testing.T) {
+func TestLfsTransferListLockDownload(t *testing.T) {
 	_, cmd, pl, _ := setup(t, "rw", "group/repo", "download")
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
 	writeCommand(t, pl, "list-lock")
 	status, args, data := readStatusArgsAndTextData(t, pl)
-	require.Equal(t, "status 405", status)
+	require.Equal(t, "status 200", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: list-lock is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
+		"lock lock1",
+		"path lock1 /large/file/1",
+		"locked-at lock1 2023-10-03T13:56:20Z",
+		"ownername lock1 johndoe",
+
+		"lock lock2",
+		"path lock2 /large/file/2",
+		"locked-at lock2 1955-11-12T22:04:00Z",
+		"ownername lock2 marty",
+
+		"lock lock3",
+		"path lock3 /large/file/3",
+		"locked-at lock3 2023-10-03T13:56:20Z",
+		"ownername lock3 janedoe",
+	}, data)
+
+	writeCommandArgs(t, pl, "list-lock", []string{"limit=2"})
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 200", status)
+	require.Equal(t, []string{
+		"next-cursor=lock3",
+	}, args)
+	require.Equal(t, []string{
+		"lock lock1",
+		"path lock1 /large/file/1",
+		"locked-at lock1 2023-10-03T13:56:20Z",
+		"ownername lock1 johndoe",
+
+		"lock lock2",
+		"path lock2 /large/file/2",
+		"locked-at lock2 1955-11-12T22:04:00Z",
+		"ownername lock2 marty",
+	}, data)
+
+	writeCommandArgs(t, pl, "list-lock", []string{"cursor=lock2"})
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 200", status)
+	require.Empty(t, args)
+	require.Equal(t, []string{
+		"lock lock2",
+		"path lock2 /large/file/2",
+		"locked-at lock2 1955-11-12T22:04:00Z",
+		"ownername lock2 marty",
+
+		"lock lock3",
+		"path lock3 /large/file/3",
+		"locked-at lock3 2023-10-03T13:56:20Z",
+		"ownername lock3 janedoe",
+	}, data)
+
+	writeCommandArgs(t, pl, "list-lock", []string{"id=lock1"})
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 200", status)
+	require.Empty(t, args)
+	require.Equal(t, []string{
+		"lock lock1",
+		"path lock1 /large/file/1",
+		"locked-at lock1 2023-10-03T13:56:20Z",
+		"ownername lock1 johndoe",
+	}, data)
+
+	writeCommandArgs(t, pl, "list-lock", []string{"path=/large/file/2"})
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 200", status)
+	require.Empty(t, args)
+	require.Equal(t, []string{
+		"lock lock2",
+		"path lock2 /large/file/2",
+		"locked-at lock2 1955-11-12T22:04:00Z",
+		"ownername lock2 marty",
 	}, data)
 
 	quit(t, pl)
 	wg.Wait()
+}
+
+func TestLfsTransferListLockUpload(t *testing.T) {
+	_, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
+	wg := setupWaitGroupForExecute(t, cmd)
+	negotiateVersion(t, pl)
+
+	writeCommand(t, pl, "list-lock")
+	status, args, data := readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 200", status)
+	require.Empty(t, args)
+	require.Equal(t, []string{
+		"lock lock1",
+		"path lock1 /large/file/1",
+		"locked-at lock1 2023-10-03T13:56:20Z",
+		"ownername lock1 johndoe",
+		"owner lock1 ours",
+
+		"lock lock2",
+		"path lock2 /large/file/2",
+		"locked-at lock2 1955-11-12T22:04:00Z",
+		"ownername lock2 marty",
+		"owner lock2 theirs",
+
+		"lock lock3",
+		"path lock3 /large/file/3",
+		"locked-at lock3 2023-10-03T13:56:20Z",
+		"ownername lock3 janedoe",
+		"owner lock3 theirs",
+	}, data)
+
+	writeCommandArgs(t, pl, "list-lock", []string{"limit=2"})
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 200", status)
+	require.Equal(t, []string{
+		"next-cursor=lock3",
+	}, args)
+	require.Equal(t, []string{
+		"lock lock1",
+		"path lock1 /large/file/1",
+		"locked-at lock1 2023-10-03T13:56:20Z",
+		"ownername lock1 johndoe",
+		"owner lock1 ours",
+
+		"lock lock2",
+		"path lock2 /large/file/2",
+		"locked-at lock2 1955-11-12T22:04:00Z",
+		"ownername lock2 marty",
+		"owner lock2 theirs",
+	}, data)
+
+	writeCommandArgs(t, pl, "list-lock", []string{"cursor=lock2"})
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 200", status)
+	require.Empty(t, args)
+	require.Equal(t, []string{
+		"lock lock2",
+		"path lock2 /large/file/2",
+		"locked-at lock2 1955-11-12T22:04:00Z",
+		"ownername lock2 marty",
+		"owner lock2 theirs",
+
+		"lock lock3",
+		"path lock3 /large/file/3",
+		"locked-at lock3 2023-10-03T13:56:20Z",
+		"ownername lock3 janedoe",
+		"owner lock3 theirs",
+	}, data)
+
+	writeCommandArgs(t, pl, "list-lock", []string{"id=lock1"})
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 200", status)
+	require.Empty(t, args)
+	require.Equal(t, []string{
+		"lock lock1",
+		"path lock1 /large/file/1",
+		"locked-at lock1 2023-10-03T13:56:20Z",
+		"ownername lock1 johndoe",
+		"owner lock1 ours",
+	}, data)
+
+	writeCommandArgs(t, pl, "list-lock", []string{"path=/large/file/2"})
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 200", status)
+	require.Empty(t, args)
+	require.Equal(t, []string{
+		"lock lock2",
+		"path lock2 /large/file/2",
+		"locked-at lock2 1955-11-12T22:04:00Z",
+		"ownername lock2 marty",
+		"owner lock2 theirs",
+	}, data)
+
+	quit(t, pl)
+	wg.Wait()
+}
+
+type Owner struct {
+	Name string `json:"name"`
+}
+type LockInfo struct {
+	Id       string `json:"id"`
+	Path     string `json:"path"`
+	LockedAt string `json:"locked_at"`
+	*Owner   `json:"owner"`
+}
+
+func listLocks(cursor string, limit int, refspec string, id string, path string) (locks []*LockInfo, nextCursor string) {
+	allLocks := []struct {
+		Refspec string
+		*LockInfo
+	}{
+		{
+			Refspec: "main",
+			LockInfo: &LockInfo{
+				Id:       "lock1",
+				Path:     "/large/file/1",
+				LockedAt: time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+				Owner: &Owner{
+					Name: "johndoe",
+				},
+			},
+		},
+		{
+			Refspec: "my-branch",
+			LockInfo: &LockInfo{
+				Id:       "lock2",
+				Path:     "/large/file/2",
+				LockedAt: time.Date(1955, 11, 12, 22, 04, 0, 0, time.UTC).Format(time.RFC3339),
+				Owner: &Owner{
+					Name: "marty",
+				},
+			},
+		},
+		{
+			Refspec: "",
+			LockInfo: &LockInfo{
+				Id:       "lock3",
+				Path:     "/large/file/3",
+				LockedAt: time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+				Owner: &Owner{
+					Name: "janedoe",
+				},
+			},
+		},
+	}
+
+	for _, lock := range allLocks {
+		if cursor != "" && cursor != lock.Id {
+			continue
+		}
+		cursor = ""
+		if len(locks) >= limit {
+			nextCursor = lock.Id
+			break
+		}
+
+		if refspec != "" && refspec != lock.Refspec {
+			continue
+		}
+		if id != "" && id != lock.Id {
+			continue
+		}
+		if path != "" && path != lock.Path {
+			continue
+		}
+		locks = append(locks, lock.LockInfo)
+	}
+	return locks, nextCursor
 }
 
 func setup(t *testing.T, keyId string, repo string, op string) (string, *Command, *pktline.Pktline, *io.PipeReader) {
@@ -954,6 +1194,58 @@ func setup(t *testing.T, keyId string, repo string, op string) (string, *Command
 				require.Equal(t, "Basic 1234567890", r.Header.Get("Authorization"))
 				body, _ := io.ReadAll(r.Body)
 				require.Equal(t, []byte(evenLargerFileContents), body)
+			},
+		},
+		{
+			Path: "/group/repo/info/lfs/locks/verify",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodPost, r.Method)
+				requestJson := &struct {
+					Cursor string `json:"cursor"`
+					Limit  int    `json:"limit"`
+					Ref    struct {
+						Name string `json:"name"`
+					} `json:"ref"`
+				}{}
+				require.NoError(t, json.NewDecoder(r.Body).Decode(requestJson))
+
+				bodyJson := &struct {
+					Ours       []*LockInfo `json:"ours,omitempty"`
+					Theirs     []*LockInfo `json:"theirs,omitempty"`
+					NextCursor string      `json:"next_cursor,omitempty"`
+				}{}
+				var locks []*LockInfo
+				locks, bodyJson.NextCursor = listLocks(requestJson.Cursor, requestJson.Limit, requestJson.Ref.Name, r.URL.Query().Get("id"), r.URL.Query().Get("path"))
+				for _, lock := range locks {
+					if lock.Id == "lock1" {
+						bodyJson.Ours = append(bodyJson.Ours, lock)
+					} else {
+						bodyJson.Theirs = append(bodyJson.Theirs, lock)
+					}
+				}
+
+				require.NoError(t, json.NewEncoder(w).Encode(bodyJson))
+			},
+		},
+		{
+			Path: "/group/repo/info/lfs/locks",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				switch r.Method {
+				case http.MethodGet:
+					bodyJson := &struct {
+						Locks      []*LockInfo `json:"locks,omitempty"`
+						NextCursor string      `json:"next_cursor,omitempty"`
+					}{}
+					limit := 100
+					if r.URL.Query().Has("limit") {
+						l, err := strconv.Atoi(r.URL.Query().Get("limit"))
+						require.NoError(t, err)
+						limit = l
+					}
+					bodyJson.Locks, bodyJson.NextCursor = listLocks(r.URL.Query().Get("cursor"), limit, r.URL.Query().Get("refspec"), r.URL.Query().Get("id"), r.URL.Query().Get("path"))
+
+					require.NoError(t, json.NewEncoder(w).Encode(bodyJson))
+				}
 			},
 		},
 	}

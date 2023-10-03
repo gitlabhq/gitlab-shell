@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/charmbracelet/git-lfs-transfer/transfer"
@@ -96,6 +97,34 @@ func (f *downloadedFile) Close() error {
 
 func (f *downloadedFile) Stat() (fs.FileInfo, error) {
 	return &f.downloadedFileInfo, nil
+}
+
+type listLocksVerifyRequest struct {
+	Cursor string    `json:"cursor,omitempty"`
+	Limit  int       `json:"limit"`
+	Ref    *batchRef `json:"ref,omitempty"`
+}
+
+type LockOwner struct {
+	Name string `json:"name"`
+}
+
+type Lock struct {
+	ID       string     `json:"id"`
+	Path     string     `json:"path"`
+	LockedAt time.Time  `json:"locked_at"`
+	Owner    *LockOwner `json:"owner"`
+}
+
+type ListLocksResponse struct {
+	Locks      []*Lock `json:"locks,omitempty"`
+	NextCursor string  `json:"next_cursor,omitempty"`
+}
+
+type ListLocksVerifyResponse struct {
+	Ours       []*Lock `json:"ours,omitempty"`
+	Theirs     []*Lock `json:"theirs,omitempty"`
+	NextCursor string  `json:"next_cursor,omitempty"`
 }
 
 func NewClient(config *config.Config, args *commandargs.Shell, href string, auth string) (*Client, error) {
@@ -205,4 +234,56 @@ func (c *Client) PutObject(oid, href string, headers map[string]string, r io.Rea
 		return fmt.Errorf("internal error (%d)", res.StatusCode)
 	}
 	return nil
+}
+
+func (c *Client) ListLocksVerify(path, id, cursor string, limit int, ref string) (*ListLocksVerifyResponse, error) {
+	url, err := url.Parse(c.href)
+	if err != nil {
+		return nil, err
+	}
+	url = url.JoinPath("locks/verify")
+	query := url.Query()
+	if path != "" {
+		query.Add("path", path)
+	}
+	if id != "" {
+		query.Add("id", id)
+	}
+	url.RawQuery = query.Encode()
+
+	body := listLocksVerifyRequest{
+		Cursor: cursor,
+		Limit:  limit,
+		Ref: &batchRef{
+			Name: ref,
+		},
+	}
+	jsonData, err := json.Marshal(&body)
+	if err != nil {
+		return nil, err
+	}
+	jsonReader := bytes.NewReader(jsonData)
+
+	req, err := http.NewRequest(http.MethodPost, url.String(), jsonReader)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
+	req.Header.Set("Authorization", c.auth)
+
+	client := http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Body.Close()
+
+	response := &ListLocksVerifyResponse{}
+	if err := gitlabnet.ParseJSON(res, response); err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }

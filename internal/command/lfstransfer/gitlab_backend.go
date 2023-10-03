@@ -6,9 +6,11 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"time"
 
 	"github.com/charmbracelet/git-lfs-transfer/transfer"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
@@ -243,12 +245,21 @@ func (b *GitlabBackend) Download(oid string, args transfer.Args) (fs.File, error
 	return b.client.GetObject(oid, href, headers)
 }
 
-func (b *GitlabBackend) LockBackend(_ transfer.Args) transfer.LockBackend {
-	return &gitlabLockBackend{}
+func (b *GitlabBackend) LockBackend(args transfer.Args) transfer.LockBackend {
+	return &gitlabLockBackend{
+		auth:   b.auth,
+		client: b.client,
+		args:   args,
+	}
 }
 
 type gitlabLock struct {
 	*gitlabLockBackend
+	id        string
+	path      string
+	timestamp time.Time
+	owner     string
+	ownerid   string
 }
 
 func (l *gitlabLock) Unlock() error {
@@ -259,27 +270,40 @@ func (l *gitlabLock) AsArguments() []string {
 	return nil
 }
 
-func (l *gitlabLock) AsLockSpec(_ bool) ([]string, error) {
-	return nil, nil
+func (l *gitlabLock) AsLockSpec(useOwnerID bool) ([]string, error) {
+	spec := []string{
+		fmt.Sprintf("lock %s", l.id),
+		fmt.Sprintf("path %s %s", l.id, l.path),
+		fmt.Sprintf("locked-at %s %s", l.id, l.timestamp.Format(time.RFC3339)),
+		fmt.Sprintf("ownername %s %s", l.id, l.owner),
+	}
+	if useOwnerID {
+		spec = append(spec, fmt.Sprintf("owner %s %s", l.id, l.ownerid))
+	}
+	return spec, nil
 }
 
 func (l *gitlabLock) FormattedTimestamp() string {
-	return ""
+	return l.timestamp.Format("")
 }
 
 func (l *gitlabLock) ID() string {
-	return ""
+	return l.id
 }
 
 func (l *gitlabLock) OwnerName() string {
-	return ""
+	return l.owner
 }
 
 func (l *gitlabLock) Path() string {
-	return ""
+	return l.path
 }
 
-type gitlabLockBackend struct{}
+type gitlabLockBackend struct {
+	auth   *GitlabAuthentication
+	client *lfstransfer.Client
+	args   map[string]string
+}
 
 func (b *gitlabLockBackend) Create(_ string, _ string) (transfer.Lock, error) {
 	return nil, newErrUnsupported("lock")
@@ -289,14 +313,69 @@ func (b *gitlabLockBackend) Unlock(_ transfer.Lock) error {
 	return newErrUnsupported("unlock")
 }
 
-func (b *gitlabLockBackend) FromPath(_ string) (transfer.Lock, error) {
-	return &gitlabLock{gitlabLockBackend: b}, nil
+func (b *gitlabLockBackend) FromPath(path string) (transfer.Lock, error) {
+	res, err := b.client.ListLocksVerify(path, "", "", 1, "")
+	if err != nil {
+		return nil, err
+	}
+	var lock *lfstransfer.Lock
+	var owner string
+	switch {
+	case len(res.Ours) == 1 && len(res.Theirs) == 0:
+		lock = res.Ours[0]
+		owner = "ours"
+	case len(res.Ours) == 0 && len(res.Theirs) == 1:
+		lock = res.Theirs[0]
+		owner = "theirs"
+	case len(res.Ours) == 0 && len(res.Theirs) == 0:
+		return nil, nil
+	default:
+		return nil, errors.New("internal error")
+	}
+	return &gitlabLock{
+		gitlabLockBackend: b,
+		id:                lock.ID,
+		path:              lock.Path,
+		timestamp:         lock.LockedAt,
+		owner:             lock.Owner.Name,
+		ownerid:           owner,
+	}, nil
 }
 
-func (b *gitlabLockBackend) FromID(_ string) (transfer.Lock, error) {
-	return &gitlabLock{gitlabLockBackend: b}, nil
+func (b *gitlabLockBackend) FromID(id string) (transfer.Lock, error) {
+	return &gitlabLock{
+		gitlabLockBackend: b,
+		id:                id,
+	}, nil
 }
 
-func (b *gitlabLockBackend) Range(_ string, _ int, _ func(transfer.Lock) error) (string, error) {
-	return "", newErrUnsupported("list-lock")
+func (b *gitlabLockBackend) Range(cursor string, limit int, iter func(transfer.Lock) error) (string, error) {
+	res, err := b.client.ListLocksVerify(b.args["path"], b.args["id"], cursor, limit, b.args["refname"])
+	if err != nil {
+		return "", err
+	}
+	for _, lock := range res.Ours {
+		tlock := &gitlabLock{
+			gitlabLockBackend: b,
+			id:                lock.ID,
+			path:              lock.Path,
+			timestamp:         lock.LockedAt,
+			owner:             lock.Owner.Name,
+			ownerid:           "ours",
+		}
+		iter(tlock)
+	}
+	for _, lock := range res.Theirs {
+		tlock := &gitlabLock{
+			gitlabLockBackend: b,
+			id:                lock.ID,
+			path:              lock.Path,
+			timestamp:         lock.LockedAt,
+			owner:             lock.Owner.Name,
+			ownerid:           "theirs",
+		}
+		iter(tlock)
+	}
+
+	return res.NextCursor, nil
 }
