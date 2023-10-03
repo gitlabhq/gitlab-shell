@@ -19,6 +19,7 @@ import (
 var (
 	capabilities = []string{
 		"version=1",
+		"locking",
 	}
 )
 

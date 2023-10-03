@@ -263,7 +263,17 @@ type gitlabLock struct {
 }
 
 func (l *gitlabLock) Unlock() error {
-	return newErrUnsupported("unlock")
+	lock, err := l.gitlabLockBackend.client.Unlock(l.id, l.gitlabLockBackend.args["force"] == "true", l.gitlabLockBackend.args["refname"])
+	if err != nil {
+		return err
+	}
+	l.id = lock.ID
+	l.path = lock.Path
+	l.timestamp = lock.LockedAt
+	if lock.Owner != nil {
+		l.owner = lock.Owner.Name
+	}
+	return nil
 }
 
 func (l *gitlabLock) AsArguments() []string {

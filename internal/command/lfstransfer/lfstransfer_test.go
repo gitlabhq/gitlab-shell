@@ -109,6 +109,7 @@ func readCapabilities(t *testing.T, pl *pktline.Pktline) {
 	}
 	require.Equal(t, []string{
 		"version=1",
+		"locking",
 	}, caps)
 }
 
@@ -814,12 +815,40 @@ func TestLfsTransferUnlock(t *testing.T) {
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
-	writeCommand(t, pl, "unlock lock1")
+	writeCommandArgs(t, pl, "unlock lock1", []string{"refname=refs/heads/main"})
+	status, args := readStatusArgs(t, pl)
+	require.Equal(t, "status 200", status)
+	require.Equal(t, []string{
+		"id=lock1",
+		"path=/large/file/1",
+		"locked-at=2023-10-03T13:56:20Z",
+		"ownername=johndoe",
+	}, args)
+
+	writeCommandArgs(t, pl, "unlock lock2", []string{"force=true"})
+	status, args = readStatusArgs(t, pl)
+	require.Equal(t, "status 200", status)
+	require.Equal(t, []string{
+		"id=lock2",
+		"path=/large/file/2",
+		"locked-at=1955-11-12T22:04:00Z",
+		"ownername=marty",
+	}, args)
+
+	writeCommand(t, pl, "unlock lock3")
 	status, args, data := readStatusArgsAndTextData(t, pl)
-	require.Equal(t, "status 405", status)
+	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: unlock is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
+		"error: forbidden",
+	}, data)
+
+	writeCommand(t, pl, "unlock lock4")
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 404", status)
+	require.Empty(t, args)
+	require.Equal(t, []string{
+		"error: not found",
 	}, data)
 
 	quit(t, pl)
@@ -1345,6 +1374,93 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 					writer := json.NewEncoder(w)
 					writer.Encode(response)
 				}
+			},
+		},
+		{
+			Path: "/group/repo/info/lfs/locks/lock1/unlock",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodPost, r.Method)
+				var body map[string]interface{}
+				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				require.Equal(t, map[string]interface{}{
+					"ref": map[string]interface{}{
+						"name": "refs/heads/main",
+					},
+					"force": false,
+				}, body)
+
+				lock := map[string]interface{}{
+					"lock": map[string]interface{}{
+						"id":        "lock1",
+						"path":      "/large/file/1",
+						"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+						"owner": map[string]interface{}{
+							"name": "johndoe",
+						},
+					},
+				}
+				writer := json.NewEncoder(w)
+				writer.Encode(lock)
+			},
+		},
+		{
+			Path: "/group/repo/info/lfs/locks/lock2/unlock",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodPost, r.Method)
+				var body map[string]interface{}
+				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				require.Equal(t, map[string]interface{}{
+					"force": true,
+				}, body)
+
+				lock := map[string]interface{}{
+					"lock": map[string]interface{}{
+						"id":        "lock2",
+						"path":      "/large/file/2",
+						"locked_at": time.Date(1955, 11, 12, 22, 4, 0, 0, time.UTC).Format(time.RFC3339),
+						"owner": map[string]interface{}{
+							"name": "marty",
+						},
+					},
+				}
+				writer := json.NewEncoder(w)
+				writer.Encode(lock)
+			},
+		},
+		{
+			Path: "/group/repo/info/lfs/locks/lock3/unlock",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodPost, r.Method)
+				var body map[string]interface{}
+				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				require.Equal(t, map[string]interface{}{
+					"force": false,
+				}, body)
+
+				lock := map[string]interface{}{
+					"message": "forbidden",
+				}
+				w.WriteHeader(http.StatusForbidden)
+				writer := json.NewEncoder(w)
+				writer.Encode(lock)
+			},
+		},
+		{
+			Path: "/group/repo/info/lfs/locks/lock4/unlock",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodPost, r.Method)
+				var body map[string]interface{}
+				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				require.Equal(t, map[string]interface{}{
+					"force": false,
+				}, body)
+
+				lock := map[string]interface{}{
+					"message": "not found",
+				}
+				w.WriteHeader(http.StatusNotFound)
+				writer := json.NewEncoder(w)
+				writer.Encode(lock)
 			},
 		},
 	}
