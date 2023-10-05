@@ -18,7 +18,7 @@ require (
 	gitlab.com/gitlab-org/gitaly/v16 v16.4.1
 	gitlab.com/gitlab-org/labkit v1.20.0
 	golang.org/x/crypto v0.13.0
-	golang.org/x/sync v0.3.0
+	golang.org/x/sync v0.4.0
 	google.golang.org/grpc v1.58.2
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v3 v3.0.1
