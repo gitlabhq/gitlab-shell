@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	protocol   = "ssh"
-	anyChanges = "_any"
+	sshProtocol     = "ssh"
+	sshCertProtocol = "ssh_certificates"
+	anyChanges      = "_any"
 )
 
 type Client struct {
@@ -87,9 +88,13 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 	request := &Request{
 		Action:        action,
 		Repo:          repo,
-		Protocol:      protocol,
 		Changes:       anyChanges,
+		Protocol:      sshProtocol,
 		NamespacePath: args.Env.NamespacePath,
+	}
+
+	if args.Env.NamespacePath != "" {
+		request.Protocol = sshCertProtocol
 	}
 
 	if args.GitlabUsername != "" {
