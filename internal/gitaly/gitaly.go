@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 
@@ -97,23 +96,19 @@ func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.Cli
 	connOpts := client.DefaultDialOpts
 	connOpts = append(
 		connOpts,
-		grpc.WithStreamInterceptor(
-			grpc_middleware.ChainStreamClient(
-				grpctracing.StreamClientTracingInterceptor(),
-				grpc_prometheus.StreamClientInterceptor,
-				grpccorrelation.StreamClientCorrelationInterceptor(
-					grpccorrelation.WithClientName(serviceName),
-				),
+		grpc.WithChainStreamInterceptor(
+			grpctracing.StreamClientTracingInterceptor(),
+			grpc_prometheus.StreamClientInterceptor,
+			grpccorrelation.StreamClientCorrelationInterceptor(
+				grpccorrelation.WithClientName(serviceName),
 			),
 		),
 
-		grpc.WithUnaryInterceptor(
-			grpc_middleware.ChainUnaryClient(
-				grpctracing.UnaryClientTracingInterceptor(),
-				grpc_prometheus.UnaryClientInterceptor,
-				grpccorrelation.UnaryClientCorrelationInterceptor(
-					grpccorrelation.WithClientName(serviceName),
-				),
+		grpc.WithChainUnaryInterceptor(
+			grpctracing.UnaryClientTracingInterceptor(),
+			grpc_prometheus.UnaryClientInterceptor,
+			grpccorrelation.UnaryClientCorrelationInterceptor(
+				grpccorrelation.WithClientName(serviceName),
 			),
 		),
 
