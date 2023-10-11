@@ -302,14 +302,80 @@ func TestParseFailure(t *testing.T) {
 }
 
 func TestNewWithUsername(t *testing.T) {
-	env := sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-receive-pack 'group/repo'"}
-	c, err := cmd.NewWithUsername("username", env, nil, nil)
-	require.NoError(t, err)
-	require.IsType(t, &receivepack.Command{}, c)
-	require.Equal(t, c.(*receivepack.Command).Args.GitlabUsername, "username")
+	tests := []struct {
+		desc         string
+		command      string
+		namespace    string
+		expectedErr  error
+		expectedType interface{}
+	}{
+		{
+			desc:        "valid command",
+			command:     "git-receive-pack 'group/repo'",
+			expectedErr: nil,
+			expectedType: &receivepack.Command{
+				Args: &commandargs.Shell{
+					CommandType:    commandargs.ReceivePack,
+					GitlabUsername: "username",
+					SshArgs:        []string{"git-receive-pack", "group/repo"},
+					Env: sshenv.Env{
+						IsSSHConnection: true,
+						OriginalCommand: "git-receive-pack 'group/repo'",
+					},
+				},
+			},
+		}, {
+			desc:        "valid non-git command",
+			command:     "2fa_recovery_codes",
+			expectedErr: nil,
+			expectedType: &twofactorrecover.Command{
+				Args: &commandargs.Shell{
+					CommandType:    commandargs.TwoFactorRecover,
+					GitlabUsername: "username",
+					SshArgs:        []string{"2fa_recovery_codes"},
+					Env: sshenv.Env{
+						IsSSHConnection: true,
+						OriginalCommand: "2fa_recovery_codes",
+					},
+				},
+			},
+		}, {
+			desc:         "invalid command",
+			command:      "invalid",
+			expectedErr:  disallowedcommand.Error,
+			expectedType: nil,
+		}, {
+			desc:        "git command with namespace",
+			command:     "git-receive-pack 'group/repo'",
+			namespace:   "group",
+			expectedErr: nil,
+			expectedType: &receivepack.Command{
+				Args: &commandargs.Shell{
+					CommandType:    commandargs.ReceivePack,
+					GitlabUsername: "username",
+					SshArgs:        []string{"git-receive-pack", "group/repo"},
+					Env: sshenv.Env{
+						IsSSHConnection: true,
+						OriginalCommand: "git-receive-pack 'group/repo'",
+						NamespacePath:   "group",
+					},
+				},
+			},
+		}, {
+			desc:         "non-git command with namespace",
+			command:      "2fa_recovery_codes",
+			namespace:    "group",
+			expectedErr:  disallowedcommand.Error,
+			expectedType: nil,
+		},
+	}
 
-	env = sshenv.Env{IsSSHConnection: true, OriginalCommand: "invalid"}
-	c, err = cmd.NewWithUsername("username", env, nil, nil)
-	require.Error(t, err)
-	require.Nil(t, c)
+	for _, tc := range tests {
+		t.Run(tc.desc, func(t *testing.T) {
+			env := sshenv.Env{IsSSHConnection: true, OriginalCommand: tc.command, NamespacePath: tc.namespace}
+			c, err := cmd.NewWithUsername("username", env, nil, nil)
+			require.IsType(t, tc.expectedErr, err)
+			require.Equal(t, tc.expectedType, c)
+		})
+	}
 }
