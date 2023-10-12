@@ -235,6 +235,8 @@ func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
 			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 			defer cancel()
 
+			log.WithContextFields(ctx, log.Fields{"ssh_key_type": key.Type()}).Info("public key authentication")
+
 			cert, ok := key.(*ssh.Certificate)
 			if ok {
 				return s.handleUserCertificate(ctx, conn.User(), cert)
