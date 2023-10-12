@@ -1,3 +1,22 @@
+v14.29.0
+
+- Update module google.golang.org/grpc to v1.58.2 !850
+- Update dependency gitlab-dangerfiles to v4 !852
+- Optimize Ruby and Go job caching !805
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.4.0 !853
+- Update module github.com/prometheus/client_golang to v1.17.0 !854
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.4.1 !856
+- Update dependency gitlab-dangerfiles to '~> 4.1.0' !857
+- Always return stdin/stdout errors !847
+- Update module golang.org/x/sync to v0.4.0 !860
+- Update dependency golang to v1.21.2 !862
+- Removes module github.com/grpc-ecosystem/go-grpc-middleware !859
+- Update module github.com/otiai10/copy to v1.14.0 !858
+- Update module golang.org/x/crypto to v0.14.0 !861
+- Allow only git commands for auth via SSH certs !864
+- Send ssh_certificates as protocol !863
+- Update module google.golang.org/grpc to v1.58.3 !868
+
 v14.28.0
 
 - Add PullCommand to githttp package !836
