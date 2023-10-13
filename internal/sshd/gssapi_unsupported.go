@@ -1,4 +1,4 @@
-//go:build !cgo
+//go:build !gssapi
 
 package sshd
 
