@@ -42,10 +42,10 @@ GEM
     gitlab (4.19.0)
       httparty (~> 0.20)
       terminal-table (>= 1.5.1)
-    gitlab-dangerfiles (4.1.0)
+    gitlab-dangerfiles (4.3.2)
       danger (>= 9.3.0)
       danger-gitlab (>= 8.0.0)
-      rake
+      rake (~> 13.0)
     httparty (0.21.0)
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
@@ -91,9 +91,9 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  gitlab-dangerfiles (~> 4.1.0)
+  gitlab-dangerfiles (~> 4.3.2)
   rspec (~> 3.12.0)
   webrick (~> 1.8, >= 1.8.1)
 
 BUNDLED WITH
-   2.4.19
+   2.4.20
