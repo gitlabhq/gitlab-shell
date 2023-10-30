@@ -42,7 +42,7 @@ GEM
     gitlab (4.19.0)
       httparty (~> 0.20)
       terminal-table (>= 1.5.1)
-    gitlab-dangerfiles (4.4.0)
+    gitlab-dangerfiles (4.5.1)
       danger (>= 9.3.0)
       danger-gitlab (>= 8.0.0)
       rake (~> 13.0)
@@ -62,7 +62,7 @@ GEM
       sawyer (~> 0.9)
     open4 (1.3.4)
     public_suffix (5.0.3)
-    rake (13.0.6)
+    rake (13.1.0)
     rchardet (1.8.0)
     rexml (3.2.6)
     rspec (3.12.0)
@@ -91,7 +91,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  gitlab-dangerfiles (~> 4.4.0)
+  gitlab-dangerfiles (~> 4.5.1)
   rspec (~> 3.12.0)
   webrick (~> 1.8, >= 1.8.1)
 
