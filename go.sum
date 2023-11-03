@@ -361,8 +361,8 @@ github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 github.com/yusufpapurcu/wmi v1.2.2 h1:KBNDSne4vP5mbSWnJbO+51IMOXJB67QiYCSBrubbPRg=
 github.com/yusufpapurcu/wmi v1.2.2/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
-gitlab.com/gitlab-org/gitaly/v16 v16.5.0 h1:eAG6j9fBENnh1AHOKvXPWxdL/DIcl8fl65lXI9t/h9A=
-gitlab.com/gitlab-org/gitaly/v16 v16.5.0/go.mod h1:tk4DzNt+NLKuXqAocZEIlJq1Q1D/DndpD4SLevjXEGE=
+gitlab.com/gitlab-org/gitaly/v16 v16.5.1 h1:ewziqYFF2EK/pVWbZsvkSkgLlTvkGk+2a8r7iBLIIXQ=
+gitlab.com/gitlab-org/gitaly/v16 v16.5.1/go.mod h1:tk4DzNt+NLKuXqAocZEIlJq1Q1D/DndpD4SLevjXEGE=
 gitlab.com/gitlab-org/labkit v1.20.0 h1:DGIVAdzbCR8sq2TppBvAh35wWBYIOy5dBL5wqFK3Wa8=
 gitlab.com/gitlab-org/labkit v1.20.0/go.mod h1:zeATDAaSBelPcPLbTTq8J3ZJEHyPTLVBM1q3nva+/W4=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
