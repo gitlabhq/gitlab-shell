@@ -1,3 +1,17 @@
+v14.30.0
+
+- Disable GSSAPI when CGO is enabled to support DNS resolution !866
+- Add log for public key authentication type !870
+- Update dependency golang to v1.21.3 !867
+- Update dependency gitlab-dangerfiles to '~> 4.3.2' !871
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.5.0 !873
+- Update module google.golang.org/grpc to v1.59.0 !872
+- Update dependency gitlab-dangerfiles to '~> 4.4.0' !874
+- Update dependency gitlab-dangerfiles to '~> 4.5.1' !876
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.5.1 !877
+- Update module golang.org/x/sync to v0.5.0 !879
+- Fix race conditions in GSSAPI calls !875
+
 v14.29.0
 
 - Update module google.golang.org/grpc to v1.58.2 !850
