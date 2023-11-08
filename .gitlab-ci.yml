@@ -22,6 +22,7 @@ variables:
   RUBY_VERSION: "ruby-3.2"
   BUNDLE_PATH: vendor/ruby
   POLICY: pull
+  CI_DEBUG_SERVICES: 'true'
 
 workflow:
   rules: &workflow_rules
