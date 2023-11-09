@@ -1,3 +1,10 @@
+v14.30.1
+
+- Update dependency golang to v1.21.4 !881
+- Update module github.com/golang-jwt/jwt/v5 to v5.1.0 !882
+- Set CI_DEBUG_SERVICES: true to assist debugging !883
+- Update module github.com/hashicorp/go-retryablehttp to v0.7.5 !885
+
 v14.30.0
 
 - Disable GSSAPI when CGO is enabled to support DNS resolution !866
