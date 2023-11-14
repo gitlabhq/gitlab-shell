@@ -1,11 +1,23 @@
-.PHONY: validate verify verify_ruby verify_golang test test_ruby test_golang coverage coverage_golang setup _script_install build compile check clean install
+.PHONY: validate verify verify_ruby verify_golang test test_ruby test_golang test_fancy test_golang_fancy coverage coverage_golang setup _script_install build compile check clean install lint
 
 FIPS_MODE ?= 0
-OS := $(shell uname)
-GO_SOURCES := $(shell find . -name '*.go')
+OS := $(shell uname | tr A-Z a-z)
+GO_SOURCES := $(shell git ls-files \*.go)
 VERSION_STRING := $(shell git describe --match v* 2>/dev/null || awk '$$0="v"$$0' VERSION 2>/dev/null || echo unknown)
 BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
-BUILD_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver
+BUILD_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver gssapi
+
+ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' | sed -e 's/aarch64/arm64/')
+
+GOTESTSUM_VERSION := 1.10.0
+GOTESTSUM_VERSION_ARCH ?= ${ARCH}
+GOTESTSUM_FILE := support/bin/gotestsum-${GOTESTSUM_VERSION}
+
+GOLANGCI_LINT_VERSION := 1.54.2
+GOLANGCI_LINT_ARCH ?= ${ARCH}
+GOLANGCI_LINT_FILE := support/bin/golangci-lint-${GOLANGCI_LINT_VERSION}
+
+export GOFLAGS := -mod=readonly
 
 ifeq (${FIPS_MODE}, 1)
     # Go 1.19 now requires GOEXPERIMENT=boringcrypto for FIPS compilation.
@@ -21,7 +33,7 @@ ifeq (${FIPS_MODE}, 1)
     export CGO_ENABLED=1
 endif
 
-ifeq (${OS}, Darwin) # Mac OS
+ifeq (${OS}, darwin) # Mac OS
     BREW_PREFIX := $(shell brew --prefix 2>/dev/null || echo "/opt/homebrew")
 
     # To be able to compile gssapi library
@@ -46,12 +58,21 @@ fmt:
 
 test: test_ruby test_golang
 
+test_fancy: test_ruby test_golang_fancy
+
 # The Ruby tests are now all integration specs that test the Go implementation.
 test_ruby:
 	bundle exec rspec --color --format d spec
 
 test_golang:
 	go test -cover -coverprofile=cover.out -count 1 ./...
+
+test_golang_fancy: ${GOTESTSUM_FILE}
+	@./${GOTESTSUM_FILE} --junitfile ./cover.xml --format pkgname -- -coverprofile=./cover.out -covermode=atomic -count 1 ./...
+
+${GOTESTSUM_FILE}:
+	mkdir -p $(shell dirname ${GOTESTSUM_FILE})
+	curl -L https://github.com/gotestyourself/gotestsum/releases/download/v${GOTESTSUM_VERSION}/gotestsum_${GOTESTSUM_VERSION}_${OS}_${GOTESTSUM_VERSION_ARCH}.tar.gz | tar -zOxf - gotestsum > ${GOTESTSUM_FILE} && chmod +x ${GOTESTSUM_FILE}
 
 test_golang_race:
 	go test -race -count 1 ./...
@@ -60,6 +81,13 @@ coverage: coverage_golang
 
 coverage_golang:
 	[ -f cover.out ] && go tool cover -func cover.out
+
+lint: ${GOLANGCI_LINT_FILE}
+	${GOLANGCI_LINT_FILE} run --issues-exit-code 0 --print-issued-lines=false ${GOLANGCI_LINT_ARGS}
+
+${GOLANGCI_LINT_FILE}:
+	mkdir -p $(shell dirname ${GOLANGCI_LINT_FILE})
+	curl -L https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${GOLANGCI_LINT_ARCH}.tar.gz | tar --strip-components 1 -zOxf - golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${GOLANGCI_LINT_ARCH}/golangci-lint > ${GOLANGCI_LINT_FILE} && chmod +x ${GOLANGCI_LINT_FILE}
 
 setup: _script_install bin/gitlab-shell
 

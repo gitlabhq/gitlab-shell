@@ -13,6 +13,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
@@ -184,7 +185,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	// Prevent a panic in a single connection from taking out the whole server
 	defer func() {
 		if err := recover(); err != nil {
-			ctxlog.Warn("panic handling session")
+			ctxlog.WithField("recovered_error", err).Error("panic handling session")
 
 			metrics.SliSshdSessionsErrorsTotal.Inc()
 		}
@@ -193,20 +194,33 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	started := time.Now()
 	conn := newConnection(s.Config, nconn)
 
-	conn.handle(ctx, s.serverConfig.get(ctx), func(sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) error {
+	var ctxWithLogData context.Context
+
+	conn.handle(ctx, s.serverConfig.get(ctx), func(ctx context.Context, sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) error {
 		session := &session{
 			cfg:                 s.Config,
 			channel:             channel,
 			gitlabKeyId:         sconn.Permissions.Extensions["key-id"],
 			gitlabKrb5Principal: sconn.Permissions.Extensions["krb5principal"],
+			gitlabUsername:      sconn.Permissions.Extensions["username"],
+			namespace:           sconn.Permissions.Extensions["namespace"],
 			remoteAddr:          remoteAddr,
-			started:             started,
+			started:             time.Now(),
 		}
 
-		return session.handle(ctx, requests)
+		var err error
+		ctxWithLogData, err = session.handle(ctx, requests)
+
+		return err
 	})
 
-	ctxlog.WithFields(log.Fields{"duration_s": time.Since(started).Seconds()}).Info("access: finish")
+	logData := extractDataFromContext(ctxWithLogData)
+
+	ctxlog.WithFields(log.Fields{
+		"duration_s":    time.Since(started).Seconds(),
+		"written_bytes": logData.WrittenBytes,
+		"meta":          logData.Meta,
+	}).Info("access: finish")
 }
 
 func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
@@ -226,6 +240,20 @@ func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
 	default:
 		return staticProxyPolicy(proxyproto.USE), nil
 	}
+}
+
+func extractDataFromContext(ctx context.Context) command.LogData {
+	logData := command.LogData{}
+
+	if ctx == nil {
+		return logData
+	}
+
+	if ctx.Value("logData") != nil {
+		logData = ctx.Value("logData").(command.LogData)
+	}
+
+	return logData
 }
 
 func staticProxyPolicy(policy proxyproto.Policy) proxyproto.PolicyFunc {

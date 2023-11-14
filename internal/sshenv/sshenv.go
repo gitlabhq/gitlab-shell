@@ -19,6 +19,7 @@ type Env struct {
 	IsSSHConnection    bool
 	OriginalCommand    string
 	RemoteAddr         string
+	NamespacePath      string
 }
 
 func NewFromEnv() Env {

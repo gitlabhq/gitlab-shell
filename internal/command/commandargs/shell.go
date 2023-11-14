@@ -23,6 +23,8 @@ const (
 var (
 	whoKeyRegex      = regexp.MustCompile(`\Akey-(?P<keyid>\d+)\z`)
 	whoUsernameRegex = regexp.MustCompile(`\Ausername-(?P<username>\S+)\z`)
+
+	GitCommands = []CommandType{LfsAuthenticate, UploadPack, ReceivePack, UploadArchive}
 )
 
 type Shell struct {

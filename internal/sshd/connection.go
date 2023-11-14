@@ -36,7 +36,7 @@ type connection struct {
 	remoteAddr         string
 }
 
-type channelHandler func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error
+type channelHandler func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error
 
 func newConnection(cfg *config.Config, nconn net.Conn) *connection {
 	maxSessions := cfg.Server.ConcurrentSessionsLimit
@@ -99,17 +99,20 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 
 	for newChannel := range chans {
 		ctxlog.WithField("channel_type", newChannel.ChannelType()).Info("connection: handle: new channel requested")
+
 		if newChannel.ChannelType() != "session" {
 			ctxlog.Info("connection: handleRequests: unknown channel type")
 			newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
 			continue
 		}
+
 		if !c.concurrentSessions.TryAcquire(1) {
 			ctxlog.Info("connection: handleRequests: too many concurrent sessions")
 			newChannel.Reject(ssh.ResourceShortage, "too many concurrent sessions")
 			metrics.SshdHitMaxSessions.Inc()
 			continue
 		}
+
 		channel, requests, err := newChannel.Accept()
 		if err != nil {
 			ctxlog.WithError(err).Error("connection: handleRequests: accepting channel failed")
@@ -129,12 +132,12 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			// Prevent a panic in a single session from taking out the whole server
 			defer func() {
 				if err := recover(); err != nil {
-					ctxlog.WithField("recovered_error", err).Warn("panic handling session")
+					ctxlog.WithField("recovered_error", err).Error("panic handling session")
 				}
 			}()
 
 			metrics.SliSshdSessionsTotal.Inc()
-			err := handler(sconn, channel, requests)
+			err := handler(ctx, sconn, channel, requests)
 			if err != nil {
 				c.trackError(ctxlog, err)
 			}

@@ -1,3 +1,125 @@
+v14.30.1
+
+- Update dependency golang to v1.21.4 !881
+- Update module github.com/golang-jwt/jwt/v5 to v5.1.0 !882
+- Set CI_DEBUG_SERVICES: true to assist debugging !883
+- Update module github.com/hashicorp/go-retryablehttp to v0.7.5 !885
+
+v14.30.0
+
+- Disable GSSAPI when CGO is enabled to support DNS resolution !866
+- Add log for public key authentication type !870
+- Update dependency golang to v1.21.3 !867
+- Update dependency gitlab-dangerfiles to '~> 4.3.2' !871
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.5.0 !873
+- Update module google.golang.org/grpc to v1.59.0 !872
+- Update dependency gitlab-dangerfiles to '~> 4.4.0' !874
+- Update dependency gitlab-dangerfiles to '~> 4.5.1' !876
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.5.1 !877
+- Update module golang.org/x/sync to v0.5.0 !879
+- Fix race conditions in GSSAPI calls !875
+
+v14.29.0
+
+- Update module google.golang.org/grpc to v1.58.2 !850
+- Update dependency gitlab-dangerfiles to v4 !852
+- Optimize Ruby and Go job caching !805
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.4.0 !853
+- Update module github.com/prometheus/client_golang to v1.17.0 !854
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.4.1 !856
+- Update dependency gitlab-dangerfiles to '~> 4.1.0' !857
+- Always return stdin/stdout errors !847
+- Update module golang.org/x/sync to v0.4.0 !860
+- Update dependency golang to v1.21.2 !862
+- Removes module github.com/grpc-ecosystem/go-grpc-middleware !859
+- Update module github.com/otiai10/copy to v1.14.0 !858
+- Update module golang.org/x/crypto to v0.14.0 !861
+- Allow only git commands for auth via SSH certs !864
+- Send ssh_certificates as protocol !863
+- Update module google.golang.org/grpc to v1.58.3 !868
+
+v14.28.0
+
+- Add PullCommand to githttp package !836
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.3.3 !849
+- Fix `make lint` on aarch64 platforms !848
+- Update dependency golang to v1.21.1 !844
+- Update module google.golang.org/grpc to v1.58.0 !845
+- Add golangci-lint to CI job !839
+- Update module golang.org/x/crypto to v0.13.0 !842
+
+v14.27.0
+
+- Workaround to allow gitaly service to start !838
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.3.1 !837
+- Resolve "GitLab sshd should include data transfer bytes in logs" !831
+- Update dependency golang to v1.21.0 !828
+- Log metadata refactor !832
+- Support authentication using SSH Certificates !812
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.3.0 !833
+- Implement geo_proxy_direct_to_primary feature flag !834
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.2.4 !830
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.2.2 !818
+- Add Go v1.21 to CI !829
+
+v14.26.0
+
+- Include error and log as Error when recovering !825
+- Fix the established session metric !826
+- Require Go 1.19 and drop use of golang-crypto fork !806
+- Update dependency gitlab-dangerfiles to '~> 3.13.0' !824
+- Create gotestsum in support/bin and ignore !825
+
+v14.25.0
+
+- Ensure context is not nil before processing !820
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.2.1 !814
+- Update module google.golang.org/grpc to v1.57.0 !815
+- Update module gitlab.com/gitlab-org/labkit to v1.20.0 !817
+- Update dependency golang to v1.20.7 !819
+
+v14.24.1
+
+- Return metadata context without using channels !810
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.2.0 !813
+- Update dependency gitlab-dangerfiles to '~> 3.12.0' !811
+
+v14.24.0
+
+- Bump golang to 1.20.6 !808
+- Ensure all binaries respond to -version !800
+- Update module google.golang.org/grpc to v1.56.2 !804
+- Update module golang.org/x/crypto to v0.11.0 !803
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.1.2 !802
+- Add support for gotestsum !796
+- Log 'access: finish' line with additional metadata !783
+- Ensure prometheus counter has time to increment !795
+- Use both go and ruby cache for test jobs !793
+- Split caching of go and ruby jobs !792
+- Optimise Ruby and Go based CI jobs !787
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.1.1 !794
+- Update module google.golang.org/protobuf to v1.31.0 !789
+- Update dependency gitlab-dangerfiles to '~> 3.11.0' !788
+- New modules:tidy and modules:download jobs !784
+- Update module google.golang.org/grpc to v1.56.1 !786
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.1.0 !785
+- Tidy up go.mod and go.sum !781
+- Create a 'msg: "access"' log entry at the completion of work, including a `duration_s` field !782
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.0.5 !779
+- Update module github.com/otiai10/copy to v1.12.0 !780
+- Ensure test cache is not used for 'go test' !778
+- Update module google.golang.org/grpc to v1.56.0 !777
+- Update module github.com/prometheus/client_golang to v1.16.0 !776
+- Update module gitlab.com/gitlab-org/labkit to v1.19.0 !771
+- Update module golang.org/x/sync to v0.3.0 !775
+- Update module golang.org/x/crypto to v0.10.0 !774
+- Update Ruby dependencies !773
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.0.4 !772
+- Update dependency golang to v1.20.5 !768
+- Use gitlab-shell maintainers group instead for CODEOWNERS !770
+- Update module github.com/golang-jwt/jwt/v4 to v5 !759
+- Update module github.com/hashicorp/go-retryablehttp to v0.7.4 !767
+
 v14.23.0
 
 - Update module github.com/golang-jwt/jwt/v4 to v5 !759

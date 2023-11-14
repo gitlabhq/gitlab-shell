@@ -5,13 +5,20 @@ import (
 	"crypto/dsa"
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
+	"errors"
+	"net/http"
 	"os"
 	"path"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 )
@@ -66,11 +73,29 @@ func TestFailedAuthorizedKeysClient(t *testing.T) {
 	_, err := newServerConfig(&config.Config{GitlabUrl: "ftp://localhost"})
 
 	require.Error(t, err)
-	require.Equal(t, "failed to initialize GitLab client: Error creating http client: unknown GitLab URL prefix", err.Error())
+	require.Equal(t, "failed to initialize authorized keys client: Error creating http client: unknown GitLab URL prefix", err.Error())
 }
 
-func TestFailedGetAuthKey(t *testing.T) {
+func TestUserKeyHandling(t *testing.T) {
 	testhelper.PrepareTestRootDir(t)
+
+	validRSAKey := rsaPublicKey(t)
+
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/api/v4/internal/authorized_keys",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				key := base64.RawStdEncoding.EncodeToString(validRSAKey.Marshal())
+				if key == r.URL.Query().Get("key") {
+					w.Write([]byte(`{ "id": 1, "key": "key" }`))
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			},
+		},
+	}
+
+	url := testserver.StartSocketHttpServer(t, requests)
 
 	srvCfg := config.ServerConfig{
 		Listen:                  "127.0.0.1",
@@ -83,39 +108,139 @@ func TestFailedGetAuthKey(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabUrl: "http://localhost", User: "user", Server: srvCfg},
+		&config.Config{GitlabUrl: url, User: "user", Server: srvCfg},
 	)
 	require.NoError(t, err)
 
 	testCases := []struct {
-		desc          string
-		user          string
-		key           ssh.PublicKey
-		expectedError string
+		desc                string
+		user                string
+		key                 ssh.PublicKey
+		expectedErr         error
+		expectedPermissions *ssh.Permissions
 	}{
 		{
-			desc:          "wrong user",
-			user:          "wrong-user",
-			key:           rsaPublicKey(t),
-			expectedError: "unknown user",
+			desc:        "wrong user",
+			user:        "wrong-user",
+			key:         rsaPublicKey(t),
+			expectedErr: errors.New("unknown user"),
 		}, {
-			desc:          "prohibited dsa key",
-			user:          "user",
-			key:           dsaPublicKey(t),
-			expectedError: "DSA is prohibited",
+			desc:        "prohibited dsa key",
+			user:        "user",
+			key:         dsaPublicKey(t),
+			expectedErr: errors.New("DSA is prohibited"),
 		}, {
-			desc:          "API error",
-			user:          "user",
-			key:           rsaPublicKey(t),
-			expectedError: "Internal API unreachable",
+			desc:        "API error",
+			user:        "user",
+			key:         rsaPublicKey(t),
+			expectedErr: &client.ApiError{Msg: "Internal API unreachable"},
+		}, {
+			desc: "successful request",
+			user: "user",
+			key:  validRSAKey,
+			expectedPermissions: &ssh.Permissions{
+				Extensions: map[string]string{"key-id": "1"},
+			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			_, err = cfg.getAuthKey(context.Background(), tc.user, tc.key)
-			require.Error(t, err)
-			require.Equal(t, tc.expectedError, err.Error())
+			permissions, err := cfg.handleUserKey(context.Background(), tc.user, tc.key)
+			require.Equal(t, tc.expectedErr, err)
+			require.Equal(t, tc.expectedPermissions, permissions)
+		})
+	}
+}
+
+func TestUserCertificateHandling(t *testing.T) {
+	testhelper.PrepareTestRootDir(t)
+
+	validUserCert := userCert(t, ssh.UserCert, time.Now().Add(time.Hour))
+
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/api/v4/internal/authorized_certs",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				key := strings.TrimPrefix(ssh.FingerprintSHA256(validUserCert.SignatureKey), "SHA256:")
+				if key == r.URL.Query().Get("key") && r.URL.Query().Get("user_identifier") == "root@example.com" {
+					w.Write([]byte(`{ "username": "root", "namespace": "namespace" }`))
+				} else {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			},
+		},
+	}
+
+	url := testserver.StartSocketHttpServer(t, requests)
+
+	srvCfg := config.ServerConfig{
+		Listen:                  "127.0.0.1",
+		ConcurrentSessionsLimit: 1,
+		HostKeyFiles: []string{
+			path.Join(testhelper.TestRoot, "certs/valid/server.key"),
+			path.Join(testhelper.TestRoot, "certs/invalid-path.key"),
+			path.Join(testhelper.TestRoot, "certs/invalid/server.crt"),
+		},
+	}
+
+	cfg, err := newServerConfig(
+		&config.Config{GitlabUrl: url, User: "user", Server: srvCfg},
+	)
+	require.NoError(t, err)
+
+	testCases := []struct {
+		desc                string
+		cert                *ssh.Certificate
+		featureFlagValue    string
+		expectedErr         error
+		expectedPermissions *ssh.Permissions
+	}{
+		{
+			desc:             "wrong cert type",
+			cert:             userCert(t, ssh.HostCert, time.Now().Add(time.Hour)),
+			featureFlagValue: "1",
+			expectedErr:      errors.New("handleUserCertificate: cert has type 2"),
+		}, {
+			desc:             "expired cert",
+			cert:             userCert(t, ssh.UserCert, time.Now().Add(-time.Hour)),
+			featureFlagValue: "1",
+			expectedErr:      errors.New("ssh: cert has expired"),
+		}, {
+			desc:             "API error",
+			cert:             userCert(t, ssh.UserCert, time.Now().Add(time.Hour)),
+			featureFlagValue: "1",
+			expectedErr:      &client.ApiError{Msg: "Internal API unreachable"},
+		}, {
+			desc:             "successful request",
+			cert:             validUserCert,
+			featureFlagValue: "1",
+			expectedPermissions: &ssh.Permissions{
+				Extensions: map[string]string{
+					"username":  "root",
+					"namespace": "namespace",
+				},
+			},
+		}, {
+			desc:                "feature flag is not enabled",
+			cert:                validUserCert,
+			expectedErr:         errors.New("handleUserCertificate: feature is disabled"),
+			expectedPermissions: nil,
+		}, {
+			desc:                "feature flag is disabled",
+			cert:                validUserCert,
+			featureFlagValue:    "0",
+			expectedErr:         errors.New("handleUserCertificate: feature is disabled"),
+			expectedPermissions: nil,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			t.Setenv("FF_GITLAB_SHELL_SSH_CERTIFICATES", tc.featureFlagValue)
+			permissions, err := cfg.handleUserCertificate(context.Background(), "user", tc.cert)
+			require.Equal(t, tc.expectedErr, err)
+			require.Equal(t, tc.expectedPermissions, permissions)
 		})
 	}
 }
@@ -239,4 +364,25 @@ func dsaPublicKey(t *testing.T) ssh.PublicKey {
 	require.NoError(t, err)
 
 	return publicKey
+}
+
+func userCert(t *testing.T, certType uint32, validBefore time.Time) *ssh.Certificate {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+
+	signer, err := ssh.NewSignerFromKey(privateKey)
+	require.NoError(t, err)
+
+	pubKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
+	require.NoError(t, err)
+
+	cert := &ssh.Certificate{
+		CertType:    certType,
+		Key:         pubKey,
+		KeyId:       "root@example.com",
+		ValidBefore: uint64(validBefore.Unix()),
+	}
+	require.NoError(t, cert.SignCert(rand.Reader, signer))
+
+	return cert
 }

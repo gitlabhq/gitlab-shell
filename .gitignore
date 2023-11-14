@@ -1,5 +1,7 @@
 *.log
 *.swp
+.DS_Store
+.GOPATH
 .bundle
 .bundle/
 .gitlab_shell_secret
@@ -14,9 +16,11 @@
 authorized_keys.lock
 config.yml
 cover.out
+cover.xml
 custom_hooks
 hooks/*.d
+/support/bin/golangci-*
+/support/bin/gotestsum-*
 tags
 tmp/*
 vendor
-.DS_Store

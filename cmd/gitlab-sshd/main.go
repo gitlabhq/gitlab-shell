@@ -20,10 +20,10 @@ import (
 var (
 	configDir = flag.String("config-dir", "", "The directory the config is in")
 
-	// BuildTime signifies the time the binary was build.
-	BuildTime = "2021-02-16T09:28:07+01:00" // Set at build time in the Makefile
-	// Version is the current version of GitLab Shell sshd.
+	// Version is the current version of gitlab-shell
 	Version = "(unknown version)" // Set at build time in the Makefile
+	// BuildTime signifies the time the binary was build
+	BuildTime = "19700101.000000" // Set at build time in the Makefile
 )
 
 func overrideConfigFromEnvironment(cfg *config.Config) {
@@ -39,11 +39,13 @@ func overrideConfigFromEnvironment(cfg *config.Config) {
 	if gitlabLogFormat := os.Getenv("GITLAB_LOG_FORMAT"); gitlabLogFormat != "" {
 		cfg.LogFormat = gitlabLogFormat
 	}
-	return
 }
 
 func main() {
+	command.CheckForVersionFlag(os.Args, Version, BuildTime)
+
 	flag.Parse()
+
 	cfg := new(config.Config)
 	if *configDir != "" {
 		var err error
@@ -52,6 +54,7 @@ func main() {
 			log.WithError(err).Fatal("failed to load configuration from specified directory")
 		}
 	}
+
 	overrideConfigFromEnvironment(cfg)
 	if err := cfg.IsSane(); err != nil {
 		if *configDir == "" {

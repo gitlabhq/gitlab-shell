@@ -8,6 +8,7 @@ import (
 
 	"gitlab.com/gitlab-org/labkit/log"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
@@ -37,10 +38,10 @@ type Payload struct {
 	ExpiresIn int           `json:"expires_in,omitempty"`
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SshArgs
 	if len(args) < 3 {
-		return disallowedcommand.Error
+		return ctx, disallowedcommand.Error
 	}
 
 	// e.g. git-lfs-authenticate user/repo.git download
@@ -49,13 +50,19 @@ func (c *Command) Execute(ctx context.Context) error {
 
 	action, err := actionFromOperation(operation)
 	if err != nil {
-		return err
+		return ctx, err
 	}
 
 	accessResponse, err := c.verifyAccess(ctx, action, repo)
 	if err != nil {
-		return err
+		return ctx, err
 	}
+
+	logData := command.NewLogData(
+		accessResponse.Gitaly.Repo.GlProjectPath,
+		accessResponse.Username,
+	)
+	ctxWithLogData := context.WithValue(ctx, "logData", logData)
 
 	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserId)
 	if err != nil {
@@ -65,12 +72,12 @@ func (c *Command) Execute(ctx context.Context) error {
 			log.Fields{"operation": operation, "repo": repo, "user_id": accessResponse.UserId},
 		).WithError(err).Debug("lfsauthenticate: execute: LFS authentication failed")
 
-		return nil
+		return ctxWithLogData, nil
 	}
 
 	fmt.Fprintf(c.ReadWriter.Out, "%s\n", payload)
 
-	return nil
+	return ctxWithLogData, nil
 }
 
 func actionFromOperation(operation string) (commandargs.CommandType, error) {

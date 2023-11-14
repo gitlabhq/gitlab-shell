@@ -56,7 +56,7 @@ func TestUploadArchive(t *testing.T) {
 			ctx := correlation.ContextWithCorrelation(context.Background(), "a-correlation-id")
 			ctx = correlation.ContextWithClientName(ctx, "gitlab-shell-tests")
 
-			err := cmd.Execute(ctx)
+			_, err := cmd.Execute(ctx)
 			require.NoError(t, err)
 
 			require.Equal(t, "UploadArchive: "+repo, output.String())

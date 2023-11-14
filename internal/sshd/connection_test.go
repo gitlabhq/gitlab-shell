@@ -97,7 +97,7 @@ func TestPanicDuringSessionIsRecovered(t *testing.T) {
 
 	numSessions := 0
 	require.NotPanics(t, func() {
-		conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
+		conn.handleRequests(context.Background(), nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 			numSessions += 1
 			close(chans)
 			panic("This is a panic")
@@ -135,7 +135,7 @@ func TestTooManySessions(t *testing.T) {
 	defer cancel()
 
 	go func() {
-		conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
+		conn.handleRequests(context.Background(), nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 			<-ctx.Done() // Keep the accepted channel open until the end of the test
 			return nil
 		})
@@ -148,9 +148,10 @@ func TestTooManySessions(t *testing.T) {
 func TestAcceptSessionSucceeds(t *testing.T) {
 	newChannel := &fakeNewChannel{channelType: "session"}
 	conn, chans := setup(1, newChannel)
+	ctx := context.Background()
 
 	channelHandled := false
-	conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
+	conn.handleRequests(ctx, nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 		channelHandled = true
 		close(chans)
 		return nil
@@ -166,10 +167,11 @@ func TestAcceptSessionFails(t *testing.T) {
 	acceptErr := errors.New("some failure")
 	newChannel := &fakeNewChannel{channelType: "session", acceptCh: acceptCh, acceptErr: acceptErr}
 	conn, chans := setup(1, newChannel)
+	ctx := context.Background()
 
 	channelHandled := false
 	go func() {
-		conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
+		conn.handleRequests(ctx, nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 			channelHandled = true
 			return nil
 		})
@@ -203,15 +205,16 @@ func TestSessionsMetrics(t *testing.T) {
 	initialSessionsErrorTotal := testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal)
 
 	newChannel := &fakeNewChannel{channelType: "session"}
-
 	conn, chans := setup(1, newChannel)
-	conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
+	ctx := context.Background()
+
+	conn.handleRequests(ctx, nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 		close(chans)
 		return errors.New("custom error")
 	})
 
-	require.InDelta(t, initialSessionsTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
-	require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
+	eventuallyInDelta(t, initialSessionsTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
+	eventuallyInDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
 
 	for i, ignoredError := range []struct {
 		desc string
@@ -224,15 +227,23 @@ func TestSessionsMetrics(t *testing.T) {
 		{"not our ref", grpcstatus.Error(grpccodes.Internal, `rpc error: code = Internal desc = cmd wait: exit status 128, stderr: "fatal: git upload-pack: not our ref 9106d18f6a1b8022f6517f479696f3e3ea5e68c1"`)},
 	} {
 		t.Run(ignoredError.desc, func(t *testing.T) {
-			conn, chans = setup(1, newChannel)
+			conn, chans := setup(1, newChannel)
 			ignored := ignoredError.err
-			conn.handleRequests(context.Background(), nil, chans, func(*ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
+			ctx := context.Background()
+
+			conn.handleRequests(ctx, nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 				close(chans)
 				return ignored
 			})
 
-			require.InDelta(t, initialSessionsTotal+2+float64(i), testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
-			require.InDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
+			eventuallyInDelta(t, initialSessionsTotal+2+float64(i), testutil.ToFloat64(metrics.SliSshdSessionsTotal), 0.1)
+			eventuallyInDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.1)
 		})
 	}
+}
+
+func eventuallyInDelta(t *testing.T, expected, actual, delta float64) {
+	require.Eventually(t, func() bool {
+		return ((expected - actual) < delta)
+	}, 1*time.Second, time.Millisecond)
 }

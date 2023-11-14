@@ -18,6 +18,7 @@ import (
 
 type fakeChannel struct {
 	stdErr             io.ReadWriter
+	stdOut             io.ReadWriter
 	sentRequestName    string
 	sentRequestPayload []byte
 }
@@ -27,7 +28,7 @@ func (f *fakeChannel) Read(data []byte) (int, error) {
 }
 
 func (f *fakeChannel) Write(data []byte) (int, error) {
-	return 0, nil
+	return f.stdOut.Write(data)
 }
 
 func (f *fakeChannel) Close() error {
@@ -132,8 +133,12 @@ func TestHandleExec(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			sessions := []*session{
 				{
-					gitlabKeyId: "root",
+					gitlabKeyId: "id",
 					cfg:         &config.Config{GitlabUrl: url},
+				},
+				{
+					gitlabUsername: "root",
+					cfg:            &config.Config{GitlabUrl: url},
 				},
 				{
 					gitlabKrb5Principal: "test@TEST.TEST",
@@ -141,12 +146,13 @@ func TestHandleExec(t *testing.T) {
 				},
 			}
 			for _, s := range sessions {
-				out := &bytes.Buffer{}
-				f := &fakeChannel{stdErr: out}
+				stdErr := &bytes.Buffer{}
+				stdOut := &bytes.Buffer{}
+				f := &fakeChannel{stdErr: stdErr, stdOut: stdOut}
 				r := &ssh.Request{Payload: tc.payload}
 
 				s.channel = f
-				shouldContinue, err := s.handleExec(context.Background(), r)
+				_, shouldContinue, err := s.handleExec(context.Background(), r)
 
 				require.Equal(t, tc.expectedErr, err)
 				require.Equal(t, false, shouldContinue)
@@ -159,12 +165,14 @@ func TestHandleExec(t *testing.T) {
 
 func TestHandleShell(t *testing.T) {
 	testCases := []struct {
-		desc              string
-		cmd               string
-		errMsg            string
-		gitlabKeyId       string
-		expectedErrString string
-		expectedExitCode  uint32
+		desc                 string
+		cmd                  string
+		errMsg               string
+		gitlabKeyId          string
+		expectedOutString    string
+		expectedErrString    string
+		expectedExitCode     uint32
+		expectedWrittenBytes int64
 	}{
 		{
 			desc:              "fails to parse command",
@@ -173,27 +181,32 @@ func TestHandleShell(t *testing.T) {
 			gitlabKeyId:       "root",
 			expectedErrString: "Invalid SSH command: invalid command line string",
 			expectedExitCode:  128,
-		}, {
+		},
+		{
 			desc:              "specified command is unknown",
 			cmd:               "unknown-command",
 			errMsg:            "ERROR: Unknown command: unknown-command\n",
 			gitlabKeyId:       "root",
 			expectedErrString: "Disallowed command",
 			expectedExitCode:  128,
-		}, {
+		},
+		{
 			desc:              "fails to parse command",
 			cmd:               "discover",
 			gitlabKeyId:       "",
 			errMsg:            "ERROR: Failed to get username: who='' is invalid\n",
 			expectedErrString: "Failed to get username: who='' is invalid",
 			expectedExitCode:  1,
-		}, {
-			desc:              "fails to parse command",
-			cmd:               "discover",
-			errMsg:            "",
-			gitlabKeyId:       "root",
-			expectedErrString: "",
-			expectedExitCode:  0,
+		},
+		{
+			desc:                 "parses command",
+			cmd:                  "discover",
+			errMsg:               "",
+			gitlabKeyId:          "root",
+			expectedOutString:    "Welcome to GitLab, @test-user!\n",
+			expectedErrString:    "",
+			expectedExitCode:     0,
+			expectedWrittenBytes: 31,
 		},
 	}
 
@@ -201,29 +214,37 @@ func TestHandleShell(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			out := &bytes.Buffer{}
+			stdOut := &bytes.Buffer{}
+			stdErr := &bytes.Buffer{}
 			s := &session{
 				gitlabKeyId: tc.gitlabKeyId,
 				execCmd:     tc.cmd,
-				channel:     &fakeChannel{stdErr: out},
+				channel:     &fakeChannel{stdErr: stdErr, stdOut: stdOut},
 				cfg:         &config.Config{GitlabUrl: url},
 			}
 			r := &ssh.Request{}
 
-			exitCode, err := s.handleShell(context.Background(), r)
+			ctxWithLogData, exitCode, err := s.handleShell(context.Background(), r)
+
+			logData := extractDataFromContext(ctxWithLogData)
+
+			if tc.expectedOutString != "" {
+				require.Equal(t, tc.expectedOutString, stdOut.String())
+			}
 
 			if tc.expectedErrString != "" {
 				require.Equal(t, tc.expectedErrString, err.Error())
 			}
 
 			require.Equal(t, tc.expectedExitCode, exitCode)
+			require.Equal(t, tc.expectedWrittenBytes, logData.WrittenBytes)
 
 			formattedErr := &bytes.Buffer{}
 			if tc.errMsg != "" {
 				console.DisplayWarningMessage(tc.errMsg, formattedErr)
-				require.Equal(t, formattedErr.String(), out.String())
+				require.Equal(t, formattedErr.String(), stdErr.String())
 			} else {
-				require.Equal(t, tc.errMsg, out.String())
+				require.Equal(t, tc.errMsg, stdErr.String())
 			}
 		})
 	}

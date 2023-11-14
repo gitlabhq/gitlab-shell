@@ -2,6 +2,7 @@ package command
 
 import (
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -74,6 +75,56 @@ func addAdditionalEnv(envMap map[string]string) func() {
 		for _, k := range unsetValues {
 			os.Unsetenv(k)
 		}
-
 	}
+}
+
+func TestNewLogData(t *testing.T) {
+	testCases := []struct {
+		desc                  string
+		project               string
+		username              string
+		expectedRootNamespace string
+	}{
+		{
+			desc:                  "Project under single namespace",
+			project:               "flightjs/Flight",
+			username:              "alex-doe",
+			expectedRootNamespace: "flightjs",
+		},
+		{
+			desc:                  "Project under single odd namespace",
+			project:               "flightjs///Flight",
+			username:              "alex-doe",
+			expectedRootNamespace: "flightjs",
+		},
+		{
+			desc:                  "Project under deeper namespace",
+			project:               "flightjs/one/Flight",
+			username:              "alex-doe",
+			expectedRootNamespace: "flightjs",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			data := NewLogData(tc.project, tc.username)
+			require.Equal(t, tc.username, data.Username)
+			require.Equal(t, tc.project, data.Meta.Project)
+			require.Equal(t, tc.expectedRootNamespace, data.Meta.RootNamespace)
+		})
+	}
+}
+
+func TestCheckForVersionFlag(t *testing.T) {
+	if os.Getenv("GITLAB_SHELL_TEST_CHECK_FOR_VERSION_FLAG") == "1" {
+		CheckForVersionFlag([]string{"test", "-version"}, "1.2.3", "456")
+		return
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=TestCheckForVersionFlag")
+	cmd.Env = append(os.Environ(), "GITLAB_SHELL_TEST_CHECK_FOR_VERSION_FLAG=1")
+	out, err := cmd.Output()
+
+	require.Nil(t, err)
+	require.Equal(t, "test 1.2.3-456\n", string(out))
 }

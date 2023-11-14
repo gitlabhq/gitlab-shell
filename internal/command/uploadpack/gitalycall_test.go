@@ -57,7 +57,7 @@ func TestUploadPack(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
 			}
 
-			err := cmd.Execute(ctx)
+			_, err := cmd.Execute(ctx)
 			require.NoError(t, err)
 
 			require.Equal(t, "SSHUploadPackWithSidechannel: "+repo, output.String())

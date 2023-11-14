@@ -382,20 +382,11 @@ func TestTwoFactorAuthRecoveryCodesSuccess(t *testing.T) {
 		},
 	}
 	client := runSSHD(t, successAPI(t, handler))
-
-	session, err := client.NewSession()
-	require.NoError(t, err)
-	defer session.Close()
-
-	stdin, err := session.StdinPipe()
-	require.NoError(t, err)
-
-	stdout, err := session.StdoutPipe()
-	require.NoError(t, err)
+	session, stdin, stdout := newSession(t, client)
 
 	reader := bufio.NewReader(stdout)
 
-	err = session.Start("2fa_recovery_codes")
+	err := session.Start("2fa_recovery_codes")
 	require.NoError(t, err)
 
 	line, err := reader.ReadString('\n')
@@ -431,20 +422,11 @@ func TwoFactorAuthVerifySuccess(t *testing.T) {
 		},
 	}
 	client := runSSHD(t, successAPI(t, handler))
-
-	session, err := client.NewSession()
-	require.NoError(t, err)
-	defer session.Close()
-
-	stdin, err := session.StdinPipe()
-	require.NoError(t, err)
-
-	stdout, err := session.StdoutPipe()
-	require.NoError(t, err)
+	session, stdin, stdout := newSession(t, client)
 
 	reader := bufio.NewReader(stdout)
 
-	err = session.Start("2fa_verify")
+	err := session.Start("2fa_verify")
 	require.NoError(t, err)
 
 	line, err := reader.ReadString('\n')
@@ -483,17 +465,9 @@ func TestGitReceivePackSuccess(t *testing.T) {
 	ensureGitalyRepository(t)
 
 	client := runSSHD(t, successAPI(t))
-	session, err := client.NewSession()
-	require.NoError(t, err)
-	defer session.Close()
+	session, stdin, stdout := newSession(t, client)
 
-	stdin, err := session.StdinPipe()
-	require.NoError(t, err)
-
-	stdout, err := session.StdoutPipe()
-	require.NoError(t, err)
-
-	err = session.Start(fmt.Sprintf("git-receive-pack %s", testRepo))
+	err := session.Start(fmt.Sprintf("git-receive-pack %s", testRepo))
 	require.NoError(t, err)
 
 	// Gracefully close connection
@@ -528,17 +502,9 @@ func TestGeoGitReceivePackSuccess(t *testing.T) {
 		},
 	}
 	client := runSSHD(t, successAPI(t, handler))
-	session, err := client.NewSession()
-	require.NoError(t, err)
-	defer session.Close()
+	session, stdin, stdout := newSession(t, client)
 
-	stdin, err := session.StdinPipe()
-	require.NoError(t, err)
-
-	stdout, err := session.StdoutPipe()
-	require.NoError(t, err)
-
-	err = session.Start(fmt.Sprintf("git-receive-pack %s", testRepo))
+	err := session.Start(fmt.Sprintf("git-receive-pack %s", testRepo))
 	require.NoError(t, err)
 
 	// Gracefully close connection
@@ -562,59 +528,47 @@ func TestGitUploadPackSuccess(t *testing.T) {
 	ensureGitalyRepository(t)
 
 	client := runSSHD(t, successAPI(t))
-	session, err := client.NewSession()
-	require.NoError(t, err)
-	defer session.Close()
+	defer client.Close()
 
-	stdin, err := session.StdinPipe()
-	require.NoError(t, err)
+	numberOfSessions := 3
+	for sessionNumber := 0; sessionNumber < numberOfSessions; sessionNumber++ {
+		t.Run(fmt.Sprintf("session #%v", sessionNumber), func(t *testing.T) {
+			session, stdin, stdout := newSession(t, client)
+			reader := bufio.NewReader(stdout)
 
-	stdout, err := session.StdoutPipe()
-	require.NoError(t, err)
+			err := session.Start(fmt.Sprintf("git-upload-pack %s", testRepo))
+			require.NoError(t, err)
 
-	reader := bufio.NewReader(stdout)
+			line, err := reader.ReadString('\n')
+			require.NoError(t, err)
+			require.Regexp(t, "^[0-9a-f]{44} HEAD.+", line)
 
-	err = session.Start(fmt.Sprintf("git-upload-pack %s", testRepo))
-	require.NoError(t, err)
+			// Gracefully close connection
+			_, err = fmt.Fprintln(stdin, "0000")
+			require.NoError(t, err)
 
-	line, err := reader.ReadString('\n')
-	require.NoError(t, err)
-	require.Regexp(t, "^[0-9a-f]{44} HEAD.+", line)
+			output, err := io.ReadAll(stdout)
+			require.NoError(t, err)
 
-	// Gracefully close connection
-	_, err = fmt.Fprintln(stdin, "0000")
-	require.NoError(t, err)
+			outputLines := strings.Split(string(output), "\n")
 
-	output, err := io.ReadAll(stdout)
-	require.NoError(t, err)
+			for i := 1; i < (len(outputLines) - 1); i++ {
+				require.Regexp(t, "^[0-9a-f]{44} refs/(heads|tags)/[^ ]+", outputLines[i])
+			}
 
-	outputLines := strings.Split(string(output), "\n")
-
-	for i := 1; i < (len(outputLines) - 1); i++ {
-		require.Regexp(t, "^[0-9a-f]{44} refs/(heads|tags)/[^ ]+", outputLines[i])
+			require.Equal(t, "0000", outputLines[len(outputLines)-1])
+		})
 	}
-
-	require.Equal(t, "0000", outputLines[len(outputLines)-1])
 }
 
 func TestGitUploadArchiveSuccess(t *testing.T) {
 	ensureGitalyRepository(t)
 
 	client := runSSHD(t, successAPI(t))
-
-	session, err := client.NewSession()
-	require.NoError(t, err)
-	defer session.Close()
-
-	stdin, err := session.StdinPipe()
-	require.NoError(t, err)
-
-	stdout, err := session.StdoutPipe()
-	require.NoError(t, err)
-
+	session, stdin, stdout := newSession(t, client)
 	reader := bufio.NewReader(stdout)
 
-	err = session.Start(fmt.Sprintf("git-upload-archive %s", testRepo))
+	err := session.Start(fmt.Sprintf("git-upload-archive %s", testRepo))
 	require.NoError(t, err)
 
 	_, err = fmt.Fprintln(stdin, "0012argument HEAD\n0000")
@@ -633,4 +587,21 @@ func TestGitUploadArchiveSuccess(t *testing.T) {
 
 	t.Logf("output: %q", output)
 	require.Equal(t, []byte("0000"), output[len(output)-4:])
+}
+
+func newSession(t *testing.T, client *ssh.Client) (*ssh.Session, io.WriteCloser, io.Reader) {
+	session, err := client.NewSession()
+	require.NoError(t, err)
+
+	stdin, err := session.StdinPipe()
+	require.NoError(t, err)
+
+	stdout, err := session.StdoutPipe()
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		session.Close()
+	})
+
+	return session, stdin, stdout
 }

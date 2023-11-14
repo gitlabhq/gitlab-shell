@@ -2,7 +2,9 @@ package uploadpack
 
 import (
 	"context"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/githttp"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/gitauditevent"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
@@ -18,36 +20,52 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-func (c *Command) Execute(ctx context.Context) error {
+func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SshArgs
 	if len(args) != 2 {
-		return disallowedcommand.Error
+		return ctx, disallowedcommand.Error
 	}
 
 	repo := args[1]
 	response, err := c.verifyAccess(ctx, repo)
 	if err != nil {
-		return err
+		return ctx, err
 	}
 
+	logData := command.NewLogData(
+		response.Gitaly.Repo.GlProjectPath,
+		response.Username,
+	)
+	ctxWithLogData := context.WithValue(ctx, "logData", logData)
+
 	if response.IsCustomAction() {
+		if response.Payload.Data.GeoProxyFetchDirectToPrimary {
+			cmd := githttp.PullCommand{
+				Config:     c.Config,
+				ReadWriter: c.ReadWriter,
+				Response:   response,
+			}
+
+			return ctxWithLogData, cmd.Execute(ctx)
+		}
+
 		customAction := customaction.Command{
 			Config:     c.Config,
 			ReadWriter: c.ReadWriter,
 			EOFSent:    false,
 		}
-		return customAction.Execute(ctx, response)
+		return ctxWithLogData, customAction.Execute(ctx, response)
 	}
 
 	stats, err := c.performGitalyCall(ctx, response)
 	if err != nil {
-		return err
+		return ctxWithLogData, err
 	}
 
 	if response.NeedAudit {
 		gitauditevent.Audit(ctx, c.Args.CommandType, c.Config, response, stats)
 	}
-	return nil
+	return ctxWithLogData, nil
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {

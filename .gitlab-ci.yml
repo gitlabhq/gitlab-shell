@@ -7,12 +7,22 @@ include:
     file:
       - '/ci/danger-review.yml'
 
+stages:
+  - prepare
+  - test
+
 variables:
+  FF_USE_FASTZIP: 'true'
+  TRANSFER_METER_FREQUENCY: "1s"
   DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
   GO_VERSION: "golang-1.20"
+  GOPATH: $CI_PROJECT_DIR/.GOPATH
   DEBIAN_VERSION: "bullseye"
   RUBY_VERSION: "ruby-3.2"
+  BUNDLE_PATH: vendor/ruby
+  POLICY: pull
+  CI_DEBUG_SERVICES: 'true'
 
 workflow:
   rules: &workflow_rules
@@ -36,12 +46,77 @@ default:
     # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
     - gitlab-org-docker
 
-.test:
+.cached-go: &cached_go
+  - key:
+      prefix: $GO_VERSION-cache
+      files:
+        - go.mod
+        - go.sum
+    policy: $POLICY
+    paths:
+      - .GOPATH/pkg/mod/
+
+.cached-ruby: &cached_ruby
+  - key:
+      prefix: $RUBY_VERSION-cache
+      files:
+        - Gemfile.lock
+    policy: $POLICY
+    paths:
+      - ${BUNDLE_PATH}
+
+.cached-go-job:
+  variables:
+    CACHE_COMPRESSION_LEVEL: "fastest"
+  cache:
+    - *cached_go
+
+.cached-ruby-job:
+  cache:
+    - *cached_ruby
+
+.cached-job:
+  cache:
+    - *cached_go
+    - *cached_ruby
+
+.go-matrix-job:
+  parallel:
+    matrix:
+      - GO_VERSION: ["golang-1.19", "golang-1.20", "golang-1.21"]
+
+################################################################################
+# Prepare jobs
+################################################################################
+
+bundle:install:
+  stage: prepare
+  extends: .cached-ruby-job
+  variables:
+    POLICY: pull-push
+  script:
+    - bundle install --jobs $(nproc)
+
+modules:download:
+  stage: prepare
+  extends:
+    - .cached-go-job
+    - .go-matrix-job
+  variables:
+    POLICY: pull-push
+  script:
+    - go mod download
+
+################################################################################
+# Test jobs
+################################################################################
+
+.test-job:
+  needs: ['bundle:install', 'modules:download']
   variables:
     GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
   before_script:
     # Set up the environment to run integration tests (still written in Ruby)
-    - bundle install
     - make build
     - cp config.yml.example config.yml
     - go version
@@ -49,22 +124,31 @@ default:
   services:
     - name: registry.gitlab.com/gitlab-org/build/cng/gitaly:master
       # Disable the hooks so we don't have to stub the GitLab API
-      command: ["bash", "-c", "mkdir -p /home/git/repositories && rm -rf /srv/gitlab-shell/hooks/* && exec /usr/bin/env GITALY_TESTING_NO_GIT_HOOKS=1 /scripts/process-wrapper"]
+      command: ["bash", "-c", "mkdir -p /home/git/repositories && rm -rf /srv/gitlab-shell/hooks/* && touch /srv/gitlab-shell/.gitlab_shell_secret && cp /etc/gitaly/config.toml.erb /etc/gitaly/config.toml 2>/dev/null && exec /usr/bin/env GITALY_TESTING_NO_GIT_HOOKS=1 /scripts/process-wrapper"]
       alias: gitaly
 
 tests:
-  extends: .test
-  parallel:
-    matrix:
-      - GO_VERSION: ["golang-1.18", "golang-1.19", "golang-1.20"]
+  extends:
+    - .cached-job
+    - .go-matrix-job
+    - .test-job
   script:
-    - make verify test
+    - make verify test_fancy
   after_script:
     - make coverage
   coverage: '/\d+.\d+%/'
+  artifacts:
+    when: always
+    paths:
+      - cover.xml
+    reports:
+      junit: cover.xml
 
 race:
-  extends: .test
+  extends:
+    - .cached-go-job
+    - .go-matrix-job
+    - .test-job
   script:
     - make test_golang_race
 
@@ -130,18 +214,15 @@ modules:tidy:
     - go mod tidy
     - git diff --exit-code go.mod go.sum
 
-modules:download:
-  parallel:
-    matrix:
-      - GO_VERSION: ["golang-1.18", "golang-1.19", "golang-1.20"]
+lint:
+  stage: test
   script:
-    - go mod download
-  cache:
-    key:
-      prefix: $GO_VERSION
-      files:
-        - go.mod
-        - go.sum
+    # Write the code coverage report to gl-code-quality-report.json
+    # and print linting issues to stdout in the format: path/to/file:line description
+    # remove `--issues-exit-code 0` or set to non-zero to fail the job if linting issues are detected
+    - make lint GOLANGCI_LINT_ARGS="--out-format code-climate:gl-code-quality-report.json,line-number"
+  artifacts:
+    reports:
+      codequality: gl-code-quality-report.json
     paths:
-      - .GOPATH/pkg/mod/
-    policy: push
+      - gl-code-quality-report.json

@@ -1,9 +1,10 @@
-//go:build cgo
+//go:build gssapi
 
 package sshd
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/openshift/gssapi"
 
@@ -41,6 +42,7 @@ type OSGSSAPIServer struct {
 	Keytab               string
 	ServicePrincipalName string
 
+	mutex     sync.RWMutex
 	contextId *gssapi.CtxId
 }
 
@@ -62,6 +64,9 @@ func (server *OSGSSAPIServer) AcceptSecContext(
 	needContinue bool,
 	err error,
 ) {
+	server.mutex.Lock()
+	defer server.mutex.Unlock()
+
 	tokenBuffer, err := lib.MakeBufferBytes(token)
 	if err != nil {
 		return
@@ -111,6 +116,9 @@ func (server *OSGSSAPIServer) VerifyMIC(
 	micField []byte,
 	micToken []byte,
 ) error {
+	server.mutex.Lock()
+	defer server.mutex.Unlock()
+
 	if server.contextId == nil {
 		return fmt.Errorf("gssapi: uninitialized contextId")
 	}
@@ -132,6 +140,9 @@ func (server *OSGSSAPIServer) VerifyMIC(
 }
 
 func (server *OSGSSAPIServer) DeleteSecContext() error {
+	server.mutex.Lock()
+	defer server.mutex.Unlock()
+
 	if server.contextId == nil {
 		return nil
 	}

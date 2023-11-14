@@ -58,6 +58,36 @@ func NewWithKrb5Principal(gitlabKrb5Principal string, env sshenv.Env, config *co
 	return nil, disallowedcommand.Error
 }
 
+func NewWithUsername(gitlabUsername string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
+	args, err := Parse(nil, env)
+	if err != nil {
+		return nil, err
+	}
+
+	// When 1.21+ only Golang is supported, it can be refactored by using slices.Contains
+	if env.NamespacePath != "" {
+		exists := false
+		for _, gitCmd := range commandargs.GitCommands {
+			if args.CommandType == gitCmd {
+				exists = true
+
+				break
+			}
+		}
+
+		if !exists {
+			return nil, disallowedcommand.Error
+		}
+	}
+
+	args.GitlabUsername = gitlabUsername
+	if cmd := Build(args, config, readWriter); cmd != nil {
+		return cmd, nil
+	}
+
+	return nil, disallowedcommand.Error
+}
+
 func Parse(arguments []string, env sshenv.Env) (*commandargs.Shell, error) {
 	args := &commandargs.Shell{Arguments: arguments, Env: env}
 
