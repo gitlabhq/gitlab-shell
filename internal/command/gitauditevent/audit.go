@@ -11,10 +11,8 @@ import (
 	"gitlab.com/gitlab-org/labkit/log"
 )
 
-// Audit is a command function that call rails to audit `git-receive-pack` and `git-upload-pack` events.
-// Calling rails for git audit events is always followed by `git clone`, `git pull`, `git push`,
-// So we do not guarantee that two requests will succeed, this is a Distributed transaction.
-// Let's just simply ignore errors.
+// Audit is called conditionally during `git-receive-pack` and `git-upload-pack` to generate streaming audit events.
+// Errors are not propagated since this is more a logging process.
 func Audit(ctx context.Context, commandType commandargs.CommandType, c *config.Config, response *accessverifier.Response, packfileStats *pb.PackfileNegotiationStatistics) {
 	ctxlog := log.WithContextFields(ctx, log.Fields{
 		"gl_repository": response.Repo,
