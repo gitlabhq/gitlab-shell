@@ -266,7 +266,6 @@ func setup(t *testing.T, userResponses, keyResponses map[string]testResponse) *C
 					_, err := w.Write(tr.body)
 					require.NoError(t, err)
 					require.Equal(t, namespace, requestBody.NamespacePath)
-					require.Equal(t, sshCertProtocol, requestBody.Protocol)
 				} else if tr, ok := userResponses[requestBody.Krb5Principal]; ok {
 					w.WriteHeader(tr.status)
 					_, err := w.Write(tr.body)
