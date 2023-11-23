@@ -68,6 +68,7 @@ func testBasicAuthHeaders(t *testing.T, response *http.Response) {
 	require.NoError(t, err)
 
 	headerParts := strings.Split(string(responseBody), " ")
+	require.NotNil(t, headerParts)
 	require.Equal(t, "Basic", headerParts[0])
 
 	credentials, err := base64.StdEncoding.DecodeString(headerParts[1])
