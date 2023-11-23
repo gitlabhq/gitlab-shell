@@ -106,7 +106,7 @@ func newRequest(ctx context.Context, method, host, path string, data interface{}
 }
 
 func parseError(resp *http.Response, respErr error) error {
-	if respErr != nil {
+	if resp == nil || respErr != nil {
 		return &ApiError{"Internal API unreachable"}
 	}
 
