@@ -79,17 +79,16 @@ func ensureGitalyRepository(t *testing.T) (*grpc.ClientConn, *pb.Repository) {
 	conn, err := gitalyClient.Dial(gitalyConnInfo.Address, gitalyClient.DefaultDialOpts)
 	require.NoError(t, err)
 
-	namespace := pb.NewNamespaceServiceClient(conn)
 	repository := pb.NewRepositoryServiceClient(conn)
 
-	// Remove the repository if it already exists, for consistency
-	rmNsReq := &pb.RemoveNamespaceRequest{StorageName: gitalyConnInfo.Storage, Name: testRepoNamespace}
-	_, err = namespace.RemoveNamespace(context.Background(), rmNsReq)
-	require.NoError(t, err)
-
 	glRepository := &pb.Repository{StorageName: gitalyConnInfo.Storage, RelativePath: testRepo}
-	createReq := &pb.CreateRepositoryFromURLRequest{Repository: glRepository, Url: testRepoImportUrl}
 
+	// Remove the test repository before running the tests
+	removeReq := &pb.RemoveRepositoryRequest{Repository: glRepository}
+	// Ignore the error because the repository may not exist
+	repository.RemoveRepository(context.Background(), removeReq)
+
+	createReq := &pb.CreateRepositoryFromURLRequest{Repository: glRepository, Url: testRepoImportUrl}
 	_, err = repository.CreateRepositoryFromURL(context.Background(), createReq)
 	require.NoError(t, err)
 

@@ -5,6 +5,6 @@ services:
       - GITALY_TESTING_NO_GIT_HOOKS=1
     image: registry.gitlab.com/gitlab-org/build/cng/gitaly:master
     command:
-      ["bash", "-c", "mkdir -p /home/git/repositories && rm -rf /srv/gitlab-shell/hooks/* && touch /srv/gitlab-shell/.gitlab_shell_secret && cp /etc/gitaly/config.toml.erb /etc/gitaly/config.toml 2>/dev/null && exec /usr/bin/env GITALY_TESTING_NO_GIT_HOOKS=1 /scripts/process-wrapper"]
+      ["bash", "-c", "mkdir -p /home/git/repositories && rm -rf /srv/gitlab-shell/hooks/* && touch /srv/gitlab-shell/.gitlab_shell_secret && exec /usr/bin/env GITALY_TESTING_NO_GIT_HOOKS=1 /scripts/process-wrapper"]
     ports:
       - '8075:8075'
