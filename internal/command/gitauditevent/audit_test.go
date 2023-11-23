@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
@@ -36,16 +35,13 @@ func TestGitAudit(t *testing.T) {
 
 				var request *gitauditevent.Request
 				require.NoError(t, json.Unmarshal(body, &request))
-				assert.Equal(t, testUsername, request.Username)
-				assert.Equal(t, testRepo, request.Repo)
+				require.Equal(t, testUsername, request.Username)
+				require.Equal(t, testRepo, request.Repo)
 
 				w.WriteHeader(http.StatusOK)
 			},
 		},
 	}
-	defer func() {
-		assert.True(t, called)
-	}()
 
 	s := &commandargs.Shell{
 		CommandType: commandargs.UploadArchive,
@@ -56,4 +52,6 @@ func TestGitAudit(t *testing.T) {
 		Username: testUsername,
 		Repo:     testRepo,
 	}, nil)
+
+	require.True(t, called)
 }

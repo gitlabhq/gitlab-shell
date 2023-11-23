@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	pb "gitlab.com/gitlab-org/gitaly/v16/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -54,12 +53,12 @@ func setup(t *testing.T, responseStatus int) *Client {
 
 				var request *Request
 				require.NoError(t, json.Unmarshal(body, &request))
-				assert.Equal(t, testUsername, request.Username)
-				assert.Equal(t, testAction, request.Action)
-				assert.Equal(t, testRepo, request.Repo)
-				assert.Equal(t, "ssh", request.Protocol)
-				assert.Equal(t, testPackfileWants, request.PackfileStats.Wants)
-				assert.Equal(t, testPackfileHaves, request.PackfileStats.Haves)
+				require.Equal(t, testUsername, request.Username)
+				require.Equal(t, testAction, request.Action)
+				require.Equal(t, testRepo, request.Repo)
+				require.Equal(t, "ssh", request.Protocol)
+				require.Equal(t, testPackfileWants, request.PackfileStats.Wants)
+				require.Equal(t, testPackfileHaves, request.PackfileStats.Haves)
 
 				w.WriteHeader(responseStatus)
 			},
