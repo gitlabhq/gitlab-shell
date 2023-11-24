@@ -17,11 +17,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 )
 
-var (
-	tempDir, _ = os.MkdirTemp("", "gitlab-shell-test-api")
-	testSocket = path.Join(tempDir, "internal.sock")
-)
-
 type TestRequestHandler struct {
 	Path    string
 	Handler func(w http.ResponseWriter, r *http.Request)
@@ -30,9 +25,12 @@ type TestRequestHandler struct {
 func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) string {
 	t.Helper()
 
+	tempDir, _ := os.MkdirTemp("", "gitlab-shell-test-api")
+	t.Cleanup(func() { os.RemoveAll(tempDir) })
+
+	testSocket := path.Join(tempDir, "internal.sock")
 	err := os.MkdirAll(filepath.Dir(testSocket), 0700)
 	require.NoError(t, err)
-	t.Cleanup(func() { os.RemoveAll(tempDir) })
 
 	socketListener, err := net.Listen("unix", testSocket)
 	require.NoError(t, err)
