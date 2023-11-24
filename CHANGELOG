@@ -1,3 +1,19 @@
+v14.31.0
+
+- Update dependency gitlab-dangerfiles to '~> 4.6.0' !887
+- Update module golang.org/x/crypto to v0.15.0 !884
+- Revert workaround to start gitaly service in test !891
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.6.0 !890
+- Remove the RPC call for Namespace removal !895
+- Update module gitlab.com/gitlab-org/labkit to v1.21.0 !892
+- Revert sending SSH certificate as a separate protocol !894
+- Bump GO_VERSION to 1.21 !898
+- Drop support for go 1.19 !899
+- Move global tempDir into StartSocketHttpServer() !902
+- New nilaway CI job !897
+- Resolve "Remove NilAway detections for 'client' package" !896
+- call git_autid_event during git pull/clone if in need !888
+
 v14.30.1
 
 - Update dependency golang to v1.21.4 !881
