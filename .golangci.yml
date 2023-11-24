@@ -265,7 +265,6 @@ linters:
     - unconvert
     - unparam
     - unused
-    - unused
     - whitespace
   # don't enable:
   # - deadcode
