@@ -243,6 +243,7 @@ linters:
     - dogsled
     - dupl
     - errcheck
+    - exportloopref
     - funlen
     - gocognit
     - goconst
@@ -250,7 +251,6 @@ linters:
     - godox
     - gofmt
     - goimports
-    - revive
     - gosec
     - gosimple
     - govet
@@ -258,13 +258,13 @@ linters:
     - interfacer
     - misspell
     - nakedret
-    - exportloopref
+    - revive
     - staticcheck
-    - unused
     - stylecheck
     - typecheck
     - unconvert
     - unparam
+    - unused
     - unused
     - whitespace
   # don't enable:
