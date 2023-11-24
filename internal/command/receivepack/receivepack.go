@@ -5,6 +5,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/gitauditevent"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/githttp"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
@@ -59,7 +60,15 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctxWithLogData, customAction.Execute(ctx, response)
 	}
 
-	return ctxWithLogData, c.performGitalyCall(ctx, response)
+	err = c.performGitalyCall(ctx, response)
+	if err != nil {
+		return ctxWithLogData, err
+	}
+
+	if response.NeedAudit {
+		gitauditevent.Audit(ctx, c.Args.CommandType, c.Config, response, nil /* keep nil for `git-receive-pack`*/)
+	}
+	return ctxWithLogData, nil
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {

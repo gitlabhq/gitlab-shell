@@ -186,6 +186,9 @@ func successAPI(t *testing.T, handlers ...customHandler) http.Handler {
 
 			_, err := fmt.Fprint(w, response)
 			require.NoError(t, err)
+		case "/api/v4/internal/shellhorse/git_audit_event":
+			w.WriteHeader(http.StatusOK)
+			return
 		default:
 			t.Logf("Unexpected request to successAPI: %s", r.URL.EscapedPath())
 			t.FailNow()
