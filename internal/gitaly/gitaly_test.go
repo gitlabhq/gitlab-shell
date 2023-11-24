@@ -33,7 +33,7 @@ func TestPrometheusMetrics(t *testing.T) {
 func TestCachedConnections(t *testing.T) {
 	c := newClient()
 
-	require.Len(t, c.cache.connections, 0)
+	require.Empty(t, c.cache.connections)
 
 	cmd := Command{ServiceName: "git-upload-pack", Address: "tcp://localhost:9999"}
 

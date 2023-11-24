@@ -125,6 +125,6 @@ func TestCheckForVersionFlag(t *testing.T) {
 	cmd.Env = append(os.Environ(), "GITLAB_SHELL_TEST_CHECK_FOR_VERSION_FLAG=1")
 	out, err := cmd.Output()
 
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "test 1.2.3-456\n", string(out))
 }
