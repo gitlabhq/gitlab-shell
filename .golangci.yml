@@ -109,9 +109,6 @@ linters-settings:
     # disable:
     #   - shadow
     # disable-all: false
-  golint:
-    # minimal confidence for issues, default is 0.8
-    min-confidence: 0.8
   gofmt:
     # simplify code: gofmt with `-s` option, true by default
     simplify: true
@@ -253,7 +250,7 @@ linters:
     - godox
     - gofmt
     - goimports
-    - golint
+    - revive
     - gosec
     - gosimple
     - govet
@@ -261,9 +258,9 @@ linters:
     - interfacer
     - misspell
     - nakedret
-    - scopelint
+    - exportloopref
     - staticcheck
-    - structcheck
+    - unused
     - stylecheck
     - typecheck
     - unconvert
