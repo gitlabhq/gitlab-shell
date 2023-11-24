@@ -61,12 +61,11 @@ func TestConfigureWithDebugLogLevel(t *testing.T) {
 }
 
 func TestConfigureWithPermissionError(t *testing.T) {
-	tmpPath, err := os.MkdirTemp(os.TempDir(), "logtest-")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpPath)
+	tempDir := t.TempDir()
+	defer os.RemoveAll(tempDir)
 
 	config := config.Config{
-		LogFile:   tmpPath,
+		LogFile:   tempDir,
 		LogFormat: "json",
 	}
 

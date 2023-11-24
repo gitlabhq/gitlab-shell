@@ -25,7 +25,7 @@ type TestRequestHandler struct {
 func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) string {
 	t.Helper()
 
-	tempDir, _ := os.MkdirTemp("", "gitlab-shell-test-api")
+	tempDir := t.TempDir()
 	t.Cleanup(func() { os.RemoveAll(tempDir) })
 
 	testSocket := path.Join(tempDir, "internal.sock")
