@@ -31,7 +31,26 @@ func TestPullExecute(t *testing.T) {
 		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 		Response: &accessverifier.Response{
 			Payload: accessverifier.CustomPayload{
-				Data: accessverifier.CustomPayloadData{PrimaryRepo: url},
+				Data: accessverifier.CustomPayloadData{PrimaryRepo: url, GeoProxyFetchDirectToPrimaryWithOptions: false},
+			},
+		},
+	}
+
+	require.NoError(t, cmd.Execute(context.Background()))
+	require.Equal(t, infoRefsWithoutPrefix, output.String())
+}
+
+func TestPullExecuteWithDepth(t *testing.T) {
+	url := setupPull(t, http.StatusOK)
+	output := &bytes.Buffer{}
+	input := strings.NewReader(strings.Replace(cloneResponse, "00000009done", "0000", 1))
+
+	cmd := &PullCommand{
+		Config:     &config.Config{GitlabUrl: url},
+		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
+		Response: &accessverifier.Response{
+			Payload: accessverifier.CustomPayload{
+				Data: accessverifier.CustomPayloadData{PrimaryRepo: url, GeoProxyFetchDirectToPrimaryWithOptions: true},
 			},
 		},
 	}
