@@ -65,8 +65,18 @@ func TestUploadPack(t *testing.T) {
 }
 
 func TestFailedHTTPRequest(t *testing.T) {
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/info/refs",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("You are not allowed to upload code."))
+			},
+		},
+	}
+
 	client := &Client{
-		Url:     testserver.StartHttpServer(t, []testserver.TestRequestHandler{}),
+		Url:     testserver.StartHttpServer(t, requests),
 		Headers: customHeaders,
 	}
 
@@ -76,7 +86,7 @@ func TestFailedHTTPRequest(t *testing.T) {
 
 	var apiErr *httpclient.ApiError
 	require.ErrorAs(t, err, &apiErr)
-	require.EqualError(t, err, repoUnavailableErrMsg)
+	require.EqualError(t, err, "You are not allowed to upload code.")
 }
 
 func setup(t *testing.T) *Client {

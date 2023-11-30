@@ -53,6 +53,11 @@ func TestExecuteWithFailedInfoRefs(t *testing.T) {
 			statusCode:  http.StatusForbidden,
 			expectedErr: "Remote repository is unavailable",
 		}, {
+			desc:            "request failed",
+			statusCode:      http.StatusForbidden,
+			responseContent: "You are not allowed to push code to this project",
+			expectedErr:     "You are not allowed to push code to this project",
+		}, {
 			desc:            "unexpected response",
 			statusCode:      http.StatusOK,
 			responseContent: "unexpected response",
