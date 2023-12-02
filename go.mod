@@ -3,7 +3,7 @@ module gitlab.com/gitlab-org/gitlab-shell/v14
 go 1.20
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.1.0
+	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/go-retryablehttp v0.7.5
 	github.com/mattn/go-shellwords v1.0.12
