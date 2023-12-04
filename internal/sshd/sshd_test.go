@@ -433,6 +433,7 @@ func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Contex
 	require.NoError(t, err)
 
 	go func() { require.NoError(t, s.ListenAndServe(ctx)) }()
+	// NOTE: Changing the below to { require.NoError(t, s.Shutdown()) } results in failed tests
 	t.Cleanup(func() { s.Shutdown() })
 
 	verifyStatus(t, s, StatusReady)
