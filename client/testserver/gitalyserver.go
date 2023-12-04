@@ -90,7 +90,7 @@ func StartGitalyServer(t *testing.T, network string) (string, *TestGitalyServer)
 		//
 		// See https://gitlab.com/gitlab-org/gitlab-shell/-/issues/696#note_1664726924
 		// for more detail.
-		tempDir, err := os.MkdirTemp("", "gitlab-shell-test-api")
+		tempDir, err := os.MkdirTemp("", "gitaly")
 		require.NoError(t, err)
 
 		gitalySocketPath := path.Join(tempDir, "gitaly.sock")

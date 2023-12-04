@@ -31,7 +31,7 @@ func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) string {
 	//
 	// See https://gitlab.com/gitlab-org/gitlab-shell/-/issues/696#note_1664726924
 	// for more detail.
-	tempDir, err := os.MkdirTemp("", "gitlab-shell-test-api")
+	tempDir, err := os.MkdirTemp("", "http")
 	require.NoError(t, err)
 	t.Cleanup(func() { os.RemoveAll(tempDir) })
 
