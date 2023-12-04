@@ -34,7 +34,7 @@ func PrepareTestRootDir(t *testing.T) {
 
 	require.NoError(t, os.MkdirAll(TestRoot, 0700))
 
-	t.Cleanup(func() { os.RemoveAll(TestRoot) })
+	t.Cleanup(func() { require.NoError(t, os.RemoveAll(TestRoot)) })
 
 	require.NoError(t, copyTestData())
 

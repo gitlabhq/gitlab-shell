@@ -33,7 +33,7 @@ func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) string {
 	// for more detail.
 	tempDir, err := os.MkdirTemp("", "http")
 	require.NoError(t, err)
-	t.Cleanup(func() { os.RemoveAll(tempDir) })
+	t.Cleanup(func() { require.NoError(t, os.RemoveAll(tempDir)) })
 
 	testSocket := path.Join(tempDir, "internal.sock")
 	err = os.MkdirAll(filepath.Dir(testSocket), 0700)

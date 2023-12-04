@@ -62,7 +62,7 @@ func TestConfigureWithDebugLogLevel(t *testing.T) {
 
 func TestConfigureWithPermissionError(t *testing.T) {
 	tempDir := t.TempDir()
-	defer os.RemoveAll(tempDir)
+	t.Cleanup(func() { require.NoError(t, os.RemoveAll(tempDir)) })
 
 	config := config.Config{
 		LogFile:   tempDir,

@@ -92,10 +92,9 @@ func StartGitalyServer(t *testing.T, network string) (string, *TestGitalyServer)
 		// for more detail.
 		tempDir, err := os.MkdirTemp("", "gitaly")
 		require.NoError(t, err)
-
-		gitalySocketPath := path.Join(tempDir, "gitaly.sock")
 		t.Cleanup(func() { require.NoError(t, os.RemoveAll(tempDir)) })
 
+		gitalySocketPath := path.Join(tempDir, "gitaly.sock")
 		err = os.MkdirAll(filepath.Dir(gitalySocketPath), 0700)
 		require.NoError(t, err)
 
