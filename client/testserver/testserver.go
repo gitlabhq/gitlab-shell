@@ -25,11 +25,18 @@ type TestRequestHandler struct {
 func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) string {
 	t.Helper()
 
-	tempDir := t.TempDir()
+	// We can't use t.TempDir() here because it will create a directory that
+	// far exceeds the 108 character limit which results in the socket failing
+	// to be created.
+	//
+	// See https://gitlab.com/gitlab-org/gitlab-shell/-/issues/696#note_1664726924
+	// for more detail.
+	tempDir, err := os.MkdirTemp("", "gitlab-shell-test-api")
+	require.NoError(t, err)
 	t.Cleanup(func() { os.RemoveAll(tempDir) })
 
 	testSocket := path.Join(tempDir, "internal.sock")
-	err := os.MkdirAll(filepath.Dir(testSocket), 0700)
+	err = os.MkdirAll(filepath.Dir(testSocket), 0700)
 	require.NoError(t, err)
 
 	socketListener, err := net.Listen("unix", testSocket)
