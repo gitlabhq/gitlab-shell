@@ -56,7 +56,8 @@ func buildExpectedResponse(who string) *Response {
 }
 
 func TestSuccessfulResponses(t *testing.T) {
-	okResponse := testResponse{body: responseBody(t, "allowed.json"), status: http.StatusOK}
+	testRoot := testhelper.PrepareTestRootDir(t)
+	okResponse := testResponse{body: responseBody(t, testRoot, "allowed.json"), status: http.StatusOK}
 	client := setup(t,
 		map[string]testResponse{"first": okResponse, "test@TEST.TEST": okResponse},
 		map[string]testResponse{"1": okResponse},
@@ -94,9 +95,10 @@ func TestSuccessfulResponses(t *testing.T) {
 }
 
 func TestGeoPushGetCustomAction(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
 	client := setup(t, map[string]testResponse{
 		"custom": {
-			body:   responseBody(t, "allowed_with_push_payload.json"),
+			body:   responseBody(t, testRoot, "allowed_with_push_payload.json"),
 			status: 300,
 		},
 	}, nil)
@@ -123,9 +125,10 @@ func TestGeoPushGetCustomAction(t *testing.T) {
 }
 
 func TestGeoPullGetCustomAction(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
 	client := setup(t, map[string]testResponse{
 		"custom": {
-			body:   responseBody(t, "allowed_with_pull_payload.json"),
+			body:   responseBody(t, testRoot, "allowed_with_pull_payload.json"),
 			status: 300,
 		},
 	}, nil)
@@ -241,9 +244,8 @@ type testResponse struct {
 	status int
 }
 
-func responseBody(t *testing.T, name string) []byte {
+func responseBody(t *testing.T, testRoot, name string) []byte {
 	t.Helper()
-	testRoot := testhelper.PrepareTestRootDir(t)
 	body, err := os.ReadFile(path.Join(testRoot, "responses", name))
 	require.NoError(t, err)
 	return body

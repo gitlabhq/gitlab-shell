@@ -32,9 +32,9 @@ var (
 )
 
 func TestListenAndServe(t *testing.T) {
-	s := setupServer(t)
+	s, testRoot := setupServer(t)
 
-	client, err := ssh.Dial("tcp", serverUrl, clientConfig(t))
+	client, err := ssh.Dial("tcp", serverUrl, clientConfig(t, testRoot))
 	require.NoError(t, err)
 	defer client.Close()
 
@@ -43,7 +43,7 @@ func TestListenAndServe(t *testing.T) {
 
 	holdSession(t, client)
 
-	_, err = ssh.Dial("tcp", serverUrl, clientConfig(t))
+	_, err = ssh.Dial("tcp", serverUrl, clientConfig(t, testRoot))
 	require.Equal(t, err.Error(), "dial tcp 127.0.0.1:50000: connect: connection refused")
 
 	client.Close()
@@ -52,6 +52,8 @@ func TestListenAndServe(t *testing.T) {
 }
 
 func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
+
 	target, err := net.ResolveTCPAddr("tcp", serverUrl)
 	require.NoError(t, err)
 
@@ -193,7 +195,7 @@ func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			sshConn, sshChans, sshRequs, err := ssh.NewClientConn(conn, serverUrl, clientConfig(t))
+			sshConn, sshChans, sshRequs, err := ssh.NewClientConn(conn, serverUrl, clientConfig(t, testRoot))
 			if sshConn != nil {
 				defer sshConn.Close()
 			}
@@ -213,9 +215,9 @@ func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {
 }
 
 func TestCorrelationId(t *testing.T) {
-	setupServer(t)
+	_, testRoot := setupServer(t)
 
-	client, err := ssh.Dial("tcp", serverUrl, clientConfig(t))
+	client, err := ssh.Dial("tcp", serverUrl, clientConfig(t, testRoot))
 	require.NoError(t, err)
 	defer client.Close()
 
@@ -223,7 +225,7 @@ func TestCorrelationId(t *testing.T) {
 
 	previousCorrelationId := correlationId
 
-	client, err = ssh.Dial("tcp", serverUrl, clientConfig(t))
+	client, err = ssh.Dial("tcp", serverUrl, clientConfig(t, testRoot))
 	require.NoError(t, err)
 	defer client.Close()
 
@@ -270,9 +272,9 @@ func TestLivenessProbe(t *testing.T) {
 }
 
 func TestInvalidClientConfig(t *testing.T) {
-	setupServer(t)
+	_, testRoot := setupServer(t)
 
-	cfg := clientConfig(t)
+	cfg := clientConfig(t, testRoot)
 	cfg.User = "unknown"
 	_, err := ssh.Dial("tcp", serverUrl, cfg)
 	require.Error(t, err)
@@ -291,12 +293,12 @@ func TestClosingHangedConnections(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	s := setupServerWithContext(t, nil, ctx)
+	s, testRoot := setupServerWithContext(t, nil, ctx)
 
 	unauthenticatedRequestStatus := make(chan string)
 	completed := make(chan bool)
 
-	clientCfg := clientConfig(t)
+	clientCfg := clientConfig(t, testRoot)
 	clientCfg.HostKeyCallback = func(_ string, _ net.Addr, _ ssh.PublicKey) error {
 		unauthenticatedRequestStatus <- "authentication-started"
 		<-completed // Wait infinitely
@@ -322,12 +324,12 @@ func TestLoginGraceTime(t *testing.T) {
 			LoginGraceTime: config.YamlDuration(50 * time.Millisecond),
 		},
 	}
-	s := setupServerWithConfig(t, cfg)
+	s, testRoot := setupServerWithConfig(t, cfg)
 
 	unauthenticatedRequestStatus := make(chan string)
 	completed := make(chan bool)
 
-	clientCfg := clientConfig(t)
+	clientCfg := clientConfig(t, testRoot)
 	clientCfg.HostKeyCallback = func(_ string, _ net.Addr, _ ssh.PublicKey) error {
 		unauthenticatedRequestStatus <- "authentication-started"
 		<-completed // Wait infinitely
@@ -374,20 +376,22 @@ func TestExtractMetaDataFromNilContext(t *testing.T) {
 	require.Equal(t, command.LogData{}, data)
 }
 
-func setupServer(t *testing.T) *Server {
+func setupServer(t *testing.T) (*Server, string) {
 	t.Helper()
 
 	return setupServerWithConfig(t, nil)
 }
 
-func setupServerWithConfig(t *testing.T, cfg *config.Config) *Server {
+func setupServerWithConfig(t *testing.T, cfg *config.Config) (*Server, string) {
 	t.Helper()
 
 	return setupServerWithContext(t, cfg, context.Background())
 }
 
-func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Context) *Server {
+func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Context) (*Server, string) {
 	t.Helper()
+
+	testRoot := testhelper.PrepareTestRootDir(t)
 
 	requests := []testserver.TestRequestHandler{
 		{
@@ -411,8 +415,6 @@ func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Contex
 		},
 	}
 
-	testRoot := testhelper.PrepareTestRootDir(t)
-
 	url := testserver.StartSocketHttpServer(t, requests)
 
 	if cfg == nil {
@@ -435,12 +437,10 @@ func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Contex
 
 	verifyStatus(t, s, StatusReady)
 
-	return s
+	return s, testRoot
 }
 
-func clientConfig(t *testing.T) *ssh.ClientConfig {
-	testRoot := testhelper.PrepareTestRootDir(t)
-
+func clientConfig(t *testing.T, testRoot string) *ssh.ClientConfig {
 	keyRaw, err := os.ReadFile(path.Join(testRoot, "certs/valid/server_authorized_key"))
 	pKey, _, _, _, err := ssh.ParseAuthorizedKey(keyRaw)
 	require.NoError(t, err)
