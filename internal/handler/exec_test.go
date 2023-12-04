@@ -141,11 +141,11 @@ func TestRunGitalyCommandMetadata(t *testing.T) {
 			err := cmd.RunGitalyCommand(context.Background(), func(ctx context.Context, _ *grpc.ClientConn) (int32, error) {
 				md, exists := metadata.FromOutgoingContext(ctx)
 				require.True(t, exists)
-				require.Equal(t, len(tt.want), md.Len())
+				require.Len(t, md, len(tt.want))
 
 				for k, v := range tt.want {
 					values := md.Get(k)
-					require.Equal(t, 1, len(values))
+					require.Len(t, values, 1)
 					require.Equal(t, v, values[0])
 				}
 
@@ -212,11 +212,11 @@ func TestPrepareContext(t *testing.T) {
 
 			md, exists := metadata.FromOutgoingContext(ctx)
 			require.True(t, exists)
-			require.Equal(t, len(tt.want), md.Len())
+			require.Len(t, md, len(tt.want))
 
 			for k, v := range tt.want {
 				values := md.Get(k)
-				require.Equal(t, 1, len(values))
+				require.Len(t, values, 1)
 				require.Equal(t, v, values[0])
 			}
 

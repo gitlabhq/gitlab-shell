@@ -284,7 +284,7 @@ func TestInvalidServerConfig(t *testing.T) {
 
 	require.Error(t, err)
 	require.Equal(t, "failed to listen for connection: listen tcp: address invalid: missing port in address", err.Error())
-	require.Nil(t, s.Shutdown())
+	require.NoError(t, s.Shutdown())
 }
 
 func TestClosingHangedConnections(t *testing.T) {

@@ -155,7 +155,7 @@ func TestHandleExec(t *testing.T) {
 				_, shouldContinue, err := s.handleExec(context.Background(), r)
 
 				require.Equal(t, tc.expectedErr, err)
-				require.Equal(t, false, shouldContinue)
+				require.False(t, shouldContinue)
 				require.Equal(t, tc.sentRequestName, f.sentRequestName)
 				require.Equal(t, tc.sentRequestPayload, f.sentRequestPayload)
 			}
