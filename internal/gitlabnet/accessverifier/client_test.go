@@ -243,8 +243,8 @@ type testResponse struct {
 
 func responseBody(t *testing.T, name string) []byte {
 	t.Helper()
-	testhelper.PrepareTestRootDir(t)
-	body, err := os.ReadFile(path.Join(testhelper.TestRoot, "responses", name))
+	testRoot := testhelper.PrepareTestRootDir(t)
+	body, err := os.ReadFile(path.Join(testRoot, "responses", name))
 	require.NoError(t, err)
 	return body
 }

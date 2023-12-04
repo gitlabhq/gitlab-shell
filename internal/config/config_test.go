@@ -63,9 +63,9 @@ func TestCustomPrometheusMetrics(t *testing.T) {
 }
 
 func TestNewFromDir(t *testing.T) {
-	testhelper.PrepareTestRootDir(t)
+	testRoot := testhelper.PrepareTestRootDir(t)
 
-	cfg, err := NewFromDir(testhelper.TestRoot)
+	cfg, err := NewFromDir(testRoot)
 	require.NoError(t, err)
 
 	require.Equal(t, 10*time.Second, time.Duration(cfg.Server.GracePeriod))

@@ -411,7 +411,7 @@ func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Contex
 		},
 	}
 
-	testhelper.PrepareTestRootDir(t)
+	testRoot := testhelper.PrepareTestRootDir(t)
 
 	url := testserver.StartSocketHttpServer(t, requests)
 
@@ -425,7 +425,7 @@ func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Contex
 	cfg.User = user
 	cfg.Server.Listen = serverUrl
 	cfg.Server.ConcurrentSessionsLimit = 1
-	cfg.Server.HostKeyFiles = []string{path.Join(testhelper.TestRoot, "certs/valid/server.key")}
+	cfg.Server.HostKeyFiles = []string{path.Join(testRoot, "certs/valid/server.key")}
 
 	s, err := NewServer(cfg)
 	require.NoError(t, err)
@@ -439,11 +439,13 @@ func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Contex
 }
 
 func clientConfig(t *testing.T) *ssh.ClientConfig {
-	keyRaw, err := os.ReadFile(path.Join(testhelper.TestRoot, "certs/valid/server_authorized_key"))
+	testRoot := testhelper.PrepareTestRootDir(t)
+
+	keyRaw, err := os.ReadFile(path.Join(testRoot, "certs/valid/server_authorized_key"))
 	pKey, _, _, _, err := ssh.ParseAuthorizedKey(keyRaw)
 	require.NoError(t, err)
 
-	key, err := os.ReadFile(path.Join(testhelper.TestRoot, "certs/client/key.pem"))
+	key, err := os.ReadFile(path.Join(testRoot, "certs/client/key.pem"))
 	require.NoError(t, err)
 	signer, err := ssh.ParsePrivateKey(key)
 	require.NoError(t, err)

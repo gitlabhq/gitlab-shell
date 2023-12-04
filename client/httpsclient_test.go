@@ -15,6 +15,8 @@ import (
 
 //go:generate openssl req -newkey rsa:4096 -new -nodes -x509 -days 3650 -out ../internal/testhelper/testdata/testroot/certs/client/server.crt -keyout ../internal/testhelper/testdata/testroot/certs/client/key.pem -subj "/C=US/ST=California/L=San Francisco/O=GitLab/OU=GitLab-Shell/CN=localhost"
 func TestSuccessfulRequests(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
+
 	testCases := []struct {
 		desc                                        string
 		caFile, caPath                              string
@@ -22,25 +24,25 @@ func TestSuccessfulRequests(t *testing.T) {
 	}{
 		{
 			desc:   "Valid CaFile",
-			caFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt"),
+			caFile: path.Join(testRoot, "certs/valid/server.crt"),
 		},
 		{
 			desc:   "Valid CaPath",
-			caPath: path.Join(testhelper.TestRoot, "certs/valid"),
-			caFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt"),
+			caPath: path.Join(testRoot, "certs/valid"),
+			caFile: path.Join(testRoot, "certs/valid/server.crt"),
 		},
 		{
 			desc:   "Invalid cert with self signed cert option enabled",
-			caFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt"),
+			caFile: path.Join(testRoot, "certs/valid/server.crt"),
 		},
 		{
 			desc:   "Client certs with CA",
-			caFile: path.Join(testhelper.TestRoot, "certs/valid/server.crt"),
+			caFile: path.Join(testRoot, "certs/valid/server.crt"),
 			// Run the command "go generate httpsclient_test.go" to
 			// regenerate the following test fixtures:
-			clientCAPath:   path.Join(testhelper.TestRoot, "certs/client/server.crt"),
-			clientCertPath: path.Join(testhelper.TestRoot, "certs/client/server.crt"),
-			clientKeyPath:  path.Join(testhelper.TestRoot, "certs/client/key.pem"),
+			clientCAPath:   path.Join(testRoot, "certs/client/server.crt"),
+			clientCertPath: path.Join(testRoot, "certs/client/server.crt"),
+			clientKeyPath:  path.Join(testRoot, "certs/client/key.pem"),
 		},
 	}
 
@@ -63,6 +65,8 @@ func TestSuccessfulRequests(t *testing.T) {
 }
 
 func TestFailedRequests(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
+
 	testCases := []struct {
 		desc                   string
 		caFile                 string
@@ -72,17 +76,17 @@ func TestFailedRequests(t *testing.T) {
 	}{
 		{
 			desc:          "Invalid CaFile",
-			caFile:        path.Join(testhelper.TestRoot, "certs/invalid/server.crt"),
+			caFile:        path.Join(testRoot, "certs/invalid/server.crt"),
 			expectedError: "Internal API unreachable",
 		},
 		{
 			desc:                   "Missing CaFile",
-			caFile:                 path.Join(testhelper.TestRoot, "certs/invalid/missing.crt"),
+			caFile:                 path.Join(testRoot, "certs/invalid/missing.crt"),
 			expectedCaFileNotFound: true,
 		},
 		{
 			desc:          "Invalid CaPath",
-			caPath:        path.Join(testhelper.TestRoot, "certs/invalid"),
+			caPath:        path.Join(testRoot, "certs/invalid"),
 			expectedError: "Internal API unreachable",
 		},
 		{
@@ -108,8 +112,6 @@ func TestFailedRequests(t *testing.T) {
 }
 
 func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPath, clientKeyPath string) (*GitlabNetClient, error) {
-	testhelper.PrepareTestRootDir(t)
-
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/hello",
