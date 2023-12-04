@@ -28,10 +28,7 @@ func TempEnv(env map[string]string) func() {
 func PrepareTestRootDir(t *testing.T) string {
 	t.Helper()
 
-	testRoot, err := os.MkdirTemp("", "root")
-	require.NoError(t, err)
-	require.NoError(t, os.MkdirAll(testRoot, 0700))
-
+	testRoot := t.TempDir()
 	t.Cleanup(func() { require.NoError(t, os.RemoveAll(testRoot)) })
 
 	require.NoError(t, copyTestData(testRoot))
