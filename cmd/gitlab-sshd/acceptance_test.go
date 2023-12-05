@@ -263,7 +263,6 @@ func configureSSHD(t *testing.T, apiServer string) (string, ed25519.PublicKey) {
 	t.Helper()
 
 	tempDir := t.TempDir()
-	t.Cleanup(func() { require.NoError(t, os.RemoveAll(tempDir)) })
 
 	configFile := filepath.Join(tempDir, "config.yml")
 	hostKeyFile := filepath.Join(tempDir, "hostkey")
