@@ -61,8 +61,8 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 	}
 
 	if response.StatusCode >= 400 {
-		body, _ := io.ReadAll(response.Body)
-		if err := response.Body.Close(); err != nil {
+		body, err := io.ReadAll(response.Body)
+		if err != nil {
 			return nil, &client.ApiError{Msg: repoUnavailableErrMsg}
 		}
 
