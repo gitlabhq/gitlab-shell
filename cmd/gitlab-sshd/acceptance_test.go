@@ -262,12 +262,10 @@ func buildClient(t *testing.T, addr string, hostKey ed25519.PublicKey) *ssh.Clie
 func configureSSHD(t *testing.T, apiServer string) (string, ed25519.PublicKey) {
 	t.Helper()
 
-	dir, err := os.MkdirTemp("", "gitlab-sshd-acceptance-test-")
-	require.NoError(t, err)
-	t.Cleanup(func() { os.RemoveAll(dir) })
+	tempDir := t.TempDir()
 
-	configFile := filepath.Join(dir, "config.yml")
-	hostKeyFile := filepath.Join(dir, "hostkey")
+	configFile := filepath.Join(tempDir, "config.yml")
+	hostKeyFile := filepath.Join(tempDir, "hostkey")
 
 	pub, priv, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
@@ -279,7 +277,7 @@ func configureSSHD(t *testing.T, apiServer string) (string, ed25519.PublicKey) {
 	hostKeyData := pem.EncodeToMemory(block)
 	require.NoError(t, os.WriteFile(hostKeyFile, hostKeyData, 0400))
 
-	return dir, pub
+	return tempDir, pub
 }
 
 func startSSHD(t *testing.T, dir string) string {

@@ -12,12 +12,10 @@ import (
 )
 
 func TestConfigure(t *testing.T) {
-	tmpFile, err := os.CreateTemp(os.TempDir(), "logtest-")
-	require.NoError(t, err)
-	defer tmpFile.Close()
+	tmpFile := createTempFile(t)
 
 	config := config.Config{
-		LogFile:   tmpFile.Name(),
+		LogFile:   tmpFile,
 		LogFormat: "json",
 	}
 
@@ -27,9 +25,7 @@ func TestConfigure(t *testing.T) {
 	log.Info("this is a test")
 	log.WithFields(log.Fields{}).Debug("debug log message")
 
-	tmpFile.Close()
-
-	data, err := os.ReadFile(tmpFile.Name())
+	data, err := os.ReadFile(tmpFile)
 	dataStr := string(data)
 	require.NoError(t, err)
 	require.Contains(t, dataStr, `"msg":"this is a test"`)
@@ -38,12 +34,10 @@ func TestConfigure(t *testing.T) {
 }
 
 func TestConfigureWithDebugLogLevel(t *testing.T) {
-	tmpFile, err := os.CreateTemp(os.TempDir(), "logtest-")
-	require.NoError(t, err)
-	defer tmpFile.Close()
+	tmpFile := createTempFile(t)
 
 	config := config.Config{
-		LogFile:   tmpFile.Name(),
+		LogFile:   tmpFile,
 		LogFormat: "json",
 		LogLevel:  "debug",
 	}
@@ -53,20 +47,16 @@ func TestConfigureWithDebugLogLevel(t *testing.T) {
 
 	log.WithFields(log.Fields{}).Debug("debug log message")
 
-	tmpFile.Close()
-
-	data, err := os.ReadFile(tmpFile.Name())
+	data, err := os.ReadFile(tmpFile)
 	require.NoError(t, err)
 	require.Contains(t, string(data), `msg":"debug log message"`)
 }
 
 func TestConfigureWithPermissionError(t *testing.T) {
-	tmpPath, err := os.MkdirTemp(os.TempDir(), "logtest-")
-	require.NoError(t, err)
-	defer os.RemoveAll(tmpPath)
+	tempDir := t.TempDir()
 
 	config := config.Config{
-		LogFile:   tmpPath,
+		LogFile:   tempDir,
 		LogFormat: "json",
 	}
 
@@ -77,13 +67,10 @@ func TestConfigureWithPermissionError(t *testing.T) {
 }
 
 func TestLogInUTC(t *testing.T) {
-	tmpFile, err := os.CreateTemp(os.TempDir(), "logtest-")
-	require.NoError(t, err)
-	defer tmpFile.Close()
-	defer os.Remove(tmpFile.Name())
+	tmpFile := createTempFile(t)
 
 	config := config.Config{
-		LogFile:   tmpFile.Name(),
+		LogFile:   tmpFile,
 		LogFormat: "json",
 	}
 
@@ -92,7 +79,7 @@ func TestLogInUTC(t *testing.T) {
 
 	log.Info("this is a test")
 
-	data, err := os.ReadFile(tmpFile.Name())
+	data, err := os.ReadFile(tmpFile)
 	require.NoError(t, err)
 
 	utc := `[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z`
@@ -100,4 +87,14 @@ func TestLogInUTC(t *testing.T) {
 
 	require.NoError(t, e)
 	require.True(t, r)
+}
+
+func createTempFile(t *testing.T) string {
+	t.Helper()
+
+	tmpFile, err := os.CreateTemp(t.TempDir(), "logtest-")
+	require.NoError(t, err)
+	tmpFile.Close()
+
+	return tmpFile.Name()
 }

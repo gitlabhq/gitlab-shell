@@ -84,11 +84,18 @@ func StartGitalyServer(t *testing.T, network string) (string, *TestGitalyServer)
 
 	switch network {
 	case "unix":
-		tempDir, _ := os.MkdirTemp("", "gitlab-shell-test-api")
-		gitalySocketPath := path.Join(tempDir, "gitaly.sock")
+		// We can't use t.TempDir() here because it will create a directory that
+		// far exceeds the 108 character limit which results in the socket failing
+		// to be created.
+		//
+		// See https://gitlab.com/gitlab-org/gitlab-shell/-/issues/696#note_1664726924
+		// for more detail.
+		tempDir, err := os.MkdirTemp("", "gitaly")
+		require.NoError(t, err)
 		t.Cleanup(func() { require.NoError(t, os.RemoveAll(tempDir)) })
 
-		err := os.MkdirAll(filepath.Dir(gitalySocketPath), 0700)
+		gitalySocketPath := path.Join(tempDir, "gitaly.sock")
+		err = os.MkdirAll(filepath.Dir(gitalySocketPath), 0700)
 		require.NoError(t, err)
 
 		addr, testServer := doStartTestServer(t, "unix", gitalySocketPath)
