@@ -31,20 +31,20 @@ func TestNewServerConfigWithoutHosts(t *testing.T) {
 }
 
 func TestHostKeyAndCerts(t *testing.T) {
-	testhelper.PrepareTestRootDir(t)
+	testRoot := testhelper.PrepareTestRootDir(t)
 
 	srvCfg := config.ServerConfig{
 		Listen:                  "127.0.0.1",
 		ConcurrentSessionsLimit: 1,
 		HostKeyFiles: []string{
-			path.Join(testhelper.TestRoot, "certs/valid/server.key"),
+			path.Join(testRoot, "certs/valid/server.key"),
 		},
 		HostCertFiles: []string{
-			path.Join(testhelper.TestRoot, "certs/valid/server-cert.pub"),
-			path.Join(testhelper.TestRoot, "certs/valid/server2-cert.pub"),
-			path.Join(testhelper.TestRoot, "certs/invalid/server-cert.pub"),
-			path.Join(testhelper.TestRoot, "certs/invalid-path.key"),
-			path.Join(testhelper.TestRoot, "certs/invalid/server.crt"),
+			path.Join(testRoot, "certs/valid/server-cert.pub"),
+			path.Join(testRoot, "certs/valid/server2-cert.pub"),
+			path.Join(testRoot, "certs/invalid/server-cert.pub"),
+			path.Join(testRoot, "certs/invalid-path.key"),
+			path.Join(testRoot, "certs/invalid/server.crt"),
 		},
 	}
 
@@ -57,7 +57,7 @@ func TestHostKeyAndCerts(t *testing.T) {
 	require.Len(t, cfg.hostKeyToCertMap, 1)
 
 	// Check that the entry is pointing to the server's public key
-	data, err := os.ReadFile(path.Join(testhelper.TestRoot, "certs/valid/server.pub"))
+	data, err := os.ReadFile(path.Join(testRoot, "certs/valid/server.pub"))
 	require.NoError(t, err)
 
 	publicKey, _, _, _, err := ssh.ParseAuthorizedKey(data)
@@ -77,7 +77,7 @@ func TestFailedAuthorizedKeysClient(t *testing.T) {
 }
 
 func TestUserKeyHandling(t *testing.T) {
-	testhelper.PrepareTestRootDir(t)
+	testRoot := testhelper.PrepareTestRootDir(t)
 
 	validRSAKey := rsaPublicKey(t)
 
@@ -101,9 +101,9 @@ func TestUserKeyHandling(t *testing.T) {
 		Listen:                  "127.0.0.1",
 		ConcurrentSessionsLimit: 1,
 		HostKeyFiles: []string{
-			path.Join(testhelper.TestRoot, "certs/valid/server.key"),
-			path.Join(testhelper.TestRoot, "certs/invalid-path.key"),
-			path.Join(testhelper.TestRoot, "certs/invalid/server.crt"),
+			path.Join(testRoot, "certs/valid/server.key"),
+			path.Join(testRoot, "certs/invalid-path.key"),
+			path.Join(testRoot, "certs/invalid/server.crt"),
 		},
 	}
 
@@ -154,7 +154,7 @@ func TestUserKeyHandling(t *testing.T) {
 }
 
 func TestUserCertificateHandling(t *testing.T) {
-	testhelper.PrepareTestRootDir(t)
+	testRoot := testhelper.PrepareTestRootDir(t)
 
 	validUserCert := userCert(t, ssh.UserCert, time.Now().Add(time.Hour))
 
@@ -178,9 +178,9 @@ func TestUserCertificateHandling(t *testing.T) {
 		Listen:                  "127.0.0.1",
 		ConcurrentSessionsLimit: 1,
 		HostKeyFiles: []string{
-			path.Join(testhelper.TestRoot, "certs/valid/server.key"),
-			path.Join(testhelper.TestRoot, "certs/invalid-path.key"),
-			path.Join(testhelper.TestRoot, "certs/invalid/server.crt"),
+			path.Join(testRoot, "certs/valid/server.key"),
+			path.Join(testRoot, "certs/invalid-path.key"),
+			path.Join(testRoot, "certs/invalid/server.crt"),
 		},
 	}
 

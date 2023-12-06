@@ -11,10 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	TestRoot, _ = os.MkdirTemp("", "test-gitlab-shell")
-)
-
 func TempEnv(env map[string]string) func() {
 	var original = make(map[string]string)
 	for key, value := range env {
@@ -29,24 +25,25 @@ func TempEnv(env map[string]string) func() {
 	}
 }
 
-func PrepareTestRootDir(t *testing.T) {
+func PrepareTestRootDir(t *testing.T) string {
 	t.Helper()
 
-	require.NoError(t, os.MkdirAll(TestRoot, 0700))
+	testRoot := t.TempDir()
+	t.Cleanup(func() { require.NoError(t, os.RemoveAll(testRoot)) })
 
-	t.Cleanup(func() { require.NoError(t, os.RemoveAll(TestRoot)) })
-
-	require.NoError(t, copyTestData())
+	require.NoError(t, copyTestData(testRoot))
 
 	oldWd, err := os.Getwd()
 	require.NoError(t, err)
 
 	t.Cleanup(func() { os.Chdir(oldWd) })
 
-	require.NoError(t, os.Chdir(TestRoot))
+	require.NoError(t, os.Chdir(testRoot))
+
+	return testRoot
 }
 
-func copyTestData() error {
+func copyTestData(testRoot string) error {
 	testDataDir, err := getTestDataDir()
 	if err != nil {
 		return err
@@ -54,7 +51,7 @@ func copyTestData() error {
 
 	testdata := path.Join(testDataDir, "testroot")
 
-	return copy.Copy(testdata, TestRoot)
+	return copy.Copy(testdata, testRoot)
 }
 
 func getTestDataDir() (string, error) {

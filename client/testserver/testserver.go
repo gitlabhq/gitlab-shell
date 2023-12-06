@@ -95,8 +95,10 @@ func StartRetryHttpServer(t *testing.T, handlers []TestRequestHandler) string {
 func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath string) string {
 	t.Helper()
 
-	crt := path.Join(testhelper.TestRoot, "certs/valid/server.crt")
-	key := path.Join(testhelper.TestRoot, "certs/valid/server.key")
+	testRoot := testhelper.PrepareTestRootDir(t)
+
+	crt := path.Join(testRoot, "certs/valid/server.crt")
+	key := path.Join(testRoot, "certs/valid/server.key")
 
 	server := httptest.NewUnstartedServer(buildHandler(handlers))
 	cer, err := tls.LoadX509KeyPair(crt, key)

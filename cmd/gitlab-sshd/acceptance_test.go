@@ -141,9 +141,9 @@ func startGitOverHTTPServer(t *testing.T) string {
 }
 
 func buildAllowedResponse(t *testing.T, filename string) string {
-	testhelper.PrepareTestRootDir(t)
+	testRoot := testhelper.PrepareTestRootDir(t)
 
-	body, err := os.ReadFile(filepath.Join(testhelper.TestRoot, filename))
+	body, err := os.ReadFile(filepath.Join(testRoot, filename))
 	require.NoError(t, err)
 
 	response := strings.Replace(string(body), "GITALY_REPOSITORY", testRepo, 1)
