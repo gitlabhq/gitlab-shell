@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
-	"io"
 )
 
 const pullService = "git-upload-pack"
@@ -40,7 +41,7 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 		return err
 	}
 
-	return c.requestUploadPack(ctx, client)
+	return c.requestUploadPack(ctx, client, data.GeoProxyFetchDirectToPrimaryWithOptions)
 }
 
 func (c *PullCommand) requestInfoRefs(ctx context.Context, client *git.Client) error {
@@ -63,9 +64,9 @@ func (c *PullCommand) requestInfoRefs(ctx context.Context, client *git.Client) e
 	return err
 }
 
-func (c *PullCommand) requestUploadPack(ctx context.Context, client *git.Client) error {
+func (c *PullCommand) requestUploadPack(ctx context.Context, client *git.Client, geoProxyFetchDirectToPrimaryWithOptions bool) error {
 	pipeReader, pipeWriter := io.Pipe()
-	go c.readFromStdin(pipeWriter)
+	go c.readFromStdin(pipeWriter, geoProxyFetchDirectToPrimaryWithOptions)
 
 	response, err := client.UploadPack(ctx, pipeReader)
 	if err != nil {
@@ -78,19 +79,23 @@ func (c *PullCommand) requestUploadPack(ctx context.Context, client *git.Client)
 	return err
 }
 
-func (c *PullCommand) readFromStdin(pw *io.PipeWriter) {
+func (c *PullCommand) readFromStdin(pw *io.PipeWriter, geoProxyFetchDirectToPrimaryWithOptions bool) {
 	scanner := pktline.NewScanner(c.ReadWriter.In)
 
 	for scanner.Scan() {
 		line := scanner.Bytes()
 
-		if pktline.IsDone(line) {
-			pw.Write(line)
+		pw.Write(line)
 
+		if pktline.IsDone(line) {
 			break
 		}
 
-		pw.Write(line)
+		if pktline.IsFlush(line) && geoProxyFetchDirectToPrimaryWithOptions {
+			pw.Write(pktline.PktDone())
+
+			break
+		}
 	}
 
 	pw.Close()

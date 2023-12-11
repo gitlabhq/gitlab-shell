@@ -18,13 +18,12 @@ import (
 
 var cloneResponse = `0090want 11d731b83788cd556abea7b465c6bee52d89923c multi_ack_detailed side-band-64k thin-pack ofs-delta deepen-since deepen-not agent=git/2.41.0
 0032want e56497bb5f03a90a51293fc6d516788730953899
-00000009done
 `
 
 func TestPullExecute(t *testing.T) {
 	url := setupPull(t, http.StatusOK)
 	output := &bytes.Buffer{}
-	input := strings.NewReader(cloneResponse)
+	input := strings.NewReader(cloneResponse + "00000009done\n")
 
 	cmd := &PullCommand{
 		Config:     &config.Config{GitlabUrl: url},
@@ -32,6 +31,25 @@ func TestPullExecute(t *testing.T) {
 		Response: &accessverifier.Response{
 			Payload: accessverifier.CustomPayload{
 				Data: accessverifier.CustomPayloadData{PrimaryRepo: url},
+			},
+		},
+	}
+
+	require.NoError(t, cmd.Execute(context.Background()))
+	require.Equal(t, infoRefsWithoutPrefix, output.String())
+}
+
+func TestPullExecuteWithDepth(t *testing.T) {
+	url := setupPull(t, http.StatusOK)
+	output := &bytes.Buffer{}
+	input := strings.NewReader(cloneResponse + "0000\n")
+
+	cmd := &PullCommand{
+		Config:     &config.Config{GitlabUrl: url},
+		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
+		Response: &accessverifier.Response{
+			Payload: accessverifier.CustomPayload{
+				Data: accessverifier.CustomPayloadData{PrimaryRepo: url, GeoProxyFetchDirectToPrimaryWithOptions: true},
 			},
 		},
 	}
@@ -94,7 +112,7 @@ func TestPullExecuteWithFailedInfoRefs(t *testing.T) {
 func TestExecuteWithFailedUploadPack(t *testing.T) {
 	url := setupPull(t, http.StatusForbidden)
 	output := &bytes.Buffer{}
-	input := strings.NewReader(cloneResponse)
+	input := strings.NewReader(cloneResponse + "00000009done\n")
 
 	cmd := &PullCommand{
 		Config:     &config.Config{GitlabUrl: url},
