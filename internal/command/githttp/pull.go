@@ -85,19 +85,17 @@ func (c *PullCommand) readFromStdin(pw *io.PipeWriter, geoProxyFetchDirectToPrim
 	for scanner.Scan() {
 		line := scanner.Bytes()
 
-		if pktline.IsDone(line) {
-			pw.Write(line)
+		pw.Write(line)
 
+		if pktline.IsDone(line) {
 			break
 		}
 
 		if pktline.IsFlush(line) && geoProxyFetchDirectToPrimaryWithOptions {
-			pw.Write([]byte(scanner.Text() + "0009done\n"))
+			pw.Write(pktline.PktDone())
 
 			break
 		}
-
-		pw.Write(line)
 	}
 
 	pw.Close()
