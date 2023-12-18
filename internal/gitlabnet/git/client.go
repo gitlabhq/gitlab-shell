@@ -56,8 +56,22 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 	}
 
 	response, err := httpClient.Do(request)
-	if err != nil || response.StatusCode >= 400 {
-		return nil, &client.ApiError{repoUnavailableErrMsg}
+	if err != nil {
+		return nil, &client.ApiError{Msg: repoUnavailableErrMsg}
+	}
+
+	if response.StatusCode >= 400 {
+		defer response.Body.Close()
+		body, err := io.ReadAll(response.Body)
+		if err != nil {
+			return nil, &client.ApiError{Msg: repoUnavailableErrMsg}
+		}
+
+		if len(body) > 0 {
+			return nil, &client.ApiError{Msg: string(body)}
+		}
+
+		return nil, &client.ApiError{Msg: repoUnavailableErrMsg}
 	}
 
 	return response, nil

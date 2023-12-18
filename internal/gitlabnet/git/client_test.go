@@ -65,8 +65,45 @@ func TestUploadPack(t *testing.T) {
 }
 
 func TestFailedHTTPRequest(t *testing.T) {
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/info/refs",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("You are not allowed to upload code."))
+			},
+		},
+	}
+
 	client := &Client{
-		Url:     testserver.StartHttpServer(t, []testserver.TestRequestHandler{}),
+		Url:     testserver.StartHttpServer(t, requests),
+		Headers: customHeaders,
+	}
+
+	response, err := client.InfoRefs(context.Background(), "git-receive-pack")
+	require.Nil(t, response)
+	require.Error(t, err)
+
+	var apiErr *httpclient.ApiError
+	require.ErrorAs(t, err, &apiErr)
+	require.EqualError(t, err, "You are not allowed to upload code.")
+}
+
+func TestFailedErrorReadRequest(t *testing.T) {
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/info/refs",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				// Simulate a read error by saying Content-Length is larger than actual content.
+				w.Header().Set("Content-Length", "1")
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte("test"))
+			},
+		},
+	}
+
+	client := &Client{
+		Url:     testserver.StartHttpServer(t, requests),
 		Headers: customHeaders,
 	}
 
