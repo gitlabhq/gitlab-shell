@@ -5,7 +5,7 @@ OS := $(shell uname | tr A-Z a-z)
 GO_SOURCES := $(shell git ls-files \*.go)
 VERSION_STRING := $(shell git describe --match v* 2>/dev/null || awk '$$0="v"$$0' VERSION 2>/dev/null || echo unknown)
 BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
-BUILD_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver gssapi
+GO_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver gssapi
 
 ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' | sed -e 's/aarch64/arm64/')
 
@@ -27,7 +27,7 @@ ifeq (${FIPS_MODE}, 1)
         GOBUILD_ENV=GOEXPERIMENT=boringcrypto
     endif
 
-    BUILD_TAGS += fips
+    GO_TAGS += fips
     # If the golang-fips compiler is built with CGO_ENABLED=0, this needs to be
     # explicitly switched on.
     export CGO_ENABLED=1
@@ -40,7 +40,7 @@ ifeq (${OS}, darwin) # Mac OS
     export CGO_CFLAGS="-I$(BREW_PREFIX)/opt/heimdal/include"
 endif
 
-GOBUILD_FLAGS := -ldflags "-X main.Version=$(VERSION_STRING) -X main.BuildTime=$(BUILD_TIME)" -tags "$(BUILD_TAGS)" -mod=mod
+GOBUILD_FLAGS := -ldflags "-X main.Version=$(VERSION_STRING) -X main.BuildTime=$(BUILD_TIME)" -tags "$(GO_TAGS)" -mod=mod
 
 PREFIX ?= /usr/local
 
@@ -65,10 +65,10 @@ test_ruby:
 	bundle exec rspec --color --format d spec
 
 test_golang:
-	go test -cover -coverprofile=cover.out -count 1 ./...
+	go test -cover -coverprofile=cover.out -count 1 -tags "$(GO_TAGS)" ./...
 
 test_golang_fancy: ${GOTESTSUM_FILE}
-	@./${GOTESTSUM_FILE} --junitfile ./cover.xml --format pkgname -- -coverprofile=./cover.out -covermode=atomic -count 1 ./...
+	@./${GOTESTSUM_FILE} --junitfile ./cover.xml --format pkgname -- -coverprofile=./cover.out -covermode=atomic -count 1 -tags "$(GO_TAGS)" ./...
 
 ${GOTESTSUM_FILE}:
 	mkdir -p $(shell dirname ${GOTESTSUM_FILE})

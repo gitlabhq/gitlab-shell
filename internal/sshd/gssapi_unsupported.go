@@ -29,6 +29,7 @@ func (*OSGSSAPIServer) AcceptSecContext([]byte) ([]byte, string, bool, error) {
 func (*OSGSSAPIServer) VerifyMIC([]byte, []byte) error {
 	return errors.New("gssapi is unsupported")
 }
+
 func (*OSGSSAPIServer) DeleteSecContext() error {
 	return errors.New("gssapi is unsupported")
 }
