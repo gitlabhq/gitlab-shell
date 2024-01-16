@@ -1,3 +1,4 @@
+// Package twofactorrecover defines logic for 2FA codes recovery
 package twofactorrecover
 
 import (
@@ -16,12 +17,14 @@ import (
 
 const readerLimit = 1024
 
+// Command provides arguments to configure 2FA
 type Command struct {
 	Config     *config.Config
 	Args       *commandargs.Shell
 	ReadWriter *readwriter.ReadWriter
 }
 
+// Execute generates new recovery codes
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	ctxlog := log.ContextLogger(ctx)
 	ctxlog.Debug("twofactorrecover: execute: Waiting for user input")
