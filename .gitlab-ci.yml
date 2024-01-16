@@ -154,13 +154,13 @@ tests_without_cgo:
   script:
     - make verify test_fancy
 
-tests_without_fips:
+tests_with_fips:
   extends:
     - .cached-job
     - .go-matrix-job
     - .test-job
   variables:
-    FIPS_MODE: 0
+    FIPS_MODE: 1
     CGO_ENABLED: 0 # this should be toggled on in the Makefile so this is disabled in order to test that
   script:
     - make verify test_fancy
