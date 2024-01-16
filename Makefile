@@ -7,7 +7,7 @@ VERSION_STRING := $(shell git describe --match v* 2>/dev/null || awk '$$0="v"$$0
 BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
 GO_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver
 
-ifeq (${CGO_ENABLED}, 1)
+ifeq !(${CGO_ENABLED}, 0)
 	GO_TAGS += gssapi
 endif
 
