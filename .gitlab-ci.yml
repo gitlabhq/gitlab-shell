@@ -149,16 +149,22 @@ tests_without_cgo:
     - .cached-job
     - .go-matrix-job
     - .test-job
-  script:
-    - CGO_ENABLED=0 make verify test_fancy
+  before_script:
+    - CGO_ENABLED=0 make build
+    - cp config.yml.example config.yml
+    - go version
+    - which go
 
 tests_without_fips:
   extends:
     - .cached-job
     - .go-matrix-job
     - .test-job
-  script:
-    - FIPS_MODE=0 make verify test_fancy
+  before_script:
+    - FIPS_MODE=0 make build
+    - cp config.yml.example config.yml
+    - go version
+    - which go
 
 race:
   extends:
