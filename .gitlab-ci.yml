@@ -145,22 +145,22 @@ tests:
       junit: cover.xml
 
 tests_without_cgo:
-  extends: .tests
+  extends: .test-job
   variables:
     GO_VERSION: "golang_1.19"
     RUBY_VERSION: "ruby-3.0"
   script:
-   - CGO_ENABLED=0 make build
-   - go tool nm bin/gitlab-sshd | grep -c gssapi._cgo_ ; [ "$?" -eq 1 ]
+    - CGO_ENABLED=0 make build
+    - go tool nm bin/gitlab-sshd | grep -c gssapi._cgo_ ; [ "$?" -eq 1 ]
 
 tests_without_fips:
-  extends: .tests
+  extends: .test-job
   variables:
     GO_VERSION: "golang_1.19"
     RUBY_VERSION: "ruby-3.0"
   script:
-   - FIPS_MODE=0 make build
-   - go tool nm bin/gitlab-sshd | grep -c gssapi._cgo_ ; [ "$?" -eq 1 ]
+    - FIPS_MODE=0 make build
+    - go tool nm bin/gitlab-sshd | grep -c gssapi._cgo_ ; [ "$?" -eq 1 ]
 
 race:
   extends:
