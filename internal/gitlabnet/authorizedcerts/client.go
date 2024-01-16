@@ -1,3 +1,4 @@
+// Package authorizedcerts implements functions for authorizing users with ssh certificates
 package authorizedcerts
 
 import (
@@ -11,30 +12,34 @@ import (
 )
 
 const (
-	AuthorizedCertsPath = "/authorized_certs"
+	authorizedCertsPath = "/authorized_certs"
 )
 
+// Client wraps a gitlab client and its associated config
 type Client struct {
 	config *config.Config
 	client *client.GitlabNetClient
 }
 
+// Response contains the json response from authorized_certs
 type Response struct {
 	Username  string `json:"username"`
 	Namespace string `json:"namespace"`
 }
 
+// NewClient instantiates a Client with config
 func NewClient(config *config.Config) (*Client, error) {
 	client, err := gitlabnet.GetClient(config)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating http client: %v", err)
+		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
 	return &Client{config: config, client: client}, nil
 }
 
-func (c *Client) GetByKey(ctx context.Context, userId, fingerprint string) (*Response, error) {
-	path, err := pathWithKey(userId, fingerprint)
+// GetByKey makes a request to authorized_certs for the namespace configured with a cert that matches fingerprint
+func (c *Client) GetByKey(ctx context.Context, userID, fingerprint string) (*Response, error) {
+	path, err := pathWithKey(userID, fingerprint)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +48,9 @@ func (c *Client) GetByKey(ctx context.Context, userId, fingerprint string) (*Res
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() {
+		_ = response.Body.Close()
+	}()
 
 	parsedResponse := &Response{}
 	if err := gitlabnet.ParseJSON(response, parsedResponse); err != nil {
@@ -53,15 +60,15 @@ func (c *Client) GetByKey(ctx context.Context, userId, fingerprint string) (*Res
 	return parsedResponse, nil
 }
 
-func pathWithKey(userId, fingerprint string) (string, error) {
-	u, err := url.Parse(AuthorizedCertsPath)
+func pathWithKey(userID, fingerprint string) (string, error) {
+	u, err := url.Parse(authorizedCertsPath)
 	if err != nil {
 		return "", err
 	}
 
 	params := u.Query()
 	params.Set("key", fingerprint)
-	params.Set("user_identifier", userId)
+	params.Set("user_identifier", userID)
 	u.RawQuery = params.Encode()
 
 	return u.String(), nil
