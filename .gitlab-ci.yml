@@ -161,7 +161,7 @@ tests_with_fips:
     - .test-job
   variables:
     FIPS_MODE: 1
-    CGO_ENABLED: 1 # this should be toggled on in the Makefile so this is disabled in order to test that
+    CGO_ENABLED: 1
   script:
     - make verify test_fancy
 
