@@ -150,8 +150,7 @@ tests_without_cgo:
     - .go-matrix-job
     - .test-job
   script:
-    - CGO_ENABLED=0 make build
-    - go tool nm bin/gitlab-sshd | grep -c gssapi._cgo_ ; [ "$?" -eq 1 ]
+    - CGO_ENABLED=0 make verify test_fancy
 
 tests_without_fips:
   extends:
@@ -159,8 +158,7 @@ tests_without_fips:
     - .go-matrix-job
     - .test-job
   script:
-    - FIPS_MODE=0 make build
-    - go tool nm bin/gitlab-sshd | grep -c gssapi._cgo_ ; [ "$?" -eq 1 ]
+    - FIPS_MODE=0 make verify test_fancy
 
 race:
   extends:
