@@ -145,19 +145,19 @@ tests:
       junit: cover.xml
 
 tests_without_cgo:
-  extends: .test-job
-  variables:
-    GO_VERSION: "golang_1.19"
-    RUBY_VERSION: "ruby-3.0"
+  extends:
+    - .cached-job
+    - .go-matrix-job
+    - .test-job
   script:
     - CGO_ENABLED=0 make build
     - go tool nm bin/gitlab-sshd | grep -c gssapi._cgo_ ; [ "$?" -eq 1 ]
 
 tests_without_fips:
-  extends: .test-job
-  variables:
-    GO_VERSION: "golang_1.19"
-    RUBY_VERSION: "ruby-3.0"
+  extends:
+    - .cached-job
+    - .go-matrix-job
+    - .test-job
   script:
     - FIPS_MODE=0 make build
     - go tool nm bin/gitlab-sshd | grep -c gssapi._cgo_ ; [ "$?" -eq 1 ]
