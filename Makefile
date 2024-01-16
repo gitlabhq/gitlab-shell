@@ -7,10 +7,6 @@ VERSION_STRING := $(shell git describe --match v* 2>/dev/null || awk '$$0="v"$$0
 BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
 GO_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver
 
-ifneq (${CGO_ENABLED}, 0)
-	GO_TAGS += gssapi
-endif
-
 ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' | sed -e 's/aarch64/arm64/')
 
 GOTESTSUM_VERSION := 1.10.0
@@ -35,6 +31,10 @@ ifeq (${FIPS_MODE}, 1)
     # If the golang-fips compiler is built with CGO_ENABLED=0, this needs to be
     # explicitly switched on.
     export CGO_ENABLED=1
+endif
+
+ifneq (${CGO_ENABLED}, 0)
+	GO_TAGS += gssapi
 endif
 
 ifeq (${OS}, darwin) # Mac OS
