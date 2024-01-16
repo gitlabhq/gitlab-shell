@@ -154,6 +154,8 @@ tests_without_cgo:
     - cp config.yml.example config.yml
     - go version
     - which go
+  script:
+    - make verify test_fancy
 
 tests_without_fips:
   extends:
@@ -165,6 +167,8 @@ tests_without_fips:
     - cp config.yml.example config.yml
     - go version
     - which go
+  script:
+    - make verify test_fancy
 
 race:
   extends:
