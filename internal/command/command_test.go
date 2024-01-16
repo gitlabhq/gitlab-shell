@@ -30,8 +30,7 @@ func TestSetup(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			resetEnvironment := addAdditionalEnv(tc.additionalEnv)
-			defer resetEnvironment()
+			addAdditionalEnv(t, tc.additionalEnv)
 
 			ctx, finished := Setup("foo", &config.Config{})
 			defer finished()
@@ -54,27 +53,9 @@ func TestSetup(t *testing.T) {
 // addAdditionalEnv will configure additional environment values
 // and return a deferrable function to reset the environment to
 // it's original state after the test
-func addAdditionalEnv(envMap map[string]string) func() {
-	prevValues := map[string]string{}
-	unsetValues := []string{}
+func addAdditionalEnv(t *testing.T, envMap map[string]string) {
 	for k, v := range envMap {
-		value, exists := os.LookupEnv(k)
-		if exists {
-			prevValues[k] = value
-		} else {
-			unsetValues = append(unsetValues, k)
-		}
-		os.Setenv(k, v)
-	}
-
-	return func() {
-		for k, v := range prevValues {
-			os.Setenv(k, v)
-		}
-
-		for _, k := range unsetValues {
-			os.Unsetenv(k)
-		}
+		t.Setenv(k, v)
 	}
 }
 
