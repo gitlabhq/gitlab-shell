@@ -1,6 +1,3 @@
-//go:build boringcrypto
-// +build boringcrypto
-
 package main
 
 import (

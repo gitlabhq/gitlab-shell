@@ -27,7 +27,7 @@ ifeq (${FIPS_MODE}, 1)
         GOBUILD_ENV=GOEXPERIMENT=boringcrypto
     endif
 
-    GO_TAGS += fips
+    GO_TAGS += fips boringcrypto
     # If the golang-fips compiler is built with CGO_ENABLED=0, this needs to be
     # explicitly switched on.
     export CGO_ENABLED=1
