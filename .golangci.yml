@@ -142,6 +142,18 @@ linters-settings:
           - $gostd
           - github.com/stretchr/testify
           - gitlab.com/gitlab-org/gitlab-shell
+          - gitlab.com/gitlab-org/labkit
+          - gitlab.com/gitlab-org/gitaly
+          - github.com/prometheus/client_golang/prometheus
+          - github.com/pires/go-proxyproto
+          - github.com/otiai10/copy
+          - github.com/hashicorp/go-retryablehttp
+          - github.com/golang-jwt/jwt
+          - github.com/mikesmitty/edkey
+          - github.com/sirupsen/logrus
+          - github.com/grpc-ecosystem/go-grpc-prometheus
+          - github.com/mattn/go-shellwords
+
   #   list-type: blacklist
   #   include-go-root: false
   #   packages:
