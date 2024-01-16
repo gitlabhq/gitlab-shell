@@ -149,11 +149,8 @@ tests_without_cgo:
     - .cached-job
     - .go-matrix-job
     - .test-job
-  before_script:
-    - CGO_ENABLED=0 make build
-    - cp config.yml.example config.yml
-    - go version
-    - which go
+  variables:
+    CGO_ENABLED: 0
   script:
     - make verify test_fancy
 
@@ -162,11 +159,9 @@ tests_without_fips:
     - .cached-job
     - .go-matrix-job
     - .test-job
-  before_script:
-    - FIPS_MODE=0 make build
-    - cp config.yml.example config.yml
-    - go version
-    - which go
+  variables:
+    FIPS_MODE: 0
+    CGO_ENABLED: 0 # this should be toggled on in the Makefile so this is disabled in order to test that
   script:
     - make verify test_fancy
 
