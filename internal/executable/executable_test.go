@@ -52,8 +52,7 @@ func TestNewSuccess(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			restoreEnv := testhelper.TempEnv(tc.environment)
-			defer restoreEnv()
+			testhelper.TempEnv(t, tc.environment)
 
 			fake := tc.fakeOs
 			fake.Setup()
@@ -89,8 +88,7 @@ func TestNewFailure(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			restoreEnv := testhelper.TempEnv(tc.environment)
-			defer restoreEnv()
+			testhelper.TempEnv(t, tc.environment)
 
 			fake := tc.fakeOs
 			fake.Setup()
