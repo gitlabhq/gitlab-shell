@@ -1,3 +1,4 @@
+// Package healthcheck implements a HTTP client to request healthcheck endpoint
 package healthcheck
 
 import (
@@ -14,11 +15,13 @@ const (
 	checkPath = "/check"
 )
 
+// Client defines configuration for healthcheck client
 type Client struct {
 	config *config.Config
 	client *client.GitlabNetClient
 }
 
+// Response contains healthcheck endpoint response data
 type Response struct {
 	APIVersion     string `json:"api_version"`
 	GitlabVersion  string `json:"gitlab_version"`
@@ -26,22 +29,26 @@ type Response struct {
 	Redis          bool   `json:"redis"`
 }
 
+// NewClient initializes a client's struct
 func NewClient(config *config.Config) (*Client, error) {
 	client, err := gitlabnet.GetClient(config)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating http client: %v", err)
+		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
 	return &Client{config: config, client: client}, nil
 }
 
-func (c *Client) Check(ctx context.Context) (*Response, error) {
+// Check makes a GET request to healthcheck endpoint
+func (c *Client) Check(ctx context.Context) (response *Response, err error) {
 	resp, err := c.client.Get(ctx, checkPath)
 	if err != nil {
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		err = resp.Body.Close()
+	}()
 
 	return parse(resp)
 }
