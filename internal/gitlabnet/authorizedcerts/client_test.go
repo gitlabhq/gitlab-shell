@@ -21,23 +21,24 @@ func init() {
 		{
 			Path: "/api/v4/internal/authorized_certs",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Query().Get("key") == "key" {
+				switch key := r.URL.Query().Get("key"); key {
+				case "key":
 					body := &Response{
 						Namespace: "group",
 						Username:  r.URL.Query().Get("user_identifier"),
 					}
 					json.NewEncoder(w).Encode(body)
-				} else if r.URL.Query().Get("key") == "broken-message" {
+				case "broken-message":
 					w.WriteHeader(http.StatusForbidden)
 					body := &client.ErrorResponse{
 						Message: "Not allowed!",
 					}
 					json.NewEncoder(w).Encode(body)
-				} else if r.URL.Query().Get("key") == "broken-json" {
+				case "broken-json":
 					w.Write([]byte("{ \"message\": \"broken json!\""))
-				} else if r.URL.Query().Get("key") == "broken-empty" {
+				case "broken-empty":
 					w.WriteHeader(http.StatusForbidden)
-				} else {
+				default:
 					w.WriteHeader(http.StatusNotFound)
 				}
 			},
