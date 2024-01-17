@@ -32,8 +32,7 @@ func TestNewFromEnv(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
-			restoreEnv := testhelper.TempEnv(tc.environment)
-			defer restoreEnv()
+			testhelper.TempEnv(t, tc.environment)
 
 			require.Equal(t, NewFromEnv(), tc.want)
 		})
@@ -41,9 +40,7 @@ func TestNewFromEnv(t *testing.T) {
 }
 
 func TestRemoteAddrFromEnv(t *testing.T) {
-	cleanup, err := testhelper.Setenv(SSHConnectionEnv, "127.0.0.1 0")
-	require.NoError(t, err)
-	defer cleanup()
+	t.Setenv(SSHConnectionEnv, "127.0.0.1 0")
 
 	require.Equal(t, remoteAddrFromEnv(), "127.0.0.1")
 }

@@ -14,7 +14,7 @@ import (
 )
 
 func TestConfigApplyGlobalState(t *testing.T) {
-	t.Cleanup(testhelper.TempEnv(map[string]string{"SSL_CERT_DIR": "unmodified"}))
+	testhelper.TempEnv(t, map[string]string{"SSL_CERT_DIR": "unmodified"})
 
 	config := &Config{SslCertDir: ""}
 	config.ApplyGlobalState()
