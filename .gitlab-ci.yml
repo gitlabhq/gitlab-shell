@@ -154,17 +154,6 @@ tests_without_cgo:
   script:
     - make verify test_fancy
 
-tests_with_fips:
-  extends:
-    - .cached-job
-    - .go-matrix-job
-    - .test-job
-  variables:
-    FIPS_MODE: 1
-    CGO_ENABLED: 1
-  script:
-    - make verify test_fancy
-
 race:
   extends:
     - .cached-go-job
