@@ -144,6 +144,16 @@ tests:
     reports:
       junit: cover.xml
 
+tests_without_cgo:
+  extends:
+    - .cached-job
+    - .go-matrix-job
+    - .test-job
+  variables:
+    CGO_ENABLED: 0
+  script:
+    - make verify test_fancy
+
 race:
   extends:
     - .cached-go-job
