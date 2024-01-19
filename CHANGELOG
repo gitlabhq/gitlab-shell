@@ -1,3 +1,14 @@
+v14.33.0
+
+- Load gssapi lib per server/connection !934
+- Update module google.golang.org/grpc to v1.60.0 !912
+- Expose error messages for failed Git operations !906
+- Update module google.golang.org/protobuf to v1.32.0 !918
+- Ensure build tags are used when testing !921
+- Update module golang.org/x/sync to v0.6.0 !922
+- Update module golang.org/x/crypto to v0.18.0 !923
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.8.0 !932
+
 v14.32.0
 
 - Geo: Add `done` pktline when git clone --depth option is given !905
