@@ -74,8 +74,6 @@ func main() {
 
 	cfg.GitalyClient.InitSidechannelRegistry(ctx)
 
-	sshd.LoadGSSAPILib(&cfg.Server.GSSAPI)
-
 	server, err := sshd.NewServer(cfg)
 	if err != nil {
 		log.WithError(err).Fatal("Failed to start GitLab built-in sshd")

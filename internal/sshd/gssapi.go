@@ -13,10 +13,23 @@ import (
 	"gitlab.com/gitlab-org/labkit/log"
 )
 
-var lib *gssapi.Lib
+func NewGSSAPIServer(c *config.GSSAPIConfig) (*OSGSSAPIServer, error) {
+	lib, err := loadGSSAPILib(c)
+	if err != nil {
+		return nil, err
+	}
 
-func LoadGSSAPILib(config *config.GSSAPIConfig) error {
+	s := &OSGSSAPIServer{
+		ServicePrincipalName: c.ServicePrincipalName,
+		lib:                  lib,
+	}
+
+	return s, nil
+}
+
+func loadGSSAPILib(config *config.GSSAPIConfig) (*gssapi.Lib, error) {
 	var err error
+	var lib *gssapi.Lib
 
 	if config.Enabled {
 		options := &gssapi.Options{
@@ -35,7 +48,7 @@ func LoadGSSAPILib(config *config.GSSAPIConfig) error {
 		}
 	}
 
-	return err
+	return lib, err
 }
 
 type OSGSSAPIServer struct {
@@ -43,17 +56,18 @@ type OSGSSAPIServer struct {
 	ServicePrincipalName string
 
 	mutex     sync.RWMutex
+	lib       *gssapi.Lib
 	contextId *gssapi.CtxId
 }
 
-func (_ *OSGSSAPIServer) str2name(str string) (*gssapi.Name, error) {
-	strBuffer, err := lib.MakeBufferString(str)
+func (server *OSGSSAPIServer) str2name(str string) (*gssapi.Name, error) {
+	strBuffer, err := server.lib.MakeBufferString(str)
 	if err != nil {
 		return nil, err
 	}
 	defer strBuffer.Release()
 
-	return strBuffer.Name(lib.GSS_C_NO_OID)
+	return strBuffer.Name(server.lib.GSS_C_NO_OID)
 }
 
 func (server *OSGSSAPIServer) AcceptSecContext(
@@ -67,13 +81,13 @@ func (server *OSGSSAPIServer) AcceptSecContext(
 	server.mutex.Lock()
 	defer server.mutex.Unlock()
 
-	tokenBuffer, err := lib.MakeBufferBytes(token)
+	tokenBuffer, err := server.lib.MakeBufferBytes(token)
 	if err != nil {
 		return
 	}
 	defer tokenBuffer.Release()
 
-	var spn *gssapi.CredId = lib.GSS_C_NO_CREDENTIAL
+	var spn *gssapi.CredId = server.lib.GSS_C_NO_CREDENTIAL
 	if server.ServicePrincipalName != "" {
 		var name *gssapi.Name
 		name, err = server.str2name(server.ServicePrincipalName)
@@ -83,7 +97,7 @@ func (server *OSGSSAPIServer) AcceptSecContext(
 		defer name.Release()
 
 		var actualMech *gssapi.OIDSet
-		spn, actualMech, _, err = lib.AcquireCred(name, 0, lib.GSS_C_NO_OID_SET, gssapi.GSS_C_ACCEPT)
+		spn, actualMech, _, err = server.lib.AcquireCred(name, 0, server.lib.GSS_C_NO_OID_SET, gssapi.GSS_C_ACCEPT)
 		if err != nil {
 			return
 		}
@@ -91,7 +105,7 @@ func (server *OSGSSAPIServer) AcceptSecContext(
 		defer actualMech.Release()
 	}
 
-	ctxOut, srcNameName, _, outputTokenBuffer, _, _, _, err := lib.AcceptSecContext(
+	ctxOut, srcNameName, _, outputTokenBuffer, _, _, _, err := server.lib.AcceptSecContext(
 		server.contextId,
 		spn,
 		tokenBuffer,
@@ -123,12 +137,12 @@ func (server *OSGSSAPIServer) VerifyMIC(
 		return fmt.Errorf("gssapi: uninitialized contextId")
 	}
 
-	micFieldBuffer, err := lib.MakeBufferBytes(micField)
+	micFieldBuffer, err := server.lib.MakeBufferBytes(micField)
 	if err != nil {
 		return err
 	}
 	defer micFieldBuffer.Release()
-	micTokenBuffer, err := lib.MakeBufferBytes(micToken)
+	micTokenBuffer, err := server.lib.MakeBufferBytes(micToken)
 	if err != nil {
 		return err
 	}
@@ -149,7 +163,7 @@ func (server *OSGSSAPIServer) DeleteSecContext() error {
 
 	err := server.contextId.DeleteSecContext()
 	if err == nil {
-		server.contextId = nil
+		server.contextId = server.lib.GSS_C_NO_CONTEXT
 	}
 	return err
 }
