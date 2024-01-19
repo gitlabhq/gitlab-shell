@@ -183,13 +183,13 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": remoteAddr})
 
 	// Prevent a panic in a single connection from taking out the whole server
-	defer func() {
-		if err := recover(); err != nil {
-			ctxlog.WithField("recovered_error", err).Error("panic handling session")
+	// defer func() {
+	// 	if err := recover(); err != nil {
+	// 		ctxlog.WithField("recovered_error1", err).Error("panic handling session")
 
-			metrics.SliSshdSessionsErrorsTotal.Inc()
-		}
-	}()
+	// 		metrics.SliSshdSessionsErrorsTotal.Inc()
+	// 	}
+	// }()
 
 	started := time.Now()
 	conn := newConnection(s.Config, nconn)

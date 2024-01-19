@@ -1,8 +1,11 @@
 module gitlab.com/gitlab-org/gitlab-shell/v14
 
-go 1.20
+go 1.21.3
+
+toolchain go1.21.6
 
 require (
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/go-retryablehttp v0.7.5
@@ -40,7 +43,6 @@ require (
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/client9/reopen v1.0.0 // indirect
-	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -99,3 +101,5 @@ require (
 )
 
 exclude github.com/prometheus/client_golang v1.12.1
+
+replace github.com/openshift/gssapi => /Users/ash/src/gitlab/go-gssapi

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/openshift/gssapi"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
@@ -49,35 +50,29 @@ type OSGSSAPIServer struct {
 func (_ *OSGSSAPIServer) str2name(str string) (*gssapi.Name, error) {
 	strBuffer, err := lib.MakeBufferString(str)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("3: %v", err)
 	}
 	defer strBuffer.Release()
 
 	return strBuffer.Name(lib.GSS_C_NO_OID)
 }
 
-func (server *OSGSSAPIServer) AcceptSecContext(
-	token []byte,
-) (
-	outputToken []byte,
-	srcName string,
-	needContinue bool,
-	err error,
-) {
-	server.mutex.Lock()
-	defer server.mutex.Unlock()
-
+func (server *OSGSSAPIServer) AcceptSecContext(token []byte) (outputToken []byte, srcName string, needContinue bool, err error) {
 	tokenBuffer, err := lib.MakeBufferBytes(token)
 	if err != nil {
+		spew.Dump("3")
 		return
 	}
 	defer tokenBuffer.Release()
 
 	var spn *gssapi.CredId = lib.GSS_C_NO_CREDENTIAL
+
 	if server.ServicePrincipalName != "" {
 		var name *gssapi.Name
+
 		name, err = server.str2name(server.ServicePrincipalName)
 		if err != nil {
+			spew.Dump("4")
 			return
 		}
 		defer name.Release()
@@ -85,8 +80,10 @@ func (server *OSGSSAPIServer) AcceptSecContext(
 		var actualMech *gssapi.OIDSet
 		spn, actualMech, _, err = lib.AcquireCred(name, 0, lib.GSS_C_NO_OID_SET, gssapi.GSS_C_ACCEPT)
 		if err != nil {
+			spew.Dump("5")
 			return
 		}
+
 		defer spn.Release()
 		defer actualMech.Release()
 	}
@@ -97,12 +94,16 @@ func (server *OSGSSAPIServer) AcceptSecContext(
 		tokenBuffer,
 		nil,
 	)
+
 	if err == gssapi.ErrContinueNeeded {
 		needContinue = true
 		err = nil
 	} else if err != nil {
+		spew.Dump("6")
+		spew.Dump(err)
 		return
 	}
+
 	defer outputTokenBuffer.Release()
 	defer srcNameName.Release()
 
@@ -112,44 +113,37 @@ func (server *OSGSSAPIServer) AcceptSecContext(
 	return outputToken, srcNameName.String(), needContinue, err
 }
 
-func (server *OSGSSAPIServer) VerifyMIC(
-	micField []byte,
-	micToken []byte,
-) error {
-	server.mutex.Lock()
-	defer server.mutex.Unlock()
-
+func (server *OSGSSAPIServer) VerifyMIC(micField []byte, micToken []byte) error {
 	if server.contextId == nil {
 		return fmt.Errorf("gssapi: uninitialized contextId")
 	}
 
 	micFieldBuffer, err := lib.MakeBufferBytes(micField)
 	if err != nil {
-		return err
+		return fmt.Errorf("2: %v", err)
 	}
 	defer micFieldBuffer.Release()
+
 	micTokenBuffer, err := lib.MakeBufferBytes(micToken)
 	if err != nil {
-		return err
+		return fmt.Errorf("1: %v", err)
 	}
 	defer micTokenBuffer.Release()
 
 	_, err = server.contextId.VerifyMIC(micFieldBuffer, micTokenBuffer)
-	return err
 
+	return err
 }
 
 func (server *OSGSSAPIServer) DeleteSecContext() error {
-	server.mutex.Lock()
-	defer server.mutex.Unlock()
-
 	if server.contextId == nil {
-		return nil
+		return fmt.Errorf("gssapi: uninitialized contextId")
 	}
 
 	err := server.contextId.DeleteSecContext()
 	if err == nil {
 		server.contextId = nil
 	}
+
 	return err
 }

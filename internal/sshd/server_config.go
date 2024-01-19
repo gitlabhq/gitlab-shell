@@ -210,6 +210,7 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 
 func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
 	var gssapiWithMICConfig *ssh.GSSAPIWithMICConfig
+
 	if s.cfg.Server.GSSAPI.Enabled {
 		gssapiWithMICConfig = &ssh.GSSAPIWithMICConfig{
 			AllowLogin: func(conn ssh.ConnMetadata, srcName string) (*ssh.Permissions, error) {
@@ -244,6 +245,7 @@ func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
 
 			return s.handleUserKey(ctx, conn.User(), key)
 		},
+
 		GSSAPIWithMICConfig: gssapiWithMICConfig,
 		ServerVersion:       "SSH-2.0-GitLab-SSHD",
 	}
