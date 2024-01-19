@@ -6,16 +6,14 @@ import (
 	"errors"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-
-	"gitlab.com/gitlab-org/labkit/log"
 )
 
-func LoadGSSAPILib(c *config.GSSAPIConfig) error {
-	if c.Enabled {
-		log.New().Error("gssapi-with-mic disabled, built without CGO")
-		c.Enabled = false
+func NewGSSAPIServer(c *config.GSSAPIConfig) (*OSGSSAPIServer, error) {
+	s := &OSGSSAPIServer{
+		ServicePrincipalName: c.ServicePrincipalName,
 	}
-	return nil
+
+	return s, nil
 }
 
 type OSGSSAPIServer struct {

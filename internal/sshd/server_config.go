@@ -211,22 +211,24 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
 	var gssapiWithMICConfig *ssh.GSSAPIWithMICConfig
 	if s.cfg.Server.GSSAPI.Enabled {
-		gssapiWithMICConfig = &ssh.GSSAPIWithMICConfig{
-			AllowLogin: func(conn ssh.ConnMetadata, srcName string) (*ssh.Permissions, error) {
-				if conn.User() != s.cfg.User {
-					return nil, fmt.Errorf("unknown user")
-				}
+		gssApiServer, _ := NewGSSAPIServer(&s.cfg.Server.GSSAPI)
 
-				return &ssh.Permissions{
-					// Record the Kerberos principal used for authentication.
-					Extensions: map[string]string{
-						"krb5principal": srcName,
-					},
-				}, nil
-			},
-			Server: &OSGSSAPIServer{
-				ServicePrincipalName: s.cfg.Server.GSSAPI.ServicePrincipalName,
-			},
+		if gssApiServer != nil {
+			gssapiWithMICConfig = &ssh.GSSAPIWithMICConfig{
+				AllowLogin: func(conn ssh.ConnMetadata, srcName string) (*ssh.Permissions, error) {
+					if conn.User() != s.cfg.User {
+						return nil, fmt.Errorf("unknown user")
+					}
+
+					return &ssh.Permissions{
+						// Record the Kerberos principal used for authentication.
+						Extensions: map[string]string{
+							"krb5principal": srcName,
+						},
+					}, nil
+				},
+				Server: gssApiServer,
+			}
 		}
 	}
 
