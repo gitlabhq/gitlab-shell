@@ -115,3 +115,7 @@ sshd:
     keytab: ""
     # The Kerberos service name to be used by sshd. Defaults to "", accepts any service name in keytab file.
     service_principal_name: ""
+
+lfs:
+  # https://gitlab.com/groups/gitlab-org/-/epics/11872, disabled by default.
+  pure_ssh_protocol: false

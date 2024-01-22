@@ -59,6 +59,10 @@ type HttpSettingsConfig struct {
 	CaPath             string `yaml:"ca_path"`
 }
 
+type LFSConfig struct {
+	PureSSHProtocal bool `yaml:"pure_ssh_protocol"`
+}
+
 type Config struct {
 	User                  string `yaml:"user,omitempty"`
 	RootDir               string
@@ -74,6 +78,7 @@ type Config struct {
 	SslCertDir     string             `yaml:"ssl_cert_dir"`
 	HttpSettings   HttpSettingsConfig `yaml:"http_settings"`
 	Server         ServerConfig       `yaml:"sshd"`
+	LFSConfig      LFSConfig          `yaml:"lfs"`
 
 	httpClient     *client.HttpClient
 	httpClientErr  error
