@@ -15,7 +15,7 @@ type WrappedLoggerForGitLFSTransfer struct {
 
 // NewWrappedLoggerForGitLFSTransfer returns a new WrappedLoggerForGitLFSTransfer
 // passing through context.Context
-func NewWrappedLoggerForGitLFSTransfer(ctx context.Context) *GitlabLogger {
+func NewWrappedLoggerForGitLFSTransfer(ctx context.Context) *WrappedLoggerForGitLFSTransfer {
 	return &WrappedLoggerForGitLFSTransfer{ctx: ctx}
 }
 

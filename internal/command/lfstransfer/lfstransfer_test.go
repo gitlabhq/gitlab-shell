@@ -260,7 +260,7 @@ func TestLfsTransferBatchDownload(t *testing.T) {
 	require.Equal(t, "status 405", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: batch is not yet supported by git-lfs-transfer. See https://gitlab.com/gitlab-org/gitlab/-/issues/336618 to track progress.",
+		"error: batch is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
 	}, data)
 
 	quit(t, pl)
@@ -279,7 +279,7 @@ func TestLfsTransferBatchUpload(t *testing.T) {
 	require.Equal(t, "status 405", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: batch is not yet supported by git-lfs-transfer. See https://gitlab.com/gitlab-org/gitlab/-/issues/336618 to track progress.",
+		"error: batch is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
 	}, data)
 
 	quit(t, pl)
@@ -296,7 +296,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 	require.Equal(t, "status 405", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: get-object is not yet supported by git-lfs-transfer. See https://gitlab.com/gitlab-org/gitlab/-/issues/336618 to track progress.",
+		"error: get-object is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
 	}, data)
 
 	quit(t, pl)
@@ -313,7 +313,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 	require.Equal(t, "status 405", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: put-object is not yet supported by git-lfs-transfer. See https://gitlab.com/gitlab-org/gitlab/-/issues/336618 to track progress.",
+		"error: put-object is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
 	}, data)
 
 	quit(t, pl)
@@ -330,7 +330,7 @@ func TestLfsTransferVerifyObject(t *testing.T) {
 	require.Equal(t, "status 405", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: verify-object is not yet supported by git-lfs-transfer. See https://gitlab.com/gitlab-org/gitlab/-/issues/336618 to track progress.",
+		"error: verify-object is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
 	}, data)
 
 	quit(t, pl)
@@ -347,7 +347,7 @@ func TestLfsTransferLock(t *testing.T) {
 	require.Equal(t, "status 405", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: lock is not yet supported by git-lfs-transfer. See https://gitlab.com/gitlab-org/gitlab/-/issues/336618 to track progress.",
+		"error: lock is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
 	}, data)
 
 	quit(t, pl)
@@ -364,7 +364,7 @@ func TestLfsTransferUnlock(t *testing.T) {
 	require.Equal(t, "status 405", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: unlock is not yet supported by git-lfs-transfer. See https://gitlab.com/gitlab-org/gitlab/-/issues/336618 to track progress.",
+		"error: unlock is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
 	}, data)
 
 	quit(t, pl)
@@ -381,7 +381,7 @@ func TestLfsTransferListLock(t *testing.T) {
 	require.Equal(t, "status 405", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: list-lock is not yet supported by git-lfs-transfer. See https://gitlab.com/gitlab-org/gitlab/-/issues/336618 to track progress.",
+		"error: list-lock is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
 	}, data)
 
 	quit(t, pl)

@@ -58,7 +58,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctxWithLogData, err
 	}
 
-	logger := NewGitlabLogger(ctxWithLogData)
+	logger := NewWrappedLoggerForGitLFSTransfer(ctxWithLogData)
 
 	backend, err := NewGitlabBackend(ctxWithLogData, c.Config, c.Args, auth)
 	if err != nil {
