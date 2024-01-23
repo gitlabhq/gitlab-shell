@@ -1,3 +1,4 @@
+// Package lfstransfer wraps https://github.com/charmbracelet/git-lfs-transfer logic
 package lfstransfer
 
 import (
@@ -6,15 +7,21 @@ import (
 	"gitlab.com/gitlab-org/labkit/log"
 )
 
-type GitlabLogger struct {
+// WrappedLoggerForGitLFSTransfer is responsible for creating a compatible logger
+// for github.com/charmbracelet/git-lfs-transfer
+type WrappedLoggerForGitLFSTransfer struct {
 	ctx context.Context
 }
 
-func NewGitlabLogger(ctx context.Context) *GitlabLogger {
-	return &GitlabLogger{ctx: ctx}
+// NewWrappedLoggerForGitLFSTransfer returns a new WrappedLoggerForGitLFSTransfer
+// passing through context.Context
+func NewWrappedLoggerForGitLFSTransfer(ctx context.Context) *GitlabLogger {
+	return &WrappedLoggerForGitLFSTransfer{ctx: ctx}
 }
 
-func (l *GitlabLogger) Log(msg string, args ...interface{}) {
+// Log allows logging in github.com/charmbracelet/git-lfs-transfer to take place
+// using gitlab.com/gitlab-org/labkit/log
+func (l *WrappedLoggerForGitLFSTransfer) Log(msg string, args ...interface{}) {
 	fields := make(map[string]interface{})
 	fieldsFallback := map[string]interface{}{"args": args}
 

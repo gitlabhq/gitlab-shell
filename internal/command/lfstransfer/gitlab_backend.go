@@ -27,7 +27,7 @@ func (e *errCustom) Is(err error) bool {
 func newErrUnsupported(operation string) error {
 	return &errCustom{
 		err:     transfer.ErrNotAllowed,
-		message: fmt.Sprintf("%s is not yet supported by git-lfs-transfer. See https://gitlab.com/gitlab-org/gitlab/-/issues/336618 to track progress.", operation),
+		message: fmt.Sprintf("%s is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.", operation),
 	}
 }
 
