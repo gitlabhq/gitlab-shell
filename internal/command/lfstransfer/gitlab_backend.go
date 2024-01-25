@@ -81,10 +81,6 @@ type gitlabLock struct {
 	*gitlabLockBackend
 }
 
-func (l *gitlabLock) Lock() error {
-	return newErrUnsupported("lock")
-}
-
 func (l *gitlabLock) Unlock() error {
 	return newErrUnsupported("unlock")
 }
@@ -115,12 +111,12 @@ func (l *gitlabLock) Path() string {
 
 type gitlabLockBackend struct{}
 
-func (b *gitlabLockBackend) Create(path, refname string) (transfer.Lock, error) {
+func (b *gitlabLockBackend) Create(path string, refname string) (transfer.Lock, error) {
 	return nil, newErrUnsupported("lock")
 }
 
 func (b *gitlabLockBackend) Unlock(lock transfer.Lock) error {
-	return newErrUnsupported("lock")
+	return newErrUnsupported("unlock")
 }
 
 func (b *gitlabLockBackend) FromPath(path string) (transfer.Lock, error) {

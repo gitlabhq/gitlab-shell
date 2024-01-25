@@ -26,7 +26,7 @@ func (l *WrappedLoggerForGitLFSTransfer) Log(msg string, args ...interface{}) {
 	fieldsFallback := map[string]interface{}{"args": args}
 
 	for i := 0; i < len(args); i += 2 {
-		if i+1 >= len(args) {
+		if i >= len(args)-1 {
 			fields = fieldsFallback
 			break
 		}
