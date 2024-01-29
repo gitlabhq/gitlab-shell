@@ -20,17 +20,18 @@ GOLANGCI_LINT_FILE := support/bin/golangci-lint-${GOLANGCI_LINT_VERSION}
 export GOFLAGS := -mod=readonly
 
 ifeq (${FIPS_MODE}, 1)
+    GO_TAGS += fips
+
+    # If the golang-fips compiler is built with CGO_ENABLED=0, this needs to be
+    # explicitly switched on.
+    export CGO_ENABLED=1
+
     # Go 1.19 now requires GOEXPERIMENT=boringcrypto for FIPS compilation.
     # See https://github.com/golang/go/issues/51940 for more details.
     BORINGCRYPTO_SUPPORT := $(shell GOEXPERIMENT=boringcrypto go version > /dev/null 2>&1; echo $$?)
     ifeq ($(BORINGCRYPTO_SUPPORT), 0)
-        GOBUILD_ENV=GOEXPERIMENT=boringcrypto
+        export GOEXPERIMENT=boringcrypto
     endif
-
-    GO_TAGS += fips
-    # If the golang-fips compiler is built with CGO_ENABLED=0, this needs to be
-    # explicitly switched on.
-    export CGO_ENABLED=1
 endif
 
 ifneq (${CGO_ENABLED}, 0)
@@ -100,10 +101,10 @@ _script_install:
 
 compile: bin/gitlab-shell bin/gitlab-sshd
 bin/gitlab-shell: $(GO_SOURCES)
-	GOBIN="$(CURDIR)/bin" $(GOBUILD_ENV) go install $(GOBUILD_FLAGS) ./cmd/...
+	GOBIN="$(CURDIR)/bin" go install $(GOBUILD_FLAGS) ./cmd/...
 
 bin/gitlab-sshd: $(GO_SOURCES)
-	GOBIN="$(CURDIR)/bin" $(GOBUILD_ENV) go install $(GOBUILD_FLAGS) ./cmd/gitlab-sshd
+	GOBIN="$(CURDIR)/bin" go install $(GOBUILD_FLAGS) ./cmd/gitlab-sshd
 
 check:
 	bin/check
