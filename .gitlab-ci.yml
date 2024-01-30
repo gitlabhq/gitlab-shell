@@ -23,6 +23,9 @@ variables:
   BUNDLE_PATH: vendor/ruby
   POLICY: pull
   CI_DEBUG_SERVICES: 'true'
+  RUST_VERSION: "rust-1.73"
+  UBI_VERSION: "8.6"
+  IMAGE_TAG: "rubygems-3.4-git-2.36-exiftool-12.60"
 
 workflow:
   rules: &workflow_rules
@@ -34,7 +37,7 @@ workflow:
     - if: '$CI_COMMIT_TAG'
 
 default:
-  image: registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-${RUBY_VERSION}-${GO_VERSION}-rust-1.65:rubygems-3.4-git-2.36-exiftool-12.60
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-${RUBY_VERSION}-${GO_VERSION}-${RUST_VERSION}:${IMAGE_TAG}
   tags:
     - gitlab-org
 
@@ -153,6 +156,16 @@ tests_without_cgo:
     CGO_ENABLED: 0
   script:
     - make verify test_fancy
+
+tests:fips:
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-${RUBY_VERSION}-${GO_VERSION}-${RUST_VERSION}:${IMAGE_TAG}
+  extends:
+    - .cached-job
+    - .test-job
+  variables:
+    FIPS_MODE: 1
+  script:
+    - make test_fancy
 
 race:
   extends:
