@@ -48,8 +48,6 @@ type CustomPayloadData struct {
 	PrimaryRepo                             string            `json:"primary_repo"`
 	UserId                                  string            `json:"gl_id,omitempty"`
 	RequestHeaders                          map[string]string `json:"request_headers"`
-	GeoProxyDirectToPrimary                 bool              `json:"geo_proxy_direct_to_primary"`
-	GeoProxyFetchDirectToPrimary            bool              `json:"geo_proxy_fetch_direct_to_primary"`
 	GeoProxyFetchDirectToPrimaryWithOptions bool              `json:"geo_proxy_fetch_direct_to_primary_with_options"`
 }
 

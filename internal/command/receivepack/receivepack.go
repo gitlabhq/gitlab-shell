@@ -38,20 +38,6 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	))
 
 	if response.IsCustomAction() {
-		// When `geo_proxy_direct_to_primary` feature flag is enabled, a Git over HTTP direct request
-		// to primary repo is performed instead of proxying the request through Gitlab Rails.
-		// After the feature flag is enabled by default and removed,
-		// custom action functionality will be removed along with it.
-		if response.Payload.Data.GeoProxyDirectToPrimary {
-			cmd := githttp.PushCommand{
-				Config:     c.Config,
-				ReadWriter: c.ReadWriter,
-				Response:   response,
-			}
-
-			return ctxWithLogData, cmd.Execute(ctx)
-		}
-
 		customAction := customaction.Command{
 			Config:     c.Config,
 			ReadWriter: c.ReadWriter,
