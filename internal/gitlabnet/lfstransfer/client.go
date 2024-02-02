@@ -55,15 +55,18 @@ func NewClient(config *config.Config, args *commandargs.Shell, href string, auth
 
 func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, reqHashAlgo string) (*BatchResponse, error) {
 	var bref *batchRef
+
 	if ref != "" {
 		bref = &batchRef{Name: ref}
 	}
+
 	body := batchRequest{
 		Operation:     operation,
 		Objects:       reqObjects,
 		Ref:           bref,
 		HashAlgorithm: reqHashAlgo,
 	}
+
 	jsonData, err := json.Marshal(body)
 	if err != nil {
 		return nil, err

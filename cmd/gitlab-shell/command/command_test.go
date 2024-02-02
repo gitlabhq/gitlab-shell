@@ -9,6 +9,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/lfsauthenticate"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/lfstransfer"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/personalaccesstoken"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/receivepack"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
@@ -103,6 +104,45 @@ func TestNew(t *testing.T) {
 	}
 }
 
+func TestLFSTransferCommands(t *testing.T) {
+	testCases := []struct {
+		desc         string
+		executable   *executable.Executable
+		env          sshenv.Env
+		arguments    []string
+		config       *config.Config
+		expectedType interface{}
+		errorString  string
+	}{
+		{
+			desc:         "it returns an Lfstransfer command",
+			executable:   gitlabShellExec,
+			env:          buildEnv("git-lfs-transfer"),
+			config:       &config.Config{GitlabUrl: "http+unix://gitlab.socket", LFSConfig: config.LFSConfig{PureSSHProtocol: true}},
+			expectedType: &lfstransfer.Command{},
+			errorString:  "",
+		},
+		{
+			desc:         "it does not return an Lfstransfer command when config disallows pureSSH",
+			executable:   gitlabShellExec,
+			env:          buildEnv("git-lfs-transfer"),
+			config:       &config.Config{GitlabUrl: "http+unix://gitlab.socket", LFSConfig: config.LFSConfig{PureSSHProtocol: false}},
+			expectedType: nil,
+			errorString:  "Disallowed command",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			command, err := cmd.New(tc.arguments, tc.env, tc.config, nil)
+
+			if len(tc.errorString) > 0 {
+				require.Equal(t, err.Error(), tc.errorString)
+			}
+			require.IsType(t, tc.expectedType, command)
+		})
+	}
+}
 func TestFailingNew(t *testing.T) {
 	testCases := []struct {
 		desc          string
@@ -252,6 +292,13 @@ func TestParseSuccess(t *testing.T) {
 			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-lfs-authenticate 'group/repo' download"},
 			arguments:    []string{},
 			expectedArgs: &commandargs.Shell{Arguments: []string{}, SshArgs: []string{"git-lfs-authenticate", "group/repo", "download"}, CommandType: commandargs.LfsAuthenticate, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-lfs-authenticate 'group/repo' download"}},
+		},
+		{
+			desc:         "It parses git-lfs-transfer command",
+			executable:   &executable.Executable{Name: executable.GitlabShell},
+			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-lfs-transfer 'group/repo' download"},
+			arguments:    []string{},
+			expectedArgs: &commandargs.Shell{Arguments: []string{}, SshArgs: []string{"git-lfs-transfer", "group/repo", "download"}, CommandType: commandargs.LfsTransfer, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-lfs-transfer 'group/repo' download"}},
 		},
 	}
 
