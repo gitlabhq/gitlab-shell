@@ -52,12 +52,12 @@ func parseHostKeys(keyFiles []string) []ssh.Signer {
 	for _, filename := range keyFiles {
 		keyRaw, err := os.ReadFile(filename)
 		if err != nil {
-			log.WithError(err).WithFields(log.Fields{"filename": filename}).Warn("Failed to read host key")
+			log.WithError(err).WithFields(log.Fields{"filename": filename}).Error("Failed to read host key")
 			continue
 		}
 		key, err := ssh.ParsePrivateKey(keyRaw)
 		if err != nil {
-			log.WithError(err).WithFields(log.Fields{"filename": filename}).Warn("Failed to parse host key")
+			log.WithError(err).WithFields(log.Fields{"filename": filename}).Error("Failed to parse host key")
 			continue
 		}
 
