@@ -11,3 +11,5 @@ info: To determine the technical writer assigned to the Stage/Group associated w
 [![Code Climate](https://codeclimate.com/github/gitlabhq/gitlab-shell.svg)](https://codeclimate.com/github/gitlabhq/gitlab-shell)
 
 The documentation for GitLab Shell [has moved into the `gitlab` repository](https://docs.gitlab.com/ee/development/gitlab_shell/).
+
+test commit
