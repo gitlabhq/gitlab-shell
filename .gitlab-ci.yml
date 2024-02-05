@@ -243,7 +243,10 @@ lint:
     # Write the code coverage report to gl-code-quality-report.json
     # and print linting issues to stdout in the format: path/to/file:line description
     # remove `--issues-exit-code 0` or set to non-zero to fail the job if linting issues are detected
-    - make lint GOLANGCI_LINT_ARGS="--out-format code-climate:gl-code-quality-report.json,line-number"
+    - apt update && apt install -y jq
+    - make lint GOLANGCI_LINT_ARGS="--out-format code-climate:gl-code-quality-report-temp.json,line-number"
+    - cat gl-code-quality-report-temp.json | jq '[ .[] | select(.severity == "warning").severity |= "minor" ]' > gl-code-quality-report.json
+    - rm -f gl-code-quality-report-temp.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
