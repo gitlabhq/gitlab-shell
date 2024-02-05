@@ -13,14 +13,14 @@
 /bin/gitlab-shell-authorized-principals-check
 /bin/gitlab-sshd
 /go_build
+/support/bin/golangci-*
+/support/bin/gotestsum-*
 authorized_keys.lock
 config.yml
 cover.out
 cover.xml
 custom_hooks
 hooks/*.d
-/support/bin/golangci-*
-/support/bin/gotestsum-*
 tags
 tmp/*
 vendor
