@@ -78,18 +78,18 @@ func parseHostCerts(hostKeys []ssh.Signer, certFiles []string) map[string]*ssh.C
 	for _, filename := range certFiles {
 		keyRaw, err := os.ReadFile(filename)
 		if err != nil {
-			log.WithError(err).WithFields(log.Fields{"filename": filename}).Warn("failed to read host certificate")
+			log.WithError(err).WithFields(log.Fields{"filename": filename}).Error("failed to read host certificate")
 			continue
 		}
 		publicKey, _, _, _, err := ssh.ParseAuthorizedKey(keyRaw)
 		if err != nil {
-			log.WithError(err).WithFields(log.Fields{"filename": filename}).Warn("failed to parse host certificate")
+			log.WithError(err).WithFields(log.Fields{"filename": filename}).Error("failed to parse host certificate")
 			continue
 		}
 
 		cert, ok := publicKey.(*ssh.Certificate)
 		if !ok {
-			log.WithFields(log.Fields{"filename": filename}).Warn("failed to decode host certificate")
+			log.WithFields(log.Fields{"filename": filename}).Error("failed to decode host certificate")
 			continue
 		}
 
@@ -100,13 +100,13 @@ func parseHostCerts(hostKeys []ssh.Signer, certFiles []string) map[string]*ssh.C
 
 			certSigner, err := ssh.NewCertSigner(cert, hostKeys[index])
 			if err != nil {
-				log.WithError(err).WithFields(log.Fields{"filename": filename}).Warn("the host certificate doesn't match the host private key")
+				log.WithError(err).WithFields(log.Fields{"filename": filename}).Error("the host certificate doesn't match the host private key")
 				continue
 			}
 
 			hostKeys[index] = certSigner
 		} else {
-			log.WithFields(log.Fields{"filename": filename}).Warnf("no matching private key for certificate %s", filename)
+			log.WithFields(log.Fields{"filename": filename}).Errorf("no matching private key for certificate %s", filename)
 		}
 	}
 
