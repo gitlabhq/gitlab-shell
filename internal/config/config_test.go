@@ -13,6 +13,12 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 )
 
+func TestDefaultConfig(t *testing.T) {
+	config := &Config{}
+
+	require.False(t, config.LFSConfig.PureSSHProtocol)
+}
+
 func TestConfigApplyGlobalState(t *testing.T) {
 	testhelper.TempEnv(t, map[string]string{"SSL_CERT_DIR": "unmodified"})
 
