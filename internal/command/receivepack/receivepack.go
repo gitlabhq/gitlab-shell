@@ -38,12 +38,13 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	))
 
 	if response.IsCustomAction() {
-		customAction := customaction.Command{
+		cmd := githttp.PushCommand{
 			Config:     c.Config,
 			ReadWriter: c.ReadWriter,
-			EOFSent:    true,
+			Response:   response,
 		}
-		return ctxWithLogData, customAction.Execute(ctx, response)
+
+		return ctxWithLogData, cmd.Execute(ctx)
 	}
 
 	err = c.performGitalyCall(ctx, response)
