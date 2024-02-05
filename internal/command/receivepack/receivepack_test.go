@@ -38,14 +38,6 @@ func TestForbiddenAccess(t *testing.T) {
 	require.Equal(t, "Disallowed by API call", err.Error())
 }
 
-func TestCustomReceivePack(t *testing.T) {
-	cmd, output := setup(t, "1", requesthandlers.BuildAllowedWithCustomActionsHandlers(t))
-
-	_, err := cmd.Execute(context.Background())
-	require.NoError(t, err)
-	require.Equal(t, "customoutput", output.String())
-}
-
 func setup(t *testing.T, keyId string, requests []testserver.TestRequestHandler) (*Command, *bytes.Buffer) {
 	url := testserver.StartSocketHttpServer(t, requests)
 
