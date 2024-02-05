@@ -9,7 +9,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/gitauditevent"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/customaction"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
