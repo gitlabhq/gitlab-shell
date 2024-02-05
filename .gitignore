@@ -12,6 +12,7 @@
 /bin/gitlab-shell-authorized-keys-check
 /bin/gitlab-shell-authorized-principals-check
 /bin/gitlab-sshd
+/gl-code-quality-report.json
 /go_build
 /support/bin/golangci-*
 /support/bin/gotestsum-*
