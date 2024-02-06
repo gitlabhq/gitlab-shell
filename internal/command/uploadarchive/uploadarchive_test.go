@@ -22,8 +22,8 @@ func TestAllowedAccess(t *testing.T) {
 	cmd.Config.GitalyClient.InitSidechannelRegistry(context.Background())
 
 	ctxWithLogData, err := cmd.Execute(context.Background())
-
 	require.NoError(t, err)
+
 	data := ctxWithLogData.Value("logData").(command.LogData)
 	require.Equal(t, "alex-doe", data.Username)
 	require.Equal(t, "group/project-path", data.Meta.Project)

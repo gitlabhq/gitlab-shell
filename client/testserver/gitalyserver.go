@@ -130,7 +130,7 @@ func doStartTestServer(t *testing.T, network string, path string) (string, *Test
 	go func() {
 		require.NoError(t, server.Serve(listener))
 	}()
-	t.Cleanup(func() { server.Stop() })
+	t.Cleanup(func() { server.GracefulStop() })
 
 	return listener.Addr().String(), &testServer
 }
