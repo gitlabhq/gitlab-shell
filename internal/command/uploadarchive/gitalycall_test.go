@@ -53,7 +53,8 @@ func TestUploadArchive(t *testing.T) {
 				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
 			}
 
-			ctx := correlation.ContextWithCorrelation(context.Background(), "a-correlation-id")
+			correlationID := correlation.SafeRandomID()
+			ctx := correlation.ContextWithCorrelation(context.Background(), correlationID)
 			ctx = correlation.ContextWithClientName(ctx, "gitlab-shell-tests")
 
 			_, err := cmd.Execute(ctx)
@@ -75,7 +76,7 @@ func TestUploadArchive(t *testing.T) {
 				require.Equal(t, v, actual[0])
 			}
 			require.Empty(t, testServer.ReceivedMD["some-other-ff"])
-			require.Equal(t, testServer.ReceivedMD["x-gitlab-correlation-id"][0], "a-correlation-id")
+			require.Equal(t, testServer.ReceivedMD["x-gitlab-correlation-id"][0], correlationID)
 		})
 	}
 }

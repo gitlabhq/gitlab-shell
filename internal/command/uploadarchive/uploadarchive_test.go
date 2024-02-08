@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"gitlab.com/gitlab-org/labkit/correlation"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
@@ -21,7 +22,10 @@ func TestAllowedAccess(t *testing.T) {
 	cmd, _ := setup(t, "1", requests)
 	cmd.Config.GitalyClient.InitSidechannelRegistry(context.Background())
 
-	ctxWithLogData, err := cmd.Execute(context.Background())
+	correlationID := correlation.SafeRandomID()
+	ctx := correlation.ContextWithCorrelation(context.Background(), correlationID)
+	ctx = correlation.ContextWithClientName(ctx, "gitlab-shell-tests")
+	ctxWithLogData, err := cmd.Execute(ctx)
 	require.NoError(t, err)
 
 	data := ctxWithLogData.Value("logData").(command.LogData)
