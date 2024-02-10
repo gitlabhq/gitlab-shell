@@ -18,7 +18,7 @@ variables:
   BUNDLE_FROZEN: "true"
   GO_VERSION: "golang-1.21"
   GOPATH: $CI_PROJECT_DIR/.GOPATH
-  DEBIAN_VERSION: "bullseye"
+  DEBIAN_VERSION: "bookworm"
   RUBY_VERSION: "ruby-3.2"
   BUNDLE_PATH: vendor/ruby
   POLICY: pull
