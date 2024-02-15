@@ -9,7 +9,7 @@ GO_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver
 
 ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' | sed -e 's/aarch64/arm64/')
 
-GOTESTSUM_VERSION := 1.10.0
+GOTESTSUM_VERSION := 1.11.0
 GOTESTSUM_VERSION_ARCH ?= ${ARCH}
 GOTESTSUM_FILE := support/bin/gotestsum-${GOTESTSUM_VERSION}
 
