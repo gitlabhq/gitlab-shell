@@ -71,6 +71,7 @@ test_golang:
 	go test -cover -coverprofile=cover.out -count 1 -tags "$(GO_TAGS)" ./...
 
 test_golang_fancy: ${GOTESTSUM_FILE}
+	@${GOTESTSUM_FILE} --version
 	@${GOTESTSUM_FILE} --junitfile ./cover.xml --format pkgname -- -coverprofile=./cover.out -covermode=atomic -count 1 -tags "$(GO_TAGS)" ./...
 
 ${GOTESTSUM_FILE}:
@@ -86,6 +87,7 @@ coverage_golang:
 	[ -f cover.out ] && go tool cover -func cover.out
 
 lint: ${GOLANGCI_LINT_FILE}
+	${GOLANGCI_LINT_FILE} --version
 	${GOLANGCI_LINT_FILE} run --issues-exit-code 0 --print-issued-lines=false ${GOLANGCI_LINT_ARGS}
 
 ${GOLANGCI_LINT_FILE}:
