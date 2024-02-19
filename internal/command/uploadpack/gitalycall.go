@@ -17,8 +17,8 @@ func (c *Command) performGitalyCall(ctx context.Context, response *accessverifie
 
 	request := &pb.SSHUploadPackWithSidechannelRequest{
 		Repository:       &response.Gitaly.Repo,
-		GitProtocol:      c.Args.Env.GitProtocolVersion,
 		GitConfigOptions: response.GitConfigOptions,
+		GitProtocol:      c.Args.Env.GitProtocolVersion,
 	}
 
 	var stats *pb.PackfileNegotiationStatistics

@@ -101,3 +101,7 @@ require (
 )
 
 exclude github.com/prometheus/client_golang v1.12.1
+
+replace gitlab.com/gitlab-org/gitaly/v16 => /Users/ash/src/gitlab/gitaly
+
+replace github.com/hashicorp/yamux => /Users/ash/src/external/yamux
