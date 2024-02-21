@@ -3,6 +3,7 @@ package lfstransfer
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -56,10 +57,11 @@ func NewClient(config *config.Config, args *commandargs.Shell, href string, auth
 func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, reqHashAlgo string) (*BatchResponse, error) {
 	var bref *batchRef
 
-	if ref != "" {
-		bref = &batchRef{Name: ref}
+	if ref == "" {
+		return nil, errors.New("A ref must be specified.")
 	}
 
+	bref = &batchRef{Name: ref}
 	body := batchRequest{
 		Operation:     operation,
 		Objects:       reqObjects,
