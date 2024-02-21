@@ -70,28 +70,33 @@ func NewGitlabBackend(ctx context.Context, config *config.Config, args *commanda
 	}, nil
 }
 
-func (b *GitlabBackend) issueBatchArgs(op string, oid string, href string, headers map[string]string) (id string, token string, err error) {
+func (b *GitlabBackend) issueBatchArgs(op string, oid string, href string, headers map[string]string) (args transfer.Args, err error) {
 	data := &idData{
 		Operation: op,
 		Oid:       oid,
 		Href:      href,
 		Headers:   headers,
 	}
+
+	args = transfer.Args{
+		"id":"",
+		"token":"",
+	}
 	dataBinary, err := json.Marshal(data)
 	if err != nil {
-		return "", "", err
+		return args, err
 	}
 
 	h := hmac.New(sha256.New, []byte(b.config.Secret))
 	_, err = h.Write(dataBinary)
 	if err != nil {
-		return "", "", err
+		return args, err
 	}
 
-	id = base64.StdEncoding.EncodeToString(dataBinary)
-	token = base64.StdEncoding.EncodeToString(h.Sum(nil))
+	args["id"] = base64.StdEncoding.EncodeToString(dataBinary)
+	args["token"] = base64.StdEncoding.EncodeToString(h.Sum(nil))
 
-	return id, token, nil
+	return args, nil
 }
 
 func (b *GitlabBackend) Batch(op string, pointers []transfer.BatchItem, args transfer.Args) ([]transfer.BatchItem, error) {
@@ -125,14 +130,9 @@ func (b *GitlabBackend) Batch(op string, pointers []transfer.BatchItem, args tra
 		var args transfer.Args
 
 		if action, present = retObject.Actions[op]; present {
-			id, token, err := b.issueBatchArgs(op, retObject.Oid, action.Href, action.Header)
+			args, err = b.issueBatchArgs(op, retObject.Oid, action.Href, action.Header)
 			if err != nil {
 				return nil, err
-			}
-
-			args = transfer.Args{
-				"id":    id,
-				"token": token,
 			}
 		}
 
