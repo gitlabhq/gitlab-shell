@@ -5,7 +5,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/lfsauthenticate"
-	// "gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/lfstransfer"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/lfstransfer"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/personalaccesstoken"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/receivepack"
