@@ -205,6 +205,7 @@ func readStatusArgsAndTextData(t *testing.T, pl *pktline.Pktline) (status string
 	// Read status.
 	status, l, err := pl.ReadPacketTextWithLength()
 	require.NoError(t, err)
+
 	switch l {
 	case 0:
 		require.Fail(t, "Expected text, got flush packet")
@@ -217,6 +218,7 @@ func readStatusArgsAndTextData(t *testing.T, pl *pktline.Pktline) (status string
 	for !end {
 		arg, l, err := pl.ReadPacketTextWithLength()
 		require.NoError(t, err)
+
 		switch l {
 		case 0:
 			return status, args, nil
@@ -232,6 +234,7 @@ func readStatusArgsAndTextData(t *testing.T, pl *pktline.Pktline) (status string
 	for !end {
 		datum, l, err := pl.ReadPacketTextWithLength()
 		require.NoError(t, err)
+
 		switch l {
 		case 0:
 			end = true
@@ -241,6 +244,7 @@ func readStatusArgsAndTextData(t *testing.T, pl *pktline.Pktline) (status string
 			data = append(data, datum)
 		}
 	}
+
 	return status, args, data
 }
 
@@ -460,8 +464,9 @@ func TestLfsTransferListLock(t *testing.T) {
 }
 
 func setup(t *testing.T, keyId string, repo string, op string) (string, *Command, *pktline.Pktline, *io.PipeReader) {
-	gitalyAddress, _ := testserver.StartGitalyServer(t, "unix")
 	var url string
+
+	gitalyAddress, _ := testserver.StartGitalyServer(t, "unix")
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/allowed",
@@ -593,6 +598,7 @@ func setup(t *testing.T, keyId string, repo string, op string) (string, *Command
 			},
 		},
 	}
+
 	url = testserver.StartHttpServer(t, requests)
 
 	inputSource, inputSink := io.Pipe()
@@ -605,5 +611,6 @@ func setup(t *testing.T, keyId string, repo string, op string) (string, *Command
 		ReadWriter: &readwriter.ReadWriter{ErrOut: errorSink, Out: outputSink, In: inputSource},
 	}
 	pl := pktline.NewPktline(outputSource, inputSink)
+
 	return url, cmd, pl, errorSource
 }
