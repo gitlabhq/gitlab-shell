@@ -38,7 +38,7 @@ var (
 	evenLargerFileOid  = hex.EncodeToString(evenLargerFileHash[:])
 )
 
-func setupWaitGroup(t *testing.T, cmd *Command) *sync.WaitGroup {
+func setupWaitGroupForExecute(t *testing.T, cmd *Command) *sync.WaitGroup {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
@@ -259,7 +259,7 @@ func quit(t *testing.T, pl *pktline.Pktline) {
 
 func TestLfsTransferCapabilities(t *testing.T) {
 	_, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
-	wg := setupWaitGroup(t, cmd)
+	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
 	quit(t, pl)
@@ -274,7 +274,7 @@ func TestLfsTransferNoPermissions(t *testing.T) {
 
 func TestLfsTransferBatchDownload(t *testing.T) {
 	url, cmd, pl, _ := setup(t, "rw", "group/repo", "download")
-	wg := setupWaitGroup(t, cmd)
+	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
 	writeCommandArgsAndTextData(t, pl, "batch", nil, []string{
@@ -340,7 +340,7 @@ func TestLfsTransferBatchDownload(t *testing.T) {
 
 func TestLfsTransferBatchUpload(t *testing.T) {
 	_, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
-	wg := setupWaitGroup(t, cmd)
+	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
 	writeCommandArgsAndTextData(t, pl, "batch", nil, []string{
@@ -359,7 +359,7 @@ func TestLfsTransferBatchUpload(t *testing.T) {
 
 func TestLfsTransferGetObject(t *testing.T) {
 	_, cmd, pl, _ := setup(t, "rw", "group/repo", "download")
-	wg := setupWaitGroup(t, cmd)
+	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
 	writeCommand(t, pl, "get-object 00000000")
@@ -376,7 +376,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 
 func TestLfsTransferPutObject(t *testing.T) {
 	_, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
-	wg := setupWaitGroup(t, cmd)
+	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
 	writeCommandArgsAndBinaryData(t, pl, "put-object 00000000", []string{"size=0"}, nil)
@@ -393,7 +393,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 
 func TestLfsTransferVerifyObject(t *testing.T) {
 	_, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
-	wg := setupWaitGroup(t, cmd)
+	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
 	writeCommandArgs(t, pl, "verify-object 00000000", []string{"size=0"})
@@ -410,7 +410,7 @@ func TestLfsTransferVerifyObject(t *testing.T) {
 
 func TestLfsTransferLock(t *testing.T) {
 	_, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
-	wg := setupWaitGroup(t, cmd)
+	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
 	writeCommandArgs(t, pl, "lock", []string{"path=large/file"})
@@ -427,7 +427,7 @@ func TestLfsTransferLock(t *testing.T) {
 
 func TestLfsTransferUnlock(t *testing.T) {
 	_, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
-	wg := setupWaitGroup(t, cmd)
+	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
 	writeCommand(t, pl, "unlock lock1")
@@ -444,7 +444,7 @@ func TestLfsTransferUnlock(t *testing.T) {
 
 func TestLfsTransferListLock(t *testing.T) {
 	_, cmd, pl, _ := setup(t, "rw", "group/repo", "download")
-	wg := setupWaitGroup(t, cmd)
+	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
 	writeCommand(t, pl, "list-lock")
