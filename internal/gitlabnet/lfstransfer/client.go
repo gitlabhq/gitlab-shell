@@ -90,7 +90,7 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 		return nil, err
 	}
 
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	response := &BatchResponse{}
 	if err := gitlabnet.ParseJSON(res, response); err != nil {

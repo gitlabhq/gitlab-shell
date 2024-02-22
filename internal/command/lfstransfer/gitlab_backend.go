@@ -61,6 +61,7 @@ func NewGitlabBackend(ctx context.Context, config *config.Config, args *commanda
 	if err != nil {
 		return nil, err
 	}
+
 	return &GitlabBackend{
 		ctx,
 		config,
@@ -79,8 +80,8 @@ func (b *GitlabBackend) issueBatchArgs(op string, oid string, href string, heade
 	}
 
 	args = transfer.Args{
-		"id":"",
-		"token":"",
+		"id":    "",
+		"token": "",
 	}
 	dataBinary, err := json.Marshal(data)
 	if err != nil {

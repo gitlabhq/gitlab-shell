@@ -41,11 +41,13 @@ var (
 func setupWaitGroup(t *testing.T, cmd *Command) *sync.WaitGroup {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
+
 	go func() {
 		_, err := cmd.Execute(context.Background())
 		require.NoError(t, err)
 		wg.Done()
 	}()
+
 	return wg
 }
 
@@ -76,10 +78,12 @@ func writeCommandArgsAndBinaryData(t *testing.T, pl *pktline.Pktline, command st
 
 func writeCommandArgsAndTextData(t *testing.T, pl *pktline.Pktline, command string, args []string, data []string) {
 	require.NoError(t, pl.WritePacketText(command))
+
 	for _, arg := range args {
 		require.NoError(t, pl.WritePacketText(arg))
 	}
 	require.NoError(t, pl.WriteDelim())
+
 	for _, datum := range data {
 		require.NoError(t, pl.WritePacketText(datum))
 	}
@@ -306,6 +310,7 @@ func TestLfsTransferBatchDownload(t *testing.T) {
 	require.True(t, found)
 	idBinary, err := base64.StdEncoding.DecodeString(idBase64)
 	require.NoError(t, err)
+
 	var id map[string]interface{}
 	require.NoError(t, json.Unmarshal(idBinary, &id))
 	require.Equal(t, map[string]interface{}{
@@ -322,6 +327,7 @@ func TestLfsTransferBatchDownload(t *testing.T) {
 	h.Write(idBinary)
 	tokenBase64, found := strings.CutPrefix(tokenArg, "token=")
 	require.True(t, found)
+
 	tokenBinary, err := base64.StdEncoding.DecodeString(tokenBase64)
 	require.NoError(t, err)
 	require.Equal(t, h.Sum(nil), tokenBinary)
