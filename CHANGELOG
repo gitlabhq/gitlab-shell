@@ -1,3 +1,30 @@
+v14.34.0
+
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.9.0 !960
+- Update golangci-lint and gotestsum to latest stable !962
+- Also test against go 1.22 !949
+- Update dependency golang to v1.22.0 !952
+- Update module google.golang.org/grpc to v1.61.1 !961
+- Update github.com/charmbracelet/git-lfs-transfer digest to e8645ad !959
+- Update github.com/charmbracelet/git-lfs-transfer digest to 8d8e152 !957
+- Upgrade to using bookworm instead of bullseye !956
+- Update GOLANGCI_LINT_VERSION to 1.56.1 !958
+- Update golangci lint to v1.56.0 !954
+- Set random correlation ID in uploadarchive test !955
+- Update module golang.org/x/crypto to v0.19.0 !953
+- Use GracefulStop() instead of Stop() !951
+- Update dependency rspec to '~> 3.13.0' !947
+- Fix scanner findings error !948
+- Log error instead of warning when parsing keys !944
+- Fix PureSSHProtocal name typo !945
+- Update github.com/charmbracelet/git-lfs-transfer digest to 732ff5e !943
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.9.0-rc3 !941
+- Run CI with FIPS_MODE enabled !940
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.8.1 !939
+- Update module google.golang.org/grpc to v1.61.0 !937
+- New lfs.pure_ssh_protocol setting !936
+- Update local Ruby version !938
+
 v14.33.0
 
 - Load gssapi lib per server/connection !934
