@@ -13,7 +13,7 @@ require (
 	github.com/openshift/gssapi v0.0.0-20161010215902-5fb4217df13b
 	github.com/otiai10/copy v1.14.0
 	github.com/pires/go-proxyproto v0.7.0
-	github.com/prometheus/client_golang v1.18.0
+	github.com/prometheus/client_golang v1.19.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
 	gitlab.com/gitlab-org/gitaly/v16 v16.9.1
@@ -64,7 +64,6 @@ require (
 	github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20210210170715-a8dfcb80d3a7 // indirect
 	github.com/lightstep/lightstep-tracer-go v0.25.0 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
-	github.com/matttproud/golang_protobuf_extensions/v2 v2.0.0 // indirect
 	github.com/oklog/ulid/v2 v2.0.2 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.20.1 // indirect
@@ -74,7 +73,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
-	github.com/prometheus/common v0.45.0 // indirect
+	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/prometheus/prometheus v0.46.0 // indirect
 	github.com/sebest/xff v0.0.0-20210106013422-671bd2870b3a // indirect
