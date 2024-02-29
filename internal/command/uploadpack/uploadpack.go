@@ -57,6 +57,10 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctxWithLogData, customAction.Execute(ctx, response)
 	}
 
+	if response.GitRpcUrl != "" {
+		return ctxWithLogData, c.performWorkhorseCall(ctx, response)
+	}
+
 	stats, err := c.performGitalyCall(ctx, response)
 	if err != nil {
 		return ctxWithLogData, err
@@ -65,6 +69,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	if response.NeedAudit {
 		gitauditevent.Audit(ctx, c.Args.CommandType, c.Config, response, stats)
 	}
+
 	return ctxWithLogData, nil
 }
 

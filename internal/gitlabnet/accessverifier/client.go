@@ -75,6 +75,9 @@ type Response struct {
 	StatusCode       int
 	// NeedAudit indicates whether git event should be audited to rails.
 	NeedAudit bool `json:"need_audit"`
+	// GitRpcUrl is the url to fetch Git SSH data via HTTP
+	GitRpcUrl        string `json:"git_rpc_url"`
+	GitRpcAuthHeader string `json:"git_rpc_auth_header"`
 }
 
 func NewClient(config *config.Config) (*Client, error) {
