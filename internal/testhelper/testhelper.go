@@ -1,3 +1,4 @@
+// Package testhelper consists of various helper functions to setup the test environment.
 package testhelper
 
 import (
@@ -11,12 +12,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TempEnv sets environment variables for the test
 func TempEnv(t *testing.T, env map[string]string) {
 	for key, value := range env {
 		t.Setenv(key, value)
 	}
 }
 
+// PrepareTestRootDir prepares the test root directory with the test data
 func PrepareTestRootDir(t *testing.T) string {
 	t.Helper()
 
@@ -28,7 +31,10 @@ func PrepareTestRootDir(t *testing.T) string {
 	oldWd, err := os.Getwd()
 	require.NoError(t, err)
 
-	t.Cleanup(func() { os.Chdir(oldWd) })
+	t.Cleanup(func() {
+		err = os.Chdir(oldWd)
+		require.NoError(t, err)
+	})
 
 	require.NoError(t, os.Chdir(testRoot))
 
@@ -49,7 +55,7 @@ func copyTestData(testRoot string) error {
 func getTestDataDir() (string, error) {
 	_, currentFile, _, ok := runtime.Caller(0)
 	if !ok {
-		return "", fmt.Errorf("Could not get caller info")
+		return "", fmt.Errorf("could not get caller info")
 	}
 
 	return path.Join(path.Dir(currentFile), "testdata"), nil
