@@ -40,7 +40,7 @@ var (
 const (
 	testRepo          = "test-gitlab-shell/gitlab-test.git"
 	testRepoNamespace = "test-gitlab-shell"
-	testRepoImportUrl = "https://gitlab.com/gitlab-org/gitlab-test.git"
+	testRepoImportURL = "https://gitlab.com/gitlab-org/gitlab-test.git"
 )
 
 type gitalyConnectionInfo struct {
@@ -88,7 +88,7 @@ func ensureGitalyRepository(t *testing.T) (*grpc.ClientConn, *pb.Repository) {
 	// Ignore the error because the repository may not exist
 	repository.RemoveRepository(context.Background(), removeReq)
 
-	createReq := &pb.CreateRepositoryFromURLRequest{Repository: glRepository, Url: testRepoImportUrl}
+	createReq := &pb.CreateRepositoryFromURLRequest{Repository: glRepository, Url: testRepoImportURL}
 	_, err = repository.CreateRepositoryFromURL(context.Background(), createReq)
 	require.NoError(t, err)
 
@@ -127,12 +127,12 @@ func startGitOverHTTPServer(t *testing.T) string {
 		},
 		{
 			Path: "/git-receive-pack",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(_ http.ResponseWriter, r *http.Request) {
 				body, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 				defer r.Body.Close()
 
-				require.Equal(t, string(body), "0000")
+				require.Equal(t, "0000", string(body))
 			},
 		},
 	}
@@ -196,13 +196,13 @@ func successAPI(t *testing.T, handlers ...customHandler) http.Handler {
 	})
 }
 
-func genServerConfig(gitlabUrl, hostKeyPath string) []byte {
+func genServerConfig(gitlabURL, hostKeyPath string) []byte {
 	return []byte(`---
 user: "git"
 log_file: ""
 log_format: json
 secret: "0123456789abcdef"
-gitlab_url: "` + gitlabUrl + `"
+gitlab_url: "` + gitlabURL + `"
 sshd:
   listen: "127.0.0.1:0"
   proxy_protocol: true
