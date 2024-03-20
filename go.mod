@@ -3,7 +3,7 @@ module gitlab.com/gitlab-org/gitlab-shell/v14
 go 1.20
 
 require (
-	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20240305141411-00bfe2e20643
+	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20240308140948-6dbff1b9ed9b
 	github.com/git-lfs/pktline v0.0.0-20230103162542-ca444d533ef1
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
