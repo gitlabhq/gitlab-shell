@@ -52,7 +52,8 @@ run:
 # output configuration options
 output:
   # colored-line-number|line-number|json|tab|checkstyle|code-climate, default is "colored-line-number"
-  format: line-number
+  formats:
+    - format: line-number
 
   # print lines of code with issue, default is true
   print-issued-lines: true
