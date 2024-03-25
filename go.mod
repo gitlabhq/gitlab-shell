@@ -1,8 +1,6 @@
 module gitlab.com/gitlab-org/gitlab-shell/v14
 
-go 1.21
-
-toolchain go1.22.1
+go 1.20
 
 require (
 	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20240308140948-6dbff1b9ed9b
