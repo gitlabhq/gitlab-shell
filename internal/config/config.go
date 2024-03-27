@@ -60,7 +60,8 @@ type HttpSettingsConfig struct {
 }
 
 type LFSConfig struct {
-	PureSSHProtocol bool `yaml:"pure_ssh_protocol"`
+	// FIXME: Let's not allow this to be set in config.yml
+	PureSSHProtocol bool // `yaml:"pure_ssh_protocol"`
 }
 
 type Config struct {

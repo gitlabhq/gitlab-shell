@@ -5,6 +5,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/discover"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/lfsauthenticate"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/lfstransfer"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/personalaccesstoken"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/receivepack"
@@ -108,6 +109,10 @@ func Build(args *commandargs.Shell, config *config.Config, readWriter *readwrite
 		return &twofactorverify.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.LfsAuthenticate:
 		return &lfsauthenticate.Command{Config: config, Args: args, ReadWriter: readWriter}
+	case commandargs.LfsTransfer:
+		if config.LFSConfig.PureSSHProtocol {
+			return &lfstransfer.Command{Config: config, Args: args, ReadWriter: readWriter}
+		}
 	case commandargs.ReceivePack:
 		return &receivepack.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.UploadPack:
