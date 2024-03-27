@@ -3,6 +3,7 @@ package lfstransfer
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -88,6 +89,11 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
+	}
+
+	// Error condition taken from example: https://pkg.go.dev/net/http#example-Get
+	if res.StatusCode > 399 {
+		return nil, errors.New(fmt.Sprintf("Response failed with status code: %d", res.StatusCode))
 	}
 
 	defer func() { _ = res.Body.Close() }()
