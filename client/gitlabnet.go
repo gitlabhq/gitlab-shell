@@ -28,11 +28,12 @@ type ErrorResponse struct {
 }
 
 type GitlabNetClient struct {
-	httpClient *HttpClient
-	user       string
-	password   string
-	secret     string
-	userAgent  string
+	HttpClient *HttpClient
+
+	user      string
+	password  string
+	secret    string
+	userAgent string
 }
 
 type ApiError struct {
@@ -57,7 +58,7 @@ func NewGitlabNetClient(
 	}
 
 	return &GitlabNetClient{
-		httpClient: httpClient,
+		HttpClient: httpClient,
 		user:       user,
 		password:   password,
 		secret:     secret,
@@ -124,15 +125,15 @@ func parseError(resp *http.Response, respErr error) error {
 }
 
 func (c *GitlabNetClient) Get(ctx context.Context, path string) (*http.Response, error) {
-	return c.DoRequest(ctx, http.MethodGet, normalizePath(path), nil)
+	return c.DoRequest(ctx, http.MethodGet, c.HttpClient.Host, normalizePath(path), nil)
 }
 
 func (c *GitlabNetClient) Post(ctx context.Context, path string, data interface{}) (*http.Response, error) {
-	return c.DoRequest(ctx, http.MethodPost, normalizePath(path), data)
+	return c.DoRequest(ctx, http.MethodPost, c.HttpClient.Host, normalizePath(path), data)
 }
 
 func (c *GitlabNetClient) Do(request *http.Request) (*http.Response, error) {
-	response, err := c.httpClient.RetryableHTTP.HTTPClient.Do(request)
+	response, err := c.HttpClient.RetryableHTTP.HTTPClient.Do(request)
 	if err := parseError(response, err); err != nil {
 		return nil, err
 	}
@@ -140,8 +141,8 @@ func (c *GitlabNetClient) Do(request *http.Request) (*http.Response, error) {
 	return response, nil
 }
 
-func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, data interface{}) (*http.Response, error) {
-	request, err := newRequest(ctx, method, c.httpClient.Host, path, data)
+func (c *GitlabNetClient) DoRequest(ctx context.Context, method, host, path string, data interface{}) (*http.Response, error) {
+	request, err := newRequest(ctx, method, host, path, data)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +167,7 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("User-Agent", c.userAgent)
 
-	response, err := c.httpClient.RetryableHTTP.Do(request)
+	response, err := c.HttpClient.RetryableHTTP.Do(request)
 	if err := parseError(response, err); err != nil {
 		return nil, err
 	}

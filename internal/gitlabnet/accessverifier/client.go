@@ -19,6 +19,8 @@ const (
 
 type Client struct {
 	client *client.GitlabNetClient
+	config *config.Config
+	host   string
 }
 
 type Request struct {
@@ -86,7 +88,7 @@ func NewClient(config *config.Config) (*Client, error) {
 		return nil, fmt.Errorf("Error creating http client: %v", err)
 	}
 
-	return &Client{client: client}, nil
+	return &Client{client: client, config: config, host: client.HttpClient.Host}, nil
 }
 
 func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action commandargs.CommandType, repo string) (*Response, error) {
@@ -108,7 +110,8 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 
 	request.CheckIp = gitlabnet.ParseIP(args.Env.RemoteAddr)
 
-	response, err := c.client.Post(ctx, "/allowed", request)
+	host := c.getCellsAddress(ctx, repo)
+	response, err := c.client.DoRequest(ctx, http.MethodPost, host, "/api/v4/internal/allowed", request)
 	if err != nil {
 		return nil, err
 	}
@@ -136,4 +139,18 @@ func parse(hr *http.Response, args *commandargs.Shell) (*Response, error) {
 
 func (r *Response) IsCustomAction() bool {
 	return r.StatusCode == http.StatusMultipleChoices
+}
+
+func (c *Client) getCellsAddress(ctx context.Context, repo string) string {
+	cellsClient := c.config.Cells.Client
+	if cellsClient == nil {
+		return c.host
+	}
+
+	cell, err := cellsClient.Classify(ctx, repo)
+	if err != nil {
+		return c.host
+	}
+
+	return cell.Address
 }
