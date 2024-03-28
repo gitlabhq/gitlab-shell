@@ -47,6 +47,7 @@ type ServerConfig struct {
 	HostCertFiles           []string     `yaml:"host_cert_files,omitempty"`
 	MACs                    []string     `yaml:"macs"`
 	KexAlgorithms           []string     `yaml:"kex_algorithms"`
+	HostKeyAlgorithms       []string     `yaml:"host_key_algorithms"`
 	Ciphers                 []string     `yaml:"ciphers"`
 	GSSAPI                  GSSAPIConfig `yaml:"gssapi,omitempty"`
 }
