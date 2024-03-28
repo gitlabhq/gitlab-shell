@@ -251,6 +251,7 @@ func TestDefaultAlgorithms(t *testing.T) {
 
 	require.Equal(t, supportedMACs, sshServerConfig.MACs)
 	require.Equal(t, supportedKeyExchanges, sshServerConfig.KeyExchanges)
+	require.Equal(t, supportedHostKeyAlgorithms, sshServerConfig.PublicKeyAuthAlgorithms)
 	require.Nil(t, sshServerConfig.Ciphers)
 
 	sshServerConfig.SetDefaults()
@@ -266,6 +267,7 @@ func TestDefaultAlgorithms(t *testing.T) {
 		"aes192-ctr",
 		"aes256-ctr",
 	}
+
 	require.Equal(t, sshServerConfig.Ciphers, defaultCiphers)
 }
 
@@ -273,13 +275,15 @@ func TestCustomAlgorithms(t *testing.T) {
 	customMACs := []string{"hmac-sha2-512-etm@openssh.com"}
 	customKexAlgos := []string{"curve25519-sha256"}
 	customCiphers := []string{"aes256-gcm@openssh.com"}
+	customHostAlgos := []string{"rsa-sha2-256"}
 
 	srvCfg := &serverConfig{
 		cfg: &config.Config{
 			Server: config.ServerConfig{
-				MACs:          customMACs,
-				KexAlgorithms: customKexAlgos,
-				Ciphers:       customCiphers,
+				MACs:              customMACs,
+				KexAlgorithms:     customKexAlgos,
+				Ciphers:           customCiphers,
+				HostKeyAlgorithms: customHostAlgos,
 			},
 		},
 	}
@@ -288,6 +292,7 @@ func TestCustomAlgorithms(t *testing.T) {
 	require.Equal(t, customMACs, sshServerConfig.MACs)
 	require.Equal(t, customKexAlgos, sshServerConfig.KeyExchanges)
 	require.Equal(t, customCiphers, sshServerConfig.Ciphers)
+	require.Equal(t, customHostAlgos, sshServerConfig.PublicKeyAuthAlgorithms)
 
 	sshServerConfig.SetDefaults()
 
