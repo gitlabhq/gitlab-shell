@@ -259,12 +259,6 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 			},
 		},
 		{
-			Path: "/api/v4/internal/auth",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				fmt.Fprint(w, r.Header.Get(secretHeaderName))
-			},
-		},
-		{
 			Path: "/api/v4/internal/jwt_auth",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				fmt.Fprint(w, r.Header.Get(apiSecretHeaderName))

@@ -16,7 +16,6 @@ import (
 
 const (
 	internalApiPath     = "/api/v4/internal"
-	secretHeaderName    = "Gitlab-Shared-Secret"
 	apiSecretHeaderName = "Gitlab-Shell-Api-Request"
 	defaultUserAgent    = "GitLab-Shell"
 	jwtTTL              = time.Minute
