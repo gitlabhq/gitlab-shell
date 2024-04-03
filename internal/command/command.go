@@ -17,8 +17,10 @@ type Command interface {
 }
 
 type LogMetadata struct {
-	Project       string `json:"project,omitempty"`
-	RootNamespace string `json:"root_namespace,omitempty"`
+	Project         string `json:"project,omitempty"`
+	RootNamespace   string `json:"root_namespace,omitempty"`
+	ProjectID       int    `json:"project_id,omitempty"`
+	RootNamespaceID int    `json:"root_namespace_id,omitempty"`
 }
 
 type LogData struct {
@@ -74,7 +76,7 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 	}
 }
 
-func NewLogData(project, username string) LogData {
+func NewLogData(project, username string, projectID, rootNamespaceID int) LogData {
 	rootNameSpace := ""
 
 	if len(project) > 0 {
@@ -91,8 +93,10 @@ func NewLogData(project, username string) LogData {
 		Username:     username,
 		WrittenBytes: 0,
 		Meta: LogMetadata{
-			Project:       project,
-			RootNamespace: rootNameSpace,
+			Project:         project,
+			RootNamespace:   rootNameSpace,
+			ProjectID:       projectID,
+			RootNamespaceID: rootNamespaceID,
 		},
 	}
 }

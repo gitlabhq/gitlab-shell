@@ -65,6 +65,8 @@ type Response struct {
 	UserId           string        `json:"gl_id"`
 	KeyType          string        `json:"gl_key_type"`
 	KeyId            int           `json:"gl_key_id"`
+	ProjectID        int           `json:"gl_project_id"`
+	RootNamespaceID  int           `json:"gl_root_namespace_id"`
 	Username         string        `json:"gl_username"`
 	GitConfigOptions []string      `json:"git_config_options"`
 	Gitaly           Gitaly        `json:"gitaly"`

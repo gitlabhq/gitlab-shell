@@ -65,33 +65,43 @@ func TestNewLogData(t *testing.T) {
 		project               string
 		username              string
 		expectedRootNamespace string
+		projectID             int
+		rootNamespaceID       int
 	}{
 		{
 			desc:                  "Project under single namespace",
 			project:               "flightjs/Flight",
 			username:              "alex-doe",
 			expectedRootNamespace: "flightjs",
+			projectID:             1,
+			rootNamespaceID:       2,
 		},
 		{
 			desc:                  "Project under single odd namespace",
 			project:               "flightjs///Flight",
 			username:              "alex-doe",
 			expectedRootNamespace: "flightjs",
+			projectID:             1,
+			rootNamespaceID:       2,
 		},
 		{
 			desc:                  "Project under deeper namespace",
 			project:               "flightjs/one/Flight",
 			username:              "alex-doe",
 			expectedRootNamespace: "flightjs",
+			projectID:             1,
+			rootNamespaceID:       2,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			data := NewLogData(tc.project, tc.username)
+			data := NewLogData(tc.project, tc.username, tc.projectID, tc.rootNamespaceID)
 			require.Equal(t, tc.username, data.Username)
 			require.Equal(t, tc.project, data.Meta.Project)
 			require.Equal(t, tc.expectedRootNamespace, data.Meta.RootNamespace)
+			require.Equal(t, tc.projectID, data.Meta.ProjectID)
+			require.Equal(t, tc.rootNamespaceID, data.Meta.RootNamespaceID)
 		})
 	}
 }
