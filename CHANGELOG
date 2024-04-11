@@ -1,3 +1,33 @@
+v14.35.0
+
+- sshd: limit server_host_key_algorithms in server config !986
+- Update github.com/charmbracelet/git-lfs-transfer digest to f0b226f !990
+- Update module google.golang.org/grpc to v1.63.2 !993
+- Update dependency golang to v1.22.2 !992
+- Update golangci-lint to 1.57.2 !988
+- Remove Gitlab-Shared-Secret reference that is no longer used !985
+- git-lfs-transfer: Enable in shell and introduce batch download !942
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.10.0 !983
+- Update golangci-lint to 1.57.1 !984
+- Update github.com/charmbracelet/git-lfs-transfer digest to 6dbff1b !981
+- Update dependency gitlab-dangerfiles to '~> 4.7.0' !982
+- chore: Fix lint issues in cmd/gitlab-sshd/acceptance_test.go !979
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.9.2 !980
+- Update module google.golang.org/protobuf to v1.33.0 !977
+- Update module google.golang.org/grpc to v1.62.1 !976
+- Update github.com/charmbracelet/git-lfs-transfer digest to 00bfe2e !974
+- Update module github.com/golang-jwt/jwt/v5 to v5.2.1 !973
+- Update module golang.org/x/crypto to v0.21.0 !972
+- chore: Fixed lint issues in internal/testhelper/testhelper.go !978
+- Update dependency golang to v1.22.1 !975
+- Update module github.com/stretchr/testify to v1.9.0 !970
+- Update github.com/charmbracelet/git-lfs-transfer digest to 3853b28 !968
+- Update github.com/charmbracelet/git-lfs-transfer digest to df8ee50 !971
+- Update module golang.org/x/crypto to v0.20.0 !966
+- Update module github.com/prometheus/client_golang to v1.19.0 !967
+- Update module google.golang.org/grpc to v1.62.0 !964
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.9.1 !963
+
 v14.34.0
 
 - Update module gitlab.com/gitlab-org/gitaly/v16 to v16.9.0 !960
