@@ -266,6 +266,10 @@ func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
 		sshCfg.Ciphers = s.cfg.Server.Ciphers
 	}
 
+	if len(s.cfg.Server.PublicKeyAlgorithms) > 0 {
+		sshCfg.PublicKeyAuthAlgorithms = s.cfg.Server.PublicKeyAlgorithms
+	}
+
 	for _, key := range s.hostKeys {
 		sshCfg.AddHostKey(key)
 	}

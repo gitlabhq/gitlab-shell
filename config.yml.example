@@ -98,6 +98,8 @@ sshd:
   kex_algorithms: [curve25519-sha256, curve25519-sha256@libssh.org, ecdh-sha2-nistp256, ecdh-sha2-nistp384, ecdh-sha2-nistp521, diffie-hellman-group14-sha256, diffie-hellman-group14-sha1]
   # Specified the ciphers allowed
   ciphers: [aes128-gcm@openssh.com, chacha20-poly1305@openssh.com, aes256-gcm@openssh.com, aes128-ctr, aes192-ctr,aes256-ctr]
+  # Specified the available Public Key algorithms
+  public_key_algorithms: [ssh-rsa, ssh-dss, ecdsa-sha2-nistp256, sk-ecdsa-sha2-nistp256@openssh.com, ecdsa-sha2-nistp384, ecdsa-sha2-nistp521, ssh-ed25519, sk-ssh-ed25519@openssh.com, rsa-sha2-256, rsa-sha2-512]
   # SSH host key files.
   host_key_files:
     - /run/secrets/ssh-hostkeys/ssh_host_rsa_key
