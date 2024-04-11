@@ -110,7 +110,15 @@ func (s *Server) listen(ctx context.Context) error {
 		log.ContextLogger(ctx).Info("Proxy protocol is enabled")
 	}
 
-	log.WithContextFields(ctx, log.Fields{"tcp_address": sshListener.Addr().String()}).Info("Listening for SSH connections")
+	fields := log.Fields{
+		"tcp_address": sshListener.Addr().String(),
+	}
+
+	if len(s.serverConfig.cfg.Server.PublicKeyAlgorithms) > 0 {
+		fields["supported_public_key_algorithms"] = s.serverConfig.cfg.Server.PublicKeyAlgorithms
+	}
+
+	log.WithContextFields(ctx, fields).Info("Listening for SSH connections")
 
 	s.listener = sshListener
 

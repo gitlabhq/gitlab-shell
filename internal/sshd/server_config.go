@@ -36,19 +36,6 @@ var (
 		"diffie-hellman-group14-sha256",
 		"diffie-hellman-group14-sha1",
 	}
-
-	supportedHostKeyAlgorithms = []string{
-		"ssh-rsa",
-		"ssh-dss",
-		"ecdsa-sha2-nistp256",
-		"sk-ecdsa-sha2-nistp256@openssh.com",
-		"ecdsa-sha2-nistp384",
-		"ecdsa-sha2-nistp521",
-		"ssh-ed25519",
-		"sk-ssh-ed25519@openssh.com",
-		"rsa-sha2-256",
-		"rsa-sha2-512",
-	}
 )
 
 type serverConfig struct {
@@ -279,10 +266,8 @@ func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
 		sshCfg.Ciphers = s.cfg.Server.Ciphers
 	}
 
-	if len(s.cfg.Server.HostKeyAlgorithms) > 0 {
-		sshCfg.PublicKeyAuthAlgorithms = s.cfg.Server.HostKeyAlgorithms
-	} else {
-		sshCfg.PublicKeyAuthAlgorithms = supportedHostKeyAlgorithms
+	if len(s.cfg.Server.PublicKeyAlgorithms) > 0 {
+		sshCfg.PublicKeyAuthAlgorithms = s.cfg.Server.PublicKeyAlgorithms
 	}
 
 	for _, key := range s.hostKeys {
