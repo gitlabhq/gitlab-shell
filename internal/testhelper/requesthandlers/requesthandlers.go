@@ -1,3 +1,4 @@
+// Package requesthandlers provides functions for building test request handlers.
 package requesthandlers
 
 import (
@@ -10,11 +11,12 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 )
 
-func BuildDisallowedByApiHandlers(t *testing.T) []testserver.TestRequestHandler {
+// BuildDisallowedByAPIHandlers returns test request handlers for disallowed API calls.
+func BuildDisallowedByAPIHandlers(t *testing.T) []testserver.TestRequestHandler {
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/allowed",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := map[string]interface{}{
 					"status":  false,
 					"message": "Disallowed by API call",
@@ -28,11 +30,12 @@ func BuildDisallowedByApiHandlers(t *testing.T) []testserver.TestRequestHandler 
 	return requests
 }
 
+// BuildAllowedWithGitalyHandlers returns test request handlers for allowed API calls with Gitaly.
 func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testserver.TestRequestHandler {
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/allowed",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := map[string]interface{}{
 					"status":      true,
 					"gl_id":       "1",
@@ -65,11 +68,12 @@ func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testse
 	return requests
 }
 
+// BuildAllowedWithCustomActionsHandlers returns test request handlers for allowed API calls with custom actions.
 func BuildAllowedWithCustomActionsHandlers(t *testing.T) []testserver.TestRequestHandler {
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/allowed",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := map[string]interface{}{
 					"status": true,
 					"gl_id":  "1",
@@ -88,14 +92,14 @@ func BuildAllowedWithCustomActionsHandlers(t *testing.T) []testserver.TestReques
 		},
 		{
 			Path: "/geo/proxy/info_refs",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := map[string]interface{}{"result": []byte("custom")}
 				require.NoError(t, json.NewEncoder(w).Encode(body))
 			},
 		},
 		{
 			Path: "/geo/proxy/push",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := map[string]interface{}{"result": []byte("output")}
 				require.NoError(t, json.NewEncoder(w).Encode(body))
 			},
