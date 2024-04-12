@@ -1,6 +1,8 @@
 module gitlab.com/gitlab-org/gitlab-shell/v14
 
-go 1.20
+go 1.21
+
+toolchain go1.22.2
 
 require (
 	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20240405134914-3263d2f69f2a
@@ -16,7 +18,7 @@ require (
 	github.com/prometheus/client_golang v1.19.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
-	gitlab.com/gitlab-org/gitaly/v16 v16.10.2
+	gitlab.com/gitlab-org/gitaly/v16 v16.10.3
 	gitlab.com/gitlab-org/labkit v1.21.0
 	golang.org/x/crypto v0.22.0
 	golang.org/x/sync v0.6.0
