@@ -31,7 +31,7 @@ func TestAllowedAccess(t *testing.T) {
 }
 
 func TestForbiddenAccess(t *testing.T) {
-	requests := requesthandlers.BuildDisallowedByApiHandlers(t)
+	requests := requesthandlers.BuildDisallowedByAPIHandlers(t)
 
 	cmd, _ := setup(t, "disallowed", requests)
 

@@ -21,7 +21,7 @@ import (
 )
 
 func TestFailedRequests(t *testing.T) {
-	requests := requesthandlers.BuildDisallowedByApiHandlers(t)
+	requests := requesthandlers.BuildDisallowedByAPIHandlers(t)
 	url := testserver.StartHttpServer(t, requests)
 
 	testCases := []struct {
