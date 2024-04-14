@@ -1,3 +1,4 @@
+// Package main is the entry point for the gitlab-shell-authorized-keys-check command
 package main
 
 import (
@@ -55,7 +56,7 @@ func main() {
 	ctx, finished := command.Setup(executable.Name, config)
 	defer finished()
 
-	if ctx, err = cmd.Execute(ctx); err != nil {
+	if _, err = cmd.Execute(ctx); err != nil {
 		console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
 		os.Exit(1)
 	}
