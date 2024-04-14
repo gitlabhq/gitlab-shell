@@ -1,3 +1,4 @@
+// Package twofactorverify provides functionality for verifying two-factor authentication in GitLab.
 package twofactorverify
 
 import (
@@ -13,31 +14,36 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
+// Client represents a client for interacting with the two-factor verification API.
 type Client struct {
 	config *config.Config
 	client *client.GitlabNetClient
 }
 
+// Response represents the response from the two-factor verification API.
 type Response struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
 }
 
+// RequestBody represents the request body for two-factor verification.
 type RequestBody struct {
-	KeyId      string `json:"key_id,omitempty"`
-	UserId     int64  `json:"user_id,omitempty"`
+	KeyID      string `json:"key_id,omitempty"`
+	UserID     int64  `json:"user_id,omitempty"`
 	OTPAttempt string `json:"otp_attempt,omitempty"`
 }
 
+// NewClient creates a new instance of the two-factor verification client.
 func NewClient(config *config.Config) (*Client, error) {
 	client, err := gitlabnet.GetClient(config)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating http client: %v", err)
+		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
 	return &Client{config: config, client: client}, nil
 }
 
+// VerifyOTP verifies the one-time password (OTP) for two-factor authentication.
 func (c *Client) VerifyOTP(ctx context.Context, args *commandargs.Shell, otp string) error {
 	requestBody, err := c.getRequestBody(ctx, args, otp)
 	if err != nil {
@@ -53,6 +59,7 @@ func (c *Client) VerifyOTP(ctx context.Context, args *commandargs.Shell, otp str
 	return parse(response)
 }
 
+// PushAuth performs two-factor push authentication.
 func (c *Client) PushAuth(ctx context.Context, args *commandargs.Shell) error {
 	requestBody, err := c.getRequestBody(ctx, args, "")
 	if err != nil {
@@ -90,7 +97,7 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, ot
 
 	var requestBody *RequestBody
 	if args.GitlabKeyId != "" {
-		requestBody = &RequestBody{KeyId: args.GitlabKeyId, OTPAttempt: otp}
+		requestBody = &RequestBody{KeyID: args.GitlabKeyId, OTPAttempt: otp}
 	} else {
 		userInfo, err := client.GetByCommandArgs(ctx, args)
 
@@ -98,7 +105,7 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, ot
 			return nil, err
 		}
 
-		requestBody = &RequestBody{UserId: userInfo.UserId, OTPAttempt: otp}
+		requestBody = &RequestBody{UserID: userInfo.UserId, OTPAttempt: otp}
 	}
 
 	return requestBody, nil

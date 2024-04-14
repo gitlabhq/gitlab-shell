@@ -40,7 +40,7 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 				var requestBody *twofactorverify.RequestBody
 				require.NoError(t, json.Unmarshal(b, &requestBody))
 
-				switch requestBody.KeyId {
+				switch requestBody.KeyID {
 				case "verify_via_otp", "verify_via_otp_with_push_error":
 					body := map[string]interface{}{
 						"success": true,
@@ -70,7 +70,7 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 				var requestBody *twofactorverify.RequestBody
 				require.NoError(t, json.Unmarshal(b, &requestBody))
 
-				switch requestBody.KeyId {
+				switch requestBody.KeyID {
 				case "verify_via_push":
 					body := map[string]interface{}{
 						"success": true,
