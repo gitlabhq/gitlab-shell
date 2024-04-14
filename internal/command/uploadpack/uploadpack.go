@@ -1,3 +1,4 @@
+// Package uploadpack provides functionality for handling upload-pack command.
 package uploadpack
 
 import (
@@ -15,12 +16,16 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
+// Command represents the upload-pack command
 type Command struct {
 	Config     *config.Config
 	Args       *commandargs.Shell
 	ReadWriter *readwriter.ReadWriter
 }
 
+type logDataKey struct{}
+
+// Execute executes the upload-pack command
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SshArgs
 	if len(args) != 2 {
@@ -39,8 +44,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		response.ProjectID,
 		response.RootNamespaceID,
 	)
-
-	ctxWithLogData := context.WithValue(ctx, "logData", logData)
+	ctxWithLogData := context.WithValue(ctx, logDataKey{}, logData)
 
 	if response.IsCustomAction() {
 		if response.Payload.Data.GeoProxyFetchDirectToPrimary {
@@ -73,7 +77,11 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {
-	cmd := accessverifier.Command{c.Config, c.Args, c.ReadWriter}
+	cmd := accessverifier.Command{
+		Config:     c.Config,
+		Args:       c.Args,
+		ReadWriter: c.ReadWriter,
+	}
 
 	return cmd.Verify(ctx, c.Args.CommandType, repo)
 }
