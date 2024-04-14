@@ -1,3 +1,4 @@
+// Package uploadpack provides functionality for handling upload-pack command
 package uploadpack
 
 import (

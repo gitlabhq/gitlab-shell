@@ -21,7 +21,7 @@ func TestUploadPack(t *testing.T) {
 	for _, network := range []string{"unix", "tcp", "dns"} {
 		t.Run(fmt.Sprintf("via %s network", network), func(t *testing.T) {
 			gitalyAddress, testServer := testserver.StartGitalyServer(t, network)
-			t.Log(fmt.Sprintf("Server address: %s", gitalyAddress))
+			t.Logf(fmt.Sprintf("Server address: %s", gitalyAddress))
 
 			requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)
 			url := testserver.StartHttpServer(t, requests)
@@ -29,7 +29,7 @@ func TestUploadPack(t *testing.T) {
 			output := &bytes.Buffer{}
 			input := &bytes.Buffer{}
 
-			userId := "1"
+			userID := "1"
 			repo := "group/repo"
 
 			env := sshenv.Env{
@@ -39,7 +39,7 @@ func TestUploadPack(t *testing.T) {
 			}
 
 			args := &commandargs.Shell{
-				GitlabKeyId: userId,
+				GitlabKeyId: userID,
 				CommandType: commandargs.UploadPack,
 				SshArgs:     []string{"git-upload-pack", repo},
 				Env:         env,
@@ -76,7 +76,7 @@ func TestUploadPack(t *testing.T) {
 				require.Equal(t, v, actual[0])
 			}
 			require.Empty(t, testServer.ReceivedMD["some-other-ff"])
-			require.Equal(t, testServer.ReceivedMD["x-gitlab-correlation-id"][0], "a-correlation-id")
+			require.Equal(t, "a-correlation-id", testServer.ReceivedMD["x-gitlab-correlation-id"][0])
 		})
 	}
 }
