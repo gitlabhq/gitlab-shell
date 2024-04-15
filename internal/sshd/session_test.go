@@ -23,7 +23,7 @@ type fakeChannel struct {
 	sentRequestPayload []byte
 }
 
-func (f *fakeChannel) Read(data []byte) (int, error) {
+func (f *fakeChannel) Read(_ []byte) (int, error) {
 	return 0, nil
 }
 
@@ -39,7 +39,7 @@ func (f *fakeChannel) CloseWrite() error {
 	return nil
 }
 
-func (f *fakeChannel) SendRequest(name string, wantReply bool, payload []byte) (bool, error) {
+func (f *fakeChannel) SendRequest(name string, _ bool, payload []byte) (bool, error) {
 	f.sentRequestName = name
 	f.sentRequestPayload = payload
 
@@ -53,7 +53,7 @@ func (f *fakeChannel) Stderr() io.ReadWriter {
 var requests = []testserver.TestRequestHandler{
 	{
 		Path: "/api/v4/internal/discover",
-		Handler: func(w http.ResponseWriter, r *http.Request) {
+		Handler: func(w http.ResponseWriter, _ *http.Request) {
 			w.Write([]byte(`{"id": 1000, "name": "Test User", "username": "test-user"}`))
 		},
 	},
@@ -133,7 +133,7 @@ func TestHandleExec(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			sessions := []*session{
 				{
-					gitlabKeyId: "id",
+					gitlabKeyID: "id",
 					cfg:         &config.Config{GitlabUrl: url},
 				},
 				{
@@ -152,7 +152,8 @@ func TestHandleExec(t *testing.T) {
 				r := &ssh.Request{Payload: tc.payload}
 
 				s.channel = f
-				_, shouldContinue, err := s.handleExec(context.Background(), r)
+				shouldContinue := false
+				_, err := s.handleExec(context.Background(), r)
 
 				require.Equal(t, tc.expectedErr, err)
 				require.False(t, shouldContinue)
@@ -168,7 +169,7 @@ func TestHandleShell(t *testing.T) {
 		desc                 string
 		cmd                  string
 		errMsg               string
-		gitlabKeyId          string
+		gitlabKeyID          string
 		expectedOutString    string
 		expectedErrString    string
 		expectedExitCode     uint32
@@ -178,7 +179,7 @@ func TestHandleShell(t *testing.T) {
 			desc:              "fails to parse command",
 			cmd:               `\`,
 			errMsg:            "ERROR: Failed to parse command: Invalid SSH command: invalid command line string\n",
-			gitlabKeyId:       "root",
+			gitlabKeyID:       "root",
 			expectedErrString: "Invalid SSH command: invalid command line string",
 			expectedExitCode:  128,
 		},
@@ -186,14 +187,14 @@ func TestHandleShell(t *testing.T) {
 			desc:              "specified command is unknown",
 			cmd:               "unknown-command",
 			errMsg:            "ERROR: Unknown command: unknown-command\n",
-			gitlabKeyId:       "root",
+			gitlabKeyID:       "root",
 			expectedErrString: "Disallowed command",
 			expectedExitCode:  128,
 		},
 		{
 			desc:              "fails to parse command",
 			cmd:               "discover",
-			gitlabKeyId:       "",
+			gitlabKeyID:       "",
 			errMsg:            "ERROR: Failed to get username: who='' is invalid\n",
 			expectedErrString: "Failed to get username: who='' is invalid",
 			expectedExitCode:  1,
@@ -202,7 +203,7 @@ func TestHandleShell(t *testing.T) {
 			desc:                 "parses command",
 			cmd:                  "discover",
 			errMsg:               "",
-			gitlabKeyId:          "root",
+			gitlabKeyID:          "root",
 			expectedOutString:    "Welcome to GitLab, @test-user!\n",
 			expectedErrString:    "",
 			expectedExitCode:     0,
@@ -217,7 +218,7 @@ func TestHandleShell(t *testing.T) {
 			stdOut := &bytes.Buffer{}
 			stdErr := &bytes.Buffer{}
 			s := &session{
-				gitlabKeyId: tc.gitlabKeyId,
+				gitlabKeyID: tc.gitlabKeyID,
 				execCmd:     tc.cmd,
 				channel:     &fakeChannel{stdErr: stdErr, stdOut: stdOut},
 				cfg:         &config.Config{GitlabUrl: url},
