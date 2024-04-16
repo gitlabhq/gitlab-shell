@@ -1,3 +1,4 @@
+// Package command provides functionality for executing commands
 package command
 
 import (
@@ -8,6 +9,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
+// New creates a new command based on the provided configuration and readWriter
 func New(config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
 	if cmd := build(config, readWriter); cmd != nil {
 		return cmd, nil
