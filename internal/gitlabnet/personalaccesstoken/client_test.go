@@ -32,7 +32,7 @@ func initialize(t *testing.T) {
 				var requestBody *RequestBody
 				json.Unmarshal(b, &requestBody)
 
-				switch requestBody.KeyId {
+				switch requestBody.KeyID {
 				case "0":
 					body := map[string]interface{}{
 						"success":    true,
@@ -59,7 +59,7 @@ func initialize(t *testing.T) {
 					w.WriteHeader(http.StatusForbidden)
 				}
 
-				if requestBody.UserId == 1 {
+				if requestBody.UserID == 1 {
 					body := map[string]interface{}{
 						"success":    true,
 						"token":      "YXuxvUgCEmeePY3G1YAa",
@@ -72,7 +72,7 @@ func initialize(t *testing.T) {
 		},
 		{
 			Path: "/api/v4/internal/discover",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := &discover.Response{
 					UserId:   1,
 					Username: "jane-doe",
@@ -129,29 +129,29 @@ func TestErrorResponses(t *testing.T) {
 
 	testCases := []struct {
 		desc          string
-		fakeId        string
+		fakeID        string
 		expectedError string
 	}{
 		{
 			desc:          "A response with an error message",
-			fakeId:        "2",
+			fakeID:        "2",
 			expectedError: "Not allowed!",
 		},
 		{
 			desc:          "A response with bad JSON",
-			fakeId:        "3",
+			fakeID:        "3",
 			expectedError: "Parsing failed",
 		},
 		{
 			desc:          "An error response without message",
-			fakeId:        "4",
+			fakeID:        "4",
 			expectedError: "Internal API error (403)",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			args := &commandargs.Shell{GitlabKeyId: tc.fakeId}
+			args := &commandargs.Shell{GitlabKeyId: tc.fakeID}
 			resp, err := client.GetPersonalAccessToken(
 				context.Background(), args, "newtoken", &[]string{"api"}, "",
 			)

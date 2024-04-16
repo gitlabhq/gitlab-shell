@@ -32,7 +32,7 @@ func setup(t *testing.T) {
 				var requestBody *personalaccesstoken.RequestBody
 				json.Unmarshal(b, &requestBody)
 
-				switch requestBody.KeyId {
+				switch requestBody.KeyID {
 				case "forbidden":
 					body := map[string]interface{}{
 						"success": false,
