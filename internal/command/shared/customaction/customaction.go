@@ -1,3 +1,4 @@
+// Package customaction provides functionality for handling custom actions
 package customaction
 
 import (
@@ -17,24 +18,27 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
 )
 
+// Request represents the request structure for custom actions
 type Request struct {
 	SecretToken []byte                           `json:"secret_token"`
 	Data        accessverifier.CustomPayloadData `json:"data"`
 	Output      []byte                           `json:"output"`
 }
 
+// Response represents the response structure for custom actions
 type Response struct {
 	Result  []byte `json:"result"`
 	Message string `json:"message"`
 }
 
+// Command represents the custom action command
 type Command struct {
 	Config     *config.Config
 	ReadWriter *readwriter.ReadWriter
 	EOFSent    bool
 }
 
-// When `geo_proxy_direct_to_primary` feature flag is enabled, a Git over HTTP direct request
+// Execute method runs when `geo_proxy_direct_to_primary` feature flag is enabled, a Git over HTTP direct request
 // to primary repo is performed instead of proxying the request through Gitlab Rails.
 // After the feature flag is enabled by default and removed, this package will be removed along with it.
 func (c *Command) Execute(ctx context.Context, response *accessverifier.Response) error {
@@ -42,13 +46,13 @@ func (c *Command) Execute(ctx context.Context, response *accessverifier.Response
 	apiEndpoints := data.ApiEndpoints
 
 	if len(apiEndpoints) == 0 {
-		return errors.New("Custom action error: Empty API endpoints")
+		return errors.New("custom action error: Empty API endpoints")
 	}
 
-	return c.processApiEndpoints(ctx, response)
+	return c.processAPIEndpoints(ctx, response)
 }
 
-func (c *Command) processApiEndpoints(ctx context.Context, response *accessverifier.Response) error {
+func (c *Command) processAPIEndpoints(ctx context.Context, response *accessverifier.Response) error {
 	client, err := gitlabnet.GetClient(c.Config)
 
 	if err != nil {
@@ -107,7 +111,7 @@ func (c *Command) performRequest(ctx context.Context, client *client.GitlabNetCl
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	cr := &Response{}
 	if err := gitlabnet.ParseJSON(response, cr); err != nil {
@@ -141,9 +145,8 @@ func (c *Command) readFromStdin() ([]byte, error) {
 
 		output = append(output, packData.Bytes()...)
 		return output, err
-	} else {
-		return output, nil
 	}
+	return output, nil
 }
 
 func (c *Command) readFromStdinNoEOF() []byte {
