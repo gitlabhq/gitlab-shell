@@ -1,3 +1,4 @@
+// Package lfsauthenticate provides functionality for authenticating Git LFS requests
 package lfsauthenticate
 
 import (
@@ -22,22 +23,28 @@ const (
 	uploadOperation   = "upload"
 )
 
+// Command represents the LFS authentication command
 type Command struct {
 	Config     *config.Config
 	Args       *commandargs.Shell
 	ReadWriter *readwriter.ReadWriter
 }
 
+// PayloadHeader represents the header of the LFS payload
 type PayloadHeader struct {
 	Auth string `json:"Authorization"`
 }
 
+// Payload represents the LFS payload
 type Payload struct {
 	Header    PayloadHeader `json:"header"`
 	Href      string        `json:"href"`
 	ExpiresIn int           `json:"expires_in,omitempty"`
 }
 
+type logInfo struct{}
+
+// Execute executes the LFS authentication command
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SshArgs
 	if len(args) < 3 {
@@ -64,7 +71,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		accessResponse.ProjectID,
 		accessResponse.RootNamespaceID,
 	)
-	ctxWithLogData := context.WithValue(ctx, "logData", logData)
+	ctxWithLogData := context.WithValue(ctx, logInfo{}, logData)
 
 	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserID)
 	if err != nil {
@@ -98,18 +105,22 @@ func actionFromOperation(operation string) (commandargs.CommandType, error) {
 }
 
 func (c *Command) verifyAccess(ctx context.Context, action commandargs.CommandType, repo string) (*accessverifier.Response, error) {
-	cmd := accessverifier.Command{c.Config, c.Args, c.ReadWriter}
+	cmd := accessverifier.Command{
+		Config:     c.Config,
+		Args:       c.Args,
+		ReadWriter: c.ReadWriter,
+	}
 
 	return cmd.Verify(ctx, action, repo)
 }
 
-func (c *Command) authenticate(ctx context.Context, operation string, repo, userId string) ([]byte, error) {
+func (c *Command) authenticate(ctx context.Context, operation string, repo, userID string) ([]byte, error) {
 	client, err := lfsauthenticate.NewClient(c.Config, c.Args)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := client.Authenticate(ctx, operation, repo, userId)
+	response, err := client.Authenticate(ctx, operation, repo, userID)
 	if err != nil {
 		return nil, err
 	}
