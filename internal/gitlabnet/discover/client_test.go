@@ -24,38 +24,39 @@ func init() {
 		{
 			Path: "/api/v4/internal/discover",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Query().Get("key_id") == "1" {
+				switch {
+				case r.URL.Query().Get("key_id") == "1":
 					body := &Response{
-						UserId:   2,
+						UserID:   2,
 						Username: "alex-doe",
 						Name:     "Alex Doe",
 					}
 					json.NewEncoder(w).Encode(body)
-				} else if r.URL.Query().Get("username") == "jane-doe" {
+				case r.URL.Query().Get("username") == "jane-doe":
 					body := &Response{
-						UserId:   1,
+						UserID:   1,
 						Username: "jane-doe",
 						Name:     "Jane Doe",
 					}
 					json.NewEncoder(w).Encode(body)
-				} else if r.URL.Query().Get("krb5principal") == "john-doe@TEST.TEST" {
+				case r.URL.Query().Get("krb5principal") == "john-doe@TEST.TEST":
 					body := &Response{
-						UserId:   3,
+						UserID:   3,
 						Username: "john-doe",
 						Name:     "John Doe",
 					}
 					json.NewEncoder(w).Encode(body)
-				} else if r.URL.Query().Get("username") == "broken_message" {
+				case r.URL.Query().Get("username") == "broken_message":
 					w.WriteHeader(http.StatusForbidden)
 					body := &client.ErrorResponse{
 						Message: "Not allowed!",
 					}
 					json.NewEncoder(w).Encode(body)
-				} else if r.URL.Query().Get("username") == "broken_json" {
+				case r.URL.Query().Get("username") == "broken_json":
 					w.Write([]byte("{ \"message\": \"broken json!\""))
-				} else if r.URL.Query().Get("username") == "broken_empty" {
+				case r.URL.Query().Get("username") == "broken_empty":
 					w.WriteHeader(http.StatusForbidden)
-				} else {
+				default:
 					fmt.Fprint(w, "null")
 				}
 			},
@@ -70,7 +71,7 @@ func TestGetByKeyId(t *testing.T) {
 	params.Add("key_id", "1")
 	result, err := client.getResponse(context.Background(), params)
 	require.NoError(t, err)
-	require.Equal(t, &Response{UserId: 2, Username: "alex-doe", Name: "Alex Doe"}, result)
+	require.Equal(t, &Response{UserID: 2, Username: "alex-doe", Name: "Alex Doe"}, result)
 }
 
 func TestGetByUsername(t *testing.T) {
@@ -80,7 +81,7 @@ func TestGetByUsername(t *testing.T) {
 	params.Add("username", "jane-doe")
 	result, err := client.getResponse(context.Background(), params)
 	require.NoError(t, err)
-	require.Equal(t, &Response{UserId: 1, Username: "jane-doe", Name: "Jane Doe"}, result)
+	require.Equal(t, &Response{UserID: 1, Username: "jane-doe", Name: "Jane Doe"}, result)
 }
 
 func TestGetByKrb5Principal(t *testing.T) {
@@ -90,7 +91,7 @@ func TestGetByKrb5Principal(t *testing.T) {
 	params.Add("krb5principal", "john-doe@TEST.TEST")
 	result, err := client.getResponse(context.Background(), params)
 	require.NoError(t, err)
-	require.Equal(t, &Response{UserId: 3, Username: "john-doe", Name: "John Doe"}, result)
+	require.Equal(t, &Response{UserID: 3, Username: "john-doe", Name: "John Doe"}, result)
 }
 
 func TestMissingUser(t *testing.T) {

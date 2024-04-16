@@ -94,7 +94,7 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, na
 	if err != nil {
 		return nil, err
 	}
-	requestBody.UserID = userInfo.UserId
+	requestBody.UserID = userInfo.UserID
 
 	return requestBody, nil
 }
