@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/labkit/log"
 )
 
 var httpClient = &http.Client{
@@ -66,7 +67,12 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 	}
 
 	if response.StatusCode >= 400 {
-		defer response.Body.Close()
+		defer func() {
+			if err := response.Body.Close(); err != nil {
+				log.WithError(err).Error("Unable to close response body")
+			}
+		}()
+
 		body, err := io.ReadAll(response.Body)
 		if err != nil {
 			return nil, &client.APIError{Msg: repoUnavailableErrMsg}
