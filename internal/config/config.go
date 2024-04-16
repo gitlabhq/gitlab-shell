@@ -82,7 +82,7 @@ type Config struct {
 	Server         ServerConfig       `yaml:"sshd"`
 	LFSConfig      LFSConfig          `yaml:"lfs"`
 
-	httpClient     *client.HttpClient
+	httpClient     *client.HTTPClient
 	httpClientErr  error
 	httpClientOnce sync.Once
 
@@ -134,7 +134,7 @@ func (c *Config) ApplyGlobalState() {
 	}
 }
 
-func (c *Config) HTTPClient() (*client.HttpClient, error) {
+func (c *Config) HTTPClient() (*client.HTTPClient, error) {
 	c.httpClientOnce.Do(func() {
 		client, err := client.NewHTTPClientWithOpts(
 			c.GitlabUrl,

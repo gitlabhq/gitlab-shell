@@ -81,7 +81,7 @@ func TestEmptyBasicAuthSettings(t *testing.T) {
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/empty_basic_auth",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(_ http.ResponseWriter, r *http.Request) {
 				require.Equal(t, "", r.Header.Get("Authorization"))
 			},
 		},
@@ -89,8 +89,9 @@ func TestEmptyBasicAuthSettings(t *testing.T) {
 
 	client := setup(t, "", "", requests)
 
-	_, err := client.Get(context.Background(), "/empty_basic_auth")
+	resp, err := client.Get(context.Background(), "/empty_basic_auth")
 	require.NoError(t, err)
+	resp.Body.Close()
 }
 
 func TestRequestWithUserAgent(t *testing.T) {
@@ -98,13 +99,13 @@ func TestRequestWithUserAgent(t *testing.T) {
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/default_user_agent",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(_ http.ResponseWriter, r *http.Request) {
 				require.Equal(t, defaultUserAgent, r.UserAgent())
 			},
 		},
 		{
 			Path: "/api/v4/internal/override_user_agent",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(_ http.ResponseWriter, r *http.Request) {
 				require.Equal(t, gitalyUserAgent, r.UserAgent())
 			},
 		},
@@ -112,12 +113,15 @@ func TestRequestWithUserAgent(t *testing.T) {
 
 	client := setup(t, "", "", requests)
 
-	_, err := client.Get(context.Background(), "/default_user_agent")
+	defaultUserAgentResp, err := client.Get(context.Background(), "/default_user_agent")
 	require.NoError(t, err)
 
 	client.SetUserAgent(gitalyUserAgent)
-	_, err = client.Get(context.Background(), "/override_user_agent")
+	overriddenUserAgentResp, err := client.Get(context.Background(), "/override_user_agent")
 	require.NoError(t, err)
+
+	defaultUserAgentResp.Body.Close()
+	overriddenUserAgentResp.Body.Close()
 }
 
 func setup(t *testing.T, username, password string, requests []testserver.TestRequestHandler) *GitlabNetClient {

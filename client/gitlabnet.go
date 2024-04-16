@@ -30,7 +30,7 @@ type ErrorResponse struct {
 
 // GitlabNetClient is a client for interacting with GitLab API
 type GitlabNetClient struct {
-	httpClient *HttpClient
+	httpClient *HTTPClient
 	user       string
 	password   string
 	secret     string
@@ -54,7 +54,7 @@ func NewGitlabNetClient(
 	user,
 	password,
 	secret string,
-	httpClient *HttpClient,
+	httpClient *HTTPClient,
 ) (*GitlabNetClient, error) {
 	if httpClient == nil {
 		return nil, fmt.Errorf("unsupported protocol")
