@@ -524,7 +524,7 @@ func setup(t *testing.T, keyId string, repo string, op string) (string, *Command
 
 				var request *lfsauthenticate.Request
 				require.NoError(t, json.Unmarshal(b, &request))
-				if request.KeyId == "rw" {
+				if request.KeyID == "rw" {
 					body := map[string]interface{}{
 						"username":             "john",
 						"lfs_token":            "sometoken",

@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	keyId = "123"
+	keyID = "123"
 	repo  = "group/repo"
 )
 
@@ -31,8 +31,8 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 				var request *Request
 				require.NoError(t, json.Unmarshal(b, &request))
 
-				switch request.KeyId {
-				case keyId:
+				switch request.KeyID {
+				case keyID:
 					body := map[string]interface{}{
 						"username":             "john",
 						"lfs_token":            "sometoken",
@@ -114,7 +114,7 @@ func TestSuccessfulRequests(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			operation := tc.operation
-			args := &commandargs.Shell{GitlabKeyId: keyId, CommandType: commandargs.LfsAuthenticate, SshArgs: []string{"git-lfs-authenticate", repo, operation}}
+			args := &commandargs.Shell{GitlabKeyId: keyID, CommandType: commandargs.LfsAuthenticate, SshArgs: []string{"git-lfs-authenticate", repo, operation}}
 			client, err := NewClient(&config.Config{GitlabUrl: url}, args)
 			require.NoError(t, err)
 
