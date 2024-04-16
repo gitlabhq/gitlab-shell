@@ -55,7 +55,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		accessResponse.RootNamespaceID,
 	))
 
-	auth, err := c.authenticate(ctx, operation, repo, accessResponse.UserId)
+	auth, err := c.authenticate(ctx, operation, repo, accessResponse.UserID)
 	if err != nil {
 		return ctxWithLogData, err
 	}

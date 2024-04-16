@@ -1,3 +1,4 @@
+// Package accessverifier provides functionality for verifying access to GitLab resources
 package accessverifier
 
 import (
@@ -17,24 +18,27 @@ const (
 	anyChanges  = "_any"
 )
 
+// Client is a client for accessing resources
 type Client struct {
 	client *client.GitlabNetClient
 }
 
+// Request represents a request for accessing resources
 type Request struct {
 	Action        commandargs.CommandType `json:"action"`
 	Repo          string                  `json:"project"`
 	Changes       string                  `json:"changes"`
 	Protocol      string                  `json:"protocol"`
-	KeyId         string                  `json:"key_id,omitempty"`
+	KeyID         string                  `json:"key_id,omitempty"`
 	Username      string                  `json:"username,omitempty"`
 	Krb5Principal string                  `json:"krb5principal,omitempty"`
-	CheckIp       string                  `json:"check_ip,omitempty"`
+	CheckIP       string                  `json:"check_ip,omitempty"`
 	// NamespacePath is the full path of the namespace in which the authenticated
 	// user is allowed to perform operation.
 	NamespacePath string `json:"namespace_path,omitempty"`
 }
 
+// Gitaly represents Gitaly server information
 type Gitaly struct {
 	Repo     pb.Repository     `json:"repository"`
 	Address  string            `json:"address"`
@@ -42,29 +46,32 @@ type Gitaly struct {
 	Features map[string]string `json:"features"`
 }
 
+// CustomPayloadData represents custom payload data
 type CustomPayloadData struct {
-	ApiEndpoints                            []string          `json:"api_endpoints"`
+	APIEndpoints                            []string          `json:"api_endpoints"`
 	Username                                string            `json:"gl_username"`
 	PrimaryRepo                             string            `json:"primary_repo"`
-	UserId                                  string            `json:"gl_id,omitempty"`
+	UserID                                  string            `json:"gl_id,omitempty"`
 	RequestHeaders                          map[string]string `json:"request_headers"`
 	GeoProxyDirectToPrimary                 bool              `json:"geo_proxy_direct_to_primary"`
 	GeoProxyFetchDirectToPrimary            bool              `json:"geo_proxy_fetch_direct_to_primary"`
 	GeoProxyFetchDirectToPrimaryWithOptions bool              `json:"geo_proxy_fetch_direct_to_primary_with_options"`
 }
 
+// CustomPayload represents a custom payload
 type CustomPayload struct {
 	Action string            `json:"action"`
 	Data   CustomPayloadData `json:"data"`
 }
 
+// Response represents a response from GitLab
 type Response struct {
 	Success          bool          `json:"status"`
 	Message          string        `json:"message"`
 	Repo             string        `json:"gl_repository"`
-	UserId           string        `json:"gl_id"`
+	UserID           string        `json:"gl_id"`
 	KeyType          string        `json:"gl_key_type"`
-	KeyId            int           `json:"gl_key_id"`
+	KeyID            int           `json:"gl_key_id"`
 	ProjectID        int           `json:"gl_project_id"`
 	RootNamespaceID  int           `json:"gl_root_namespace_id"`
 	Username         string        `json:"gl_username"`
@@ -79,15 +86,17 @@ type Response struct {
 	NeedAudit bool `json:"need_audit"`
 }
 
+// NewClient creates a new instance of Client
 func NewClient(config *config.Config) (*Client, error) {
 	client, err := gitlabnet.GetClient(config)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating http client: %v", err)
+		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
 	return &Client{client: client}, nil
 }
 
+// Verify verifies access to a GitLab resource
 func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action commandargs.CommandType, repo string) (*Response, error) {
 	request := &Request{
 		Action:        action,
@@ -97,21 +106,22 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 		NamespacePath: args.Env.NamespacePath,
 	}
 
-	if args.GitlabUsername != "" {
+	switch {
+	case args.GitlabUsername != "":
 		request.Username = args.GitlabUsername
-	} else if args.GitlabKrb5Principal != "" {
+	case args.GitlabKrb5Principal != "":
 		request.Krb5Principal = args.GitlabKrb5Principal
-	} else {
-		request.KeyId = args.GitlabKeyId
+	default:
+		request.KeyID = args.GitlabKeyId
 	}
 
-	request.CheckIp = gitlabnet.ParseIP(args.Env.RemoteAddr)
+	request.CheckIP = gitlabnet.ParseIP(args.Env.RemoteAddr)
 
 	response, err := c.client.Post(ctx, "/allowed", request)
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	return parse(response, args)
 }
@@ -125,7 +135,7 @@ func parse(hr *http.Response, args *commandargs.Shell) (*Response, error) {
 	if args.GitlabKeyId != "" {
 		response.Who = "key-" + args.GitlabKeyId
 	} else {
-		response.Who = response.UserId
+		response.Who = response.UserID
 	}
 
 	response.StatusCode = hr.StatusCode
@@ -133,6 +143,7 @@ func parse(hr *http.Response, args *commandargs.Shell) (*Response, error) {
 	return response, nil
 }
 
+// IsCustomAction checks if the response indicates a custom action
 func (r *Response) IsCustomAction() bool {
 	return r.StatusCode == http.StatusMultipleChoices
 }

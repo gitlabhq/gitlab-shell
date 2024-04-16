@@ -29,7 +29,7 @@ func TestExecuteEOFSent(t *testing.T) {
 				var request *Request
 				require.NoError(t, json.Unmarshal(b, &request))
 
-				require.Equal(t, request.Data.UserId, who)
+				require.Equal(t, request.Data.UserID, who)
 				require.Empty(t, request.Output)
 
 				err = json.NewEncoder(w).Encode(Response{Result: []byte("custom")})
@@ -45,7 +45,7 @@ func TestExecuteEOFSent(t *testing.T) {
 				var request *Request
 				require.NoError(t, json.Unmarshal(b, &request))
 
-				require.Equal(t, request.Data.UserId, who)
+				require.Equal(t, request.Data.UserID, who)
 				require.Equal(t, "0009input", string(request.Output))
 
 				err = json.NewEncoder(w).Encode(Response{Result: []byte("output")})
@@ -65,7 +65,7 @@ func TestExecuteEOFSent(t *testing.T) {
 		Payload: accessverifier.CustomPayload{
 			Action: "geo_proxy_to_primary",
 			Data: accessverifier.CustomPayloadData{
-				ApiEndpoints: []string{"/geo/proxy/info_refs_receive_pack", "/geo/proxy/receive_pack"},
+				APIEndpoints: []string{"/geo/proxy/info_refs_receive_pack", "/geo/proxy/receive_pack"},
 				Username:     "custom",
 				PrimaryRepo:  "https://repo/path",
 			},
@@ -98,7 +98,7 @@ func TestExecuteNoEOFSent(t *testing.T) {
 				var request *Request
 				require.NoError(t, json.Unmarshal(b, &request))
 
-				require.Equal(t, request.Data.UserId, who)
+				require.Equal(t, request.Data.UserID, who)
 				require.Empty(t, request.Output)
 
 				err = json.NewEncoder(w).Encode(Response{Result: []byte("custom")})
@@ -114,7 +114,7 @@ func TestExecuteNoEOFSent(t *testing.T) {
 				var request *Request
 				require.NoError(t, json.Unmarshal(b, &request))
 
-				require.Equal(t, request.Data.UserId, who)
+				require.Equal(t, request.Data.UserID, who)
 				require.Equal(t, "0032want 343d70886785dc1f98aaf70f3b4ca87c93a5d0dd\n", string(request.Output))
 
 				err = json.NewEncoder(w).Encode(Response{Result: []byte("output")})
@@ -134,7 +134,7 @@ func TestExecuteNoEOFSent(t *testing.T) {
 		Payload: accessverifier.CustomPayload{
 			Action: "geo_proxy_to_primary",
 			Data: accessverifier.CustomPayloadData{
-				ApiEndpoints: []string{"/geo/proxy/info_refs_upload_pack", "/geo/proxy/upload_pack"},
+				APIEndpoints: []string{"/geo/proxy/info_refs_upload_pack", "/geo/proxy/upload_pack"},
 				Username:     "custom",
 				PrimaryRepo:  "https://repo/path",
 			},

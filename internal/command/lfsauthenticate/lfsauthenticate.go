@@ -66,12 +66,12 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	)
 	ctxWithLogData := context.WithValue(ctx, "logData", logData)
 
-	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserId)
+	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserID)
 	if err != nil {
 		// return nothing just like Ruby's GitlabShell#lfs_authenticate does
 		log.WithContextFields(
 			ctx,
-			log.Fields{"operation": operation, "repo": repo, "user_id": accessResponse.UserId},
+			log.Fields{"operation": operation, "repo": repo, "user_id": accessResponse.UserID},
 		).WithError(err).Debug("lfsauthenticate: execute: LFS authentication failed")
 
 		return ctxWithLogData, nil

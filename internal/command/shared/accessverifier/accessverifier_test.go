@@ -34,7 +34,7 @@ func setup(t *testing.T) (*Command, *bytes.Buffer, *bytes.Buffer) {
 				err = json.Unmarshal(b, &requestBody)
 				require.NoError(t, err)
 
-				if requestBody.KeyId == "1" {
+				if requestBody.KeyID == "1" {
 					body := map[string]interface{}{
 						"gl_console_messages": []string{"console", "message"},
 					}

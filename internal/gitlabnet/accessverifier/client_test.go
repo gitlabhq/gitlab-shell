@@ -29,7 +29,7 @@ var (
 func buildExpectedResponse(who string) *Response {
 	response := &Response{
 		Success:          true,
-		UserId:           "user-1",
+		UserID:           "user-1",
 		Repo:             "project-26",
 		Username:         "root",
 		GitConfigOptions: []string{"option"},
@@ -111,7 +111,7 @@ func TestGeoPushGetCustomAction(t *testing.T) {
 	response.Payload = CustomPayload{
 		Action: "geo_proxy_to_primary",
 		Data: CustomPayloadData{
-			ApiEndpoints:            []string{"geo/proxy_git_ssh/info_refs_receive_pack", "geo/proxy_git_ssh/receive_pack"},
+			APIEndpoints:            []string{"geo/proxy_git_ssh/info_refs_receive_pack", "geo/proxy_git_ssh/receive_pack"},
 			GeoProxyDirectToPrimary: true,
 			RequestHeaders:          map[string]string{"Authorization": "Bearer token"},
 			Username:                "custom",
@@ -141,7 +141,7 @@ func TestGeoPullGetCustomAction(t *testing.T) {
 	response.Payload = CustomPayload{
 		Action: "geo_proxy_to_primary",
 		Data: CustomPayloadData{
-			ApiEndpoints:                 []string{"geo/proxy_git_ssh/info_refs_upload_pack", "geo/proxy_git_ssh/upload_pack"},
+			APIEndpoints:                 []string{"geo/proxy_git_ssh/info_refs_upload_pack", "geo/proxy_git_ssh/upload_pack"},
 			Username:                     "custom",
 			GeoProxyFetchDirectToPrimary: true,
 			PrimaryRepo:                  "https://repo/path",
@@ -163,29 +163,29 @@ func TestErrorResponses(t *testing.T) {
 
 	testCases := []struct {
 		desc          string
-		fakeId        string
+		fakeID        string
 		expectedError string
 	}{
 		{
 			desc:          "A response with an error message",
-			fakeId:        "2",
+			fakeID:        "2",
 			expectedError: "Not allowed!",
 		},
 		{
 			desc:          "A response with bad JSON",
-			fakeId:        "3",
+			fakeID:        "3",
 			expectedError: "Parsing failed",
 		},
 		{
 			desc:          "An error response without message",
-			fakeId:        "4",
+			fakeID:        "4",
 			expectedError: "Internal API error (403)",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			args := &commandargs.Shell{GitlabKeyId: tc.fakeId}
+			args := &commandargs.Shell{GitlabKeyId: tc.fakeID}
 			resp, err := client.Verify(context.Background(), args, receivePackAction, repo)
 
 			require.EqualError(t, err, tc.expectedError)
@@ -198,39 +198,39 @@ func TestCheckIP(t *testing.T) {
 	testCases := []struct {
 		desc            string
 		remoteAddr      string
-		expectedCheckIp string
+		expectedCheckIP string
 	}{
 		{
 			desc:            "IPv4 address",
 			remoteAddr:      "18.245.0.42",
-			expectedCheckIp: "18.245.0.42",
+			expectedCheckIP: "18.245.0.42",
 		},
 		{
 			desc:            "IPv6 address",
 			remoteAddr:      "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
-			expectedCheckIp: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+			expectedCheckIP: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
 		},
 		{
 			desc:            "Host and port",
 			remoteAddr:      "18.245.0.42:6345",
-			expectedCheckIp: "18.245.0.42",
+			expectedCheckIP: "18.245.0.42",
 		},
 		{
 			desc:            "IPv6 host and port",
 			remoteAddr:      "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:80",
-			expectedCheckIp: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+			expectedCheckIP: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
 		},
 		{
 			desc:            "Bad remote addr",
 			remoteAddr:      "[127.0",
-			expectedCheckIp: "[127.0",
+			expectedCheckIP: "[127.0",
 		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			client := setupWithApiInspector(t,
+			client := setupWithAPIInspector(t,
 				func(r *Request) {
-					require.Equal(t, tc.expectedCheckIp, r.CheckIp)
+					require.Equal(t, tc.expectedCheckIP, r.CheckIP)
 				})
 
 			sshEnv := sshenv.Env{RemoteAddr: tc.remoteAddr}
@@ -273,7 +273,7 @@ func setup(t *testing.T, userResponses, keyResponses map[string]testResponse) *C
 					_, err := w.Write(tr.body)
 					require.NoError(t, err)
 					require.Equal(t, sshProtocol, requestBody.Protocol)
-				} else if tr, ok := keyResponses[requestBody.KeyId]; ok {
+				} else if tr, ok := keyResponses[requestBody.KeyID]; ok {
 					w.WriteHeader(tr.status)
 					_, err := w.Write(tr.body)
 					require.NoError(t, err)
@@ -291,12 +291,12 @@ func setup(t *testing.T, userResponses, keyResponses map[string]testResponse) *C
 	return client
 }
 
-func setupWithApiInspector(t *testing.T, inspector func(*Request)) *Client {
+func setupWithAPIInspector(t *testing.T, inspector func(*Request)) *Client {
 	t.Helper()
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/allowed",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(_ http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
 				require.NoError(t, err)
 

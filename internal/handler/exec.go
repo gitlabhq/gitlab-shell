@@ -96,9 +96,9 @@ func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repo
 	if !ok {
 		md = metadata.New(nil)
 	}
-	md.Append("key_id", strconv.Itoa(gc.Response.KeyId))
+	md.Append("key_id", strconv.Itoa(gc.Response.KeyID))
 	md.Append("key_type", gc.Response.KeyType)
-	md.Append("user_id", gc.Response.UserId)
+	md.Append("user_id", gc.Response.UserID)
 	md.Append("username", gc.Response.Username)
 	md.Append("remote_ip", env.RemoteAddr)
 	ctx = metadata.NewOutgoingContext(ctx, md)
@@ -111,12 +111,12 @@ func (gc *GitalyCommand) LogExecution(ctx context.Context, repository *pb.Reposi
 		"command":         gc.Command.ServiceName,
 		"gl_project_path": repository.GlProjectPath,
 		"gl_repository":   repository.GlRepository,
-		"user_id":         gc.Response.UserId,
+		"user_id":         gc.Response.UserID,
 		"username":        gc.Response.Username,
 		"git_protocol":    env.GitProtocolVersion,
 		"remote_ip":       env.RemoteAddr,
 		"gl_key_type":     gc.Response.KeyType,
-		"gl_key_id":       gc.Response.KeyId,
+		"gl_key_id":       gc.Response.KeyID,
 	}
 
 	log.WithContextFields(ctx, fields).Info("executing git command")
