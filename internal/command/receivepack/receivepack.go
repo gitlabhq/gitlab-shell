@@ -1,3 +1,4 @@
+// Package receivepack provides functionality for handling Git receive-pack commands
 package receivepack
 
 import (
@@ -14,12 +15,16 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
+// Command represents the receive-pack command
 type Command struct {
 	Config     *config.Config
 	Args       *commandargs.Shell
 	ReadWriter *readwriter.ReadWriter
 }
 
+type logData struct{}
+
+// Execute executes the receive-pack command
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SshArgs
 	if len(args) != 2 {
@@ -32,7 +37,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	ctxWithLogData := context.WithValue(ctx, "logData", command.NewLogData(
+	ctxWithLogData := context.WithValue(ctx, logData{}, command.NewLogData(
 		response.Gitaly.Repo.GlProjectPath,
 		response.Username,
 		response.ProjectID,
@@ -74,7 +79,11 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {
-	cmd := accessverifier.Command{c.Config, c.Args, c.ReadWriter}
+	cmd := accessverifier.Command{
+		Config:     c.Config,
+		Args:       c.Args,
+		ReadWriter: c.ReadWriter,
+	}
 
 	return cmd.Verify(ctx, c.Args.CommandType, repo)
 }

@@ -46,7 +46,7 @@ func TestCustomReceivePack(t *testing.T) {
 	require.Equal(t, "customoutput", output.String())
 }
 
-func setup(t *testing.T, keyId string, requests []testserver.TestRequestHandler) (*Command, *bytes.Buffer) {
+func setup(t *testing.T, keyID string, requests []testserver.TestRequestHandler) (*Command, *bytes.Buffer) {
 	url := testserver.StartSocketHttpServer(t, requests)
 
 	output := &bytes.Buffer{}
@@ -54,7 +54,7 @@ func setup(t *testing.T, keyId string, requests []testserver.TestRequestHandler)
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},
-		Args:       &commandargs.Shell{GitlabKeyId: keyId, SshArgs: []string{"git-receive-pack", "group/repo"}},
+		Args:       &commandargs.Shell{GitlabKeyId: keyID, SshArgs: []string{"git-receive-pack", "group/repo"}},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
 	}
 
