@@ -42,7 +42,7 @@ func (c *Command) printKeyLine(ctx context.Context) error {
 		return nil
 	}
 
-	keyLine, err := keyline.NewPublicKeyLine(strconv.FormatInt(response.Id, 10), response.Key, c.Config)
+	keyLine, err := keyline.NewPublicKeyLine(strconv.FormatInt(response.ID, 10), response.Key, c.Config)
 	if err != nil {
 		return err
 	}

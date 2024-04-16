@@ -156,7 +156,7 @@ func (s *serverConfig) handleUserKey(ctx context.Context, user string, key ssh.P
 	return &ssh.Permissions{
 		// Record the public key used for authentication.
 		Extensions: map[string]string{
-			"key-id": strconv.FormatInt(res.Id, 10),
+			"key-id": strconv.FormatInt(res.ID, 10),
 		},
 	}, nil
 }
