@@ -1,3 +1,4 @@
+// Package sshd implements functionality related to SSH server configuration and handling
 package sshd
 
 import (
@@ -5,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -50,7 +52,7 @@ func parseHostKeys(keyFiles []string) []ssh.Signer {
 	var hostKeys []ssh.Signer
 
 	for _, filename := range keyFiles {
-		keyRaw, err := os.ReadFile(filename)
+		keyRaw, err := os.ReadFile(filepath.Clean(filename))
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{"filename": filename}).Error("Failed to read host key")
 			continue
@@ -76,7 +78,7 @@ func parseHostCerts(hostKeys []ssh.Signer, certFiles []string) map[string]*ssh.C
 	}
 
 	for _, filename := range certFiles {
-		keyRaw, err := os.ReadFile(filename)
+		keyRaw, err := os.ReadFile(filepath.Clean(filename))
 		if err != nil {
 			log.WithError(err).WithFields(log.Fields{"filename": filename}).Error("failed to read host certificate")
 			continue
@@ -126,7 +128,7 @@ func newServerConfig(cfg *config.Config) (*serverConfig, error) {
 
 	hostKeys := parseHostKeys(cfg.Server.HostKeyFiles)
 	if len(hostKeys) == 0 {
-		return nil, fmt.Errorf("No host keys could be loaded, aborting")
+		return nil, fmt.Errorf("no host keys could be loaded, aborting")
 	}
 
 	hostKeyToCertMap := parseHostCerts(hostKeys, cfg.Server.HostCertFiles)
@@ -208,12 +210,12 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 	}, nil
 }
 
-func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
+func (s *serverConfig) get(parentCtx context.Context) *ssh.ServerConfig {
 	var gssapiWithMICConfig *ssh.GSSAPIWithMICConfig
 	if s.cfg.Server.GSSAPI.Enabled {
-		gssApiServer, _ := NewGSSAPIServer(&s.cfg.Server.GSSAPI)
+		gssAPIServer, _ := NewGSSAPIServer(&s.cfg.Server.GSSAPI)
 
-		if gssApiServer != nil {
+		if gssAPIServer != nil {
 			gssapiWithMICConfig = &ssh.GSSAPIWithMICConfig{
 				AllowLogin: func(conn ssh.ConnMetadata, srcName string) (*ssh.Permissions, error) {
 					if conn.User() != s.cfg.User {
@@ -227,14 +229,14 @@ func (s *serverConfig) get(ctx context.Context) *ssh.ServerConfig {
 						},
 					}, nil
 				},
-				Server: gssApiServer,
+				Server: gssAPIServer,
 			}
 		}
 	}
 
 	sshCfg := &ssh.ServerConfig{
 		PublicKeyCallback: func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
-			ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+			ctx, cancel := context.WithTimeout(parentCtx, 10*time.Second)
 			defer cancel()
 
 			log.WithContextFields(ctx, log.Fields{"ssh_key_type": key.Type()}).Info("public key authentication")
