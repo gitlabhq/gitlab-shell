@@ -1,3 +1,4 @@
+// Package command provides functionality for handling GitLab Shell commands
 package command
 
 import (
@@ -18,6 +19,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
+// New creates a new command based on the provided arguments, environment, config, and readWriter
 func New(arguments []string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
 	args, err := Parse(arguments, env)
 	if err != nil {
@@ -31,13 +33,14 @@ func New(arguments []string, env sshenv.Env, config *config.Config, readWriter *
 	return nil, disallowedcommand.Error
 }
 
-func NewWithKey(gitlabKeyId string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
+// NewWithKey creates a new command with the provided key ID
+func NewWithKey(gitlabKeyID string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
 	args, err := Parse(nil, env)
 	if err != nil {
 		return nil, err
 	}
 
-	args.GitlabKeyId = gitlabKeyId
+	args.GitlabKeyId = gitlabKeyID
 	if cmd := Build(args, config, readWriter); cmd != nil {
 		return cmd, nil
 	}
@@ -45,6 +48,7 @@ func NewWithKey(gitlabKeyId string, env sshenv.Env, config *config.Config, readW
 	return nil, disallowedcommand.Error
 }
 
+// NewWithKrb5Principal creates a new command with the provided Kerberos 5 principal
 func NewWithKrb5Principal(gitlabKrb5Principal string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
 	args, err := Parse(nil, env)
 	if err != nil {
@@ -59,6 +63,7 @@ func NewWithKrb5Principal(gitlabKrb5Principal string, env sshenv.Env, config *co
 	return nil, disallowedcommand.Error
 }
 
+// NewWithUsername creates a new command with the provided username
 func NewWithUsername(gitlabUsername string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
 	args, err := Parse(nil, env)
 	if err != nil {
@@ -89,6 +94,7 @@ func NewWithUsername(gitlabUsername string, env sshenv.Env, config *config.Confi
 	return nil, disallowedcommand.Error
 }
 
+// Parse parses the provided arguments and environment to create a commandargs.Shell object
 func Parse(arguments []string, env sshenv.Env) (*commandargs.Shell, error) {
 	args := &commandargs.Shell{Arguments: arguments, Env: env}
 
@@ -99,6 +105,7 @@ func Parse(arguments []string, env sshenv.Env) (*commandargs.Shell, error) {
 	return args, nil
 }
 
+// Build constructs a command based on the provided arguments, config, and readWriter
 func Build(args *commandargs.Shell, config *config.Config, readWriter *readwriter.ReadWriter) command.Command {
 	switch args.CommandType {
 	case commandargs.Discover:
