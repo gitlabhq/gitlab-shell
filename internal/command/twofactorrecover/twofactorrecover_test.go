@@ -33,7 +33,7 @@ func setup(t *testing.T) {
 				var requestBody *twofactorrecover.RequestBody
 				json.Unmarshal(b, &requestBody)
 
-				switch requestBody.KeyId {
+				switch requestBody.KeyID {
 				case "1":
 					body := map[string]interface{}{
 						"success":        true,
