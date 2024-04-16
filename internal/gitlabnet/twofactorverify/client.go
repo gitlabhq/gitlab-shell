@@ -54,7 +54,7 @@ func (c *Client) VerifyOTP(ctx context.Context, args *commandargs.Shell, otp str
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	return parse(response)
 }
@@ -70,7 +70,7 @@ func (c *Client) PushAuth(ctx context.Context, args *commandargs.Shell) error {
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	return parse(response)
 }
