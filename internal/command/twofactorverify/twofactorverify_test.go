@@ -121,7 +121,7 @@ func TestExecute(t *testing.T) {
 			desc:           "With an empty OTP",
 			arguments:      &commandargs.Shell{GitlabKeyId: "verify_via_otp"},
 			input:          bytes.NewBufferString("\n"),
-			expectedOutput: errorHeader + "OTP cannot be blank.\n",
+			expectedOutput: errorHeader + "otp cannot be blank\n",
 		},
 		{
 			desc:           "With bad response",
