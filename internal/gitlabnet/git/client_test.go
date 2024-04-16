@@ -84,7 +84,7 @@ func TestFailedHTTPRequest(t *testing.T) {
 	require.Nil(t, response)
 	require.Error(t, err)
 
-	var apiErr *httpclient.ApiError
+	var apiErr *httpclient.APIError
 	require.ErrorAs(t, err, &apiErr)
 	require.EqualError(t, err, "You are not allowed to upload code.")
 }
@@ -111,7 +111,7 @@ func TestFailedErrorReadRequest(t *testing.T) {
 	require.Nil(t, response)
 	require.Error(t, err)
 
-	var apiErr *httpclient.ApiError
+	var apiErr *httpclient.APIError
 	require.ErrorAs(t, err, &apiErr)
 	require.EqualError(t, err, repoUnavailableErrMsg)
 }

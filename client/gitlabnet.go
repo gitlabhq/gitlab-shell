@@ -1,3 +1,4 @@
+// Package client provides a client for interacting with GitLab API
 package client
 
 import (
@@ -15,17 +16,19 @@ import (
 )
 
 const (
-	internalApiPath     = "/api/v4/internal"
-	apiSecretHeaderName = "Gitlab-Shell-Api-Request"
+	internalAPIPath     = "/api/v4/internal"
+	apiSecretHeaderName = "Gitlab-Shell-Api-Request" // #nosec G101
 	defaultUserAgent    = "GitLab-Shell"
 	jwtTTL              = time.Minute
 	jwtIssuer           = "gitlab-shell"
 )
 
+// ErrorResponse represents an error response from the API
 type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
+// GitlabNetClient is a client for interacting with GitLab API
 type GitlabNetClient struct {
 	httpClient *HttpClient
 	user       string
@@ -34,17 +37,19 @@ type GitlabNetClient struct {
 	userAgent  string
 }
 
-type ApiError struct {
+// APIError represents an API error
+type APIError struct {
 	Msg string
 }
 
-// To use as the key in a Context to set an X-Forwarded-For header in a request
+// OriginalRemoteIPContextKey is used as the key in a Context to set an X-Forwarded-For header in a request
 type OriginalRemoteIPContextKey struct{}
 
-func (e *ApiError) Error() string {
+func (e *APIError) Error() string {
 	return e.Msg
 }
 
+// NewGitlabNetClient creates a new GitlabNetClient instance
 func NewGitlabNetClient(
 	user,
 	password,
@@ -52,7 +57,7 @@ func NewGitlabNetClient(
 	httpClient *HttpClient,
 ) (*GitlabNetClient, error) {
 	if httpClient == nil {
-		return nil, fmt.Errorf("Unsupported protocol")
+		return nil, fmt.Errorf("unsupported protocol")
 	}
 
 	return &GitlabNetClient{
@@ -75,8 +80,8 @@ func normalizePath(path string) string {
 		path = "/" + path
 	}
 
-	if !strings.HasPrefix(path, internalApiPath) {
-		path = internalApiPath + path
+	if !strings.HasPrefix(path, internalAPIPath) {
+		path = internalAPIPath + path
 	}
 	return path
 }
@@ -106,39 +111,42 @@ func newRequest(ctx context.Context, method, host, path string, data interface{}
 
 func parseError(resp *http.Response, respErr error) error {
 	if resp == nil || respErr != nil {
-		return &ApiError{"Internal API unreachable"}
+		return &APIError{"Internal API unreachable"}
 	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode <= 399 {
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	parsedResponse := &ErrorResponse{}
 
 	if err := json.NewDecoder(resp.Body).Decode(parsedResponse); err != nil {
-		return &ApiError{fmt.Sprintf("Internal API error (%v)", resp.StatusCode)}
-	} else {
-		return &ApiError{parsedResponse.Message}
+		return &APIError{fmt.Sprintf("Internal API error (%v)", resp.StatusCode)}
 	}
+	return &APIError{parsedResponse.Message}
 }
 
+// Get makes a GET request
 func (c *GitlabNetClient) Get(ctx context.Context, path string) (*http.Response, error) {
 	return c.DoRequest(ctx, http.MethodGet, normalizePath(path), nil)
 }
 
+// Post makes a POST request
 func (c *GitlabNetClient) Post(ctx context.Context, path string, data interface{}) (*http.Response, error) {
 	return c.DoRequest(ctx, http.MethodPost, normalizePath(path), data)
 }
 
+// Do executes a request
 func (c *GitlabNetClient) Do(request *http.Request) (*http.Response, error) {
-	response, err := c.httpClient.RetryableHTTP.HTTPClient.Do(request)
-	if err := parseError(response, err); err != nil {
+	response, respErr := c.httpClient.RetryableHTTP.HTTPClient.Do(request)
+	if err := parseError(response, respErr); err != nil {
 		return nil, err
 	}
 
 	return response, nil
 }
 
+// DoRequest executes a request with the given method, path, and data
 func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, data interface{}) (*http.Response, error) {
 	request, err := newRequest(ctx, method, c.httpClient.Host, path, data)
 	if err != nil {
@@ -165,8 +173,8 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("User-Agent", c.userAgent)
 
-	response, err := c.httpClient.RetryableHTTP.Do(request)
-	if err := parseError(response, err); err != nil {
+	response, respErr := c.httpClient.RetryableHTTP.Do(request)
+	if err := parseError(response, respErr); err != nil {
 		return nil, err
 	}
 
