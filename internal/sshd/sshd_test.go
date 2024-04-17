@@ -355,11 +355,13 @@ func TestExtractMetaDataFromContext(t *testing.T) {
 	username := "alex-doe"
 	rootNameSpace := "flightjs"
 	project := fmt.Sprintf("%s/Flight", rootNameSpace)
-	ctx := context.WithValue(context.Background(), "logData", command.NewLogData(project, username))
+	projectID := 1
+	rootNamespaceID := 2
+	ctx := context.WithValue(context.Background(), "logData", command.NewLogData(project, username, projectID, rootNamespaceID))
 
 	data := extractDataFromContext(ctx)
 
-	require.Equal(t, command.LogData{Username: username, Meta: command.LogMetadata{Project: project, RootNamespace: rootNameSpace}}, data)
+	require.Equal(t, command.LogData{Username: username, Meta: command.LogMetadata{Project: project, RootNamespace: rootNameSpace, ProjectID: projectID, RootNamespaceID: rootNamespaceID}}, data)
 }
 
 func TestExtractMetaDataFromContextWithoutMetaData(t *testing.T) {

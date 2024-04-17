@@ -32,6 +32,8 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	logData := command.NewLogData(
 		response.Gitaly.Repo.GlProjectPath,
 		response.Username,
+		response.ProjectID,
+		response.RootNamespaceID,
 	)
 	ctxWithLogData := context.WithValue(ctx, "logData", logData)
 

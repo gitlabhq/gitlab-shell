@@ -51,6 +51,8 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	ctxWithLogData := context.WithValue(ctx, "logData", command.NewLogData(
 		accessResponse.Gitaly.Repo.GlProjectPath,
 		accessResponse.Username,
+		accessResponse.ProjectID,
+		accessResponse.RootNamespaceID,
 	))
 
 	auth, err := c.authenticate(ctx, operation, repo, accessResponse.UserId)

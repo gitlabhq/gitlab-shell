@@ -2,6 +2,7 @@ package uploadpack
 
 import (
 	"context"
+
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/githttp"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
@@ -35,7 +36,10 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	logData := command.NewLogData(
 		response.Gitaly.Repo.GlProjectPath,
 		response.Username,
+		response.ProjectID,
+		response.RootNamespaceID,
 	)
+
 	ctxWithLogData := context.WithValue(ctx, "logData", logData)
 
 	if response.IsCustomAction() {

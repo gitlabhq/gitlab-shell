@@ -35,6 +35,8 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	ctxWithLogData := context.WithValue(ctx, "logData", command.NewLogData(
 		response.Gitaly.Repo.GlProjectPath,
 		response.Username,
+		response.ProjectID,
+		response.RootNamespaceID,
 	))
 
 	if response.IsCustomAction() {
