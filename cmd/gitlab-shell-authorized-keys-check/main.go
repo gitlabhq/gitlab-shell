@@ -43,7 +43,6 @@ func main() {
 	}
 
 	logCloser := logger.Configure(config)
-	defer logCloser.Close()
 
 	cmd, err := cmd.New(os.Args[1:], config, readWriter)
 	if err != nil {
@@ -54,10 +53,12 @@ func main() {
 	}
 
 	ctx, finished := command.Setup(executable.Name, config)
-	defer finished()
 
 	if _, err = cmd.Execute(ctx); err != nil {
 		console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
 		os.Exit(1)
 	}
+
+	defer func() { _ = logCloser.Close() }()
+	defer finished()
 }
