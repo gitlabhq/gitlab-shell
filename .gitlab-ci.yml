@@ -16,12 +16,7 @@ variables:
   TRANSFER_METER_FREQUENCY: "1s"
   DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
-  # Due to https://go.dev/doc/toolchain, we need to keep our base image at Go 1.20
-  # until GitLab 16.11 is out which will mean we can drop support for Go 1.20
-  # and make 1.21 our minimum. Using Go 1.21 here now results in the go.mod
-  # being updated to include the 'toolchain go<version>' directive, which
-  # causes CI failures.
-  GO_VERSION: "golang-1.20"
+  GO_VERSION: "golang-1.21"
   GOPATH: $CI_PROJECT_DIR/.GOPATH
   DEBIAN_VERSION: "bookworm"
   RUBY_VERSION: "ruby-3.2"
@@ -91,7 +86,7 @@ default:
 .go-matrix-job:
   parallel:
     matrix:
-      - GO_VERSION: ["golang-1.20", "golang-1.21", "golang-1.22"]
+      - GO_VERSION: ["golang-1.21", "golang-1.22"]
 
 ################################################################################
 # Prepare jobs
