@@ -18,13 +18,13 @@ func TestFailingNewPublicKeyLine(t *testing.T) {
 			desc:          "When Id has non-alphanumeric and non-dash characters in it",
 			id:            "key\n1",
 			publicKey:     "public-key",
-			expectedError: "Invalid key_id: key\n1",
+			expectedError: "invalid key_id: key\n1",
 		},
 		{
 			desc:          "When public key has newline in it",
 			id:            "key",
 			publicKey:     "public\nkey",
-			expectedError: "Invalid value: public\nkey",
+			expectedError: "invalid value: public\nkey",
 		},
 	}
 
@@ -49,13 +49,13 @@ func TestFailingNewPrincipalKeyLine(t *testing.T) {
 			desc:          "When username has non-alphanumeric and non-dash characters in it",
 			keyID:         "username\n1",
 			principal:     "principal",
-			expectedError: "Invalid key_id: username\n1",
+			expectedError: "invalid key_id: username\n1",
 		},
 		{
 			desc:          "When principal has newline in it",
 			keyID:         "username",
 			principal:     "principal\n1",
-			expectedError: "Invalid value: principal\n1",
+			expectedError: "invalid value: principal\n1",
 		},
 	}
 
