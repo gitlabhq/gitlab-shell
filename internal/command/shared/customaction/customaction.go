@@ -39,7 +39,7 @@ type Command struct {
 // After the feature flag is enabled by default and removed, this package will be removed along with it.
 func (c *Command) Execute(ctx context.Context, response *accessverifier.Response) error {
 	data := response.Payload.Data
-	apiEndpoints := data.ApiEndpoints
+	apiEndpoints := data.APIEndpoints
 
 	if len(apiEndpoints) == 0 {
 		return errors.New("Custom action error: Empty API endpoints")
@@ -57,9 +57,9 @@ func (c *Command) processApiEndpoints(ctx context.Context, response *accessverif
 
 	data := response.Payload.Data
 	request := &Request{Data: data}
-	request.Data.UserId = response.Who
+	request.Data.UserID = response.Who
 
-	for _, endpoint := range data.ApiEndpoints {
+	for _, endpoint := range data.APIEndpoints {
 		ctxlog := log.WithContextFields(ctx, log.Fields{
 			"primary_repo": data.PrimaryRepo,
 			"endpoint":     endpoint,

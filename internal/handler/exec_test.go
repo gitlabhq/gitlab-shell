@@ -173,9 +173,9 @@ func TestPrepareContext(t *testing.T) {
 				&config.Config{},
 				string(commandargs.UploadPack),
 				&accessverifier.Response{
-					KeyId:    1,
+					KeyID:    1,
 					KeyType:  "key",
-					UserId:   "6",
+					UserID:   "6",
 					Username: "jane.doe",
 					Gitaly: accessverifier.Gitaly{
 						Address: "tcp://localhost:9999",
