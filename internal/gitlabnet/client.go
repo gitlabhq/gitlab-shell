@@ -16,7 +16,7 @@ var (
 )
 
 func GetClient(config *config.Config) (*client.GitlabNetClient, error) {
-	httpClient, err := config.HttpClient()
+	httpClient, err := config.HTTPClient()
 	if err != nil {
 		return nil, err
 	}

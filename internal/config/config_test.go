@@ -37,7 +37,7 @@ func TestCustomPrometheusMetrics(t *testing.T) {
 	url := testserver.StartHttpServer(t, []testserver.TestRequestHandler{})
 
 	config := &Config{GitlabUrl: url}
-	client, err := config.HttpClient()
+	client, err := config.HTTPClient()
 	require.NoError(t, err)
 
 	if client.RetryableHTTP != nil {

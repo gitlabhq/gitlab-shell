@@ -134,7 +134,7 @@ func (c *Config) ApplyGlobalState() {
 	}
 }
 
-func (c *Config) HttpClient() (*client.HttpClient, error) {
+func (c *Config) HTTPClient() (*client.HttpClient, error) {
 	c.httpClientOnce.Do(func() {
 		client, err := client.NewHTTPClientWithOpts(
 			c.GitlabUrl,
