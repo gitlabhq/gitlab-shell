@@ -1,3 +1,4 @@
+// Package personalaccesstoken provides functionality for managing personal access tokens
 package personalaccesstoken
 
 import (
@@ -13,11 +14,13 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
+// Client represents a client for managing personal access tokens
 type Client struct {
 	config *config.Config
 	client *client.GitlabNetClient
 }
 
+// Response represents the response from creating a personal access token
 type Response struct {
 	Success   bool     `json:"success"`
 	Token     string   `json:"token"`
@@ -26,23 +29,26 @@ type Response struct {
 	Message   string   `json:"message"`
 }
 
+// RequestBody represents the request body for creating a personal access token
 type RequestBody struct {
-	KeyId     string   `json:"key_id,omitempty"`
-	UserId    int64    `json:"user_id,omitempty"`
+	KeyID     string   `json:"key_id,omitempty"`
+	UserID    int64    `json:"user_id,omitempty"`
 	Name      string   `json:"name"`
 	Scopes    []string `json:"scopes"`
 	ExpiresAt string   `json:"expires_at,omitempty"`
 }
 
+// NewClient creates a new instance of Client
 func NewClient(config *config.Config) (*Client, error) {
 	client, err := gitlabnet.GetClient(config)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating http client: %v", err)
+		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
 	return &Client{config: config, client: client}, nil
 }
 
+// GetPersonalAccessToken retrieves or creates a personal access token
 func (c *Client) GetPersonalAccessToken(ctx context.Context, args *commandargs.Shell, name string, scopes *[]string, expiresAt string) (*Response, error) {
 	requestBody, err := c.getRequestBody(ctx, args, name, scopes, expiresAt)
 	if err != nil {
@@ -53,7 +59,7 @@ func (c *Client) GetPersonalAccessToken(ctx context.Context, args *commandargs.S
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	return parse(response)
 }
@@ -79,7 +85,7 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, na
 
 	requestBody := &RequestBody{Name: name, Scopes: *scopes, ExpiresAt: expiresAt}
 	if args.GitlabKeyId != "" {
-		requestBody.KeyId = args.GitlabKeyId
+		requestBody.KeyID = args.GitlabKeyId
 
 		return requestBody, nil
 	}
@@ -88,7 +94,7 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, na
 	if err != nil {
 		return nil, err
 	}
-	requestBody.UserId = userInfo.UserId
+	requestBody.UserID = userInfo.UserId
 
 	return requestBody, nil
 }
