@@ -1,3 +1,4 @@
+// Package twofactorrecover provides functionality for interacting with GitLab Two-Factor Authentication recovery codes
 package twofactorrecover
 
 import (
@@ -13,31 +14,36 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
+// Client represents a client for interacting with GitLab Two-Factor Authentication recovery codes
 type Client struct {
 	config *config.Config
 	client *client.GitlabNetClient
 }
 
+// Response represents the response structure for Two-Factor Authentication recovery code requests
 type Response struct {
 	Success       bool     `json:"success"`
 	RecoveryCodes []string `json:"recovery_codes"`
 	Message       string   `json:"message"`
 }
 
+// RequestBody represents the request body structure for Two-Factor Authentication recovery code requests
 type RequestBody struct {
-	KeyId  string `json:"key_id,omitempty"`
-	UserId int64  `json:"user_id,omitempty"`
+	KeyID  string `json:"key_id,omitempty"`
+	UserID int64  `json:"user_id,omitempty"`
 }
 
+// NewClient creates a new Client instance with the provided configuration
 func NewClient(config *config.Config) (*Client, error) {
 	client, err := gitlabnet.GetClient(config)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating http client: %v", err)
+		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
 	return &Client{config: config, client: client}, nil
 }
 
+// GetRecoveryCodes retrieves the recovery codes for the specified user
 func (c *Client) GetRecoveryCodes(ctx context.Context, args *commandargs.Shell) ([]string, error) {
 	requestBody, err := c.getRequestBody(ctx, args)
 
@@ -49,7 +55,7 @@ func (c *Client) GetRecoveryCodes(ctx context.Context, args *commandargs.Shell) 
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	return parse(response)
 }
@@ -76,7 +82,7 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell) (*
 
 	var requestBody *RequestBody
 	if args.GitlabKeyId != "" {
-		requestBody = &RequestBody{KeyId: args.GitlabKeyId}
+		requestBody = &RequestBody{KeyID: args.GitlabKeyId}
 	} else {
 		userInfo, err := client.GetByCommandArgs(ctx, args)
 
@@ -84,7 +90,7 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell) (*
 			return nil, err
 		}
 
-		requestBody = &RequestBody{UserId: userInfo.UserId}
+		requestBody = &RequestBody{UserID: userInfo.UserId}
 	}
 
 	return requestBody, nil
