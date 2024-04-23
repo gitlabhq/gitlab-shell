@@ -1,3 +1,4 @@
+// Package sshd provides functionality for handling SSH sessions
 package sshd
 
 import (
