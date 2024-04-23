@@ -1,3 +1,4 @@
+// Package sshd provides functionality for handling SSH connections
 package sshd
 
 import (
@@ -25,12 +26,20 @@ import (
 type status int
 
 const (
+	// StatusStarting represents the starting status of the SSH server
 	StatusStarting status = iota
+
+	// StatusReady represents the ready status of the SSH server
 	StatusReady
+
+	// StatusOnShutdown represents the status when the SSH server is shutting down
 	StatusOnShutdown
+
+	// StatusClosed represents the closed status of the SSH server
 	StatusClosed
 )
 
+// Server represents an SSH server instance
 type Server struct {
 	Config *config.Config
 
@@ -41,6 +50,9 @@ type Server struct {
 	serverConfig *serverConfig
 }
 
+type logInfo struct{}
+
+// NewServer creates a new instance of Server
 func NewServer(cfg *config.Config) (*Server, error) {
 	serverConfig, err := newServerConfig(cfg)
 	if err != nil {
@@ -50,17 +62,19 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	return &Server{Config: cfg, serverConfig: serverConfig}, nil
 }
 
+// ListenAndServe starts listening for SSH connections and serves them
 func (s *Server) ListenAndServe(ctx context.Context) error {
 	if err := s.listen(ctx); err != nil {
 		return err
 	}
-	defer s.listener.Close()
+	defer func() { _ = s.listener.Close() }()
 
 	s.serve(ctx)
 
 	return nil
 }
 
+// Shutdown gracefully shuts down the SSH server
 func (s *Server) Shutdown() error {
 	if s.listener == nil {
 		return nil
@@ -71,10 +85,11 @@ func (s *Server) Shutdown() error {
 	return s.listener.Close()
 }
 
+// MonitoringServeMux returns the ServeMux for monitoring endpoints
 func (s *Server) MonitoringServeMux() *http.ServeMux {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc(s.Config.Server.ReadinessProbe, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(s.Config.Server.ReadinessProbe, func(w http.ResponseWriter, _ *http.Request) {
 		if s.getStatus() == StatusReady {
 			w.WriteHeader(http.StatusOK)
 		} else {
@@ -82,7 +97,7 @@ func (s *Server) MonitoringServeMux() *http.ServeMux {
 		}
 	})
 
-	mux.HandleFunc(s.Config.Server.LivenessProbe, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(s.Config.Server.LivenessProbe, func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 
@@ -184,7 +199,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	defer cancel()
 	go func() {
 		<-ctx.Done()
-		nconn.Close() // Close the connection when context is cancelled
+		_ = nconn.Close() // Close the connection when context is canceled
 	}()
 
 	remoteAddr := nconn.RemoteAddr().String()
@@ -222,7 +237,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		return err
 	})
 
-	logData := extractDataFromContext(ctxWithLogData)
+	logData := extractLogDataFromContext(ctxWithLogData)
 
 	ctxlog.WithFields(log.Fields{
 		"duration_s":    time.Since(started).Seconds(),
@@ -259,6 +274,20 @@ func extractDataFromContext(ctx context.Context) command.LogData {
 
 	if ctx.Value("logData") != nil {
 		logData = ctx.Value("logData").(command.LogData)
+	}
+
+	return logData
+}
+
+func extractLogDataFromContext(ctx context.Context) command.LogData {
+	logData := command.LogData{}
+
+	if ctx == nil {
+		return logData
+	}
+
+	if ctx.Value(logInfo{}) != nil {
+		logData = ctx.Value(logInfo{}).(command.LogData)
 	}
 
 	return logData

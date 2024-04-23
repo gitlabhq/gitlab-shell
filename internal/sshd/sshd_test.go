@@ -22,19 +22,19 @@ import (
 )
 
 const (
-	serverUrl = "127.0.0.1:50000"
+	serverURL = "127.0.0.1:50000"
 	user      = "git"
 )
 
 var (
-	correlationId = ""
+	correlationID = ""
 	xForwardedFor = ""
 )
 
 func TestListenAndServe(t *testing.T) {
 	s, testRoot := setupServer(t)
 
-	client, err := ssh.Dial("tcp", serverUrl, clientConfig(t, testRoot))
+	client, err := ssh.Dial("tcp", serverURL, clientConfig(t, testRoot))
 	require.NoError(t, err)
 	defer client.Close()
 
@@ -43,8 +43,8 @@ func TestListenAndServe(t *testing.T) {
 
 	holdSession(t, client)
 
-	_, err = ssh.Dial("tcp", serverUrl, clientConfig(t, testRoot))
-	require.Equal(t, err.Error(), "dial tcp 127.0.0.1:50000: connect: connection refused")
+	_, err = ssh.Dial("tcp", serverURL, clientConfig(t, testRoot))
+	require.Equal(t, "dial tcp 127.0.0.1:50000: connect: connection refused", err.Error())
 
 	client.Close()
 
@@ -54,7 +54,7 @@ func TestListenAndServe(t *testing.T) {
 func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {
 	testRoot := testhelper.PrepareTestRootDir(t)
 
-	target, err := net.ResolveTCPAddr("tcp", serverUrl)
+	target, err := net.ResolveTCPAddr("tcp", serverURL)
 	require.NoError(t, err)
 
 	header := &proxyproto.Header{
@@ -191,11 +191,11 @@ func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {
 			require.NoError(t, err)
 
 			if tc.header != nil {
-				_, err := header.WriteTo(conn)
-				require.NoError(t, err)
+				_, writeToErr := header.WriteTo(conn)
+				require.NoError(t, writeToErr)
 			}
 
-			sshConn, sshChans, sshRequs, err := ssh.NewClientConn(conn, serverUrl, clientConfig(t, testRoot))
+			sshConn, sshChans, sshRequs, err := ssh.NewClientConn(conn, serverURL, clientConfig(t, testRoot))
 			if sshConn != nil {
 				defer sshConn.Close()
 			}
@@ -217,21 +217,21 @@ func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {
 func TestCorrelationId(t *testing.T) {
 	_, testRoot := setupServer(t)
 
-	client, err := ssh.Dial("tcp", serverUrl, clientConfig(t, testRoot))
+	client, err := ssh.Dial("tcp", serverURL, clientConfig(t, testRoot))
 	require.NoError(t, err)
 	defer client.Close()
 
 	holdSession(t, client)
 
-	previousCorrelationId := correlationId
+	previousCorrelationID := correlationID
 
-	client, err = ssh.Dial("tcp", serverUrl, clientConfig(t, testRoot))
+	client, err = ssh.Dial("tcp", serverURL, clientConfig(t, testRoot))
 	require.NoError(t, err)
 	defer client.Close()
 
 	holdSession(t, client)
 
-	require.NotEqual(t, previousCorrelationId, correlationId)
+	require.NotEqual(t, previousCorrelationID, correlationID)
 }
 
 func TestReadinessProbe(t *testing.T) {
@@ -246,18 +246,21 @@ func TestReadinessProbe(t *testing.T) {
 	r := httptest.NewRecorder()
 	mux.ServeHTTP(r, req)
 	require.Equal(t, 503, r.Result().StatusCode)
+	r.Result().Body.Close()
 
 	s.changeStatus(StatusReady)
 
 	r = httptest.NewRecorder()
 	mux.ServeHTTP(r, req)
 	require.Equal(t, 200, r.Result().StatusCode)
+	r.Result().Body.Close()
 
 	s.changeStatus(StatusOnShutdown)
 
 	r = httptest.NewRecorder()
 	mux.ServeHTTP(r, req)
 	require.Equal(t, 503, r.Result().StatusCode)
+	r.Result().Body.Close()
 }
 
 func TestLivenessProbe(t *testing.T) {
@@ -269,6 +272,7 @@ func TestLivenessProbe(t *testing.T) {
 	r := httptest.NewRecorder()
 	mux.ServeHTTP(r, req)
 	require.Equal(t, 200, r.Result().StatusCode)
+	r.Result().Body.Close()
 }
 
 func TestInvalidClientConfig(t *testing.T) {
@@ -276,7 +280,7 @@ func TestInvalidClientConfig(t *testing.T) {
 
 	cfg := clientConfig(t, testRoot)
 	cfg.User = "unknown"
-	_, err := ssh.Dial("tcp", serverUrl, cfg)
+	_, err := ssh.Dial("tcp", serverURL, cfg)
 	require.Error(t, err)
 }
 
@@ -293,7 +297,7 @@ func TestClosingHangedConnections(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	s, testRoot := setupServerWithContext(t, nil, ctx)
+	s, testRoot := setupServerWithContext(ctx, t, nil)
 
 	unauthenticatedRequestStatus := make(chan string)
 	completed := make(chan bool)
@@ -308,7 +312,7 @@ func TestClosingHangedConnections(t *testing.T) {
 
 	go func() {
 		// Start an SSH connection that never ends
-		ssh.Dial("tcp", serverUrl, clientCfg)
+		ssh.Dial("tcp", serverURL, clientCfg)
 	}()
 
 	require.Equal(t, "authentication-started", <-unauthenticatedRequestStatus)
@@ -339,7 +343,7 @@ func TestLoginGraceTime(t *testing.T) {
 
 	go func() {
 		// Start an SSH connection that never ends
-		ssh.Dial("tcp", serverUrl, clientCfg)
+		ssh.Dial("tcp", serverURL, clientCfg)
 	}()
 
 	require.Equal(t, "authentication-started", <-unauthenticatedRequestStatus)
@@ -357,15 +361,15 @@ func TestExtractMetaDataFromContext(t *testing.T) {
 	project := fmt.Sprintf("%s/Flight", rootNameSpace)
 	projectID := 1
 	rootNamespaceID := 2
-	ctx := context.WithValue(context.Background(), "logData", command.NewLogData(project, username, projectID, rootNamespaceID))
+	ctx := context.WithValue(context.Background(), logInfo{}, command.NewLogData(project, username, projectID, rootNamespaceID))
 
-	data := extractDataFromContext(ctx)
+	data := extractLogDataFromContext(ctx)
 
 	require.Equal(t, command.LogData{Username: username, Meta: command.LogMetadata{Project: project, RootNamespace: rootNameSpace, ProjectID: projectID, RootNamespaceID: rootNamespaceID}}, data)
 }
 
 func TestExtractMetaDataFromContextWithoutMetaData(t *testing.T) {
-	data := extractDataFromContext(context.Background())
+	data := extractLogDataFromContext(context.Background())
 
 	require.Equal(t, command.LogData{}, data)
 }
@@ -373,7 +377,7 @@ func TestExtractMetaDataFromContextWithoutMetaData(t *testing.T) {
 func TestExtractMetaDataFromNilContext(t *testing.T) {
 	var ctx context.Context
 
-	data := extractDataFromContext(ctx)
+	data := extractLogDataFromContext(ctx)
 
 	require.Equal(t, command.LogData{}, data)
 }
@@ -387,10 +391,10 @@ func setupServer(t *testing.T) (*Server, string) {
 func setupServerWithConfig(t *testing.T, cfg *config.Config) (*Server, string) {
 	t.Helper()
 
-	return setupServerWithContext(t, cfg, context.Background())
+	return setupServerWithContext(context.Background(), t, cfg)
 }
 
-func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Context) (*Server, string) {
+func setupServerWithContext(ctx context.Context, t *testing.T, cfg *config.Config) (*Server, string) {
 	t.Helper()
 
 	testRoot := testhelper.PrepareTestRootDir(t)
@@ -399,9 +403,9 @@ func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Contex
 		{
 			Path: "/api/v4/internal/authorized_keys",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				correlationId = r.Header.Get("X-Request-Id")
+				correlationID = r.Header.Get("X-Request-Id")
 
-				require.NotEmpty(t, correlationId)
+				require.NotEmpty(t, correlationID)
 				require.Equal(t, xForwardedFor, r.Header.Get("X-Forwarded-For"))
 
 				fmt.Fprint(w, `{"id": 1000, "key": "key"}`)
@@ -409,7 +413,7 @@ func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Contex
 		}, {
 			Path: "/api/v4/internal/discover",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, correlationId, r.Header.Get("X-Request-Id"))
+				require.Equal(t, correlationID, r.Header.Get("X-Request-Id"))
 				require.Equal(t, xForwardedFor, r.Header.Get("X-Forwarded-For"))
 
 				fmt.Fprint(w, `{"id": 1000, "name": "Test User", "username": "test-user"}`)
@@ -427,7 +431,7 @@ func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Contex
 	cfg.GitlabUrl = url
 	cfg.RootDir = "/tmp"
 	cfg.User = user
-	cfg.Server.Listen = serverUrl
+	cfg.Server.Listen = serverURL
 	cfg.Server.ConcurrentSessionsLimit = 1
 	cfg.Server.HostKeyFiles = []string{path.Join(testRoot, "certs/valid/server.key")}
 
@@ -444,7 +448,7 @@ func setupServerWithContext(t *testing.T, cfg *config.Config, ctx context.Contex
 }
 
 func clientConfig(t *testing.T, testRoot string) *ssh.ClientConfig {
-	keyRaw, err := os.ReadFile(path.Join(testRoot, "certs/valid/server_authorized_key"))
+	keyRaw, _ := os.ReadFile(path.Join(testRoot, "certs/valid/server_authorized_key"))
 	pKey, _, _, _, err := ssh.ParseAuthorizedKey(keyRaw)
 	require.NoError(t, err)
 
