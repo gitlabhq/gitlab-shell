@@ -227,7 +227,7 @@ func TestHandleShell(t *testing.T) {
 
 			ctxWithLogData, exitCode, err := s.handleShell(context.Background(), r)
 
-			logData := extractDataFromContext(ctxWithLogData)
+			logInfo := extractLogDataFromContext(ctxWithLogData)
 
 			if tc.expectedOutString != "" {
 				require.Equal(t, tc.expectedOutString, stdOut.String())
@@ -238,7 +238,7 @@ func TestHandleShell(t *testing.T) {
 			}
 
 			require.Equal(t, tc.expectedExitCode, exitCode)
-			require.Equal(t, tc.expectedWrittenBytes, logData.WrittenBytes)
+			require.Equal(t, tc.expectedWrittenBytes, logInfo.WrittenBytes)
 
 			formattedErr := &bytes.Buffer{}
 			if tc.errMsg != "" {
