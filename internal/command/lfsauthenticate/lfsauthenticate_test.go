@@ -157,7 +157,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedOutput, output.String())
 
-			data := ctxWithLogData.Value("logData").(command.LogData)
+			data := ctxWithLogData.Value(logInfo{}).(command.LogData)
 			require.Equal(t, "alex-doe", data.Username)
 			require.Equal(t, "group/project-path", data.Meta.Project)
 			require.Equal(t, "group", data.Meta.RootNamespace)
