@@ -73,7 +73,7 @@ func TestFailedAuthorizedKeysClient(t *testing.T) {
 	_, err := newServerConfig(&config.Config{GitlabUrl: "ftp://localhost"})
 
 	require.Error(t, err)
-	require.Equal(t, "failed to initialize authorized keys client: Error creating http client: unknown GitLab URL prefix", err.Error())
+	require.Equal(t, "failed to initialize authorized keys client: error creating http client: unknown GitLab URL prefix", err.Error())
 }
 
 func TestUserKeyHandling(t *testing.T) {
