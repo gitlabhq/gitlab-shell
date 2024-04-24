@@ -21,7 +21,7 @@ func TestUploadPack(t *testing.T) {
 	for _, network := range []string{"unix", "tcp", "dns"} {
 		t.Run(fmt.Sprintf("via %s network", network), func(t *testing.T) {
 			gitalyAddress, testServer := testserver.StartGitalyServer(t, network)
-			t.Logf(fmt.Sprintf("Server address: %s", gitalyAddress))
+			t.Logf("Server address: %s", gitalyAddress)
 
 			requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)
 			url := testserver.StartHttpServer(t, requests)
