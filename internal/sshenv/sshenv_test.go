@@ -34,7 +34,7 @@ func TestNewFromEnv(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			testhelper.TempEnv(t, tc.environment)
 
-			require.Equal(t, NewFromEnv(), tc.want)
+			require.Equal(t, tc.want, NewFromEnv())
 		})
 	}
 }
@@ -42,9 +42,9 @@ func TestNewFromEnv(t *testing.T) {
 func TestRemoteAddrFromEnv(t *testing.T) {
 	t.Setenv(SSHConnectionEnv, "127.0.0.1 0")
 
-	require.Equal(t, remoteAddrFromEnv(), "127.0.0.1")
+	require.Equal(t, "127.0.0.1", remoteAddrFromEnv())
 }
 
 func TestEmptyRemoteAddrFromEnv(t *testing.T) {
-	require.Equal(t, remoteAddrFromEnv(), "")
+	require.Equal(t, "", remoteAddrFromEnv())
 }

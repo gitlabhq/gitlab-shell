@@ -1,3 +1,4 @@
+// Package sshenv provides functionality for handling SSH environment variables
 package sshenv
 
 import (
@@ -14,6 +15,7 @@ const (
 	SSHOriginalCommandEnv = "SSH_ORIGINAL_COMMAND"
 )
 
+// Env represents the SSH environment variables
 type Env struct {
 	GitProtocolVersion string
 	IsSSHConnection    bool
@@ -22,6 +24,7 @@ type Env struct {
 	NamespacePath      string
 }
 
+// NewFromEnv creates a new Env instance based on the current environment variables
 func NewFromEnv() Env {
 	isSSHConnection := false
 	if ok := os.Getenv(SSHConnectionEnv); ok != "" {
