@@ -82,7 +82,7 @@ func (c *Command) getOTP(ctx context.Context) (string, error) {
 	}
 
 	if answer == "" {
-		return "", fmt.Errorf("otp cannot be blank")
+		return "", fmt.Errorf("OTP cannot be blank") //revive:disable:error-strings
 	}
 
 	return answer, nil
