@@ -245,22 +245,25 @@ func TestReadinessProbe(t *testing.T) {
 
 	r := httptest.NewRecorder()
 	mux.ServeHTTP(r, req)
-	require.Equal(t, 503, r.Result().StatusCode)
-	r.Result().Body.Close()
+	res := r.Result()
+	require.Equal(t, 503, res.StatusCode)
+	res.Body.Close()
 
 	s.changeStatus(StatusReady)
 
 	r = httptest.NewRecorder()
 	mux.ServeHTTP(r, req)
-	require.Equal(t, 200, r.Result().StatusCode)
-	r.Result().Body.Close()
+	res = r.Result()
+	require.Equal(t, 200, res.StatusCode)
+	res.Body.Close()
 
 	s.changeStatus(StatusOnShutdown)
 
 	r = httptest.NewRecorder()
 	mux.ServeHTTP(r, req)
-	require.Equal(t, 503, r.Result().StatusCode)
-	r.Result().Body.Close()
+	res = r.Result()
+	require.Equal(t, 503, res.StatusCode)
+	res.Body.Close()
 }
 
 func TestLivenessProbe(t *testing.T) {
@@ -271,8 +274,9 @@ func TestLivenessProbe(t *testing.T) {
 
 	r := httptest.NewRecorder()
 	mux.ServeHTTP(r, req)
-	require.Equal(t, 200, r.Result().StatusCode)
-	r.Result().Body.Close()
+	res := r.Result()
+	require.Equal(t, 200, res.StatusCode)
+	res.Body.Close()
 }
 
 func TestInvalidClientConfig(t *testing.T) {
