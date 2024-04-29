@@ -1,7 +1,7 @@
+// Package keyline provides functionality for managing SSH key lines
 package keyline
 
 import (
-	"errors"
 	"fmt"
 	"path"
 	"regexp"
@@ -16,30 +16,39 @@ var (
 )
 
 const (
+	// PublicKeyPrefix is the prefix used for public keys
 	PublicKeyPrefix = "key"
+
+	// PrincipalPrefix is the prefix used for principals
 	PrincipalPrefix = "username"
-	SshOptions      = "no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty"
+
+	// SSHOptions specifies SSH options for key lines
+	SSHOptions = "no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty"
 )
 
+// KeyLine represents a struct used for SSH key management
 type KeyLine struct {
-	Id     string // This can be either an ID of a Key or username
+	ID     string // This can be either an ID of a Key or username
 	Value  string // This can be either a public key or a principal name
 	Prefix string
 	Config *config.Config
 }
 
+// NewPublicKeyLine creates a new KeyLine for a public key
 func NewPublicKeyLine(id, publicKey string, config *config.Config) (*KeyLine, error) {
 	return newKeyLine(id, publicKey, PublicKeyPrefix, config)
 }
 
-func NewPrincipalKeyLine(keyId, principal string, config *config.Config) (*KeyLine, error) {
-	return newKeyLine(keyId, principal, PrincipalPrefix, config)
+// NewPrincipalKeyLine creates a new KeyLine for a principal
+func NewPrincipalKeyLine(keyID, principal string, config *config.Config) (*KeyLine, error) {
+	return newKeyLine(keyID, principal, PrincipalPrefix, config)
 }
 
+// ToString converts a KeyLine to a string representation
 func (k *KeyLine) ToString() string {
-	command := fmt.Sprintf("%s %s-%s", path.Join(k.Config.RootDir, executable.BinDir, executable.GitlabShell), k.Prefix, k.Id)
+	command := fmt.Sprintf("%s %s-%s", path.Join(k.Config.RootDir, executable.BinDir, executable.GitlabShell), k.Prefix, k.ID)
 
-	return fmt.Sprintf(`command="%s",%s %s`, command, SshOptions, k.Value)
+	return fmt.Sprintf(`command="%s",%s %s`, command, SSHOptions, k.Value)
 }
 
 func newKeyLine(id, value, prefix string, config *config.Config) (*KeyLine, error) {
@@ -47,16 +56,16 @@ func newKeyLine(id, value, prefix string, config *config.Config) (*KeyLine, erro
 		return nil, err
 	}
 
-	return &KeyLine{Id: id, Value: value, Prefix: prefix, Config: config}, nil
+	return &KeyLine{ID: id, Value: value, Prefix: prefix, Config: config}, nil
 }
 
 func validate(id string, value string) error {
 	if !keyRegex.MatchString(id) {
-		return errors.New(fmt.Sprintf("Invalid key_id: %s", id))
+		return fmt.Errorf("invalid key_id: %s", id)
 	}
 
 	if strings.Contains(value, "\n") {
-		return errors.New(fmt.Sprintf("Invalid value: %s", value))
+		return fmt.Errorf("invalid value: %s", value)
 	}
 
 	return nil
