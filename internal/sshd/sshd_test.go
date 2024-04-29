@@ -442,8 +442,8 @@ func setupServerWithContext(ctx context.Context, t *testing.T, cfg *config.Confi
 	s, err := NewServer(cfg)
 	require.NoError(t, err)
 
-	go func() { require.NoError(t, s.ListenAndServe(ctx)) }()
-	// NOTE: Changing the below to { require.NoError(t, s.Shutdown()) } results in failed tests
+	go func() { s.ListenAndServe(ctx) }()
+	//nolint:godox // NOTE: Changing the below to { require.NoError(t, s.Shutdown()) } results in failed tests
 	t.Cleanup(func() { s.Shutdown() })
 
 	verifyStatus(t, s, StatusReady)
@@ -453,7 +453,7 @@ func setupServerWithContext(ctx context.Context, t *testing.T, cfg *config.Confi
 
 func clientConfig(t *testing.T, testRoot string) *ssh.ClientConfig {
 	keyRaw, _ := os.ReadFile(path.Join(testRoot, "certs/valid/server_authorized_key"))
-	pKey, _, _, _, err := ssh.ParseAuthorizedKey(keyRaw)
+	pKey, _, _, _, err := ssh.ParseAuthorizedKey(keyRaw) //nolint:dogsled
 	require.NoError(t, err)
 
 	key, err := os.ReadFile(path.Join(testRoot, "certs/client/key.pem"))
