@@ -79,7 +79,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 				require.NoError(t, json.Unmarshal(b, &request))
 				require.Equal(t, request.Operation, operation)
 
-				if request.UserId == userId {
+				if request.UserID == userId {
 					body := map[string]interface{}{
 						"username":             "john",
 						"lfs_token":            "sometoken",

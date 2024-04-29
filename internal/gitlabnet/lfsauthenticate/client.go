@@ -1,3 +1,4 @@
+// Package lfsauthenticate provides functionality for authenticating Large File Storage (LFS) requests
 package lfsauthenticate
 
 import (
@@ -12,19 +13,22 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 )
 
+// Client represents a client for LFS authentication
 type Client struct {
 	config *config.Config
 	client *client.GitlabNetClient
 	args   *commandargs.Shell
 }
 
+// Request represents a request for LFS authentication
 type Request struct {
 	Operation string `json:"operation"`
 	Repo      string `json:"project"`
-	KeyId     string `json:"key_id,omitempty"`
-	UserId    string `json:"user_id,omitempty"`
+	KeyID     string `json:"key_id,omitempty"`
+	UserID    string `json:"user_id,omitempty"`
 }
 
+// Response represents a response from LFS authentication
 type Response struct {
 	Username  string `json:"username"`
 	LfsToken  string `json:"lfs_token"`
@@ -32,28 +36,30 @@ type Response struct {
 	ExpiresIn int    `json:"expires_in"`
 }
 
+// NewClient creates a new LFS authentication client
 func NewClient(config *config.Config, args *commandargs.Shell) (*Client, error) {
 	client, err := gitlabnet.GetClient(config)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating http client: %v", err)
+		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
 	return &Client{config: config, client: client, args: args}, nil
 }
 
-func (c *Client) Authenticate(ctx context.Context, operation, repo, userId string) (*Response, error) {
+// Authenticate performs authentication for LFS requests
+func (c *Client) Authenticate(ctx context.Context, operation, repo, userID string) (*Response, error) {
 	request := &Request{Operation: operation, Repo: repo}
 	if c.args.GitlabKeyId != "" {
-		request.KeyId = c.args.GitlabKeyId
+		request.KeyID = c.args.GitlabKeyId
 	} else {
-		request.UserId = strings.TrimPrefix(userId, "user-")
+		request.UserID = strings.TrimPrefix(userID, "user-")
 	}
 
 	response, err := c.client.Post(ctx, "/lfs_authenticate", request)
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	return parse(response)
 }
