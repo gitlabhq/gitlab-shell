@@ -21,23 +21,24 @@ func init() {
 		{
 			Path: "/api/v4/internal/authorized_keys",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Query().Get("key") == "key" {
+				switch r.URL.Query().Get("key") {
+				case "key":
 					body := &Response{
-						Id:  1,
+						ID:  1,
 						Key: "public-key",
 					}
 					json.NewEncoder(w).Encode(body)
-				} else if r.URL.Query().Get("key") == "broken-message" {
+				case "broken-message":
 					w.WriteHeader(http.StatusForbidden)
 					body := &client.ErrorResponse{
 						Message: "Not allowed!",
 					}
 					json.NewEncoder(w).Encode(body)
-				} else if r.URL.Query().Get("key") == "broken-json" {
+				case "broken-json":
 					w.Write([]byte("{ \"message\": \"broken json!\""))
-				} else if r.URL.Query().Get("key") == "broken-empty" {
+				case "broken-empty":
 					w.WriteHeader(http.StatusForbidden)
-				} else {
+				default:
 					w.WriteHeader(http.StatusNotFound)
 				}
 			},
@@ -50,7 +51,7 @@ func TestGetByKey(t *testing.T) {
 
 	result, err := client.GetByKey(context.Background(), "key")
 	require.NoError(t, err)
-	require.Equal(t, &Response{Id: 1, Key: "public-key"}, result)
+	require.Equal(t, &Response{ID: 1, Key: "public-key"}, result)
 }
 
 func TestGetByKeyErrorResponses(t *testing.T) {

@@ -1,3 +1,4 @@
+// Package authorizedkeys provides functionality for interacting with authorized keys.
 package authorizedkeys
 
 import (
@@ -11,28 +12,33 @@ import (
 )
 
 const (
+	// AuthorizedKeysPath represents the path to authorized keys endpoint
 	AuthorizedKeysPath = "/authorized_keys"
 )
 
+// Client represents a client for interacting with authorized keys
 type Client struct {
 	config *config.Config
 	client *client.GitlabNetClient
 }
 
+// Response represents the response structure for authorized keys
 type Response struct {
-	Id  int64  `json:"id"`
+	ID  int64  `json:"id"`
 	Key string `json:"key"`
 }
 
+// NewClient creates a new instance of the authorized keys client
 func NewClient(config *config.Config) (*Client, error) {
 	client, err := gitlabnet.GetClient(config)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating http client: %v", err)
+		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
 	return &Client{config: config, client: client}, nil
 }
 
+// GetByKey retrieves authorized keys by key
 func (c *Client) GetByKey(ctx context.Context, key string) (*Response, error) {
 	path, err := pathWithKey(key)
 	if err != nil {
@@ -43,7 +49,7 @@ func (c *Client) GetByKey(ctx context.Context, key string) (*Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	parsedResponse := &Response{}
 	if err := gitlabnet.ParseJSON(response, parsedResponse); err != nil {
