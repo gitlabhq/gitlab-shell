@@ -1,3 +1,4 @@
+// Package twofactorverify provides functionality for two-factor verification
 package twofactorverify
 
 import (
@@ -19,12 +20,14 @@ const (
 	prompt  = "OTP: "
 )
 
+// Command represents the command for two-factor verification
 type Command struct {
 	Config     *config.Config
 	Args       *commandargs.Shell
 	ReadWriter *readwriter.ReadWriter
 }
 
+// Execute executes the two-factor verification command
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	client, err := twofactorverify.NewClient(c.Config)
 	if err != nil {
@@ -79,7 +82,7 @@ func (c *Command) getOTP(ctx context.Context) (string, error) {
 	}
 
 	if answer == "" {
-		return "", fmt.Errorf("OTP cannot be blank.")
+		return "", fmt.Errorf("OTP cannot be blank") //revive:disable:error-strings
 	}
 
 	return answer, nil
