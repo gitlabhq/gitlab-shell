@@ -1,3 +1,4 @@
+// Package uploadarchive provides functionality for uploading archives
 package uploadarchive
 
 import (
@@ -11,12 +12,16 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
+// Command represents the upload archive command
 type Command struct {
 	Config     *config.Config
 	Args       *commandargs.Shell
 	ReadWriter *readwriter.ReadWriter
 }
 
+type logInfo struct{}
+
+// Execute executes the upload archive command
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SshArgs
 	if len(args) != 2 {
@@ -35,13 +40,17 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		response.ProjectID,
 		response.RootNamespaceID,
 	)
-	ctxWithLogData := context.WithValue(ctx, "logData", logData)
+	ctxWithLogData := context.WithValue(ctx, logInfo{}, logData)
 
 	return ctxWithLogData, c.performGitalyCall(ctx, response)
 }
 
 func (c *Command) verifyAccess(ctx context.Context, repo string) (*accessverifier.Response, error) {
-	cmd := accessverifier.Command{c.Config, c.Args, c.ReadWriter}
+	cmd := accessverifier.Command{
+		Config:     c.Config,
+		Args:       c.Args,
+		ReadWriter: c.ReadWriter,
+	}
 
 	return cmd.Verify(ctx, c.Args.CommandType, repo)
 }
