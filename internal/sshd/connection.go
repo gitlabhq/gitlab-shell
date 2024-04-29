@@ -169,7 +169,7 @@ func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn
 }
 
 func (c *connection) trackError(ctxlog *logrus.Entry, err error) {
-	var apiError *client.ApiError
+	var apiError *client.APIError
 	if errors.As(err, &apiError) {
 		return
 	}
