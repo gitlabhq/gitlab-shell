@@ -44,7 +44,7 @@ func TestRunGitalyCommand(t *testing.T) {
 
 	expectedErr := errors.New("error")
 	err = cmd.RunGitalyCommand(context.Background(), makeHandler(t, expectedErr))
-	require.Equal(t, err, expectedErr)
+	require.Equal(t, expectedErr, err)
 }
 
 func TestCachingOfGitalyConnections(t *testing.T) {
@@ -220,7 +220,6 @@ func TestPrepareContext(t *testing.T) {
 				require.Len(t, values, 1)
 				require.Equal(t, v, values[0])
 			}
-
 		})
 	}
 }

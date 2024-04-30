@@ -1,3 +1,4 @@
+// Package handler provides functionality for executing Gitaly commands
 package handler
 
 import (
@@ -25,12 +26,14 @@ import (
 // and returning an error from the Gitaly call.
 type GitalyHandlerFunc func(ctx context.Context, client *grpc.ClientConn) (int32, error)
 
+// GitalyCommand provides functionality for executing Gitaly commands
 type GitalyCommand struct {
 	Config   *config.Config
 	Response *accessverifier.Response
 	Command  gitaly.Command
 }
 
+// NewGitalyCommand creates a new GitalyCommand instance
 func NewGitalyCommand(cfg *config.Config, serviceName string, response *accessverifier.Response) *GitalyCommand {
 	gc := gitaly.Command{
 		ServiceName: serviceName,
@@ -49,8 +52,7 @@ func processGitalyError(statusErr error) error {
 	if st, ok := grpcstatus.FromError(statusErr); ok {
 		details := st.Details()
 		for _, detail := range details {
-			switch detail.(type) {
-			case *pb.LimitError:
+			if _, ok := detail.(*pb.LimitError); ok {
 				return grpcstatus.Error(grpccodes.Unavailable, "GitLab is currently unable to handle this request due to load.")
 			}
 		}
@@ -106,6 +108,7 @@ func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repo
 	return ctx, cancel
 }
 
+// LogExecution logs the execution of a Git command
 func (gc *GitalyCommand) LogExecution(ctx context.Context, repository *pb.Repository, env sshenv.Env) {
 	fields := log.Fields{
 		"command":         gc.Command.ServiceName,
