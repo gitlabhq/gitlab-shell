@@ -24,7 +24,7 @@ func TestAllowedAccess(t *testing.T) {
 	ctxWithLogData, err := cmd.Execute(context.Background())
 
 	require.NoError(t, err)
-	data := ctxWithLogData.Value("logData").(command.LogData)
+	data := ctxWithLogData.Value(logData{}).(command.LogData)
 	require.Equal(t, "alex-doe", data.Username)
 	require.Equal(t, "group/project-path", data.Meta.Project)
 	require.Equal(t, "group", data.Meta.RootNamespace)
@@ -46,7 +46,7 @@ func TestCustomReceivePack(t *testing.T) {
 	require.Equal(t, "customoutput", output.String())
 }
 
-func setup(t *testing.T, keyId string, requests []testserver.TestRequestHandler) (*Command, *bytes.Buffer) {
+func setup(t *testing.T, keyID string, requests []testserver.TestRequestHandler) (*Command, *bytes.Buffer) {
 	url := testserver.StartSocketHttpServer(t, requests)
 
 	output := &bytes.Buffer{}
@@ -54,7 +54,7 @@ func setup(t *testing.T, keyId string, requests []testserver.TestRequestHandler)
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},
-		Args:       &commandargs.Shell{GitlabKeyId: keyId, SshArgs: []string{"git-receive-pack", "group/repo"}},
+		Args:       &commandargs.Shell{GitlabKeyId: keyID, SshArgs: []string{"git-receive-pack", "group/repo"}},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
 	}
 
