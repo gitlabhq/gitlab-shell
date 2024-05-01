@@ -105,7 +105,7 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, ot
 			return nil, err
 		}
 
-		requestBody = &RequestBody{UserID: userInfo.UserId, OTPAttempt: otp}
+		requestBody = &RequestBody{UserID: userInfo.UserID, OTPAttempt: otp}
 	}
 
 	return requestBody, nil

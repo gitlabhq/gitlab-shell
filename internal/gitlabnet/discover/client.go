@@ -1,3 +1,4 @@
+// Package discover provides functionality for discovering GitLab users
 package discover
 
 import (
@@ -12,36 +13,41 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 )
 
+// Client represents a client for discovering GitLab users
 type Client struct {
 	config *config.Config
 	client *client.GitlabNetClient
 }
 
+// Response represents the response structure for user discovery
 type Response struct {
-	UserId   int64  `json:"id"`
+	UserID   int64  `json:"id"`
 	Name     string `json:"name"`
 	Username string `json:"username"`
 }
 
+// NewClient creates a new instance of the user discovery client
 func NewClient(config *config.Config) (*Client, error) {
 	client, err := gitlabnet.GetClient(config)
 	if err != nil {
-		return nil, fmt.Errorf("Error creating http client: %v", err)
+		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
 	return &Client{config: config, client: client}, nil
 }
 
+// GetByCommandArgs retrieves user information based on command arguments
 func (c *Client) GetByCommandArgs(ctx context.Context, args *commandargs.Shell) (*Response, error) {
 	params := url.Values{}
-	if args.GitlabUsername != "" {
+	switch {
+	case args.GitlabUsername != "":
 		params.Add("username", args.GitlabUsername)
-	} else if args.GitlabKeyId != "" {
+	case args.GitlabKeyId != "":
 		params.Add("key_id", args.GitlabKeyId)
-	} else if args.GitlabKrb5Principal != "" {
+	case args.GitlabKrb5Principal != "":
 		params.Add("krb5principal", args.GitlabKrb5Principal)
-	} else {
-		// There was no 'who' information, this  matches the ruby error
+	default:
+		// There was no 'who' information, this matches the ruby error
 		// message.
 		return nil, fmt.Errorf("who='' is invalid")
 	}
@@ -56,7 +62,7 @@ func (c *Client) getResponse(ctx context.Context, params url.Values) (*Response,
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer func() { _ = response.Body.Close() }()
 
 	return parse(response)
 }
@@ -70,6 +76,7 @@ func parse(hr *http.Response) (*Response, error) {
 	return response, nil
 }
 
+// IsAnonymous checks if the user is anonymous
 func (r *Response) IsAnonymous() bool {
-	return r.UserId < 1
+	return r.UserID < 1
 }

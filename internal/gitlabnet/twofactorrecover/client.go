@@ -90,7 +90,7 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell) (*
 			return nil, err
 		}
 
-		requestBody = &RequestBody{UserID: userInfo.UserId}
+		requestBody = &RequestBody{UserID: userInfo.UserID}
 	}
 
 	return requestBody, nil

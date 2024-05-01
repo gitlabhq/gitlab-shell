@@ -71,7 +71,7 @@ func initialize(t *testing.T) []testserver.TestRequestHandler {
 			Path: "/api/v4/internal/discover",
 			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := &discover.Response{
-					UserId:   1,
+					UserID:   1,
 					Username: "jane-doe",
 					Name:     "Jane Doe",
 				}
