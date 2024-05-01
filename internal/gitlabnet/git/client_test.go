@@ -68,7 +68,7 @@ func TestFailedHTTPRequest(t *testing.T) {
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/info/refs",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusBadRequest)
 				w.Write([]byte("You are not allowed to upload code."))
 			},
@@ -76,7 +76,7 @@ func TestFailedHTTPRequest(t *testing.T) {
 	}
 
 	client := &Client{
-		Url:     testserver.StartHttpServer(t, requests),
+		URL:     testserver.StartHttpServer(t, requests),
 		Headers: customHeaders,
 	}
 
@@ -87,13 +87,17 @@ func TestFailedHTTPRequest(t *testing.T) {
 	var apiErr *httpclient.APIError
 	require.ErrorAs(t, err, &apiErr)
 	require.EqualError(t, err, "You are not allowed to upload code.")
+
+	if response != nil && response.Body != nil {
+		defer response.Body.Close()
+	}
 }
 
 func TestFailedErrorReadRequest(t *testing.T) {
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/info/refs",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				// Simulate a read error by saying Content-Length is larger than actual content.
 				w.Header().Set("Content-Length", "1")
 				w.WriteHeader(http.StatusBadRequest)
@@ -103,7 +107,7 @@ func TestFailedErrorReadRequest(t *testing.T) {
 	}
 
 	client := &Client{
-		Url:     testserver.StartHttpServer(t, requests),
+		URL:     testserver.StartHttpServer(t, requests),
 		Headers: customHeaders,
 	}
 
@@ -114,6 +118,10 @@ func TestFailedErrorReadRequest(t *testing.T) {
 	var apiErr *httpclient.APIError
 	require.ErrorAs(t, err, &apiErr)
 	require.EqualError(t, err, repoUnavailableErrMsg)
+
+	if response != nil && response.Body != nil {
+		defer response.Body.Close()
+	}
 }
 
 func setup(t *testing.T) *Client {
@@ -161,7 +169,7 @@ func setup(t *testing.T) *Client {
 	}
 
 	client := &Client{
-		Url:     testserver.StartHttpServer(t, requests),
+		URL:     testserver.StartHttpServer(t, requests),
 		Headers: customHeaders,
 	}
 
