@@ -1,3 +1,4 @@
+// Package client provides functionality for interacting with HTTP clients
 package client
 
 import (
@@ -17,19 +18,21 @@ import (
 )
 
 const (
-	socketBaseUrl             = "http://unix"
+	socketBaseURL             = "http://unix"
 	unixSocketProtocol        = "http+unix://"
 	httpProtocol              = "http://"
 	httpsProtocol             = "https://"
 	defaultReadTimeoutSeconds = 300
-	defaultRetryWaitMin       = time.Second
-	defaultRetryWaitMax       = 15 * time.Second
+	defaultRetryWaitMinimum   = time.Second
+	defaultRetryWaitMaximum   = 15 * time.Second
 	defaultRetryMax           = 2
 )
 
+// ErrCafileNotFound indicates that the specified CA file was not found
 var ErrCafileNotFound = errors.New("cafile not found")
 
-type HttpClient struct {
+// HTTPClient provides an HTTP client with retry capabilities
+type HTTPClient struct {
 	RetryableHTTP *retryablehttp.Client
 	Host          string
 }
@@ -55,6 +58,7 @@ func WithClientCert(certPath, keyPath string) HTTPClientOpt {
 	}
 }
 
+// WithHTTPRetryOpts configures HTTP retry options for the HttpClient
 func WithHTTPRetryOpts(waitMin, waitMax time.Duration, maxAttempts int) HTTPClientOpt {
 	return func(hcc *httpClientCfg) {
 		hcc.retryWaitMin = waitMin
@@ -80,12 +84,12 @@ func validateCaFile(filename string) error {
 }
 
 // NewHTTPClientWithOpts builds an HTTP client using the provided options
-func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, readTimeoutSeconds uint64, opts []HTTPClientOpt) (*HttpClient, error) {
+func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, readTimeoutSeconds uint64, opts []HTTPClientOpt) (*HTTPClient, error) {
 	hcc := &httpClientCfg{
 		caFile:       caFile,
 		caPath:       caPath,
-		retryWaitMin: defaultRetryWaitMin,
-		retryWaitMax: defaultRetryWaitMax,
+		retryWaitMin: defaultRetryWaitMinimum,
+		retryWaitMax: defaultRetryWaitMaximum,
 		retryMax:     defaultRetryMax,
 	}
 
@@ -96,21 +100,21 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	var transport *http.Transport
 	var host string
 	var err error
-	if strings.HasPrefix(gitlabURL, unixSocketProtocol) {
+	switch {
+	case strings.HasPrefix(gitlabURL, unixSocketProtocol):
 		transport, host = buildSocketTransport(gitlabURL, gitlabRelativeURLRoot)
-	} else if strings.HasPrefix(gitlabURL, httpProtocol) {
-		transport, host = buildHttpTransport(gitlabURL)
-	} else if strings.HasPrefix(gitlabURL, httpsProtocol) {
+	case strings.HasPrefix(gitlabURL, httpProtocol):
+		transport, host = buildHTTPTransport(gitlabURL)
+	case strings.HasPrefix(gitlabURL, httpsProtocol):
 		err = validateCaFile(caFile)
 		if err != nil {
 			return nil, err
 		}
-
-		transport, host, err = buildHttpsTransport(*hcc, gitlabURL)
+		transport, host, err = buildHTTPSTransport(*hcc, gitlabURL)
 		if err != nil {
 			return nil, err
 		}
-	} else {
+	default:
 		return nil, errors.New("unknown GitLab URL prefix")
 	}
 
@@ -122,7 +126,7 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	c.HTTPClient.Transport = NewTransport(transport)
 	c.HTTPClient.Timeout = readTimeout(readTimeoutSeconds)
 
-	client := &HttpClient{RetryableHTTP: c, Host: host}
+	client := &HTTPClient{RetryableHTTP: c, Host: host}
 
 	return client, nil
 }
@@ -137,7 +141,7 @@ func buildSocketTransport(gitlabURL, gitlabRelativeURLRoot string) (*http.Transp
 		},
 	}
 
-	host := socketBaseUrl
+	host := socketBaseURL
 	gitlabRelativeURLRoot = strings.Trim(gitlabRelativeURLRoot, "/")
 	if gitlabRelativeURLRoot != "" {
 		host = host + "/" + gitlabRelativeURLRoot
@@ -146,7 +150,7 @@ func buildSocketTransport(gitlabURL, gitlabRelativeURLRoot string) (*http.Transp
 	return transport, host
 }
 
-func buildHttpsTransport(hcc httpClientCfg, gitlabURL string) (*http.Transport, string, error) {
+func buildHTTPSTransport(hcc httpClientCfg, gitlabURL string) (*http.Transport, string, error) {
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
 		certPool = x509.NewCertPool()
@@ -172,9 +176,9 @@ func buildHttpsTransport(hcc httpClientCfg, gitlabURL string) (*http.Transport, 
 	}
 
 	if hcc.HaveCertAndKey() {
-		cert, err := tls.LoadX509KeyPair(hcc.certPath, hcc.keyPath)
-		if err != nil {
-			return nil, "", err
+		cert, loadErr := tls.LoadX509KeyPair(hcc.certPath, hcc.keyPath)
+		if loadErr != nil {
+			return nil, "", loadErr
 		}
 		tlsConfig.Certificates = []tls.Certificate{cert}
 	}
@@ -187,13 +191,13 @@ func buildHttpsTransport(hcc httpClientCfg, gitlabURL string) (*http.Transport, 
 }
 
 func addCertToPool(certPool *x509.CertPool, fileName string) {
-	cert, err := os.ReadFile(fileName)
+	cert, err := os.ReadFile(filepath.Clean(fileName))
 	if err == nil {
 		certPool.AppendCertsFromPEM(cert)
 	}
 }
 
-func buildHttpTransport(gitlabURL string) (*http.Transport, string) {
+func buildHTTPTransport(gitlabURL string) (*http.Transport, string) {
 	return &http.Transport{}, gitlabURL
 }
 
