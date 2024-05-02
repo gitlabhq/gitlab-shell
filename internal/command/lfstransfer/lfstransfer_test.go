@@ -292,7 +292,7 @@ func TestLfsTransferBatchDownload(t *testing.T) {
 	require.Equal(t, "00000000 0 noop", data[0])
 
 	largeFileArgs := strings.Split(data[1], " ")
-	require.Equal(t, 5, len(largeFileArgs))
+	require.Len(t, largeFileArgs, 5)
 	require.Equal(t, largeFileOid, largeFileArgs[0])
 	require.Equal(t, fmt.Sprint(largeFileLen), largeFileArgs[1])
 	require.Equal(t, "download", largeFileArgs[2])
@@ -360,7 +360,7 @@ func TestLfsTransferBatchUpload(t *testing.T) {
 	require.Equal(t, fmt.Sprintf("%s %d noop", largeFileOid, largeFileLen), data[1])
 
 	evenLargerFileArgs := strings.Split(data[2], " ")
-	require.Equal(t, 5, len(evenLargerFileArgs))
+	require.Len(t, evenLargerFileArgs, 5)
 	require.Equal(t, evenLargerFileOid, evenLargerFileArgs[0])
 	require.Equal(t, fmt.Sprint(evenLargerFileLen), evenLargerFileArgs[1])
 	require.Equal(t, "upload", evenLargerFileArgs[2])
@@ -454,7 +454,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 		"error: token hash mismatch",
 	}, data)
 
-	idJson := map[string]interface{}{
+	idJSON := map[string]interface{}{
 		"operation": "download",
 		"oid":       largeFileOid,
 		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
@@ -463,7 +463,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 			"Content-Type":  "application/octet-stream",
 		},
 	}
-	idBinary, _ := json.Marshal(idJson)
+	idBinary, _ := json.Marshal(idJSON)
 	idBase64 := base64.StdEncoding.EncodeToString(idBinary)
 	h := hmac.New(sha256.New, []byte("very secret"))
 	h.Write(idBinary)
@@ -477,7 +477,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 	}, args)
 	require.Equal(t, [][]byte{[]byte(largeFileContents)}, binData)
 
-	idJson = map[string]interface{}{
+	idJSON = map[string]interface{}{
 		"operation": "download",
 		"oid":       evenLargerFileOid,
 		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, evenLargerFileOid),
@@ -486,7 +486,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 			"Content-Type":  "application/octet-stream",
 		},
 	}
-	idBinary, _ = json.Marshal(idJson)
+	idBinary, _ = json.Marshal(idJSON)
 	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
 	h = hmac.New(sha256.New, []byte("very secret"))
 	h.Write(idBinary)
@@ -500,7 +500,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 		fmt.Sprintf("object %s not found", evenLargerFileOid),
 	}, data)
 
-	idJson = map[string]interface{}{
+	idJSON = map[string]interface{}{
 		"operation": "upload",
 		"oid":       largeFileOid,
 		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
@@ -509,7 +509,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 			"Content-Type":  "application/octet-stream",
 		},
 	}
-	idBinary, _ = json.Marshal(idJson)
+	idBinary, _ = json.Marshal(idJSON)
 	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
 	h = hmac.New(sha256.New, []byte("very secret"))
 	h.Write(idBinary)
@@ -523,7 +523,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 		"error: invalid operation",
 	}, data)
 
-	idJson = map[string]interface{}{
+	idJSON = map[string]interface{}{
 		"operation": "download",
 		"oid":       evenLargerFileOid,
 		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
@@ -532,7 +532,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 			"Content-Type":  "application/octet-stream",
 		},
 	}
-	idBinary, _ = json.Marshal(idJson)
+	idBinary, _ = json.Marshal(idJSON)
 	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
 	h = hmac.New(sha256.New, []byte("very secret"))
 	h.Write(idBinary)
@@ -546,7 +546,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 		"error: invalid oid",
 	}, data)
 
-	idJson = map[string]interface{}{
+	idJSON = map[string]interface{}{
 		"operation": "download",
 		"oid":       largeFileOid,
 		"href":      fmt.Sprintf("%s/evil-url", url),
@@ -555,7 +555,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 			"Content-Type":  "application/octet-stream",
 		},
 	}
-	idBinary, _ = json.Marshal(idJson)
+	idBinary, _ = json.Marshal(idJSON)
 	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
 	h = hmac.New(sha256.New, []byte("evil secret"))
 	h.Write(idBinary)
@@ -621,7 +621,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 		"error: token hash mismatch",
 	}, data)
 
-	idJson := map[string]interface{}{
+	idJSON := map[string]interface{}{
 		"operation": "upload",
 		"oid":       largeFileOid,
 		"href":      fmt.Sprintf("%s/group/noexist/gitlab-lfs/objects/%s/%d", url, largeFileOid, largeFileLen),
@@ -630,7 +630,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 			"Content-Type":  "application/octet-stream",
 		},
 	}
-	idBinary, _ := json.Marshal(idJson)
+	idBinary, _ := json.Marshal(idJSON)
 	idBase64 := base64.StdEncoding.EncodeToString(idBinary)
 	h := hmac.New(sha256.New, []byte("very secret"))
 	h.Write(idBinary)
@@ -644,7 +644,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 		"error: not found",
 	}, data)
 
-	idJson = map[string]interface{}{
+	idJSON = map[string]interface{}{
 		"operation": "upload",
 		"oid":       evenLargerFileOid,
 		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
@@ -653,7 +653,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 			"Content-Type":  "application/octet-stream",
 		},
 	}
-	idBinary, _ = json.Marshal(idJson)
+	idBinary, _ = json.Marshal(idJSON)
 	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
 	h = hmac.New(sha256.New, []byte("very secret"))
 	h.Write(idBinary)
@@ -663,7 +663,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 	status = readStatus(t, pl)
 	require.Equal(t, "status 200", status)
 
-	idJson = map[string]interface{}{
+	idJSON = map[string]interface{}{
 		"operation": "download",
 		"oid":       evenLargerFileOid,
 		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
@@ -672,7 +672,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 			"Content-Type":  "application/octet-stream",
 		},
 	}
-	idBinary, _ = json.Marshal(idJson)
+	idBinary, _ = json.Marshal(idJSON)
 	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
 	h = hmac.New(sha256.New, []byte("very secret"))
 	h.Write(idBinary)
@@ -686,7 +686,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 		"error: invalid operation",
 	}, data)
 
-	idJson = map[string]interface{}{
+	idJSON = map[string]interface{}{
 		"operation": "upload",
 		"oid":       largeFileOid,
 		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
@@ -695,7 +695,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 			"Content-Type":  "application/octet-stream",
 		},
 	}
-	idBinary, _ = json.Marshal(idJson)
+	idBinary, _ = json.Marshal(idJSON)
 	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
 	h = hmac.New(sha256.New, []byte("very secret"))
 	h.Write(idBinary)
@@ -709,7 +709,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 		"error: invalid oid",
 	}, data)
 
-	idJson = map[string]interface{}{
+	idJSON = map[string]interface{}{
 		"operation": "upload",
 		"oid":       largeFileOid,
 		"href":      fmt.Sprintf("%s/evil-url", url),
@@ -718,7 +718,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 			"Content-Type":  "application/octet-stream",
 		},
 	}
-	idBinary, _ = json.Marshal(idJson)
+	idBinary, _ = json.Marshal(idJSON)
 	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
 	h = hmac.New(sha256.New, []byte("evil secret"))
 	h.Write(idBinary)
@@ -940,7 +940,7 @@ func setup(t *testing.T, keyId string, repo string, op string) (string, *Command
 		},
 		{
 			Path: "/evil-url",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(_ http.ResponseWriter, r *http.Request) {
 				require.Fail(t, "An attacker accessed an evil URL")
 			},
 		},
@@ -953,7 +953,7 @@ func setup(t *testing.T, keyId string, repo string, op string) (string, *Command
 		},
 		{
 			Path: fmt.Sprintf("/group/repo/gitlab-lfs/objects/%s/%d", evenLargerFileOid, evenLargerFileLen),
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(_ http.ResponseWriter, r *http.Request) {
 				require.Equal(t, http.MethodPut, r.Method)
 				require.Equal(t, "Basic 1234567890", r.Header.Get("Authorization"))
 				body, _ := io.ReadAll(r.Body)

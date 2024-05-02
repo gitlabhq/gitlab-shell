@@ -193,6 +193,7 @@ func (c *Client) PutObject(oid, href string, headers map[string]string, r io.Rea
 
 	client := http.Client{}
 	res, err := client.Do(req)
+	defer func() { _ = res.Body.Close() }()
 	if err != nil {
 		return err
 	}
@@ -200,7 +201,7 @@ func (c *Client) PutObject(oid, href string, headers map[string]string, r io.Rea
 		return transfer.ErrNotFound
 	}
 	if res.StatusCode < 200 || res.StatusCode > 299 {
-		return errors.New("internal error")
+		return fmt.Errorf("internal error (%d)", res.StatusCode)
 	}
 	return nil
 }
