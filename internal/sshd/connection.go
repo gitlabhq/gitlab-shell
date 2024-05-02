@@ -1,3 +1,4 @@
+// Package sshd provides functionality for SSH daemon connections.
 package sshd
 
 import (
@@ -22,10 +23,14 @@ import (
 )
 
 const (
-	KeepAliveMsg   = "keepalive@openssh.com"
+	// KeepAliveMsg is the message used for keeping SSH connections alive.
+	KeepAliveMsg = "keepalive@openssh.com"
+
+	// NotOurRefError represents the error message indicating that the git upload-pack is not our reference
 	NotOurRefError = `exit status 128, stderr: "fatal: git upload-pack: not our ref `
 )
 
+// EOFTimeout specifies the timeout duration for EOF (End of File) in SSH connections
 var EOFTimeout = 10 * time.Second
 
 type connection struct {
@@ -72,8 +77,8 @@ func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handl
 
 func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfig) (*ssh.ServerConn, <-chan ssh.NewChannel, error) {
 	if c.cfg.Server.LoginGraceTime > 0 {
-		c.nconn.SetDeadline(time.Now().Add(time.Duration(c.cfg.Server.LoginGraceTime)))
-		defer c.nconn.SetDeadline(time.Time{})
+		_ = c.nconn.SetDeadline(time.Now().Add(time.Duration(c.cfg.Server.LoginGraceTime)))
+		defer func() { _ = c.nconn.SetDeadline(time.Time{}) }()
 	}
 
 	sconn, chans, reqs, err := ssh.NewServerConn(c.nconn, srvCfg)
@@ -102,13 +107,13 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 
 		if newChannel.ChannelType() != "session" {
 			ctxlog.Info("connection: handleRequests: unknown channel type")
-			newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
+			_ = newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
 			continue
 		}
 
 		if !c.concurrentSessions.TryAcquire(1) {
 			ctxlog.Info("connection: handleRequests: too many concurrent sessions")
-			newChannel.Reject(ssh.ResourceShortage, "too many concurrent sessions")
+			_ = newChannel.Reject(ssh.ResourceShortage, "too many concurrent sessions")
 			metrics.SshdHitMaxSessions.Inc()
 			continue
 		}
@@ -150,7 +155,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 	// Related issue: https://gitlab.com/gitlab-org/gitlab-shell/-/issues/563
 	ctx, cancel := context.WithTimeout(ctx, EOFTimeout)
 	defer cancel()
-	c.concurrentSessions.Acquire(ctx, c.maxSessions)
+	_ = c.concurrentSessions.Acquire(ctx, c.maxSessions)
 }
 
 func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn, ticker *time.Ticker) {
@@ -163,7 +168,7 @@ func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn
 		case <-ticker.C:
 			ctxlog.Debug("connection: sendKeepAliveMsg: send keepalive message to a client")
 
-			sconn.SendRequest(KeepAliveMsg, true, nil)
+			_, _, _ = sconn.SendRequest(KeepAliveMsg, true, nil)
 		}
 	}
 }
