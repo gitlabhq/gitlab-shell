@@ -112,13 +112,13 @@ func (c *Command) verifyAccess(ctx context.Context, action commandargs.CommandTy
 	return cmd.Verify(ctx, action, repo)
 }
 
-func (c *Command) authenticate(ctx context.Context, operation string, repo string, userId string) (*GitlabAuthentication, error) {
+func (c *Command) authenticate(ctx context.Context, operation string, repo string, userID string) (*GitlabAuthentication, error) {
 	client, err := lfsauthenticate.NewClient(c.Config, c.Args)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := client.Authenticate(ctx, operation, repo, userId)
+	response, err := client.Authenticate(ctx, operation, repo, userID)
 	if err != nil {
 		return nil, err
 	}

@@ -220,17 +220,17 @@ func (c *uploadCloser) Close() error {
 func (b *GitlabBackend) StartUpload(oid string, r io.Reader, args transfer.Args) (io.Closer, error) {
 	href, headers, err := b.parseAndCheckBatchArgs("upload", oid, args["id"], args["token"])
 	if err != nil {
-		io.Copy(io.Discard, r)
+		_, _ = io.Copy(io.Discard, r)
 		return nil, err
 	}
 	return &uploadCloser{}, b.client.PutObject(oid, href, headers, r)
 }
 
-func (b *GitlabBackend) FinishUpload(state io.Closer, args transfer.Args) error {
+func (b *GitlabBackend) FinishUpload(_ io.Closer, _ transfer.Args) error {
 	return nil
 }
 
-func (b *GitlabBackend) Verify(oid string, args transfer.Args) (transfer.Status, error) {
+func (b *GitlabBackend) Verify(_ string, _ transfer.Args) (transfer.Status, error) {
 	return nil, newErrUnsupported("verify-object")
 }
 
@@ -242,7 +242,7 @@ func (b *GitlabBackend) Download(oid string, args transfer.Args) (fs.File, error
 	return b.client.GetObject(oid, href, headers)
 }
 
-func (b *GitlabBackend) LockBackend(args transfer.Args) transfer.LockBackend {
+func (b *GitlabBackend) LockBackend(_ transfer.Args) transfer.LockBackend {
 	return &gitlabLockBackend{}
 }
 
@@ -258,7 +258,7 @@ func (l *gitlabLock) AsArguments() []string {
 	return nil
 }
 
-func (l *gitlabLock) AsLockSpec(useOwnerID bool) ([]string, error) {
+func (l *gitlabLock) AsLockSpec(_ bool) ([]string, error) {
 	return nil, nil
 }
 
@@ -280,22 +280,22 @@ func (l *gitlabLock) Path() string {
 
 type gitlabLockBackend struct{}
 
-func (b *gitlabLockBackend) Create(path string, refname string) (transfer.Lock, error) {
+func (b *gitlabLockBackend) Create(_ string, _ string) (transfer.Lock, error) {
 	return nil, newErrUnsupported("lock")
 }
 
-func (b *gitlabLockBackend) Unlock(lock transfer.Lock) error {
+func (b *gitlabLockBackend) Unlock(_ transfer.Lock) error {
 	return newErrUnsupported("unlock")
 }
 
-func (b *gitlabLockBackend) FromPath(path string) (transfer.Lock, error) {
+func (b *gitlabLockBackend) FromPath(_ string) (transfer.Lock, error) {
 	return &gitlabLock{gitlabLockBackend: b}, nil
 }
 
-func (b *gitlabLockBackend) FromID(id string) (transfer.Lock, error) {
+func (b *gitlabLockBackend) FromID(_ string) (transfer.Lock, error) {
 	return &gitlabLock{gitlabLockBackend: b}, nil
 }
 
-func (b *gitlabLockBackend) Range(cursor string, limit int, iter func(transfer.Lock) error) (string, error) {
+func (b *gitlabLockBackend) Range(_ string, _ int, _ func(transfer.Lock) error) (string, error) {
 	return "", newErrUnsupported("list-lock")
 }
