@@ -164,7 +164,9 @@ func (c *Client) GetObject(oid, href string, headers map[string]string) (fs.File
 	}
 
 	client := http.Client{}
-	res, err := client.Do(req)
+	// See https://gitlab.com/gitlab-org/gitlab-shell/-/merge_requests/989#note_1891153531 for
+	// discussion on bypassing the linter
+	res, err := client.Do(req) // nolint:bodyclose
 	if err != nil {
 		return nil, err
 	}
