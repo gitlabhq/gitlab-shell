@@ -363,7 +363,10 @@ func (b *gitlabLockBackend) Range(cursor string, limit int, iter func(transfer.L
 			owner:             lock.Owner.Name,
 			ownerid:           "ours",
 		}
-		iter(tlock)
+		err = iter(tlock)
+		if err != nil {
+			return "", err
+		}
 	}
 	for _, lock := range res.Theirs {
 		tlock := &gitlabLock{
@@ -374,7 +377,10 @@ func (b *gitlabLockBackend) Range(cursor string, limit int, iter func(transfer.L
 			owner:             lock.Owner.Name,
 			ownerid:           "theirs",
 		}
-		iter(tlock)
+		err = iter(tlock)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return res.NextCursor, nil

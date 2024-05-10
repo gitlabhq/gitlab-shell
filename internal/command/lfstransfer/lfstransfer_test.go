@@ -96,7 +96,7 @@ func readCapabilities(t *testing.T, pl *pktline.Pktline) {
 	var caps []string
 	end := false
 	for !end {
-		cap, l, err := pl.ReadPacketTextWithLength()
+		capability, l, err := pl.ReadPacketTextWithLength()
 		require.NoError(t, err)
 		switch l {
 		case 0:
@@ -104,7 +104,7 @@ func readCapabilities(t *testing.T, pl *pktline.Pktline) {
 		case 1:
 			require.Fail(t, "Expected text or flush packet, got delim packet")
 		default:
-			caps = append(caps, cap)
+			caps = append(caps, capability)
 		}
 	}
 	require.Equal(t, []string{
@@ -970,7 +970,7 @@ type Owner struct {
 	Name string `json:"name"`
 }
 type LockInfo struct {
-	Id       string `json:"id"`
+	ID       string `json:"id"`
 	Path     string `json:"path"`
 	LockedAt string `json:"locked_at"`
 	*Owner   `json:"owner"`
@@ -984,7 +984,7 @@ func listLocks(cursor string, limit int, refspec string, id string, path string)
 		{
 			Refspec: "main",
 			LockInfo: &LockInfo{
-				Id:       "lock1",
+				ID:       "lock1",
 				Path:     "/large/file/1",
 				LockedAt: time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
 				Owner: &Owner{
@@ -995,7 +995,7 @@ func listLocks(cursor string, limit int, refspec string, id string, path string)
 		{
 			Refspec: "my-branch",
 			LockInfo: &LockInfo{
-				Id:       "lock2",
+				ID:       "lock2",
 				Path:     "/large/file/2",
 				LockedAt: time.Date(1955, 11, 12, 22, 04, 0, 0, time.UTC).Format(time.RFC3339),
 				Owner: &Owner{
@@ -1006,7 +1006,7 @@ func listLocks(cursor string, limit int, refspec string, id string, path string)
 		{
 			Refspec: "",
 			LockInfo: &LockInfo{
-				Id:       "lock3",
+				ID:       "lock3",
 				Path:     "/large/file/3",
 				LockedAt: time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
 				Owner: &Owner{
@@ -1017,19 +1017,19 @@ func listLocks(cursor string, limit int, refspec string, id string, path string)
 	}
 
 	for _, lock := range allLocks {
-		if cursor != "" && cursor != lock.Id {
+		if cursor != "" && cursor != lock.ID {
 			continue
 		}
 		cursor = ""
 		if len(locks) >= limit {
-			nextCursor = lock.Id
+			nextCursor = lock.ID
 			break
 		}
 
 		if refspec != "" && refspec != lock.Refspec {
 			continue
 		}
-		if id != "" && id != lock.Id {
+		if id != "" && id != lock.ID {
 			continue
 		}
 		if path != "" && path != lock.Path {
@@ -1040,7 +1040,7 @@ func listLocks(cursor string, limit int, refspec string, id string, path string)
 	return locks, nextCursor
 }
 
-func setup(t *testing.T, keyId string, repo string, op string) (string, *Command, *pktline.Pktline, *io.PipeReader) {
+func setup(t *testing.T, keyID string, repo string, op string) (string, *Command, *pktline.Pktline, *io.PipeReader) {
 	var url string
 
 	gitalyAddress, _ := testserver.StartGitalyServer(t, "unix")
@@ -1176,7 +1176,7 @@ func setup(t *testing.T, keyId string, repo string, op string) (string, *Command
 		},
 		{
 			Path: "/evil-url",
-			Handler: func(_ http.ResponseWriter, r *http.Request) {
+			Handler: func(_ http.ResponseWriter, _ *http.Request) {
 				require.Fail(t, "An attacker accessed an evil URL")
 			},
 		},
@@ -1200,31 +1200,31 @@ func setup(t *testing.T, keyId string, repo string, op string) (string, *Command
 			Path: "/group/repo/info/lfs/locks/verify",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				require.Equal(t, http.MethodPost, r.Method)
-				requestJson := &struct {
+				requestJSON := &struct {
 					Cursor string `json:"cursor"`
 					Limit  int    `json:"limit"`
 					Ref    struct {
 						Name string `json:"name"`
 					} `json:"ref"`
 				}{}
-				require.NoError(t, json.NewDecoder(r.Body).Decode(requestJson))
+				require.NoError(t, json.NewDecoder(r.Body).Decode(requestJSON))
 
-				bodyJson := &struct {
+				bodyJSON := &struct {
 					Ours       []*LockInfo `json:"ours,omitempty"`
 					Theirs     []*LockInfo `json:"theirs,omitempty"`
 					NextCursor string      `json:"next_cursor,omitempty"`
 				}{}
 				var locks []*LockInfo
-				locks, bodyJson.NextCursor = listLocks(requestJson.Cursor, requestJson.Limit, requestJson.Ref.Name, r.URL.Query().Get("id"), r.URL.Query().Get("path"))
+				locks, bodyJSON.NextCursor = listLocks(requestJSON.Cursor, requestJSON.Limit, requestJSON.Ref.Name, r.URL.Query().Get("id"), r.URL.Query().Get("path"))
 				for _, lock := range locks {
-					if lock.Id == "lock1" {
-						bodyJson.Ours = append(bodyJson.Ours, lock)
+					if lock.ID == "lock1" {
+						bodyJSON.Ours = append(bodyJSON.Ours, lock)
 					} else {
-						bodyJson.Theirs = append(bodyJson.Theirs, lock)
+						bodyJSON.Theirs = append(bodyJSON.Theirs, lock)
 					}
 				}
 
-				require.NoError(t, json.NewEncoder(w).Encode(bodyJson))
+				require.NoError(t, json.NewEncoder(w).Encode(bodyJSON))
 			},
 		},
 		{
@@ -1232,7 +1232,7 @@ func setup(t *testing.T, keyId string, repo string, op string) (string, *Command
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				switch r.Method {
 				case http.MethodGet:
-					bodyJson := &struct {
+					bodyJSON := &struct {
 						Locks      []*LockInfo `json:"locks,omitempty"`
 						NextCursor string      `json:"next_cursor,omitempty"`
 					}{}
@@ -1242,9 +1242,9 @@ func setup(t *testing.T, keyId string, repo string, op string) (string, *Command
 						require.NoError(t, err)
 						limit = l
 					}
-					bodyJson.Locks, bodyJson.NextCursor = listLocks(r.URL.Query().Get("cursor"), limit, r.URL.Query().Get("refspec"), r.URL.Query().Get("id"), r.URL.Query().Get("path"))
+					bodyJSON.Locks, bodyJSON.NextCursor = listLocks(r.URL.Query().Get("cursor"), limit, r.URL.Query().Get("refspec"), r.URL.Query().Get("id"), r.URL.Query().Get("path"))
 
-					require.NoError(t, json.NewEncoder(w).Encode(bodyJson))
+					require.NoError(t, json.NewEncoder(w).Encode(bodyJSON))
 				}
 			},
 		},
@@ -1258,7 +1258,7 @@ func setup(t *testing.T, keyId string, repo string, op string) (string, *Command
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url, Secret: "very secret"},
-		Args:       &commandargs.Shell{GitlabKeyId: keyId, SshArgs: []string{"git-lfs-transfer", repo, op}},
+		Args:       &commandargs.Shell{GitlabKeyId: keyID, SshArgs: []string{"git-lfs-transfer", repo, op}},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: errorSink, Out: outputSink, In: inputSource},
 	}
 	pl := pktline.NewPktline(outputSource, inputSink)
