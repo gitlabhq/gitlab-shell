@@ -195,7 +195,7 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 
 	ctxWithLogData, err := cmd.Execute(ctx)
 
-	logData := extractDataFromContext(ctxWithLogData)
+	logData := extractLogDataFromContext(ctxWithLogData)
 	logData.WrittenBytes = countingWriter.N
 
 	ctxWithLogData = context.WithValue(ctx, logInfo{}, logData)
