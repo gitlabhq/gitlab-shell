@@ -52,8 +52,6 @@ type exitStatusReq struct {
 	ExitStatus uint32
 }
 
-type logInfo struct{}
-
 func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (context.Context, error) {
 	ctxWithLogData := ctx
 	ctxlog := log.ContextLogger(ctx)
