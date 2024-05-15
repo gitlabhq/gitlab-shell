@@ -160,10 +160,12 @@ func (c *Client) getCellsAddress(ctx context.Context, repo string) string {
 		return c.host
 	}
 
-	cell, err := cellsClient.Classify(ctx, repo)
-	if err != nil {
-		return c.host
-	}
+	return c.host
 
-	return cell.Address
+	// cell, err := cellsClient.Classify(ctx, repo)
+	// if err != nil {
+	// 	return c.host
+	// }
+
+	// return cell.Address
 }

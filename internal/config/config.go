@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/cells"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitaly"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
