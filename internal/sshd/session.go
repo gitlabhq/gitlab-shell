@@ -1,3 +1,4 @@
+// Package sshd provides functionality for handling SSH sessions
 package sshd
 
 import (
@@ -26,7 +27,7 @@ type session struct {
 	// State set up by the connection
 	cfg                 *config.Config
 	channel             ssh.Channel
-	gitlabKeyId         string
+	gitlabKeyID         string
 	gitlabKrb5Principal string
 	gitlabUsername      string
 	namespace           string
@@ -73,7 +74,8 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (con
 		case "exec":
 			// The command has been executed as `ssh user@host command` or `exec` channel has been used
 			// in the app implementation
-			ctxWithLogData, shouldContinue, err = s.handleExec(ctx, req)
+			shouldContinue = false
+			ctxWithLogData, err = s.handleExec(ctx, req)
 		case "shell":
 			// The command has been entered into the shell or `shell` channel has been used
 			// in the app implementation
@@ -86,7 +88,7 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (con
 			shouldContinue = true
 
 			if req.WantReply {
-				if err := req.Reply(false, []byte{}); err != nil {
+				if err = req.Reply(false, []byte{}); err != nil {
 					sessionLog.WithError(err).Debug("session: handle: Failed to reply")
 				}
 			}
@@ -95,7 +97,7 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (con
 		sessionLog.WithField("should_continue", shouldContinue).Debug("session: handle: request processed")
 
 		if !shouldContinue {
-			s.channel.Close()
+			_ = s.channel.Close()
 			break
 		}
 	}
@@ -107,16 +109,16 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (con
 
 func (s *session) handleEnv(ctx context.Context, req *ssh.Request) (bool, error) {
 	var accepted bool
-	var envRequest envRequest
+	var envReq envRequest
 
-	if err := ssh.Unmarshal(req.Payload, &envRequest); err != nil {
+	if err := ssh.Unmarshal(req.Payload, &envReq); err != nil {
 		log.ContextLogger(ctx).WithError(err).Error("session: handleEnv: failed to unmarshal request")
 		return false, err
 	}
 
-	switch envRequest.Name {
+	switch envReq.Name {
 	case sshenv.GitProtocolEnv:
-		s.gitProtocolVersion = envRequest.Value
+		s.gitProtocolVersion = envReq.Value
 		accepted = true
 	default:
 		// Client requested a forbidden envvar, nothing to do
@@ -129,25 +131,25 @@ func (s *session) handleEnv(ctx context.Context, req *ssh.Request) (bool, error)
 	}
 
 	log.WithContextFields(
-		ctx, log.Fields{"accepted": accepted, "env_request": envRequest},
+		ctx, log.Fields{"accepted": accepted, "env_request": envReq},
 	).Debug("session: handleEnv: processed")
 
 	return true, nil
 }
 
-func (s *session) handleExec(ctx context.Context, req *ssh.Request) (context.Context, bool, error) {
-	var execRequest execRequest
+func (s *session) handleExec(ctx context.Context, req *ssh.Request) (context.Context, error) {
+	var execReq execRequest
 
-	if err := ssh.Unmarshal(req.Payload, &execRequest); err != nil {
-		return ctx, false, err
+	if err := ssh.Unmarshal(req.Payload, &execReq); err != nil {
+		return ctx, err
 	}
 
-	s.execCmd = execRequest.Command
+	s.execCmd = execReq.Command
 
 	ctxWithLogData, status, err := s.handleShell(ctx, req)
 	s.exit(ctxWithLogData, status)
 
-	return ctxWithLogData, false, err
+	return ctxWithLogData, err
 }
 
 func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Context, uint32, error) {
@@ -175,25 +177,10 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 		ErrOut: s.channel.Stderr(),
 	}
 
-	var cmd command.Command
-	var err error
-
-	if s.gitlabKrb5Principal != "" {
-		cmd, err = shellCmd.NewWithKrb5Principal(s.gitlabKrb5Principal, env, s.cfg, rw)
-	} else if s.gitlabUsername != "" {
-		cmd, err = shellCmd.NewWithUsername(s.gitlabUsername, env, s.cfg, rw)
-	} else {
-		cmd, err = shellCmd.NewWithKey(s.gitlabKeyId, env, s.cfg, rw)
-	}
+	cmd, err := s.getCommand(env, rw)
 
 	if err != nil {
-		if errors.Is(err, disallowedcommand.Error) {
-			s.toStderr(ctx, "ERROR: Unknown command: %v\n", s.execCmd)
-		} else {
-			s.toStderr(ctx, "ERROR: Failed to parse command: %v\n", err.Error())
-		}
-
-		return ctx, 128, err
+		return s.handleCommandError(ctx, err)
 	}
 
 	cmdName := reflect.TypeOf(cmd).String()
@@ -206,10 +193,10 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 
 	ctxWithLogData, err := cmd.Execute(ctx)
 
-	logData := extractDataFromContext(ctxWithLogData)
+	logData := extractLogDataFromContext(ctxWithLogData)
 	logData.WrittenBytes = countingWriter.N
 
-	ctxWithLogData = context.WithValue(ctx, "logData", logData)
+	ctxWithLogData = context.WithValue(ctx, logInfo{}, logData)
 
 	if err != nil {
 		grpcStatus := grpcstatus.Convert(err)
@@ -225,6 +212,31 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 	return ctxWithLogData, 0, nil
 }
 
+func (s *session) handleCommandError(ctx context.Context, err error) (context.Context, uint32, error) {
+	if errors.Is(err, disallowedcommand.Error) {
+		s.toStderr(ctx, "ERROR: Unknown command: %v\n", s.execCmd)
+	} else {
+		s.toStderr(ctx, "ERROR: Failed to parse command: %v\n", err.Error())
+	}
+
+	return ctx, 128, err
+}
+
+func (s *session) getCommand(env sshenv.Env, rw *readwriter.ReadWriter) (command.Command, error) {
+	var cmd command.Command
+	var err error
+
+	switch {
+	case s.gitlabKrb5Principal != "":
+		cmd, err = shellCmd.NewWithKrb5Principal(s.gitlabKrb5Principal, env, s.cfg, rw)
+	case s.gitlabUsername != "":
+		cmd, err = shellCmd.NewWithUsername(s.gitlabUsername, env, s.cfg, rw)
+	default:
+		cmd, err = shellCmd.NewWithKey(s.gitlabKeyID, env, s.cfg, rw)
+	}
+	return cmd, err
+}
+
 func (s *session) toStderr(ctx context.Context, format string, args ...interface{}) {
 	out := fmt.Sprintf(format, args...)
 	log.WithContextFields(ctx, log.Fields{"stderr": out}).Debug("session: toStderr: output")
@@ -235,6 +247,6 @@ func (s *session) exit(ctx context.Context, status uint32) {
 	log.WithContextFields(ctx, log.Fields{"exit_status": status}).Info("session: exit: exiting")
 	req := exitStatusReq{ExitStatus: status}
 
-	s.channel.CloseWrite()
-	s.channel.SendRequest("exit-status", false, ssh.Marshal(req))
+	_ = s.channel.CloseWrite()
+	_, _ = s.channel.SendRequest("exit-status", false, ssh.Marshal(req))
 }

@@ -223,7 +223,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		session := &session{
 			cfg:                 s.Config,
 			channel:             channel,
-			gitlabKeyId:         sconn.Permissions.Extensions["key-id"],
+			gitlabKeyID:         sconn.Permissions.Extensions["key-id"],
 			gitlabKrb5Principal: sconn.Permissions.Extensions["krb5principal"],
 			gitlabUsername:      sconn.Permissions.Extensions["username"],
 			namespace:           sconn.Permissions.Extensions["namespace"],
