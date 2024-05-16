@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.9
 
 require (
-	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20240425140508-9e9a21de0f5b
+	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20240507135601-cc13460f1967
 	github.com/git-lfs/pktline v0.0.0-20230103162542-ca444d533ef1
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
@@ -96,7 +96,7 @@ require (
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.17.0 // indirect
