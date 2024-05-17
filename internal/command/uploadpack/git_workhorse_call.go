@@ -10,7 +10,7 @@ import (
 
 func (c *Command) performWorkhorseCall(ctx context.Context, response *accessverifier.Response) error {
 	client := &git.Client{
-		Url: response.GitRpcUrl,
+		URL: response.GitRpcUrl,
 		Headers: map[string]string{
 			"Gitlab-Shell-Api-Request": response.GitRpcAuthHeader,
 			"Git-Protocol":             c.Args.Env.GitProtocolVersion,

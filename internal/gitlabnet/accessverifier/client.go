@@ -21,8 +21,6 @@ const (
 // Client is a client for accessing resources
 type Client struct {
 	client *client.GitlabNetClient
-	config *config.Config
-	host   string
 }
 
 // Request represents a request for accessing resources
@@ -98,7 +96,7 @@ func NewClient(config *config.Config) (*Client, error) {
 		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
-	return &Client{client: client, config: config, host: client.HttpClient.Host}, nil
+	return &Client{client: client}, nil
 }
 
 // Verify verifies access to a GitLab resource
@@ -122,7 +120,7 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 
 	request.CheckIP = gitlabnet.ParseIP(args.Env.RemoteAddr)
 
-	response, err := c.client.DoRequest(ctx, http.MethodPost, c.host, "/api/v4/internal/allowed", request)
+	response, err := c.client.Post(ctx, "/allowed", request)
 	if err != nil {
 		return nil, err
 	}

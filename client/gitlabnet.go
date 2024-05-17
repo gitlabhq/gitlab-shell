@@ -30,12 +30,11 @@ type ErrorResponse struct {
 
 // GitlabNetClient is a client for interacting with GitLab API
 type GitlabNetClient struct {
-	HttpClient *HTTPClient
-
-	user      string
-	password  string
-	secret    string
-	userAgent string
+	httpClient *HTTPClient
+	user       string
+	password   string
+	secret     string
+	userAgent  string
 }
 
 // APIError represents an API error
@@ -62,7 +61,7 @@ func NewGitlabNetClient(
 	}
 
 	return &GitlabNetClient{
-		HttpClient: httpClient,
+		httpClient: httpClient,
 		user:       user,
 		password:   password,
 		secret:     secret,
@@ -129,17 +128,17 @@ func parseError(resp *http.Response, respErr error) error {
 
 // Get makes a GET request
 func (c *GitlabNetClient) Get(ctx context.Context, path string) (*http.Response, error) {
-	return c.DoRequest(ctx, http.MethodGet, c.HttpClient.Host, normalizePath(path), nil)
+	return c.DoRequest(ctx, http.MethodGet, normalizePath(path), nil)
 }
 
 // Post makes a POST request
 func (c *GitlabNetClient) Post(ctx context.Context, path string, data interface{}) (*http.Response, error) {
-	return c.DoRequest(ctx, http.MethodPost, c.HttpClient.Host, normalizePath(path), data)
+	return c.DoRequest(ctx, http.MethodPost, normalizePath(path), data)
 }
 
 // Do executes a request
 func (c *GitlabNetClient) Do(request *http.Request) (*http.Response, error) {
-	response, respErr := c.HttpClient.RetryableHTTP.HTTPClient.Do(request)
+	response, respErr := c.httpClient.RetryableHTTP.HTTPClient.Do(request)
 	if err := parseError(response, respErr); err != nil {
 		return nil, err
 	}
@@ -148,8 +147,8 @@ func (c *GitlabNetClient) Do(request *http.Request) (*http.Response, error) {
 }
 
 // DoRequest executes a request with the given method, path, and data
-func (c *GitlabNetClient) DoRequest(ctx context.Context, method, host, path string, data interface{}) (*http.Response, error) {
-	request, err := newRequest(ctx, method, host, path, data)
+func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, data interface{}) (*http.Response, error) {
+	request, err := newRequest(ctx, method, c.httpClient.Host, path, data)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +173,7 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, host, path stri
 	request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("User-Agent", c.userAgent)
 
-	response, respErr := c.HttpClient.RetryableHTTP.Do(request)
+	response, respErr := c.httpClient.RetryableHTTP.Do(request)
 	if err := parseError(response, respErr); err != nil {
 		return nil, err
 	}

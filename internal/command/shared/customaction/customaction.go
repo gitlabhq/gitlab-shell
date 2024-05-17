@@ -107,7 +107,7 @@ func (c *Command) processAPIEndpoints(ctx context.Context, response *accessverif
 }
 
 func (c *Command) performRequest(ctx context.Context, client *client.GitlabNetClient, endpoint string, request *Request) (*Response, error) {
-	response, err := client.DoRequest(ctx, http.MethodPost, client.HttpClient.Host, endpoint, request)
+	response, err := client.DoRequest(ctx, http.MethodPost, endpoint, request)
 	if err != nil {
 		return nil, err
 	}
