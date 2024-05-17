@@ -3,25 +3,22 @@ package uploadpack
 import (
 	"context"
 	"io"
-	"net/http"
 
-	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
 )
 
-var httpClient = &http.Client{
-	Transport: client.NewTransport(client.DefaultTransport()),
-}
-
 func (c *Command) performWorkhorseCall(ctx context.Context, response *accessverifier.Response) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, response.GitRpcUrl, io.NopCloser(c.ReadWriter.In))
-	if err != nil {
-		return err
+	client := &git.Client{
+		Url: response.GitRpcUrl,
+		Headers: map[string]string{
+			"Gitlab-Shell-Api-Request": response.GitRpcAuthHeader,
+			"Git-Protocol":             c.Args.Env.GitProtocolVersion,
+		},
 	}
-	req.Header.Set("Authorization", response.GitRpcAuthHeader)
-	req.Header.Set("Git-Protocol", c.Args.Env.GitProtocolVersion)
 
-	resp, err := httpClient.Do(req)
+	resp, err := client.SshUploadPack(ctx, io.NopCloser(c.ReadWriter.In))
+
 	if err != nil {
 		return err
 	}

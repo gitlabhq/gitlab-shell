@@ -56,6 +56,16 @@ func (c *Client) UploadPack(ctx context.Context, body io.Reader) (*http.Response
 	return c.do(request)
 }
 
+// SshUploadPack sends a SSH over HTTPS request to the server
+func (c *Client) SshUploadPack(ctx context.Context, body io.Reader) (*http.Response, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.Url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.do(request)
+}
+
 func (c *Client) do(request *http.Request) (*http.Response, error) {
 	for k, v := range c.Headers {
 		request.Header.Add(k, v)

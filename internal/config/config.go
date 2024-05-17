@@ -12,7 +12,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/cells"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitaly"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
@@ -66,12 +65,6 @@ type LFSConfig struct {
 	PureSSHProtocol bool // `yaml:"pure_ssh_protocol"`
 }
 
-type CellsConfig struct {
-	Url string `yaml:"url"`
-
-	Client *cells.Client
-}
-
 type Config struct {
 	User                  string `yaml:"user,omitempty"`
 	RootDir               string
@@ -88,7 +81,6 @@ type Config struct {
 	HttpSettings   HttpSettingsConfig `yaml:"http_settings"`
 	Server         ServerConfig       `yaml:"sshd"`
 	LFSConfig      LFSConfig          `yaml:"lfs"`
-	Cells          CellsConfig        `yaml:"cells"`
 
 	httpClient     *client.HTTPClient
 	httpClientErr  error
@@ -217,14 +209,6 @@ func newFromFile(path string) (*Config, error) {
 
 	if len(cfg.LogFile) > 0 && cfg.LogFile[0] != '/' && cfg.RootDir != "" {
 		cfg.LogFile = filepath.Join(cfg.RootDir, cfg.LogFile)
-	}
-
-	if cfg.Cells.Url != "" {
-		client, err := cells.NewClient(cfg.Cells.Url)
-		if err != nil {
-			return nil, err
-		}
-		cfg.Cells.Client = client
 	}
 
 	return cfg, nil

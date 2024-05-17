@@ -122,8 +122,7 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 
 	request.CheckIP = gitlabnet.ParseIP(args.Env.RemoteAddr)
 
-	host := c.getCellsAddress(ctx, repo)
-	response, err := c.client.DoRequest(ctx, http.MethodPost, host, "/api/v4/internal/allowed", request)
+	response, err := c.client.DoRequest(ctx, http.MethodPost, c.host, "/api/v4/internal/allowed", request)
 	if err != nil {
 		return nil, err
 	}
@@ -152,20 +151,4 @@ func parse(hr *http.Response, args *commandargs.Shell) (*Response, error) {
 // IsCustomAction checks if the response indicates a custom action
 func (r *Response) IsCustomAction() bool {
 	return r.StatusCode == http.StatusMultipleChoices
-}
-
-func (c *Client) getCellsAddress(ctx context.Context, repo string) string {
-	cellsClient := c.config.Cells.Client
-	if cellsClient == nil {
-		return c.host
-	}
-
-	return c.host
-
-	// cell, err := cellsClient.Classify(ctx, repo)
-	// if err != nil {
-	// 	return c.host
-	// }
-
-	// return cell.Address
 }
