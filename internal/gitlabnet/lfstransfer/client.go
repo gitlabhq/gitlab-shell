@@ -21,6 +21,7 @@ type Client struct {
 	args   *commandargs.Shell
 	href   string
 	auth   string
+	header string
 }
 
 type BatchAction struct {
@@ -126,9 +127,9 @@ type ListLocksVerifyResponse struct {
 	Theirs     []*Lock `json:"theirs,omitempty"`
 	NextCursor string  `json:"next_cursor,omitempty"`
 }
-
+var ClientHeader = "application/vnd.git-lfs+json"
 func NewClient(config *config.Config, args *commandargs.Shell, href string, auth string) (*Client, error) {
-	return &Client{config: config, args: args, href: href, auth: auth}, nil
+	return &Client{config: config, args: args, href: href, auth: auth, header: ClientHeader}, nil
 }
 
 func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, reqHashAlgo string) (*BatchResponse, error) {
@@ -157,7 +158,7 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
+	req.Header.Set("Content-Type", c.header)
 	req.Header.Set("Authorization", c.auth)
 
 	client := http.Client{}
@@ -267,7 +268,7 @@ func (c *Client) ListLocksVerify(path, id, cursor string, limit int, ref string)
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
+	req.Header.Set("Content-Type", c.header)
 	req.Header.Set("Authorization", c.auth)
 
 	client := http.Client{}
