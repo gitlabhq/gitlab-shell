@@ -181,7 +181,7 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 	return response, nil
 }
 
-func (c *Client) GetObject(oid string, href string, headers map[string]string) (fs.File, error) {
+func (c *Client) GetObject(oid, href string, headers map[string]string) (fs.File, error) {
 	req, err := http.NewRequest(http.MethodGet, href, nil)
 	if err != nil {
 		return nil, err
@@ -276,7 +276,7 @@ func (c *Client) ListLocksVerify(path, id, cursor string, limit int, ref string)
 		return nil, err
 	}
 
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	response := &ListLocksVerifyResponse{}
 	if err := gitlabnet.ParseJSON(res, response); err != nil {
