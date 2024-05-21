@@ -27,7 +27,7 @@ func TestNewServerConfigWithoutHosts(t *testing.T) {
 	_, err := newServerConfig(&config.Config{GitlabUrl: "http://localhost"})
 
 	require.Error(t, err)
-	require.Equal(t, "No host keys could be loaded, aborting", err.Error())
+	require.Equal(t, "no host keys could be loaded, aborting", err.Error())
 }
 
 func TestHostKeyAndCerts(t *testing.T) {

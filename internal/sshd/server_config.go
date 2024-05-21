@@ -252,29 +252,42 @@ func (s *serverConfig) get(parentCtx context.Context) *ssh.ServerConfig {
 		ServerVersion:       "SSH-2.0-GitLab-SSHD",
 	}
 
-	if len(s.cfg.Server.MACs) > 0 {
-		sshCfg.MACs = s.cfg.Server.MACs
-	} else {
-		sshCfg.MACs = supportedMACs
-	}
-
-	if len(s.cfg.Server.KexAlgorithms) > 0 {
-		sshCfg.KeyExchanges = s.cfg.Server.KexAlgorithms
-	} else {
-		sshCfg.KeyExchanges = supportedKeyExchanges
-	}
-
-	if len(s.cfg.Server.Ciphers) > 0 {
-		sshCfg.Ciphers = s.cfg.Server.Ciphers
-	}
-
-	if len(s.cfg.Server.PublicKeyAlgorithms) > 0 {
-		sshCfg.PublicKeyAuthAlgorithms = s.cfg.Server.PublicKeyAlgorithms
-	}
+	s.configureMACs(sshCfg)
+	s.configureKeyExchanges(sshCfg)
+	s.configureCiphers(sshCfg)
+	s.configurePublicKeyAlgorithms(sshCfg)
 
 	for _, key := range s.hostKeys {
 		sshCfg.AddHostKey(key)
 	}
 
 	return sshCfg
+}
+
+func (s *serverConfig) configurePublicKeyAlgorithms(sshCfg *ssh.ServerConfig) {
+	if len(s.cfg.Server.PublicKeyAlgorithms) > 0 {
+		sshCfg.PublicKeyAuthAlgorithms = s.cfg.Server.PublicKeyAlgorithms
+	}
+}
+
+func (s *serverConfig) configureCiphers(sshCfg *ssh.ServerConfig) {
+	if len(s.cfg.Server.Ciphers) > 0 {
+		sshCfg.Ciphers = s.cfg.Server.Ciphers
+	}
+}
+
+func (s *serverConfig) configureKeyExchanges(sshCfg *ssh.ServerConfig) {
+	if len(s.cfg.Server.KexAlgorithms) > 0 {
+		sshCfg.KeyExchanges = s.cfg.Server.KexAlgorithms
+	} else {
+		sshCfg.KeyExchanges = supportedKeyExchanges
+	}
+}
+
+func (s *serverConfig) configureMACs(sshCfg *ssh.ServerConfig) {
+	if len(s.cfg.Server.MACs) > 0 {
+		sshCfg.MACs = s.cfg.Server.MACs
+	} else {
+		sshCfg.MACs = supportedMACs
+	}
 }
