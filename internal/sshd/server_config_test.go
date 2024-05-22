@@ -27,7 +27,7 @@ func TestNewServerConfigWithoutHosts(t *testing.T) {
 	_, err := newServerConfig(&config.Config{GitlabUrl: "http://localhost"})
 
 	require.Error(t, err)
-	require.Equal(t, "No host keys could be loaded, aborting", err.Error())
+	require.Equal(t, "no host keys could be loaded, aborting", err.Error())
 }
 
 func TestHostKeyAndCerts(t *testing.T) {
@@ -317,14 +317,14 @@ func TestGSSAPIWithMIC(t *testing.T) {
 	require.NotNil(t, sshServerConfig.GSSAPIWithMICConfig)
 	require.NotNil(t, sshServerConfig.GSSAPIWithMICConfig.AllowLogin)
 	require.NotNil(t, server)
-	require.Equal(t, server.ServicePrincipalName, "host/test@TEST.TEST")
+	require.Equal(t, "host/test@TEST.TEST", server.ServicePrincipalName)
 
 	sshServerConfig.SetDefaults()
 
 	require.NotNil(t, sshServerConfig.GSSAPIWithMICConfig)
 	require.NotNil(t, sshServerConfig.GSSAPIWithMICConfig.AllowLogin)
 	require.NotNil(t, server)
-	require.Equal(t, server.ServicePrincipalName, "host/test@TEST.TEST")
+	require.Equal(t, "host/test@TEST.TEST", server.ServicePrincipalName)
 }
 
 func TestGSSAPIWithMICDisabled(t *testing.T) {
