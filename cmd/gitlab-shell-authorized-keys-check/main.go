@@ -21,6 +21,11 @@ var (
 	BuildTime = "19700101.000000" // Set at build time in the Makefile
 )
 
+const (
+	exitCodeSuccess = 0
+	exitCodeFailure = 1
+)
+
 func main() {
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)
 
@@ -30,35 +35,42 @@ func main() {
 		ErrOut: os.Stderr,
 	}
 
+	code, err := execute(readWriter)
+	if err != nil {
+		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
+	}
+
+	os.Exit(int(code))
+}
+
+func execute(readWriter *readwriter.ReadWriter) (int, error) {
 	executable, err := executable.New(executable.AuthorizedKeysCheck)
 	if err != nil {
-		fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
-		os.Exit(1)
+		return exitCodeFailure, fmt.Errorf("failed to determine executable, exiting")
 	}
 
 	config, err := config.NewFromDirExternal(executable.RootDir)
 	if err != nil {
-		fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting")
-		os.Exit(1)
+		return exitCodeFailure, fmt.Errorf("failed to read config, exiting")
 	}
 
 	logCloser := logger.Configure(config)
+	defer func() { _ = logCloser.Close() }()
 
 	cmd, err := cmd.New(os.Args[1:], config, readWriter)
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment
-		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
-		os.Exit(1)
+		return exitCodeFailure, err
 	}
 
 	ctx, finished := command.Setup(executable.Name, config)
+	defer finished()
 
 	if _, err = cmd.Execute(ctx); err != nil {
 		console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
-		os.Exit(1)
+		return exitCodeFailure, nil
 	}
 
-	defer func() { _ = logCloser.Close() }()
-	defer finished()
+	return exitCodeSuccess, nil
 }
