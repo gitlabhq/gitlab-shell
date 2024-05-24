@@ -7,9 +7,11 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/charmbracelet/git-lfs-transfer/transfer"
+	"github.com/hashicorp/go-retryablehttp"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
@@ -20,6 +22,7 @@ type Client struct {
 	args   *commandargs.Shell
 	href   string
 	auth   string
+	header string
 }
 
 type BatchAction struct {
@@ -98,19 +101,61 @@ func (f *downloadedFile) Stat() (fs.FileInfo, error) {
 	return &f.downloadedFileInfo, nil
 }
 
+type listLocksVerifyRequest struct {
+	Cursor string    `json:"cursor,omitempty"`
+	Limit  int       `json:"limit"`
+	Ref    *batchRef `json:"ref,omitempty"`
+}
+
+type LockOwner struct {
+	Name string `json:"name"`
+}
+
+type Lock struct {
+	ID       string     `json:"id"`
+	Path     string     `json:"path"`
+	LockedAt time.Time  `json:"locked_at"`
+	Owner    *LockOwner `json:"owner"`
+}
+
+type ListLocksResponse struct {
+	Locks      []*Lock `json:"locks,omitempty"`
+	NextCursor string  `json:"next_cursor,omitempty"`
+}
+
+type ListLocksVerifyResponse struct {
+	Ours       []*Lock `json:"ours,omitempty"`
+	Theirs     []*Lock `json:"theirs,omitempty"`
+	NextCursor string  `json:"next_cursor,omitempty"`
+}
+
+var ClientHeader = "application/vnd.git-lfs+json"
+
 func NewClient(config *config.Config, args *commandargs.Shell, href string, auth string) (*Client, error) {
-	return &Client{config: config, args: args, href: href, auth: auth}, nil
+	return &Client{config: config, args: args, href: href, auth: auth, header: ClientHeader}, nil
+}
+func newHTTPRequest(method string, ref string, reader io.Reader) (*retryablehttp.Request, error) {
+	req, err := retryablehttp.NewRequest(method, ref, reader)
+	if err != nil {
+		return nil, err
+	}
+	return req, nil
+}
+
+func newHTTPClient() *retryablehttp.Client {
+	client := retryablehttp.NewClient()
+	client.RetryMax = 3
+	client.Logger = nil
+	return client
 }
 
 func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, reqHashAlgo string) (*BatchResponse, error) {
-	var bref *batchRef
-
 	// FIXME: This causes tests to fail
 	// if ref == "" {
 	// 	return nil, errors.New("A ref must be specified.")
 	// }
 
-	bref = &batchRef{Name: ref}
+	bref := &batchRef{Name: ref}
 	body := batchRequest{
 		Operation:     operation,
 		Objects:       reqObjects,
@@ -125,15 +170,12 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 
 	jsonReader := bytes.NewReader(jsonData)
 
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/objects/batch", c.href), jsonReader)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := newHTTPRequest(http.MethodPost, fmt.Sprintf("%s/objects/batch", c.href), jsonReader)
 
-	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
+	req.Header.Set("Content-Type", c.header)
 	req.Header.Set("Authorization", c.auth)
+	client := newHTTPClient()
 
-	client := http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -155,15 +197,12 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 }
 
 func (c *Client) GetObject(oid, href string, headers map[string]string) (fs.File, error) {
-	req, err := http.NewRequest(http.MethodGet, href, nil)
-	if err != nil {
-		return nil, err
-	}
+	req, _ := newHTTPRequest(http.MethodGet, href, nil)
 	for key, value := range headers {
 		req.Header.Add(key, value)
 	}
 
-	client := http.Client{}
+	client := newHTTPClient()
 	// See https://gitlab.com/gitlab-org/gitlab-shell/-/merge_requests/989#note_1891153531 for
 	// discussion on bypassing the linter
 	res, err := client.Do(req) // nolint:bodyclose
@@ -184,15 +223,12 @@ func (c *Client) GetObject(oid, href string, headers map[string]string) (fs.File
 }
 
 func (c *Client) PutObject(oid, href string, headers map[string]string, r io.Reader) error {
-	req, err := http.NewRequest(http.MethodPut, href, r)
-	if err != nil {
-		return err
-	}
+	req, _ := newHTTPRequest(http.MethodPut, href, r)
 	for key, value := range headers {
 		req.Header.Add(key, value)
 	}
 
-	client := http.Client{}
+	client := newHTTPClient()
 	res, err := client.Do(req)
 	if err != nil {
 		return err
@@ -205,4 +241,52 @@ func (c *Client) PutObject(oid, href string, headers map[string]string, r io.Rea
 		return fmt.Errorf("internal error (%d)", res.StatusCode)
 	}
 	return nil
+}
+
+func (c *Client) ListLocksVerify(path, id, cursor string, limit int, ref string) (*ListLocksVerifyResponse, error) {
+	url, err := url.Parse(c.href)
+	if err != nil {
+		return nil, err
+	}
+	url = url.JoinPath("locks/verify")
+	query := url.Query()
+	if path != "" {
+		query.Add("path", path)
+	}
+	if id != "" {
+		query.Add("id", id)
+	}
+	url.RawQuery = query.Encode()
+
+	body := listLocksVerifyRequest{
+		Cursor: cursor,
+		Limit:  limit,
+		Ref: &batchRef{
+			Name: ref,
+		},
+	}
+	jsonData, err := json.Marshal(&body)
+	if err != nil {
+		return nil, err
+	}
+	jsonReader := bytes.NewReader(jsonData)
+
+	req, _ := newHTTPRequest(http.MethodPost, url.String(), jsonReader)
+	req.Header.Set("Content-Type", c.header)
+	req.Header.Set("Authorization", c.auth)
+
+	client := newHTTPClient()
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() { _ = res.Body.Close() }()
+
+	response := &ListLocksVerifyResponse{}
+	if err := gitlabnet.ParseJSON(res, response); err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
