@@ -278,7 +278,7 @@ func (c *Client) Lock(path, refname string) (*Lock, error) {
 	}
 	jsonReader := bytes.NewReader(jsonData)
 
-	req, err := http.NewRequest(http.MethodPost, c.href+"/locks", jsonReader)
+	req, err := newHTTPRequest(http.MethodPost, c.href+"/locks", jsonReader)
 	if err != nil {
 		return nil, err
 	}
@@ -286,13 +286,13 @@ func (c *Client) Lock(path, refname string) (*Lock, error) {
 	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
 	req.Header.Set("Authorization", c.auth)
 
-	client := http.Client{}
+	client := newHTTPClient()
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	switch {
 	case res.StatusCode >= 200 && res.StatusCode <= 299:
@@ -335,7 +335,7 @@ func (c *Client) Unlock(id string, force bool, refname string) (*Lock, error) {
 	}
 	jsonReader := bytes.NewReader(jsonData)
 
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/locks/%s/unlock", c.href, id), jsonReader)
+	req, err := newHTTPRequest(http.MethodPost, fmt.Sprintf("%s/locks/%s/unlock", c.href, id), jsonReader)
 	if err != nil {
 		return nil, err
 	}
@@ -343,13 +343,13 @@ func (c *Client) Unlock(id string, force bool, refname string) (*Lock, error) {
 	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
 	req.Header.Set("Authorization", c.auth)
 
-	client := http.Client{}
+	client := newHTTPClient()
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	switch {
 	case res.StatusCode >= 200 && res.StatusCode <= 299:
