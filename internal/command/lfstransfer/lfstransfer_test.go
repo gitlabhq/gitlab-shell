@@ -109,6 +109,7 @@ func readCapabilities(t *testing.T, pl *pktline.Pktline) {
 	}
 	require.Equal(t, []string{
 		"version=1",
+		"locking",
 	}, caps)
 }
 
@@ -756,13 +757,54 @@ func TestLfsTransferLock(t *testing.T) {
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
-	writeCommandArgs(t, pl, "lock", []string{"path=large/file"})
+	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/1"})
 	status, args, data := readStatusArgsAndTextData(t, pl)
-	require.Equal(t, "status 405", status)
+	require.Equal(t, "status 409", status)
+	require.Equal(t, []string{
+		"id=lock1",
+		"path=/large/file/1",
+		"locked-at=2023-10-03T13:56:20Z",
+		"ownername=johndoe",
+	}, args)
+	require.Equal(t, []string{
+		"conflict",
+	}, data)
+
+	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/2"})
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: lock is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
+		"error: forbidden",
 	}, data)
+
+	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/3"})
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 500", status)
+	require.Empty(t, args)
+	require.Equal(t, []string{
+		"internal error",
+	}, data)
+
+	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/4"})
+	status, args = readStatusArgs(t, pl)
+	require.Equal(t, "status 201", status)
+	require.Equal(t, []string{
+		"id=lock4",
+		"path=/large/file/4",
+		"locked-at=2023-10-03T13:56:20Z",
+		"ownername=johndoe",
+	}, args)
+
+	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/5", "refname=refs/heads/main"})
+	status, args = readStatusArgs(t, pl)
+	require.Equal(t, "status 201", status)
+	require.Equal(t, []string{
+		"id=lock5",
+		"path=/large/file/5",
+		"locked-at=2023-10-03T13:56:20Z",
+		"ownername=johndoe",
+	}, args)
 
 	quit(t, pl)
 	wg.Wait()
@@ -773,12 +815,40 @@ func TestLfsTransferUnlock(t *testing.T) {
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
-	writeCommand(t, pl, "unlock lock1")
+	writeCommandArgs(t, pl, "unlock lock1", []string{"refname=refs/heads/main"})
+	status, args := readStatusArgs(t, pl)
+	require.Equal(t, "status 200", status)
+	require.Equal(t, []string{
+		"id=lock1",
+		"path=/large/file/1",
+		"locked-at=2023-10-03T13:56:20Z",
+		"ownername=johndoe",
+	}, args)
+
+	writeCommandArgs(t, pl, "unlock lock2", []string{"force=true"})
+	status, args = readStatusArgs(t, pl)
+	require.Equal(t, "status 200", status)
+	require.Equal(t, []string{
+		"id=lock2",
+		"path=/large/file/2",
+		"locked-at=1955-11-12T22:04:00Z",
+		"ownername=marty",
+	}, args)
+
+	writeCommand(t, pl, "unlock lock3")
 	status, args, data := readStatusArgsAndTextData(t, pl)
-	require.Equal(t, "status 405", status)
+	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: unlock is not yet supported by git-lfs-transfer. See https://gitlab.com/groups/gitlab-org/-/epics/11872 to track progress.",
+		"error: forbidden",
+	}, data)
+
+	writeCommand(t, pl, "unlock lock4")
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 404", status)
+	require.Empty(t, args)
+	require.Equal(t, []string{
+		"error: not found",
 	}, data)
 
 	quit(t, pl)
@@ -1243,9 +1313,154 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 						limit = l
 					}
 					bodyJSON.Locks, bodyJSON.NextCursor = listLocks(r.URL.Query().Get("cursor"), limit, r.URL.Query().Get("refspec"), r.URL.Query().Get("id"), r.URL.Query().Get("path"))
-
 					require.NoError(t, json.NewEncoder(w).Encode(bodyJSON))
+				case http.MethodPost:
+					var body map[string]interface{}
+					reader := json.NewDecoder(r.Body)
+					reader.Decode(&body)
+
+					var response map[string]interface{}
+					switch body["path"] {
+					case "/large/file/1":
+						response = map[string]interface{}{
+							"lock": map[string]interface{}{
+								"id":        "lock1",
+								"path":      "/large/file/1",
+								"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+								"owner": map[string]interface{}{
+									"name": "johndoe",
+								},
+							},
+							"message": "already created lock",
+						}
+						w.WriteHeader(http.StatusConflict)
+					case "/large/file/2":
+						response = map[string]interface{}{
+							"message": "no permission",
+						}
+						w.WriteHeader(http.StatusForbidden)
+					case "/large/file/4":
+						response = map[string]interface{}{
+							"lock": map[string]interface{}{
+								"id":        "lock4",
+								"path":      "/large/file/4",
+								"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+								"owner": map[string]interface{}{
+									"name": "johndoe",
+								},
+							},
+						}
+						w.WriteHeader(http.StatusCreated)
+					case "/large/file/5":
+						ref := body["ref"].(map[string]interface{})
+						require.Equal(t, "refs/heads/main", ref["name"])
+						response = map[string]interface{}{
+							"lock": map[string]interface{}{
+								"id":        "lock5",
+								"path":      "/large/file/5",
+								"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+								"owner": map[string]interface{}{
+									"name": "johndoe",
+								},
+							},
+						}
+						w.WriteHeader(http.StatusCreated)
+					default:
+						response = map[string]interface{}{
+							"message": "internal error",
+						}
+						w.WriteHeader(http.StatusInternalServerError)
+					}
+					writer := json.NewEncoder(w)
+					writer.Encode(response)
 				}
+			},
+		},
+		{
+			Path: "/group/repo/info/lfs/locks/lock1/unlock",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodPost, r.Method)
+				var body map[string]interface{}
+				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				require.Equal(t, map[string]interface{}{
+					"ref": map[string]interface{}{
+						"name": "refs/heads/main",
+					},
+					"force": false,
+				}, body)
+
+				lock := map[string]interface{}{
+					"lock": map[string]interface{}{
+						"id":        "lock1",
+						"path":      "/large/file/1",
+						"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+						"owner": map[string]interface{}{
+							"name": "johndoe",
+						},
+					},
+				}
+				writer := json.NewEncoder(w)
+				writer.Encode(lock)
+			},
+		},
+		{
+			Path: "/group/repo/info/lfs/locks/lock2/unlock",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodPost, r.Method)
+				var body map[string]interface{}
+				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				require.Equal(t, map[string]interface{}{
+					"force": true,
+				}, body)
+
+				lock := map[string]interface{}{
+					"lock": map[string]interface{}{
+						"id":        "lock2",
+						"path":      "/large/file/2",
+						"locked_at": time.Date(1955, 11, 12, 22, 4, 0, 0, time.UTC).Format(time.RFC3339),
+						"owner": map[string]interface{}{
+							"name": "marty",
+						},
+					},
+				}
+				writer := json.NewEncoder(w)
+				writer.Encode(lock)
+			},
+		},
+		{
+			Path: "/group/repo/info/lfs/locks/lock3/unlock",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodPost, r.Method)
+				var body map[string]interface{}
+				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				require.Equal(t, map[string]interface{}{
+					"force": false,
+				}, body)
+
+				lock := map[string]interface{}{
+					"message": "forbidden",
+				}
+				w.WriteHeader(http.StatusForbidden)
+				writer := json.NewEncoder(w)
+				writer.Encode(lock)
+			},
+		},
+		{
+			Path: "/group/repo/info/lfs/locks/lock4/unlock",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodPost, r.Method)
+				var body map[string]interface{}
+				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				require.Equal(t, map[string]interface{}{
+					"force": false,
+				}, body)
+
+				lock := map[string]interface{}{
+					"message": "not found",
+				}
+				w.WriteHeader(http.StatusNotFound)
+				writer := json.NewEncoder(w)
+				writer.Encode(lock)
 			},
 		},
 	}
