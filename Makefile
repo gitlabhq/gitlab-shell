@@ -12,7 +12,7 @@ ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' | sed -e 's/aarch64/arm64/')
 GOTESTSUM_VERSION := 1.11.0
 GOTESTSUM_FILE := support/bin/gotestsum-${GOTESTSUM_VERSION}
 
-GOLANGCI_LINT_VERSION := 1.58.2
+GOLANGCI_LINT_VERSION := 1.59.0
 GOLANGCI_LINT_FILE := support/bin/golangci-lint-${GOLANGCI_LINT_VERSION}
 
 export GOFLAGS := -mod=readonly
