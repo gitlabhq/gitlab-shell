@@ -16,7 +16,7 @@ variables:
   TRANSFER_METER_FREQUENCY: "1s"
   DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
-  GO_VERSION: "golang-1.21"
+  GO_VERSION: "golang-1.22"
   GOPATH: $CI_PROJECT_DIR/.GOPATH
   DEBIAN_VERSION: "bookworm"
   RUBY_VERSION: "ruby-3.2"
