@@ -127,7 +127,9 @@ func Build(args *commandargs.Shell, config *config.Config, readWriter *readwrite
 	case commandargs.UploadArchive:
 		return &uploadarchive.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.PersonalAccessToken:
-		return &personalaccesstoken.Command{Config: config, Args: args, ReadWriter: readWriter}
+		if config.PATConfig.Enabled {
+			return &personalaccesstoken.Command{Config: config, Args: args, ReadWriter: readWriter}
+		}
 	}
 
 	return nil

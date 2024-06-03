@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -41,6 +42,14 @@ func setup(t *testing.T) {
 					json.NewEncoder(w).Encode(body)
 				case "broken":
 					w.WriteHeader(http.StatusInternalServerError)
+				case "invalidscope":
+					message := "Invalid scope: '" + strings.Join(requestBody.Scopes, ",") + "'."
+					message += " Valid scopes are: [\"api\", \"create_runner\", \"k8s_proxy\", \"read_api\", \"read_registry\", \"read_repository\", \"read_user\", \"write_registry\", \"write_repository\"]"
+					body := map[string]interface{}{
+						"success": false,
+						"message": message,
+					}
+					json.NewEncoder(w).Encode(body)
 				case "badresponse":
 				default:
 					var expiresAt interface{}
@@ -73,6 +82,7 @@ func TestExecute(t *testing.T) {
 
 	testCases := []struct {
 		desc           string
+		PATConfig      config.PATConfig
 		arguments      *commandargs.Shell
 		expectedOutput string
 		expectedError  string
@@ -154,6 +164,48 @@ func TestExecute(t *testing.T) {
 			},
 			expectedError: "who='' is invalid",
 		},
+		{
+			desc:      "With restricted scopes",
+			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api"}},
+			arguments: &commandargs.Shell{
+				GitlabKeyId: "default",
+				SshArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
+			},
+			expectedOutput: "Token:   YXuxvUgCEmeePY3G1YAa\n" +
+				"Scopes:  read_api\n" +
+				"Expires: 9001-11-17\n",
+		},
+		{
+			desc:      "With unknown configured scopes",
+			PATConfig: config.PATConfig{AllowedScopes: []string{"read_reposotory"}},
+			arguments: &commandargs.Shell{
+				GitlabKeyId: "default",
+				SshArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
+			},
+			expectedOutput: "Token:   YXuxvUgCEmeePY3G1YAa\n" +
+				"Scopes:  \n" +
+				"Expires: 9001-11-17\n",
+		},
+		{
+			desc:      "With unknown requested scopes",
+			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api", "read_repository"}},
+			arguments: &commandargs.Shell{
+				GitlabKeyId: "default",
+				SshArgs:     []string{cmdname, "newtoken", "read_api,read_reposotory"},
+			},
+			expectedOutput: "Token:   YXuxvUgCEmeePY3G1YAa\n" +
+				"Scopes:  read_api\n" +
+				"Expires: 9001-11-17\n",
+		},
+		{
+			desc:      "With matching unknown requested scopes",
+			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api", "read_reposotory"}},
+			arguments: &commandargs.Shell{
+				GitlabKeyId: "invalidscope",
+				SshArgs:     []string{cmdname, "newtoken", "read_reposotory"},
+			},
+			expectedError: "Invalid scope: 'read_reposotory'. Valid scopes are: [\"api\", \"create_runner\", \"k8s_proxy\", \"read_api\", \"read_registry\", \"read_repository\", \"read_user\", \"write_registry\", \"write_repository\"]",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -162,7 +214,7 @@ func TestExecute(t *testing.T) {
 			input := bytes.NewBufferString("")
 
 			cmd := &Command{
-				Config:     &config.Config{GitlabUrl: url},
+				Config:     &config.Config{GitlabUrl: url, PATConfig: tc.PATConfig},
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 			}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -60,9 +61,21 @@ func (c *Command) parseTokenArgs() error {
 	if len(c.Args.SshArgs) < 3 || len(c.Args.SshArgs) > 4 {
 		return errors.New(usageText)
 	}
+
+	var rectfiedScopes []string
+	requestedScopes := strings.Split(c.Args.SshArgs[2], ",")
+	if len(c.Config.PATConfig.AllowedScopes) > 0 {
+		for _, requestedScope := range requestedScopes {
+			if slices.Contains(c.Config.PATConfig.AllowedScopes, requestedScope) {
+				rectfiedScopes = append(rectfiedScopes, requestedScope)
+			}
+		}
+	} else {
+		rectfiedScopes = requestedScopes
+	}
 	c.TokenArgs = &tokenArgs{
 		Name:   c.Args.SshArgs[1],
-		Scopes: strings.Split(c.Args.SshArgs[2], ","),
+		Scopes: rectfiedScopes,
 	}
 
 	if len(c.Args.SshArgs) < 4 {
