@@ -24,7 +24,7 @@ import (
 
 var (
 	gitlabShellExec = &executable.Executable{Name: executable.GitlabShell}
-	basicConfig     = &config.Config{GitlabUrl: "http+unix://gitlab.socket"}
+	basicConfig     = &config.Config{GitlabUrl: "http+unix://gitlab.socket", PATConfig: config.PATConfig{Enabled: true}}
 )
 
 func TestNew(t *testing.T) {
@@ -143,6 +143,47 @@ func TestLFSTransferCommands(t *testing.T) {
 		})
 	}
 }
+
+func TestPATCommands(t *testing.T) {
+	testCases := []struct {
+		desc         string
+		executable   *executable.Executable
+		env          sshenv.Env
+		arguments    []string
+		config       *config.Config
+		expectedType interface{}
+		errorString  string
+	}{
+		{
+			desc:         "it returns a PersonalAccessToken command",
+			executable:   gitlabShellExec,
+			env:          buildEnv("personal_access_token"),
+			config:       basicConfig,
+			expectedType: &personalaccesstoken.Command{},
+			errorString:  "",
+		},
+		{
+			desc:         "it does not return a PersonalAccessToken command when config disallows it",
+			executable:   gitlabShellExec,
+			env:          buildEnv("personal_access_token"),
+			config:       &config.Config{GitlabUrl: "http+unix://gitlab.socket", PATConfig: config.PATConfig{Enabled: false}},
+			expectedType: nil,
+			errorString:  "Disallowed command",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			command, err := cmd.New(tc.arguments, tc.env, tc.config, nil)
+
+			if len(tc.errorString) > 0 {
+				require.Equal(t, err.Error(), tc.errorString)
+			}
+			require.IsType(t, tc.expectedType, command)
+		})
+	}
+}
+
 func TestFailingNew(t *testing.T) {
 	testCases := []struct {
 		desc          string

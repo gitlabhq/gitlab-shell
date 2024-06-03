@@ -65,6 +65,11 @@ type LFSConfig struct {
 	PureSSHProtocol bool // `yaml:"pure_ssh_protocol"`
 }
 
+type PATConfig struct {
+	Enabled       bool     `yaml:"enabled,omitempty"`
+	AllowedScopes []string `yaml:"allowed_scopes,omitempty"`
+}
+
 type Config struct {
 	User                  string `yaml:"user,omitempty"`
 	RootDir               string
@@ -81,6 +86,7 @@ type Config struct {
 	HttpSettings   HttpSettingsConfig `yaml:"http_settings"`
 	Server         ServerConfig       `yaml:"sshd"`
 	LFSConfig      LFSConfig          `yaml:"lfs"`
+	PATConfig      PATConfig          `yaml:"pat"`
 
 	httpClient     *client.HTTPClient
 	httpClientErr  error
@@ -97,6 +103,7 @@ var (
 		LogLevel:  "info",
 		Server:    DefaultServerConfig,
 		User:      "git",
+		PATConfig: DefaultPATConfig,
 	}
 
 	DefaultServerConfig = ServerConfig{
@@ -114,6 +121,10 @@ var (
 			"/run/secrets/ssh-hostkeys/ssh_host_ecdsa_key",
 			"/run/secrets/ssh-hostkeys/ssh_host_ed25519_key",
 		},
+	}
+
+	DefaultPATConfig = PATConfig{
+		Enabled: true,
 	}
 )
 
