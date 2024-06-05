@@ -11,9 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
 var (
@@ -116,6 +118,35 @@ func TestExecuteWithFailedReceivePack(t *testing.T) {
 	require.Equal(t, "Remote repository is unavailable", err.Error())
 }
 
+func TestPushExecuteWithSSHReceivePack(t *testing.T) {
+	url := setupSSHPush(t, http.StatusOK)
+	output := &bytes.Buffer{}
+	input := strings.NewReader(cloneResponse + "0009done\n")
+
+	cmd := &PushCommand{
+		Config:     &config.Config{GitlabUrl: url},
+		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
+		Response: &accessverifier.Response{
+			Payload: accessverifier.CustomPayload{
+				Data: accessverifier.CustomPayloadData{
+					PrimaryRepo:                    url,
+					GeoProxyDirectToPrimary:        true,
+					GeoProxyPushSSHDirectToPrimary: true,
+					RequestHeaders:                 map[string]string{"Authorization": "token"},
+				},
+			},
+		},
+		Args: &commandargs.Shell{
+			Env: sshenv.Env{
+				GitProtocolVersion: "version=2",
+			},
+		},
+	}
+
+	require.NoError(t, cmd.Execute(context.Background()))
+	require.Equal(t, "receive-pack-response", output.String())
+}
+
 func setup(t *testing.T, receivePackStatusCode int) (string, io.Reader) {
 	infoRefs := "001f# service=git-receive-pack\n" + flush + infoRefsWithoutPrefix
 	receivePackPrefix := "00ab4c9d98d7750fa65db8ddcc60a89ef919f7a179f9 df505c066e4e63a801268a84627d7e8f7e033c7a " +
@@ -152,4 +183,26 @@ func setup(t *testing.T, receivePackStatusCode int) (string, io.Reader) {
 	}
 
 	return testserver.StartHttpServer(t, requests), input
+}
+
+func setupSSHPush(t *testing.T, uploadPackStatusCode int) string {
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/ssh-receive-pack",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				body, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+				defer r.Body.Close()
+
+				require.True(t, strings.HasSuffix(string(body), "0009done\n"))
+				require.Equal(t, "version=2", r.Header.Get("Git-Protocol"))
+				require.Equal(t, "token", r.Header.Get("Authorization"))
+
+				w.WriteHeader(uploadPackStatusCode)
+				w.Write([]byte("receive-pack-response"))
+			},
+		},
+	}
+
+	return testserver.StartHttpServer(t, requests)
 }

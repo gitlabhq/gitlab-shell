@@ -54,6 +54,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 				Config:     c.Config,
 				ReadWriter: c.ReadWriter,
 				Response:   response,
+				Args:       c.Args,
 			}
 
 			return ctxWithLogData, cmd.Execute(ctx)

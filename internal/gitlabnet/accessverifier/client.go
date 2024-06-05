@@ -57,6 +57,7 @@ type CustomPayloadData struct {
 	GeoProxyFetchDirectToPrimary            bool              `json:"geo_proxy_fetch_direct_to_primary"`
 	GeoProxyFetchDirectToPrimaryWithOptions bool              `json:"geo_proxy_fetch_direct_to_primary_with_options"`
 	GeoProxyFetchSSHDirectToPrimary         bool              `json:"geo_proxy_fetch_ssh_direct_to_primary"`
+	GeoProxyPushSSHDirectToPrimary          bool              `json:"geo_proxy_push_ssh_direct_to_primary"`
 }
 
 // CustomPayload represents a custom payload
