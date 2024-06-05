@@ -64,6 +64,20 @@ func TestUploadPack(t *testing.T) {
 	require.Equal(t, "git-upload-pack: content", string(body))
 }
 
+func TestSSHUploadPack(t *testing.T) {
+	client := setup(t)
+
+	refsBody := "0032want 0a53e9ddeaddad63ad106860237bbf53411d11a7\n"
+	response, err := client.SSHUploadPack(context.Background(), bytes.NewReader([]byte(refsBody)))
+	require.NoError(t, err)
+	defer response.Body.Close()
+
+	body, err := io.ReadAll(response.Body)
+	require.NoError(t, err)
+
+	require.Equal(t, "ssh-upload-pack: content", string(body))
+}
+
 func TestFailedHTTPRequest(t *testing.T) {
 	requests := []testserver.TestRequestHandler{
 		{
@@ -164,6 +178,19 @@ func setup(t *testing.T) *Client {
 				defer r.Body.Close()
 
 				w.Write([]byte("git-upload-pack: content"))
+			},
+		},
+		{
+			Path: "/ssh-upload-pack",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
+				require.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
+
+				_, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+				defer r.Body.Close()
+
+				w.Write([]byte("ssh-upload-pack: content"))
 			},
 		},
 	}

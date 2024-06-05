@@ -37,6 +37,11 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 	data := c.Response.Payload.Data
 	client := &git.Client{URL: data.PrimaryRepo, Headers: data.RequestHeaders}
 
+	// For Git over SSH routing
+	if data.GeoProxyFetchSSHDirectToPrimary {
+		return c.requestSSHUploadPack(ctx, client)
+	}
+
 	if err := c.requestInfoRefs(ctx, client); err != nil {
 		return err
 	}
@@ -58,6 +63,18 @@ func (c *PullCommand) requestInfoRefs(ctx context.Context, client *git.Client) e
 	if err != nil || !bytes.Equal(p, uploadPackHttpPrefix) {
 		return fmt.Errorf("Unexpected git-upload-pack response")
 	}
+
+	_, err = io.Copy(c.ReadWriter.Out, response.Body)
+
+	return err
+}
+
+func (c *PullCommand) requestSSHUploadPack(ctx context.Context, client *git.Client) error {
+	response, err := client.SSHUploadPack(ctx, io.NopCloser(c.ReadWriter.In))
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
 
 	_, err = io.Copy(c.ReadWriter.Out, response.Body)
 

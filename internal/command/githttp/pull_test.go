@@ -58,6 +58,27 @@ func TestPullExecuteWithDepth(t *testing.T) {
 	require.Equal(t, infoRefsWithoutPrefix, output.String())
 }
 
+func TestPullExecuteWithSSHUploadPack(t *testing.T) {
+	url := setupSSHPull(t, http.StatusOK)
+	output := &bytes.Buffer{}
+	input := strings.NewReader(cloneResponse + "0009done\n")
+
+	cmd := &PullCommand{
+		Config:     &config.Config{GitlabUrl: url},
+		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
+		Response: &accessverifier.Response{
+			Payload: accessverifier.CustomPayload{
+				Data: accessverifier.CustomPayloadData{
+					PrimaryRepo: url, GeoProxyFetchDirectToPrimaryWithOptions: true, GeoProxyFetchSSHDirectToPrimary: true,
+				},
+			},
+		},
+	}
+
+	require.NoError(t, cmd.Execute(context.Background()))
+	require.Equal(t, "upload-pack-response", output.String())
+}
+
 func TestPullExecuteWithFailedInfoRefs(t *testing.T) {
 	testCases := []struct {
 		desc            string
@@ -150,6 +171,26 @@ func setupPull(t *testing.T, uploadPackStatusCode int) string {
 
 				require.True(t, strings.HasSuffix(string(body), "0009done\n"))
 
+				w.WriteHeader(uploadPackStatusCode)
+			},
+		},
+	}
+
+	return testserver.StartHttpServer(t, requests)
+}
+
+func setupSSHPull(t *testing.T, uploadPackStatusCode int) string {
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/ssh-upload-pack",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				body, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+				defer r.Body.Close()
+
+				require.True(t, strings.HasSuffix(string(body), "0009done\n"))
+
+				w.Write([]byte("upload-pack-response"))
 				w.WriteHeader(uploadPackStatusCode)
 			},
 		},
