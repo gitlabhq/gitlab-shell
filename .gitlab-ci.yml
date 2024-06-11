@@ -19,7 +19,7 @@ variables:
   GO_VERSION: "golang-1.22"
   GOPATH: $CI_PROJECT_DIR/.GOPATH
   DEBIAN_VERSION: "bookworm"
-  RUBY_VERSION: "ruby-3.2"
+  RUBY_VERSION: "3.2.4"
   BUNDLE_PATH: vendor/ruby
   POLICY: pull
   CI_DEBUG_SERVICES: 'true'
@@ -37,7 +37,7 @@ workflow:
     - if: '$CI_COMMIT_TAG'
 
 default:
-  image: registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-${RUBY_VERSION}-${GO_VERSION}-${RUST_VERSION}:${IMAGE_TAG}
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-ruby-${RUBY_VERSION}-${GO_VERSION}-${RUST_VERSION}:${IMAGE_TAG}
   tags:
     - gitlab-org
 
@@ -61,7 +61,7 @@ default:
 
 .cached-ruby: &cached_ruby
   - key:
-      prefix: $RUBY_VERSION-cache
+      prefix: "ruby-${RUBY_VERSION}-cache"
       files:
         - Gemfile.lock
     policy: $POLICY
@@ -158,7 +158,7 @@ tests_without_cgo:
     - make verify test_fancy
 
 tests:fips:
-  image: registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-${RUBY_VERSION}-${GO_VERSION}-${RUST_VERSION}:${IMAGE_TAG}
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-ruby-${RUBY_VERSION}-${GO_VERSION}-${RUST_VERSION}:${IMAGE_TAG}
   extends:
     - .cached-job
     - .test-job
