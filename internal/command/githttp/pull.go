@@ -12,6 +12,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
+	"gitlab.com/gitlab-org/labkit/log"
 )
 
 const pullService = "git-upload-pack"
@@ -41,8 +42,9 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 
 	// For Git over SSH routing
 	if data.GeoProxyFetchSSHDirectToPrimary {
-		client.Headers["Git-Protocol"] = c.Args.Env.GitProtocolVersion
+		log.ContextLogger(ctx).Info("Using Git over SSH upload pack")
 
+		client.Headers["Git-Protocol"] = c.Args.Env.GitProtocolVersion
 		return c.requestSSHUploadPack(ctx, client)
 	}
 
