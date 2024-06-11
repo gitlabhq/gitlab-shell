@@ -181,7 +181,7 @@ func setup(t *testing.T) *Client {
 			},
 		},
 		{
-			Path: "/ssh-upload-pack",
+			Path: sshUploadPackPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				require.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
 				require.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
