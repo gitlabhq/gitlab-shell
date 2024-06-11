@@ -11,9 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
 var cloneResponse = `0090want 11d731b83788cd556abea7b465c6bee52d89923c multi_ack_detailed side-band-64k thin-pack ofs-delta deepen-since deepen-not agent=git/2.41.0
@@ -69,8 +71,16 @@ func TestPullExecuteWithSSHUploadPack(t *testing.T) {
 		Response: &accessverifier.Response{
 			Payload: accessverifier.CustomPayload{
 				Data: accessverifier.CustomPayloadData{
-					PrimaryRepo: url, GeoProxyFetchDirectToPrimaryWithOptions: true, GeoProxyFetchSSHDirectToPrimary: true,
+					PrimaryRepo:                             url,
+					GeoProxyFetchDirectToPrimaryWithOptions: true,
+					GeoProxyFetchSSHDirectToPrimary:         true,
+					RequestHeaders:                          map[string]string{"Authorization": "token"},
 				},
+			},
+		},
+		Args: &commandargs.Shell{
+			Env: sshenv.Env{
+				GitProtocolVersion: "version=2",
 			},
 		},
 	}
@@ -189,6 +199,8 @@ func setupSSHPull(t *testing.T, uploadPackStatusCode int) string {
 				defer r.Body.Close()
 
 				require.True(t, strings.HasSuffix(string(body), "0009done\n"))
+				require.Equal(t, r.Header.Get("Git-Protocol"), "version=2")
+				require.Equal(t, r.Header.Get("Authorization"), "token")
 
 				w.Write([]byte("upload-pack-response"))
 				w.WriteHeader(uploadPackStatusCode)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
@@ -20,6 +21,7 @@ var uploadPackHttpPrefix = []byte("001e# service=git-upload-pack\n0000")
 type PullCommand struct {
 	Config     *config.Config
 	ReadWriter *readwriter.ReadWriter
+	Args       *commandargs.Shell
 	Response   *accessverifier.Response
 }
 
@@ -39,6 +41,8 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 
 	// For Git over SSH routing
 	if data.GeoProxyFetchSSHDirectToPrimary {
+		client.Headers["Git-Protocol"] = c.Args.Env.GitProtocolVersion
+
 		return c.requestSSHUploadPack(ctx, client)
 	}
 
