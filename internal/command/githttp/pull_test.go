@@ -11,9 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
 var cloneResponse = `0090want 11d731b83788cd556abea7b465c6bee52d89923c multi_ack_detailed side-band-64k thin-pack ofs-delta deepen-since deepen-not agent=git/2.41.0
@@ -56,6 +58,35 @@ func TestPullExecuteWithDepth(t *testing.T) {
 
 	require.NoError(t, cmd.Execute(context.Background()))
 	require.Equal(t, infoRefsWithoutPrefix, output.String())
+}
+
+func TestPullExecuteWithSSHUploadPack(t *testing.T) {
+	url := setupSSHPull(t, http.StatusOK)
+	output := &bytes.Buffer{}
+	input := strings.NewReader(cloneResponse + "0009done\n")
+
+	cmd := &PullCommand{
+		Config:     &config.Config{GitlabUrl: url},
+		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
+		Response: &accessverifier.Response{
+			Payload: accessverifier.CustomPayload{
+				Data: accessverifier.CustomPayloadData{
+					PrimaryRepo:                             url,
+					GeoProxyFetchDirectToPrimaryWithOptions: true,
+					GeoProxyFetchSSHDirectToPrimary:         true,
+					RequestHeaders:                          map[string]string{"Authorization": "token"},
+				},
+			},
+		},
+		Args: &commandargs.Shell{
+			Env: sshenv.Env{
+				GitProtocolVersion: "version=2",
+			},
+		},
+	}
+
+	require.NoError(t, cmd.Execute(context.Background()))
+	require.Equal(t, "upload-pack-response", output.String())
 }
 
 func TestPullExecuteWithFailedInfoRefs(t *testing.T) {
@@ -150,6 +181,28 @@ func setupPull(t *testing.T, uploadPackStatusCode int) string {
 
 				require.True(t, strings.HasSuffix(string(body), "0009done\n"))
 
+				w.WriteHeader(uploadPackStatusCode)
+			},
+		},
+	}
+
+	return testserver.StartHttpServer(t, requests)
+}
+
+func setupSSHPull(t *testing.T, uploadPackStatusCode int) string {
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/ssh-upload-pack",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				body, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+				defer r.Body.Close()
+
+				require.True(t, strings.HasSuffix(string(body), "0009done\n"))
+				require.Equal(t, "version=2", r.Header.Get("Git-Protocol"))
+				require.Equal(t, "token", r.Header.Get("Authorization"))
+
+				w.Write([]byte("upload-pack-response"))
 				w.WriteHeader(uploadPackStatusCode)
 			},
 		},

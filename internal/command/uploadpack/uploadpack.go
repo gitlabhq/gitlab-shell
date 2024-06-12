@@ -51,6 +51,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 			cmd := githttp.PullCommand{
 				Config:     c.Config,
 				ReadWriter: c.ReadWriter,
+				Args:       c.Args,
 				Response:   response,
 			}
 

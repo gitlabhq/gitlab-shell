@@ -14,7 +14,10 @@ var httpClient = &http.Client{
 	Transport: client.NewTransport(client.DefaultTransport()),
 }
 
-const repoUnavailableErrMsg = "Remote repository is unavailable"
+const (
+	repoUnavailableErrMsg = "Remote repository is unavailable"
+	sshUploadPackPath     = "/ssh-upload-pack"
+)
 
 // Client represents a client for interacting with Git repositories.
 type Client struct {
@@ -52,6 +55,16 @@ func (c *Client) UploadPack(ctx context.Context, body io.Reader) (*http.Response
 	}
 	request.Header.Add("Content-Type", "application/x-git-upload-pack-request")
 	request.Header.Add("Accept", "application/x-git-upload-pack-result")
+
+	return c.do(request)
+}
+
+// SSHUploadPack sends a SSH Git fetch request to the server.
+func (c *Client) SSHUploadPack(ctx context.Context, body io.Reader) (*http.Response, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL+sshUploadPackPath, body)
+	if err != nil {
+		return nil, err
+	}
 
 	return c.do(request)
 }
