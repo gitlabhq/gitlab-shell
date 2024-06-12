@@ -199,8 +199,8 @@ func setupSSHPull(t *testing.T, uploadPackStatusCode int) string {
 				defer r.Body.Close()
 
 				require.True(t, strings.HasSuffix(string(body), "0009done\n"))
-				require.Equal(t, r.Header.Get("Git-Protocol"), "version=2")
-				require.Equal(t, r.Header.Get("Authorization"), "token")
+				require.Equal(t, "version=2", r.Header.Get("Git-Protocol"))
+				require.Equal(t, "token", r.Header.Get("Authorization"))
 
 				w.Write([]byte("upload-pack-response"))
 				w.WriteHeader(uploadPackStatusCode)
