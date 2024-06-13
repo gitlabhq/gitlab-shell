@@ -1,3 +1,73 @@
+v14.36.0
+
+- Use the danger-review component !1086
+- Update module google.golang.org/protobuf to v1.34.2 !1083
+- Geo: Replace Git over HTTP calls with Workhorse HTTP endpoint for SSH pull !1081
+- Update github.com/charmbracelet/git-lfs-transfer digest to 0ffd62e !1080
+- Update dependency golang to v1.22.4 !1079
+- Update module golang.org/x/crypto to v0.24.0 !1078
+- Update golang default to 1.22 !1077
+- Geo: Replace Git over HTTP calls with Workhorse HTTP endpoint for SSH push !1076
+- Update module github.com/hashicorp/go-retryablehttp to v0.7.7 !1074
+- Update CI image to latest one !1073
+- Update module golang.org/x/sync to v0.7.0 !1072
+- git-lfs-transfer: Add support for lock and unlocking of files !1071
+- Update golangci to 1.58.2 !1069
+- Update github.com/charmbracelet/git-lfs-transfer digest to 4ef8f58 !1067
+- Continue work on Git LFS over SSH !1066
+- Update module google.golang.org/grpc to v1.64.0 !1065
+- Update module github.com/prometheus/client_golang to v1.19.1 !1063
+- Update module github.com/hashicorp/go-retryablehttp to v0.7.6 !1061
+- Update dependency golang to v1.22.3 !1060
+- Update golangci to 1.58.1 !1057
+- Update module google.golang.org/protobuf to v1.34.1 !1056
+- Update module golang.org/x/crypto to v0.23.0 !1055
+- Update github.com/charmbracelet/git-lfs-transfer digest to cc13460 !1054
+- Add configuration objects to PAT token !1053
+- Update module google.golang.org/protobuf to v1.34.0 !1052
+- Fix lint issues for sshd server_config !1043
+- Resolve `make lint` (golangci-lint) issues for `internal/sshd/sshd.go` and `internal/sshd/sshd_test.go` !1040
+- Update github.com/charmbracelet/git-lfs-transfer digest to 9e9a21d !1038
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.11.3 !1037
+- Resolve  `make lint` (golangci-lint) issues for `internal/command/uploadarchive/uploadarchive.go` and `internal/command/uploadarchive/uploadarchive_test.go` !1034
+- Resolve `make lint` (golangci-lint) issues for `internal/command/uploadpack/uploadpack.go` and `internal/command/uploadpack/uploadpack_test.go` !1033
+- Resolve `make lint` (golangci-lint) issues for `internal/sshd/session.go` and `internal/sshd/session_test.go` !1032
+- Resolve `make lint` (golangci-lint) issues for `internal/gitlabnet/authorizedkeys/client.go` and `internal/gitlabnet/authorizedkeys/client_test.go` !1031
+- Resolve `make lint` (golangci-lint) issues for `internal/command/receivepack/receivepack.go` and `internal/command/receivepack/receivepack_test.go` !1030
+- Resolve `make lint` (golangci-lint) issues for `internal/command/lfsauthenticate/lfsauthenticate.go` and `internal/command/lfsauthenticate/lfsauthenticate_test.go !1029
+- Update HttpClient method name !1028
+- Resolves `make lint` (golangci-lint) issues for `cmd/gitlab-shell-authorized-keys-check/main.go` !1027
+- Resolve `make lint` (golangci-lint) issues for `internal/gitlabnet/git/client.go` and `internal/gitlabnet/git/client_test.go` !1026
+- Resolve `make lint` (golangci-lint) issues or `internal/command/uploadpack/gitalycall.go` and `internal/command/uploadpack/gitalycall_test.go` !1025
+- Resolve `make lint` (golangci-lint) issues for `internal/gitlabnet/twofactorverify/client.go` and `internal/gitlabnet/twofactorverify/client_test.go` !1024
+- Resolve `make lint` (golangci-lint) issues for `internal/command/twofactorverify/twofactorverify.go` and `internal/command/twofactorverify/twofactorverify_test.go` !1023
+- Resolve `make lint` (golangci-lint) issues for `internal/command/shared/customaction/customaction.go` and `internal/command/shared/customaction/customaction_test.go` !1022
+- Resolve `make lint` (golangci-lint) issues for `internal/gitlabnet/accessverifier/client.go` and `internal/gitlabnet/accessverifier/client_test.go` !1021
+- Resolve `make lint` (golangci-lint) issues for `cmd/gitlab-shell/command/command.go` and `cmd/gitlab-shell/command/command_test.go` !1020
+- Resolve `make lint` (golangci-lint) issues for `internal/gitlabnet/discover/client.go` and `internal/gitlabnet/discover/client_test.go` !1019
+- Resolve `make lint` (golangci-lint) issues for `cmd/check/command/command.go` and `cmd/check/command/command_test.go` !1018
+- Resolve `make lint` (golangci-lint) issues for `internal/keyline/key_line.go` and `internal/keyline/key_line_test.go` !1017
+- Resolve `make lint` (golangci-lint) issues for `internal/gitlabnet/lfsauthenticate/client.go` and `internal/gitlabnet/lfsauthenticate/client_test.go` !1016
+- Resolve `make lint` (golangci-lint) issues for `internal/sshenv/sshenv.go` and `internal/sshenv/sshenv_test.go` !1015
+- Resolve `make lint` (golangci-lint) issues for `cmd/gitlab-shell-authorized-keys-check/command/command.go` and `cmd/gitlab-shell-authorized-keys-check/command/command_test.go` !1014
+- Fix `make lint` (golangci-lint) issues for `client/httpclient.go` and `client/httpsclient_test.go` !1013
+- Fix `make lint` (golangci-lint) issues for `internal/handler/exec.go` and `internal/handler/exec_test.go` !1012
+- Fix `make lint` (golangci-lint) issues for `internal/gitlabnet/personalaccesstoken/client.go` and `internal/gitlabnet/personalaccesstoken/client_test.go` !1011
+- Fix `make lint` (golangci-lint) issues for `client/gitlabnet.go` !1010
+- Fixes `make lint` (golangci-lint) issues for `internal/gitlabnet/twofactorrecover/client.go` and `internal/gitlabnet/twofactorrecover/client_test.go` !1009
+- Fix `make lint` (golangci-lint) issues for `internal/sshd/connection.go` and `internal/sshd/connection_test.go` !1008
+- Fix `make lint` (golangci-lint) issues for `internal/console/console.go` and `internal/console/console_test.go` !1007
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.11.0 !1006
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.10.3 !1005
+- Fix golanci shadow warning !1004
+- Fix lint issues in requesthandlers.go !1003
+- Resolve Use golang-1.21 for GO_VERSION in CI !1001
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.10.2 !997
+- Update github.com/charmbracelet/git-lfs-transfer digest to 3263d2f !996
+- Update module golang.org/x/crypto to v0.22.0 !995
+- Extend shell logs with additional metadata !991
+- git-lfs-transfer: Add support for batch upload and get object !989
+
 v14.35.0
 
 - sshd: limit server_host_key_algorithms in server config !986
