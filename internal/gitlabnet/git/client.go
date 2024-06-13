@@ -17,6 +17,7 @@ var httpClient = &http.Client{
 const (
 	repoUnavailableErrMsg = "Remote repository is unavailable"
 	sshUploadPackPath     = "/ssh-upload-pack"
+	sshReceivePackPath    = "/ssh-receive-pack"
 )
 
 // Client represents a client for interacting with Git repositories.
@@ -62,6 +63,16 @@ func (c *Client) UploadPack(ctx context.Context, body io.Reader) (*http.Response
 // SSHUploadPack sends a SSH Git fetch request to the server.
 func (c *Client) SSHUploadPack(ctx context.Context, body io.Reader) (*http.Response, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL+sshUploadPackPath, body)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.do(request)
+}
+
+// SSHReceivePack sends a SSH Git push request to the server.
+func (c *Client) SSHReceivePack(ctx context.Context, body io.Reader) (*http.Response, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL+sshReceivePackPath, body)
 	if err != nil {
 		return nil, err
 	}
