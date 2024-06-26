@@ -18,7 +18,7 @@ require (
 	github.com/prometheus/client_golang v1.19.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
-	gitlab.com/gitlab-org/gitaly/v16 v16.11.4
+	gitlab.com/gitlab-org/gitaly/v16 v16.11.5
 	gitlab.com/gitlab-org/labkit v1.21.0
 	golang.org/x/crypto v0.24.0
 	golang.org/x/sync v0.7.0
