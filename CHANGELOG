@@ -1,3 +1,13 @@
+v14.37.0
+
+- Update dependency danger-review to v1.4.1 !1095
+- Allow pure_ssh_protocol to be set !1093
+- Update dependency gitlab-dangerfiles to '~> 4.8.0' !1094
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.11.5 !1091
+- Update dependency danger-review to v1.4.0 !1090
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.11.4 !1085
+- Update golangci to 1.59.1 !1089
+
 v14.36.0
 
 - Use the danger-review component !1086
