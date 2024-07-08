@@ -7,7 +7,9 @@ include:
 
 stages:
   - prepare
+  - lint
   - test
+  - post-test
 
 variables:
   FF_USE_FASTZIP: 'true'
@@ -174,10 +176,12 @@ race:
     - make test_golang_race
 
 code_quality:
+  stage: lint
   extends: .use-docker-in-docker
   rules: *workflow_rules
 
 code_navigation:
+  stage: post-test
   image: sourcegraph/lsif-go:v1.9
   allow_failure: true
   script:
@@ -188,17 +192,21 @@ code_navigation:
 
 # SAST
 semgrep-sast:
+  stage: lint
   rules: *workflow_rules
 
 # Dependency Scanning
 gemnasium-dependency_scanning:
+  stage: lint
   rules: *workflow_rules
 
 # Secret Detection
 secret_detection:
+  stage: lint
   rules: *workflow_rules
 
 build-package-and-qa:
+  stage: post-test
   trigger:
     project: 'gitlab-org/build/omnibus-gitlab-mirror'
     branch: 'master'
@@ -230,13 +238,14 @@ build-package-and-qa:
   needs: []
 
 modules:tidy:
+  stage: lint
   needs: ['modules:download']
   script:
     - go mod tidy
     - git diff --exit-code go.mod go.sum
 
 lint:
-  stage: test
+  stage: lint
   script:
     # Write the code coverage report to gl-code-quality-report.json
     # and print linting issues to stdout in the format: path/to/file:line description
@@ -252,7 +261,7 @@ lint:
       - gl-code-quality-report.json
 
 nilaway:
-  stage: test
+  stage: lint
   before_script:
     - go install go.uber.org/nilaway/cmd/nilaway@latest
   script:
