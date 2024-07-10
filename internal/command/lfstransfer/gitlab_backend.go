@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"time"
 
 	"github.com/charmbracelet/git-lfs-transfer/transfer"
@@ -213,34 +212,24 @@ func (b *GitlabBackend) parseAndCheckBatchArgs(op, oid, id, token string) (href 
 	return idData.Href, idData.Headers, nil
 }
 
-type uploadCloser struct{}
-
-func (c *uploadCloser) Close() error {
-	return nil
-}
-
-func (b *GitlabBackend) StartUpload(oid string, r io.Reader, args transfer.Args) (io.Closer, error) {
+func (b *GitlabBackend) Upload(oid string, _ int64, r io.Reader, args transfer.Args) error {
 	href, headers, err := b.parseAndCheckBatchArgs("upload", oid, args["id"], args["token"])
 	if err != nil {
 		_, _ = io.Copy(io.Discard, r)
-		return nil, err
+		return err
 	}
-	return &uploadCloser{}, b.client.PutObject(oid, href, headers, r)
+	return b.client.PutObject(oid, href, headers, r)
 }
 
-func (b *GitlabBackend) FinishUpload(_ io.Closer, _ transfer.Args) error {
-	return nil
-}
-
-func (b *GitlabBackend) Verify(_ string, _ transfer.Args) (transfer.Status, error) {
+func (b *GitlabBackend) Verify(_ string, _ int64, _ transfer.Args) (transfer.Status, error) {
 	// Not needed, all verification is done in upload step.
 	return transfer.SuccessStatus(), nil
 }
 
-func (b *GitlabBackend) Download(oid string, args transfer.Args) (fs.File, error) {
+func (b *GitlabBackend) Download(oid string, args transfer.Args) (io.ReadCloser, int64, error) {
 	href, headers, err := b.parseAndCheckBatchArgs("download", oid, args["id"], args["token"])
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	return b.client.GetObject(oid, href, headers)
 }

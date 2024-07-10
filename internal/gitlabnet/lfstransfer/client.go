@@ -55,52 +55,6 @@ type BatchResponse struct {
 	HashAlgorithm string         `json:"hash_algo,omitempty"`
 }
 
-type downloadedFileInfo struct {
-	oid    string
-	size   int64
-	reader io.ReadCloser
-}
-
-func (i *downloadedFileInfo) Name() string {
-	return i.oid
-}
-
-func (i *downloadedFileInfo) Size() int64 {
-	return i.size
-}
-
-func (i *downloadedFileInfo) Mode() fs.FileMode {
-	return 0
-}
-
-func (i *downloadedFileInfo) ModTime() time.Time {
-	return time.Time{}
-}
-
-func (i *downloadedFileInfo) IsDir() bool {
-	return false
-}
-
-func (i *downloadedFileInfo) Sys() any {
-	return i.reader
-}
-
-type downloadedFile struct {
-	downloadedFileInfo
-}
-
-func (f *downloadedFile) Read(buf []byte) (int, error) {
-	return f.downloadedFileInfo.reader.Read(buf)
-}
-
-func (f *downloadedFile) Close() error {
-	return f.downloadedFileInfo.reader.Close()
-}
-
-func (f *downloadedFile) Stat() (fs.FileInfo, error) {
-	return &f.downloadedFileInfo, nil
-}
-
 type lockRequest struct {
 	Path string    `json:"path"`
 	Ref  *batchRef `json:"ref,omitempty"`
@@ -214,7 +168,7 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 	return response, nil
 }
 
-func (c *Client) GetObject(oid, href string, headers map[string]string) (fs.File, error) {
+func (c *Client) GetObject(oid, href string, headers map[string]string) (io.ReadCloser, int64, error) {
 	req, _ := newHTTPRequest(http.MethodGet, href, nil)
 	for key, value := range headers {
 		req.Header.Add(key, value)
@@ -225,19 +179,13 @@ func (c *Client) GetObject(oid, href string, headers map[string]string) (fs.File
 	// discussion on bypassing the linter
 	res, err := client.Do(req) // nolint:bodyclose
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if res.StatusCode < 200 || res.StatusCode > 299 {
-		return nil, fs.ErrNotExist
+		return nil, 0, fs.ErrNotExist
 	}
 
-	return &downloadedFile{
-		downloadedFileInfo{
-			oid:    oid,
-			size:   res.ContentLength,
-			reader: res.Body,
-		},
-	}, nil
+	return res.Body, res.ContentLength, nil
 }
 
 func (c *Client) PutObject(oid, href string, headers map[string]string, r io.Reader) error {
