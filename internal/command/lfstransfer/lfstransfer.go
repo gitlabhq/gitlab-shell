@@ -56,6 +56,8 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		accessResponse.RootNamespaceID,
 	))
 
+	log.WithContextFields(ctxWithLogData, log.Fields{"action": action}).Info("processing action")
+
 	auth, err := c.authenticate(ctx, operation, repo, accessResponse.UserID)
 	if err != nil {
 		return ctxWithLogData, err
@@ -81,7 +83,8 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	}
 
 	p := transfer.NewProcessor(handler, backend, logger)
-	defer log.WithContextFields(ctxWithLogData, log.Fields{}).Info("done processing commands")
+	defer log.WithContextFields(ctxWithLogData, log.Fields{"action": action}).Info("done processing commands")
+
 	switch operation {
 	case transfer.DownloadOperation:
 		return ctxWithLogData, p.ProcessCommands(transfer.DownloadOperation)
