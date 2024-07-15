@@ -90,11 +90,7 @@ describe 'bin/gitlab-shell-authorized-keys-check' do
   describe 'with the go authorized-keys-check feature', :go do
     before(:all) do
       write_config(
-        'gitlab_url' => "http+unix://#{CGI.escape(tmp_socket_path)}",
-        'migration' => {
-          'enabled' => true,
-          'features' => ['authorized-keys-check']
-        }
+        'gitlab_url' => "http+unix://#{CGI.escape(tmp_socket_path)}"
       )
     end
 
