@@ -16,6 +16,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/uploadarchive"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
@@ -115,6 +116,7 @@ func Build(args *commandargs.Shell, config *config.Config, readWriter *readwrite
 	case commandargs.TwoFactorVerify:
 		return &twofactorverify.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.LfsAuthenticate:
+		metrics.LfsHTTPConnectionsTotal.Inc()
 		return &lfsauthenticate.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.LfsTransfer:
 		if config.LFSConfig.PureSSHProtocol {

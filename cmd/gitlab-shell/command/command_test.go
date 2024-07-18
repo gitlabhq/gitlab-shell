@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	cmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
@@ -19,6 +20,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
@@ -102,6 +104,21 @@ func TestNew(t *testing.T) {
 			require.IsType(t, tc.expectedType, command)
 		})
 	}
+}
+
+func TestLFSAuthenticateCommands(t *testing.T) {
+	arguments := []string{}
+	env := buildEnv("git-lfs-authenticate")
+	config := &config.Config{GitlabUrl: "http+unix://gitlab.socket"}
+
+	lfsHTTPConnectionsTotal := testutil.ToFloat64(metrics.LfsHTTPConnectionsTotal)
+
+	command, err := cmd.New(arguments, env, config, nil)
+
+	require.NoError(t, err)
+	require.IsType(t, &lfsauthenticate.Command{}, command)
+
+	require.InDelta(t, lfsHTTPConnectionsTotal+1, testutil.ToFloat64(metrics.LfsHTTPConnectionsTotal), 0)
 }
 
 func TestLFSTransferCommands(t *testing.T) {
