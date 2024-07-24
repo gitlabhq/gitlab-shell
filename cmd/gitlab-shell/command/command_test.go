@@ -151,11 +151,16 @@ func TestLFSTransferCommands(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
+			lfsSSHConnectionsTotal := testutil.ToFloat64(metrics.LfsSSHConnectionsTotal)
+
 			command, err := cmd.New(tc.arguments, tc.env, tc.config, nil)
 
 			if len(tc.errorString) > 0 {
 				require.Equal(t, err.Error(), tc.errorString)
+			} else {
+				require.InDelta(t, lfsSSHConnectionsTotal+1, testutil.ToFloat64(metrics.LfsSSHConnectionsTotal), 0)
 			}
+
 			require.IsType(t, tc.expectedType, command)
 		})
 	}
