@@ -120,6 +120,7 @@ func Build(args *commandargs.Shell, config *config.Config, readWriter *readwrite
 		return &lfsauthenticate.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.LfsTransfer:
 		if config.LFSConfig.PureSSHProtocol {
+			metrics.LfsSSHConnectionsTotal.Inc()
 			return &lfstransfer.Command{Config: config, Args: args, ReadWriter: readWriter}
 		}
 	case commandargs.ReceivePack:

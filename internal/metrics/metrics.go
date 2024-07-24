@@ -28,6 +28,7 @@ const (
 	sliSshdSessionsErrorsTotalName = "gitlab_sli:shell_sshd_sessions:errors_total"
 
 	lfsHTTPConnectionsTotalName = "lfs_http_connections_total"
+	lfsSSHConnectionsTotalName  = "lfs_ssh_connections_total"
 
 	gitalyConnectionsTotalName = "connections_total"
 )
@@ -150,6 +151,13 @@ var (
 		prometheus.CounterOpts{
 			Name: lfsHTTPConnectionsTotalName,
 			Help: "Number of LFS over HTTP connections that have been established",
+		},
+	)
+
+	LfsSSHConnectionsTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: lfsSSHConnectionsTotalName,
+			Help: "Number of LFS over SSH connections that have been established",
 		},
 	)
 )
