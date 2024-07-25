@@ -1,3 +1,18 @@
+v14.38.0
+
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.11.7 !1110
+- Add basic LFS connections metric for SSH !1107
+- Update module google.golang.org/grpc to v1.65.0 !1098
+- Add basic LFS connections metric for HTTP !1108
+- Remove migration section as no longer supported !1106
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.11.6 !1104
+- Update dependency ruby to v3.3.4 !1102
+- Update Ruby to 3.3.4 !1105
+- Update module golang.org/x/crypto to v0.25.0 !1100
+- Update github.com/charmbracelet/git-lfs-transfer digest to bacbfdb !1101
+- Restructure CI jobs !1097
+- Update dependency golang to v1.22.5 !1099
+
 v14.37.0
 
 - Update dependency danger-review to v1.4.1 !1095
