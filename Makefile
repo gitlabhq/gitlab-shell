@@ -100,11 +100,12 @@ _script_install:
 	bin/install
 
 compile: bin/gitlab-shell bin/gitlab-sshd
+
 bin/gitlab-shell: $(GO_SOURCES)
-	GOBIN="$(CURDIR)/bin" go install $(GOBUILD_FLAGS) ./cmd/...
+	go build $(GOBUILD_FLAGS) -o $(CURDIR)/bin ./cmd/...
 
 bin/gitlab-sshd: $(GO_SOURCES)
-	GOBIN="$(CURDIR)/bin" go install $(GOBUILD_FLAGS) ./cmd/gitlab-sshd
+	go build $(GOBUILD_FLAGS) -o $(CURDIR)/bin/gitlab-sshd ./cmd/gitlab-sshd
 
 check:
 	bin/check
