@@ -26,6 +26,7 @@ variables:
   RUST_VERSION: "rust-1.73"
   UBI_VERSION: "8.6"
   IMAGE_TAG: "rubygems-3.4-git-2.36-exiftool-12.60"
+  GITLAB_ADVANCED_SAST_ENABLED: 'true'
 
 workflow:
   rules: &workflow_rules
@@ -192,6 +193,10 @@ code_navigation:
 
 # SAST
 semgrep-sast:
+  stage: lint
+  rules: *workflow_rules
+
+gitlab-advanced-sast:
   stage: lint
   rules: *workflow_rules
 
