@@ -1,4 +1,4 @@
-.PHONY: validate verify verify_ruby verify_golang test test_ruby test_golang test_fancy test_golang_fancy coverage coverage_golang setup _script_install build compile check clean install lint
+.PHONY: validate verify verify_ruby verify_golang test test_ruby test_golang test_fancy test_golang_fancy coverage coverage_golang setup _script_install make_necessary_dirs build compile check clean install lint
 
 FIPS_MODE ?= 0
 OS := $(shell uname | tr A-Z a-z)
@@ -94,8 +94,9 @@ ${GOLANGCI_LINT_FILE}:
 	mkdir -p $(shell dirname ${GOLANGCI_LINT_FILE})
 	curl -L https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${ARCH}.tar.gz | tar --strip-components 1 -zOxf - golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${ARCH}/golangci-lint > ${GOLANGCI_LINT_FILE} && chmod +x ${GOLANGCI_LINT_FILE}
 
-setup: _script_install bin/gitlab-shell
+setup: make_necessary_dirs bin/gitlab-shell
 
+make_necessary_dirs: _script_install
 _script_install:
 	bin/install
 
