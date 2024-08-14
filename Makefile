@@ -96,16 +96,18 @@ ${GOLANGCI_LINT_FILE}:
 
 setup: make_necessary_dirs bin/gitlab-shell
 
-make_necessary_dirs: _script_install
-_script_install:
-	bin/install
+make_necessary_dirs:
+	support/make_necessary_dirs
 
 compile: bin/gitlab-shell bin/gitlab-sshd
 
-bin/gitlab-shell: $(GO_SOURCES)
+bin:
+	mkdir -p bin
+
+bin/gitlab-shell: bin $(GO_SOURCES)
 	go build $(GOBUILD_FLAGS) -o $(CURDIR)/bin ./cmd/...
 
-bin/gitlab-sshd: $(GO_SOURCES)
+bin/gitlab-sshd: bin $(GO_SOURCES)
 	go build $(GOBUILD_FLAGS) -o $(CURDIR)/bin/gitlab-sshd ./cmd/gitlab-sshd
 
 check:
