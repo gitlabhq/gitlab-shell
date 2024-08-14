@@ -1,3 +1,20 @@
+v14.39.0
+
+- Revise CODEOWNERS to use entire TW team !1125
+- Rename bin/check to bin/gitlab-shell-check to to avoid name clash !801
+- Update golangci to 1.60.1 !1122
+- Move bin/install to support/make_necessary_dirs !799
+- Update dependency golang to v1.23.0 !1121
+- Use go build so we can use -o !1117
+- Add 'make make_necessary_dirs' alias !1119
+- Add GitLab Advanced SAST to CI/CD config !1120
+- Update github.com/charmbracelet/git-lfs-transfer digest to 2cab0ea !1118
+- Update module golang.org/x/crypto to v0.26.0 !1115
+- Update dependency golang to v1.22.6 !1116
+- Update github.com/charmbracelet/git-lfs-transfer digest to c3aa24b !1113
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.11.8 !1114
+- Update module golang.org/x/sync to v0.8.0 !1112
+
 v14.38.0
 
 - Update module gitlab.com/gitlab-org/gitaly/v16 to v16.11.7 !1110
