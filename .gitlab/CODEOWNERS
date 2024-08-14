@@ -1,5 +1,6 @@
 # https://gitlab.com/groups/gitlab-org/maintainers/gitlab-shell/-/group_members?with_inherited_permissions=exclude
 * @gitlab-org/maintainers/gitlab-shell
 
-[Documentation]
-*.md @aqualls
+[Documentation] @gl-docsteam
+*.md 
+/doc/
