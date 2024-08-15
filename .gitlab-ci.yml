@@ -124,6 +124,7 @@ modules:download:
 
 .test-job:
   needs: ['bundle:install', 'modules:download']
+  rules: !reference [".rules:go-changes", rules]
   variables:
     GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
   before_script:
@@ -274,6 +275,7 @@ lint:
 
 nilaway:
   stage: lint
+  rules: !reference [".rules:go-changes", rules]
   before_script:
     - go install go.uber.org/nilaway/cmd/nilaway@latest
   script:
