@@ -37,6 +37,13 @@ workflow:
     # For tags, create a pipeline.
     - if: '$CI_COMMIT_TAG'
 
+.rules:go-changes:
+  rules:
+    - changes:
+        - 'go.mod'
+        - 'go.sum'
+        - '**/*.go'
+
 default:
   image: registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-ruby-${RUBY_VERSION}-${GO_VERSION}-${RUST_VERSION}:${IMAGE_TAG}
   tags:
@@ -117,6 +124,7 @@ modules:download:
 
 .test-job:
   needs: ['bundle:install', 'modules:download']
+  rules: !reference [".rules:go-changes", rules]
   variables:
     GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
   before_script:
@@ -267,6 +275,7 @@ lint:
 
 nilaway:
   stage: lint
+  rules: !reference [".rules:go-changes", rules]
   before_script:
     - go install go.uber.org/nilaway/cmd/nilaway@latest
   script:
