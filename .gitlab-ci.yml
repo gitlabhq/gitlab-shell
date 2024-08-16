@@ -25,7 +25,7 @@ variables:
   CI_DEBUG_SERVICES: 'true'
   RUST_VERSION: "rust-1.73"
   UBI_VERSION: "8.6"
-  IMAGE_TAG: "rubygems-3.4-git-2.36-exiftool-12.60"
+  IMAGE_TAG: "rubygems-3.4-git-2.45-exiftool-12.60"
   GITLAB_ADVANCED_SAST_ENABLED: 'true'
 
 workflow:
