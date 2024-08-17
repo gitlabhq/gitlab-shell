@@ -71,7 +71,7 @@ func NewWithUsername(gitlabUsername string, env sshenv.Env, config *config.Confi
 		return nil, err
 	}
 
-	// When 1.21+ only Golang is supported, it can be refactored by using slices.Contains
+	// FIXME: When 1.21+ only Golang is supported, it can be refactored by using slices.Contains
 	if env.NamespacePath != "" {
 		exists := false
 		for _, gitCmd := range commandargs.GitCommands {
