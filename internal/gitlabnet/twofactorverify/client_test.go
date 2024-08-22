@@ -127,7 +127,7 @@ func TestErrorResponses(t *testing.T) {
 		{
 			desc:          "A response with bad JSON",
 			fakeID:        "3",
-			expectedError: "Parsing failed",
+			expectedError: "parsing failed",
 		},
 		{
 			desc:          "An error response without message",
@@ -178,7 +178,7 @@ func TestErrorResponsesPush(t *testing.T) {
 		{
 			desc:          "A response with bad JSON",
 			fakeID:        "3",
-			expectedError: "Parsing failed",
+			expectedError: "parsing failed",
 		},
 		{
 			desc:          "An error response without message",

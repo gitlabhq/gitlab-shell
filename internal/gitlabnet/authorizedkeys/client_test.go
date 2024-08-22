@@ -70,7 +70,7 @@ func TestGetByKeyErrorResponses(t *testing.T) {
 		{
 			desc:          "A response with bad JSON",
 			key:           "broken-json",
-			expectedError: "Parsing failed",
+			expectedError: "parsing failed",
 		},
 		{
 			desc:          "A forbidden (403) response without message",

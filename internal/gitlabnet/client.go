@@ -11,10 +11,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
-var (
-	ParsingError = fmt.Errorf("Parsing failed")
-)
-
 func GetClient(config *config.Config) (*client.GitlabNetClient, error) {
 	httpClient, err := config.HTTPClient()
 	if err != nil {
@@ -30,7 +26,7 @@ func GetClient(config *config.Config) (*client.GitlabNetClient, error) {
 
 func ParseJSON(hr *http.Response, response interface{}) error {
 	if err := json.NewDecoder(hr.Body).Decode(response); err != nil {
-		return ParsingError
+		return fmt.Errorf("parsing failed")
 	}
 
 	return nil

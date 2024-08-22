@@ -120,7 +120,7 @@ func TestErrorResponses(t *testing.T) {
 		{
 			desc:          "A response with bad JSON",
 			fakeUsername:  "broken_json",
-			expectedError: "Parsing failed",
+			expectedError: "parsing failed",
 		},
 		{
 			desc:          "An error response without message",

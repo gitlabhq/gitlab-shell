@@ -126,7 +126,7 @@ func TestExecute(t *testing.T) {
 		{
 			desc:           "With bad response",
 			arguments:      &commandargs.Shell{GitlabKeyId: "-1"},
-			expectedOutput: errorHeader + "Parsing failed\n",
+			expectedOutput: errorHeader + "parsing failed\n",
 		},
 		{
 			desc:           "With API returns an error",

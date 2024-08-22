@@ -64,7 +64,7 @@ func TestFailedRequests(t *testing.T) {
 		{
 			desc:           "With bad response",
 			args:           &commandargs.Shell{GitlabKeyId: "-1", CommandType: commandargs.LfsAuthenticate, SshArgs: []string{"git-lfs-authenticate", repo, "download"}},
-			expectedOutput: "Parsing failed",
+			expectedOutput: "parsing failed",
 		},
 		{
 			desc:           "With API returns an error",

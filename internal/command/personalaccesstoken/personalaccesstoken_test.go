@@ -139,7 +139,7 @@ func TestExecute(t *testing.T) {
 				GitlabKeyId: "badresponse",
 				SshArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
 			},
-			expectedError: "Parsing failed",
+			expectedError: "parsing failed",
 		},
 		{
 			desc: "when API returns an error",
