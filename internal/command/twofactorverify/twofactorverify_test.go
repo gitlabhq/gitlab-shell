@@ -93,7 +93,7 @@ const errorHeader = "OTP validation failed: "
 func TestExecute(t *testing.T) {
 	requests := setup(t)
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	testCases := []struct {
 		desc           string
@@ -173,7 +173,7 @@ func TestCanceledContext(t *testing.T) {
 
 	output := &bytes.Buffer{}
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},
 		Args:       &commandargs.Shell{GitlabKeyId: "wait_infinitely"},

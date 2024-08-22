@@ -104,7 +104,7 @@ func TestFailedHTTPRequest(t *testing.T) {
 	}
 
 	client := &Client{
-		URL:     testserver.StartHttpServer(t, requests),
+		URL:     testserver.StartHTTPServer(t, requests),
 		Headers: customHeaders,
 	}
 
@@ -135,7 +135,7 @@ func TestFailedErrorReadRequest(t *testing.T) {
 	}
 
 	client := &Client{
-		URL:     testserver.StartHttpServer(t, requests),
+		URL:     testserver.StartHTTPServer(t, requests),
 		Headers: customHeaders,
 	}
 
@@ -223,7 +223,7 @@ func setup(t *testing.T) *Client {
 	}
 
 	client := &Client{
-		URL:     testserver.StartHttpServer(t, requests),
+		URL:     testserver.StartHTTPServer(t, requests),
 		Headers: customHeaders,
 	}
 

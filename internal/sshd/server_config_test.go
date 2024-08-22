@@ -95,7 +95,7 @@ func TestUserKeyHandling(t *testing.T) {
 		},
 	}
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	srvCfg := config.ServerConfig{
 		Listen:                  "127.0.0.1",
@@ -172,7 +172,7 @@ func TestUserCertificateHandling(t *testing.T) {
 		},
 	}
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	srvCfg := config.ServerConfig{
 		Listen:                  "127.0.0.1",

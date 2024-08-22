@@ -36,31 +36,31 @@ func TestClients(t *testing.T) {
 	}{
 		{
 			desc:   "Socket client",
-			server: testserver.StartSocketHttpServer,
+			server: testserver.StartSocketHTTPServer,
 			secret: secret,
 		},
 		{
 			desc:            "Socket client with a relative URL at /",
 			relativeURLRoot: "/",
-			server:          testserver.StartSocketHttpServer,
+			server:          testserver.StartSocketHTTPServer,
 			secret:          secret,
 		},
 		{
 			desc:            "Socket client with relative URL at /gitlab",
 			relativeURLRoot: "/gitlab",
-			server:          testserver.StartSocketHttpServer,
+			server:          testserver.StartSocketHTTPServer,
 			secret:          secret,
 		},
 		{
 			desc:   "Http client",
-			server: testserver.StartHttpServer,
+			server: testserver.StartHTTPServer,
 			secret: secret,
 		},
 		{
 			desc:   "Https client",
 			caFile: path.Join(testRoot, "certs/valid/server.crt"),
 			server: func(t *testing.T, handlers []testserver.TestRequestHandler) string {
-				return testserver.StartHttpsServer(t, handlers, "")
+				return testserver.StartHTTPSServer(t, handlers, "")
 			},
 			secret: secret,
 		},
@@ -68,13 +68,13 @@ func TestClients(t *testing.T) {
 			desc:   "Secret with newlines",
 			caFile: path.Join(testRoot, "certs/valid/server.crt"),
 			server: func(t *testing.T, handlers []testserver.TestRequestHandler) string {
-				return testserver.StartHttpsServer(t, handlers, "")
+				return testserver.StartHTTPSServer(t, handlers, "")
 			},
 			secret: "\n" + secret + "\n",
 		},
 		{
 			desc:   "Retry client",
-			server: testserver.StartRetryHttpServer,
+			server: testserver.StartRetryHTTPServer,
 			secret: secret,
 		},
 	}

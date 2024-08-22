@@ -54,7 +54,7 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 
 func TestFailedRequests(t *testing.T) {
 	requests := setup(t)
-	url := testserver.StartHttpServer(t, requests)
+	url := testserver.StartHTTPServer(t, requests)
 
 	testCases := []struct {
 		desc           string
@@ -95,7 +95,7 @@ func TestFailedRequests(t *testing.T) {
 
 func TestSuccessfulRequests(t *testing.T) {
 	requests := setup(t)
-	url := testserver.StartHttpServer(t, requests)
+	url := testserver.StartHTTPServer(t, requests)
 
 	testCases := []struct {
 		desc      string

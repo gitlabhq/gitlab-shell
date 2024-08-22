@@ -24,7 +24,7 @@ func TestUploadArchive(t *testing.T) {
 			t.Log(fmt.Sprintf("Server address: %s", gitalyAddress))
 
 			requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)
-			url := testserver.StartHttpServer(t, requests)
+			url := testserver.StartHTTPServer(t, requests)
 
 			output := &bytes.Buffer{}
 			input := &bytes.Buffer{}

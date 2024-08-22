@@ -122,7 +122,7 @@ func TestPullExecuteWithFailedInfoRefs(t *testing.T) {
 				},
 			}
 
-			url := testserver.StartHttpServer(t, requests)
+			url := testserver.StartHTTPServer(t, requests)
 
 			cmd := &PullCommand{
 				Config: &config.Config{GitlabUrl: url},
@@ -186,7 +186,7 @@ func setupPull(t *testing.T, uploadPackStatusCode int) string {
 		},
 	}
 
-	return testserver.StartHttpServer(t, requests)
+	return testserver.StartHTTPServer(t, requests)
 }
 
 func setupSSHPull(t *testing.T, uploadPackStatusCode int) string {
@@ -208,5 +208,5 @@ func setupSSHPull(t *testing.T, uploadPackStatusCode int) string {
 		},
 	}
 
-	return testserver.StartHttpServer(t, requests)
+	return testserver.StartHTTPServer(t, requests)
 }

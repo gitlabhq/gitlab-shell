@@ -425,7 +425,7 @@ func setupServerWithContext(ctx context.Context, t *testing.T, cfg *config.Confi
 		},
 	}
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	if cfg == nil {
 		cfg = &config.Config{}

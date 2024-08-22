@@ -78,7 +78,7 @@ const (
 func TestExecute(t *testing.T) {
 	setup(t)
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	testCases := []struct {
 		desc           string

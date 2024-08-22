@@ -1465,7 +1465,7 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 		},
 	}
 
-	url = testserver.StartHttpServer(t, requests)
+	url = testserver.StartHTTPServer(t, requests)
 
 	inputSource, inputSink := io.Pipe()
 	outputSource, outputSink := io.Pipe()

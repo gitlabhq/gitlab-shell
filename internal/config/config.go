@@ -52,7 +52,8 @@ type ServerConfig struct {
 	GSSAPI                  GSSAPIConfig `yaml:"gssapi,omitempty"`
 }
 
-type HttpSettingsConfig struct {
+// HTTPSettingsConfig are HTTP related settings
+type HTTPSettingsConfig struct {
 	User               string `yaml:"user"`
 	Password           string `yaml:"password"`
 	ReadTimeoutSeconds uint64 `yaml:"read_timeout"`
@@ -82,7 +83,7 @@ type Config struct {
 	SecretFilePath string             `yaml:"secret_file"`
 	Secret         string             `yaml:"secret"`
 	SslCertDir     string             `yaml:"ssl_cert_dir"`
-	HttpSettings   HttpSettingsConfig `yaml:"http_settings"`
+	HTTPSettings   HTTPSettingsConfig `yaml:"http_settings"`
 	Server         ServerConfig       `yaml:"sshd"`
 	LFSConfig      LFSConfig          `yaml:"lfs"`
 	PATConfig      PATConfig          `yaml:"pat"`
@@ -144,14 +145,15 @@ func (c *Config) ApplyGlobalState() {
 	}
 }
 
+// HTTPClient creates a new instance of *client.HTTPClient
 func (c *Config) HTTPClient() (*client.HTTPClient, error) {
 	c.httpClientOnce.Do(func() {
 		client, err := client.NewHTTPClientWithOpts(
 			c.GitlabUrl,
 			c.GitlabRelativeURLRoot,
-			c.HttpSettings.CaFile,
-			c.HttpSettings.CaPath,
-			c.HttpSettings.ReadTimeoutSeconds,
+			c.HTTPSettings.CaFile,
+			c.HTTPSettings.CaPath,
+			c.HTTPSettings.ReadTimeoutSeconds,
 			nil,
 		)
 		if err != nil {

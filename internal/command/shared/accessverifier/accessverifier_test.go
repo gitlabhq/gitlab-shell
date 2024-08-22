@@ -50,7 +50,7 @@ func setup(t *testing.T) (*Command, *bytes.Buffer, *bytes.Buffer) {
 		},
 	}
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	errBuf := &bytes.Buffer{}
 	outBuf := &bytes.Buffer{}

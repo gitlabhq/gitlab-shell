@@ -45,7 +45,7 @@ var requests = []testserver.TestRequestHandler{
 }
 
 func TestExecute(t *testing.T) {
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	testCases := []struct {
 		desc             string
@@ -96,7 +96,7 @@ func TestExecute(t *testing.T) {
 }
 
 func TestFailingExecute(t *testing.T) {
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	testCases := []struct {
 		desc          string

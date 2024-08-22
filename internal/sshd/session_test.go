@@ -127,7 +127,7 @@ func TestHandleExec(t *testing.T) {
 		},
 	}
 
-	url := testserver.StartHttpServer(t, requests)
+	url := testserver.StartHTTPServer(t, requests)
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -211,7 +211,7 @@ func TestHandleShell(t *testing.T) {
 		},
 	}
 
-	url := testserver.StartHttpServer(t, requests)
+	url := testserver.StartHTTPServer(t, requests)
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {

@@ -25,7 +25,7 @@ func GetClient(config *config.Config) (*client.GitlabNetClient, error) {
 		return nil, fmt.Errorf("Unsupported protocol")
 	}
 
-	return client.NewGitlabNetClient(config.HttpSettings.User, config.HttpSettings.Password, config.Secret, httpClient)
+	return client.NewGitlabNetClient(config.HTTPSettings.User, config.HTTPSettings.Password, config.Secret, httpClient)
 }
 
 func ParseJSON(hr *http.Response, response interface{}) error {
