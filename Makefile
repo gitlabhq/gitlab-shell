@@ -86,13 +86,15 @@ coverage: coverage_golang
 coverage_golang:
 	[ -f cover.out ] && go tool cover -func cover.out
 
-lint: ${GOLANGCI_LINT_FILE}
-	${GOLANGCI_LINT_FILE} --version
-	${GOLANGCI_LINT_FILE} run --issues-exit-code 0 --print-issued-lines=false ${GOLANGCI_LINT_ARGS}
+lint:
+	@support/lint.sh ./...
+
+golangci: ${GOLANGCI_LINT_FILE}
+	@${GOLANGCI_LINT_FILE} run --issues-exit-code 0 --print-issued-lines=false ${GOLANGCI_LINT_ARGS}
 
 ${GOLANGCI_LINT_FILE}:
-	mkdir -p $(shell dirname ${GOLANGCI_LINT_FILE})
-	curl -L https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${ARCH}.tar.gz | tar --strip-components 1 -zOxf - golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${ARCH}/golangci-lint > ${GOLANGCI_LINT_FILE} && chmod +x ${GOLANGCI_LINT_FILE}
+	@mkdir -p $(shell dirname ${GOLANGCI_LINT_FILE})
+	@curl -L https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${ARCH}.tar.gz | tar --strip-components 1 -zOxf - golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${ARCH}/golangci-lint > ${GOLANGCI_LINT_FILE} && chmod +x ${GOLANGCI_LINT_FILE}
 
 setup: make_necessary_dirs bin/gitlab-shell
 

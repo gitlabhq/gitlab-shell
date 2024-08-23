@@ -174,7 +174,7 @@ func TestErrorResponses(t *testing.T) {
 		{
 			desc:          "A response with bad JSON",
 			fakeID:        "3",
-			expectedError: "Parsing failed",
+			expectedError: "parsing failed",
 		},
 		{
 			desc:          "An error response without message",
@@ -283,7 +283,7 @@ func setup(t *testing.T, userResponses, keyResponses map[string]testResponse) *C
 		},
 	}
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	client, err := NewClient(&config.Config{GitlabUrl: url})
 	require.NoError(t, err)
@@ -309,7 +309,7 @@ func setupWithAPIInspector(t *testing.T, inspector func(*Request)) *Client {
 		},
 	}
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	client, err := NewClient(&config.Config{GitlabUrl: url})
 	require.NoError(t, err)

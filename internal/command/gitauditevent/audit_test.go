@@ -47,7 +47,7 @@ func TestGitAudit(t *testing.T) {
 		CommandType: commandargs.UploadArchive,
 	}
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 	Audit(context.Background(), s.CommandType, &config.Config{GitlabUrl: url}, &accessverifier.Response{
 		Username: testUsername,
 		Repo:     testRepo,

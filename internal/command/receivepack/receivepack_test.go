@@ -47,7 +47,7 @@ func TestCustomReceivePack(t *testing.T) {
 }
 
 func setup(t *testing.T, keyID string, requests []testserver.TestRequestHandler) (*Command, *bytes.Buffer) {
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	output := &bytes.Buffer{}
 	input := bytes.NewBufferString("input")

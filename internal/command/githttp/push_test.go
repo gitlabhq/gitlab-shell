@@ -81,7 +81,7 @@ func TestExecuteWithFailedInfoRefs(t *testing.T) {
 				},
 			}
 
-			url := testserver.StartHttpServer(t, requests)
+			url := testserver.StartHTTPServer(t, requests)
 
 			cmd := &PushCommand{
 				Config: &config.Config{GitlabUrl: url},
@@ -182,7 +182,7 @@ func setup(t *testing.T, receivePackStatusCode int) (string, io.Reader) {
 		},
 	}
 
-	return testserver.StartHttpServer(t, requests), input
+	return testserver.StartHTTPServer(t, requests), input
 }
 
 func setupSSHPush(t *testing.T, uploadPackStatusCode int) string {
@@ -204,5 +204,5 @@ func setupSSHPush(t *testing.T, uploadPackStatusCode int) string {
 		},
 	}
 
-	return testserver.StartHttpServer(t, requests)
+	return testserver.StartHTTPServer(t, requests)
 }

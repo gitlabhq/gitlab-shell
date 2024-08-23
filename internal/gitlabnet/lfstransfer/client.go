@@ -168,7 +168,8 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 	return response, nil
 }
 
-func (c *Client) GetObject(oid, href string, headers map[string]string) (io.ReadCloser, int64, error) {
+// GetObject performs an HTTP GET request for the object
+func (c *Client) GetObject(_, href string, headers map[string]string) (io.ReadCloser, int64, error) {
 	req, _ := newHTTPRequest(http.MethodGet, href, nil)
 	for key, value := range headers {
 		req.Header.Add(key, value)
@@ -188,7 +189,8 @@ func (c *Client) GetObject(oid, href string, headers map[string]string) (io.Read
 	return res.Body, res.ContentLength, nil
 }
 
-func (c *Client) PutObject(oid, href string, headers map[string]string, r io.Reader) error {
+// PutObject performs an HTTP PUT request for the object
+func (c *Client) PutObject(_, href string, headers map[string]string, r io.Reader) error {
 	req, _ := newHTTPRequest(http.MethodPut, href, r)
 	for key, value := range headers {
 		req.Header.Add(key, value)

@@ -54,7 +54,7 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 
 func TestFailedRequests(t *testing.T) {
 	requests := setup(t)
-	url := testserver.StartHttpServer(t, requests)
+	url := testserver.StartHTTPServer(t, requests)
 
 	testCases := []struct {
 		desc           string
@@ -64,7 +64,7 @@ func TestFailedRequests(t *testing.T) {
 		{
 			desc:           "With bad response",
 			args:           &commandargs.Shell{GitlabKeyId: "-1", CommandType: commandargs.LfsAuthenticate, SshArgs: []string{"git-lfs-authenticate", repo, "download"}},
-			expectedOutput: "Parsing failed",
+			expectedOutput: "parsing failed",
 		},
 		{
 			desc:           "With API returns an error",
@@ -95,7 +95,7 @@ func TestFailedRequests(t *testing.T) {
 
 func TestSuccessfulRequests(t *testing.T) {
 	requests := setup(t)
-	url := testserver.StartHttpServer(t, requests)
+	url := testserver.StartHTTPServer(t, requests)
 
 	testCases := []struct {
 		desc      string

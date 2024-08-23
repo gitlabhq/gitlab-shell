@@ -78,7 +78,7 @@ const (
 func TestExecute(t *testing.T) {
 	setup(t)
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	testCases := []struct {
 		desc           string
@@ -139,7 +139,7 @@ func TestExecute(t *testing.T) {
 				GitlabKeyId: "badresponse",
 				SshArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
 			},
-			expectedError: "Parsing failed",
+			expectedError: "parsing failed",
 		},
 		{
 			desc: "when API returns an error",

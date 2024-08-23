@@ -125,7 +125,7 @@ func TestRequestWithUserAgent(t *testing.T) {
 }
 
 func setup(t *testing.T, username, password string, requests []testserver.TestRequestHandler) *GitlabNetClient {
-	url := testserver.StartHttpServer(t, requests)
+	url := testserver.StartHTTPServer(t, requests)
 
 	httpClient, err := NewHTTPClientWithOpts(url, "", "", "", 1, nil)
 	require.NoError(t, err)

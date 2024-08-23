@@ -54,7 +54,7 @@ func TestExecuteEOFSent(t *testing.T) {
 		},
 	}
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	outBuf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}
@@ -123,7 +123,7 @@ func TestExecuteNoEOFSent(t *testing.T) {
 		},
 	}
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	outBuf := &bytes.Buffer{}
 	errBuf := &bytes.Buffer{}

@@ -137,7 +137,7 @@ func startGitOverHTTPServer(t *testing.T) string {
 		},
 	}
 
-	return testserver.StartHttpServer(t, requests)
+	return testserver.StartHTTPServer(t, requests)
 }
 
 func buildAllowedResponse(t *testing.T, filename string) string {

@@ -63,7 +63,7 @@ const (
 func TestExecute(t *testing.T) {
 	setup(t)
 
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	testCases := []struct {
 		desc           string
@@ -85,7 +85,7 @@ func TestExecute(t *testing.T) {
 			desc:           "With bad response",
 			arguments:      &commandargs.Shell{GitlabKeyId: "-1"},
 			answer:         "yes\n",
-			expectedOutput: question + errorHeader + "Parsing failed\n",
+			expectedOutput: question + errorHeader + "parsing failed\n",
 		},
 		{
 			desc:           "With API returns an error",

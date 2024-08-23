@@ -34,7 +34,7 @@ func TestConfigApplyGlobalState(t *testing.T) {
 }
 
 func TestCustomPrometheusMetrics(t *testing.T) {
-	url := testserver.StartHttpServer(t, []testserver.TestRequestHandler{})
+	url := testserver.StartHTTPServer(t, []testserver.TestRequestHandler{})
 
 	config := &Config{GitlabUrl: url}
 	client, err := config.HTTPClient()

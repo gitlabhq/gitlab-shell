@@ -39,7 +39,7 @@ func TestCheck(t *testing.T) {
 }
 
 func setup(t *testing.T) *Client {
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	client, err := NewClient(&config.Config{GitlabUrl: url})
 	require.NoError(t, err)

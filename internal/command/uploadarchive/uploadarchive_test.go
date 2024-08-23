@@ -44,7 +44,7 @@ func TestForbiddenAccess(t *testing.T) {
 }
 
 func setup(t *testing.T, keyID string, requests []testserver.TestRequestHandler) *Command {
-	url := testserver.StartHttpServer(t, requests)
+	url := testserver.StartHTTPServer(t, requests)
 
 	output := &bytes.Buffer{}
 	input := bytes.NewBufferString("input")

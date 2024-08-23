@@ -22,7 +22,8 @@ type TestRequestHandler struct {
 	Handler func(w http.ResponseWriter, r *http.Request)
 }
 
-func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) string {
+// StartSocketHTTPServer starts a socket based HTTP server
+func StartSocketHTTPServer(t *testing.T, handlers []TestRequestHandler) string {
 	t.Helper()
 
 	// We can't use t.TempDir() here because it will create a directory that
@@ -55,7 +56,8 @@ func StartSocketHttpServer(t *testing.T, handlers []TestRequestHandler) string {
 	return url
 }
 
-func StartHttpServer(t *testing.T, handlers []TestRequestHandler) string {
+// StartHTTPServer starts a TCP based HTTP server
+func StartHTTPServer(t *testing.T, handlers []TestRequestHandler) string {
 	t.Helper()
 
 	server := httptest.NewServer(buildHandler(handlers))
@@ -64,7 +66,8 @@ func StartHttpServer(t *testing.T, handlers []TestRequestHandler) string {
 	return server.URL
 }
 
-func StartRetryHttpServer(t *testing.T, handlers []TestRequestHandler) string {
+// StartRetryHTTPServer starts a TCP based HTTP server with retry capabilities
+func StartRetryHTTPServer(t *testing.T, handlers []TestRequestHandler) string {
 	attempts := map[string]int{}
 
 	retryMiddileware := func(next func(w http.ResponseWriter, r *http.Request)) http.Handler {
@@ -92,7 +95,8 @@ func StartRetryHttpServer(t *testing.T, handlers []TestRequestHandler) string {
 	return server.URL
 }
 
-func StartHttpsServer(t *testing.T, handlers []TestRequestHandler, clientCAPath string) string {
+// StartHTTPSServer starts a TCP based HTTPS capable server
+func StartHTTPSServer(t *testing.T, handlers []TestRequestHandler, clientCAPath string) string {
 	t.Helper()
 
 	testRoot := testhelper.PrepareTestRootDir(t)

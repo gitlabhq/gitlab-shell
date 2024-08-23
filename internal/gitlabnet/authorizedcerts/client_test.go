@@ -70,7 +70,7 @@ func TestGetByKeyErrorResponses(t *testing.T) {
 		{
 			desc:          "A response with bad JSON",
 			key:           "broken-json",
-			expectedError: "Parsing failed",
+			expectedError: "parsing failed",
 		},
 		{
 			desc:          "A forbidden (403) response without message",
@@ -95,7 +95,7 @@ func TestGetByKeyErrorResponses(t *testing.T) {
 }
 
 func setup(t *testing.T) *Client {
-	url := testserver.StartSocketHttpServer(t, requests)
+	url := testserver.StartSocketHTTPServer(t, requests)
 
 	client, err := NewClient(&config.Config{GitlabUrl: url})
 	require.NoError(t, err)

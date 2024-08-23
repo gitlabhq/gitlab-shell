@@ -22,7 +22,7 @@ import (
 
 func TestFailedRequests(t *testing.T) {
 	requests := requesthandlers.BuildDisallowedByAPIHandlers(t)
-	url := testserver.StartHttpServer(t, requests)
+	url := testserver.StartHTTPServer(t, requests)
 
 	testCases := []struct {
 		desc           string
@@ -124,7 +124,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 		},
 	}
 
-	url := testserver.StartHttpServer(t, requests)
+	url := testserver.StartHTTPServer(t, requests)
 
 	testCases := []struct {
 		desc           string
