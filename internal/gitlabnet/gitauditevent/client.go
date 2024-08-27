@@ -1,3 +1,4 @@
+// Package gitauditevent handles Git audit events for GitLab.
 package gitauditevent
 
 import (
@@ -13,11 +14,13 @@ import (
 
 const uri = "/api/v4/internal/shellhorse/git_audit_event"
 
+// Client handles communication with the GitLab audit event API.
 type Client struct {
 	config *config.Config
 	client *client.GitlabNetClient
 }
 
+// NewClient creates a new Client for sending audit events.
 func NewClient(config *config.Config) (*Client, error) {
 	client, err := gitlabnet.GetClient(config)
 	if err != nil {
@@ -27,6 +30,7 @@ func NewClient(config *config.Config) (*Client, error) {
 	return &Client{config: config, client: client}, nil
 }
 
+// Request represents the data for a Git audit event.
 type Request struct {
 	Action        commandargs.CommandType           `json:"action"`
 	Protocol      string                            `json:"protocol"`
@@ -35,6 +39,7 @@ type Request struct {
 	PackfileStats *pb.PackfileNegotiationStatistics `json:"packfile_stats,omitempty"`
 }
 
+// Audit sends an audit event to the GitLab API.
 func (c *Client) Audit(ctx context.Context, username string, action commandargs.CommandType, repo string, packfileStats *pb.PackfileNegotiationStatistics) error {
 	request := &Request{
 		Action:        action,
@@ -48,6 +53,10 @@ func (c *Client) Audit(ctx context.Context, username string, action commandargs.
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer func() {
+		if err := response.Body.Close(); err != nil {
+			_ = fmt.Errorf("unable to close response body: %v", err)
+		}
+	}()
 	return nil
 }
