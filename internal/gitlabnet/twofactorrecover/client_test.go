@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -27,7 +28,7 @@ func initialize(t *testing.T) {
 				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var requestBody *RequestBody
 				json.Unmarshal(b, &requestBody)
