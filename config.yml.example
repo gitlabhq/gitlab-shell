@@ -121,3 +121,10 @@ sshd:
 lfs:
   # https://gitlab.com/groups/gitlab-org/-/epics/11872, disabled by default.
   pure_ssh_protocol: false
+
+# https://docs.gitlab.com/ee/development/gitlab_shell/features.html#personal-access-token
+pat:
+  # Enable/disable creation of personal access tokens using SSH key
+  enabled: true
+  # Configure which PAT scopes are allowable to generate using an SSH key
+  # allowed_scopes: [read_repository]
