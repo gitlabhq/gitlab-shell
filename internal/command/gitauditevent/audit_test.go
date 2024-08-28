@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
@@ -30,13 +31,13 @@ func TestGitAudit(t *testing.T) {
 				called = true
 
 				body, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				defer r.Body.Close()
 
 				var request *gitauditevent.Request
-				require.NoError(t, json.Unmarshal(body, &request))
-				require.Equal(t, testUsername, request.Username)
-				require.Equal(t, testRepo, request.Repo)
+				assert.NoError(t, json.Unmarshal(body, &request))
+				assert.Equal(t, testUsername, request.Username)
+				assert.Equal(t, testRepo, request.Repo)
 
 				w.WriteHeader(http.StatusOK)
 			},
