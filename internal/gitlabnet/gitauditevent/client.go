@@ -53,10 +53,7 @@ func (c *Client) Audit(ctx context.Context, username string, action commandargs.
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err := response.Body.Close(); err != nil {
-			_ = fmt.Errorf("unable to close response body: %v", err)
-		}
-	}()
+	defer response.Body.Close() //nolint:errcheck
+
 	return nil
 }
