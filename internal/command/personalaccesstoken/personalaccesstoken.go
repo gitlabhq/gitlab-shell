@@ -1,3 +1,5 @@
+// Package personalaccesstoken handles operations related to personal access tokens,
+// including parsing arguments, requesting tokens, and formatting responses.
 package personalaccesstoken
 
 import (
@@ -18,10 +20,11 @@ import (
 )
 
 const (
-	usageText         = "Usage: personal_access_token <name> <scope1[,scope2,...]> [ttl_days]"
+	usageText         = "usage: personal_access_token <name> <scope1[,scope2,...]> [ttl_days]"
 	expiresDateFormat = "2006-01-02"
 )
 
+// Command represents a command to manage personal access tokens.
 type Command struct {
 	Config     *config.Config
 	Args       *commandargs.Shell
@@ -35,6 +38,7 @@ type tokenArgs struct {
 	ExpiresDate string // Calculated, a TTL is passed from command-line.
 }
 
+// Execute processes the command, requests a personal access token, and prints the result.
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	err := c.parseTokenArgs()
 	if err != nil {
@@ -50,9 +54,9 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	fmt.Fprint(c.ReadWriter.Out, "Token:   "+response.Token+"\n")
-	fmt.Fprint(c.ReadWriter.Out, "Scopes:  "+strings.Join(response.Scopes, ",")+"\n")
-	fmt.Fprint(c.ReadWriter.Out, "Expires: "+response.ExpiresAt+"\n")
+	_, _ = fmt.Fprint(c.ReadWriter.Out, "Token:   "+response.Token+"\n")
+	_, _ = fmt.Fprint(c.ReadWriter.Out, "Scopes:  "+strings.Join(response.Scopes, ",")+"\n")
+	_, _ = fmt.Fprint(c.ReadWriter.Out, "Expires: "+response.ExpiresAt+"\n")
 
 	return ctx, nil
 }
@@ -86,7 +90,7 @@ func (c *Command) parseTokenArgs() error {
 
 	TTL, err := strconv.Atoi(rawTTL)
 	if err != nil || TTL < 0 {
-		return fmt.Errorf("Invalid value for days_ttl: '%s'", rawTTL)
+		return fmt.Errorf("invalid value for days_ttl: '%s'", rawTTL)
 	}
 
 	c.TokenArgs.ExpiresDate = time.Now().AddDate(0, 0, TTL+1).Format(expiresDateFormat)
