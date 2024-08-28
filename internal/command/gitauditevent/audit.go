@@ -1,3 +1,4 @@
+// Package gitauditevent handles Git audit events for GitLab.
 package gitauditevent
 
 import (
