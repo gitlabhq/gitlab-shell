@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	httpclient "gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -16,6 +17,7 @@ var customHeaders = map[string]string{
 	"Authorization": "Bearer: token",
 	"Header-One":    "Value-Two",
 }
+var refsBody = "0032want 0a53e9ddeaddad63ad106860237bbf53411d11a7\n"
 
 func TestInfoRefs(t *testing.T) {
 	client := setup(t)
@@ -53,7 +55,6 @@ func TestReceivePack(t *testing.T) {
 func TestUploadPack(t *testing.T) {
 	client := setup(t)
 
-	refsBody := "0032want 0a53e9ddeaddad63ad106860237bbf53411d11a7\n"
 	response, err := client.UploadPack(context.Background(), bytes.NewReader([]byte(refsBody)))
 	require.NoError(t, err)
 	defer response.Body.Close()
@@ -67,7 +68,6 @@ func TestUploadPack(t *testing.T) {
 func TestSSHUploadPack(t *testing.T) {
 	client := setup(t)
 
-	refsBody := "0032want 0a53e9ddeaddad63ad106860237bbf53411d11a7\n"
 	response, err := client.SSHUploadPack(context.Background(), bytes.NewReader([]byte(refsBody)))
 	require.NoError(t, err)
 	defer response.Body.Close()
@@ -81,7 +81,6 @@ func TestSSHUploadPack(t *testing.T) {
 func TestSSHReceivePack(t *testing.T) {
 	client := setup(t)
 
-	refsBody := "0032want 0a53e9ddeaddad63ad106860237bbf53411d11a7\n"
 	response, err := client.SSHReceivePack(context.Background(), bytes.NewReader([]byte(refsBody)))
 	require.NoError(t, err)
 	defer response.Body.Close()
@@ -157,8 +156,8 @@ func setup(t *testing.T) *Client {
 		{
 			Path: "/info/refs",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
-				require.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
+				assert.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
+				assert.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
 
 				w.Write([]byte(r.URL.Query().Get("service")))
 			},
@@ -166,13 +165,13 @@ func setup(t *testing.T) *Client {
 		{
 			Path: "/git-receive-pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
-				require.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
-				require.Equal(t, "application/x-git-receive-pack-request", r.Header.Get("Content-Type"))
-				require.Equal(t, "application/x-git-receive-pack-result", r.Header.Get("Accept"))
+				assert.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
+				assert.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
+				assert.Equal(t, "application/x-git-receive-pack-request", r.Header.Get("Content-Type"))
+				assert.Equal(t, "application/x-git-receive-pack-result", r.Header.Get("Accept"))
 
 				body, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				defer r.Body.Close()
 
 				w.Write([]byte("git-receive-pack: "))
@@ -182,13 +181,13 @@ func setup(t *testing.T) *Client {
 		{
 			Path: "/git-upload-pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
-				require.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
-				require.Equal(t, "application/x-git-upload-pack-request", r.Header.Get("Content-Type"))
-				require.Equal(t, "application/x-git-upload-pack-result", r.Header.Get("Accept"))
+				assert.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
+				assert.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
+				assert.Equal(t, "application/x-git-upload-pack-request", r.Header.Get("Content-Type"))
+				assert.Equal(t, "application/x-git-upload-pack-result", r.Header.Get("Accept"))
 
 				_, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				defer r.Body.Close()
 
 				w.Write([]byte("git-upload-pack: content"))
@@ -197,11 +196,11 @@ func setup(t *testing.T) *Client {
 		{
 			Path: sshUploadPackPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
-				require.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
+				assert.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
+				assert.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
 
 				_, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				defer r.Body.Close()
 
 				w.Write([]byte("ssh-upload-pack: content"))
@@ -210,11 +209,11 @@ func setup(t *testing.T) *Client {
 		{
 			Path: sshReceivePackPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
-				require.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
+				assert.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
+				assert.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))
 
 				_, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				defer r.Body.Close()
 
 				w.Write([]byte("ssh-receive-pack: content"))
