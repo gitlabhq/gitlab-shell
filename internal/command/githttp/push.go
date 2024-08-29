@@ -1,9 +1,7 @@
 package githttp
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"io"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
@@ -15,10 +13,12 @@ import (
 	"gitlab.com/gitlab-org/labkit/log"
 )
 
-const service = "git-receive-pack"
+const pushService = "git-receive-pack"
 
-var receivePackHttpPrefix = []byte("001f# service=git-receive-pack\n0000")
+var receivePackHTTPPrefix = []byte("001f# service=git-receive-pack\n0000")
 
+// PushCommand handles the execution of a Git push operation,
+// including configuration, input/output handling, and access verification.
 type PushCommand struct {
 	Config     *config.Config
 	ReadWriter *readwriter.ReadWriter
@@ -35,6 +35,13 @@ type PushCommand struct {
 // 4. Read the send-pack data provided by user via SSH (stdinReader)
 // 5. Perform /git-receive-pack request and send this data
 // 6. Return the output to the user
+
+// ForInfoRefs returns the necessary Push specifics for client.InfoRefs()
+func (c *PushCommand) ForInfoRefs() (*readwriter.ReadWriter, string, []byte) {
+	return c.ReadWriter, pushService, receivePackHTTPPrefix
+}
+
+// Execute runs the push command by determining the appropriate method (HTTP/SSH)
 func (c *PushCommand) Execute(ctx context.Context) error {
 	data := c.Response.Payload.Data
 	client := &git.Client{URL: data.PrimaryRepo, Headers: data.RequestHeaders}
@@ -47,31 +54,11 @@ func (c *PushCommand) Execute(ctx context.Context) error {
 		return c.requestSSHReceivePack(ctx, client)
 	}
 
-	if err := c.requestInfoRefs(ctx, client); err != nil {
+	if err := requestInfoRefs(ctx, client, c); err != nil {
 		return err
 	}
 
 	return c.requestReceivePack(ctx, client)
-}
-
-func (c *PushCommand) requestInfoRefs(ctx context.Context, client *git.Client) error {
-	response, err := client.InfoRefs(ctx, service)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-
-	// Read the first bytes that contain 001f# service=git-receive-pack\n0000 string
-	// to convert HTTP(S) Git response to the one expected by SSH
-	p := make([]byte, len(receivePackHttpPrefix))
-	_, err = response.Body.Read(p)
-	if err != nil || !bytes.Equal(p, receivePackHttpPrefix) {
-		return fmt.Errorf("Unexpected git-receive-pack response")
-	}
-
-	_, err = io.Copy(c.ReadWriter.Out, response.Body)
-
-	return err
 }
 
 func (c *PushCommand) requestSSHReceivePack(ctx context.Context, client *git.Client) error {
@@ -79,7 +66,7 @@ func (c *PushCommand) requestSSHReceivePack(ctx context.Context, client *git.Cli
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer response.Body.Close() //nolint:errcheck
 
 	_, err = io.Copy(c.ReadWriter.Out, response.Body)
 
@@ -94,7 +81,7 @@ func (c *PushCommand) requestReceivePack(ctx context.Context, client *git.Client
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer response.Body.Close() //nolint:errcheck
 
 	_, err = io.Copy(c.ReadWriter.Out, response.Body)
 
@@ -107,7 +94,10 @@ func (c *PushCommand) readFromStdin(pw *io.PipeWriter) {
 	scanner := pktline.NewScanner(c.ReadWriter.In)
 	for scanner.Scan() {
 		line := scanner.Bytes()
-		pw.Write(line)
+		_, err := pw.Write(line)
+		if err != nil {
+			log.WithError(err).Error("failed to write line")
+		}
 
 		if pktline.IsFlush(line) {
 			break
@@ -119,8 +109,14 @@ func (c *PushCommand) readFromStdin(pw *io.PipeWriter) {
 	}
 
 	if needsPackData {
-		io.Copy(pw, c.ReadWriter.In)
+		_, err := io.Copy(pw, c.ReadWriter.In)
+		if err != nil {
+			log.WithError(err).Error("failed to copy")
+		}
 	}
 
-	pw.Close()
+	err := pw.Close()
+	if err != nil {
+		log.WithError(err).Error("failed to close writer")
+	}
 }
