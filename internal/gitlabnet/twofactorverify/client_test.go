@@ -9,6 +9,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -21,29 +22,29 @@ func initialize(t *testing.T) []testserver.TestRequestHandler {
 		b, err := io.ReadAll(r.Body)
 		defer r.Body.Close()
 
-		require.NoError(t, err)
+		assert.NoError(t, err)
 
 		var requestBody *RequestBody
-		require.NoError(t, json.Unmarshal(b, &requestBody))
+		assert.NoError(t, json.Unmarshal(b, &requestBody))
 
 		switch requestBody.KeyID {
 		case "0":
 			body := map[string]interface{}{
 				"success": true,
 			}
-			require.NoError(t, json.NewEncoder(w).Encode(body))
+			assert.NoError(t, json.NewEncoder(w).Encode(body))
 		case "1":
 			body := map[string]interface{}{
 				"success": false,
 				"message": "error message",
 			}
-			require.NoError(t, json.NewEncoder(w).Encode(body))
+			assert.NoError(t, json.NewEncoder(w).Encode(body))
 		case "2":
 			w.WriteHeader(http.StatusForbidden)
 			body := &client.ErrorResponse{
 				Message: "Not allowed!",
 			}
-			require.NoError(t, json.NewEncoder(w).Encode(body))
+			assert.NoError(t, json.NewEncoder(w).Encode(body))
 		case "3":
 			w.Write([]byte("{ \"message\": \"broken json!\""))
 		case "4":
@@ -54,7 +55,7 @@ func initialize(t *testing.T) []testserver.TestRequestHandler {
 			body := map[string]interface{}{
 				"success": true,
 			}
-			require.NoError(t, json.NewEncoder(w).Encode(body))
+			assert.NoError(t, json.NewEncoder(w).Encode(body))
 		}
 	}
 
@@ -75,7 +76,7 @@ func initialize(t *testing.T) []testserver.TestRequestHandler {
 					Username: "jane-doe",
 					Name:     "Jane Doe",
 				}
-				require.NoError(t, json.NewEncoder(w).Encode(body))
+				assert.NoError(t, json.NewEncoder(w).Encode(body))
 			},
 		},
 	}
