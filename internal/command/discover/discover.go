@@ -1,3 +1,4 @@
+// Package discover implements the "discover" command for fetching user info and displaying a welcome message.
 package discover
 
 import (
@@ -11,25 +12,27 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
+// Command struct encapsulates the necessary components for executing the Discover command.
 type Command struct {
 	Config     *config.Config
 	Args       *commandargs.Shell
 	ReadWriter *readwriter.ReadWriter
 }
 
+// Execute runs the discover command, fetching and displaying user information.
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	response, err := c.getUserInfo(ctx)
 	if err != nil {
-		return ctx, fmt.Errorf("Failed to get username: %v", err)
+		return ctx, fmt.Errorf("failed to get username: %v", err)
 	}
 
 	logData := command.LogData{}
 	if response.IsAnonymous() {
 		logData.Username = "Anonymous"
-		fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, Anonymous!\n")
+		_, _ = fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, Anonymous!\n")
 	} else {
 		logData.Username = response.Username
-		fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, @%s!\n", response.Username)
+		_, _ = fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, @%s!\n", response.Username)
 	}
 
 	ctxWithLogData := context.WithValue(ctx, "logData", logData)
