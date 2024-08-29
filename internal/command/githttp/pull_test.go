@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -104,7 +105,7 @@ func TestPullExecuteWithFailedInfoRefs(t *testing.T) {
 			desc:            "unexpected response",
 			statusCode:      http.StatusOK,
 			responseContent: "unexpected response",
-			expectedErr:     "Unexpected git-upload-pack response",
+			expectedErr:     "unexpected git-upload-pack response",
 		},
 	}
 
@@ -114,7 +115,7 @@ func TestPullExecuteWithFailedInfoRefs(t *testing.T) {
 				{
 					Path: "/info/refs",
 					Handler: func(w http.ResponseWriter, r *http.Request) {
-						require.Equal(t, "git-upload-pack", r.URL.Query().Get("service"))
+						assert.Equal(t, "git-upload-pack", r.URL.Query().Get("service"))
 
 						w.WriteHeader(tc.statusCode)
 						w.Write([]byte(tc.responseContent))
@@ -167,7 +168,7 @@ func setupPull(t *testing.T, uploadPackStatusCode int) string {
 		{
 			Path: "/info/refs",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, "git-upload-pack", r.URL.Query().Get("service"))
+				assert.Equal(t, "git-upload-pack", r.URL.Query().Get("service"))
 
 				w.Write([]byte(infoRefs))
 			},
@@ -176,10 +177,10 @@ func setupPull(t *testing.T, uploadPackStatusCode int) string {
 			Path: "/git-upload-pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				body, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				defer r.Body.Close()
 
-				require.True(t, strings.HasSuffix(string(body), "0009done\n"))
+				assert.True(t, strings.HasSuffix(string(body), "0009done\n"))
 
 				w.WriteHeader(uploadPackStatusCode)
 			},
@@ -195,12 +196,12 @@ func setupSSHPull(t *testing.T, uploadPackStatusCode int) string {
 			Path: "/ssh-upload-pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				body, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				defer r.Body.Close()
 
-				require.True(t, strings.HasSuffix(string(body), "0009done\n"))
-				require.Equal(t, "version=2", r.Header.Get("Git-Protocol"))
-				require.Equal(t, "token", r.Header.Get("Authorization"))
+				assert.True(t, strings.HasSuffix(string(body), "0009done\n"))
+				assert.Equal(t, "version=2", r.Header.Get("Git-Protocol"))
+				assert.Equal(t, "token", r.Header.Get("Authorization"))
 
 				w.Write([]byte("upload-pack-response"))
 				w.WriteHeader(uploadPackStatusCode)
