@@ -1,3 +1,4 @@
+// Package gitaly provides a client for interacting with Gitaly services over gRPC.
 package gitaly
 
 import (
@@ -9,7 +10,6 @@ import (
 	"google.golang.org/grpc"
 
 	gitalyauth "gitlab.com/gitlab-org/gitaly/v16/auth"
-	"gitlab.com/gitlab-org/gitaly/v16/client"
 	gitalyclient "gitlab.com/gitlab-org/gitaly/v16/client"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	grpccorrelation "gitlab.com/gitlab-org/labkit/correlation/grpc"
@@ -19,6 +19,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
 
+// Command represents a gRPC service command with its address and token.
 type Command struct {
 	ServiceName string
 	Address     string
@@ -31,33 +32,36 @@ type connectionsCache struct {
 	connections map[Command]*grpc.ClientConn
 }
 
+// Client manages connections to Gitaly services and handles sidechannel communication.
 type Client struct {
 	SidechannelRegistry *gitalyclient.SidechannelRegistry
 
 	cache connectionsCache
 }
 
+// InitSidechannelRegistry initializes the sidechannel registry for gRPC connections.
 func (c *Client) InitSidechannelRegistry(ctx context.Context) {
 	c.SidechannelRegistry = gitalyclient.NewSidechannelRegistry(log.ContextLogger(ctx))
 }
 
+// GetConnection returns a gRPC connection for the given command, using a cached connection if available.
 func (c *Client) GetConnection(ctx context.Context, cmd Command) (*grpc.ClientConn, error) {
 	c.cache.RLock()
-	conn := c.cache.connections[cmd]
+	existingConn := c.cache.connections[cmd]
 	c.cache.RUnlock()
 
-	if conn != nil {
-		return conn, nil
+	if existingConn != nil {
+		return existingConn, nil
 	}
 
 	c.cache.Lock()
 	defer c.cache.Unlock()
 
-	if conn := c.cache.connections[cmd]; conn != nil {
-		return conn, nil
+	if cachedConn := c.cache.connections[cmd]; cachedConn != nil {
+		return cachedConn, nil
 	}
 
-	conn, err := c.newConnection(ctx, cmd)
+	newConn, err := c.newConnection(ctx, cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -66,9 +70,9 @@ func (c *Client) GetConnection(ctx context.Context, cmd Command) (*grpc.ClientCo
 		c.cache.connections = make(map[Command]*grpc.ClientConn)
 	}
 
-	c.cache.connections[cmd] = conn
+	c.cache.connections[cmd] = newConn
 
-	return conn, nil
+	return newConn, nil
 }
 
 func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.ClientConn, err error) {
@@ -93,7 +97,7 @@ func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.Cli
 
 	serviceName = fmt.Sprintf("%s-%s", serviceName, cmd.ServiceName)
 
-	connOpts := client.DefaultDialOpts
+	connOpts := gitalyclient.DefaultDialOpts
 	connOpts = append(
 		connOpts,
 		grpc.WithChainStreamInterceptor(
@@ -129,5 +133,5 @@ func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.Cli
 		)
 	}
 
-	return client.DialSidechannel(ctx, cmd.Address, c.SidechannelRegistry, connOpts)
+	return gitalyclient.DialSidechannel(ctx, cmd.Address, c.SidechannelRegistry, connOpts)
 }
