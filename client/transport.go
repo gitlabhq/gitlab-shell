@@ -1,3 +1,4 @@
+// Package client provides an HTTP client with enhanced logging, tracing, and correlation handling.
 package client
 
 import (
@@ -13,6 +14,7 @@ type transport struct {
 	next http.RoundTripper
 }
 
+// RoundTrip executes a single HTTP transaction, adding logging and tracing capabilities.
 func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 	ctx := request.Context()
 
@@ -55,10 +57,12 @@ func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 	return response, nil
 }
 
+// DefaultTransport returns a clone of the default HTTP transport.
 func DefaultTransport() http.RoundTripper {
 	return http.DefaultTransport.(*http.Transport).Clone()
 }
 
+// NewTransport creates a new transport with logging, tracing, and correlation handling.
 func NewTransport(next http.RoundTripper) http.RoundTripper {
 	t := &transport{next: next}
 	return correlation.NewInstrumentedRoundTripper(tracing.NewRoundTripper(t))
