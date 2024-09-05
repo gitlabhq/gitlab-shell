@@ -34,7 +34,7 @@ func buildTestHandlers(code int, rsp *healthcheck.Response) []testserver.TestReq
 	return []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/check",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(code)
 				if rsp != nil {
 					json.NewEncoder(w).Encode(rsp)
