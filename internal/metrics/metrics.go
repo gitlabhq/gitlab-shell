@@ -1,3 +1,4 @@
+// Package metrics provides Prometheus metrics for monitoring gitlab-shell components.
 package metrics
 
 import (
@@ -34,6 +35,7 @@ const (
 )
 
 var (
+	// SshdSessionDuration is a histogram of latencies for connections to gitlab-shell sshd.
 	SshdSessionDuration = promauto.NewHistogram(
 		prometheus.HistogramOpts{
 			Namespace: namespace,
@@ -48,6 +50,7 @@ var (
 		},
 	)
 
+	// SshdSessionEstablishedDuration is a histogram of latencies until session established to gitlab-shell sshd.
 	SshdSessionEstablishedDuration = promauto.NewHistogram(
 		prometheus.HistogramOpts{
 			Namespace: namespace,
@@ -62,6 +65,7 @@ var (
 		},
 	)
 
+	// SshdConnectionsInFlight is a gauge of connections currently being served by gitlab-shell sshd.
 	SshdConnectionsInFlight = promauto.NewGauge(
 		prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -71,6 +75,7 @@ var (
 		},
 	)
 
+	// SshdHitMaxSessions is the number of times the concurrent sessions limit was hit in gitlab-shell sshd.
 	SshdHitMaxSessions = promauto.NewCounter(
 		prometheus.CounterOpts{
 			Namespace: namespace,
@@ -80,6 +85,7 @@ var (
 		},
 	)
 
+	// SliSshdSessionsTotal is the number of SSH sessions that have been established.
 	SliSshdSessionsTotal = promauto.NewCounter(
 		prometheus.CounterOpts{
 			Name: sliSshdSessionsTotalName,
@@ -87,6 +93,7 @@ var (
 		},
 	)
 
+	// SliSshdSessionsErrorsTotal is the number of SSH sessions that have failed.
 	SliSshdSessionsErrorsTotal = promauto.NewCounter(
 		prometheus.CounterOpts{
 			Name: sliSshdSessionsErrorsTotalName,
@@ -94,6 +101,7 @@ var (
 		},
 	)
 
+	// GitalyConnectionsTotal is a counter for the number of Gitaly connections that have been established,
 	GitalyConnectionsTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: namespace,
@@ -147,6 +155,7 @@ var (
 		},
 	)
 
+	// LfsHTTPConnectionsTotal is the number of LFS over HTTP connections that have been established.
 	LfsHTTPConnectionsTotal = promauto.NewCounter(
 		prometheus.CounterOpts{
 			Name: lfsHTTPConnectionsTotalName,
@@ -154,6 +163,7 @@ var (
 		},
 	)
 
+	// LfsSSHConnectionsTotal is the number of LFS over SSH connections that have been established.
 	LfsSSHConnectionsTotal = promauto.NewCounter(
 		prometheus.CounterOpts{
 			Name: lfsSSHConnectionsTotalName,
@@ -162,6 +172,7 @@ var (
 	)
 )
 
+// NewRoundTripper wraps an http.RoundTripper to instrument it with Prometheus metrics.
 func NewRoundTripper(next http.RoundTripper) promhttp.RoundTripperFunc {
 	rt := next
 
