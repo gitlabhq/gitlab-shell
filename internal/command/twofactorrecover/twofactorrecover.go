@@ -34,7 +34,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		c.displayRecoveryCodes(ctx)
 	} else {
 		ctxlog.Debug("twofactorrecover: execute: User chose not to continue")
-		fmt.Fprintln(c.ReadWriter.Out, "\nNew recovery codes have *not* been generated. Existing codes will remain valid.")
+		_, _ = fmt.Fprintln(c.ReadWriter.Out, "\nNew recovery codes have *not* been generated. Existing codes will remain valid.")
 	}
 
 	return ctx, nil
@@ -44,7 +44,7 @@ func (c *Command) getUserAnswer(ctx context.Context) string {
 	question :=
 		"Are you sure you want to generate new two-factor recovery codes?\n" +
 			"Any existing recovery codes you saved will be invalidated. (yes/no)"
-	fmt.Fprintln(c.ReadWriter.Out, question)
+	_, _ = fmt.Fprintln(c.ReadWriter.Out, question)
 
 	var answer string
 	if _, err := fmt.Fscanln(io.LimitReader(c.ReadWriter.In, readerLimit), &answer); err != nil {
@@ -67,10 +67,10 @@ func (c *Command) displayRecoveryCodes(ctx context.Context) {
 				"\n\nDuring sign in, use one of the codes above when prompted for\n" +
 				"your two-factor code. Then, visit your Profile Settings and add\n" +
 				"a new device so you do not lose access to your account again.\n"
-		fmt.Fprint(c.ReadWriter.Out, messageWithCodes)
+		_, _ = fmt.Fprint(c.ReadWriter.Out, messageWithCodes)
 	} else {
 		ctxlog.WithError(err).Error("twofactorrecover: displayRecoveryCodes: failed to generate recovery codes")
-		fmt.Fprintf(c.ReadWriter.Out, "\nAn error occurred while trying to generate new recovery codes.\n%v\n", err)
+		_, _ = fmt.Fprintf(c.ReadWriter.Out, "\nAn error occurred while trying to generate new recovery codes.\n%v\n", err)
 	}
 }
 

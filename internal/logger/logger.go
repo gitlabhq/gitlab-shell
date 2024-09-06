@@ -1,3 +1,4 @@
+// Package logger provides logging configuration utilities for the gitlab-shell
 package logger
 
 import (
@@ -52,7 +53,7 @@ func buildOpts(cfg *config.Config) []log.LoggerOption {
 // opened for writing.
 func Configure(cfg *config.Config) io.Closer {
 	var closer io.Closer = io.NopCloser(nil)
-	err := fmt.Errorf("No logfile specified")
+	err := fmt.Errorf("no logfile specified")
 
 	if cfg.LogFile != "" {
 		closer, err = log.Initialize(buildOpts(cfg)...)
@@ -66,7 +67,7 @@ func Configure(cfg *config.Config) io.Closer {
 			syslogLogger.Print(msg)
 		} else {
 			msg := fmt.Sprintf("%s: Unable to configure logging: %v, %v\n", progName, err.Error(), syslogLoggerErr.Error())
-			fmt.Fprintf(os.Stderr, msg)
+			fmt.Fprintln(os.Stderr, msg)
 		}
 
 		cfg.LogFile = "/dev/null"

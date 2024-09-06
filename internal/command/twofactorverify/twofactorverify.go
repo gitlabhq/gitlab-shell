@@ -37,7 +37,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	fmt.Fprint(c.ReadWriter.Out, prompt)
+	_, _ = fmt.Fprint(c.ReadWriter.Out, prompt)
 
 	resultCh := make(chan string)
 	go func() {
@@ -68,7 +68,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	}
 
 	log.WithContextFields(ctx, log.Fields{"message": message}).Info("Two factor verify command finished")
-	fmt.Fprintf(c.ReadWriter.Out, "\n%v\n", message)
+	_, _ = fmt.Fprintf(c.ReadWriter.Out, "\n%v\n", message)
 
 	return ctx, nil
 }

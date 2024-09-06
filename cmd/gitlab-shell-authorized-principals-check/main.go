@@ -1,3 +1,4 @@
+// Package main is the entry point for the GitLab Shell authorized principals check command.
 package main
 
 import (
@@ -21,6 +22,10 @@ var (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)
 
 	readWriter := &readwriter.ReadWriter{
@@ -31,32 +36,33 @@ func main() {
 
 	executable, err := executable.New(executable.AuthorizedPrincipalsCheck)
 	if err != nil {
-		fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
-		os.Exit(1)
+		_, _ = fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
+		return 1
 	}
 
 	config, err := config.NewFromDirExternal(executable.RootDir)
 	if err != nil {
-		fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting")
-		os.Exit(1)
+		_, _ = fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting")
+		return 1
 	}
 
 	logCloser := logger.Configure(config)
-	defer logCloser.Close()
+	defer logCloser.Close() //nolint:errcheck
 
 	cmd, err := cmd.New(os.Args[1:], config, readWriter)
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment
-		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
-		os.Exit(1)
+		_, _ = fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
+		return 1
 	}
 
 	ctx, finished := command.Setup(executable.Name, config)
 	defer finished()
 
-	if ctx, err = cmd.Execute(ctx); err != nil {
+	if _, err = cmd.Execute(ctx); err != nil {
 		console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }

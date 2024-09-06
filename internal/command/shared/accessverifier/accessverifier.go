@@ -1,3 +1,4 @@
+// Package accessverifier handles the verification of access permission.
 package accessverifier
 
 import (
@@ -11,14 +12,17 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 )
 
+// Response is an alias for accessverifier.Response, representing the result of an access verification.
 type Response = accessverifier.Response
 
+// Command handles access verification commands.
 type Command struct {
 	Config     *config.Config
 	Args       *commandargs.Shell
 	ReadWriter *readwriter.ReadWriter
 }
 
+// Verify checks access permissions and returns a response.
 func (c *Command) Verify(ctx context.Context, action commandargs.CommandType, repo string) (*Response, error) {
 	client, err := accessverifier.NewClient(c.Config)
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -40,7 +41,7 @@ func TestExecute(t *testing.T) {
 	}
 
 	require.NoError(t, cmd.Execute(context.Background()))
-	require.Equal(t, infoRefsWithoutPrefix, output.String())
+	assert.Equal(t, infoRefsWithoutPrefix, output.String())
 }
 
 func TestExecuteWithFailedInfoRefs(t *testing.T) {
@@ -63,7 +64,7 @@ func TestExecuteWithFailedInfoRefs(t *testing.T) {
 			desc:            "unexpected response",
 			statusCode:      http.StatusOK,
 			responseContent: "unexpected response",
-			expectedErr:     "Unexpected git-receive-pack response",
+			expectedErr:     "unexpected git-receive-pack response",
 		},
 	}
 
@@ -73,7 +74,7 @@ func TestExecuteWithFailedInfoRefs(t *testing.T) {
 				{
 					Path: "/info/refs",
 					Handler: func(w http.ResponseWriter, r *http.Request) {
-						require.Equal(t, "git-receive-pack", r.URL.Query().Get("service"))
+						assert.Equal(t, "git-receive-pack", r.URL.Query().Get("service"))
 
 						w.WriteHeader(tc.statusCode)
 						w.Write([]byte(tc.responseContent))
@@ -94,7 +95,7 @@ func TestExecuteWithFailedInfoRefs(t *testing.T) {
 
 			err := cmd.Execute(context.Background())
 			require.Error(t, err)
-			require.Equal(t, tc.expectedErr, err.Error())
+			assert.Equal(t, tc.expectedErr, err.Error())
 		})
 	}
 }
@@ -115,7 +116,7 @@ func TestExecuteWithFailedReceivePack(t *testing.T) {
 
 	err := cmd.Execute(context.Background())
 	require.Error(t, err)
-	require.Equal(t, "Remote repository is unavailable", err.Error())
+	assert.Equal(t, "Remote repository is unavailable", err.Error())
 }
 
 func TestPushExecuteWithSSHReceivePack(t *testing.T) {
@@ -144,7 +145,7 @@ func TestPushExecuteWithSSHReceivePack(t *testing.T) {
 	}
 
 	require.NoError(t, cmd.Execute(context.Background()))
-	require.Equal(t, "receive-pack-response", output.String())
+	assert.Equal(t, "receive-pack-response", output.String())
 }
 
 func setup(t *testing.T, receivePackStatusCode int) (string, io.Reader) {
@@ -164,7 +165,7 @@ func setup(t *testing.T, receivePackStatusCode int) (string, io.Reader) {
 		{
 			Path: "/info/refs",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, "git-receive-pack", r.URL.Query().Get("service"))
+				assert.Equal(t, "git-receive-pack", r.URL.Query().Get("service"))
 
 				w.Write([]byte(infoRefs))
 			},
@@ -173,10 +174,10 @@ func setup(t *testing.T, receivePackStatusCode int) (string, io.Reader) {
 			Path: "/git-receive-pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				body, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				defer r.Body.Close()
 
-				require.Equal(t, receivePackPrefix+flush+receivePackData, string(body))
+				assert.Equal(t, receivePackPrefix+flush+receivePackData, string(body))
 				w.WriteHeader(receivePackStatusCode)
 			},
 		},
@@ -191,12 +192,12 @@ func setupSSHPush(t *testing.T, uploadPackStatusCode int) string {
 			Path: "/ssh-receive-pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				body, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				defer r.Body.Close()
 
-				require.True(t, strings.HasSuffix(string(body), "0009done\n"))
-				require.Equal(t, "version=2", r.Header.Get("Git-Protocol"))
-				require.Equal(t, "token", r.Header.Get("Authorization"))
+				assert.True(t, strings.HasSuffix(string(body), "0009done\n"))
+				assert.Equal(t, "version=2", r.Header.Get("Git-Protocol"))
+				assert.Equal(t, "token", r.Header.Get("Authorization"))
 
 				w.WriteHeader(uploadPackStatusCode)
 				w.Write([]byte("receive-pack-response"))
