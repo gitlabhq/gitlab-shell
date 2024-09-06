@@ -195,8 +195,8 @@ func TestHandleShell(t *testing.T) {
 			desc:              "fails to parse command",
 			cmd:               "discover",
 			gitlabKeyID:       "",
-			errMsg:            "ERROR: failed to get username: who='' is invalid\n",
-			expectedErrString: "failed to get username: who='' is invalid",
+			errMsg:            "ERROR: Failed to get username: who='' is invalid\n",
+			expectedErrString: "Failed to get username: who='' is invalid",
 			expectedExitCode:  1,
 		},
 		{
