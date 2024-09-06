@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -35,10 +36,10 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var requestBody *twofactorverify.RequestBody
-				require.NoError(t, json.Unmarshal(b, &requestBody))
+				assert.NoError(t, json.Unmarshal(b, &requestBody))
 
 				switch requestBody.KeyID {
 				case "verify_via_otp", "verify_via_otp_with_push_error":
@@ -53,7 +54,7 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 						"success": false,
 						"message": "error message",
 					}
-					require.NoError(t, json.NewEncoder(w).Encode(body))
+					assert.NoError(t, json.NewEncoder(w).Encode(body))
 				case "broken":
 					w.WriteHeader(http.StatusInternalServerError)
 				}
@@ -65,10 +66,10 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var requestBody *twofactorverify.RequestBody
-				require.NoError(t, json.Unmarshal(b, &requestBody))
+				assert.NoError(t, json.Unmarshal(b, &requestBody))
 
 				switch requestBody.KeyID {
 				case "verify_via_push":

@@ -53,6 +53,7 @@ func (c *Client) Audit(ctx context.Context, username string, action commandargs.
 	if err != nil {
 		return err
 	}
-        defer response.Body.Close() //nolint:errcheck
+	defer response.Body.Close() //nolint:errcheck
+
 	return nil
 }

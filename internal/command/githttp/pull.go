@@ -1,9 +1,11 @@
+// Package githttp provides functionality to handle Git operations over HTTP(S) and SSH,
+// including executing Git commands like git-upload-pack and converting responses to the
+// expected format for SSH protocols. It integrates with GitLab's internal components
+// for secure access verification and data transfer.
 package githttp
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"io"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
@@ -17,8 +19,9 @@ import (
 
 const pullService = "git-upload-pack"
 
-var uploadPackHttpPrefix = []byte("001e# service=git-upload-pack\n0000")
+var uploadPackHTTPPrefix = []byte("001e# service=git-upload-pack\n0000")
 
+// PullCommand handles the execution of a Git pull operation over HTTP(S) or SSH
 type PullCommand struct {
 	Config     *config.Config
 	ReadWriter *readwriter.ReadWriter
@@ -36,6 +39,12 @@ type PullCommand struct {
 // 5. Perform /git-upload-pack request and send this data
 // 6. Return the output to the user
 
+// ForInfoRefs returns the necessary Pull specifics for client.InfoRefs()
+func (c *PullCommand) ForInfoRefs() (*readwriter.ReadWriter, string, []byte) {
+	return c.ReadWriter, pullService, uploadPackHTTPPrefix
+}
+
+// Execute runs the pull command by determining the appropriate method (HTTP/SSH)
 func (c *PullCommand) Execute(ctx context.Context) error {
 	data := c.Response.Payload.Data
 	client := &git.Client{URL: data.PrimaryRepo, Headers: data.RequestHeaders}
@@ -48,31 +57,11 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 		return c.requestSSHUploadPack(ctx, client)
 	}
 
-	if err := c.requestInfoRefs(ctx, client); err != nil {
+	if err := requestInfoRefs(ctx, client, c); err != nil {
 		return err
 	}
 
 	return c.requestUploadPack(ctx, client, data.GeoProxyFetchDirectToPrimaryWithOptions)
-}
-
-func (c *PullCommand) requestInfoRefs(ctx context.Context, client *git.Client) error {
-	response, err := client.InfoRefs(ctx, pullService)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-
-	// Read the first bytes that contain 001e# service=git-upload-pack\n0000 string
-	// to convert HTTP(S) Git response to the one expected by SSH
-	p := make([]byte, len(uploadPackHttpPrefix))
-	_, err = response.Body.Read(p)
-	if err != nil || !bytes.Equal(p, uploadPackHttpPrefix) {
-		return fmt.Errorf("Unexpected git-upload-pack response")
-	}
-
-	_, err = io.Copy(c.ReadWriter.Out, response.Body)
-
-	return err
 }
 
 func (c *PullCommand) requestSSHUploadPack(ctx context.Context, client *git.Client) error {
@@ -80,7 +69,7 @@ func (c *PullCommand) requestSSHUploadPack(ctx context.Context, client *git.Clie
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer response.Body.Close() //nolint:errcheck
 
 	_, err = io.Copy(c.ReadWriter.Out, response.Body)
 
@@ -95,7 +84,7 @@ func (c *PullCommand) requestUploadPack(ctx context.Context, client *git.Client,
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer response.Body.Close() //nolint:errcheck
 
 	_, err = io.Copy(c.ReadWriter.Out, response.Body)
 
@@ -108,18 +97,27 @@ func (c *PullCommand) readFromStdin(pw *io.PipeWriter, geoProxyFetchDirectToPrim
 	for scanner.Scan() {
 		line := scanner.Bytes()
 
-		pw.Write(line)
+		_, err := pw.Write(line)
+		if err != nil {
+			log.WithError(err).Error("failed to write line")
+		}
 
 		if pktline.IsDone(line) {
 			break
 		}
 
 		if pktline.IsFlush(line) && geoProxyFetchDirectToPrimaryWithOptions {
-			pw.Write(pktline.PktDone())
+			_, err := pw.Write(pktline.PktDone())
+			if err != nil {
+				log.WithError(err).Error("failed to write packet done line")
+			}
 
 			break
 		}
 	}
 
-	pw.Close()
+	err := pw.Close()
+	if err != nil {
+		log.WithError(err).Error("failed to close writer")
+	}
 }
