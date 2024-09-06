@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	usageText         = "usage: personal_access_token <name> <scope1[,scope2,...]> [ttl_days]"
+	usageText         = "Usage: personal_access_token <name> <scope1[,scope2,...]> [ttl_days]"
 	expiresDateFormat = "2006-01-02"
 )
 
@@ -63,7 +63,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 
 func (c *Command) parseTokenArgs() error {
 	if len(c.Args.SshArgs) < 3 || len(c.Args.SshArgs) > 4 {
-		return errors.New(usageText)
+		return errors.New(usageText) // nolint:stylecheck // usageText is customer facing
 	}
 
 	var rectfiedScopes []string

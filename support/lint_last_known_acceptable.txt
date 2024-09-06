@@ -259,7 +259,6 @@ internal/gitlabnet/lfstransfer/client.go:125: internal/gitlabnet/lfstransfer/cli
 internal/gitlabnet/lfstransfer/client.go:214:1: exported: exported method Client.Lock should have comment or be unexported (revive)
 internal/gitlabnet/lfstransfer/client.go:271:1: exported: exported method Client.Unlock should have comment or be unexported (revive)
 internal/gitlabnet/lfstransfer/client.go:321:1: exported: exported method Client.ListLocksVerify should have comment or be unexported (revive)
-internal/gitlabnet/personalaccesstoken/client_test.go:30:5: go-require: do not use require in http handlers (testifylint)
 internal/sshd/gssapi_unsupported.go:11:1: exported: exported function NewGSSAPIServer should have comment or be unexported (revive)
 internal/sshd/gssapi_unsupported.go:19:6: exported: exported type OSGSSAPIServer should have comment or be unexported (revive)
 internal/sshd/gssapi_unsupported.go:23:1: exported: exported method OSGSSAPIServer.AcceptSecContext should have comment or be unexported (revive)

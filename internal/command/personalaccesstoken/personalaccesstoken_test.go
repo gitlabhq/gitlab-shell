@@ -178,7 +178,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			desc:      "With unknown configured scopes",
-			PATConfig: config.PATConfig{AllowedScopes: []string{"unknown_repository"}},
+			PATConfig: config.PATConfig{AllowedScopes: []string{"read_reposotory"}}, //nolint:misspell //testing purpose
 			arguments: &commandargs.Shell{
 				GitlabKeyId: "default",
 				SshArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
@@ -192,7 +192,7 @@ func TestExecute(t *testing.T) {
 			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api", "read_repository"}},
 			arguments: &commandargs.Shell{
 				GitlabKeyId: "default",
-				SshArgs:     []string{cmdname, "newtoken", "read_api,unknown_repository"},
+				SshArgs:     []string{cmdname, "newtoken", "read_api,read_reposotory"}, //nolint:misspell //testing purpose
 			},
 			expectedOutput: "Token:   YXuxvUgCEmeePY3G1YAa\n" +
 				"Scopes:  read_api\n" +
@@ -200,12 +200,12 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			desc:      "With matching unknown requested scopes",
-			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api", "unknown_repository"}},
+			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api", "read_reposotory"}}, //nolint:misspell //testing purpose
 			arguments: &commandargs.Shell{
 				GitlabKeyId: "invalidscope",
-				SshArgs:     []string{cmdname, "newtoken", "unknown_repository"},
+				SshArgs:     []string{cmdname, "newtoken", "read_reposotory"}, //nolint:misspell //testing purpose
 			},
-			expectedError: "Invalid scope: 'unknown_repository'. Valid scopes are: [\"api\", \"create_runner\", \"k8s_proxy\", \"read_api\", \"read_registry\", \"read_repository\", \"read_user\", \"write_registry\", \"write_repository\"]",
+			expectedError: "Invalid scope: 'read_reposotory'. Valid scopes are: [\"api\", \"create_runner\", \"k8s_proxy\", \"read_api\", \"read_registry\", \"read_repository\", \"read_user\", \"write_registry\", \"write_repository\"]",
 		},
 	}
 

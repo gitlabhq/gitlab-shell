@@ -53,7 +53,7 @@ describe 'bin/gitlab-shell personal_access_token' do
         remote: 
         remote: ========================================================================
         remote: 
-        remote: usage: personal_access_token <name> <scope1[,scope2,...]> [ttl_days]
+        remote: Usage: personal_access_token <name> <scope1[,scope2,...]> [ttl_days]
         remote: 
         remote: ========================================================================
         remote: 
