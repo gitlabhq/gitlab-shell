@@ -168,14 +168,14 @@ func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn
 		case <-ticker.C:
 			ctxlog.Debug("connection: sendKeepAliveMsg: send keepalive message to a client")
 
-			status, result, err := sconn.SendRequest(KeepAliveMsg, true, nil)
+			status, payload, err := sconn.SendRequest(KeepAliveMsg, true, nil)
 			if err != nil {
 				ctxlog.Errorf("Error occurred while sending request :%v", err)
 				return
 			}
 
 			if status {
-				ctxlog.Debugf("connection: sendKeepAliveMsg: response: %v", string(result))
+				ctxlog.Debugf("connection: sendKeepAliveMsg: payload: %v", string(payload))
 			}
 		}
 	}
