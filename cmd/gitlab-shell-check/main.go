@@ -1,3 +1,4 @@
+// Package main is the entry point for the GitLab Shell health check command.
 package main
 
 import (
@@ -20,6 +21,10 @@ var (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)
 
 	readWriter := &readwriter.ReadWriter{
@@ -28,32 +33,38 @@ func main() {
 		ErrOut: os.Stderr,
 	}
 
+	exitOnError := func(err error, message string) int {
+		if err != nil {
+			_, _ = fmt.Fprintf(readWriter.ErrOut, "%s: %v\n", message, err)
+			return 1
+		}
+		return 0
+	}
+
 	executable, err := executable.New(executable.Healthcheck)
-	if err != nil {
-		fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
-		os.Exit(1)
+	if code := exitOnError(err, "Failed to determine executable, exiting"); code != 0 {
+		return code
 	}
 
 	config, err := config.NewFromDirExternal(executable.RootDir)
-	if err != nil {
-		fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting")
-		os.Exit(1)
+	if code := exitOnError(err, "Failed to read config, exiting"); code != 0 {
+		return code
 	}
 
 	logCloser := logger.Configure(config)
-	defer logCloser.Close()
+	defer logCloser.Close() //nolint:errcheck
 
 	cmd, err := checkCmd.New(config, readWriter)
-	if err != nil {
-		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
-		os.Exit(1)
+	if code := exitOnError(err, "Failed to create command"); code != 0 {
+		return code
 	}
 
 	ctx, finished := command.Setup(executable.Name, config)
 	defer finished()
 
-	if ctx, err = cmd.Execute(ctx); err != nil {
-		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
-		os.Exit(1)
+	if _, err = cmd.Execute(ctx); err != nil {
+		_, _ = fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
+		return 1
 	}
+	return 0
 }
