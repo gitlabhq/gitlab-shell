@@ -23,7 +23,7 @@ type Command struct {
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	response, err := c.getUserInfo(ctx)
 	if err != nil {
-		return ctx, fmt.Errorf("failed to get username: %v", err)
+		return ctx, fmt.Errorf("Failed to get username: %v", err) //nolint:stylecheck // This is customer facing message
 	}
 
 	logData := command.LogData{}

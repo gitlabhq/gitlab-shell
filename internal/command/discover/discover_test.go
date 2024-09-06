@@ -106,17 +106,17 @@ func TestFailingExecute(t *testing.T) {
 		{
 			desc:          "With missing arguments",
 			arguments:     &commandargs.Shell{},
-			expectedError: "failed to get username: who='' is invalid",
+			expectedError: "Failed to get username: who='' is invalid",
 		},
 		{
 			desc:          "When the API returns an error",
 			arguments:     &commandargs.Shell{GitlabUsername: "broken_message"},
-			expectedError: "failed to get username: Forbidden!",
+			expectedError: "Failed to get username: Forbidden!",
 		},
 		{
 			desc:          "When the API fails",
 			arguments:     &commandargs.Shell{GitlabUsername: "broken"},
-			expectedError: "failed to get username: Internal API unreachable",
+			expectedError: "Failed to get username: Internal API unreachable",
 		},
 	}
 
