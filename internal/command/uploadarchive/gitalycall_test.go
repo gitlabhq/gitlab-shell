@@ -21,7 +21,7 @@ func TestUploadArchive(t *testing.T) {
 	for _, network := range []string{"unix", "tcp", "dns"} {
 		t.Run(fmt.Sprintf("via %s network", network), func(t *testing.T) {
 			gitalyAddress, testServer := testserver.StartGitalyServer(t, network)
-			t.Log(fmt.Sprintf("Server address: %s", gitalyAddress))
+			t.Logf("Server address: %s", gitalyAddress)
 
 			requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)
 			url := testserver.StartHTTPServer(t, requests)
@@ -29,7 +29,7 @@ func TestUploadArchive(t *testing.T) {
 			output := &bytes.Buffer{}
 			input := &bytes.Buffer{}
 
-			userId := "1"
+			userID := "1"
 			repo := "group/repo"
 
 			env := sshenv.Env{
@@ -39,7 +39,7 @@ func TestUploadArchive(t *testing.T) {
 			}
 
 			args := &commandargs.Shell{
-				GitlabKeyId: userId,
+				GitlabKeyId: userID,
 				CommandType: commandargs.UploadArchive,
 				SshArgs:     []string{"git-upload-archive", repo},
 				Env:         env,
