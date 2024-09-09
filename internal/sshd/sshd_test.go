@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pires/go-proxyproto"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 
@@ -409,16 +410,16 @@ func setupServerWithContext(ctx context.Context, t *testing.T, cfg *config.Confi
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				correlationID = r.Header.Get("X-Request-Id")
 
-				require.NotEmpty(t, correlationID)
-				require.Equal(t, xForwardedFor, r.Header.Get("X-Forwarded-For"))
+				assert.NotEmpty(t, correlationID)
+				assert.Equal(t, xForwardedFor, r.Header.Get("X-Forwarded-For"))
 
 				fmt.Fprint(w, `{"id": 1000, "key": "key"}`)
 			},
 		}, {
 			Path: "/api/v4/internal/discover",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, correlationID, r.Header.Get("X-Request-Id"))
-				require.Equal(t, xForwardedFor, r.Header.Get("X-Forwarded-For"))
+				assert.Equal(t, correlationID, r.Header.Get("X-Request-Id"))
+				assert.Equal(t, xForwardedFor, r.Header.Get("X-Forwarded-For"))
 
 				fmt.Fprint(w, `{"id": 1000, "name": "Test User", "username": "test-user"}`)
 			},
