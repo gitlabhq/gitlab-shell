@@ -42,7 +42,7 @@ func run() int {
 
 	config, err := config.NewFromDirExternal(executable.RootDir)
 	if err != nil {
-		_, _ = fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting")
+		_, _ = fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting:", err)
 		return 1
 	}
 
