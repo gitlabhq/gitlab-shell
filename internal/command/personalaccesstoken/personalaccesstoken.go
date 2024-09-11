@@ -90,7 +90,7 @@ func (c *Command) parseTokenArgs() error {
 
 	TTL, err := strconv.Atoi(rawTTL)
 	if err != nil || TTL < 0 {
-		return fmt.Errorf("invalid value for days_ttl: '%s'", rawTTL)
+		return fmt.Errorf("Invalid value for days_ttl: '%s'", rawTTL) //nolint:stylecheck //message is customer facing
 	}
 
 	c.TokenArgs.ExpiresDate = time.Now().AddDate(0, 0, TTL+1).Format(expiresDateFormat)
