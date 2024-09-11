@@ -9,6 +9,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	pb "gitlab.com/gitlab-org/gitaly/v16/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -258,26 +259,26 @@ func setup(t *testing.T, userResponses, keyResponses map[string]testResponse) *C
 			Path: "/api/v4/internal/allowed",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var requestBody *Request
-				require.NoError(t, json.Unmarshal(b, &requestBody))
+				assert.NoError(t, json.Unmarshal(b, &requestBody))
 
 				if tr, ok := userResponses[requestBody.Username]; ok {
 					w.WriteHeader(tr.status)
 					_, err := w.Write(tr.body)
-					require.NoError(t, err)
-					require.Equal(t, namespace, requestBody.NamespacePath)
+					assert.NoError(t, err)
+					assert.Equal(t, namespace, requestBody.NamespacePath)
 				} else if tr, ok := userResponses[requestBody.Krb5Principal]; ok {
 					w.WriteHeader(tr.status)
 					_, err := w.Write(tr.body)
-					require.NoError(t, err)
-					require.Equal(t, sshProtocol, requestBody.Protocol)
+					assert.NoError(t, err)
+					assert.Equal(t, sshProtocol, requestBody.Protocol)
 				} else if tr, ok := keyResponses[requestBody.KeyID]; ok {
 					w.WriteHeader(tr.status)
 					_, err := w.Write(tr.body)
-					require.NoError(t, err)
-					require.Equal(t, sshProtocol, requestBody.Protocol)
+					assert.NoError(t, err)
+					assert.Equal(t, sshProtocol, requestBody.Protocol)
 				}
 			},
 		},
@@ -298,11 +299,11 @@ func setupWithAPIInspector(t *testing.T, inspector func(*Request)) *Client {
 			Path: "/api/v4/internal/allowed",
 			Handler: func(_ http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var requestBody *Request
 				err = json.Unmarshal(b, &requestBody)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				inspector(requestBody)
 			},

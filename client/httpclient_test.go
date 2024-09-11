@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 )
@@ -34,7 +35,7 @@ func TestBasicAuthSettings(t *testing.T) {
 		{
 			Path: "/api/v4/internal/get_endpoint",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodGet, r.Method)
+				assert.Equal(t, http.MethodGet, r.Method)
 
 				fmt.Fprint(w, r.Header.Get("Authorization"))
 			},
@@ -42,7 +43,7 @@ func TestBasicAuthSettings(t *testing.T) {
 		{
 			Path: "/api/v4/internal/post_endpoint",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, http.MethodPost, r.Method)
 
 				fmt.Fprint(w, r.Header.Get("Authorization"))
 			},
@@ -82,7 +83,7 @@ func TestEmptyBasicAuthSettings(t *testing.T) {
 		{
 			Path: "/api/v4/internal/empty_basic_auth",
 			Handler: func(_ http.ResponseWriter, r *http.Request) {
-				require.Equal(t, "", r.Header.Get("Authorization"))
+				assert.Equal(t, "", r.Header.Get("Authorization"))
 			},
 		},
 	}
@@ -100,13 +101,13 @@ func TestRequestWithUserAgent(t *testing.T) {
 		{
 			Path: "/api/v4/internal/default_user_agent",
 			Handler: func(_ http.ResponseWriter, r *http.Request) {
-				require.Equal(t, defaultUserAgent, r.UserAgent())
+				assert.Equal(t, defaultUserAgent, r.UserAgent())
 			},
 		},
 		{
 			Path: "/api/v4/internal/override_user_agent",
 			Handler: func(_ http.ResponseWriter, r *http.Request) {
-				require.Equal(t, gitalyUserAgent, r.UserAgent())
+				assert.Equal(t, gitalyUserAgent, r.UserAgent())
 			},
 		},
 	}

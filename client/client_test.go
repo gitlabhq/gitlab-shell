@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -240,7 +241,7 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 		{
 			Path: "/api/v4/internal/hello",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodGet, r.Method)
+				assert.Equal(t, http.MethodGet, r.Method)
 
 				fmt.Fprint(w, "Hello")
 			},
@@ -248,12 +249,12 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 		{
 			Path: "/api/v4/internal/post_endpoint",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, http.MethodPost, r.Method)
 
 				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				fmt.Fprint(w, "Echo: "+string(b))
 			},
