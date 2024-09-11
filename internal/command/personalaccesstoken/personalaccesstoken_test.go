@@ -112,7 +112,7 @@ func TestExecute(t *testing.T) {
 			arguments: &commandargs.Shell{
 				SshArgs: []string{cmdname, "newtoken", "api", "bad_ttl"},
 			},
-			expectedError: "invalid value for days_ttl: 'bad_ttl'",
+			expectedError: "Invalid value for days_ttl: 'bad_ttl'",
 		},
 		{
 			desc: "Without a ttl argument",
