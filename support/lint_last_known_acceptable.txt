@@ -230,7 +230,6 @@ internal/gitlabnet/client.go:27:1: exported: exported function ParseJSON should 
 internal/gitlabnet/client.go:35:1: exported: exported function ParseIP should have comment or be unexported (revive)
 internal/gitlabnet/healthcheck/client_test.go:19:41: unused-parameter: parameter 'r' seems to be unused, consider removing or renaming it as _ (revive)
 internal/gitlabnet/lfstransfer/client.go:137: internal/gitlabnet/lfstransfer/client.go:137: Line contains TODO/BUG/FIXME/NOTE/OPTIMIZE/HACK: "FIXME: This causes tests to fail" (godox)
-internal/gitlabnet/personalaccesstoken/client_test.go:30:5: go-require: do not use require in http handlers (testifylint)
 internal/sshd/server_config_test.go:5:2: SA1019: "crypto/dsa" has been deprecated since Go 1.16 because it shouldn't be used: DSA is a legacy algorithm, and modern alternatives such as Ed25519 (implemented by package crypto/ed25519) should be used instead. Keys with 1024-bit moduli (L1024N160 parameters) are cryptographically weak, while bigger keys are not widely supported. Note that FIPS 186-5 no longer approves DSA for signature generation. (staticcheck)
 internal/sshd/sshd.go:268:6: func `extractDataFromContext` is unused (unused)
 internal/testhelper/requesthandlers/requesthandlers.go:25:5: go-require: do not use require in http handlers (testifylint)
