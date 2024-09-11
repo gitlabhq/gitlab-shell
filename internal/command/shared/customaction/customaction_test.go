@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -24,32 +25,32 @@ func TestExecuteEOFSent(t *testing.T) {
 			Path: "/geo/proxy/info_refs_receive_pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var request *Request
-				require.NoError(t, json.Unmarshal(b, &request))
+				assert.NoError(t, json.Unmarshal(b, &request))
 
-				require.Equal(t, request.Data.UserID, who)
-				require.Empty(t, request.Output)
+				assert.Equal(t, request.Data.UserID, who)
+				assert.Empty(t, request.Output)
 
 				err = json.NewEncoder(w).Encode(Response{Result: []byte("custom")})
-				require.NoError(t, err)
+				assert.NoError(t, err)
 			},
 		},
 		{
 			Path: "/geo/proxy/receive_pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var request *Request
-				require.NoError(t, json.Unmarshal(b, &request))
+				assert.NoError(t, json.Unmarshal(b, &request))
 
-				require.Equal(t, request.Data.UserID, who)
-				require.Equal(t, "0009input", string(request.Output))
+				assert.Equal(t, request.Data.UserID, who)
+				assert.Equal(t, "0009input", string(request.Output))
 
 				err = json.NewEncoder(w).Encode(Response{Result: []byte("output")})
-				require.NoError(t, err)
+				assert.NoError(t, err)
 			},
 		},
 	}
@@ -82,7 +83,7 @@ func TestExecuteEOFSent(t *testing.T) {
 
 	// expect printing of info message, "custom" string from the first request
 	// and "output" string from the second request
-	require.Equal(t, "customoutput", outBuf.String())
+	assert.Equal(t, "customoutput", outBuf.String())
 }
 
 func TestExecuteNoEOFSent(t *testing.T) {
@@ -93,32 +94,32 @@ func TestExecuteNoEOFSent(t *testing.T) {
 			Path: "/geo/proxy/info_refs_upload_pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var request *Request
-				require.NoError(t, json.Unmarshal(b, &request))
+				assert.NoError(t, json.Unmarshal(b, &request))
 
-				require.Equal(t, request.Data.UserID, who)
-				require.Empty(t, request.Output)
+				assert.Equal(t, request.Data.UserID, who)
+				assert.Empty(t, request.Output)
 
 				err = json.NewEncoder(w).Encode(Response{Result: []byte("custom")})
-				require.NoError(t, err)
+				assert.NoError(t, err)
 			},
 		},
 		{
 			Path: "/geo/proxy/upload_pack",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var request *Request
-				require.NoError(t, json.Unmarshal(b, &request))
+				assert.NoError(t, json.Unmarshal(b, &request))
 
-				require.Equal(t, request.Data.UserID, who)
-				require.Equal(t, "0032want 343d70886785dc1f98aaf70f3b4ca87c93a5d0dd\n", string(request.Output))
+				assert.Equal(t, request.Data.UserID, who)
+				assert.Equal(t, "0032want 343d70886785dc1f98aaf70f3b4ca87c93a5d0dd\n", string(request.Output))
 
 				err = json.NewEncoder(w).Encode(Response{Result: []byte("output")})
-				require.NoError(t, err)
+				assert.NoError(t, err)
 			},
 		},
 	}
@@ -151,5 +152,5 @@ func TestExecuteNoEOFSent(t *testing.T) {
 
 	// expect printing of info message, "custom" string from the first request
 	// and "output" string from the second request
-	require.Equal(t, "customoutput", outBuf.String())
+	assert.Equal(t, "customoutput", outBuf.String())
 }
