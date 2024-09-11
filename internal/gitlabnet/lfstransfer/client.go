@@ -1,3 +1,4 @@
+// Package lfstransfer provides functionality for handling LFS (Large File Storage) transfers.
 package lfstransfer
 
 import (
@@ -17,6 +18,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 )
 
+// Client holds configuration, arguments, and authentication details for the client.
 type Client struct {
 	config *config.Config
 	args   *commandargs.Shell
@@ -25,6 +27,7 @@ type Client struct {
 	header string
 }
 
+// BatchAction represents an action for a batch operation with metadata.
 type BatchAction struct {
 	Href      string            `json:"href"`
 	Header    map[string]string `json:"header,omitempty"`
@@ -32,6 +35,7 @@ type BatchAction struct {
 	ExpiresIn int               `json:"expires_in,omitempty"`
 }
 
+// BatchObject represents an object in a batch operation with its metadata and actions.
 type BatchObject struct {
 	Oid           string                  `json:"oid,omitempty"`
 	Size          int64                   `json:"size"`
@@ -50,6 +54,7 @@ type batchRequest struct {
 	HashAlgorithm string         `json:"hash_algo,omitempty"`
 }
 
+// BatchResponse contains batch operation results and the hash algorithm used.
 type BatchResponse struct {
 	Objects       []*BatchObject `json:"objects"`
 	HashAlgorithm string         `json:"hash_algo,omitempty"`
@@ -79,10 +84,12 @@ type listLocksVerifyRequest struct {
 	Ref    *batchRef `json:"ref,omitempty"`
 }
 
+// LockOwner represents the owner of a lock.
 type LockOwner struct {
 	Name string `json:"name"`
 }
 
+// Lock represents a lock with its ID, path, timestamp, and owner details.
 type Lock struct {
 	ID       string     `json:"id"`
 	Path     string     `json:"path"`
@@ -90,19 +97,23 @@ type Lock struct {
 	Owner    *LockOwner `json:"owner"`
 }
 
+// ListLocksResponse contains a list of locks and a cursor for pagination.
 type ListLocksResponse struct {
 	Locks      []*Lock `json:"locks,omitempty"`
 	NextCursor string  `json:"next_cursor,omitempty"`
 }
 
+// ListLocksVerifyResponse provides lists of locks for "ours" and "theirs" with a cursor for pagination.
 type ListLocksVerifyResponse struct {
 	Ours       []*Lock `json:"ours,omitempty"`
 	Theirs     []*Lock `json:"theirs,omitempty"`
 	NextCursor string  `json:"next_cursor,omitempty"`
 }
 
+// ClientHeader specifies the content type for Git LFS JSON requests.
 var ClientHeader = "application/vnd.git-lfs+json"
 
+// NewClient creates a new Client instance using the provided configuration and credentials.
 func NewClient(config *config.Config, args *commandargs.Shell, href string, auth string) (*Client, error) {
 	return &Client{config: config, args: args, href: href, auth: auth, header: ClientHeader}, nil
 }
@@ -121,6 +132,7 @@ func newHTTPClient() *retryablehttp.Client {
 	return client
 }
 
+// Batch performs a batch operation on objects and returns the result.
 func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, reqHashAlgo string) (*BatchResponse, error) {
 	// FIXME: This causes tests to fail
 	// if ref == "" {
@@ -211,6 +223,7 @@ func (c *Client) PutObject(_, href string, headers map[string]string, r io.Reade
 	return nil
 }
 
+// Lock acquires a lock for the specified path with an optional reference name.
 func (c *Client) Lock(path, refname string) (*Lock, error) {
 	var ref *batchRef
 	if refname != "" {
@@ -268,6 +281,7 @@ func (c *Client) Lock(path, refname string) (*Lock, error) {
 	}
 }
 
+// Unlock releases the lock with the given id, optionally forcing the unlock.
 func (c *Client) Unlock(id string, force bool, refname string) (*Lock, error) {
 	var ref *batchRef
 	if refname != "" {
@@ -318,6 +332,7 @@ func (c *Client) Unlock(id string, force bool, refname string) (*Lock, error) {
 	}
 }
 
+// ListLocksVerify retrieves locks for the given path and id, with optional pagination.
 func (c *Client) ListLocksVerify(path, id, cursor string, limit int, ref string) (*ListLocksVerifyResponse, error) {
 	url, err := url.Parse(c.href)
 	if err != nil {
