@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -26,10 +27,10 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var request *Request
-				require.NoError(t, json.Unmarshal(b, &request))
+				assert.NoError(t, json.Unmarshal(b, &request))
 
 				switch request.KeyID {
 				case keyID:
@@ -39,7 +40,7 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 						"repository_http_path": "https://gitlab.com/repo/path",
 						"expires_in":           1800,
 					}
-					require.NoError(t, json.NewEncoder(w).Encode(body))
+					assert.NoError(t, json.NewEncoder(w).Encode(body))
 				case "forbidden":
 					w.WriteHeader(http.StatusForbidden)
 				case "broken":
@@ -88,7 +89,7 @@ func TestFailedRequests(t *testing.T) {
 			_, err = client.Authenticate(context.Background(), operation, repo, "")
 			require.Error(t, err)
 
-			require.Equal(t, tc.expectedOutput, err.Error())
+			assert.Equal(t, tc.expectedOutput, err.Error())
 		})
 	}
 }
@@ -128,7 +129,7 @@ func TestSuccessfulRequests(t *testing.T) {
 				ExpiresIn: 1800,
 			}
 
-			require.Equal(t, expectedResponse, response)
+			assert.Equal(t, expectedResponse, response)
 		})
 	}
 }

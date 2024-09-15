@@ -78,7 +78,7 @@ func (f *fakeConn) SendRequest(name string, _ bool, _ []byte) (bool, []byte, err
 
 	f.sentRequestName = name
 
-	return true, nil, nil
+	return true, []byte("I am a response"), nil
 }
 
 func setup(newChannel *fakeNewChannel) (*connection, chan ssh.NewChannel) {

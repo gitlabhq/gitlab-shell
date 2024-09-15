@@ -1,3 +1,4 @@
+// Package pktline provides utility functions for working with the Git pkt-line format.
 package pktline
 
 // Utility functions for working with the Git pkt-line format. See
@@ -27,6 +28,7 @@ func NewScanner(r io.Reader) *bufio.Scanner {
 	return scanner
 }
 
+// IsRefRemoval checks if the packet represents a reference removal.
 func IsRefRemoval(pkt []byte) bool {
 	return branchRemovalPktRegexp.Match(pkt)
 }

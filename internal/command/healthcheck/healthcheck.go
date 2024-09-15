@@ -1,3 +1,4 @@
+// Package healthcheck provides functionality to perform health checks.
 package healthcheck
 
 import (
@@ -14,24 +15,26 @@ var (
 	redisMessage = "Redis available via internal API"
 )
 
+// Command handles the execution of health checks.
 type Command struct {
 	Config     *config.Config
 	ReadWriter *readwriter.ReadWriter
 }
 
+// Execute performs the health check and outputs the result.
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	response, err := c.runCheck(ctx)
 	if err != nil {
 		return ctx, fmt.Errorf("%v: FAILED - %v", apiMessage, err)
 	}
 
-	fmt.Fprintf(c.ReadWriter.Out, "%v: OK\n", apiMessage)
+	_, _ = fmt.Fprintf(c.ReadWriter.Out, "%v: OK\n", apiMessage)
 
 	if !response.Redis {
 		return ctx, fmt.Errorf("%v: FAILED", redisMessage)
 	}
 
-	fmt.Fprintf(c.ReadWriter.Out, "%v: OK\n", redisMessage)
+	_, _ = fmt.Fprintf(c.ReadWriter.Out, "%v: OK\n", redisMessage)
 	return ctx, nil
 }
 

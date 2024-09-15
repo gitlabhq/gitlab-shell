@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -28,7 +29,7 @@ func setup(t *testing.T) {
 				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
 
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var requestBody *personalaccesstoken.RequestBody
 				json.Unmarshal(b, &requestBody)
@@ -177,7 +178,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			desc:      "With unknown configured scopes",
-			PATConfig: config.PATConfig{AllowedScopes: []string{"read_reposotory"}},
+			PATConfig: config.PATConfig{AllowedScopes: []string{"read_reposotory"}}, //nolint:misspell //testing purpose
 			arguments: &commandargs.Shell{
 				GitlabKeyId: "default",
 				SshArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
@@ -191,7 +192,7 @@ func TestExecute(t *testing.T) {
 			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api", "read_repository"}},
 			arguments: &commandargs.Shell{
 				GitlabKeyId: "default",
-				SshArgs:     []string{cmdname, "newtoken", "read_api,read_reposotory"},
+				SshArgs:     []string{cmdname, "newtoken", "read_api,read_reposotory"}, //nolint:misspell //testing purpose
 			},
 			expectedOutput: "Token:   YXuxvUgCEmeePY3G1YAa\n" +
 				"Scopes:  read_api\n" +
@@ -199,10 +200,10 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			desc:      "With matching unknown requested scopes",
-			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api", "read_reposotory"}},
+			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api", "read_reposotory"}}, //nolint:misspell //testing purpose
 			arguments: &commandargs.Shell{
 				GitlabKeyId: "invalidscope",
-				SshArgs:     []string{cmdname, "newtoken", "read_reposotory"},
+				SshArgs:     []string{cmdname, "newtoken", "read_reposotory"}, //nolint:misspell //testing purpose
 			},
 			expectedError: "Invalid scope: 'read_reposotory'. Valid scopes are: [\"api\", \"create_runner\", \"k8s_proxy\", \"read_api\", \"read_registry\", \"read_repository\", \"read_user\", \"write_registry\", \"write_repository\"]",
 		},

@@ -60,8 +60,9 @@ func TestHostKeyAndCerts(t *testing.T) {
 	data, err := os.ReadFile(path.Join(testRoot, "certs/valid/server.pub"))
 	require.NoError(t, err)
 
-	publicKey, _, _, _, err := ssh.ParseAuthorizedKey(data)
+	publicKey, comment, _, _, err := ssh.ParseAuthorizedKey(data)
 	require.NoError(t, err)
+	require.NotNil(t, comment)
 	require.NotNil(t, publicKey)
 	cert, ok := cfg.hostKeyToCertMap[string(publicKey.Marshal())]
 	require.True(t, ok)

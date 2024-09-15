@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -28,23 +29,23 @@ func setup(t *testing.T) (*Command, *bytes.Buffer, *bytes.Buffer) {
 			Path: "/api/v4/internal/allowed",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var requestBody *accessverifier.Request
 				err = json.Unmarshal(b, &requestBody)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				if requestBody.KeyID == "1" {
 					body := map[string]interface{}{
 						"gl_console_messages": []string{"console", "message"},
 					}
-					require.NoError(t, json.NewEncoder(w).Encode(body))
+					assert.NoError(t, json.NewEncoder(w).Encode(body))
 				} else {
 					body := map[string]interface{}{
 						"status":  false,
 						"message": "missing user",
 					}
-					require.NoError(t, json.NewEncoder(w).Encode(body))
+					assert.NoError(t, json.NewEncoder(w).Encode(body))
 				}
 			},
 		},
