@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 )
@@ -22,7 +22,7 @@ func BuildDisallowedByAPIHandlers(t *testing.T) []testserver.TestRequestHandler 
 					"message": "Disallowed by API call",
 				}
 				w.WriteHeader(http.StatusForbidden)
-				require.NoError(t, json.NewEncoder(w).Encode(body))
+				assert.NoError(t, json.NewEncoder(w).Encode(body))
 			},
 		},
 	}
@@ -60,7 +60,7 @@ func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testse
 						},
 					},
 				}
-				require.NoError(t, json.NewEncoder(w).Encode(body))
+				assert.NoError(t, json.NewEncoder(w).Encode(body))
 			},
 		},
 	}
@@ -87,21 +87,21 @@ func BuildAllowedWithCustomActionsHandlers(t *testing.T) []testserver.TestReques
 					},
 				}
 				w.WriteHeader(http.StatusMultipleChoices)
-				require.NoError(t, json.NewEncoder(w).Encode(body))
+				assert.NoError(t, json.NewEncoder(w).Encode(body))
 			},
 		},
 		{
 			Path: "/geo/proxy/info_refs",
 			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := map[string]interface{}{"result": []byte("custom")}
-				require.NoError(t, json.NewEncoder(w).Encode(body))
+				assert.NoError(t, json.NewEncoder(w).Encode(body))
 			},
 		},
 		{
 			Path: "/geo/proxy/push",
 			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := map[string]interface{}{"result": []byte("output")}
-				require.NoError(t, json.NewEncoder(w).Encode(body))
+				assert.NoError(t, json.NewEncoder(w).Encode(body))
 			},
 		},
 	}

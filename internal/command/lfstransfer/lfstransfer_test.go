@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/git-lfs/pktline"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
@@ -46,7 +47,7 @@ func setupWaitGroupForExecute(t *testing.T, cmd *Command) *sync.WaitGroup {
 
 	go func() {
 		_, err := cmd.Execute(context.Background())
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		wg.Done()
 	}()
 
@@ -1159,7 +1160,7 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 				default:
 					body = disallowed
 				}
-				require.NoError(t, json.NewEncoder(w).Encode(body))
+				assert.NoError(t, json.NewEncoder(w).Encode(body))
 			},
 		},
 		{
@@ -1167,10 +1168,10 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var request *lfsauthenticate.Request
-				require.NoError(t, json.Unmarshal(b, &request))
+				assert.NoError(t, json.Unmarshal(b, &request))
 				if request.KeyID == "rw" {
 					body := map[string]interface{}{
 						"username":             "john",
@@ -1178,7 +1179,7 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 						"repository_http_path": fmt.Sprintf("%s/group/repo", url),
 						"expires_in":           1800,
 					}
-					require.NoError(t, json.NewEncoder(w).Encode(body))
+					assert.NoError(t, json.NewEncoder(w).Encode(body))
 				} else {
 					w.WriteHeader(http.StatusForbidden)
 				}
@@ -1187,7 +1188,7 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 		{
 			Path: "/group/repo/info/lfs/objects/batch",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("john:sometoken"))), r.Header.Get("Authorization"))
+				assert.Equal(t, fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("john:sometoken"))), r.Header.Get("Authorization"))
 
 				var requestBody map[string]interface{}
 				json.NewDecoder(r.Body).Decode(&requestBody)
@@ -1214,7 +1215,7 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 							}
 						}
 					case evenLargerFileOid:
-						require.Equal(t, evenLargerFileLen, int(reqObject["size"].(float64)))
+						assert.Equal(t, evenLargerFileLen, int(reqObject["size"].(float64)))
 						retObject["size"] = evenLargerFileLen
 						if op == "upload" {
 							retObject["actions"] = map[string]interface{}{
@@ -1247,29 +1248,29 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 		{
 			Path: "/evil-url",
 			Handler: func(_ http.ResponseWriter, _ *http.Request) {
-				require.Fail(t, "An attacker accessed an evil URL")
+				assert.Fail(t, "An attacker accessed an evil URL")
 			},
 		},
 		{
 			Path: fmt.Sprintf("/group/repo/gitlab-lfs/objects/%s", largeFileOid),
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, "Basic 1234567890", r.Header.Get("Authorization"))
+				assert.Equal(t, "Basic 1234567890", r.Header.Get("Authorization"))
 				w.Write([]byte(largeFileContents))
 			},
 		},
 		{
 			Path: fmt.Sprintf("/group/repo/gitlab-lfs/objects/%s/%d", evenLargerFileOid, evenLargerFileLen),
 			Handler: func(_ http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodPut, r.Method)
-				require.Equal(t, "Basic 1234567890", r.Header.Get("Authorization"))
+				assert.Equal(t, http.MethodPut, r.Method)
+				assert.Equal(t, "Basic 1234567890", r.Header.Get("Authorization"))
 				body, _ := io.ReadAll(r.Body)
-				require.Equal(t, []byte(evenLargerFileContents), body)
+				assert.Equal(t, []byte(evenLargerFileContents), body)
 			},
 		},
 		{
 			Path: "/group/repo/info/lfs/locks/verify",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, http.MethodPost, r.Method)
 				requestJSON := &struct {
 					Cursor string `json:"cursor"`
 					Limit  int    `json:"limit"`
@@ -1277,7 +1278,7 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 						Name string `json:"name"`
 					} `json:"ref"`
 				}{}
-				require.NoError(t, json.NewDecoder(r.Body).Decode(requestJSON))
+				assert.NoError(t, json.NewDecoder(r.Body).Decode(requestJSON))
 
 				bodyJSON := &struct {
 					Ours       []*LockInfo `json:"ours,omitempty"`
@@ -1294,7 +1295,7 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 					}
 				}
 
-				require.NoError(t, json.NewEncoder(w).Encode(bodyJSON))
+				assert.NoError(t, json.NewEncoder(w).Encode(bodyJSON))
 			},
 		},
 		{
@@ -1309,11 +1310,11 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 					limit := 100
 					if r.URL.Query().Has("limit") {
 						l, err := strconv.Atoi(r.URL.Query().Get("limit"))
-						require.NoError(t, err)
+						assert.NoError(t, err)
 						limit = l
 					}
 					bodyJSON.Locks, bodyJSON.NextCursor = listLocks(r.URL.Query().Get("cursor"), limit, r.URL.Query().Get("refspec"), r.URL.Query().Get("id"), r.URL.Query().Get("path"))
-					require.NoError(t, json.NewEncoder(w).Encode(bodyJSON))
+					assert.NoError(t, json.NewEncoder(w).Encode(bodyJSON))
 				case http.MethodPost:
 					var body map[string]interface{}
 					reader := json.NewDecoder(r.Body)
@@ -1353,7 +1354,7 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 						w.WriteHeader(http.StatusCreated)
 					case "/large/file/5":
 						ref := body["ref"].(map[string]interface{})
-						require.Equal(t, "refs/heads/main", ref["name"])
+						assert.Equal(t, "refs/heads/main", ref["name"])
 						response = map[string]interface{}{
 							"lock": map[string]interface{}{
 								"id":        "lock5",
@@ -1379,10 +1380,10 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 		{
 			Path: "/group/repo/info/lfs/locks/lock1/unlock",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, http.MethodPost, r.Method)
 				var body map[string]interface{}
-				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
-				require.Equal(t, map[string]interface{}{
+				assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				assert.Equal(t, map[string]interface{}{
 					"ref": map[string]interface{}{
 						"name": "refs/heads/main",
 					},
@@ -1406,10 +1407,10 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 		{
 			Path: "/group/repo/info/lfs/locks/lock2/unlock",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, http.MethodPost, r.Method)
 				var body map[string]interface{}
-				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
-				require.Equal(t, map[string]interface{}{
+				assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				assert.Equal(t, map[string]interface{}{
 					"force": true,
 				}, body)
 
@@ -1430,10 +1431,10 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 		{
 			Path: "/group/repo/info/lfs/locks/lock3/unlock",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, http.MethodPost, r.Method)
 				var body map[string]interface{}
-				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
-				require.Equal(t, map[string]interface{}{
+				assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				assert.Equal(t, map[string]interface{}{
 					"force": false,
 				}, body)
 
@@ -1448,10 +1449,10 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 		{
 			Path: "/group/repo/info/lfs/locks/lock4/unlock",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, http.MethodPost, r.Method)
 				var body map[string]interface{}
-				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
-				require.Equal(t, map[string]interface{}{
+				assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				assert.Equal(t, map[string]interface{}{
 					"force": false,
 				}, body)
 

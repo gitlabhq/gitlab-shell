@@ -8,6 +8,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
@@ -116,7 +117,7 @@ func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPat
 		{
 			Path: "/api/v4/internal/hello",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				require.Equal(t, http.MethodGet, r.Method)
+				assert.Equal(t, http.MethodGet, r.Method)
 
 				fmt.Fprint(w, "Hello")
 			},
