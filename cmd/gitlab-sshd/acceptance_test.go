@@ -21,6 +21,7 @@ import (
 
 	"github.com/mikesmitty/edkey"
 	"github.com/pires/go-proxyproto"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	gitalyClient "gitlab.com/gitlab-org/gitaly/v16/client"
 	pb "gitlab.com/gitlab-org/gitaly/v16/proto/go/gitalypb"
@@ -112,7 +113,7 @@ func startGitOverHTTPServer(t *testing.T) string {
 				switch r.URL.Query().Get("service") {
 				case "git-receive-pack":
 					stream, err := client.InfoRefsReceivePack(ctx, rpcRequest)
-					require.NoError(t, err)
+					assert.NoError(t, err)
 					reader = streamio.NewReader(func() ([]byte, error) {
 						resp, err := stream.Recv()
 						return resp.GetData(), err
@@ -122,17 +123,17 @@ func startGitOverHTTPServer(t *testing.T) string {
 				}
 
 				_, err := io.Copy(w, reader)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 			},
 		},
 		{
 			Path: "/git-receive-pack",
 			Handler: func(_ http.ResponseWriter, r *http.Request) {
 				body, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
+				assert.NoError(t, err)
 				defer r.Body.Close()
 
-				require.Equal(t, "0000", string(body))
+				assert.Equal(t, "0000", string(body))
 			},
 		},
 	}
@@ -185,7 +186,7 @@ func successAPI(t *testing.T, handlers ...customHandler) http.Handler {
 			response := buildAllowedResponse(t, "responses/allowed_without_console_messages.json")
 
 			_, err := fmt.Fprint(w, response)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 		case "/api/v4/internal/shellhorse/git_audit_event":
 			w.WriteHeader(http.StatusOK)
 			return
@@ -495,7 +496,7 @@ func TestGeoGitReceivePackSuccess(t *testing.T) {
 
 			w.WriteHeader(300)
 			_, err := fmt.Fprint(w, response)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 		},
 	}
 	client := runSSHD(t, successAPI(t, handler))

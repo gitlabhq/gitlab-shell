@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -73,11 +74,11 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var request *lfsauthenticate.Request
-				require.NoError(t, json.Unmarshal(b, &request))
-				require.Equal(t, request.Operation, operation)
+				assert.NoError(t, json.Unmarshal(b, &request))
+				assert.Equal(t, request.Operation, operation)
 
 				if request.UserID == userID {
 					body := map[string]interface{}{
@@ -86,7 +87,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 						"repository_http_path": "https://gitlab.com/repo/path",
 						"expires_in":           1800,
 					}
-					require.NoError(t, json.NewEncoder(w).Encode(body))
+					assert.NoError(t, json.NewEncoder(w).Encode(body))
 				} else {
 					w.WriteHeader(http.StatusForbidden)
 				}
@@ -97,10 +98,10 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
 				defer r.Body.Close()
-				require.NoError(t, err)
+				assert.NoError(t, err)
 
 				var request *accessverifier.Request
-				require.NoError(t, json.Unmarshal(b, &request))
+				assert.NoError(t, json.Unmarshal(b, &request))
 
 				var glID string
 				if request.Username == "somename" {
@@ -119,7 +120,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 						},
 					},
 				}
-				require.NoError(t, json.NewEncoder(w).Encode(body))
+				assert.NoError(t, json.NewEncoder(w).Encode(body))
 			},
 		},
 	}
