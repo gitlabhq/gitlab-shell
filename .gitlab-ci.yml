@@ -16,16 +16,16 @@ variables:
   TRANSFER_METER_FREQUENCY: "1s"
   DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
-  GO_VERSION: "golang-1.23"
+  GO_VERSION: "1.23"
   GOPATH: $CI_PROJECT_DIR/.GOPATH
   DEBIAN_VERSION: "bookworm"
-  RUBY_VERSION: "3.2.4"
+  RUBY_VERSION: "3.2.5"
   BUNDLE_PATH: vendor/ruby
   POLICY: pull
   CI_DEBUG_SERVICES: 'true'
-  RUST_VERSION: "rust-1.73"
+  RUST_VERSION: "1.73"
   UBI_VERSION: "8.6"
-  IMAGE_TAG: "rubygems-3.4-git-2.45-exiftool-12.60"
+  IMAGE_TAG: "rubygems-3.5-git-2.45-exiftool-12.60"
   GITLAB_ADVANCED_SAST_ENABLED: 'true'
 
 workflow:
@@ -45,7 +45,7 @@ workflow:
         - '**/*.go'
 
 default:
-  image: registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-ruby-${RUBY_VERSION}-${GO_VERSION}-${RUST_VERSION}:${IMAGE_TAG}
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-ruby-${RUBY_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${IMAGE_TAG}
   tags:
     - gitlab-org
 
@@ -59,7 +59,7 @@ default:
 
 .cached-go: &cached_go
   - key:
-      prefix: $GO_VERSION-cache
+      prefix: "golang-${GO_VERSION}-cache"
       files:
         - go.mod
         - go.sum
@@ -94,7 +94,7 @@ default:
 .go-matrix-job:
   parallel:
     matrix:
-      - GO_VERSION: ["golang-1.22", "golang-1.23"]
+      - GO_VERSION: ["1.22", "1.23"]
 
 ################################################################################
 # Prepare jobs
@@ -167,7 +167,7 @@ tests_without_cgo:
     - make verify test_fancy
 
 tests:fips:
-  image: registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-ruby-${RUBY_VERSION}-${GO_VERSION}-${RUST_VERSION}:${IMAGE_TAG}
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-ruby-${RUBY_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${IMAGE_TAG}
   extends:
     - .cached-job
     - .test-job
