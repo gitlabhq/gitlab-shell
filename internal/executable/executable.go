@@ -1,3 +1,4 @@
+// Package executable provides utilities for managing and locating executables related to GitLab Shell.
 package executable
 
 import (
@@ -5,6 +6,7 @@ import (
 	"path/filepath"
 )
 
+// Predefined constants representing various executable names and directories.
 const (
 	BinDir                    = "bin"
 	Healthcheck               = "check"
@@ -13,6 +15,7 @@ const (
 	AuthorizedPrincipalsCheck = "gitlab-shell-authorized-principals-check"
 )
 
+// Executable represents an executable binary, including its name and root directory.
 type Executable struct {
 	Name    string
 	RootDir string
@@ -23,6 +26,7 @@ var (
 	osExecutable = os.Executable
 )
 
+// New creates a new Executable instance by determining its root directory based on the current executable path.
 func New(name string) (*Executable, error) {
 	path, err := osExecutable()
 	if err != nil {

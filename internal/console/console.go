@@ -36,7 +36,7 @@ func DisplayMessages(messages []string, out io.Writer, displayDivider bool) {
 	displayBlankLineOrDivider(out, displayDivider)
 
 	for _, msg := range messages {
-		fmt.Fprint(out, formatLine(msg))
+		_, _ = fmt.Fprint(out, formatLine(msg))
 	}
 
 	displayBlankLineOrDivider(out, displayDivider)
@@ -62,9 +62,9 @@ func formatLine(message string) string {
 
 func displayBlankLineOrDivider(out io.Writer, displayDivider bool) {
 	if displayDivider {
-		fmt.Fprint(out, divider())
+		_, _ = fmt.Fprint(out, divider())
 	} else {
-		fmt.Fprint(out, blankLine())
+		_, _ = fmt.Fprint(out, blankLine())
 	}
 }
 

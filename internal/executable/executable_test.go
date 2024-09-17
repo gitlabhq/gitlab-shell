@@ -61,8 +61,8 @@ func TestNewSuccess(t *testing.T) {
 			result, err := New("gitlab-shell")
 
 			require.NoError(t, err)
-			require.Equal(t, result.Name, "gitlab-shell")
-			require.Equal(t, result.RootDir, tc.expectedRootDir)
+			require.Equal(t, "gitlab-shell", result.Name)
+			require.Equal(t, tc.expectedRootDir, result.RootDir)
 		})
 	}
 }
