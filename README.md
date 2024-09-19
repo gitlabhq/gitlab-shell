@@ -10,10 +10,10 @@ info: To determine the technical writer assigned to the Stage/Group associated w
 
 # GitLab Shell
 
-GitLab Shell handles Git SSH sessions for GitLab and modifies the list of 
+GitLab Shell handles Git SSH sessions for GitLab and modifies the list of
 authorized keys. GitLab Shell is not a Unix shell nor a replacement for Bash or Zsh.
 
-GitLab supports Git LFS authentication through SSH. 
+GitLab supports Git LFS authentication through SSH.
 
 ## Development Documentation
 
@@ -32,11 +32,18 @@ Development documentation for GitLab Shell [has moved into the `gitlab` reposito
 
 ## Building
 
-Run `make build`.
+Run `make` or `make build`.
 
 ## Testing
 
 Run `make test`.
+
+## Release Process
+
+1. Create a `gitlab-org/gitlab-shell` MR to update [`VERSION`](https://gitlab.com/gitlab-org/gitlab-shell/-/blob/main/VERSION) and [`CHANGELOG`](https://gitlab.com/gitlab-org/gitlab-shell/-/blob/main/CHANGELOG) files, e.g. [Release v14.39.0](https://gitlab.com/gitlab-org/gitlab-shell/-/merge_requests/1123).
+2. Once `gitlab-org/gitlab-shell` MR is merged, create the corresponding git tag, e.g. https://gitlab.com/gitlab-org/gitlab-shell/-/tags/v14.39.0.
+3. Create a `gitlab-org/gitlab` MR to update [`GITLAB_SHELL_VERSION`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/GITLAB_SHELL_VERSION) to the proposed tag, e.g. [Bump GitLab Shell to 14.39.0](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/162661).
+4. Announce in `#gitlab-shell` a new version has been created.
 
 ## Licensing
 
