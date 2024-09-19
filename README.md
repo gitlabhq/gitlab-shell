@@ -32,7 +32,7 @@ Development documentation for GitLab Shell [has moved into the `gitlab` reposito
 
 ## Building
 
-Run `make build`.
+Run `make` or `make build`.
 
 ## Testing
 
