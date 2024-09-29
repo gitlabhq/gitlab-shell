@@ -1,3 +1,5 @@
+// Package commandargs provides functionality to handle and parse command-line arguments
+// for various GitLab shell commands, including SSH arguments and command types.
 package commandargs
 
 import (
@@ -9,6 +11,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
+// Define supported command types
 const (
 	Discover            CommandType = "discover"
 	TwoFactorRecover    CommandType = "2fa_recovery_codes"
@@ -21,23 +24,27 @@ const (
 	PersonalAccessToken CommandType = "personal_access_token"
 )
 
+// Regular expressions for parsing key IDs and usernames from arguments
 var (
 	whoKeyRegex      = regexp.MustCompile(`\Akey-(?P<keyid>\d+)\z`)
 	whoUsernameRegex = regexp.MustCompile(`\Ausername-(?P<username>\S+)\z`)
 
+	// List of Git commands that are handled in a special way
 	GitCommands = []CommandType{LfsAuthenticate, UploadPack, ReceivePack, UploadArchive}
 )
 
+// Shell represents a parsed shell command with its arguments and related information.
 type Shell struct {
 	Arguments           []string
 	GitlabUsername      string
-	GitlabKeyId         string
+	GitlabKeyID         string
 	GitlabKrb5Principal string
-	SshArgs             []string
+	SSHArgs             []string
 	CommandType         CommandType
 	Env                 sshenv.Env
 }
 
+// Parse validates and parses the command-line arguments and SSH environment.
 func (s *Shell) Parse() error {
 	if err := s.validate(); err != nil {
 		return err
@@ -48,17 +55,18 @@ func (s *Shell) Parse() error {
 	return nil
 }
 
+// GetArguments returns the list of command-line arguments.
 func (s *Shell) GetArguments() []string {
 	return s.Arguments
 }
 
 func (s *Shell) validate() error {
 	if !s.Env.IsSSHConnection {
-		return fmt.Errorf("Only SSH allowed")
+		return fmt.Errorf("Only SSH allowed") //nolint:stylecheck //message is customer facing
 	}
 
 	if err := s.ParseCommand(s.Env.OriginalCommand); err != nil {
-		return fmt.Errorf("Invalid SSH command: %w", err)
+		return fmt.Errorf("Invalid SSH command: %w", err) //nolint:stylecheck //message is customer facing
 	}
 
 	return nil
@@ -66,8 +74,8 @@ func (s *Shell) validate() error {
 
 func (s *Shell) parseWho() {
 	for _, argument := range s.Arguments {
-		if keyId := tryParseKeyId(argument); keyId != "" {
-			s.GitlabKeyId = keyId
+		if keyID := tryParseKeyID(argument); keyID != "" {
+			s.GitlabKeyID = keyID
 			break
 		}
 
@@ -95,7 +103,7 @@ func tryParse(r *regexp.Regexp, argument string) string {
 	return ""
 }
 
-func tryParseKeyId(argument string) string {
+func tryParseKeyID(argument string) string {
 	return tryParse(whoKeyRegex, argument)
 }
 
@@ -103,6 +111,7 @@ func tryParseUsername(argument string) string {
 	return tryParse(whoUsernameRegex, argument)
 }
 
+// ParseCommand parses the command string into a slice of arguments.
 func (s *Shell) ParseCommand(commandString string) error {
 	args, err := shellwords.Parse(commandString)
 	if err != nil {
@@ -117,7 +126,7 @@ func (s *Shell) ParseCommand(commandString string) error {
 		args = append([]string{command}, commandArgs...)
 	}
 
-	s.SshArgs = args
+	s.SSHArgs = args
 
 	s.defineCommandType()
 
@@ -125,9 +134,9 @@ func (s *Shell) ParseCommand(commandString string) error {
 }
 
 func (s *Shell) defineCommandType() {
-	if len(s.SshArgs) == 0 {
+	if len(s.SSHArgs) == 0 {
 		s.CommandType = Discover
 	} else {
-		s.CommandType = CommandType(s.SshArgs[0])
+		s.CommandType = CommandType(s.SSHArgs[0])
 	}
 }

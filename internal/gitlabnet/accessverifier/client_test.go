@@ -71,7 +71,7 @@ func TestSuccessfulResponses(t *testing.T) {
 	}{
 		{
 			desc: "Provide key id within the request",
-			args: &commandargs.Shell{GitlabKeyId: "1"},
+			args: &commandargs.Shell{GitlabKeyID: "1"},
 			who:  "key-1",
 		}, {
 			desc: "Provide username within the request",
@@ -186,7 +186,7 @@ func TestErrorResponses(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			args := &commandargs.Shell{GitlabKeyId: tc.fakeID}
+			args := &commandargs.Shell{GitlabKeyID: tc.fakeID}
 			resp, err := client.Verify(context.Background(), args, receivePackAction, repo)
 
 			require.EqualError(t, err, tc.expectedError)

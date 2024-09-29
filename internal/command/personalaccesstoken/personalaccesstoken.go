@@ -62,12 +62,12 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 }
 
 func (c *Command) parseTokenArgs() error {
-	if len(c.Args.SshArgs) < 3 || len(c.Args.SshArgs) > 4 {
+	if len(c.Args.SSHArgs) < 3 || len(c.Args.SSHArgs) > 4 {
 		return errors.New(usageText) // nolint:stylecheck // usageText is customer facing
 	}
 
 	var rectfiedScopes []string
-	requestedScopes := strings.Split(c.Args.SshArgs[2], ",")
+	requestedScopes := strings.Split(c.Args.SSHArgs[2], ",")
 	if len(c.Config.PATConfig.AllowedScopes) > 0 {
 		for _, requestedScope := range requestedScopes {
 			if slices.Contains(c.Config.PATConfig.AllowedScopes, requestedScope) {
@@ -78,15 +78,15 @@ func (c *Command) parseTokenArgs() error {
 		rectfiedScopes = requestedScopes
 	}
 	c.TokenArgs = &tokenArgs{
-		Name:   c.Args.SshArgs[1],
+		Name:   c.Args.SSHArgs[1],
 		Scopes: rectfiedScopes,
 	}
 
-	if len(c.Args.SshArgs) < 4 {
+	if len(c.Args.SSHArgs) < 4 {
 		c.TokenArgs.ExpiresDate = time.Now().AddDate(0, 0, 30).Format(expiresDateFormat)
 		return nil
 	}
-	rawTTL := c.Args.SshArgs[3]
+	rawTTL := c.Args.SSHArgs[3]
 
 	TTL, err := strconv.Atoi(rawTTL)
 	if err != nil || TTL < 0 {

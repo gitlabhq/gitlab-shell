@@ -1,3 +1,5 @@
+// Package commandargs defines structures and methods for handling command-line arguments
+// related to authorized key checks in the GitLab shell.
 package commandargs
 
 import (
@@ -5,6 +7,7 @@ import (
 	"fmt"
 )
 
+// AuthorizedKeys holds the arguments and user information for key authorization checks.
 type AuthorizedKeys struct {
 	Arguments    []string
 	ExpectedUser string
@@ -12,6 +15,7 @@ type AuthorizedKeys struct {
 	Key          string
 }
 
+// Parse parses and validates the arguments, setting ExpectedUser, ActualUser, and Key.
 func (ak *AuthorizedKeys) Parse() error {
 	if err := ak.validate(); err != nil {
 		return err
@@ -24,6 +28,7 @@ func (ak *AuthorizedKeys) Parse() error {
 	return nil
 }
 
+// GetArguments returns the list of command-line arguments.
 func (ak *AuthorizedKeys) GetArguments() []string {
 	return ak.Arguments
 }
@@ -32,7 +37,7 @@ func (ak *AuthorizedKeys) validate() error {
 	argsSize := len(ak.Arguments)
 
 	if argsSize != 3 {
-		return errors.New(fmt.Sprintf("# Insufficient arguments. %d. Usage\n#\tgitlab-shell-authorized-keys-check <expected-username> <actual-username> <key>", argsSize))
+		return fmt.Errorf("# Insufficient arguments. %d. Usage\n#\tgitlab-shell-authorized-keys-check <expected-username> <actual-username> <key>", argsSize)
 	}
 
 	expectedUsername := ak.Arguments[0]

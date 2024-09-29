@@ -64,17 +64,17 @@ func TestFailedRequests(t *testing.T) {
 	}{
 		{
 			desc:           "With bad response",
-			args:           &commandargs.Shell{GitlabKeyId: "-1", CommandType: commandargs.LfsAuthenticate, SshArgs: []string{"git-lfs-authenticate", repo, "download"}},
+			args:           &commandargs.Shell{GitlabKeyID: "-1", CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, "download"}},
 			expectedOutput: "parsing failed",
 		},
 		{
 			desc:           "With API returns an error",
-			args:           &commandargs.Shell{GitlabKeyId: "forbidden", CommandType: commandargs.LfsAuthenticate, SshArgs: []string{"git-lfs-authenticate", repo, "download"}},
+			args:           &commandargs.Shell{GitlabKeyID: "forbidden", CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, "download"}},
 			expectedOutput: "Internal API error (403)",
 		},
 		{
 			desc:           "With API fails",
-			args:           &commandargs.Shell{GitlabKeyId: "broken", CommandType: commandargs.LfsAuthenticate, SshArgs: []string{"git-lfs-authenticate", repo, "download"}},
+			args:           &commandargs.Shell{GitlabKeyID: "broken", CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, "download"}},
 			expectedOutput: "Internal API unreachable",
 		},
 	}
@@ -84,7 +84,7 @@ func TestFailedRequests(t *testing.T) {
 			client, err := NewClient(&config.Config{GitlabUrl: url}, tc.args)
 			require.NoError(t, err)
 
-			operation := tc.args.SshArgs[2]
+			operation := tc.args.SSHArgs[2]
 
 			_, err = client.Authenticate(context.Background(), operation, repo, "")
 			require.Error(t, err)
@@ -115,7 +115,7 @@ func TestSuccessfulRequests(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			operation := tc.operation
-			args := &commandargs.Shell{GitlabKeyId: keyID, CommandType: commandargs.LfsAuthenticate, SshArgs: []string{"git-lfs-authenticate", repo, operation}}
+			args := &commandargs.Shell{GitlabKeyID: keyID, CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, operation}}
 			client, err := NewClient(&config.Config{GitlabUrl: url}, args)
 			require.NoError(t, err)
 

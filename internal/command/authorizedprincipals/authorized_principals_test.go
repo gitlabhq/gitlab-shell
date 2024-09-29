@@ -22,12 +22,12 @@ func TestExecute(t *testing.T) {
 	}{
 		{
 			desc:           "With single principal",
-			arguments:      &commandargs.AuthorizedPrincipals{KeyId: "key", Principals: []string{"principal"}},
+			arguments:      &commandargs.AuthorizedPrincipals{KeyID: "key", Principals: []string{"principal"}},
 			expectedOutput: "command=\"/tmp/bin/gitlab-shell username-key\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty principal\n",
 		},
 		{
 			desc:           "With multiple principals",
-			arguments:      &commandargs.AuthorizedPrincipals{KeyId: "key", Principals: []string{"principal-1", "principal-2"}},
+			arguments:      &commandargs.AuthorizedPrincipals{KeyID: "key", Principals: []string{"principal-1", "principal-2"}},
 			expectedOutput: "command=\"/tmp/bin/gitlab-shell username-key\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty principal-1\ncommand=\"/tmp/bin/gitlab-shell username-key\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty principal-2\n",
 		},
 	}

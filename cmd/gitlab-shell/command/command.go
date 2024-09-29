@@ -41,7 +41,7 @@ func NewWithKey(gitlabKeyID string, env sshenv.Env, config *config.Config, readW
 		return nil, err
 	}
 
-	args.GitlabKeyId = gitlabKeyID
+	args.GitlabKeyID = gitlabKeyID
 	if cmd := Build(args, config, readWriter); cmd != nil {
 		return cmd, nil
 	}

@@ -96,29 +96,29 @@ func TestExecute(t *testing.T) {
 		{
 			desc: "With too few arguments",
 			arguments: &commandargs.Shell{
-				SshArgs: []string{cmdname, "newtoken"},
+				SSHArgs: []string{cmdname, "newtoken"},
 			},
 			expectedError: usageText,
 		},
 		{
 			desc: "With too many arguments",
 			arguments: &commandargs.Shell{
-				SshArgs: []string{cmdname, "newtoken", "api", "bad_ttl", "toomany"},
+				SSHArgs: []string{cmdname, "newtoken", "api", "bad_ttl", "toomany"},
 			},
 			expectedError: usageText,
 		},
 		{
 			desc: "With a bad ttl_days argument",
 			arguments: &commandargs.Shell{
-				SshArgs: []string{cmdname, "newtoken", "api", "bad_ttl"},
+				SSHArgs: []string{cmdname, "newtoken", "api", "bad_ttl"},
 			},
 			expectedError: "Invalid value for days_ttl: 'bad_ttl'",
 		},
 		{
 			desc: "Without a ttl argument",
 			arguments: &commandargs.Shell{
-				GitlabKeyId: "default",
-				SshArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
+				GitlabKeyID: "default",
+				SSHArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
 			},
 			expectedOutput: "Token:   YXuxvUgCEmeePY3G1YAa\n" +
 				"Scopes:  read_api,read_repository\n" +
@@ -127,8 +127,8 @@ func TestExecute(t *testing.T) {
 		{
 			desc: "With a ttl argument",
 			arguments: &commandargs.Shell{
-				GitlabKeyId: "default",
-				SshArgs:     []string{cmdname, "newtoken", "api", "30"},
+				GitlabKeyID: "default",
+				SSHArgs:     []string{cmdname, "newtoken", "api", "30"},
 			},
 			expectedOutput: "Token:   YXuxvUgCEmeePY3G1YAa\n" +
 				"Scopes:  api\n" +
@@ -137,31 +137,31 @@ func TestExecute(t *testing.T) {
 		{
 			desc: "With bad response",
 			arguments: &commandargs.Shell{
-				GitlabKeyId: "badresponse",
-				SshArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
+				GitlabKeyID: "badresponse",
+				SSHArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
 			},
 			expectedError: "parsing failed",
 		},
 		{
 			desc: "when API returns an error",
 			arguments: &commandargs.Shell{
-				GitlabKeyId: "forbidden",
-				SshArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
+				GitlabKeyID: "forbidden",
+				SSHArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
 			},
 			expectedError: "Forbidden!",
 		},
 		{
 			desc: "When API fails",
 			arguments: &commandargs.Shell{
-				GitlabKeyId: "broken",
-				SshArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
+				GitlabKeyID: "broken",
+				SSHArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
 			},
 			expectedError: "Internal API unreachable",
 		},
 		{
 			desc: "Without KeyID or User",
 			arguments: &commandargs.Shell{
-				SshArgs: []string{cmdname, "newtoken", "read_api,read_repository"},
+				SSHArgs: []string{cmdname, "newtoken", "read_api,read_repository"},
 			},
 			expectedError: "who='' is invalid",
 		},
@@ -169,8 +169,8 @@ func TestExecute(t *testing.T) {
 			desc:      "With restricted scopes",
 			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api"}},
 			arguments: &commandargs.Shell{
-				GitlabKeyId: "default",
-				SshArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
+				GitlabKeyID: "default",
+				SSHArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
 			},
 			expectedOutput: "Token:   YXuxvUgCEmeePY3G1YAa\n" +
 				"Scopes:  read_api\n" +
@@ -180,8 +180,8 @@ func TestExecute(t *testing.T) {
 			desc:      "With unknown configured scopes",
 			PATConfig: config.PATConfig{AllowedScopes: []string{"read_reposotory"}}, //nolint:misspell //testing purpose
 			arguments: &commandargs.Shell{
-				GitlabKeyId: "default",
-				SshArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
+				GitlabKeyID: "default",
+				SSHArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
 			},
 			expectedOutput: "Token:   YXuxvUgCEmeePY3G1YAa\n" +
 				"Scopes:  \n" +
@@ -191,8 +191,8 @@ func TestExecute(t *testing.T) {
 			desc:      "With unknown requested scopes",
 			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api", "read_repository"}},
 			arguments: &commandargs.Shell{
-				GitlabKeyId: "default",
-				SshArgs:     []string{cmdname, "newtoken", "read_api,read_reposotory"}, //nolint:misspell //testing purpose
+				GitlabKeyID: "default",
+				SSHArgs:     []string{cmdname, "newtoken", "read_api,read_reposotory"}, //nolint:misspell //testing purpose
 			},
 			expectedOutput: "Token:   YXuxvUgCEmeePY3G1YAa\n" +
 				"Scopes:  read_api\n" +
@@ -202,8 +202,8 @@ func TestExecute(t *testing.T) {
 			desc:      "With matching unknown requested scopes",
 			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api", "read_reposotory"}}, //nolint:misspell //testing purpose
 			arguments: &commandargs.Shell{
-				GitlabKeyId: "invalidscope",
-				SshArgs:     []string{cmdname, "newtoken", "read_reposotory"}, //nolint:misspell //testing purpose
+				GitlabKeyID: "invalidscope",
+				SSHArgs:     []string{cmdname, "newtoken", "read_reposotory"}, //nolint:misspell //testing purpose
 			},
 			expectedError: "Invalid scope: 'read_reposotory'. Valid scopes are: [\"api\", \"create_runner\", \"k8s_proxy\", \"read_api\", \"read_registry\", \"read_repository\", \"read_user\", \"write_registry\", \"write_repository\"]",
 		},

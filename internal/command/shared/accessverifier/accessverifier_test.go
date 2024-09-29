@@ -65,7 +65,7 @@ func setup(t *testing.T) (*Command, *bytes.Buffer, *bytes.Buffer) {
 func TestMissingUser(t *testing.T) {
 	cmd, _, _ := setup(t)
 
-	cmd.Args = &commandargs.Shell{GitlabKeyId: "2"}
+	cmd.Args = &commandargs.Shell{GitlabKeyID: "2"}
 	_, err := cmd.Verify(context.Background(), action, repo)
 
 	require.Equal(t, "missing user", err.Error())
@@ -74,7 +74,7 @@ func TestMissingUser(t *testing.T) {
 func TestConsoleMessages(t *testing.T) {
 	cmd, errBuf, outBuf := setup(t)
 
-	cmd.Args = &commandargs.Shell{GitlabKeyId: "1"}
+	cmd.Args = &commandargs.Shell{GitlabKeyID: "1"}
 	cmd.Verify(context.Background(), action, repo)
 
 	require.Equal(t, "remote: \nremote: console\nremote: message\nremote: \n", errBuf.String())

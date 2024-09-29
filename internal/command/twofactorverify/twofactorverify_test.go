@@ -104,39 +104,39 @@ func TestExecute(t *testing.T) {
 	}{
 		{
 			desc:           "Verify via OTP",
-			arguments:      &commandargs.Shell{GitlabKeyId: "verify_via_otp"},
+			arguments:      &commandargs.Shell{GitlabKeyID: "verify_via_otp"},
 			expectedOutput: "OTP validation successful. Git operations are now allowed.\n",
 		},
 		{
 			desc:           "Verify via OTP",
-			arguments:      &commandargs.Shell{GitlabKeyId: "verify_via_otp_with_push_error"},
+			arguments:      &commandargs.Shell{GitlabKeyID: "verify_via_otp_with_push_error"},
 			expectedOutput: "OTP validation successful. Git operations are now allowed.\n",
 		},
 		{
 			desc:           "Verify via push authentication",
-			arguments:      &commandargs.Shell{GitlabKeyId: "verify_via_push"},
+			arguments:      &commandargs.Shell{GitlabKeyID: "verify_via_push"},
 			input:          &blockingReader{},
 			expectedOutput: "OTP has been validated by Push Authentication. Git operations are now allowed.\n",
 		},
 		{
 			desc:           "With an empty OTP",
-			arguments:      &commandargs.Shell{GitlabKeyId: "verify_via_otp"},
+			arguments:      &commandargs.Shell{GitlabKeyID: "verify_via_otp"},
 			input:          bytes.NewBufferString("\n"),
 			expectedOutput: errorHeader + "OTP cannot be blank\n",
 		},
 		{
 			desc:           "With bad response",
-			arguments:      &commandargs.Shell{GitlabKeyId: "-1"},
+			arguments:      &commandargs.Shell{GitlabKeyID: "-1"},
 			expectedOutput: errorHeader + "parsing failed\n",
 		},
 		{
 			desc:           "With API returns an error",
-			arguments:      &commandargs.Shell{GitlabKeyId: "error"},
+			arguments:      &commandargs.Shell{GitlabKeyID: "error"},
 			expectedOutput: errorHeader + "error message\n",
 		},
 		{
 			desc:           "With API fails",
-			arguments:      &commandargs.Shell{GitlabKeyId: "broken"},
+			arguments:      &commandargs.Shell{GitlabKeyID: "broken"},
 			expectedOutput: errorHeader + "Internal API unreachable\n",
 		},
 		{
@@ -177,7 +177,7 @@ func TestCanceledContext(t *testing.T) {
 	url := testserver.StartSocketHTTPServer(t, requests)
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},
-		Args:       &commandargs.Shell{GitlabKeyId: "wait_infinitely"},
+		Args:       &commandargs.Shell{GitlabKeyID: "wait_infinitely"},
 		ReadWriter: &readwriter.ReadWriter{Out: output, In: &blockingReader{}},
 	}
 

@@ -84,8 +84,8 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, na
 	}
 
 	requestBody := &RequestBody{Name: name, Scopes: *scopes, ExpiresAt: expiresAt}
-	if args.GitlabKeyId != "" {
-		requestBody.KeyID = args.GitlabKeyId
+	if args.GitlabKeyID != "" {
+		requestBody.KeyID = args.GitlabKeyID
 
 		return requestBody, nil
 	}

@@ -74,7 +74,7 @@ func TestExecute(t *testing.T) {
 	}{
 		{
 			desc:      "With a known key id",
-			arguments: &commandargs.Shell{GitlabKeyId: "1"},
+			arguments: &commandargs.Shell{GitlabKeyID: "1"},
 			answer:    "yes\n",
 			expectedOutput: question +
 				"Your two-factor authentication recovery codes are:\n\nrecovery\ncodes\n\n" +
@@ -84,19 +84,19 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			desc:           "With bad response",
-			arguments:      &commandargs.Shell{GitlabKeyId: "-1"},
+			arguments:      &commandargs.Shell{GitlabKeyID: "-1"},
 			answer:         "yes\n",
 			expectedOutput: question + errorHeader + "parsing failed\n",
 		},
 		{
 			desc:           "With API returns an error",
-			arguments:      &commandargs.Shell{GitlabKeyId: "forbidden"},
+			arguments:      &commandargs.Shell{GitlabKeyID: "forbidden"},
 			answer:         "yes\n",
 			expectedOutput: question + errorHeader + "Forbidden!\n",
 		},
 		{
 			desc:           "With API fails",
-			arguments:      &commandargs.Shell{GitlabKeyId: "broken"},
+			arguments:      &commandargs.Shell{GitlabKeyID: "broken"},
 			answer:         "yes\n",
 			expectedOutput: question + errorHeader + "Internal API unreachable\n",
 		},

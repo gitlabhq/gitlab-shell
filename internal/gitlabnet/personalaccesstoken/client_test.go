@@ -88,7 +88,7 @@ func initialize(t *testing.T) {
 func TestGetPersonalAccessTokenByKeyId(t *testing.T) {
 	client := setup(t)
 
-	args := &commandargs.Shell{GitlabKeyId: "0"}
+	args := &commandargs.Shell{GitlabKeyID: "0"}
 	result, err := client.GetPersonalAccessToken(
 		context.Background(), args, "newtoken", &[]string{"read_api", "read_repository"}, "",
 	)
@@ -118,7 +118,7 @@ func TestGetRecoveryCodesByUsername(t *testing.T) {
 func TestMissingUser(t *testing.T) {
 	client := setup(t)
 
-	args := &commandargs.Shell{GitlabKeyId: "1"}
+	args := &commandargs.Shell{GitlabKeyID: "1"}
 	_, err := client.GetPersonalAccessToken(
 		context.Background(), args, "newtoken", &[]string{"api"}, "",
 	)
@@ -152,7 +152,7 @@ func TestErrorResponses(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			args := &commandargs.Shell{GitlabKeyId: tc.fakeID}
+			args := &commandargs.Shell{GitlabKeyID: tc.fakeID}
 			resp, err := client.GetPersonalAccessToken(
 				context.Background(), args, "newtoken", &[]string{"api"}, "",
 			)

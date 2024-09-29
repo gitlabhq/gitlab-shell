@@ -37,12 +37,12 @@ func TestFailedRequests(t *testing.T) {
 		},
 		{
 			desc:           "With disallowed command",
-			arguments:      &commandargs.Shell{GitlabKeyId: "1", SshArgs: []string{"git-lfs-authenticate", "group/repo", "unknown"}},
+			arguments:      &commandargs.Shell{GitlabKeyID: "1", SSHArgs: []string{"git-lfs-authenticate", "group/repo", "unknown"}},
 			expectedOutput: "Disallowed command",
 		},
 		{
 			desc:           "With disallowed user",
-			arguments:      &commandargs.Shell{GitlabKeyId: "disallowed", SshArgs: []string{"git-lfs-authenticate", "group/repo", "download"}},
+			arguments:      &commandargs.Shell{GitlabKeyID: "disallowed", SSHArgs: []string{"git-lfs-authenticate", "group/repo", "download"}},
 			expectedOutput: "Disallowed by API call",
 		},
 	}
@@ -149,7 +149,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 			output := &bytes.Buffer{}
 			cmd := &Command{
 				Config:     &config.Config{GitlabUrl: url},
-				Args:       &commandargs.Shell{GitlabUsername: tc.username, SshArgs: []string{"git-lfs-authenticate", "group/repo", operation}},
+				Args:       &commandargs.Shell{GitlabUsername: tc.username, SSHArgs: []string{"git-lfs-authenticate", "group/repo", operation}},
 				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 			}
 

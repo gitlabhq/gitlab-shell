@@ -51,14 +51,14 @@ func TestReceivePack(t *testing.T) {
 
 				args := &commandargs.Shell{
 					CommandType: commandargs.ReceivePack,
-					SshArgs:     []string{"git-receive-pack", repo},
+					SSHArgs:     []string{"git-receive-pack", repo},
 					Env:         env,
 				}
 
 				if tc.username != "" {
 					args.GitlabUsername = tc.username
 				} else {
-					args.GitlabKeyId = tc.keyId
+					args.GitlabKeyID = tc.keyId
 				}
 
 				cfg := &config.Config{GitlabUrl: url}
