@@ -96,8 +96,8 @@ func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, ot
 	}
 
 	var requestBody *RequestBody
-	if args.GitlabKeyId != "" {
-		requestBody = &RequestBody{KeyID: args.GitlabKeyId, OTPAttempt: otp}
+	if args.GitlabKeyID != "" {
+		requestBody = &RequestBody{KeyID: args.GitlabKeyID, OTPAttempt: otp}
 	} else {
 		userInfo, err := client.GetByCommandArgs(ctx, args)
 

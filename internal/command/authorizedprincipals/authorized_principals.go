@@ -40,7 +40,7 @@ func (c *Command) printPrincipalLines() error {
 }
 
 func (c *Command) printPrincipalLine(principal string) error {
-	principalKeyLine, err := keyline.NewPrincipalKeyLine(c.Args.KeyId, principal, c.Config)
+	principalKeyLine, err := keyline.NewPrincipalKeyLine(c.Args.KeyID, principal, c.Config)
 	if err != nil {
 		return err
 	}

@@ -114,7 +114,7 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 	case args.GitlabKrb5Principal != "":
 		request.Krb5Principal = args.GitlabKrb5Principal
 	default:
-		request.KeyID = args.GitlabKeyId
+		request.KeyID = args.GitlabKeyID
 	}
 
 	request.CheckIP = gitlabnet.ParseIP(args.Env.RemoteAddr)
@@ -134,8 +134,8 @@ func parse(hr *http.Response, args *commandargs.Shell) (*Response, error) {
 		return nil, err
 	}
 
-	if args.GitlabKeyId != "" {
-		response.Who = "key-" + args.GitlabKeyId
+	if args.GitlabKeyID != "" {
+		response.Who = "key-" + args.GitlabKeyID
 	} else {
 		response.Who = response.UserID
 	}

@@ -39,9 +39,9 @@ func TestUploadPack(t *testing.T) {
 			}
 
 			args := &commandargs.Shell{
-				GitlabKeyId: userID,
+				GitlabKeyID: userID,
 				CommandType: commandargs.UploadPack,
-				SshArgs:     []string{"git-upload-pack", repo},
+				SSHArgs:     []string{"git-upload-pack", repo},
 				Env:         env,
 			}
 

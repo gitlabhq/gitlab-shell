@@ -59,12 +59,12 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			desc:             "With a known key id",
-			arguments:        &commandargs.Shell{GitlabKeyId: "1"},
+			arguments:        &commandargs.Shell{GitlabKeyID: "1"},
 			expectedUsername: "@alex-doe",
 		},
 		{
 			desc:             "With an unknown key",
-			arguments:        &commandargs.Shell{GitlabKeyId: "-1"},
+			arguments:        &commandargs.Shell{GitlabKeyID: "-1"},
 			expectedUsername: "Anonymous",
 		},
 		{

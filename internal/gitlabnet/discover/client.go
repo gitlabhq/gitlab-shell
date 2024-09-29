@@ -42,8 +42,8 @@ func (c *Client) GetByCommandArgs(ctx context.Context, args *commandargs.Shell) 
 	switch {
 	case args.GitlabUsername != "":
 		params.Add("username", args.GitlabUsername)
-	case args.GitlabKeyId != "":
-		params.Add("key_id", args.GitlabKeyId)
+	case args.GitlabKeyID != "":
+		params.Add("key_id", args.GitlabKeyID)
 	case args.GitlabKrb5Principal != "":
 		params.Add("krb5principal", args.GitlabKrb5Principal)
 	default:

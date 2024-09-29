@@ -39,9 +39,9 @@ func TestUploadArchive(t *testing.T) {
 			}
 
 			args := &commandargs.Shell{
-				GitlabKeyId: userID,
+				GitlabKeyID: userID,
 				CommandType: commandargs.UploadArchive,
-				SshArgs:     []string{"git-upload-archive", repo},
+				SSHArgs:     []string{"git-upload-archive", repo},
 				Env:         env,
 			}
 

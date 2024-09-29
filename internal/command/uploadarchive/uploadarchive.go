@@ -23,7 +23,7 @@ type logInfo struct{}
 
 // Execute executes the upload archive command
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
-	args := c.Args.SshArgs
+	args := c.Args.SSHArgs
 	if len(args) != 2 {
 		return ctx, disallowedcommand.Error
 	}

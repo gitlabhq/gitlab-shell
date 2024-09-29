@@ -49,8 +49,8 @@ func NewClient(config *config.Config, args *commandargs.Shell) (*Client, error) 
 // Authenticate performs authentication for LFS requests
 func (c *Client) Authenticate(ctx context.Context, operation, repo, userID string) (*Response, error) {
 	request := &Request{Operation: operation, Repo: repo}
-	if c.args.GitlabKeyId != "" {
-		request.KeyID = c.args.GitlabKeyId
+	if c.args.GitlabKeyID != "" {
+		request.KeyID = c.args.GitlabKeyID
 	} else {
 		request.UserID = strings.TrimPrefix(userID, "user-")
 	}

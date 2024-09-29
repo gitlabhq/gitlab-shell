@@ -58,7 +58,7 @@ func TestParseSuccess(t *testing.T) {
 			desc:         "It parses authorized-principals command",
 			executable:   &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
 			arguments:    []string{"key", "principal-1", "principal-2"},
-			expectedArgs: &commandargs.AuthorizedPrincipals{Arguments: []string{"key", "principal-1", "principal-2"}, KeyId: "key", Principals: []string{"principal-1", "principal-2"}},
+			expectedArgs: &commandargs.AuthorizedPrincipals{Arguments: []string{"key", "principal-1", "principal-2"}, KeyID: "key", Principals: []string{"principal-1", "principal-2"}},
 		},
 	}
 

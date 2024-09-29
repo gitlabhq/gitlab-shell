@@ -91,7 +91,7 @@ const (
 func TestVerifyOTPByKeyId(t *testing.T) {
 	client := setup(t)
 
-	args := &commandargs.Shell{GitlabKeyId: "0"}
+	args := &commandargs.Shell{GitlabKeyID: "0"}
 	err := client.VerifyOTP(context.Background(), args, otpAttempt)
 	require.NoError(t, err)
 }
@@ -107,7 +107,7 @@ func TestVerifyOTPByUsername(t *testing.T) {
 func TestErrorMessage(t *testing.T) {
 	client := setup(t)
 
-	args := &commandargs.Shell{GitlabKeyId: "1"}
+	args := &commandargs.Shell{GitlabKeyID: "1"}
 	err := client.VerifyOTP(context.Background(), args, otpAttempt)
 	require.Equal(t, "error message", err.Error())
 }
@@ -139,7 +139,7 @@ func TestErrorResponses(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			args := &commandargs.Shell{GitlabKeyId: tc.fakeID}
+			args := &commandargs.Shell{GitlabKeyID: tc.fakeID}
 			err := client.VerifyOTP(context.Background(), args, otpAttempt)
 
 			require.EqualError(t, err, tc.expectedError)
@@ -150,7 +150,7 @@ func TestErrorResponses(t *testing.T) {
 func TestVerifyPush(t *testing.T) {
 	client := setup(t)
 
-	args := &commandargs.Shell{GitlabKeyId: "0"}
+	args := &commandargs.Shell{GitlabKeyID: "0"}
 	err := client.PushAuth(context.Background(), args)
 	require.NoError(t, err)
 }
@@ -158,7 +158,7 @@ func TestVerifyPush(t *testing.T) {
 func TestErrorMessagePush(t *testing.T) {
 	client := setup(t)
 
-	args := &commandargs.Shell{GitlabKeyId: "1"}
+	args := &commandargs.Shell{GitlabKeyID: "1"}
 	err := client.PushAuth(context.Background(), args)
 	require.Equal(t, "error message", err.Error())
 }
@@ -190,7 +190,7 @@ func TestErrorResponsesPush(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			args := &commandargs.Shell{GitlabKeyId: tc.fakeID}
+			args := &commandargs.Shell{GitlabKeyID: tc.fakeID}
 			err := client.PushAuth(context.Background(), args)
 
 			require.EqualError(t, err, tc.expectedError)

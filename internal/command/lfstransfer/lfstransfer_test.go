@@ -1474,7 +1474,7 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url, Secret: "very secret"},
-		Args:       &commandargs.Shell{GitlabKeyId: keyID, SshArgs: []string{"git-lfs-transfer", repo, op}},
+		Args:       &commandargs.Shell{GitlabKeyID: keyID, SSHArgs: []string{"git-lfs-transfer", repo, op}},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: errorSink, Out: outputSink, In: inputSource},
 	}
 	pl := pktline.NewPktline(outputSource, inputSink)
