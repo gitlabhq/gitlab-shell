@@ -15,7 +15,7 @@ require (
 	github.com/openshift/gssapi v0.0.0-20161010215902-5fb4217df13b
 	github.com/otiai10/copy v1.14.0
 	github.com/pires/go-proxyproto v0.8.0
-	github.com/prometheus/client_golang v1.20.4
+	github.com/prometheus/client_golang v1.20.5
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 	gitlab.com/gitlab-org/gitaly/v16 v16.11.10
