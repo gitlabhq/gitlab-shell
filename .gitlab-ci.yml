@@ -4,6 +4,10 @@ include:
   - template: Security/Dependency-Scanning.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
   - component: ${CI_SERVER_FQDN}/gitlab-org/components/danger-review/danger-review@1.4.1
+  - component: ${CI_SERVER_FQDN}/components/code-intelligence/golang-code-intel@v0.1.1
+    inputs:
+      golang_version: ${GO_VERSION}
+      stage: post-test
 
 stages:
   - prepare
@@ -188,16 +192,6 @@ code_quality:
   stage: lint
   extends: .use-docker-in-docker
   rules: *workflow_rules
-
-code_navigation:
-  stage: post-test
-  image: sourcegraph/lsif-go:v1.9
-  allow_failure: true
-  script:
-    - lsif-go
-  artifacts:
-    reports:
-      lsif: dump.lsif
 
 # SAST
 semgrep-sast:
