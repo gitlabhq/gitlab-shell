@@ -91,7 +91,7 @@ GEM
       unicode-display_width (>= 1.1.1, < 3)
     unicode-display_width (2.5.0)
     uri (0.13.0)
-    webrick (1.8.2)
+    webrick (1.9.0)
 
 PLATFORMS
   ruby
@@ -99,7 +99,7 @@ PLATFORMS
 DEPENDENCIES
   gitlab-dangerfiles (~> 4.8.0)
   rspec (~> 3.13.0)
-  webrick (~> 1.8, >= 1.8.2)
+  webrick (~> 1.9)
 
 BUNDLED WITH
    2.5.11
