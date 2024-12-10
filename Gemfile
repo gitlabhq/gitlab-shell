@@ -2,7 +2,7 @@ source 'https://rubygems.org'
 
 group :development, :test do
   gem 'rspec', '~> 3.13.0'
-  gem 'webrick', '~> 1.9'
+  gem 'webrick', '~> 1.9', '>= 1.9.1'
 end
 
 group :development, :danger do
