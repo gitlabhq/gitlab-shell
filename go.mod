@@ -5,7 +5,7 @@ go 1.22
 toolchain go1.22.6
 
 require (
-	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20241205135855-f587eea0d96d
+	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20241212022435-e0340c3da857
 	github.com/git-lfs/pktline v0.0.0-20230103162542-ca444d533ef1
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
