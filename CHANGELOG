@@ -1,3 +1,80 @@
+v14.40.0
+
+- Bump development Ruby version to 3.3.7 !1224
+- Update module github.com/otiai10/copy to v1.14.1 !1220
+- Update module google.golang.org/grpc to v1.69.2 !1216
+- Update github.com/charmbracelet/git-lfs-transfer digest to e0340c3 !1215
+- Update module golang.org/x/crypto to v0.31.0 !1214
+- Update dependency webrick to '~> 1.9', '>= 1.9.1' !1212
+- Update module google.golang.org/grpc to v1.68.1 !1196
+- Update github.com/charmbracelet/git-lfs-transfer digest to f587eea !1210
+- Update module golang.org/x/crypto to v0.30.0 !1208
+- Update dependency danger-review to v2 !1206
+- Update module golang.org/x/sync to v0.10.0 !1207
+- Update dependency golang to v1.23.4 !1205
+- Update dependency danger-review to v1.4.2 !1204
+- Update github.com/charmbracelet/git-lfs-transfer digest to b2a2ff3 !1202
+- Update dependency ruby to v3.3.6 !1192
+- Update github.com/charmbracelet/git-lfs-transfer digest to b9a7efd !1199
+- Update module github.com/stretchr/testify to v1.10.0 !1201
+- Update module google.golang.org/protobuf to v1.35.2 !1200
+- Update module golang.org/x/crypto to v0.29.0 !1198
+- Update module golang.org/x/sync to v0.9.0 !1197
+- Update dependency golang to v1.23.3 !1194
+- Update CONTRIBUTING.md and LICENSE !1193
+- Update dependency webrick to '~> 1.9' !1191
+- Upgrade golang-code-intel version !1190
+- Fix code-navigation job !1189
+- Update module github.com/prometheus/client_golang to v1.20.5 !1187
+- Update module github.com/pires/go-proxyproto to v0.8.0 !1184
+- Update LabKit library to v1.21.2 !1186
+- Update github.com/charmbracelet/git-lfs-transfer digest to 422d244 !1181
+- Update module google.golang.org/protobuf to v1.35.1 !1180
+- Update module golang.org/x/crypto to v0.28.0 !1178
+- Update dependency golang to v1.23.2 !1177
+- Update module google.golang.org/grpc to v1.67.1 !1169
+- Update dependency webrick to '~> 1.8', '>= 1.8.2' !1175
+- Lint fixes for commandargs packages !1145
+- Update module github.com/prometheus/client_golang to v1.20.4 !1172
+- Resolve "Add current release process to the new README.md" !1174
+- Resolve "Expand the README.md with more details" !1173
+- ci: Bump Ruby/RubyGems versions in CI images !1171
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.11.10 !1170
+- Lint fixes for console executable and gitaly packages !1154
+- Fix 'go-require: do not use require in http handlers (testifylint)' linter errors !1168
+- Lint fixes for customaction package !1147
+- Lint fixes in healthcheck and discover package !1150
+- Improve logging on errors !1156
+- Lint fixes for personalaccesstoken package !1146
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.11.9 !1167
+- Update github.com/charmbracelet/git-lfs-transfer digest to edbf581 !1165
+- Update module google.golang.org/grpc to v1.66.1 !1166
+- Lint fixes for sshd packages !1138
+- Lint fixes for lfs packages !1139
+- Lint fixes for shared packages !1157
+- Added inspecting result in connection !1136
+- Update module github.com/prometheus/client_golang to v1.20.3 !1161
+- Update module golang.org/x/crypto to v0.27.0 !1163
+- Lint fixes in gitlabshell packages !1152
+- Update dependency golang to v1.23.1 !1162
+- Lint fixes for logger metrics and pktline packages !1155
+- Lint fixes in accessverifier package !1153
+- Lint fixes in gitlabnet git package !1149
+- Lint fixes for authorized keys and principal packages !1151
+- Update dependency ruby to v3.3.5 !1160
+- Lint fixes for githttp package !1144
+- Lint fixes for twofactor packages !1143
+- Update module google.golang.org/grpc to v1.66.0 !1142
+- Lint fixes for audit event packages !1140
+- Update config.yml with a configuration for PAT !1141
+- Update module github.com/prometheus/client_golang to v1.20.2 !1134
+- Update `golangci` to 1.60.3 and `gotestsum` to 1.12.0 !1135
+- Improve lint error reporting !1133
+- Update golangci to 1.60.2 !1132
+- Update module github.com/prometheus/client_golang to v1.20.1 !1130
+- Resolve "Add support for Go 1.23 to gitlab-shell" !1128
+- Resolve "Only run `nilaway` CI job when there's actual `.go` changes" !1127
+
 v14.39.0
 
 - Revise CODEOWNERS to use entire TW team !1125
