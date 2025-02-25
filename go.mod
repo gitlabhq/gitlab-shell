@@ -1,8 +1,8 @@
 module gitlab.com/gitlab-org/gitlab-shell/v14
 
-go 1.22
+go 1.23.0
 
-toolchain go1.22.6
+toolchain go1.24.0
 
 require (
 	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20250213143426-ccc940e84a22
@@ -20,7 +20,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gitlab-org/gitaly/v16 v16.11.10
 	gitlab.com/gitlab-org/labkit v1.21.2
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.35.0
 	golang.org/x/sync v0.11.0
 	google.golang.org/grpc v1.69.2
 	google.golang.org/protobuf v1.36.5
