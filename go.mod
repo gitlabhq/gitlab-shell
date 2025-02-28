@@ -19,7 +19,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 	gitlab.com/gitlab-org/gitaly/v16 v16.11.10
-	gitlab.com/gitlab-org/labkit v1.21.2
+	gitlab.com/gitlab-org/labkit v1.22.0
 	golang.org/x/crypto v0.35.0
 	golang.org/x/sync v0.11.0
 	google.golang.org/grpc v1.69.2
@@ -77,7 +77,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
-	github.com/prometheus/common v0.55.0 // indirect
+	github.com/prometheus/common v0.60.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/prometheus/prometheus v0.50.1 // indirect
 	github.com/sebest/xff v0.0.0-20210106013422-671bd2870b3a // indirect
