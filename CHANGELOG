@@ -1,3 +1,20 @@
+v14.41.0
+
+- Update module golang.org/x/sync to v0.12.0 !1244
+- Update dependency golang to v1.24.1 !1243
+- Update module github.com/prometheus/client_golang to v1.21.1 !1242
+- Update github.com/charmbracelet/git-lfs-transfer digest to 805ee9c !1241
+- Update module github.com/prometheus/client_golang to v1.21.0 !1234
+- Update module gitlab.com/gitlab-org/labkit to v1.22.0 !1240
+- Update dependency ruby to v3.4.2 !1232
+- Update module golang.org/x/crypto to v0.35.0 !1237
+- Update github.com/charmbracelet/git-lfs-transfer digest to ccc940e !1231
+- Update module golang.org/x/crypto to v0.33.0 !1222
+- Update dependency golang to v1.24.0 !1226
+- Update module google.golang.org/protobuf to v1.36.5 !1217
+- Update github.com/charmbracelet/git-lfs-transfer digest to db48881 !1219
+- Update dependency gitlab-dangerfiles to '~> 4.8.1' !1223
+
 v14.40.0
 
 - Bump development Ruby version to 3.3.7 !1224
