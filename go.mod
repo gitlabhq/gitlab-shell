@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.24.0
 
 require (
-	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20250303104011-805ee9c6cbde
+	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20250310095436-d4ecc24fdf8d
 	github.com/git-lfs/pktline v0.0.0-20230103162542-ca444d533ef1
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
