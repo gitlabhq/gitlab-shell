@@ -35,18 +35,6 @@ func (s *TestGitalyServer) SSHReceivePack(stream pb.SSHService_SSHReceivePackSer
 	return stream.Send(&pb.SSHReceivePackResponse{Stdout: response})
 }
 
-func (s *TestGitalyServer) SSHUploadPack(stream pb.SSHService_SSHUploadPackServer) error {
-	req, err := stream.Recv()
-	if err != nil {
-		return err
-	}
-
-	s.ReceivedMD, _ = metadata.FromIncomingContext(stream.Context())
-
-	response := []byte("UploadPack: " + req.Repository.GlRepository)
-	return stream.Send(&pb.SSHUploadPackResponse{Stdout: response})
-}
-
 func (s *TestGitalyServer) SSHUploadPackWithSidechannel(ctx context.Context, req *pb.SSHUploadPackWithSidechannelRequest) (*pb.SSHUploadPackWithSidechannelResponse, error) {
 	conn, err := client.OpenServerSidechannel(ctx)
 	if err != nil {
