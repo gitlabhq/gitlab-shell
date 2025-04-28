@@ -23,7 +23,7 @@ require (
 	// Please do not override. Once v16.11.1 is released, this comment
 	// can be removed.
 	gitlab.com/gitlab-org/gitaly/v16 v16.11.0-rc1.0.20250408053233-c6d43513e93c
-	gitlab.com/gitlab-org/labkit v1.23.2
+	gitlab.com/gitlab-org/labkit v1.24.0
 	golang.org/x/crypto v0.37.0
 	golang.org/x/sync v0.13.0
 	google.golang.org/grpc v1.72.0
