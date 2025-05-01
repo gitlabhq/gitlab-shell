@@ -18,19 +18,22 @@ stages:
 variables:
   FF_USE_FASTZIP: "true"
   TRANSFER_METER_FREQUENCY: "1s"
-  DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
-  GO_VERSION: "1.24"
   GOPATH: $CI_PROJECT_DIR/.GOPATH
   DEBIAN_VERSION: "bookworm"
-  RUBY_VERSION: "3.3.7"
   BUNDLE_PATH: vendor/ruby
   POLICY: pull
   CI_DEBUG_SERVICES: "true"
+  DOCKER_VERSION: "20.10.15"
+  GO_VERSION: "1.24"
+  RUBY_VERSION: "3.3.7"
   RUST_VERSION: "1.73"
-  UBI_VERSION: "8.6"
-  IMAGE_TAG: "rubygems-3.5-git-2.45-exiftool-12.60"
+  UBI_VERSION: "9.5"
   GITLAB_ADVANCED_SAST_ENABLED: "true"
+  IMAGE_TAG: "rubygems-3.5-git-2.45-lfs-2.9-chrome-123-yarn-1.22-graphicsmagick-1.3.36"
+  DEFAULT_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-ruby-${RUBY_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}-node-20.12-postgresql-16:${IMAGE_TAG}"
+  FIPS_IMAGE_TAG: "git-2.45"
+  FIPS_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${FIPS_IMAGE_TAG}"
 
 workflow:
   rules: &workflow_rules # For merge requests, create a pipeline.
@@ -48,7 +51,7 @@ workflow:
         - "**/*.go"
 
 default:
-  image: registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-ruby-${RUBY_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${IMAGE_TAG}
+  image: ${DEFAULT_IMAGE}
   tags:
     - gitlab-org
 
@@ -175,7 +178,7 @@ tests_without_cgo:
     - make verify test_fancy
 
 tests:fips:
-  image: registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-ruby-${RUBY_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${IMAGE_TAG}
+  image: ${FIPS_IMAGE}
   extends:
     - .cached-job
     - .test-job
