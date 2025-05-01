@@ -23,7 +23,7 @@ variables:
   GO_VERSION: "1.24"
   GOPATH: $CI_PROJECT_DIR/.GOPATH
   DEBIAN_VERSION: "bookworm"
-  RUBY_VERSION: "3.2.5"
+  RUBY_VERSION: "3.3.7"
   BUNDLE_PATH: vendor/ruby
   POLICY: pull
   CI_DEBUG_SERVICES: "true"
