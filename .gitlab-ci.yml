@@ -273,6 +273,6 @@ nilaway:
   before_script:
     - go install go.uber.org/nilaway/cmd/nilaway@latest
   script:
-    - ${GOPATH}/bin/nilaway ./... > /tmp/out.txt 2>&1 || true
+    - ${GOPATH}/bin/nilaway -include-pkgs="gitlab.com/gitlab-org/gitlab-shell/v14" ./... > /tmp/out.txt 2>&1 || true
     - cat /tmp/out.txt
   allow_failure: true
