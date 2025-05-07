@@ -16,7 +16,7 @@ stages:
   - post-test
 
 variables:
-  FF_USE_FASTZIP: 'true'
+  FF_USE_FASTZIP: "true"
   TRANSFER_METER_FREQUENCY: "1s"
   DOCKER_VERSION: "20.10.15"
   BUNDLE_FROZEN: "true"
@@ -26,27 +26,26 @@ variables:
   RUBY_VERSION: "3.2.5"
   BUNDLE_PATH: vendor/ruby
   POLICY: pull
-  CI_DEBUG_SERVICES: 'true'
+  CI_DEBUG_SERVICES: "true"
   RUST_VERSION: "1.73"
   UBI_VERSION: "8.6"
   IMAGE_TAG: "rubygems-3.5-git-2.45-exiftool-12.60"
-  GITLAB_ADVANCED_SAST_ENABLED: 'true'
+  GITLAB_ADVANCED_SAST_ENABLED: "true"
 
 workflow:
-  rules: &workflow_rules
-    # For merge requests, create a pipeline.
-    - if: '$CI_MERGE_REQUEST_IID'
+  rules: &workflow_rules # For merge requests, create a pipeline.
+    - if: "$CI_MERGE_REQUEST_IID"
     # For `main` branch, create a pipeline (this includes on schedules, pushes, merges, etc.).
     - if: '$CI_COMMIT_BRANCH == "main"'
     # For tags, create a pipeline.
-    - if: '$CI_COMMIT_TAG'
+    - if: "$CI_COMMIT_TAG"
 
 .rules:go-changes:
   rules:
     - changes:
-        - 'go.mod'
-        - 'go.sum'
-        - '**/*.go'
+        - "go.mod"
+        - "go.sum"
+        - "**/*.go"
 
 default:
   image: registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-ruby-${RUBY_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${IMAGE_TAG}
@@ -127,7 +126,7 @@ modules:download:
 ################################################################################
 
 .test-job:
-  needs: ['bundle:install', 'modules:download']
+  needs: ["bundle:install", "modules:download"]
   rules: !reference [".rules:go-changes", rules]
   variables:
     GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
@@ -140,7 +139,12 @@ modules:download:
   services:
     - name: registry.gitlab.com/gitlab-org/build/cng/gitaly:master
       # Disable the hooks so we don't have to stub the GitLab API
-      command: ["bash", "-c", "mkdir -p /home/git/repositories && rm -rf /srv/gitlab-shell/hooks/* && touch /srv/gitlab-shell/.gitlab_shell_secret && exec /usr/bin/env GITALY_TESTING_NO_GIT_HOOKS=1 /scripts/process-wrapper"]
+      command:
+        [
+          "bash",
+          "-c",
+          "mkdir -p /home/git/repositories && rm -rf /srv/gitlab-shell/hooks/* && touch /srv/gitlab-shell/.gitlab_shell_secret && exec /usr/bin/env GITALY_TESTING_NO_GIT_HOOKS=1 /scripts/process-wrapper",
+        ]
       alias: gitaly
 
 tests:
@@ -215,8 +219,8 @@ secret_detection:
 build-package-and-qa:
   stage: post-test
   trigger:
-    project: 'gitlab-org/build/omnibus-gitlab-mirror'
-    branch: 'master'
+    project: "gitlab-org/build/omnibus-gitlab-mirror"
+    branch: "master"
     strategy: depend
   inherit:
     variables: false
@@ -230,7 +234,7 @@ build-package-and-qa:
     # For MRs that change dependencies, we want to automatically ensure builds
     # aren't broken. In such cases, we don't want the QA tests to be run
     # automatically, but still available for developers to manually run.
-    - if: '$CI_MERGE_REQUEST_IID'
+    - if: "$CI_MERGE_REQUEST_IID"
       changes:
         - go.sum
       variables:
@@ -239,14 +243,14 @@ build-package-and-qa:
       allow_failure: false
     # For other MRs, we still provide this job as a manual job for developers
     # to obtain a package for testing and run QA tests.
-    - if: '$CI_MERGE_REQUEST_IID'
+    - if: "$CI_MERGE_REQUEST_IID"
       when: manual
       allow_failure: true
   needs: []
 
 modules:tidy:
   stage: lint
-  needs: ['modules:download']
+  needs: ["modules:download"]
   script:
     - go mod tidy
     - git diff --exit-code go.mod go.sum
@@ -273,6 +277,7 @@ nilaway:
   before_script:
     - go install go.uber.org/nilaway/cmd/nilaway@latest
   script:
-    - ${GOPATH}/bin/nilaway ./... > /tmp/out.txt 2>&1 || true
+    - NILAWAY_EXIT_CODE=$(${GOPATH}/bin/nilaway -include-pkgs="gitlab.com/gitlab-org/gitlab-shell/v14" ./... > /tmp/out.txt 2>&1 ; echo $?) || true
     - cat /tmp/out.txt
+    - exit ${NILAWAY_EXIT_CODE}
   allow_failure: true
