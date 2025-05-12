@@ -1,3 +1,32 @@
+v14.42.0
+
+- Update CI RUBY_VERSION to 3.4.2 !1248
+- Revert "Merge branch 'pb-ci-ruby-version-3-4-2' into 'main'" !1249
+- Update github.com/charmbracelet/git-lfs-transfer digest to d4ecc24 !1250
+- Update Gitaly client dependency to include DNS lookup change !1251
+- Update module gitlab.com/gitlab-org/labkit to v1.23.1 !1252
+- Update module gitlab.com/gitlab-org/gitaly/v16 to v16.11.10 !1253
+- Update module gitlab.com/gitlab-org/labkit to v1.23.2 !1254
+- Update module github.com/golang-jwt/jwt/v5 to v5.2.2 !1256
+- Update module google.golang.org/protobuf to v1.36.6 !1257
+- Update dependency danger-review to v2.1.0 !1258
+- Update github.com/charmbracelet/git-lfs-transfer digest to fd7f679 !1259
+- Update dependency golang to v1.24.2 !1261
+- Update github.com/charmbracelet/git-lfs-transfer digest to e9f7fdb !1262
+- Update module github.com/prometheus/client_golang to v1.22.0 !1263
+- Update Gitlab-shell Gitaly client dependency !1266
+- Update github.com/charmbracelet/git-lfs-transfer digest to 4db3867 !1267
+- Update dependency ruby to v3.4.3 !1268
+- Update module google.golang.org/grpc to v1.72.0 !1269
+- Update github.com/charmbracelet/git-lfs-transfer digest to cdc13fa !1273
+- Update module gitlab.com/gitlab-org/labkit to v1.24.0 !1274
+- Go 1.24.2 update !1275
+- Update dependency gitlab-dangerfiles to '~> 4.9.1' !1278
+- Update github.com/charmbracelet/git-lfs-transfer digest to 0d51139 !1279
+- Update dependency go to v1.24.3 !1282
+- Update dependency golang to v1.24.3 !1283
+- Ensure nilaway only scans gitlab-shell !1285
+
 v14.41.0
 
 - Update module golang.org/x/sync to v0.12.0 !1244
