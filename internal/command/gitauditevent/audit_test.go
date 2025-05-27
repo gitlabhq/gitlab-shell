@@ -14,6 +14,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/gitauditevent"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
 var (
@@ -44,12 +45,13 @@ func TestGitAudit(t *testing.T) {
 		},
 	}
 
-	s := &commandargs.Shell{
+	args := &commandargs.Shell{
 		CommandType: commandargs.UploadArchive,
+		Env:         sshenv.Env{RemoteAddr: "18.245.0.42"},
 	}
 
 	url := testserver.StartSocketHTTPServer(t, requests)
-	Audit(context.Background(), s.CommandType, &config.Config{GitlabUrl: url}, &accessverifier.Response{
+	Audit(context.Background(), args, &config.Config{GitlabUrl: url}, &accessverifier.Response{
 		Username: testUsername,
 		Repo:     testRepo,
 	}, nil)

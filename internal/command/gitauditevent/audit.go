@@ -14,10 +14,10 @@ import (
 
 // Audit is called conditionally during `git-receive-pack` and `git-upload-pack` to generate streaming audit events.
 // Errors are not propagated since this is more a logging process.
-func Audit(ctx context.Context, commandType commandargs.CommandType, c *config.Config, response *accessverifier.Response, packfileStats *pb.PackfileNegotiationStatistics) {
+func Audit(ctx context.Context, args *commandargs.Shell, c *config.Config, response *accessverifier.Response, packfileStats *pb.PackfileNegotiationStatistics) {
 	ctxlog := log.WithContextFields(ctx, log.Fields{
 		"gl_repository": response.Repo,
-		"command":       commandType,
+		"command":       args.CommandType,
 		"username":      response.Username,
 	})
 
@@ -29,7 +29,7 @@ func Audit(ctx context.Context, commandType commandargs.CommandType, c *config.C
 		return
 	}
 
-	errOnlyLog = gitAuditClient.Audit(ctx, response.Username, commandType, response.Repo, packfileStats)
+	errOnlyLog = gitAuditClient.Audit(ctx, response.Username, args, response.Repo, packfileStats)
 	if errOnlyLog != nil {
 		ctxlog.Errorf("failed to audit git event: %v", errOnlyLog)
 		return
