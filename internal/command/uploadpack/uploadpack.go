@@ -72,7 +72,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	}
 
 	if response.NeedAudit {
-		gitauditevent.Audit(ctx, c.Args.CommandType, c.Config, response, stats)
+		gitauditevent.Audit(ctx, c.Args, c.Config, response, stats)
 	}
 	return ctxWithLogData, nil
 }

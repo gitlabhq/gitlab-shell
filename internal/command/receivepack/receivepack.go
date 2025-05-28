@@ -74,7 +74,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	}
 
 	if response.NeedAudit {
-		gitauditevent.Audit(ctx, c.Args.CommandType, c.Config, response, nil /* keep nil for `git-receive-pack`*/)
+		gitauditevent.Audit(ctx, c.Args, c.Config, response, nil /* keep nil for `git-receive-pack`*/)
 	}
 	return ctxWithLogData, nil
 }

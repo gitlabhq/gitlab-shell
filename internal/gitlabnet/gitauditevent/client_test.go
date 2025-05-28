@@ -13,20 +13,24 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
 var (
-	testUsername                              = "gitlab-shell"
-	testAction        commandargs.CommandType = "git-upload-pack"
-	testRepo                                  = "gitlab-org/gitlab-shell"
-	testPackfileWants int64                   = 100
-	testPackfileHaves int64                   = 100
+	testUsername            = "gitlab-shell"
+	testRepo                = "gitlab-org/gitlab-shell"
+	testPackfileWants int64 = 100
+	testPackfileHaves int64 = 100
+	testArgs                = &commandargs.Shell{
+		Env:         sshenv.Env{RemoteAddr: "18.245.0.42"},
+		CommandType: "git-upload-pack",
+	}
 )
 
 func TestAudit(t *testing.T) {
 	client := setup(t, http.StatusOK)
 
-	err := client.Audit(context.Background(), testUsername, testAction, testRepo, &pb.PackfileNegotiationStatistics{
+	err := client.Audit(context.Background(), testUsername, testArgs, testRepo, &pb.PackfileNegotiationStatistics{
 		Wants: testPackfileWants,
 		Haves: testPackfileHaves,
 	})
@@ -36,7 +40,7 @@ func TestAudit(t *testing.T) {
 func TestAuditFailed(t *testing.T) {
 	client := setup(t, http.StatusBadRequest)
 
-	err := client.Audit(context.Background(), testUsername, testAction, testRepo, &pb.PackfileNegotiationStatistics{
+	err := client.Audit(context.Background(), testUsername, testArgs, testRepo, &pb.PackfileNegotiationStatistics{
 		Wants: testPackfileWants,
 		Haves: testPackfileHaves,
 	})
@@ -55,7 +59,8 @@ func setup(t *testing.T, responseStatus int) *Client {
 				var request *Request
 				assert.NoError(t, json.Unmarshal(body, &request))
 				assert.Equal(t, testUsername, request.Username)
-				assert.Equal(t, testAction, request.Action)
+				assert.Equal(t, testArgs.Env.RemoteAddr, request.CheckIP)
+				assert.Equal(t, testArgs.CommandType, request.Action)
 				assert.Equal(t, testRepo, request.Repo)
 				assert.Equal(t, "ssh", request.Protocol)
 				assert.Equal(t, testPackfileWants, request.PackfileStats.Wants)
