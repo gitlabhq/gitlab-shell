@@ -1,10 +1,13 @@
 package keyline
 
 import (
+	"fmt"
+	"path"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
 )
 
 func TestFailingNewPublicKeyLine(t *testing.T) {
@@ -57,6 +60,12 @@ func TestFailingNewPrincipalKeyLine(t *testing.T) {
 			principal:     "principal\n1",
 			expectedError: "invalid value: principal\n1",
 		},
+		{
+			desc:          "When KeyID has an invalid character in it",
+			keyID:         "user.name@domain",
+			principal:     "principal1",
+			expectedError: "invalid key_id: user.name@domain",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -65,6 +74,52 @@ func TestFailingNewPrincipalKeyLine(t *testing.T) {
 
 			require.Empty(t, result)
 			require.EqualError(t, err, tc.expectedError)
+		})
+	}
+}
+
+func TestSuccessfulNewPrincipalKeyLine(t *testing.T) {
+	testCases := []struct {
+		desc      string
+		keyID     string
+		principal string
+	}{
+		{
+			desc:      "KeyID with dot",
+			keyID:     "user.name",
+			principal: "principal1",
+		},
+		{
+			desc:      "KeyID with uppercase",
+			keyID:     "UserName",
+			principal: "principal1",
+		},
+		{
+			desc:      "KeyID with dot and uppercase",
+			keyID:     "User.Name.DEPARTMENT",
+			principal: "principal1",
+		},
+		{
+			desc:      "KeyID with hyphen, dot, uppercase, no space",
+			keyID:     "User-name.Department_9",
+			principal: "principal1",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			currentConfig := &config.Config{RootDir: "/tmp", SslCertDir: "/tmp/certs"}
+			keyLine, err := NewPrincipalKeyLine(tc.keyID, tc.principal, currentConfig)
+			require.NoError(t, err)
+			require.NotNil(t, keyLine)
+			require.Equal(t, tc.keyID, keyLine.ID)
+			require.Equal(t, tc.principal, keyLine.Value)
+			require.Equal(t, PrincipalPrefix, keyLine.Prefix)
+
+			// Optionally verify ToString output
+			expectedCommand := fmt.Sprintf("%s %s-%s", path.Join(currentConfig.RootDir, executable.BinDir, executable.GitlabShell), PrincipalPrefix, tc.keyID)
+			expectedOutput := fmt.Sprintf(`command="%s",%s %s`, expectedCommand, SSHOptions, tc.principal)
+			require.Equal(t, expectedOutput, keyLine.ToString())
 		})
 	}
 }

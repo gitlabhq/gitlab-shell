@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	keyRegex = regexp.MustCompile(`\A[a-z0-9-]+\z`)
+	keyRegex = regexp.MustCompile(`\A[a-zA-Z0-9._-]+\z`)
 )
 
 const (
