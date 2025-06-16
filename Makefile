@@ -4,7 +4,12 @@ FIPS_MODE ?= 0
 OS := $(shell uname | tr A-Z a-z)
 GO_SOURCES := $(shell git ls-files \*.go)
 VERSION_STRING := $(shell git describe --match v* 2>/dev/null || awk '$$0="v"$$0' VERSION 2>/dev/null || echo unknown)
-BUILD_TIME := $(shell date -u +%Y%m%d.%H%M%S)
+DATE_FMT = +%Y%m%d.%H%M%S
+ifdef SOURCE_DATE_EPOCH
+	BUILD_TIME := $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "$(DATE_FMT)" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "$(DATE_FMT)" 2>/dev/null || date -u "$(DATE_FMT)")
+else
+	BUILD_TIME := $(shell date -u "$(DATE_FMT)")
+endif
 GO_TAGS := tracer_static tracer_static_jaeger continuous_profiler_stackdriver
 
 ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' | sed -e 's/aarch64/arm64/')
