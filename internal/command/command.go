@@ -29,6 +29,11 @@ type LogData struct {
 	Meta         LogMetadata `json:"meta"`
 }
 
+type contextKey string
+
+// LogDataKey is the context key used to store log data in request contexts.
+const LogDataKey contextKey = "logData"
+
 func CheckForVersionFlag(osArgs []string, version, buildTime string) {
 	// We can't use the flag library because gitlab-shell receives other arguments
 	// that confuse the parser.
