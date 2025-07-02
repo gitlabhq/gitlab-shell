@@ -38,6 +38,7 @@ type Request struct {
 	Username      string                            `json:"username"`
 	PackfileStats *pb.PackfileNegotiationStatistics `json:"packfile_stats,omitempty"`
 	CheckIP       string                            `json:"check_ip,omitempty"`
+	Changes       string                            `json:"changes"`
 }
 
 // Audit sends an audit event to the GitLab API.
@@ -49,6 +50,7 @@ func (c *Client) Audit(ctx context.Context, username string, args *commandargs.S
 		Username:      username,
 		PackfileStats: packfileStats,
 		CheckIP:       gitlabnet.ParseIP(args.Env.RemoteAddr),
+		Changes:       "_any",
 	}
 
 	response, err := c.client.Post(ctx, uri, request)

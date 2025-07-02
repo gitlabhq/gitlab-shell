@@ -65,6 +65,7 @@ func setup(t *testing.T, responseStatus int) *Client {
 				assert.Equal(t, "ssh", request.Protocol)
 				assert.Equal(t, testPackfileWants, request.PackfileStats.Wants)
 				assert.Equal(t, testPackfileHaves, request.PackfileStats.Haves)
+				assert.Equal(t, "_any", request.Changes)
 
 				w.WriteHeader(responseStatus)
 			},
