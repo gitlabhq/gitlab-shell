@@ -273,7 +273,7 @@ func TestDefaultAlgorithms(t *testing.T) {
 
 func TestCustomAlgorithms(t *testing.T) {
 	customMACs := []string{"hmac-sha2-512-etm@openssh.com"}
-	customKexAlgos := []string{"curve25519-sha256"}
+	customKexAlgos := []string{"curve25519-sha256", "curve25519-sha256@libssh.org"}
 	customCiphers := []string{"aes256-gcm@openssh.com"}
 	customPublicKeyAlgorithms := []string{"rsa-sha2-256"}
 
