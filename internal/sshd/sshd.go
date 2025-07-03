@@ -272,8 +272,8 @@ func extractDataFromContext(ctx context.Context) command.LogData {
 		return logData
 	}
 
-	if ctx.Value("logData") != nil {
-		logData = ctx.Value("logData").(command.LogData)
+	if ctx.Value(command.LogDataKey) != nil {
+		logData = ctx.Value(command.LogDataKey).(command.LogData)
 	}
 
 	return logData

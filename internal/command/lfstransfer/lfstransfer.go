@@ -49,7 +49,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	ctxWithLogData := context.WithValue(ctx, "logData", command.NewLogData(
+	ctxWithLogData := context.WithValue(ctx, command.LogDataKey, command.NewLogData(
 		accessResponse.Gitaly.Repo.GlProjectPath,
 		accessResponse.Username,
 		accessResponse.ProjectID,
