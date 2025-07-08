@@ -1,3 +1,18 @@
+v14.43.0
+
+- Update module golang.org/x/crypto to v0.38.0 !1281
+- Send `check_ip` parameter in Git streaming audit event !1290
+- Allow dots, underscores, and uppercase in key_id validation !1284
+- Update Ruby dependencies !1292
+- Update module golang.org/x/sync to v0.15.0 !1293
+- Use `SOURCE_DATE_EPOCH` if set for build time !1291
+- Update dependency go to v1.24.4 !1294
+- Update dependency golang to v1.24.4 !1295
+- Update module gitlab.com/gitlab-org/labkit to v1.24.1 !1297
+- Fix "context-keys-type" linter warning !1301
+- Update module golang.org/x/crypto to v0.39.0 !1299
+- Include changes param in shellhorse Git over SSH !1300
+
 v14.42.0
 
 - Update CI RUBY_VERSION to 3.4.2 !1248
