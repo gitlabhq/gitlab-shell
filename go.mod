@@ -7,7 +7,7 @@ toolchain go1.24.5
 require (
 	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20250505094602-0d51139d5979
 	github.com/git-lfs/pktline v0.0.0-20230103162542-ca444d533ef1
-	github.com/golang-jwt/jwt/v5 v5.2.3
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/mattn/go-shellwords v1.0.12
