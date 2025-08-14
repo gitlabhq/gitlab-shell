@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"context"
 	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -218,7 +220,14 @@ func buildClient(t *testing.T, addr string, hostKey ed25519.PublicKey) *ssh.Clie
 	pubKey, err := ssh.NewPublicKey(hostKey)
 	require.NoError(t, err)
 
-	_, clientPrivKey, err := ed25519.GenerateKey(nil)
+	var clientPrivKey interface{}
+
+	if os.Getenv("FIPS_MODE") == "1" {
+		clientPrivKey, err = rsa.GenerateKey(rand.Reader, 2048)
+	} else {
+		_, clientPrivKey, err = ed25519.GenerateKey(nil)
+	}
+
 	require.NoError(t, err)
 
 	clientSigner, err := ssh.NewSignerFromKey(clientPrivKey)

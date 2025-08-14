@@ -37,7 +37,7 @@ cmd/gitlab-shell/main.go:48:15: Error return value of `fmt.Fprintln` is not chec
 cmd/gitlab-shell/main.go:53:23: Error return value of `logCloser.Close` is not checked (errcheck)
 cmd/gitlab-shell/main.go:60:14: Error return value of `fmt.Fprintf` is not checked (errcheck)
 cmd/gitlab-shell/main.go:61:3: exitAfterDefer: os.Exit will exit, and `defer logCloser.Close()` will not run (gocritic)
-cmd/gitlab-sshd/acceptance_test.go:458:2: encoded-compare: use require.JSONEq (testifylint)
+cmd/gitlab-sshd/acceptance_test.go:467:2: encoded-compare: use require.JSONEq (testifylint)
 internal/command/authorizedkeys/authorized_keys.go:29:4: internal/command/authorizedkeys/authorized_keys.go:29: Line contains TODO/BUG/FIXME/NOTE/OPTIMIZE/HACK: "TODO: Log this event once we have a cons..." (godox)
 internal/command/command.go:1:1: package-comments: should have a package comment (revive)
 internal/command/command.go:15:6: exported: exported type Command should have comment or be unexported (revive)
