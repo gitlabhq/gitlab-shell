@@ -1,3 +1,12 @@
+v14.44.0
+
+- Update dependency go to v1.24.5 !1306
+- Update module golang.org/x/sync to v0.16.0 !1307
+- Update module github.com/golang-jwt/jwt/v5 to v5.2.3 !1310
+- Update Ruby development version to 3.3.9 !1312
+- Update module github.com/golang-jwt/jwt/v5 to v5.3.0 !1313
+- Remove hard-coded SSH supported algorithms !1315
+
 v14.43.0
 
 - Update module golang.org/x/crypto to v0.38.0 !1281
