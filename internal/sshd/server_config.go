@@ -17,27 +17,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedcerts"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedkeys"
 
+	"gitlab.com/gitlab-org/labkit/fips"
 	"gitlab.com/gitlab-org/labkit/log"
-)
-
-var (
-	supportedMACs = []string{
-		"hmac-sha2-256-etm@openssh.com",
-		"hmac-sha2-512-etm@openssh.com",
-		"hmac-sha2-256",
-		"hmac-sha2-512",
-		"hmac-sha1",
-	}
-
-	supportedKeyExchanges = []string{
-		"curve25519-sha256",
-		"curve25519-sha256@libssh.org",
-		"ecdh-sha2-nistp256",
-		"ecdh-sha2-nistp384",
-		"ecdh-sha2-nistp521",
-		"diffie-hellman-group14-sha256",
-		"diffie-hellman-group14-sha1",
-	}
 )
 
 type serverConfig struct {
@@ -252,6 +233,14 @@ func (s *serverConfig) get(parentCtx context.Context) *ssh.ServerConfig {
 		ServerVersion:       "SSH-2.0-GitLab-SSHD",
 	}
 
+	// This can be dropped once https://github.com/golang-fips/go/issues/316 is supported.
+	// We need to constrain the list of supported algorithms for FIPS.
+	algorithms := fips.SupportedAlgorithms()
+	sshCfg.PublicKeyAuthAlgorithms = algorithms.PublicKeyAuths
+	sshCfg.Ciphers = algorithms.Ciphers
+	sshCfg.KeyExchanges = algorithms.KeyExchanges
+	sshCfg.MACs = algorithms.MACs
+
 	s.configureMACs(sshCfg)
 	s.configureKeyExchanges(sshCfg)
 	s.configureCiphers(sshCfg)
@@ -279,15 +268,11 @@ func (s *serverConfig) configureCiphers(sshCfg *ssh.ServerConfig) {
 func (s *serverConfig) configureKeyExchanges(sshCfg *ssh.ServerConfig) {
 	if len(s.cfg.Server.KexAlgorithms) > 0 {
 		sshCfg.KeyExchanges = s.cfg.Server.KexAlgorithms
-	} else {
-		sshCfg.KeyExchanges = supportedKeyExchanges
 	}
 }
 
 func (s *serverConfig) configureMACs(sshCfg *ssh.ServerConfig) {
 	if len(s.cfg.Server.MACs) > 0 {
 		sshCfg.MACs = s.cfg.Server.MACs
-	} else {
-		sshCfg.MACs = supportedMACs
 	}
 }

@@ -21,6 +21,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
+	"gitlab.com/gitlab-org/labkit/fips"
 )
 
 func TestNewServerConfigWithoutHosts(t *testing.T) {
@@ -250,25 +251,28 @@ func TestDefaultAlgorithms(t *testing.T) {
 	srvCfg := &serverConfig{cfg: &config.Config{}}
 	sshServerConfig := srvCfg.get(context.Background())
 
-	require.Equal(t, supportedMACs, sshServerConfig.MACs)
-	require.Equal(t, supportedKeyExchanges, sshServerConfig.KeyExchanges)
-	require.Nil(t, sshServerConfig.Ciphers)
+	algorithms := fips.SupportedAlgorithms()
+
+	require.Equal(t, algorithms.MACs, sshServerConfig.MACs)
+	require.Equal(t, algorithms.KeyExchanges, sshServerConfig.KeyExchanges)
+	require.Equal(t, algorithms.Ciphers, sshServerConfig.Ciphers)
 
 	sshServerConfig.SetDefaults()
 
-	require.Equal(t, supportedMACs, sshServerConfig.MACs)
-	require.Equal(t, supportedKeyExchanges, sshServerConfig.KeyExchanges)
-
-	defaultCiphers := []string{
-		"aes128-gcm@openssh.com",
-		"aes256-gcm@openssh.com",
-		"chacha20-poly1305@openssh.com",
-		"aes128-ctr",
-		"aes192-ctr",
-		"aes256-ctr",
+	// Go automatically adds curve25519-sha256@libssh.org as alias for curve25519-sha256
+	// if the latter exists for backwards compatibility:
+	// https://github.com/golang/crypto/blob/ef5341b70697ceb55f904384bd982587224e8b0c/ssh/common.go#L512-L520
+	var kexs []string
+	for _, k := range algorithms.KeyExchanges {
+		kexs = append(kexs, k)
+		if k == ssh.KeyExchangeCurve25519 {
+			kexs = append(kexs, "curve25519-sha256@libssh.org")
+		}
 	}
 
-	require.Equal(t, sshServerConfig.Ciphers, defaultCiphers)
+	require.Equal(t, algorithms.MACs, sshServerConfig.MACs)
+	require.Equal(t, kexs, sshServerConfig.KeyExchanges)
+	require.Equal(t, algorithms.Ciphers, sshServerConfig.Ciphers)
 }
 
 func TestCustomAlgorithms(t *testing.T) {
