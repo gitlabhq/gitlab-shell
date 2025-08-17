@@ -1,0 +1,6 @@
+```glql
+display: list
+fields: title, labels("workflow::*") AS "Workflow", labels("priority::*") AS "Priority"
+limit: 5
+query: project = "gitlab-org/gitlab" AND assignee = currentUser() AND state = opened
+```
