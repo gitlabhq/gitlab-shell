@@ -1,0 +1,7 @@
+```glql
+display: list
+fields: title, health, due
+limit: 5
+sort: due asc
+query: project = "gitlab-org/gitlab" AND assignee = currentUser() AND state = opened
+```
