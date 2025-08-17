@@ -1,0 +1,8 @@
+```glql
+display: table
+title: GLQL table
+description: This view lists my open issues
+fields: title, state, health, epic, milestone, weight, updated
+limit: 5
+query: project = "gitlab-org/gitlab" AND assignee = currentUser() AND state = opened
+```
