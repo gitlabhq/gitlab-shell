@@ -34,6 +34,7 @@ variables:
   DEFAULT_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-ruby-${RUBY_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${IMAGE_TAG}"
   FIPS_IMAGE_TAG: "rubygems-3.5-git-2.49-exiftool-12.60"
   FIPS_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-ruby-${RUBY_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${FIPS_IMAGE_TAG}"
+  GOTOOLCHAIN: local
 
 workflow:
   rules: &workflow_rules # For merge requests, create a pipeline.
@@ -46,6 +47,7 @@ workflow:
 .rules:go-changes:
   rules:
     - changes:
+        - .gitlab-ci.yml
         - "go.mod"
         - "go.sum"
         - "**/*.go"
