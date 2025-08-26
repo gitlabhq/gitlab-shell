@@ -1,3 +1,8 @@
+v14.45.0
+
+- Make CI jobs use the local Go toolchain !1319
+- Add back default SSH algorithms for non-FIPS builds !1320
+
 v14.44.0
 
 - Update dependency go to v1.24.5 !1306
