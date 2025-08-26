@@ -247,12 +247,17 @@ func TestUserCertificateHandling(t *testing.T) {
 	}
 }
 
-func TestDefaultAlgorithms(t *testing.T) {
+func TestFipsDefaultAlgorithms(t *testing.T) {
+	if !fips.Enabled() {
+		t.Skip()
+	}
+
 	srvCfg := &serverConfig{cfg: &config.Config{}}
 	sshServerConfig := srvCfg.get(context.Background())
 
 	algorithms := fips.SupportedAlgorithms()
 
+	require.Equal(t, algorithms.PublicKeyAuths, sshServerConfig.PublicKeyAuthAlgorithms)
 	require.Equal(t, algorithms.MACs, sshServerConfig.MACs)
 	require.Equal(t, algorithms.KeyExchanges, sshServerConfig.KeyExchanges)
 	require.Equal(t, algorithms.Ciphers, sshServerConfig.Ciphers)
@@ -273,6 +278,23 @@ func TestDefaultAlgorithms(t *testing.T) {
 	require.Equal(t, algorithms.MACs, sshServerConfig.MACs)
 	require.Equal(t, kexs, sshServerConfig.KeyExchanges)
 	require.Equal(t, algorithms.Ciphers, sshServerConfig.Ciphers)
+}
+
+func TestNonFipsDefaultAlgorithms(t *testing.T) {
+	if fips.Enabled() {
+		t.Skip()
+	}
+
+	srvCfg := &serverConfig{cfg: &config.Config{}}
+	sshServerConfig := srvCfg.get(context.Background())
+
+	defaultCfg := ssh.ServerConfig{}
+	defaultCfg.SetDefaults()
+
+	require.Equal(t, defaultCfg.PublicKeyAuthAlgorithms, sshServerConfig.PublicKeyAuthAlgorithms)
+	require.Equal(t, defaultCfg.MACs, sshServerConfig.MACs)
+	require.Equal(t, defaultCfg.KeyExchanges, sshServerConfig.KeyExchanges)
+	require.Equal(t, defaultCfg.Ciphers, sshServerConfig.Ciphers)
 }
 
 func TestCustomAlgorithms(t *testing.T) {

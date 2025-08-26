@@ -233,13 +233,17 @@ func (s *serverConfig) get(parentCtx context.Context) *ssh.ServerConfig {
 		ServerVersion:       "SSH-2.0-GitLab-SSHD",
 	}
 
-	// This can be dropped once https://github.com/golang-fips/go/issues/316 is supported.
-	// We need to constrain the list of supported algorithms for FIPS.
-	algorithms := fips.SupportedAlgorithms()
-	sshCfg.PublicKeyAuthAlgorithms = algorithms.PublicKeyAuths
-	sshCfg.Ciphers = algorithms.Ciphers
-	sshCfg.KeyExchanges = algorithms.KeyExchanges
-	sshCfg.MACs = algorithms.MACs
+	// Only set this for FIPS because by default to preserve backwards compatibility
+	// for previous versions that support both secure and insecure defaults.
+	if fips.Enabled() {
+		// This can be dropped once https://github.com/golang-fips/go/issues/316 is supported.
+		// We need to constrain the list of supported algorithms for FIPS.
+		algorithms := fips.SupportedAlgorithms()
+		sshCfg.PublicKeyAuthAlgorithms = algorithms.PublicKeyAuths
+		sshCfg.Ciphers = algorithms.Ciphers
+		sshCfg.KeyExchanges = algorithms.KeyExchanges
+		sshCfg.MACs = algorithms.MACs
+	}
 
 	s.configureMACs(sshCfg)
 	s.configureKeyExchanges(sshCfg)
@@ -249,6 +253,8 @@ func (s *serverConfig) get(parentCtx context.Context) *ssh.ServerConfig {
 	for _, key := range s.hostKeys {
 		sshCfg.AddHostKey(key)
 	}
+
+	sshCfg.SetDefaults()
 
 	return sshCfg
 }
