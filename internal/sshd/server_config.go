@@ -237,8 +237,14 @@ func (s *serverConfig) get(parentCtx context.Context) *ssh.ServerConfig {
 	// for previous versions that support both secure and insecure defaults.
 	if fips.Enabled() {
 		// This can be dropped once https://github.com/golang-fips/go/issues/316 is supported.
-		// We need to constrain the list of supported algorithms for FIPS.
-		algorithms := fips.SupportedAlgorithms()
+		// We need to constrain the list of supported algorithms for FIPS because
+		// ED25519 algorithms cause gitlab-sshd to panic.
+		//
+		// Right now we use fips.DefaultAlgorithms() instead of fips.SupportedAlgorithms()
+		// to preserve backwards compatibility with clients that are not configured properly.
+		// fips.DefaultAlgorithms() still allows ssh-rsa and ssh-dss. Admins can lock down
+		// these algorithms by setting `public_key_algorithms`.
+		algorithms := fips.DefaultAlgorithms()
 		sshCfg.PublicKeyAuthAlgorithms = algorithms.PublicKeyAuths
 		sshCfg.Ciphers = algorithms.Ciphers
 		sshCfg.KeyExchanges = algorithms.KeyExchanges
