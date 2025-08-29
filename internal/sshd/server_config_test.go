@@ -255,12 +255,16 @@ func TestFipsDefaultAlgorithms(t *testing.T) {
 	srvCfg := &serverConfig{cfg: &config.Config{}}
 	sshServerConfig := srvCfg.get(context.Background())
 
-	algorithms := fips.SupportedAlgorithms()
+	algorithms := fips.DefaultAlgorithms()
 
 	require.Equal(t, algorithms.PublicKeyAuths, sshServerConfig.PublicKeyAuthAlgorithms)
 	require.Equal(t, algorithms.MACs, sshServerConfig.MACs)
 	require.Equal(t, algorithms.KeyExchanges, sshServerConfig.KeyExchanges)
 	require.Equal(t, algorithms.Ciphers, sshServerConfig.Ciphers)
+
+	// Ensure ssh-rsa and ssh-dss are there for backwards compatibility.
+	require.Contains(t, algorithms.PublicKeyAuths, "ssh-rsa")
+	require.Contains(t, algorithms.PublicKeyAuths, "ssh-dss")
 
 	sshServerConfig.SetDefaults()
 
