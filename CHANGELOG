@@ -1,3 +1,7 @@
+v14.45.2
+
+- Update labkit to v1.27.1 to allow ED25519 with FIPS !1324
+
 v14.45.1
 
 - Relax FIPS default algorithms !1322
