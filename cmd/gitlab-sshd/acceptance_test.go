@@ -489,7 +489,7 @@ func TestGitLfsAuthenticateSuccess(t *testing.T) {
 	output, err := session.Output("git-lfs-authenticate test-user/repo.git download")
 
 	require.NoError(t, err)
-	require.Equal(t, `{"header":{"Authorization":"Basic dGVzdC11c2VyOnRlc3RsZnN0b2tlbg=="},"href":"/info/lfs","expires_in":7200}
+	require.JSONEq(t, `{"header":{"Authorization":"Basic dGVzdC11c2VyOnRlc3RsZnN0b2tlbg=="},"href":"/info/lfs","expires_in":7200}
 `, string(output))
 }
 
