@@ -186,7 +186,6 @@ tests:fips:
     - .test-job
   variables:
     FIPS_MODE: 1
-    GOLANG_FIPS: 1
   script:
     - make test_fancy
 
