@@ -3,7 +3,9 @@ package main_test
 import (
 	"bufio"
 	"context"
+	"crypto/ecdsa"
 	"crypto/ed25519"
+	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
@@ -38,6 +40,14 @@ import (
 var (
 	sshdPath       = ""
 	gitalyConnInfo *gitalyConnectionInfo
+	keyTypes       = []string{
+		"rsa-2048",
+		"rsa-4096",
+		"ed25519",
+		"ecdsa-p256",
+		"ecdsa-p384",
+		"ecdsa-p521",
+	}
 )
 
 const (
@@ -49,6 +59,26 @@ const (
 type gitalyConnectionInfo struct {
 	Address string `json:"address"`
 	Storage string `json:"storage"`
+}
+
+func generateKey(keyType string) (interface{}, error) {
+	switch strings.ToLower(keyType) {
+	case "rsa-2048":
+		return rsa.GenerateKey(rand.Reader, 2048)
+	case "rsa-4096":
+		return rsa.GenerateKey(rand.Reader, 4096)
+	case "ed25519":
+		_, priv, err := ed25519.GenerateKey(rand.Reader)
+		return priv, err
+	case "ecdsa-p256":
+		return ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	case "ecdsa-p384":
+		return ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	case "ecdsa-p521":
+		return ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
+	default:
+		return nil, fmt.Errorf("unsupported key type: %s", keyType)
+	}
 }
 
 func init() {
@@ -214,7 +244,7 @@ sshd:
     - "` + hostKeyPath + `"`)
 }
 
-func buildClient(t *testing.T, addr string, hostKey ed25519.PublicKey) *ssh.Client {
+func buildClient(t *testing.T, addr string, clientKeyType string, hostKey ed25519.PublicKey) *ssh.Client {
 	t.Helper()
 
 	pubKey, err := ssh.NewPublicKey(hostKey)
@@ -222,12 +252,7 @@ func buildClient(t *testing.T, addr string, hostKey ed25519.PublicKey) *ssh.Clie
 
 	var clientPrivKey interface{}
 
-	if os.Getenv("FIPS_MODE") == "1" {
-		clientPrivKey, err = rsa.GenerateKey(rand.Reader, 2048)
-	} else {
-		_, clientPrivKey, err = ed25519.GenerateKey(nil)
-	}
-
+	clientPrivKey, err = generateKey(clientKeyType)
 	require.NoError(t, err)
 
 	clientSigner, err := ssh.NewSignerFromKey(clientPrivKey)
@@ -328,7 +353,7 @@ func startSSHD(t *testing.T, dir string) string {
 
 // Starts an instance of gitlab-sshd with the given arguments, returning an SSH
 // client already connected to it
-func runSSHD(t *testing.T, apiHandler http.Handler) *ssh.Client {
+func runSSHD(t *testing.T, clientKeyType string, apiHandler http.Handler) *ssh.Client {
 	t.Helper()
 
 	// Set up a stub gitlab server
@@ -342,7 +367,7 @@ func runSSHD(t *testing.T, apiHandler http.Handler) *ssh.Client {
 	dir, hostKey := configureSSHD(t, apiServer.URL)
 	listenAddr := startSSHD(t, dir)
 
-	return buildClient(t, listenAddr, hostKey)
+	return buildClient(t, listenAddr, clientKeyType, hostKey)
 }
 
 func TestDiscoverSuccess(t *testing.T) {
@@ -352,7 +377,7 @@ func TestDiscoverSuccess(t *testing.T) {
 			fmt.Fprint(w, `{"id": 1000, "name": "Test User", "username": "test-user"}`)
 		},
 	}
-	client := runSSHD(t, successAPI(t, handler))
+	client := runSSHD(t, "ed25519", successAPI(t, handler))
 
 	session, err := client.NewSession()
 	require.NoError(t, err)
@@ -370,7 +395,7 @@ func TestPersonalAccessTokenSuccess(t *testing.T) {
 			fmt.Fprint(w, `{"success": true, "token": "testtoken", "scopes": ["api"], "expires_at": "9001-01-01"}`)
 		},
 	}
-	client := runSSHD(t, successAPI(t, handler))
+	client := runSSHD(t, "ed25519", successAPI(t, handler))
 
 	session, err := client.NewSession()
 	require.NoError(t, err)
@@ -388,7 +413,7 @@ func TestTwoFactorAuthRecoveryCodesSuccess(t *testing.T) {
 			fmt.Fprint(w, `{"success": true, "recovery_codes": ["code1", "code2"]}`)
 		},
 	}
-	client := runSSHD(t, successAPI(t, handler))
+	client := runSSHD(t, "ed25519", successAPI(t, handler))
 	session, stdin, stdout := newSession(t, client)
 
 	reader := bufio.NewReader(stdout)
@@ -428,7 +453,7 @@ func TwoFactorAuthVerifySuccess(t *testing.T) {
 			fmt.Fprint(w, `{"success": true}`)
 		},
 	}
-	client := runSSHD(t, successAPI(t, handler))
+	client := runSSHD(t, "ed25519", successAPI(t, handler))
 	session, stdin, stdout := newSession(t, client)
 
 	reader := bufio.NewReader(stdout)
@@ -455,7 +480,7 @@ func TestGitLfsAuthenticateSuccess(t *testing.T) {
 			fmt.Fprint(w, `{"username": "test-user", "lfs_token": "testlfstoken", "repo_path": "foo", "expires_in": 7200}`)
 		},
 	}
-	client := runSSHD(t, successAPI(t, handler))
+	client := runSSHD(t, "ed25519", successAPI(t, handler))
 
 	session, err := client.NewSession()
 	require.NoError(t, err)
@@ -464,34 +489,36 @@ func TestGitLfsAuthenticateSuccess(t *testing.T) {
 	output, err := session.Output("git-lfs-authenticate test-user/repo.git download")
 
 	require.NoError(t, err)
-	require.Equal(t, `{"header":{"Authorization":"Basic dGVzdC11c2VyOnRlc3RsZnN0b2tlbg=="},"href":"/info/lfs","expires_in":7200}
+	require.JSONEq(t, `{"header":{"Authorization":"Basic dGVzdC11c2VyOnRlc3RsZnN0b2tlbg=="},"href":"/info/lfs","expires_in":7200}
 `, string(output))
 }
 
 func TestGitReceivePackSuccess(t *testing.T) {
 	ensureGitalyRepository(t)
 
-	client := runSSHD(t, successAPI(t))
-	session, stdin, stdout := newSession(t, client)
+	for _, keyType := range keyTypes {
+		t.Run(keyType, func(t *testing.T) {
+			client := runSSHD(t, keyType, successAPI(t))
+			session, stdin, stdout := newSession(t, client)
 
-	err := session.Start(fmt.Sprintf("git-receive-pack %s", testRepo))
-	require.NoError(t, err)
+			err := session.Start(fmt.Sprintf("git-receive-pack %s", testRepo))
+			require.NoError(t, err)
 
-	// Gracefully close connection
-	_, err = fmt.Fprintln(stdin, "0000")
-	require.NoError(t, err)
-	stdin.Close()
+			// Gracefully close connection
+			_, err = fmt.Fprintln(stdin, "0000")
+			require.NoError(t, err)
+			stdin.Close()
 
-	output, err := io.ReadAll(stdout)
-	require.NoError(t, err)
+			output, err := io.ReadAll(stdout)
+			require.NoError(t, err)
 
-	outputLines := strings.Split(string(output), "\n")
-
-	for i := 0; i < (len(outputLines) - 1); i++ {
-		require.Regexp(t, "^[0-9a-f]{44} refs/(heads|tags)/[^ ]+", outputLines[i])
+			outputLines := strings.Split(string(output), "\n")
+			for i := 0; i < (len(outputLines) - 1); i++ {
+				require.Regexp(t, "^[0-9a-f]{44} refs/(heads|tags)/[^ ]+", outputLines[i])
+			}
+			require.Equal(t, "0000", outputLines[len(outputLines)-1])
+		})
 	}
-
-	require.Equal(t, "0000", outputLines[len(outputLines)-1])
 }
 
 func TestGeoGitReceivePackSuccess(t *testing.T) {
@@ -508,7 +535,7 @@ func TestGeoGitReceivePackSuccess(t *testing.T) {
 			assert.NoError(t, err)
 		},
 	}
-	client := runSSHD(t, successAPI(t, handler))
+	client := runSSHD(t, "ed25519", successAPI(t, handler))
 	session, stdin, stdout := newSession(t, client)
 
 	err := session.Start(fmt.Sprintf("git-receive-pack %s", testRepo))
@@ -534,7 +561,7 @@ func TestGeoGitReceivePackSuccess(t *testing.T) {
 func TestGitUploadPackSuccess(t *testing.T) {
 	ensureGitalyRepository(t)
 
-	client := runSSHD(t, successAPI(t))
+	client := runSSHD(t, "ed25519", successAPI(t))
 	defer client.Close()
 
 	numberOfSessions := 3
@@ -571,7 +598,7 @@ func TestGitUploadPackSuccess(t *testing.T) {
 func TestGitUploadArchiveSuccess(t *testing.T) {
 	ensureGitalyRepository(t)
 
-	client := runSSHD(t, successAPI(t))
+	client := runSSHD(t, "ed25519", successAPI(t))
 	session, stdin, stdout := newSession(t, client)
 	reader := bufio.NewReader(stdout)
 
