@@ -48,16 +48,15 @@ type Gitaly struct {
 
 // CustomPayloadData represents custom payload data
 type CustomPayloadData struct {
-	APIEndpoints                            []string          `json:"api_endpoints"`
-	Username                                string            `json:"gl_username"`
-	PrimaryRepo                             string            `json:"primary_repo"`
-	UserID                                  string            `json:"gl_id,omitempty"`
-	RequestHeaders                          map[string]string `json:"request_headers"`
-	GeoProxyDirectToPrimary                 bool              `json:"geo_proxy_direct_to_primary"`
-	GeoProxyFetchDirectToPrimary            bool              `json:"geo_proxy_fetch_direct_to_primary"`
-	GeoProxyFetchDirectToPrimaryWithOptions bool              `json:"geo_proxy_fetch_direct_to_primary_with_options"`
-	GeoProxyFetchSSHDirectToPrimary         bool              `json:"geo_proxy_fetch_ssh_direct_to_primary"`
-	GeoProxyPushSSHDirectToPrimary          bool              `json:"geo_proxy_push_ssh_direct_to_primary"`
+	APIEndpoints                    []string          `json:"api_endpoints"`
+	Username                        string            `json:"gl_username"`
+	PrimaryRepo                     string            `json:"primary_repo"`
+	UserID                          string            `json:"gl_id,omitempty"`
+	RequestHeaders                  map[string]string `json:"request_headers"`
+	GeoProxyDirectToPrimary         bool              `json:"geo_proxy_direct_to_primary"`
+	GeoProxyFetchDirectToPrimary    bool              `json:"geo_proxy_fetch_direct_to_primary"`
+	GeoProxyFetchSSHDirectToPrimary bool              `json:"geo_proxy_fetch_ssh_direct_to_primary"`
+	GeoProxyPushSSHDirectToPrimary  bool              `json:"geo_proxy_push_ssh_direct_to_primary"`
 }
 
 // CustomPayload represents a custom payload
