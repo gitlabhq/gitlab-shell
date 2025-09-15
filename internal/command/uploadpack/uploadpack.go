@@ -11,7 +11,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/gitauditevent"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/customaction"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
@@ -47,23 +46,14 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	ctxWithLogData := context.WithValue(ctx, logDataKey{}, logData)
 
 	if response.IsCustomAction() {
-		if response.Payload.Data.GeoProxyFetchDirectToPrimary {
-			cmd := githttp.PullCommand{
-				Config:     c.Config,
-				ReadWriter: c.ReadWriter,
-				Args:       c.Args,
-				Response:   response,
-			}
-
-			return ctxWithLogData, cmd.Execute(ctx)
-		}
-
-		customAction := customaction.Command{
+		cmd := githttp.PullCommand{
 			Config:     c.Config,
 			ReadWriter: c.ReadWriter,
-			EOFSent:    false,
+			Args:       c.Args,
+			Response:   response,
 		}
-		return ctxWithLogData, customAction.Execute(ctx, response)
+
+		return ctxWithLogData, cmd.Execute(ctx)
 	}
 
 	stats, err := c.performGitalyCall(ctx, response)
