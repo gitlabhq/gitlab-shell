@@ -142,11 +142,10 @@ func TestGeoPullGetCustomAction(t *testing.T) {
 	response.Payload = CustomPayload{
 		Action: "geo_proxy_to_primary",
 		Data: CustomPayloadData{
-			APIEndpoints:                 []string{"geo/proxy_git_ssh/info_refs_upload_pack", "geo/proxy_git_ssh/upload_pack"},
-			Username:                     "custom",
-			GeoProxyFetchDirectToPrimary: true,
-			PrimaryRepo:                  "https://repo/path",
-			RequestHeaders:               map[string]string{"Authorization": "Bearer token"},
+			APIEndpoints:   []string{"geo/proxy_git_ssh/info_refs_upload_pack", "geo/proxy_git_ssh/upload_pack"},
+			Username:       "custom",
+			PrimaryRepo:    "https://repo/path",
+			RequestHeaders: map[string]string{"Authorization": "Bearer token"},
 		},
 	}
 	response.StatusCode = 300

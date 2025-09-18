@@ -30,7 +30,6 @@
       ],
       "gl_username": "custom",
       "primary_repo": "https://repo/path",
-      "geo_proxy_fetch_direct_to_primary": true,
       "request_headers": { "Authorization": "Bearer token" }
     }
   },
