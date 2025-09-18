@@ -3,6 +3,7 @@ package uploadpack
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -43,7 +44,7 @@ func setup(t *testing.T, keyID string, requests []testserver.TestRequestHandler)
 	url := testserver.StartHTTPServer(t, requests)
 
 	output := &bytes.Buffer{}
-	input := bytes.NewBufferString("input")
+	input := strings.NewReader("input")
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},
