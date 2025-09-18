@@ -61,7 +61,7 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 		return err
 	}
 
-	return c.requestUploadPack(ctx, client, data.GeoProxyFetchDirectToPrimaryWithOptions)
+	return c.requestUploadPack(ctx, client)
 }
 
 func (c *PullCommand) requestSSHUploadPack(ctx context.Context, client *git.Client) error {
@@ -76,9 +76,9 @@ func (c *PullCommand) requestSSHUploadPack(ctx context.Context, client *git.Clie
 	return err
 }
 
-func (c *PullCommand) requestUploadPack(ctx context.Context, client *git.Client, geoProxyFetchDirectToPrimaryWithOptions bool) error {
+func (c *PullCommand) requestUploadPack(ctx context.Context, client *git.Client) error {
 	pipeReader, pipeWriter := io.Pipe()
-	go c.readFromStdin(pipeWriter, geoProxyFetchDirectToPrimaryWithOptions)
+	go c.readFromStdin(pipeWriter)
 
 	response, err := client.UploadPack(ctx, pipeReader)
 	if err != nil {
@@ -91,7 +91,7 @@ func (c *PullCommand) requestUploadPack(ctx context.Context, client *git.Client,
 	return err
 }
 
-func (c *PullCommand) readFromStdin(pw *io.PipeWriter, geoProxyFetchDirectToPrimaryWithOptions bool) {
+func (c *PullCommand) readFromStdin(pw *io.PipeWriter) {
 	scanner := pktline.NewScanner(c.ReadWriter.In)
 
 	for scanner.Scan() {
@@ -103,15 +103,6 @@ func (c *PullCommand) readFromStdin(pw *io.PipeWriter, geoProxyFetchDirectToPrim
 		}
 
 		if pktline.IsDone(line) {
-			break
-		}
-
-		if pktline.IsFlush(line) && geoProxyFetchDirectToPrimaryWithOptions {
-			_, err := pw.Write(pktline.PktDone())
-			if err != nil {
-				log.WithError(err).Error("failed to write packet done line")
-			}
-
 			break
 		}
 	}
