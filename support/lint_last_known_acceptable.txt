@@ -46,6 +46,8 @@ internal/command/command.go:37:1: exported: exported function CheckForVersionFla
 internal/command/command.go:48:1: exported: comment on exported function Setup should be of the form "Setup ..." (revive)
 internal/command/command.go:80:15: Error return value of `closer.Close` is not checked (errcheck)
 internal/command/command.go:84:1: exported: exported function NewLogData should have comment or be unexported (revive)
+internal/command/githttp/pull.go:48: 48-65 lines are duplicate of `internal/command/githttp/push.go:45-62` (dupl)
+internal/command/githttp/push.go:45: 45-62 lines are duplicate of `internal/command/githttp/pull.go:48-65` (dupl)
 internal/command/lfsauthenticate/lfsauthenticate.go:87:13: Error return value of `fmt.Fprintf` is not checked (errcheck)
 internal/command/lfstransfer/gitlab_backend.go:40:6: exported: exported type GitlabAuthentication should have comment or be unexported (revive)
 internal/command/lfstransfer/gitlab_backend.go:45:6: exported: exported type GitlabBackend should have comment or be unexported (revive)
