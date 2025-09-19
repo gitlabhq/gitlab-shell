@@ -3,6 +3,7 @@ package receivepack
 import (
 	"bytes"
 	"context"
+	"io"
 	"strings"
 	"testing"
 
@@ -51,7 +52,7 @@ func setup(t *testing.T, keyID string, requests []testserver.TestRequestHandler)
 	url := testserver.StartSocketHTTPServer(t, requests)
 
 	output := &bytes.Buffer{}
-	input := strings.NewReader("input")
+	input := io.NopCloser(strings.NewReader("input"))
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},
