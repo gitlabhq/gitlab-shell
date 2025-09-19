@@ -3,6 +3,8 @@ package uploadpack
 import (
 	"bytes"
 	"context"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -32,7 +34,6 @@ func TestAllowedAccess(t *testing.T) {
 
 func TestForbiddenAccess(t *testing.T) {
 	requests := requesthandlers.BuildDisallowedByAPIHandlers(t)
-
 	cmd := setup(t, "disallowed", requests)
 
 	_, err := cmd.Execute(context.Background())
@@ -43,7 +44,7 @@ func setup(t *testing.T, keyID string, requests []testserver.TestRequestHandler)
 	url := testserver.StartHTTPServer(t, requests)
 
 	output := &bytes.Buffer{}
-	input := bytes.NewBufferString("input")
+	input := io.NopCloser(strings.NewReader("input"))
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},

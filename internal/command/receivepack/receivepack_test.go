@@ -3,6 +3,8 @@ package receivepack
 import (
 	"bytes"
 	"context"
+	"io"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -50,7 +52,7 @@ func setup(t *testing.T, keyID string, requests []testserver.TestRequestHandler)
 	url := testserver.StartSocketHTTPServer(t, requests)
 
 	output := &bytes.Buffer{}
-	input := bytes.NewBufferString("input")
+	input := io.NopCloser(strings.NewReader("input"))
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},
