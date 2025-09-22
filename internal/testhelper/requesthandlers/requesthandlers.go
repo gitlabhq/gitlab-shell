@@ -4,6 +4,7 @@ package requesthandlers
 import (
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,6 +71,22 @@ func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testse
 
 // BuildAllowedWithCustomActionsHandlers returns test request handlers for allowed API calls with custom actions.
 func BuildAllowedWithCustomActionsHandlers(t *testing.T) []testserver.TestRequestHandler {
+	// Create a separate HTTP server for Git protocol responses
+	gitServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/info/refs" && r.URL.Query().Get("service") == "git-receive-pack" {
+			// Proper Git info/refs response format
+			w.Header().Set("Content-Type", "application/x-git-receive-pack-advertisement")
+			_, err := w.Write([]byte("001f# service=git-receive-pack\n0000\n0045abcdef1234567890abcdef1234567890abcdef1234 refs/heads/master\n0000"))
+			assert.NoError(t, err)
+		} else if r.URL.Path == "/git-receive-pack" {
+			// Proper Git receive-pack response format
+			w.Header().Set("Content-Type", "application/x-git-receive-pack-result")
+			_, err := w.Write([]byte("0008NAK\n0019ok refs/heads/master\n0000"))
+			assert.NoError(t, err)
+		}
+	}))
+	t.Cleanup(func() { gitServer.Close() })
+
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/allowed",
@@ -80,27 +97,12 @@ func BuildAllowedWithCustomActionsHandlers(t *testing.T) []testserver.TestReques
 					"payload": map[string]interface{}{
 						"action": "geo_proxy_to_primary",
 						"data": map[string]interface{}{
-							"api_endpoints": []string{"/geo/proxy/info_refs", "/geo/proxy/push"},
-							"gl_username":   "custom",
-							"primary_repo":  "https://repo/path",
+							"primary_repo": gitServer.URL,
+							"gl_username":  "custom",
 						},
 					},
 				}
 				w.WriteHeader(http.StatusMultipleChoices)
-				assert.NoError(t, json.NewEncoder(w).Encode(body))
-			},
-		},
-		{
-			Path: "/geo/proxy/info_refs",
-			Handler: func(w http.ResponseWriter, _ *http.Request) {
-				body := map[string]interface{}{"result": []byte("custom")}
-				assert.NoError(t, json.NewEncoder(w).Encode(body))
-			},
-		},
-		{
-			Path: "/geo/proxy/push",
-			Handler: func(w http.ResponseWriter, _ *http.Request) {
-				body := map[string]interface{}{"result": []byte("output")}
 				assert.NoError(t, json.NewEncoder(w).Encode(body))
 			},
 		},

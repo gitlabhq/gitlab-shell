@@ -131,7 +131,6 @@ func TestPushExecuteWithSSHReceivePack(t *testing.T) {
 			Payload: accessverifier.CustomPayload{
 				Data: accessverifier.CustomPayloadData{
 					PrimaryRepo:                    url,
-					GeoProxyDirectToPrimary:        true,
 					GeoProxyPushSSHDirectToPrimary: true,
 					RequestHeaders:                 map[string]string{"Authorization": "token"},
 				},
