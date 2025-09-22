@@ -19,7 +19,6 @@
 	},
 	"payload" : {
 		"data": {
-			"geo_proxy_direct_to_primary": true,
 			"request_headers": { "Authorization": "Bearer token" },
 			"primary_repo":  "PRIMARY_REPO"
 	        }
