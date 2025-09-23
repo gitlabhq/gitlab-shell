@@ -1,3 +1,12 @@
+v14.45.3
+
+- Add gitlab-sshd acceptance tests for all supported SSH key types !1326
+- Move GOLANG_FIPS=1 back into tests:fips CI job !1327
+- Clean up FF geo_proxy_fetch_direct_to_primary_with_options !1329
+- Clean up FF geo_proxy_fetch_direct_to_primary !1330
+- Fix race in tests !1332
+- Clean up FF geo_proxy_direct_to_primary !1331
+
 v14.45.2
 
 - Update labkit to v1.27.1 to allow ED25519 with FIPS !1324
