@@ -60,7 +60,7 @@ func TestSuccessfulRequests(t *testing.T) {
 
 			responseBody, err := io.ReadAll(response.Body)
 			require.NoError(t, err)
-			require.Equal(t, string(responseBody), "Hello")
+			require.Equal(t, "Hello", string(responseBody))
 		})
 	}
 }
@@ -103,10 +103,12 @@ func TestFailedRequests(t *testing.T) {
 				require.Error(t, err)
 				require.ErrorIs(t, err, ErrCafileNotFound)
 			} else {
-				_, err = client.Get(context.Background(), "/hello")
+				resp, err := client.Get(context.Background(), "/hello")
 				require.Error(t, err)
 
-				require.Equal(t, err.Error(), tc.expectedError)
+				defer resp.Body.Close()
+
+				require.Equal(t, tc.expectedError, err.Error())
 			}
 		})
 	}
@@ -126,7 +128,7 @@ func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPat
 
 	url := testserver.StartHTTPSServer(t, requests, clientCAPath)
 
-	opts := defaultHttpOpts
+	opts := defaultHTTPOpts
 	if clientCertPath != "" && clientKeyPath != "" {
 		opts = append(opts, WithClientCert(clientCertPath, clientKeyPath))
 	}

@@ -16,7 +16,7 @@ import (
 )
 
 func TestReadTimeout(t *testing.T) {
-	expectedSeconds := uint64(300)
+	expectedSeconds := int64(300)
 
 	client, err := NewHTTPClientWithOpts("http://localhost:3000", "", "", "", expectedSeconds, nil)
 	require.NoError(t, err)

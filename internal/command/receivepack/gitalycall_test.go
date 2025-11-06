@@ -95,7 +95,7 @@ func TestReceivePack(t *testing.T) {
 					require.Equal(t, v, actual[0])
 				}
 				require.Empty(t, testServer.ReceivedMD["some-other-ff"])
-				require.Equal(t, testServer.ReceivedMD["x-gitlab-correlation-id"][0], "a-correlation-id")
+				require.Equal(t, "a-correlation-id", testServer.ReceivedMD["x-gitlab-correlation-id"][0])
 			}
 		})
 	}

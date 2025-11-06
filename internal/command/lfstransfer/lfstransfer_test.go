@@ -310,7 +310,7 @@ func TestLfsTransferBatchDownload(t *testing.T) {
 		case strings.HasPrefix(arg, "token="):
 			tokenArg = arg
 		default:
-			require.Fail(t, "Unexpected batch item argument: %v", arg)
+			require.Failf(t, "Unexpected batch item argument: %v", arg)
 		}
 	}
 
@@ -378,7 +378,7 @@ func TestLfsTransferBatchUpload(t *testing.T) {
 		case strings.HasPrefix(arg, "token="):
 			tokenArg = arg
 		default:
-			require.Fail(t, "Unexpected batch item argument: %v", arg)
+			require.Failf(t, "Unexpected batch item argument: %v", arg)
 		}
 	}
 

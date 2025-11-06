@@ -39,12 +39,14 @@ func main() {
 
 	executable, err := executable.New(executable.GitlabShell)
 	if err != nil {
+		//nolint
 		fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
 		os.Exit(1)
 	}
 
 	config, err := config.NewFromDirExternal(executable.RootDir)
 	if err != nil {
+		//nolint
 		fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting:", err)
 		os.Exit(1)
 	}
@@ -57,6 +59,7 @@ func main() {
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment
+		//nolint
 		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
 		os.Exit(1)
 	}

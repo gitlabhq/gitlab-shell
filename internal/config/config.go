@@ -56,7 +56,7 @@ type ServerConfig struct {
 type HTTPSettingsConfig struct {
 	User               string `yaml:"user"`
 	Password           string `yaml:"password"`
-	ReadTimeoutSeconds uint64 `yaml:"read_timeout"`
+	ReadTimeoutSeconds int64  `yaml:"read_timeout"`
 	CaFile             string `yaml:"ca_file"`
 	CaPath             string `yaml:"ca_path"`
 }

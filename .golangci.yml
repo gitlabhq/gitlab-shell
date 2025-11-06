@@ -132,6 +132,7 @@ linters-settings:
         allow:
           - $gostd
           - github.com/stretchr/testify
+          - github.com/stretchr/testify/require
           - gitlab.com/gitlab-org/gitlab-shell
           - gitlab.com/gitlab-org/labkit
           - gitlab.com/gitlab-org/gitaly
@@ -142,8 +143,8 @@ linters-settings:
           - github.com/golang-jwt/jwt
           - github.com/mikesmitty/edkey
           - github.com/sirupsen/logrus
-          - github.com/grpc-ecosystem/go-grpc-prometheus
           - github.com/mattn/go-shellwords
+          - github.com/grpc-ecosystem/go-grpc-prometheus
 
   #   list-type: blacklist
   #   include-go-root: false

@@ -40,7 +40,7 @@ func main() {
 		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
 	}
 
-	os.Exit(int(code))
+	os.Exit(code)
 }
 
 func execute(readWriter *readwriter.ReadWriter) (int, error) {

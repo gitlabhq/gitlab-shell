@@ -84,7 +84,7 @@ func validateCaFile(filename string) error {
 }
 
 // NewHTTPClientWithOpts builds an HTTP client using the provided options
-func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, readTimeoutSeconds uint64, opts []HTTPClientOpt) (*HTTPClient, error) {
+func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath string, readTimeoutSeconds int64, opts []HTTPClientOpt) (*HTTPClient, error) {
 	hcc := &httpClientCfg{
 		caFile:       caFile,
 		caPath:       caPath,
@@ -201,7 +201,7 @@ func buildHTTPTransport(gitlabURL string) (*http.Transport, string) {
 	return &http.Transport{}, gitlabURL
 }
 
-func readTimeout(timeoutSeconds uint64) time.Duration {
+func readTimeout(timeoutSeconds int64) time.Duration {
 	if timeoutSeconds == 0 {
 		timeoutSeconds = defaultReadTimeoutSeconds
 	}
