@@ -151,7 +151,6 @@ linters-settings:
           - github.com/hashicorp/go-retryablehttp
           - github.com/golang-jwt/jwt
           - github.com/mikesmitty/edkey
-          - github.com/sirupsen/logrus
           - github.com/grpc-ecosystem/go-grpc-prometheus
           - github.com/mattn/go-shellwords
 

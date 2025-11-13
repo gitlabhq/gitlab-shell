@@ -4,11 +4,11 @@ package sshd
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net"
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/sync/semaphore"
 	grpccodes "google.golang.org/grpc/codes"
@@ -18,8 +18,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
-
-	"gitlab.com/gitlab-org/labkit/log"
 )
 
 const (
@@ -56,7 +54,7 @@ func newConnection(cfg *config.Config, nconn net.Conn) *connection {
 }
 
 func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handler channelHandler) {
-	log.WithContextFields(ctx, log.Fields{}).Info("server: handleConn: start")
+	slog.InfoContext(ctx, "server: handleConn: start")
 
 	sconn, chans, err := c.initServerConn(ctx, srvCfg)
 	if err != nil {
@@ -72,7 +70,7 @@ func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handl
 	c.handleRequests(ctx, sconn, chans, handler)
 
 	reason := sconn.Wait()
-	log.WithContextFields(ctx, log.Fields{"reason": reason}).Info("server: handleConn: done")
+	slog.InfoContext(ctx, "server: handleConn: done", "reason", reason)
 }
 
 func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfig) (*ssh.ServerConn, <-chan ssh.NewChannel, error) {
@@ -84,12 +82,11 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 	sconn, chans, reqs, err := ssh.NewServerConn(c.nconn, srvCfg)
 	if err != nil {
 		msg := "connection: initServerConn: failed to initialize SSH connection"
-		logger := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr}).WithError(err)
 
 		if strings.Contains(err.Error(), "no common algorithm for host key") || err.Error() == "EOF" {
-			logger.Debug(msg)
+			slog.DebugContext(ctx, msg, "remote_addr", c.remoteAddr, "error", err)
 		} else {
-			logger.Warn(msg)
+			slog.WarnContext(ctx, msg, "remote_addr", c.remoteAddr, "error", err)
 		}
 
 		return nil, nil, err
@@ -100,19 +97,19 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 }
 
 func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, handler channelHandler) {
-	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
-
 	for newChannel := range chans {
-		ctxlog.WithField("channel_type", newChannel.ChannelType()).Info("connection: handle: new channel requested")
+		slog.InfoContext(ctx, "connection: handle: new channel requested",
+			"remote_addr", c.remoteAddr,
+			"channel_type", newChannel.ChannelType())
 
 		if newChannel.ChannelType() != "session" {
-			ctxlog.Info("connection: handleRequests: unknown channel type")
+			slog.InfoContext(ctx, "connection: handleRequests: unknown channel type", "remote_addr", c.remoteAddr)
 			_ = newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
 			continue
 		}
 
 		if !c.concurrentSessions.TryAcquire(1) {
-			ctxlog.Info("connection: handleRequests: too many concurrent sessions")
+			slog.InfoContext(ctx, "connection: handleRequests: too many concurrent sessions", "remote_addr", c.remoteAddr)
 			_ = newChannel.Reject(ssh.ResourceShortage, "too many concurrent sessions")
 			metrics.SshdHitMaxSessions.Inc()
 			continue
@@ -120,7 +117,9 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 
 		channel, requests, err := newChannel.Accept()
 		if err != nil {
-			ctxlog.WithError(err).Error("connection: handleRequests: accepting channel failed")
+			slog.ErrorContext(ctx, "connection: handleRequests: accepting channel failed",
+				"remote_addr", c.remoteAddr,
+				"error", err)
 			c.concurrentSessions.Release(1)
 			continue
 		}
@@ -129,7 +128,9 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			defer func(started time.Time) {
 				duration := time.Since(started).Seconds()
 				metrics.SshdSessionDuration.Observe(duration)
-				ctxlog.WithFields(log.Fields{"duration_s": duration}).Info("connection: handleRequests: done")
+				slog.InfoContext(ctx, "connection: handleRequests: done",
+					"remote_addr", c.remoteAddr,
+					"duration_s", duration)
 			}(time.Now())
 
 			defer c.concurrentSessions.Release(1)
@@ -137,14 +138,16 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			// Prevent a panic in a single session from taking out the whole server
 			defer func() {
 				if err := recover(); err != nil {
-					ctxlog.WithField("recovered_error", err).Error("panic handling session")
+					slog.ErrorContext(ctx, "panic handling session",
+						"remote_addr", c.remoteAddr,
+						"recovered_error", err)
 				}
 			}()
 
 			metrics.SliSshdSessionsTotal.Inc()
 			err := handler(ctx, sconn, channel, requests)
 			if err != nil {
-				c.trackError(ctxlog, err)
+				c.trackError(ctx, err)
 			}
 		}()
 	}
@@ -159,29 +162,32 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 }
 
 func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn, ticker *time.Ticker) {
-	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
-
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			ctxlog.Debug("connection: sendKeepAliveMsg: send keepalive message to a client")
+			slog.DebugContext(ctx, "connection: sendKeepAliveMsg: send keepalive message to a client",
+				"remote_addr", c.remoteAddr)
 
 			status, payload, err := sconn.SendRequest(KeepAliveMsg, true, nil)
 			if err != nil {
-				ctxlog.Errorf("Error occurred while sending request :%v", err)
+				slog.ErrorContext(ctx, "Error occurred while sending request",
+					"remote_addr", c.remoteAddr,
+					"error", err)
 				return
 			}
 
 			if status {
-				ctxlog.Debugf("connection: sendKeepAliveMsg: payload: %v", string(payload))
+				slog.DebugContext(ctx, "connection: sendKeepAliveMsg: payload",
+					"remote_addr", c.remoteAddr,
+					"payload", string(payload))
 			}
 		}
 	}
 }
 
-func (c *connection) trackError(ctxlog *logrus.Entry, err error) {
+func (c *connection) trackError(ctx context.Context, err error) {
 	var apiError *client.APIError
 	if errors.As(err, &apiError) {
 		return
@@ -199,5 +205,7 @@ func (c *connection) trackError(ctxlog *logrus.Entry, err error) {
 	}
 
 	metrics.SliSshdSessionsErrorsTotal.Inc()
-	ctxlog.WithError(err).Warn("connection: session error")
+	slog.WarnContext(ctx, "connection: session error",
+		"remote_addr", c.remoteAddr,
+		"error", err)
 }
