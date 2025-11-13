@@ -16,7 +16,7 @@ require (
 	github.com/otiai10/copy v1.14.1
 	github.com/pires/go-proxyproto v0.8.0
 	github.com/prometheus/client_golang v1.22.0
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/stretchr/testify v1.10.0
 	// This v16.11.0-rc1 changes has some fixes for dns bug for
 	// v16.11.10, see https://gitlab.com/gitlab-org/gitaly/-/issues/6694.
