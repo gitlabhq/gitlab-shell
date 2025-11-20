@@ -1,5 +1,6 @@
 # This file contains all available configuration options
 # with their default values.
+version: "2"
 
 # options for analysis running
 run:
@@ -47,10 +48,6 @@ run:
 
 # output configuration options
 output:
-  # colored-line-number|line-number|json|tab|checkstyle|code-climate, default is "colored-line-number"
-  formats:
-    - format: line-number
-
   # print lines of code with issue, default is true
   print-issued-lines: true
 
@@ -110,13 +107,6 @@ linters-settings:
     # disable:
     #   - shadow
     # disable-all: false
-  gofmt:
-    # simplify code: gofmt with `-s` option, true by default
-    simplify: true
-  goimports:
-    # put imports beginning with prefix after 3rd-party packages;
-    # it's a comma-separated list of prefixes
-    # local-prefixes: github.com/org/project
   gocyclo:
     # minimal code complexity to report, 30 by default (but we recommend 10-20)
     min-complexity: 30
@@ -270,19 +260,14 @@ linters:
     - goconst
     - gocritic
     - godox
-    - gofmt
-    - goimports
     - gosec
-    - gosimple
     - govet
     - ineffassign
     - misspell
     - nakedret
     - revive
     - staticcheck
-    - stylecheck
     - testifylint
-    - typecheck
     - unconvert
     - unparam
     - unused
