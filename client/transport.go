@@ -2,12 +2,14 @@
 package client
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
-	"gitlab.com/gitlab-org/labkit/log"
 	"gitlab.com/gitlab-org/labkit/tracing"
+	"gitlab.com/gitlab-org/labkit/v2/log"
+	"gitlab.com/gitlab-org/labkit/v2/meta"
 )
 
 type transport struct {
@@ -17,6 +19,9 @@ type transport struct {
 // RoundTrip executes a single HTTP transaction, adding logging and tracing capabilities.
 func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 	ctx := request.Context()
+	correlationID := correlation.ExtractFromContext(ctx)
+	ctx = meta.WithCorrelationID(ctx, correlationID)
+	logger := log.ContextLogger(ctx)
 
 	originalRemoteIP, ok := ctx.Value(OriginalRemoteIPContextKey{}).(string)
 	if ok {
@@ -29,31 +34,27 @@ func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 
 	response, err := rt.next.RoundTrip(request)
 
-	fields := log.Fields{
-		"method":      request.Method,
-		"url":         request.URL.String(),
-		"duration_ms": time.Since(start) / time.Millisecond,
-	}
-	logger := log.WithContextFields(ctx, fields)
+	logger = logger.With(ctx,
+		slog.String("method", request.Method),
+		slog.String("url", request.URL.String()),
+		slog.Any("duration_ms", time.Since(start)/time.Millisecond),
+	)
 
 	if err != nil {
-		logger.WithError(err).Error("Internal API unreachable")
+		logger.Error("Internal API unreachable", slog.String("error_message", err.Error()))
 		return response, err
 	}
 
-	logger = logger.WithField("status", response.StatusCode)
-
+	logger = logger.With(
+		slog.Int("status", response.StatusCode),
+		slog.Int("content_length_bytes", int(response.ContentLength)),
+	)
 	if response.StatusCode >= 400 {
-		logger.WithError(err).Error("Internal API error")
+		logger.Error("Internal API unreachable", slog.String("error_message", err.Error()))
 		return response, err
-	}
-
-	if response.ContentLength >= 0 {
-		logger = logger.WithField("content_length_bytes", response.ContentLength)
 	}
 
 	logger.Info("Finished HTTP request")
-
 	return response, nil
 }
 
