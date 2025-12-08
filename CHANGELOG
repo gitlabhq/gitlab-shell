@@ -1,3 +1,7 @@
+v14.45.5
+
+- Update ruby version to 3.3.10
+
 v14.45.3
 
 - Add gitlab-sshd acceptance tests for all supported SSH key types !1326
