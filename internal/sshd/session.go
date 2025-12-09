@@ -5,10 +5,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"reflect"
 	"time"
 
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 	"golang.org/x/crypto/ssh"
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
@@ -53,19 +54,15 @@ type exitStatusReq struct {
 }
 
 func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (context.Context, error) {
-	ctxWithLogData := ctx
-	ctxlog := log.ContextLogger(ctx)
-
-	ctxlog.Debug("session: handle: entering request loop")
-
+	logger := log.New()
 	var err error
 	for req := range requests {
-		sessionLog := ctxlog.WithFields(log.Fields{
-			"bytesize":   len(req.Payload),
-			"type":       req.Type,
-			"want_reply": req.WantReply,
-		})
-		sessionLog.Debug("session: handle: request received")
+		ctx = log.WithFields(ctx,
+			slog.Int("bytesize", len(req.Payload)),
+			slog.String("type", req.Type),
+			slog.Bool("want_reply", req.WantReply),
+		)
+		logger.DebugContext(ctx, "session: handle: request received")
 
 		var shouldContinue bool
 		switch req.Type {

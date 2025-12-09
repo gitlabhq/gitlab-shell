@@ -2,14 +2,16 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"reflect"
 
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
+	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/fips"
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 
 	shellCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
@@ -17,7 +19,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/console"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
@@ -49,9 +50,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logCloser := logger.Configure(config)
-	defer logCloser.Close()
-
+	logger := log.New()
 	env := sshenv.NewFromEnv()
 	cmd, err := shellCmd.New(os.Args[1:], env, config, readWriter)
 	if err != nil {
@@ -67,17 +66,20 @@ func main() {
 	config.GitalyClient.InitSidechannelRegistry(ctx)
 
 	cmdName := reflect.TypeOf(cmd).String()
-	ctxlog := log.ContextLogger(ctx)
-	ctxlog.WithFields(log.Fields{"env": env, "command": cmdName}).Info("gitlab-shell: main: executing command")
+	// {"env": env, "command": cmdName
+	ctx = log.WithFields(ctx, slog.String("command", cmdName))
+	logger.InfoContext(ctx, "gitlab-shell: main: executing command")
 	fips.Check()
 
 	if _, err := cmd.Execute(ctx); err != nil {
-		ctxlog.WithError(err).Warn("gitlab-shell: main: command execution failed")
+		logger.WarnContext(ctx, "gitlab-shell: main: command execution failed", slog.String(
+			fields.ErrorMessage, err.Error(),
+		))
 		if grpcstatus.Convert(err).Code() != grpccodes.Internal {
 			console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
 		}
 		os.Exit(1)
 	}
 
-	ctxlog.Info("gitlab-shell: main: command executed successfully")
+	logger.InfoContext(ctx, "gitlab-shell: main: command executed successfully")
 }

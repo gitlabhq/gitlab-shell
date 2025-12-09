@@ -4,6 +4,7 @@ package sshd
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"strings"
@@ -14,13 +15,13 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/fields"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 type status int
@@ -48,6 +49,7 @@ type Server struct {
 	wg           sync.WaitGroup
 	listener     net.Listener
 	serverConfig *serverConfig
+	logger       *slog.Logger
 }
 
 type logInfo struct{}
@@ -59,7 +61,12 @@ func NewServer(cfg *config.Config) (*Server, error) {
 		return nil, err
 	}
 
-	return &Server{Config: cfg, serverConfig: serverConfig}, nil
+	logger := log.New()
+	return &Server{
+		Config:       cfg,
+		serverConfig: serverConfig,
+		logger:       logger,
+	}, nil
 }
 
 // ListenAndServe starts listening for SSH connections and serves them
@@ -122,21 +129,19 @@ func (s *Server) listen(ctx context.Context) error {
 			ReadHeaderTimeout: time.Duration(s.Config.Server.ProxyHeaderTimeout),
 		}
 
-		log.ContextLogger(ctx).Info("Proxy protocol is enabled")
+		s.logger.InfoContext(ctx, "Proxy protocol is enabled")
 	}
 
-	fields := log.Fields{
-		"tcp_address": sshListener.Addr().String(),
-	}
+	ctx = log.WithFields(ctx, slog.String(
+		"tcp_address", sshListener.Addr().String(),
+	))
 
 	if len(s.serverConfig.cfg.Server.PublicKeyAlgorithms) > 0 {
-		fields["supported_public_key_algorithms"] = s.serverConfig.cfg.Server.PublicKeyAlgorithms
+		ctx = log.WithFields(ctx, slog.Any("supported_public_key_algorithms", s.serverConfig.cfg.Server.PublicKeyAlgorithms))
 	}
 
-	log.WithContextFields(ctx, fields).Info("Listening for SSH connections")
-
+	s.logger.InfoContext(ctx, "Listening for SSH connections")
 	s.listener = sshListener
-
 	return nil
 }
 
@@ -203,21 +208,20 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	}()
 
 	remoteAddr := nconn.RemoteAddr().String()
-	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": remoteAddr})
+	ctx = log.WithFields(ctx, slog.String("remote_addr", remoteAddr))
 
 	// Prevent a panic in a single connection from taking out the whole server
 	defer func() {
 		if err := recover(); err != nil {
-			ctxlog.WithField("recovered_error", err).Error("panic handling session")
-
+			s.logger.ErrorContext(ctx, "panic handling session", slog.String(
+				fields.ErrorMessage, fmt.Sprintf("%v", err),
+			))
 			metrics.SliSshdSessionsErrorsTotal.Inc()
 		}
 	}()
 
 	started := time.Now()
 	conn := newConnection(s.Config, nconn)
-
-	var ctxWithLogData context.Context
 
 	conn.handle(ctx, s.serverConfig.get(ctx), func(ctx context.Context, sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) error {
 		session := &session{
@@ -232,18 +236,17 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		}
 
 		var err error
-		ctxWithLogData, err = session.handle(ctx, requests)
+		ctx, err = session.handle(ctx, requests)
 
 		return err
 	})
 
-	logData := extractLogDataFromContext(ctxWithLogData)
-
-	ctxlog.WithFields(log.Fields{
-		"duration_s":    time.Since(started).Seconds(),
-		"written_bytes": logData.WrittenBytes,
-		"meta":          logData.Meta,
-	}).Info("access: finish")
+	s.logger.InfoContext(ctx,
+		"Access: finish",
+		slog.Int64("written_bytes", logData.WrittenBytes),
+		slog.Any("meta", logData.Meta),
+		slog.Duration("duration_s", time.Since(started)/time.Second),
+	)
 }
 
 func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
@@ -263,34 +266,6 @@ func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
 	default:
 		return staticProxyPolicy(proxyproto.USE), nil
 	}
-}
-
-func extractDataFromContext(ctx context.Context) command.LogData {
-	logData := command.LogData{}
-
-	if ctx == nil {
-		return logData
-	}
-
-	if ctx.Value(command.LogDataKey) != nil {
-		logData = ctx.Value(command.LogDataKey).(command.LogData)
-	}
-
-	return logData
-}
-
-func extractLogDataFromContext(ctx context.Context) command.LogData {
-	logData := command.LogData{}
-
-	if ctx == nil {
-		return logData
-	}
-
-	if ctx.Value(logInfo{}) != nil {
-		logData = ctx.Value(logInfo{}).(command.LogData)
-	}
-
-	return logData
 }
 
 func staticProxyPolicy(policy proxyproto.Policy) proxyproto.PolicyFunc {

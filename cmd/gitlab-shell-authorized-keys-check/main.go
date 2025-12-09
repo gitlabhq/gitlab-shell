@@ -11,7 +11,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/console"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
 )
 
 var (

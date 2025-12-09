@@ -11,7 +11,6 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshd"
 
 	"gitlab.com/gitlab-org/labkit/log"
@@ -66,13 +65,6 @@ func main() {
 	}
 
 	cfg.ApplyGlobalState()
-
-	logCloser := logger.ConfigureStandalone(cfg)
-	defer func() {
-		if err := logCloser.Close(); err != nil {
-			log.WithError(err).Fatal("Error closing logCloser")
-		}
-	}()
 	ctx, finished := command.Setup("gitlab-sshd", cfg)
 	defer finished()
 
