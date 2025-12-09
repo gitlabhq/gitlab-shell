@@ -4,6 +4,8 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,8 +16,10 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshd"
 
+	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/log"
 	"gitlab.com/gitlab-org/labkit/monitoring"
+	v2log "gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 var (
@@ -43,6 +47,9 @@ func overrideConfigFromEnvironment(cfg *config.Config) {
 }
 
 func main() {
+	ctx := context.Background()
+	v2Logger := v2log.New()
+	v2Logger.InfoContext(ctx, "gitlab-sshd starting up...")
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)
 
 	flag.Parse()
@@ -52,15 +59,23 @@ func main() {
 		var err error
 		cfg, err = config.NewFromDir(*configDir)
 		if err != nil {
+			v2Logger.ErrorContext(ctx, "failed to load configuration from specified directory", slog.String(
+				fields.ErrorMessage, err.Error(),
+			))
 			log.WithError(err).Fatal("failed to load configuration from specified directory")
 		}
 	}
 
 	overrideConfigFromEnvironment(cfg)
 	if err := cfg.IsSane(); err != nil {
+		ctx = v2log.WithFields(ctx,
+			slog.String(fields.ErrorMessage, err.Error()),
+		)
 		if *configDir == "" {
+			v2Logger.ErrorContext(ctx, "no config-dir provided, using only environment variables")
 			log.WithError(err).Fatal("no config-dir provided, using only environment variables")
 		} else {
+			v2Logger.ErrorContext(ctx, "configuration error")
 			log.WithError(err).Fatal("configuration error")
 		}
 	}
@@ -103,11 +118,14 @@ func main() {
 
 func gracefulShutdown(ctx context.Context, done chan os.Signal, cfg *config.Config, server *sshd.Server, cancel context.CancelFunc) {
 	go func() {
+		v2Logger := v2log.New()
 		sig := <-done
 		signal.Reset(syscall.SIGINT, syscall.SIGTERM)
 
 		gracePeriod := time.Duration(cfg.Server.GracePeriod)
 		log.WithContextFields(ctx, log.Fields{"shutdown_timeout_s": gracePeriod.Seconds(), "signal": sig.String()}).Info("Shutdown initiated")
+		v2Logger.InfoContext(ctx, fmt.Sprintf("v2log: Shutdown initiated with grace period: %d", gracePeriod.Seconds()),
+			slog.String("signal", sig.String()))
 
 		if err := server.Shutdown(); err != nil {
 			log.WithError(err).Fatal("Error shutting down the server")
