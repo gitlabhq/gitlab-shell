@@ -52,7 +52,6 @@ var (
 
 const (
 	testRepo          = "test-gitlab-shell/gitlab-test.git"
-	testRepoNamespace = "test-gitlab-shell"
 	testRepoImportURL = "https://gitlab.com/gitlab-org/gitlab-test.git"
 )
 
