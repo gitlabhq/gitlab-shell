@@ -46,8 +46,17 @@ func overrideConfigFromEnvironment(cfg *config.Config) {
 	}
 }
 
+func configureUTC() {
+	loc, err := time.LoadLocation("UTC")
+	if err != nil {
+		return
+	}
+	time.Local = loc
+}
+
 func main() {
 	ctx := context.Background()
+	configureUTC()
 	v2Logger := v2log.New()
 	v2Logger.InfoContext(ctx, "v2log: gitlab-sshd starting up...")
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)
