@@ -97,9 +97,28 @@ func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.Cli
 
 	serviceName = fmt.Sprintf("%s-%s", serviceName, cmd.ServiceName)
 
+	serviceConfig := `{
+		"methodConfig": [{
+			"name": [
+				{"service": "gitaly.SSHService", "method": "SSHUploadPackWithSidechannel"},
+				{"service": "gitaly.SSHService", "method": "SSHReceivePack"},
+				{"service": "gitaly.SSHService", "method": "SSHUploadArchive"}
+			],
+			"retryPolicy": {
+				"maxAttempts": 4,
+				"initialBackoff": "0.4s",
+				"maxBackoff": "1.4s",
+				"backoffMultiplier": 2,
+				"retryableStatusCodes": ["UNAVAILABLE", "ABORTED"]
+			}
+		}]
+	}`
+
 	connOpts := gitalyclient.DefaultDialOpts
 	connOpts = append(
 		connOpts,
+		grpc.WithDefaultServiceConfig(serviceConfig),
+
 		grpc.WithChainStreamInterceptor(
 			grpctracing.StreamClientTracingInterceptor(),
 			grpc_prometheus.StreamClientInterceptor,
