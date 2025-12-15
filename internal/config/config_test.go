@@ -104,3 +104,75 @@ func TestYAMLDuration(t *testing.T) {
 		})
 	}
 }
+
+func TestClientRetryConfig(t *testing.T) {
+	testCases := []struct {
+		name                string
+		yamlConfig          string
+		expectedMaxAttempts int
+		expectedMaxBackoff  float64
+	}{
+		{
+			name: "default retry config",
+			yamlConfig: `
+gitlab_url: http://localhost
+secret: test-secret
+`,
+			expectedMaxAttempts: 4,
+			expectedMaxBackoff:  1.4,
+		},
+		{
+			name: "custom retry config",
+			yamlConfig: `
+gitlab_url: http://localhost
+secret: test-secret
+retry_policy:
+  max_attempts: 5
+  max_backoff: 2.5
+`,
+			expectedMaxAttempts: 5,
+			expectedMaxBackoff:  2.5,
+		},
+		{
+			name: "partial retry config - only max_attempts",
+			yamlConfig: `
+gitlab_url: http://localhost
+secret: test-secret
+retry_policy:
+  max_attempts: 3
+`,
+			expectedMaxAttempts: 3,
+			expectedMaxBackoff:  1.4,
+		},
+		{
+			name: "partial retry config - only max_backoff",
+			yamlConfig: `
+gitlab_url: http://localhost
+secret: test-secret
+retry_policy:
+  max_backoff: 3.0
+`,
+			expectedMaxAttempts: 4,
+			expectedMaxBackoff:  3.0,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			testRoot := t.TempDir()
+			configPath := testRoot + "/config.yml"
+			err := os.WriteFile(configPath, []byte(tc.yamlConfig), 0o644)
+			require.NoError(t, err)
+
+			cfg, err := NewFromDir(testRoot)
+			require.NoError(t, err)
+
+			require.Equal(t, tc.expectedMaxAttempts, cfg.RetryPolicy.GetMaxAttempts())
+			require.InDelta(t, tc.expectedMaxBackoff, cfg.RetryPolicy.GetMaxBackoff(), 0.01)
+
+			// Verify the retry config is passed to the Gitaly client
+			require.Equal(t, tc.expectedMaxAttempts, cfg.GitalyClient.MaxAttempts)
+			require.InDelta(t, tc.expectedMaxBackoff, cfg.GitalyClient.MaxBackoff, 0.01)
+		})
+	}
+}

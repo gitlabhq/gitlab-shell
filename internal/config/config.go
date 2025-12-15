@@ -52,6 +52,28 @@ type ServerConfig struct {
 	GSSAPI                  GSSAPIConfig `yaml:"gssapi,omitempty"`
 }
 
+// ClientRetryConfig configures the Gitaly gRPC client retry policy
+type ClientRetryConfig struct {
+	MaxAttempts int     `yaml:"max_attempts" json:"max_attempts"`
+	MaxBackoff  float64 `yaml:"max_backoff" json:"max_backoff"`
+}
+
+func (c ClientRetryConfig) GetMaxAttempts() int {
+	if c.MaxAttempts == 0 {
+		return 4
+	}
+
+	return c.MaxAttempts
+}
+
+func (c ClientRetryConfig) GetMaxBackoff() float64 {
+	if c.MaxBackoff == 0 {
+		return 1.4
+	}
+
+	return c.MaxBackoff
+}
+
 // HTTPSettingsConfig are HTTP related settings
 type HTTPSettingsConfig struct {
 	User               string `yaml:"user"`
@@ -87,6 +109,7 @@ type Config struct {
 	Server         ServerConfig       `yaml:"sshd"`
 	LFSConfig      LFSConfig          `yaml:"lfs"`
 	PATConfig      PATConfig          `yaml:"pat"`
+	RetryPolicy    ClientRetryConfig  `yaml:"retry_policy"`
 
 	httpClient     *client.HTTPClient
 	httpClientErr  error
@@ -222,6 +245,10 @@ func newFromFile(path string) (*Config, error) {
 	if len(cfg.LogFile) > 0 && cfg.LogFile[0] != '/' && cfg.RootDir != "" {
 		cfg.LogFile = filepath.Join(cfg.RootDir, cfg.LogFile)
 	}
+
+	// Apply retry configuration to Gitaly client
+	cfg.GitalyClient.MaxAttempts = cfg.RetryPolicy.GetMaxAttempts()
+	cfg.GitalyClient.MaxBackoff = cfg.RetryPolicy.GetMaxBackoff()
 
 	return cfg, nil
 }
