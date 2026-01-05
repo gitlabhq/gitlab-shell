@@ -23,12 +23,14 @@ var (
 	}
 )
 
+// Command handles git-lfs-transfer operations
 type Command struct {
 	Config     *config.Config
 	Args       *commandargs.Shell
 	ReadWriter *readwriter.ReadWriter
 }
 
+// Execute runs the git-lfs-transfer command
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SSHArgs
 	if len(args) != 3 {
@@ -111,7 +113,11 @@ func actionFromOperation(operation string) (commandargs.CommandType, error) {
 }
 
 func (c *Command) verifyAccess(ctx context.Context, action commandargs.CommandType, repo string) (*accessverifier.Response, error) {
-	cmd := accessverifier.Command{c.Config, c.Args, c.ReadWriter}
+	cmd := accessverifier.Command{
+		Config:     c.Config,
+		Args:       c.Args,
+		ReadWriter: c.ReadWriter,
+	}
 
 	return cmd.Verify(ctx, action, repo)
 }
