@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -49,12 +48,16 @@ func setup(t *testing.T, keyID string, requests []testserver.TestRequestHandler)
 	url := testserver.StartHTTPServer(t, requests)
 
 	output := &bytes.Buffer{}
-	input := io.NopCloser(strings.NewReader("input"))
+	pipeReader, pipeWriter := io.Pipe()
+	t.Cleanup(func() {
+		pipeWriter.Close()
+		pipeReader.Close()
+	})
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url},
 		Args:       &commandargs.Shell{GitlabKeyID: keyID, SSHArgs: []string{"git-upload-archive", "group/repo"}},
-		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
+		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: pipeReader},
 	}
 
 	return cmd
