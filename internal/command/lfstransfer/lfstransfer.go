@@ -23,12 +23,14 @@ var (
 	}
 )
 
+// Command handles git-lfs-transfer operations
 type Command struct {
 	Config     *config.Config
 	Args       *commandargs.Shell
 	ReadWriter *readwriter.ReadWriter
 }
 
+// Execute runs the git-lfs-transfer command
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SSHArgs
 	if len(args) != 3 {
@@ -63,36 +65,49 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctxWithLogData, err
 	}
 
-	logger := NewWrappedLoggerForGitLFSTransfer(ctxWithLogData)
+	return c.processTransfer(ctxWithLogData, operation, action, auth)
+}
 
-	backend, err := NewGitlabBackend(ctxWithLogData, c.Config, c.Args, auth)
+func (c *Command) processTransfer(ctx context.Context, operation string, action commandargs.CommandType, auth *GitlabAuthentication) (context.Context, error) {
+	logger := NewWrappedLoggerForGitLFSTransfer(ctx)
+
+	backend, err := NewGitlabBackend(ctx, c.Config, c.Args, auth)
 	if err != nil {
-		return ctxWithLogData, err
+		return ctx, err
 	}
 
 	handler := transfer.NewPktline(c.ReadWriter.In, c.ReadWriter.Out, logger)
 
+	if err := c.sendCapabilities(ctx, handler); err != nil {
+		return ctx, err
+	}
+
+	p := transfer.NewProcessor(handler, backend, logger)
+	defer log.WithContextFields(ctx, log.Fields{"action": action}).Info("done processing commands")
+
+	switch operation {
+	case transfer.DownloadOperation:
+		return ctx, p.ProcessCommands(transfer.DownloadOperation)
+	case transfer.UploadOperation:
+		return ctx, p.ProcessCommands(transfer.UploadOperation)
+	default:
+		return ctx, fmt.Errorf("unknown operation %q", operation)
+	}
+}
+
+func (c *Command) sendCapabilities(ctx context.Context, handler *transfer.Pktline) error {
 	for _, cap := range capabilities {
 		if err := handler.WritePacketText(cap); err != nil {
-			log.WithContextFields(ctxWithLogData, log.Fields{"capability": cap}).WithError(err).Error("error sending capability")
+			log.WithContextFields(ctx, log.Fields{"capability": cap}).WithError(err).Error("error sending capability")
 		}
 	}
 
 	if err := handler.WriteFlush(); err != nil {
-		log.WithContextFields(ctxWithLogData, log.Fields{}).WithError(err).Error("error flushing capabilities")
+		log.WithContextFields(ctx, log.Fields{}).WithError(err).Error("error flushing capabilities")
+		return err
 	}
 
-	p := transfer.NewProcessor(handler, backend, logger)
-	defer log.WithContextFields(ctxWithLogData, log.Fields{"action": action}).Info("done processing commands")
-
-	switch operation {
-	case transfer.DownloadOperation:
-		return ctxWithLogData, p.ProcessCommands(transfer.DownloadOperation)
-	case transfer.UploadOperation:
-		return ctxWithLogData, p.ProcessCommands(transfer.UploadOperation)
-	default:
-		return ctxWithLogData, fmt.Errorf("unknown operation %q", operation)
-	}
+	return nil
 }
 
 func actionFromOperation(operation string) (commandargs.CommandType, error) {
@@ -111,7 +126,11 @@ func actionFromOperation(operation string) (commandargs.CommandType, error) {
 }
 
 func (c *Command) verifyAccess(ctx context.Context, action commandargs.CommandType, repo string) (*accessverifier.Response, error) {
-	cmd := accessverifier.Command{c.Config, c.Args, c.ReadWriter}
+	cmd := accessverifier.Command{
+		Config:     c.Config,
+		Args:       c.Args,
+		ReadWriter: c.ReadWriter,
+	}
 
 	return cmd.Verify(ctx, action, repo)
 }
