@@ -156,7 +156,7 @@ func TestExecute(t *testing.T) {
 			}
 
 			cmd := &Command{
-				Config:     &config.Config{GitlabUrl: url},
+				Config:     &config.Config{GitlabURL: url},
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 			}
@@ -176,7 +176,7 @@ func TestCanceledContext(t *testing.T) {
 
 	url := testserver.StartSocketHTTPServer(t, requests)
 	cmd := &Command{
-		Config:     &config.Config{GitlabUrl: url},
+		Config:     &config.Config{GitlabURL: url},
 		Args:       &commandargs.Shell{GitlabKeyID: "wait_infinitely"},
 		ReadWriter: &readwriter.ReadWriter{Out: output, In: &blockingReader{}},
 	}

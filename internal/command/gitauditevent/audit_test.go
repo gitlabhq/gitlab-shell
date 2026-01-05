@@ -51,7 +51,7 @@ func TestGitAudit(t *testing.T) {
 	}
 
 	url := testserver.StartSocketHTTPServer(t, requests)
-	Audit(context.Background(), args, &config.Config{GitlabUrl: url}, &accessverifier.Response{
+	Audit(context.Background(), args, &config.Config{GitlabURL: url}, &accessverifier.Response{
 		Username: testUsername,
 		Repo:     testRepo,
 	}, nil)

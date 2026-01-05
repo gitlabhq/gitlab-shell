@@ -433,7 +433,7 @@ func setupServerWithContext(ctx context.Context, t *testing.T, cfg *config.Confi
 	}
 
 	// All things that don't need to be configurable in tests yet
-	cfg.GitlabUrl = url
+	cfg.GitlabURL = url
 	cfg.RootDir = "/tmp"
 	cfg.User = user
 	cfg.Server.Listen = serverURL

@@ -128,7 +128,7 @@ func TestExecute(t *testing.T) {
 			input := bytes.NewBufferString(tc.answer)
 
 			cmd := &Command{
-				Config:     &config.Config{GitlabUrl: url},
+				Config:     &config.Config{GitlabURL: url},
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 			}

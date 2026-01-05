@@ -49,7 +49,7 @@ func TestExecute(t *testing.T) {
 
 	buffer := &bytes.Buffer{}
 	cmd := &Command{
-		Config:     &config.Config{GitlabUrl: url},
+		Config:     &config.Config{GitlabURL: url},
 		ReadWriter: &readwriter.ReadWriter{Out: buffer},
 	}
 
@@ -64,7 +64,7 @@ func TestFailingRedisExecute(t *testing.T) {
 
 	buffer := &bytes.Buffer{}
 	cmd := &Command{
-		Config:     &config.Config{GitlabUrl: url},
+		Config:     &config.Config{GitlabURL: url},
 		ReadWriter: &readwriter.ReadWriter{Out: buffer},
 	}
 
@@ -78,7 +78,7 @@ func TestFailingAPIExecute(t *testing.T) {
 
 	buffer := &bytes.Buffer{}
 	cmd := &Command{
-		Config:     &config.Config{GitlabUrl: url},
+		Config:     &config.Config{GitlabURL: url},
 		ReadWriter: &readwriter.ReadWriter{Out: buffer},
 	}
 

@@ -48,7 +48,7 @@ func TestUploadPack(t *testing.T) {
 			ctx := correlation.ContextWithCorrelation(context.Background(), "a-correlation-id")
 			ctx = correlation.ContextWithClientName(ctx, "gitlab-shell-tests")
 
-			cfg := &config.Config{GitlabUrl: url}
+			cfg := &config.Config{GitlabURL: url}
 			cfg.GitalyClient.InitSidechannelRegistry(ctx)
 
 			cmd := &Command{

@@ -29,7 +29,7 @@ var (
 
 func overrideConfigFromEnvironment(cfg *config.Config) {
 	if gitlabURL := os.Getenv("GITLAB_URL"); gitlabURL != "" {
-		cfg.GitlabUrl = gitlabURL
+		cfg.GitlabURL = gitlabURL
 	}
 	if gitlabTracing := os.Getenv("GITLAB_TRACING"); gitlabTracing != "" {
 		cfg.GitlabTracing = gitlabTracing

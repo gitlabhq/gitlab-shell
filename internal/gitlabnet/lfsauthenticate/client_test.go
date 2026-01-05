@@ -81,7 +81,7 @@ func TestFailedRequests(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			client, err := NewClient(&config.Config{GitlabUrl: url}, tc.args)
+			client, err := NewClient(&config.Config{GitlabURL: url}, tc.args)
 			require.NoError(t, err)
 
 			operation := tc.args.SSHArgs[2]
@@ -116,7 +116,7 @@ func TestSuccessfulRequests(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			operation := tc.operation
 			args := &commandargs.Shell{GitlabKeyID: keyID, CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, operation}}
-			client, err := NewClient(&config.Config{GitlabUrl: url}, args)
+			client, err := NewClient(&config.Config{GitlabURL: url}, args)
 			require.NoError(t, err)
 
 			response, err := client.Authenticate(context.Background(), operation, repo, "")

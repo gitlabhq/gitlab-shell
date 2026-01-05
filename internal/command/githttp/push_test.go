@@ -31,7 +31,7 @@ func TestExecute(t *testing.T) {
 	output := &bytes.Buffer{}
 
 	cmd := &PushCommand{
-		Config:     &config.Config{GitlabUrl: url},
+		Config:     &config.Config{GitlabURL: url},
 		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 		Response: &accessverifier.Response{
 			Payload: accessverifier.CustomPayload{
@@ -85,7 +85,7 @@ func TestExecuteWithFailedInfoRefs(t *testing.T) {
 			url := testserver.StartHTTPServer(t, requests)
 
 			cmd := &PushCommand{
-				Config: &config.Config{GitlabUrl: url},
+				Config: &config.Config{GitlabURL: url},
 				Response: &accessverifier.Response{
 					Payload: accessverifier.CustomPayload{
 						Data: accessverifier.CustomPayloadData{PrimaryRepo: url},
@@ -105,7 +105,7 @@ func TestExecuteWithFailedReceivePack(t *testing.T) {
 	output := &bytes.Buffer{}
 
 	cmd := &PushCommand{
-		Config:     &config.Config{GitlabUrl: url},
+		Config:     &config.Config{GitlabURL: url},
 		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 		Response: &accessverifier.Response{
 			Payload: accessverifier.CustomPayload{
@@ -125,7 +125,7 @@ func TestPushExecuteWithSSHReceivePack(t *testing.T) {
 	input := strings.NewReader(cloneResponse + "0009done\n")
 
 	cmd := &PushCommand{
-		Config:     &config.Config{GitlabUrl: url},
+		Config:     &config.Config{GitlabURL: url},
 		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 		Response: &accessverifier.Response{
 			Payload: accessverifier.CustomPayload{

@@ -26,7 +26,7 @@ import (
 
 var (
 	gitlabShellExec = &executable.Executable{Name: executable.GitlabShell}
-	basicConfig     = &config.Config{GitlabUrl: "http+unix://gitlab.socket", PATConfig: config.PATConfig{Enabled: true}}
+	basicConfig     = &config.Config{GitlabURL: "http+unix://gitlab.socket", PATConfig: config.PATConfig{Enabled: true}}
 )
 
 func TestNew(t *testing.T) {
@@ -109,7 +109,7 @@ func TestNew(t *testing.T) {
 func TestLFSAuthenticateCommands(t *testing.T) {
 	arguments := []string{}
 	env := buildEnv("git-lfs-authenticate")
-	config := &config.Config{GitlabUrl: "http+unix://gitlab.socket"}
+	config := &config.Config{GitlabURL: "http+unix://gitlab.socket"}
 
 	lfsHTTPConnectionsTotal := testutil.ToFloat64(metrics.LfsHTTPConnectionsTotal)
 
@@ -135,7 +135,7 @@ func TestLFSTransferCommands(t *testing.T) {
 			desc:         "it returns an Lfstransfer command",
 			executable:   gitlabShellExec,
 			env:          buildEnv("git-lfs-transfer"),
-			config:       &config.Config{GitlabUrl: "http+unix://gitlab.socket", LFSConfig: config.LFSConfig{PureSSHProtocol: true}},
+			config:       &config.Config{GitlabURL: "http+unix://gitlab.socket", LFSConfig: config.LFSConfig{PureSSHProtocol: true}},
 			expectedType: &lfstransfer.Command{},
 			errorString:  "",
 		},
@@ -143,7 +143,7 @@ func TestLFSTransferCommands(t *testing.T) {
 			desc:         "it does not return an Lfstransfer command when config disallows pureSSH",
 			executable:   gitlabShellExec,
 			env:          buildEnv("git-lfs-transfer"),
-			config:       &config.Config{GitlabUrl: "http+unix://gitlab.socket", LFSConfig: config.LFSConfig{PureSSHProtocol: false}},
+			config:       &config.Config{GitlabURL: "http+unix://gitlab.socket", LFSConfig: config.LFSConfig{PureSSHProtocol: false}},
 			expectedType: nil,
 			errorString:  "Disallowed command",
 		},
@@ -188,7 +188,7 @@ func TestPATCommands(t *testing.T) {
 			desc:         "it does not return a PersonalAccessToken command when config disallows it",
 			executable:   gitlabShellExec,
 			env:          buildEnv("personal_access_token"),
-			config:       &config.Config{GitlabUrl: "http+unix://gitlab.socket", PATConfig: config.PATConfig{Enabled: false}},
+			config:       &config.Config{GitlabURL: "http+unix://gitlab.socket", PATConfig: config.PATConfig{Enabled: false}},
 			expectedType: nil,
 			errorString:  "Disallowed command",
 		},
