@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/git-lfs/pktline"
+	"github.com/charmbracelet/git-lfs-transfer/transfer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
@@ -54,12 +54,12 @@ func setupWaitGroupForExecute(t *testing.T, cmd *Command) *sync.WaitGroup {
 	return wg
 }
 
-func writeCommand(t *testing.T, pl *pktline.Pktline, command string) {
+func writeCommand(t *testing.T, pl *transfer.Pktline, command string) {
 	require.NoError(t, pl.WritePacketText(command))
 	require.NoError(t, pl.WriteFlush())
 }
 
-func writeCommandArgs(t *testing.T, pl *pktline.Pktline, command string, args []string) {
+func writeCommandArgs(t *testing.T, pl *transfer.Pktline, command string, args []string) {
 	require.NoError(t, pl.WritePacketText(command))
 	for _, arg := range args {
 		require.NoError(t, pl.WritePacketText(arg))
@@ -67,7 +67,7 @@ func writeCommandArgs(t *testing.T, pl *pktline.Pktline, command string, args []
 	require.NoError(t, pl.WriteFlush())
 }
 
-func writeCommandArgsAndBinaryData(t *testing.T, pl *pktline.Pktline, command string, args []string, data [][]byte) {
+func writeCommandArgsAndBinaryData(t *testing.T, pl *transfer.Pktline, command string, args []string, data [][]byte) {
 	require.NoError(t, pl.WritePacketText(command))
 	for _, arg := range args {
 		require.NoError(t, pl.WritePacketText(arg))
@@ -79,7 +79,7 @@ func writeCommandArgsAndBinaryData(t *testing.T, pl *pktline.Pktline, command st
 	require.NoError(t, pl.WriteFlush())
 }
 
-func writeCommandArgsAndTextData(t *testing.T, pl *pktline.Pktline, command string, args []string, data []string) {
+func writeCommandArgsAndTextData(t *testing.T, pl *transfer.Pktline, command string, args []string, data []string) {
 	require.NoError(t, pl.WritePacketText(command))
 
 	for _, arg := range args {
@@ -93,7 +93,7 @@ func writeCommandArgsAndTextData(t *testing.T, pl *pktline.Pktline, command stri
 	require.NoError(t, pl.WriteFlush())
 }
 
-func readCapabilities(t *testing.T, pl *pktline.Pktline) {
+func readCapabilities(t *testing.T, pl *transfer.Pktline) {
 	var caps []string
 	end := false
 	for !end {
@@ -114,7 +114,7 @@ func readCapabilities(t *testing.T, pl *pktline.Pktline) {
 	}, caps)
 }
 
-func readStatus(t *testing.T, pl *pktline.Pktline) string {
+func readStatus(t *testing.T, pl *transfer.Pktline) string {
 	// Read status.
 	status, l, err := pl.ReadPacketTextWithLength()
 	require.NoError(t, err)
@@ -133,7 +133,7 @@ func readStatus(t *testing.T, pl *pktline.Pktline) string {
 	return status
 }
 
-func readStatusArgs(t *testing.T, pl *pktline.Pktline) (status string, args []string) {
+func readStatusArgs(t *testing.T, pl *transfer.Pktline) (status string, args []string) {
 	// Read status.
 	status, l, err := pl.ReadPacketTextWithLength()
 	require.NoError(t, err)
@@ -162,7 +162,7 @@ func readStatusArgs(t *testing.T, pl *pktline.Pktline) (status string, args []st
 	return status, args
 }
 
-func readStatusArgsAndBinaryData(t *testing.T, pl *pktline.Pktline) (status string, args []string, data [][]byte) {
+func readStatusArgsAndBinaryData(t *testing.T, pl *transfer.Pktline) (status string, args []string, data [][]byte) {
 	// Read status.
 	status, l, err := pl.ReadPacketTextWithLength()
 	require.NoError(t, err)
@@ -205,7 +205,7 @@ func readStatusArgsAndBinaryData(t *testing.T, pl *pktline.Pktline) (status stri
 	return status, args, data
 }
 
-func readStatusArgsAndTextData(t *testing.T, pl *pktline.Pktline) (status string, args []string, data []string) {
+func readStatusArgsAndTextData(t *testing.T, pl *transfer.Pktline) (status string, args []string, data []string) {
 	// Read status.
 	status, l, err := pl.ReadPacketTextWithLength()
 	require.NoError(t, err)
@@ -252,16 +252,16 @@ func readStatusArgsAndTextData(t *testing.T, pl *pktline.Pktline) (status string
 	return status, args, data
 }
 
-func negotiateVersion(t *testing.T, pl *pktline.Pktline) {
+func negotiateVersion(t *testing.T, pl *transfer.Pktline) {
 	readCapabilities(t, pl)
 	writeCommand(t, pl, "version 1")
-	status, _, _ := readStatusArgsAndTextData(t, pl)
+	status := readStatus(t, pl)
 	require.Equal(t, "status 200", status)
 }
 
-func quit(t *testing.T, pl *pktline.Pktline) {
+func quit(t *testing.T, pl *transfer.Pktline) {
 	writeCommand(t, pl, "quit")
-	status, _, _ := readStatusArgsAndTextData(t, pl)
+	status := readStatus(t, pl)
 	require.Equal(t, "status 200", status)
 }
 
@@ -1111,7 +1111,7 @@ func listLocks(cursor string, limit int, refspec string, id string, path string)
 	return locks, nextCursor
 }
 
-func setup(t *testing.T, keyID string, repo string, op string) (string, *Command, *pktline.Pktline, *io.PipeReader) {
+func setup(t *testing.T, keyID string, repo string, op string) (string, *Command, *transfer.Pktline, *io.PipeReader) {
 	var url string
 
 	gitalyAddress, _ := testserver.StartGitalyServer(t, "unix")
@@ -1477,7 +1477,7 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 		Args:       &commandargs.Shell{GitlabKeyID: keyID, SSHArgs: []string{"git-lfs-transfer", repo, op}},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: errorSink, Out: outputSink, In: inputSource},
 	}
-	pl := pktline.NewPktline(outputSource, inputSink)
+	pl := transfer.NewPktline(outputSource, inputSink)
 
 	return url, cmd, pl, errorSource
 }
