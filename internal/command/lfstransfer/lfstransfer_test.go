@@ -266,7 +266,7 @@ func quit(t *testing.T, pl *pktline.Pktline) {
 }
 
 func TestLfsTransferCapabilities(t *testing.T) {
-	_, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
+	_, cmd, pl := setup(t, "rw", "upload")
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -275,13 +275,13 @@ func TestLfsTransferCapabilities(t *testing.T) {
 }
 
 func TestLfsTransferNoPermissions(t *testing.T) {
-	_, cmd, _, _ := setup(t, "ro", "group/repo", "upload")
+	_, cmd, _ := setup(t, "ro", "upload")
 	_, err := cmd.Execute(context.Background())
 	require.Equal(t, "Disallowed by API call", err.Error())
 }
 
 func TestLfsTransferBatchDownload(t *testing.T) {
-	url, cmd, pl, _ := setup(t, "rw", "group/repo", "download")
+	url, cmd, pl := setup(t, "rw", "download")
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -347,7 +347,7 @@ func TestLfsTransferBatchDownload(t *testing.T) {
 }
 
 func TestLfsTransferBatchUpload(t *testing.T) {
-	url, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
+	url, cmd, pl := setup(t, "rw", "upload")
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -411,7 +411,7 @@ func TestLfsTransferBatchUpload(t *testing.T) {
 }
 
 func TestLfsTransferGetObject(t *testing.T) {
-	url, cmd, pl, _ := setup(t, "rw", "group/repo", "download")
+	url, cmd, pl := setup(t, "rw", "download")
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -578,7 +578,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 }
 
 func TestLfsTransferPutObject(t *testing.T) {
-	url, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
+	url, cmd, pl := setup(t, "rw", "upload")
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -741,7 +741,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 }
 
 func TestLfsTransferVerifyObject(t *testing.T) {
-	_, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
+	_, cmd, pl := setup(t, "rw", "upload")
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -754,7 +754,7 @@ func TestLfsTransferVerifyObject(t *testing.T) {
 }
 
 func TestLfsTransferLock(t *testing.T) {
-	_, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
+	_, cmd, pl := setup(t, "rw", "upload")
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -812,7 +812,7 @@ func TestLfsTransferLock(t *testing.T) {
 }
 
 func TestLfsTransferUnlock(t *testing.T) {
-	_, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
+	_, cmd, pl := setup(t, "rw", "upload")
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -857,7 +857,7 @@ func TestLfsTransferUnlock(t *testing.T) {
 }
 
 func TestLfsTransferListLockDownload(t *testing.T) {
-	_, cmd, pl, _ := setup(t, "rw", "group/repo", "download")
+	_, cmd, pl := setup(t, "rw", "download")
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -943,7 +943,7 @@ func TestLfsTransferListLockDownload(t *testing.T) {
 }
 
 func TestLfsTransferListLockUpload(t *testing.T) {
-	_, cmd, pl, _ := setup(t, "rw", "group/repo", "upload")
+	_, cmd, pl := setup(t, "rw", "upload")
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -1111,366 +1111,18 @@ func listLocks(cursor string, limit int, refspec string, id string, path string)
 	return locks, nextCursor
 }
 
-func setup(t *testing.T, keyID string, repo string, op string) (string, *Command, *pktline.Pktline, *io.PipeReader) {
+func setup(t *testing.T, keyID string, op string) (string, *Command, *pktline.Pktline) {
 	var url string
+	repo := "group/repo"
 
 	gitalyAddress, _ := testserver.StartGitalyServer(t, "unix")
-	requests := []testserver.TestRequestHandler{
-		{
-			Path: "/api/v4/internal/allowed",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				var requestBody map[string]interface{}
-				json.NewDecoder(r.Body).Decode(&requestBody)
-
-				allowed := map[string]interface{}{
-					"status":      true,
-					"gl_id":       "1",
-					"gl_key_type": "key",
-					"gl_key_id":   123,
-					"gl_username": "alex-doe",
-					"gitaly": map[string]interface{}{
-						"repository": map[string]interface{}{
-							"storage_name":                     "storage_name",
-							"relative_path":                    "relative_path",
-							"git_object_directory":             "path/to/git_object_directory",
-							"git_alternate_object_directories": []string{"path/to/git_alternate_object_directory"},
-							"gl_repository":                    "group/repo",
-							"gl_project_path":                  "group/project-path",
-						},
-						"address": gitalyAddress,
-						"token":   "token",
-						"features": map[string]string{
-							"gitaly-feature-cache_invalidator":        "true",
-							"gitaly-feature-inforef_uploadpack_cache": "false",
-							"some-other-ff":                           "true",
-						},
-					},
-				}
-				disallowed := map[string]interface{}{
-					"status":  false,
-					"message": "Disallowed by API call",
-				}
-
-				var body map[string]interface{}
-				switch {
-				case requestBody["key_id"] == "rw":
-					body = allowed
-				case requestBody["key_id"] == "ro" && requestBody["action"] == "git-upload-pack":
-					body = allowed
-				default:
-					body = disallowed
-				}
-				assert.NoError(t, json.NewEncoder(w).Encode(body))
-			},
-		},
-		{
-			Path: "/api/v4/internal/lfs_authenticate",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				defer r.Body.Close()
-				assert.NoError(t, err)
-
-				var request *lfsauthenticate.Request
-				assert.NoError(t, json.Unmarshal(b, &request))
-				if request.KeyID == "rw" {
-					body := map[string]interface{}{
-						"username":             "john",
-						"lfs_token":            "sometoken",
-						"repository_http_path": fmt.Sprintf("%s/group/repo", url),
-						"expires_in":           1800,
-					}
-					assert.NoError(t, json.NewEncoder(w).Encode(body))
-				} else {
-					w.WriteHeader(http.StatusForbidden)
-				}
-			},
-		},
-		{
-			Path: "/group/repo/info/lfs/objects/batch",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("john:sometoken"))), r.Header.Get("Authorization"))
-
-				var requestBody map[string]interface{}
-				json.NewDecoder(r.Body).Decode(&requestBody)
-
-				reqObjects := requestBody["objects"].([]interface{})
-				retObjects := make([]map[string]interface{}, 0)
-				for _, o := range reqObjects {
-					reqObject := o.(map[string]interface{})
-					retObject := map[string]interface{}{
-						"oid": reqObject["oid"],
-					}
-					switch reqObject["oid"] {
-					case largeFileOid:
-						retObject["size"] = largeFileLen
-						if op == "download" {
-							retObject["actions"] = map[string]interface{}{
-								"download": map[string]interface{}{
-									"href": fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
-									"header": map[string]interface{}{
-										"Authorization": "Basic 1234567890",
-										"Content-Type":  "application/octet-stream",
-									},
-								},
-							}
-						}
-					case evenLargerFileOid:
-						assert.Equal(t, evenLargerFileLen, int(reqObject["size"].(float64)))
-						retObject["size"] = evenLargerFileLen
-						if op == "upload" {
-							retObject["actions"] = map[string]interface{}{
-								"upload": map[string]interface{}{
-									"href": fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
-									"header": map[string]interface{}{
-										"Authorization": "Basic 1234567890",
-										"Content-Type":  "application/octet-stream",
-									},
-								},
-							}
-						}
-					default:
-						retObject["size"] = reqObject["size"]
-						retObject["error"] = map[string]interface{}{
-							"code":    404,
-							"message": "Not found",
-						}
-					}
-					retObjects = append(retObjects, retObject)
-				}
-
-				retBody := map[string]interface{}{
-					"objects": retObjects,
-				}
-				body, _ := json.Marshal(retBody)
-				w.Write(body)
-			},
-		},
-		{
-			Path: "/evil-url",
-			Handler: func(_ http.ResponseWriter, _ *http.Request) {
-				assert.Fail(t, "An attacker accessed an evil URL")
-			},
-		},
-		{
-			Path: fmt.Sprintf("/group/repo/gitlab-lfs/objects/%s", largeFileOid),
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, "Basic 1234567890", r.Header.Get("Authorization"))
-				w.Write([]byte(largeFileContents))
-			},
-		},
-		{
-			Path: fmt.Sprintf("/group/repo/gitlab-lfs/objects/%s/%d", evenLargerFileOid, evenLargerFileLen),
-			Handler: func(_ http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, http.MethodPut, r.Method)
-				assert.Equal(t, "Basic 1234567890", r.Header.Get("Authorization"))
-				body, _ := io.ReadAll(r.Body)
-				assert.Equal(t, []byte(evenLargerFileContents), body)
-			},
-		},
-		{
-			Path: "/group/repo/info/lfs/locks/verify",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, http.MethodPost, r.Method)
-				requestJSON := &struct {
-					Cursor string `json:"cursor"`
-					Limit  int    `json:"limit"`
-					Ref    struct {
-						Name string `json:"name"`
-					} `json:"ref"`
-				}{}
-				assert.NoError(t, json.NewDecoder(r.Body).Decode(requestJSON))
-
-				bodyJSON := &struct {
-					Ours       []*LockInfo `json:"ours,omitempty"`
-					Theirs     []*LockInfo `json:"theirs,omitempty"`
-					NextCursor string      `json:"next_cursor,omitempty"`
-				}{}
-				var locks []*LockInfo
-				locks, bodyJSON.NextCursor = listLocks(requestJSON.Cursor, requestJSON.Limit, requestJSON.Ref.Name, r.URL.Query().Get("id"), r.URL.Query().Get("path"))
-				for _, lock := range locks {
-					if lock.ID == "lock1" {
-						bodyJSON.Ours = append(bodyJSON.Ours, lock)
-					} else {
-						bodyJSON.Theirs = append(bodyJSON.Theirs, lock)
-					}
-				}
-
-				assert.NoError(t, json.NewEncoder(w).Encode(bodyJSON))
-			},
-		},
-		{
-			Path: "/group/repo/info/lfs/locks",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				switch r.Method {
-				case http.MethodGet:
-					bodyJSON := &struct {
-						Locks      []*LockInfo `json:"locks,omitempty"`
-						NextCursor string      `json:"next_cursor,omitempty"`
-					}{}
-					limit := 100
-					if r.URL.Query().Has("limit") {
-						l, err := strconv.Atoi(r.URL.Query().Get("limit"))
-						assert.NoError(t, err)
-						limit = l
-					}
-					bodyJSON.Locks, bodyJSON.NextCursor = listLocks(r.URL.Query().Get("cursor"), limit, r.URL.Query().Get("refspec"), r.URL.Query().Get("id"), r.URL.Query().Get("path"))
-					assert.NoError(t, json.NewEncoder(w).Encode(bodyJSON))
-				case http.MethodPost:
-					var body map[string]interface{}
-					reader := json.NewDecoder(r.Body)
-					reader.Decode(&body)
-
-					var response map[string]interface{}
-					switch body["path"] {
-					case "/large/file/1":
-						response = map[string]interface{}{
-							"lock": map[string]interface{}{
-								"id":        "lock1",
-								"path":      "/large/file/1",
-								"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
-								"owner": map[string]interface{}{
-									"name": "johndoe",
-								},
-							},
-							"message": "already created lock",
-						}
-						w.WriteHeader(http.StatusConflict)
-					case "/large/file/2":
-						response = map[string]interface{}{
-							"message": "no permission",
-						}
-						w.WriteHeader(http.StatusForbidden)
-					case "/large/file/4":
-						response = map[string]interface{}{
-							"lock": map[string]interface{}{
-								"id":        "lock4",
-								"path":      "/large/file/4",
-								"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
-								"owner": map[string]interface{}{
-									"name": "johndoe",
-								},
-							},
-						}
-						w.WriteHeader(http.StatusCreated)
-					case "/large/file/5":
-						ref := body["ref"].(map[string]interface{})
-						assert.Equal(t, "refs/heads/main", ref["name"])
-						response = map[string]interface{}{
-							"lock": map[string]interface{}{
-								"id":        "lock5",
-								"path":      "/large/file/5",
-								"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
-								"owner": map[string]interface{}{
-									"name": "johndoe",
-								},
-							},
-						}
-						w.WriteHeader(http.StatusCreated)
-					default:
-						response = map[string]interface{}{
-							"message": "internal error",
-						}
-						w.WriteHeader(http.StatusInternalServerError)
-					}
-					writer := json.NewEncoder(w)
-					writer.Encode(response)
-				}
-			},
-		},
-		{
-			Path: "/group/repo/info/lfs/locks/lock1/unlock",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, http.MethodPost, r.Method)
-				var body map[string]interface{}
-				assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
-				assert.Equal(t, map[string]interface{}{
-					"ref": map[string]interface{}{
-						"name": "refs/heads/main",
-					},
-					"force": false,
-				}, body)
-
-				lock := map[string]interface{}{
-					"lock": map[string]interface{}{
-						"id":        "lock1",
-						"path":      "/large/file/1",
-						"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
-						"owner": map[string]interface{}{
-							"name": "johndoe",
-						},
-					},
-				}
-				writer := json.NewEncoder(w)
-				writer.Encode(lock)
-			},
-		},
-		{
-			Path: "/group/repo/info/lfs/locks/lock2/unlock",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, http.MethodPost, r.Method)
-				var body map[string]interface{}
-				assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
-				assert.Equal(t, map[string]interface{}{
-					"force": true,
-				}, body)
-
-				lock := map[string]interface{}{
-					"lock": map[string]interface{}{
-						"id":        "lock2",
-						"path":      "/large/file/2",
-						"locked_at": time.Date(1955, 11, 12, 22, 4, 0, 0, time.UTC).Format(time.RFC3339),
-						"owner": map[string]interface{}{
-							"name": "marty",
-						},
-					},
-				}
-				writer := json.NewEncoder(w)
-				writer.Encode(lock)
-			},
-		},
-		{
-			Path: "/group/repo/info/lfs/locks/lock3/unlock",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, http.MethodPost, r.Method)
-				var body map[string]interface{}
-				assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
-				assert.Equal(t, map[string]interface{}{
-					"force": false,
-				}, body)
-
-				lock := map[string]interface{}{
-					"message": "forbidden",
-				}
-				w.WriteHeader(http.StatusForbidden)
-				writer := json.NewEncoder(w)
-				writer.Encode(lock)
-			},
-		},
-		{
-			Path: "/group/repo/info/lfs/locks/lock4/unlock",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, http.MethodPost, r.Method)
-				var body map[string]interface{}
-				assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
-				assert.Equal(t, map[string]interface{}{
-					"force": false,
-				}, body)
-
-				lock := map[string]interface{}{
-					"message": "not found",
-				}
-				w.WriteHeader(http.StatusNotFound)
-				writer := json.NewEncoder(w)
-				writer.Encode(lock)
-			},
-		},
-	}
+	requests := buildTestRequestHandlers(t, &url, gitalyAddress, op)
 
 	url = testserver.StartHTTPServer(t, requests)
 
 	inputSource, inputSink := io.Pipe()
 	outputSource, outputSink := io.Pipe()
-	errorSource, errorSink := io.Pipe()
+	_, errorSink := io.Pipe()
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabUrl: url, Secret: "very secret"},
@@ -1479,5 +1131,414 @@ func setup(t *testing.T, keyID string, repo string, op string) (string, *Command
 	}
 	pl := pktline.NewPktline(outputSource, inputSink)
 
-	return url, cmd, pl, errorSource
+	return url, cmd, pl
+}
+
+func buildTestRequestHandlers(t *testing.T, url *string, gitalyAddress string, op string) []testserver.TestRequestHandler {
+	return []testserver.TestRequestHandler{
+		buildAllowedHandler(t, gitalyAddress),
+		buildLFSAuthenticateHandler(t, url),
+		buildBatchHandler(t, url, op),
+		buildEvilURLHandler(t),
+		buildLargeFileObjectHandler(t),
+		buildEvenLargerFileObjectHandler(t),
+		buildLocksVerifyHandler(t),
+		buildLocksHandler(t),
+		buildUnlockLock1Handler(t),
+		buildUnlockLock2Handler(t),
+		buildUnlockLock3Handler(t),
+		buildUnlockLock4Handler(t),
+	}
+}
+
+func buildAllowedHandler(t *testing.T, gitalyAddress string) testserver.TestRequestHandler {
+	return testserver.TestRequestHandler{
+		Path: "/api/v4/internal/allowed",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			var requestBody map[string]interface{}
+			json.NewDecoder(r.Body).Decode(&requestBody)
+
+			allowed := map[string]interface{}{
+				"status":      true,
+				"gl_id":       "1",
+				"gl_key_type": "key",
+				"gl_key_id":   123,
+				"gl_username": "alex-doe",
+				"gitaly": map[string]interface{}{
+					"repository": map[string]interface{}{
+						"storage_name":                     "storage_name",
+						"relative_path":                    "relative_path",
+						"git_object_directory":             "path/to/git_object_directory",
+						"git_alternate_object_directories": []string{"path/to/git_alternate_object_directory"},
+						"gl_repository":                    "group/repo",
+						"gl_project_path":                  "group/project-path",
+					},
+					"address": gitalyAddress,
+					"token":   "token",
+					"features": map[string]string{
+						"gitaly-feature-cache_invalidator":        "true",
+						"gitaly-feature-inforef_uploadpack_cache": "false",
+						"some-other-ff":                           "true",
+					},
+				},
+			}
+			disallowed := map[string]interface{}{
+				"status":  false,
+				"message": "Disallowed by API call",
+			}
+
+			var body map[string]interface{}
+			switch {
+			case requestBody["key_id"] == "rw":
+				body = allowed
+			case requestBody["key_id"] == "ro" && requestBody["action"] == "git-upload-pack":
+				body = allowed
+			default:
+				body = disallowed
+			}
+			assert.NoError(t, json.NewEncoder(w).Encode(body))
+		},
+	}
+}
+
+func buildLFSAuthenticateHandler(t *testing.T, url *string) testserver.TestRequestHandler {
+	return testserver.TestRequestHandler{
+		Path: "/api/v4/internal/lfs_authenticate",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			b, err := io.ReadAll(r.Body)
+			defer r.Body.Close()
+			assert.NoError(t, err)
+
+			var request *lfsauthenticate.Request
+			assert.NoError(t, json.Unmarshal(b, &request))
+			if request.KeyID == "rw" {
+				body := map[string]interface{}{
+					"username":             "john",
+					"lfs_token":            "sometoken",
+					"repository_http_path": fmt.Sprintf("%s/group/repo", *url),
+					"expires_in":           1800,
+				}
+				assert.NoError(t, json.NewEncoder(w).Encode(body))
+			} else {
+				w.WriteHeader(http.StatusForbidden)
+			}
+		},
+	}
+}
+
+func buildBatchHandler(t *testing.T, url *string, op string) testserver.TestRequestHandler {
+	return testserver.TestRequestHandler{
+		Path: "/group/repo/info/lfs/objects/batch",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("john:sometoken"))), r.Header.Get("Authorization"))
+
+			var requestBody map[string]interface{}
+			json.NewDecoder(r.Body).Decode(&requestBody)
+
+			reqObjects := requestBody["objects"].([]interface{})
+			retObjects := make([]map[string]interface{}, 0)
+			for _, o := range reqObjects {
+				reqObject := o.(map[string]interface{})
+				retObject := map[string]interface{}{
+					"oid": reqObject["oid"],
+				}
+				switch reqObject["oid"] {
+				case largeFileOid:
+					retObject["size"] = largeFileLen
+					if op == "download" {
+						retObject["actions"] = map[string]interface{}{
+							"download": map[string]interface{}{
+								"href": fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", *url, largeFileOid),
+								"header": map[string]interface{}{
+									"Authorization": "Basic 1234567890",
+									"Content-Type":  "application/octet-stream",
+								},
+							},
+						}
+					}
+				case evenLargerFileOid:
+					assert.Equal(t, evenLargerFileLen, int(reqObject["size"].(float64)))
+					retObject["size"] = evenLargerFileLen
+					if op == "upload" {
+						retObject["actions"] = map[string]interface{}{
+							"upload": map[string]interface{}{
+								"href": fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", *url, evenLargerFileOid, evenLargerFileLen),
+								"header": map[string]interface{}{
+									"Authorization": "Basic 1234567890",
+									"Content-Type":  "application/octet-stream",
+								},
+							},
+						}
+					}
+				default:
+					retObject["size"] = reqObject["size"]
+					retObject["error"] = map[string]interface{}{
+						"code":    404,
+						"message": "Not found",
+					}
+				}
+				retObjects = append(retObjects, retObject)
+			}
+
+			retBody := map[string]interface{}{
+				"objects": retObjects,
+			}
+			body, _ := json.Marshal(retBody)
+			w.Write(body)
+		},
+	}
+}
+
+func buildEvilURLHandler(t *testing.T) testserver.TestRequestHandler {
+	return testserver.TestRequestHandler{
+		Path: "/evil-url",
+		Handler: func(_ http.ResponseWriter, _ *http.Request) {
+			assert.Fail(t, "An attacker accessed an evil URL")
+		},
+	}
+}
+
+func buildLargeFileObjectHandler(t *testing.T) testserver.TestRequestHandler {
+	return testserver.TestRequestHandler{
+		Path: fmt.Sprintf("/group/repo/gitlab-lfs/objects/%s", largeFileOid),
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "Basic 1234567890", r.Header.Get("Authorization"))
+			w.Write([]byte(largeFileContents))
+		},
+	}
+}
+
+func buildEvenLargerFileObjectHandler(t *testing.T) testserver.TestRequestHandler {
+	return testserver.TestRequestHandler{
+		Path: fmt.Sprintf("/group/repo/gitlab-lfs/objects/%s/%d", evenLargerFileOid, evenLargerFileLen),
+		Handler: func(_ http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPut, r.Method)
+			assert.Equal(t, "Basic 1234567890", r.Header.Get("Authorization"))
+			body, _ := io.ReadAll(r.Body)
+			assert.Equal(t, []byte(evenLargerFileContents), body)
+		},
+	}
+}
+
+func buildLocksVerifyHandler(t *testing.T) testserver.TestRequestHandler {
+	return testserver.TestRequestHandler{
+		Path: "/group/repo/info/lfs/locks/verify",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			requestJSON := &struct {
+				Cursor string `json:"cursor"`
+				Limit  int    `json:"limit"`
+				Ref    struct {
+					Name string `json:"name"`
+				} `json:"ref"`
+			}{}
+			assert.NoError(t, json.NewDecoder(r.Body).Decode(requestJSON))
+
+			bodyJSON := &struct {
+				Ours       []*LockInfo `json:"ours,omitempty"`
+				Theirs     []*LockInfo `json:"theirs,omitempty"`
+				NextCursor string      `json:"next_cursor,omitempty"`
+			}{}
+			var locks []*LockInfo
+			locks, bodyJSON.NextCursor = listLocks(requestJSON.Cursor, requestJSON.Limit, requestJSON.Ref.Name, r.URL.Query().Get("id"), r.URL.Query().Get("path"))
+			for _, lock := range locks {
+				if lock.ID == "lock1" {
+					bodyJSON.Ours = append(bodyJSON.Ours, lock)
+				} else {
+					bodyJSON.Theirs = append(bodyJSON.Theirs, lock)
+				}
+			}
+
+			assert.NoError(t, json.NewEncoder(w).Encode(bodyJSON))
+		},
+	}
+}
+
+func buildLocksHandler(t *testing.T) testserver.TestRequestHandler {
+	return testserver.TestRequestHandler{
+		Path: "/group/repo/info/lfs/locks",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			switch r.Method {
+			case http.MethodGet:
+				handleLocksGet(t, w, r)
+			case http.MethodPost:
+				handleLocksPost(t, w, r)
+			}
+		},
+	}
+}
+
+func handleLocksGet(t *testing.T, w http.ResponseWriter, r *http.Request) {
+	bodyJSON := &struct {
+		Locks      []*LockInfo `json:"locks,omitempty"`
+		NextCursor string      `json:"next_cursor,omitempty"`
+	}{}
+	limit := 100
+	if r.URL.Query().Has("limit") {
+		l, err := strconv.Atoi(r.URL.Query().Get("limit"))
+		assert.NoError(t, err)
+		limit = l
+	}
+	bodyJSON.Locks, bodyJSON.NextCursor = listLocks(r.URL.Query().Get("cursor"), limit, r.URL.Query().Get("refspec"), r.URL.Query().Get("id"), r.URL.Query().Get("path"))
+	assert.NoError(t, json.NewEncoder(w).Encode(bodyJSON))
+}
+
+func handleLocksPost(t *testing.T, w http.ResponseWriter, r *http.Request) {
+	var body map[string]interface{}
+	reader := json.NewDecoder(r.Body)
+	reader.Decode(&body)
+
+	var response map[string]interface{}
+	switch body["path"] {
+	case "/large/file/1":
+		response = map[string]interface{}{
+			"lock": map[string]interface{}{
+				"id":        "lock1",
+				"path":      "/large/file/1",
+				"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+				"owner": map[string]interface{}{
+					"name": "johndoe",
+				},
+			},
+			"message": "already created lock",
+		}
+		w.WriteHeader(http.StatusConflict)
+	case "/large/file/2":
+		response = map[string]interface{}{
+			"message": "no permission",
+		}
+		w.WriteHeader(http.StatusForbidden)
+	case "/large/file/4":
+		response = map[string]interface{}{
+			"lock": map[string]interface{}{
+				"id":        "lock4",
+				"path":      "/large/file/4",
+				"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+				"owner": map[string]interface{}{
+					"name": "johndoe",
+				},
+			},
+		}
+		w.WriteHeader(http.StatusCreated)
+	case "/large/file/5":
+		ref := body["ref"].(map[string]interface{})
+		assert.Equal(t, "refs/heads/main", ref["name"])
+		response = map[string]interface{}{
+			"lock": map[string]interface{}{
+				"id":        "lock5",
+				"path":      "/large/file/5",
+				"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+				"owner": map[string]interface{}{
+					"name": "johndoe",
+				},
+			},
+		}
+		w.WriteHeader(http.StatusCreated)
+	default:
+		response = map[string]interface{}{
+			"message": "internal error",
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	writer := json.NewEncoder(w)
+	writer.Encode(response)
+}
+
+func buildUnlockLock1Handler(t *testing.T) testserver.TestRequestHandler {
+	return testserver.TestRequestHandler{
+		Path: "/group/repo/info/lfs/locks/lock1/unlock",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			var body map[string]interface{}
+			assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+			assert.Equal(t, map[string]interface{}{
+				"ref": map[string]interface{}{
+					"name": "refs/heads/main",
+				},
+				"force": false,
+			}, body)
+
+			lock := map[string]interface{}{
+				"lock": map[string]interface{}{
+					"id":        "lock1",
+					"path":      "/large/file/1",
+					"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+					"owner": map[string]interface{}{
+						"name": "johndoe",
+					},
+				},
+			}
+			writer := json.NewEncoder(w)
+			writer.Encode(lock)
+		},
+	}
+}
+
+func buildUnlockLock2Handler(t *testing.T) testserver.TestRequestHandler {
+	return testserver.TestRequestHandler{
+		Path: "/group/repo/info/lfs/locks/lock2/unlock",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			var body map[string]interface{}
+			assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+			assert.Equal(t, map[string]interface{}{
+				"force": true,
+			}, body)
+
+			lock := map[string]interface{}{
+				"lock": map[string]interface{}{
+					"id":        "lock2",
+					"path":      "/large/file/2",
+					"locked_at": time.Date(1955, 11, 12, 22, 4, 0, 0, time.UTC).Format(time.RFC3339),
+					"owner": map[string]interface{}{
+						"name": "marty",
+					},
+				},
+			}
+			writer := json.NewEncoder(w)
+			writer.Encode(lock)
+		},
+	}
+}
+
+func buildUnlockLock3Handler(t *testing.T) testserver.TestRequestHandler {
+	return testserver.TestRequestHandler{
+		Path: "/group/repo/info/lfs/locks/lock3/unlock",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			var body map[string]interface{}
+			assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+			assert.Equal(t, map[string]interface{}{
+				"force": false,
+			}, body)
+
+			lock := map[string]interface{}{
+				"message": "forbidden",
+			}
+			w.WriteHeader(http.StatusForbidden)
+			writer := json.NewEncoder(w)
+			writer.Encode(lock)
+		},
+	}
+}
+
+func buildUnlockLock4Handler(t *testing.T) testserver.TestRequestHandler {
+	return testserver.TestRequestHandler{
+		Path: "/group/repo/info/lfs/locks/lock4/unlock",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			var body map[string]interface{}
+			assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+			assert.Equal(t, map[string]interface{}{
+				"force": false,
+			}, body)
+
+			lock := map[string]interface{}{
+				"message": "not found",
+			}
+			w.WriteHeader(http.StatusNotFound)
+			writer := json.NewEncoder(w)
+			writer.Encode(lock)
+		},
+	}
 }

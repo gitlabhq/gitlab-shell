@@ -47,8 +47,6 @@ internal/command/lfstransfer/lfstransfer.go:26:6: exported: exported type Comman
 internal/command/lfstransfer/lfstransfer.go:32:1: exported: exported method Command.Execute should have comment or be unexported (revive)
 internal/command/lfstransfer/lfstransfer.go:114:9: composites: gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier.Command struct literal uses unkeyed fields (govet)
 internal/command/lfstransfer/lfstransfer_test.go:19:2: import 'github.com/git-lfs/pktline' is not allowed from list 'test' (depguard)
-internal/command/lfstransfer/lfstransfer_test.go:278:2: declaration has 3 blank identifiers (dogsled)
-internal/command/lfstransfer/lfstransfer_test.go:1114:1: cognitive complexity 33 of func `setup` is high (> 20) (gocognit)
 internal/command/readwriter/readwriter.go:1:1: package-comments: should have a package comment (revive)
 internal/command/readwriter/readwriter.go:7:6: exported: exported type ReadWriter should have comment or be unexported (revive)
 internal/command/receivepack/gitalycall_test.go:31:5: var-naming: struct field keyId should be keyID (revive)
