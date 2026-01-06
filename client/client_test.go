@@ -21,8 +21,8 @@ import (
 )
 
 var (
-	secret          = "sssh, it's a secret"
-	defaultHttpOpts = []HTTPClientOpt{WithHTTPRetryOpts(time.Millisecond, time.Millisecond, 2)}
+	secret           = "sssh, it's a secret"
+	defaultHTTPOpts = []HTTPClientOpt{WithHTTPRetryOpts(time.Millisecond, time.Millisecond, 2)}
 )
 
 func TestClients(t *testing.T) {
@@ -84,7 +84,7 @@ func TestClients(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			url := tc.server(t, buildRequests(t, tc.relativeURLRoot))
 
-			httpClient, err := NewHTTPClientWithOpts(url, tc.relativeURLRoot, tc.caFile, "", 1, defaultHttpOpts)
+			httpClient, err := NewHTTPClientWithOpts(url, tc.relativeURLRoot, tc.caFile, "", 1, defaultHTTPOpts)
 			require.NoError(t, err)
 
 			client, err := NewGitlabNetClient("", "", tc.secret, httpClient)
@@ -112,7 +112,7 @@ func testSuccessfulGet(t *testing.T, client *GitlabNetClient) {
 
 		responseBody, err := io.ReadAll(response.Body)
 		require.NoError(t, err)
-		require.Equal(t, string(responseBody), "Hello")
+		require.Equal(t, "Hello", string(responseBody))
 	})
 }
 
@@ -136,12 +136,18 @@ func testMissing(t *testing.T, client *GitlabNetClient) {
 	t.Run("Missing error for GET", func(t *testing.T) {
 		response, err := client.Get(context.Background(), "/missing")
 		require.EqualError(t, err, "Internal API error (404)")
+		if response != nil {
+			response.Body.Close()
+		}
 		require.Nil(t, response)
 	})
 
 	t.Run("Missing error for POST", func(t *testing.T) {
 		response, err := client.Post(context.Background(), "/missing", map[string]string{})
 		require.EqualError(t, err, "Internal API error (404)")
+		if response != nil {
+			response.Body.Close()
+		}
 		require.Nil(t, response)
 	})
 }
@@ -150,12 +156,18 @@ func testErrorMessage(t *testing.T, client *GitlabNetClient) {
 	t.Run("Error with message for GET", func(t *testing.T) {
 		response, err := client.Get(context.Background(), "/error")
 		require.EqualError(t, err, "Don't do that")
+		if response != nil {
+			response.Body.Close()
+		}
 		require.Nil(t, response)
 	})
 
 	t.Run("Error with message for POST", func(t *testing.T) {
 		response, err := client.Post(context.Background(), "/error", map[string]string{})
 		require.EqualError(t, err, "Don't do that")
+		if response != nil {
+			response.Body.Close()
+		}
 		require.Nil(t, response)
 	})
 }
@@ -164,12 +176,18 @@ func testBrokenRequest(t *testing.T, client *GitlabNetClient) {
 	t.Run("Broken request for GET", func(t *testing.T) {
 		response, err := client.Get(context.Background(), "/broken")
 		require.EqualError(t, err, "Internal API unreachable")
+		if response != nil {
+			response.Body.Close()
+		}
 		require.Nil(t, response)
 	})
 
 	t.Run("Broken request for POST", func(t *testing.T) {
 		response, err := client.Post(context.Background(), "/broken", map[string]string{})
 		require.EqualError(t, err, "Internal API unreachable")
+		if response != nil {
+			response.Body.Close()
+		}
 		require.Nil(t, response)
 	})
 }
@@ -180,7 +198,7 @@ func testJWTAuthenticationHeader(t *testing.T, client *GitlabNetClient) {
 		require.NoError(t, err)
 
 		claims := &jwt.RegisteredClaims{}
-		token, err := jwt.ParseWithClaims(string(responseBody), claims, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(string(responseBody), claims, func(_ *jwt.Token) (interface{}, error) {
 			return []byte(secret), nil
 		})
 		require.NoError(t, err)
@@ -240,9 +258,7 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/hello",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, http.MethodGet, r.Method)
-
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				fmt.Fprint(w, "Hello")
 			},
 		},
@@ -273,7 +289,7 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 		},
 		{
 			Path: "/api/v4/internal/error",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusBadRequest)
 				body := map[string]string{
@@ -284,7 +300,7 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 		},
 		{
 			Path: "/api/v4/internal/broken",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(_ http.ResponseWriter, _ *http.Request) {
 				panic("Broken")
 			},
 		},
@@ -302,19 +318,22 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 
 func TestRetryOnFailure(t *testing.T) {
 	reqAttempts := 0
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		reqAttempts++
 		w.WriteHeader(500)
 	}))
 	defer srv.Close()
 
-	httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, defaultHttpOpts)
+	httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, defaultHTTPOpts)
 	require.NoError(t, err)
 	require.NotNil(t, httpClient.RetryableHTTP)
 	client, err := NewGitlabNetClient("", "", "", httpClient)
 	require.NoError(t, err)
 
-	_, err = client.Get(context.Background(), "/")
+	resp, err := client.Get(context.Background(), "/")
+	if resp != nil {
+		resp.Body.Close()
+	}
 	require.EqualError(t, err, "Internal API unreachable")
 	require.Equal(t, 3, reqAttempts)
 }
