@@ -60,7 +60,7 @@ func TestSuccessfulRequests(t *testing.T) {
 
 			responseBody, err := io.ReadAll(response.Body)
 			require.NoError(t, err)
-			require.Equal(t, string(responseBody), "Hello")
+			require.Equal(t, "Hello", string(responseBody))
 		})
 	}
 }
@@ -103,10 +103,13 @@ func TestFailedRequests(t *testing.T) {
 				require.Error(t, err)
 				require.ErrorIs(t, err, ErrCafileNotFound)
 			} else {
-				_, err = client.Get(context.Background(), "/hello")
+				response, err := client.Get(context.Background(), "/hello")
+				if response != nil {
+					response.Body.Close()
+				}
 				require.Error(t, err)
 
-				require.Equal(t, err.Error(), tc.expectedError)
+				require.Equal(t, tc.expectedError, err.Error())
 			}
 		})
 	}
