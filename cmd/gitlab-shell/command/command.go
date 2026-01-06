@@ -2,6 +2,8 @@
 package command
 
 import (
+	"slices"
+
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/discover"
@@ -71,18 +73,8 @@ func NewWithUsername(gitlabUsername string, env sshenv.Env, config *config.Confi
 		return nil, err
 	}
 
-	// FIXME: When 1.21+ only Golang is supported, it can be refactored by using slices.Contains
 	if env.NamespacePath != "" {
-		exists := false
-		for _, gitCmd := range commandargs.GitCommands {
-			if args.CommandType == gitCmd {
-				exists = true
-
-				break
-			}
-		}
-
-		if !exists {
+		if !slices.Contains(commandargs.GitCommands, args.CommandType) {
 			return nil, disallowedcommand.Error
 		}
 	}
