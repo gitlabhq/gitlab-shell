@@ -126,7 +126,7 @@ func setupWithRequests(t *testing.T, caFile, caPath, clientCAPath, clientCertPat
 
 	url := testserver.StartHTTPSServer(t, requests, clientCAPath)
 
-	opts := defaultHttpOpts
+	opts := defaultHTTPOpts
 	if clientCertPath != "" && clientKeyPath != "" {
 		opts = append(opts, WithClientCert(clientCertPath, clientKeyPath))
 	}
