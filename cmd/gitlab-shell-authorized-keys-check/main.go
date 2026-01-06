@@ -37,10 +37,10 @@ func main() {
 
 	code, err := execute(readWriter)
 	if err != nil {
-		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
+		_, _ = fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
 	}
 
-	os.Exit(int(code))
+	os.Exit(code)
 }
 
 func execute(readWriter *readwriter.ReadWriter) (int, error) {
