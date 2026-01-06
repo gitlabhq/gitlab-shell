@@ -1,3 +1,4 @@
+// Package testserver provides test server implementations for testing GitLab Shell client functionality.
 package testserver
 
 import (
@@ -18,11 +19,13 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// TestGitalyServer is a test implementation of the Gitaly SSH service server.
 type TestGitalyServer struct {
 	ReceivedMD metadata.MD
 	pb.UnimplementedSSHServiceServer
 }
 
+// SSHReceivePack handles the SSH receive pack RPC for testing.
 func (s *TestGitalyServer) SSHReceivePack(stream pb.SSHService_SSHReceivePackServer) error {
 	req, err := stream.Recv()
 	if err != nil {
@@ -35,12 +38,15 @@ func (s *TestGitalyServer) SSHReceivePack(stream pb.SSHService_SSHReceivePackSer
 	return stream.Send(&pb.SSHReceivePackResponse{Stdout: response})
 }
 
+// SSHUploadPackWithSidechannel handles the SSH upload pack with sidechannel RPC for testing.
 func (s *TestGitalyServer) SSHUploadPackWithSidechannel(ctx context.Context, req *pb.SSHUploadPackWithSidechannelRequest) (*pb.SSHUploadPackWithSidechannelResponse, error) {
 	conn, err := client.OpenServerSidechannel(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	s.ReceivedMD, _ = metadata.FromIncomingContext(ctx)
 
@@ -55,6 +61,7 @@ func (s *TestGitalyServer) SSHUploadPackWithSidechannel(ctx context.Context, req
 	return &pb.SSHUploadPackWithSidechannelResponse{}, nil
 }
 
+// SSHUploadArchive handles the SSH upload archive RPC for testing.
 func (s *TestGitalyServer) SSHUploadArchive(stream pb.SSHService_SSHUploadArchiveServer) error {
 	req, err := stream.Recv()
 	if err != nil {
@@ -67,6 +74,7 @@ func (s *TestGitalyServer) SSHUploadArchive(stream pb.SSHService_SSHUploadArchiv
 	return stream.Send(&pb.SSHUploadArchiveResponse{Stdout: response})
 }
 
+// StartGitalyServer starts a test Gitaly server for the specified network type.
 func StartGitalyServer(t *testing.T, network string) (string, *TestGitalyServer) {
 	t.Helper()
 
@@ -116,7 +124,7 @@ func doStartTestServer(t *testing.T, network string, path string) (string, *Test
 	pb.RegisterSSHServiceServer(server, &testServer)
 
 	go func() {
-		require.NoError(t, server.Serve(listener))
+		_ = server.Serve(listener)
 	}()
 	t.Cleanup(func() { server.GracefulStop() })
 
