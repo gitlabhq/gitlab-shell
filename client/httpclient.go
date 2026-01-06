@@ -206,5 +206,11 @@ func readTimeout(timeoutSeconds uint64) time.Duration {
 		timeoutSeconds = defaultReadTimeoutSeconds
 	}
 
-	return time.Duration(timeoutSeconds) * time.Second
+	// Safe conversion: timeoutSeconds is capped by practical limits
+	// and won't exceed int64 max value in realistic scenarios
+	if timeoutSeconds > 9223372036854775807 {
+		timeoutSeconds = defaultReadTimeoutSeconds
+	}
+
+	return time.Duration(int64(timeoutSeconds)) * time.Second
 }
