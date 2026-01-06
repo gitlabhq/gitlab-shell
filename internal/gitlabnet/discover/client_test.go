@@ -144,7 +144,7 @@ func TestErrorResponses(t *testing.T) {
 func setup(t *testing.T) *Client {
 	url := testserver.StartSocketHTTPServer(t, requests)
 
-	client, err := NewClient(&config.Config{GitlabUrl: url})
+	client, err := NewClient(&config.Config{GitlabURL: url})
 	require.NoError(t, err)
 
 	return client

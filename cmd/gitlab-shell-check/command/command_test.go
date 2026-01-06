@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	basicConfig = &config.Config{GitlabUrl: "http+unix://gitlab.socket"}
+	basicConfig = &config.Config{GitlabURL: "http+unix://gitlab.socket"}
 )
 
 func TestNew(t *testing.T) {

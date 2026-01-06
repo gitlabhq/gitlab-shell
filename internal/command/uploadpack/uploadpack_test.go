@@ -51,7 +51,7 @@ func setup(t *testing.T, keyID string, requests []testserver.TestRequestHandler)
 	})
 
 	cmd := &Command{
-		Config:     &config.Config{GitlabUrl: url},
+		Config:     &config.Config{GitlabURL: url},
 		Args:       &commandargs.Shell{GitlabKeyID: keyID, SSHArgs: []string{"git-upload-pack", "group/repo"}},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: pipeReader},
 	}

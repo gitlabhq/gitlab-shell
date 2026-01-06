@@ -57,7 +57,7 @@ func setup(t *testing.T) (*Command, *bytes.Buffer, *bytes.Buffer) {
 	outBuf := &bytes.Buffer{}
 
 	readWriter := &readwriter.ReadWriter{Out: outBuf, ErrOut: errBuf}
-	cmd := &Command{Config: &config.Config{GitlabUrl: url}, ReadWriter: readWriter}
+	cmd := &Command{Config: &config.Config{GitlabURL: url}, ReadWriter: readWriter}
 
 	return cmd, errBuf, outBuf
 }

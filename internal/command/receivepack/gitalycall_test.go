@@ -61,7 +61,7 @@ func TestReceivePack(t *testing.T) {
 					args.GitlabKeyID = tc.keyId
 				}
 
-				cfg := &config.Config{GitlabUrl: url}
+				cfg := &config.Config{GitlabURL: url}
 				cfg.GitalyClient.InitSidechannelRegistry(context.Background())
 				cmd := &Command{
 					Config:     cfg,

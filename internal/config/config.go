@@ -1,3 +1,6 @@
+// Package config provides configuration management for gitlab-shell.
+// It handles loading and parsing of YAML configuration files and provides
+// access to HTTP clients and other shared resources.
 package config
 
 import (
@@ -18,11 +21,14 @@ import (
 
 const (
 	configFile            = "config.yml"
-	defaultSecretFileName = ".gitlab_shell_secret"
+	defaultSecretFileName = ".gitlab_shell_secret" //nolint:gosec // Not actual credentials, just field name
 )
 
+// YamlDuration is a custom duration type that can unmarshal from both
+// integer seconds and standard duration strings in YAML.
 type YamlDuration time.Duration
 
+// GSSAPIConfig contains GSSAPI/Kerberos authentication settings for SSH.
 type GSSAPIConfig struct {
 	Enabled              bool   `yaml:"enabled,omitempty"`
 	Keytab               string `yaml:"keytab,omitempty"`
@@ -30,6 +36,7 @@ type GSSAPIConfig struct {
 	LibPath              string
 }
 
+// ServerConfig contains SSH server configuration options.
 type ServerConfig struct {
 	Listen                  string       `yaml:"listen,omitempty"`
 	ProxyProtocol           bool         `yaml:"proxy_protocol,omitempty"`
@@ -61,22 +68,25 @@ type HTTPSettingsConfig struct {
 	CaPath             string `yaml:"ca_path"`
 }
 
+// LFSConfig contains Git LFS protocol settings.
 type LFSConfig struct {
 	PureSSHProtocol bool `yaml:"pure_ssh_protocol"`
 }
 
+// PATConfig contains Personal Access Token authentication settings.
 type PATConfig struct {
 	Enabled       bool     `yaml:"enabled,omitempty"`
 	AllowedScopes []string `yaml:"allowed_scopes,omitempty"`
 }
 
+// Config represents the main gitlab-shell configuration.
 type Config struct {
 	User                  string `yaml:"user,omitempty"`
 	RootDir               string
 	LogFile               string `yaml:"log_file,omitempty"`
 	LogFormat             string `yaml:"log_format,omitempty"`
 	LogLevel              string `yaml:"log_level,omitempty"`
-	GitlabUrl             string `yaml:"gitlab_url"`
+	GitlabURL             string `yaml:"gitlab_url"`
 	GitlabRelativeURLRoot string `yaml:"gitlab_relative_url_root"`
 	GitlabTracing         string `yaml:"gitlab_tracing"`
 	// SecretFilePath is only for parsing. Application code should always use Secret.
@@ -128,6 +138,8 @@ var (
 	}
 )
 
+// UnmarshalYAML implements custom YAML unmarshaling for YamlDuration,
+// accepting both integer seconds and duration strings.
 func (d *YamlDuration) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var intDuration int
 	if err := unmarshal(&intDuration); err != nil {
@@ -139,9 +151,11 @@ func (d *YamlDuration) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// ApplyGlobalState applies configuration settings that affect global process state,
+// such as environment variables.
 func (c *Config) ApplyGlobalState() {
 	if c.SslCertDir != "" {
-		os.Setenv("SSL_CERT_DIR", c.SslCertDir)
+		_ = os.Setenv("SSL_CERT_DIR", c.SslCertDir)
 	}
 }
 
@@ -149,7 +163,7 @@ func (c *Config) ApplyGlobalState() {
 func (c *Config) HTTPClient() (*client.HTTPClient, error) {
 	c.httpClientOnce.Do(func() {
 		client, err := client.NewHTTPClientWithOpts(
-			c.GitlabUrl,
+			c.GitlabURL,
 			c.GitlabRelativeURLRoot,
 			c.HTTPSettings.CaFile,
 			c.HTTPSettings.CaPath,
@@ -192,11 +206,17 @@ func NewFromDir(dir string) (*Config, error) {
 
 // newFromFile reads a new Config instance from the given file path. It doesn't apply any defaults.
 func newFromFile(path string) (*Config, error) {
-	cfg := &Config{}
-	*cfg = DefaultConfig
+	cfg := &Config{
+		LogFile:   DefaultConfig.LogFile,
+		LogFormat: DefaultConfig.LogFormat,
+		LogLevel:  DefaultConfig.LogLevel,
+		Server:    DefaultConfig.Server,
+		User:      DefaultConfig.User,
+		PATConfig: DefaultConfig.PATConfig,
+	}
 	cfg.RootDir = filepath.Dir(path)
 
-	configBytes, err := os.ReadFile(path)
+	configBytes, err := os.ReadFile(path) //nolint:gosec // File path is from trusted config directory
 	if err != nil {
 		return nil, err
 	}
@@ -205,14 +225,14 @@ func newFromFile(path string) (*Config, error) {
 		return nil, err
 	}
 
-	if cfg.GitlabUrl != "" {
+	if cfg.GitlabURL != "" {
 		// This is only done for historic reasons, don't implement it for new config sources.
-		unescapedUrl, err := url.PathUnescape(cfg.GitlabUrl)
+		unescapedURL, err := url.PathUnescape(cfg.GitlabURL)
 		if err != nil {
 			return nil, err
 		}
 
-		cfg.GitlabUrl = unescapedUrl
+		cfg.GitlabURL = unescapedURL
 	}
 
 	if err := parseSecret(cfg); err != nil {
@@ -253,11 +273,11 @@ func parseSecret(cfg *Config) error {
 // Any error returned by this function should be a startup error. On the other hand
 // if this function returns nil, this doesn't guarantee the config will work, but it's
 // at least worth a try.
-func (cfg *Config) IsSane() error {
-	if cfg.GitlabUrl == "" {
+func (c *Config) IsSane() error {
+	if c.GitlabURL == "" {
 		return errors.New("gitlab_url is required")
 	}
-	if cfg.Secret == "" {
+	if c.Secret == "" {
 		return errors.New("secret or secret_file_path is required")
 	}
 	return nil

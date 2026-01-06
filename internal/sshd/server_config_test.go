@@ -25,7 +25,7 @@ import (
 )
 
 func TestNewServerConfigWithoutHosts(t *testing.T) {
-	_, err := newServerConfig(&config.Config{GitlabUrl: "http://localhost"})
+	_, err := newServerConfig(&config.Config{GitlabURL: "http://localhost"})
 
 	require.Error(t, err)
 	require.Equal(t, "no host keys could be loaded, aborting", err.Error())
@@ -50,7 +50,7 @@ func TestHostKeyAndCerts(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabUrl: "http://localhost", User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: "http://localhost", User: "user", Server: srvCfg},
 	)
 	require.NoError(t, err)
 
@@ -72,7 +72,7 @@ func TestHostKeyAndCerts(t *testing.T) {
 }
 
 func TestFailedAuthorizedKeysClient(t *testing.T) {
-	_, err := newServerConfig(&config.Config{GitlabUrl: "ftp://localhost"})
+	_, err := newServerConfig(&config.Config{GitlabURL: "ftp://localhost"})
 
 	require.Error(t, err)
 	require.Equal(t, "failed to initialize authorized keys client: error creating http client: unknown GitLab URL prefix", err.Error())
@@ -110,7 +110,7 @@ func TestUserKeyHandling(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabUrl: url, User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: url, User: "user", Server: srvCfg},
 	)
 	require.NoError(t, err)
 
@@ -187,7 +187,7 @@ func TestUserCertificateHandling(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabUrl: url, User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: url, User: "user", Server: srvCfg},
 	)
 	require.NoError(t, err)
 

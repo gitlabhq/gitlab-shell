@@ -1125,7 +1125,7 @@ func setup(t *testing.T, keyID string, op string) (string, *Command, *pktline.Pk
 	_, errorSink := io.Pipe()
 
 	cmd := &Command{
-		Config:     &config.Config{GitlabUrl: url, Secret: "very secret"},
+		Config:     &config.Config{GitlabURL: url, Secret: "very secret"},
 		Args:       &commandargs.Shell{GitlabKeyID: keyID, SSHArgs: []string{"git-lfs-transfer", repo, op}},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: errorSink, Out: outputSink, In: inputSource},
 	}

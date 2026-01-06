@@ -134,15 +134,15 @@ func TestHandleExec(t *testing.T) {
 			sessions := []*session{
 				{
 					gitlabKeyID: "id",
-					cfg:         &config.Config{GitlabUrl: url},
+					cfg:         &config.Config{GitlabURL: url},
 				},
 				{
 					gitlabUsername: "root",
-					cfg:            &config.Config{GitlabUrl: url},
+					cfg:            &config.Config{GitlabURL: url},
 				},
 				{
 					gitlabKrb5Principal: "test@TEST.TEST",
-					cfg:                 &config.Config{GitlabUrl: url},
+					cfg:                 &config.Config{GitlabURL: url},
 				},
 			}
 			for _, s := range sessions {
@@ -221,7 +221,7 @@ func TestHandleShell(t *testing.T) {
 				gitlabKeyID: tc.gitlabKeyID,
 				execCmd:     tc.cmd,
 				channel:     &fakeChannel{stdErr: stdErr, stdOut: stdOut},
-				cfg:         &config.Config{GitlabUrl: url},
+				cfg:         &config.Config{GitlabURL: url},
 			}
 			r := &ssh.Request{}
 

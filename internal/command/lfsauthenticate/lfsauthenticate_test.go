@@ -51,7 +51,7 @@ func TestFailedRequests(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			output := &bytes.Buffer{}
 			cmd := &Command{
-				Config:     &config.Config{GitlabUrl: url},
+				Config:     &config.Config{GitlabURL: url},
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 			}
@@ -148,7 +148,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			output := &bytes.Buffer{}
 			cmd := &Command{
-				Config:     &config.Config{GitlabUrl: url},
+				Config:     &config.Config{GitlabURL: url},
 				Args:       &commandargs.Shell{GitlabUsername: tc.username, SSHArgs: []string{"git-lfs-authenticate", "group/repo", operation}},
 				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 			}

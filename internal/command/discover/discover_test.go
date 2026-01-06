@@ -78,7 +78,7 @@ func TestExecute(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			buffer := &bytes.Buffer{}
 			cmd := &Command{
-				Config:     &config.Config{GitlabUrl: url},
+				Config:     &config.Config{GitlabURL: url},
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
@@ -124,7 +124,7 @@ func TestFailingExecute(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			buffer := &bytes.Buffer{}
 			cmd := &Command{
-				Config:     &config.Config{GitlabUrl: url},
+				Config:     &config.Config{GitlabURL: url},
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
