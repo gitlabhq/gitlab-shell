@@ -484,7 +484,11 @@ func TestNewWithUsername(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			env := sshenv.Env{IsSSHConnection: true, OriginalCommand: tc.command, NamespacePath: tc.namespace}
 			c, err := cmd.NewWithUsername("username", env, nil, nil)
-			require.IsType(t, tc.expectedErr, err)
+			if tc.expectedErr != nil {
+				require.Equal(t, tc.expectedErr, err)
+			} else {
+				require.NoError(t, err)
+			}
 			require.Equal(t, tc.expectedType, c)
 		})
 	}
