@@ -265,20 +265,6 @@ func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
 	}
 }
 
-func extractDataFromContext(ctx context.Context) command.LogData {
-	logData := command.LogData{}
-
-	if ctx == nil {
-		return logData
-	}
-
-	if ctx.Value(command.LogDataKey) != nil {
-		logData = ctx.Value(command.LogDataKey).(command.LogData)
-	}
-
-	return logData
-}
-
 func extractLogDataFromContext(ctx context.Context) command.LogData {
 	logData := command.LogData{}
 

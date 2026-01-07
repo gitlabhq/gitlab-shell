@@ -127,6 +127,7 @@ func (s *serverConfig) handleUserKey(ctx context.Context, user string, key ssh.P
 	if user != s.cfg.User {
 		return nil, fmt.Errorf("unknown user")
 	}
+	//nolint:staticcheck // SA1019: Intentionally checking for deprecated DSA to reject it
 	if key.Type() == ssh.KeyAlgoDSA {
 		return nil, fmt.Errorf("DSA is prohibited")
 	}
