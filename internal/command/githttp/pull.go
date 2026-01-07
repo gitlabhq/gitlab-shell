@@ -51,8 +51,6 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 
 	// For Git over SSH routing
 	if data.GeoProxyFetchSSHDirectToPrimary {
-		log.ContextLogger(ctx).Info("Using Git over SSH upload pack")
-
 		client.Headers["Git-Protocol"] = c.Args.Env.GitProtocolVersion
 		return c.requestSSHUploadPack(ctx, client)
 	}
@@ -65,15 +63,9 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 }
 
 func (c *PullCommand) requestSSHUploadPack(ctx context.Context, client *git.Client) error {
-	response, err := client.SSHUploadPack(ctx, io.NopCloser(c.ReadWriter.In))
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close() //nolint:errcheck
+	log.ContextLogger(ctx).Info("Using Git over SSH upload pack")
 
-	_, err = io.Copy(c.ReadWriter.Out, response.Body)
-
-	return err
+	return executeSSHRequest(ctx, client.SSHUploadPack, c.ReadWriter)
 }
 
 func (c *PullCommand) requestUploadPack(ctx context.Context, client *git.Client) error {

@@ -1,9 +1,11 @@
+// Package readwriter provides I/O abstractions for command input and output streams.
 package readwriter
 
 import (
 	"io"
 )
 
+// ReadWriter bundles the standard input, output, and error streams for command execution.
 type ReadWriter struct {
 	Out    io.Writer
 	In     io.Reader

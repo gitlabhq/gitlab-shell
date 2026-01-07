@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
@@ -36,6 +37,22 @@ func requestInfoRefs(ctx context.Context, client *git.Client, command gitHTTPCom
 	}
 
 	_, err = io.Copy(readWriter.Out, response.Body)
+
+	return err
+}
+
+// sshRequestFunc is a function type for SSH pack requests
+type sshRequestFunc func(ctx context.Context, body io.Reader) (*http.Response, error)
+
+// executeSSHRequest executes an SSH request and copies the response to the output
+func executeSSHRequest(ctx context.Context, requestFn sshRequestFunc, rw *readwriter.ReadWriter) error {
+	response, err := requestFn(ctx, io.NopCloser(rw.In))
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close() //nolint:errcheck
+
+	_, err = io.Copy(rw.Out, response.Body)
 
 	return err
 }
