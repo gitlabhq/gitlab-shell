@@ -84,7 +84,9 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctxWithLogData, nil
 	}
 
-	fmt.Fprintf(c.ReadWriter.Out, "%s\n", payload)
+	if _, err := fmt.Fprintf(c.ReadWriter.Out, "%s\n", payload); err != nil {
+		return ctxWithLogData, err
+	}
 
 	return ctxWithLogData, nil
 }

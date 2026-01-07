@@ -65,15 +65,7 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 }
 
 func (c *PullCommand) requestSSHUploadPack(ctx context.Context, client *git.Client) error {
-	response, err := client.SSHUploadPack(ctx, io.NopCloser(c.ReadWriter.In))
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close() //nolint:errcheck
-
-	_, err = io.Copy(c.ReadWriter.Out, response.Body)
-
-	return err
+	return executeSSHRequest(ctx, client.SSHUploadPack, c.ReadWriter)
 }
 
 func (c *PullCommand) requestUploadPack(ctx context.Context, client *git.Client) error {

@@ -3,6 +3,7 @@ package githttp
 import (
 	"context"
 	"io"
+	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
@@ -62,15 +63,7 @@ func (c *PushCommand) Execute(ctx context.Context) error {
 }
 
 func (c *PushCommand) requestSSHReceivePack(ctx context.Context, client *git.Client) error {
-	response, err := client.SSHReceivePack(ctx, io.NopCloser(c.ReadWriter.In))
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close() //nolint:errcheck
-
-	_, err = io.Copy(c.ReadWriter.Out, response.Body)
-
-	return err
+	return executeSSHRequest(ctx, client.SSHReceivePack, c.ReadWriter)
 }
 
 func (c *PushCommand) requestReceivePack(ctx context.Context, client *git.Client) error {
@@ -119,4 +112,20 @@ func (c *PushCommand) readFromStdin(pw *io.PipeWriter) {
 	if err != nil {
 		log.WithError(err).Error("failed to close writer")
 	}
+}
+
+// sshRequestFunc is a function type for SSH pack requests
+type sshRequestFunc func(ctx context.Context, body io.Reader) (*http.Response, error)
+
+// executeSSHRequest executes an SSH request and copies the response to the output
+func executeSSHRequest(ctx context.Context, requestFn sshRequestFunc, rw *readwriter.ReadWriter) error {
+	response, err := requestFn(ctx, io.NopCloser(rw.In))
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close() //nolint:errcheck
+
+	_, err = io.Copy(rw.Out, response.Body)
+
+	return err
 }

@@ -1,3 +1,6 @@
+// Package command provides the core command execution infrastructure for gitlab-shell.
+// It defines the Command interface that all shell commands must implement,
+// along with shared utilities for logging, tracing, and context management.
 package command
 
 import (
@@ -12,10 +15,13 @@ import (
 	"gitlab.com/gitlab-org/labkit/tracing"
 )
 
+// Command is the interface that all gitlab-shell commands must implement.
+// Execute runs the command and returns the updated context and any error.
 type Command interface {
 	Execute(ctx context.Context) (context.Context, error)
 }
 
+// LogMetadata contains project and namespace information for structured logging.
 type LogMetadata struct {
 	Project         string `json:"project,omitempty"`
 	RootNamespace   string `json:"root_namespace,omitempty"`
@@ -23,6 +29,7 @@ type LogMetadata struct {
 	RootNamespaceID int    `json:"root_namespace_id,omitempty"`
 }
 
+// LogData contains user and request information for structured logging.
 type LogData struct {
 	Username     string      `json:"username"`
 	WrittenBytes int64       `json:"written_bytes"`
@@ -34,6 +41,8 @@ type contextKey string
 // LogDataKey is the context key used to store log data in request contexts.
 const LogDataKey contextKey = "logData"
 
+// CheckForVersionFlag checks if the -version flag was passed and prints version info if so.
+// It exits the program after printing the version.
 func CheckForVersionFlag(osArgs []string, version, buildTime string) {
 	// We can't use the flag library because gitlab-shell receives other arguments
 	// that confuse the parser.
@@ -45,7 +54,7 @@ func CheckForVersionFlag(osArgs []string, version, buildTime string) {
 	}
 }
 
-// Setup() initializes tracing from the configuration file and generates a
+// Setup initializes tracing from the configuration file and generates a
 // background context from which all other contexts in the process should derive
 // from, as it has a service name and initial correlation ID set.
 func Setup(serviceName string, config *config.Config) (context.Context, func()) {
@@ -77,10 +86,12 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 
 	return ctx, func() {
 		finished()
-		closer.Close()
+		_ = closer.Close()
 	}
 }
 
+// NewLogData creates a new LogData instance with the given project, username, and IDs.
+// It extracts the root namespace from the project path.
 func NewLogData(project, username string, projectID, rootNamespaceID int) LogData {
 	rootNameSpace := ""
 
