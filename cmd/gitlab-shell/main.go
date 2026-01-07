@@ -1,3 +1,4 @@
+// Package main is the entry point for the gitlab-shell command
 package main
 
 import (
@@ -39,30 +40,29 @@ func main() {
 
 	executable, err := executable.New(executable.GitlabShell)
 	if err != nil {
-		fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
+		_, _ = fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
 		os.Exit(1)
 	}
 
 	config, err := config.NewFromDirExternal(executable.RootDir)
 	if err != nil {
-		fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting:", err)
+		_, _ = fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting:", err)
 		os.Exit(1)
 	}
 
 	logCloser := logger.Configure(config)
-	defer logCloser.Close()
 
 	env := sshenv.NewFromEnv()
 	cmd, err := shellCmd.New(os.Args[1:], env, config, readWriter)
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment
-		fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
+		_, _ = fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
+		_ = logCloser.Close()
 		os.Exit(1)
 	}
 
 	ctx, finished := command.Setup(executable.Name, config)
-	defer finished()
 
 	config.GitalyClient.InitSidechannelRegistry(ctx)
 
@@ -76,8 +76,12 @@ func main() {
 		if grpcstatus.Convert(err).Code() != grpccodes.Internal {
 			console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
 		}
+		finished()
+		_ = logCloser.Close()
 		os.Exit(1)
 	}
 
 	ctxlog.Info("gitlab-shell: main: command executed successfully")
+	finished()
+	_ = logCloser.Close()
 }
