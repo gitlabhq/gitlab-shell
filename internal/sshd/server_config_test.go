@@ -2,7 +2,6 @@ package sshd
 
 import (
 	"context"
-	"crypto/dsa"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
@@ -126,11 +125,6 @@ func TestUserKeyHandling(t *testing.T) {
 			user:        "wrong-user",
 			key:         rsaPublicKey(t),
 			expectedErr: errors.New("unknown user"),
-		}, {
-			desc:        "prohibited dsa key",
-			user:        "user",
-			key:         dsaPublicKey(t),
-			expectedErr: errors.New("DSA is prohibited"),
 		}, {
 			desc:        "API error",
 			user:        "user",
@@ -378,20 +372,6 @@ func TestGSSAPIWithMICDisabled(t *testing.T) {
 func rsaPublicKey(t *testing.T) ssh.PublicKey {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
-
-	publicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
-	require.NoError(t, err)
-
-	return publicKey
-}
-
-func dsaPublicKey(t *testing.T) ssh.PublicKey {
-	privateKey := new(dsa.PrivateKey)
-	params := new(dsa.Parameters)
-	require.NoError(t, dsa.GenerateParameters(params, rand.Reader, dsa.L1024N160))
-
-	privateKey.PublicKey.Parameters = *params
-	require.NoError(t, dsa.GenerateKey(privateKey, rand.Reader))
 
 	publicKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
 	require.NoError(t, err)

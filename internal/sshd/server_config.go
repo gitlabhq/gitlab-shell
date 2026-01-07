@@ -127,7 +127,7 @@ func (s *serverConfig) handleUserKey(ctx context.Context, user string, key ssh.P
 	if user != s.cfg.User {
 		return nil, fmt.Errorf("unknown user")
 	}
-	if key.Type() == ssh.KeyAlgoDSA {
+	if key.Type() == "ssh-dss" {
 		return nil, fmt.Errorf("DSA is prohibited")
 	}
 
