@@ -144,6 +144,7 @@ linters-settings:
           - github.com/sirupsen/logrus
           - github.com/grpc-ecosystem/go-grpc-prometheus
           - github.com/mattn/go-shellwords
+          - github.com/git-lfs/pktline
 
   #   list-type: blacklist
   #   include-go-root: false
