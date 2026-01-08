@@ -12,11 +12,13 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 )
 
+// TestRequestHandler defines a test HTTP request handler with a path and handler function.
 type TestRequestHandler struct {
 	Path    string
 	Handler func(w http.ResponseWriter, r *http.Request)
@@ -44,12 +46,15 @@ func StartSocketHTTPServer(t *testing.T, handlers []TestRequestHandler) string {
 	require.NoError(t, err)
 
 	server := http.Server{
-		Handler: buildHandler(handlers),
+		Handler:           buildHandler(handlers),
+		ReadHeaderTimeout: 10 * time.Second,
 		// We'll put this server through some nasty stuff we don't want
 		// in our test output
 		ErrorLog: log.New(io.Discard, "", 0),
 	}
-	go server.Serve(socketListener)
+	go func() {
+		_ = server.Serve(socketListener)
+	}()
 
 	url := "http+unix://" + testSocket
 
@@ -114,7 +119,7 @@ func StartHTTPSServer(t *testing.T, handlers []TestRequestHandler, clientCAPath 
 	}
 
 	if clientCAPath != "" {
-		caCert, err := os.ReadFile(clientCAPath)
+		caCert, err := os.ReadFile(filepath.Clean(clientCAPath))
 		require.NoError(t, err)
 
 		caCertPool := x509.NewCertPool()

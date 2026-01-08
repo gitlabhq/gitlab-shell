@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -202,9 +203,9 @@ func buildHTTPTransport(gitlabURL string) (*http.Transport, string) {
 }
 
 func readTimeout(timeoutSeconds uint64) time.Duration {
-	if timeoutSeconds == 0 {
+	if timeoutSeconds == 0 || timeoutSeconds > math.MaxInt64 {
 		timeoutSeconds = defaultReadTimeoutSeconds
 	}
 
-	return time.Duration(timeoutSeconds) * time.Second
+	return time.Duration(timeoutSeconds) * time.Second // #nosec G115
 }
