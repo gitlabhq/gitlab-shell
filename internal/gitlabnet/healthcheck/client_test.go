@@ -16,7 +16,7 @@ var (
 	requests = []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/check",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				json.NewEncoder(w).Encode(testResponse)
 			},
 		},

@@ -1,3 +1,4 @@
+// Package gitlabnet provides client utilities for interacting with GitLab's internal API.
 package gitlabnet
 
 import (
@@ -11,6 +12,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
+// GetClient creates and returns a new GitlabNetClient configured with the provided settings.
 func GetClient(config *config.Config) (*client.GitlabNetClient, error) {
 	httpClient, err := config.HTTPClient()
 	if err != nil {
@@ -24,6 +26,7 @@ func GetClient(config *config.Config) (*client.GitlabNetClient, error) {
 	return client.NewGitlabNetClient(config.HTTPSettings.User, config.HTTPSettings.Password, config.Secret, httpClient)
 }
 
+// ParseJSON decodes JSON from an HTTP response into the provided response interface.
 func ParseJSON(hr *http.Response, response interface{}) error {
 	if err := json.NewDecoder(hr.Body).Decode(response); err != nil {
 		return fmt.Errorf("parsing failed")
@@ -32,6 +35,8 @@ func ParseJSON(hr *http.Response, response interface{}) error {
 	return nil
 }
 
+// ParseIP extracts and returns the IP address from a remote address string.
+// It handles both plain IP addresses and host:port combinations.
 func ParseIP(remoteAddr string) string {
 	// The remoteAddr field can be filled by:
 	// 1. An IP address via the SSH_CONNECTION environment variable

@@ -2,7 +2,7 @@ package sshd
 
 import (
 	"context"
-	"crypto/dsa"
+	"crypto/dsa" //nolint:staticcheck // SA1019: Intentionally using deprecated DSA for testing rejection
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
@@ -385,6 +385,7 @@ func rsaPublicKey(t *testing.T) ssh.PublicKey {
 	return publicKey
 }
 
+//nolint:staticcheck // SA1019: Intentionally using deprecated DSA for testing rejection
 func dsaPublicKey(t *testing.T) ssh.PublicKey {
 	privateKey := new(dsa.PrivateKey)
 	params := new(dsa.Parameters)

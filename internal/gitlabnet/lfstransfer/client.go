@@ -133,12 +133,8 @@ func newHTTPClient() *retryablehttp.Client {
 }
 
 // Batch performs a batch operation on objects and returns the result.
+// The ref parameter is optional and can be an empty string.
 func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, reqHashAlgo string) (*BatchResponse, error) {
-	// FIXME: This causes tests to fail
-	// if ref == "" {
-	// 	return nil, errors.New("A ref must be specified.")
-	// }
-
 	bref := &batchRef{Name: ref}
 	body := batchRequest{
 		Operation:     operation,
