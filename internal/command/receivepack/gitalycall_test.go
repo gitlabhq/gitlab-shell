@@ -28,13 +28,13 @@ func TestReceivePack(t *testing.T) {
 
 			testCases := []struct {
 				username string
-				keyId    string
+				keyID    string
 			}{
 				{
 					username: "john.doe",
 				},
 				{
-					keyId: "123",
+					keyID: "123",
 				},
 			}
 
@@ -58,7 +58,7 @@ func TestReceivePack(t *testing.T) {
 				if tc.username != "" {
 					args.GitlabUsername = tc.username
 				} else {
-					args.GitlabKeyID = tc.keyId
+					args.GitlabKeyID = tc.keyID
 				}
 
 				cfg := &config.Config{GitlabURL: url}
@@ -95,7 +95,7 @@ func TestReceivePack(t *testing.T) {
 					require.Equal(t, v, actual[0])
 				}
 				require.Empty(t, testServer.ReceivedMD["some-other-ff"])
-				require.Equal(t, testServer.ReceivedMD["x-gitlab-correlation-id"][0], "a-correlation-id")
+				require.Equal(t, "a-correlation-id", testServer.ReceivedMD["x-gitlab-correlation-id"][0])
 			}
 		})
 	}

@@ -48,8 +48,6 @@ func (c *PushCommand) Execute(ctx context.Context) error {
 
 	// For Git over SSH routing
 	if data.GeoProxyPushSSHDirectToPrimary {
-		log.ContextLogger(ctx).Info("Using Git over SSH receive pack")
-
 		client.Headers["Git-Protocol"] = c.Args.Env.GitProtocolVersion
 		return c.requestSSHReceivePack(ctx, client)
 	}
@@ -62,15 +60,9 @@ func (c *PushCommand) Execute(ctx context.Context) error {
 }
 
 func (c *PushCommand) requestSSHReceivePack(ctx context.Context, client *git.Client) error {
-	response, err := client.SSHReceivePack(ctx, io.NopCloser(c.ReadWriter.In))
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close() //nolint:errcheck
+	log.ContextLogger(ctx).Info("Using Git over SSH receive pack")
 
-	_, err = io.Copy(c.ReadWriter.Out, response.Body)
-
-	return err
+	return executeSSHRequest(ctx, client.SSHReceivePack, c.ReadWriter)
 }
 
 func (c *PushCommand) requestReceivePack(ctx context.Context, client *git.Client) error {
