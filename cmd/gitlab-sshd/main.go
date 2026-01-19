@@ -115,17 +115,24 @@ func main() {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
-	gracefulShutdown(ctx, done, cfg, server, cancel)
+	gracefulShutdown(ctx, done, cfg, server, cancel, v2Logger)
 
 	if err := server.ListenAndServe(ctx); err != nil {
-		v2Logger.ErrorContext(ctx, "v2log: GitLab built-in sshd failed to listen for new connections")
+		v2Logger.ErrorContext(ctx, "v2log: GitLab built-in sshd failed to listen for new connections",
+			slog.String(fields.ErrorMessage, err.Error()))
 		log.WithError(err).Fatal("GitLab built-in sshd failed to listen for new connections")
 	}
 }
 
-func gracefulShutdown(ctx context.Context, done chan os.Signal, cfg *config.Config, server *sshd.Server, cancel context.CancelFunc) {
+func gracefulShutdown(
+	ctx context.Context,
+	done chan os.Signal,
+	cfg *config.Config,
+	server *sshd.Server,
+	cancel context.CancelFunc,
+	v2Logger *slog.Logger,
+) {
 	go func() {
-		v2Logger := v2log.New()
 		sig := <-done
 		signal.Reset(syscall.SIGINT, syscall.SIGTERM)
 
@@ -135,9 +142,9 @@ func gracefulShutdown(ctx context.Context, done chan os.Signal, cfg *config.Conf
 			slog.String("signal", sig.String()))
 
 		if err := server.Shutdown(); err != nil {
-			log.WithError(err).Fatal("Error shutting down the server")
 			v2Logger.ErrorContext(ctx, "v2log: Error shutting down the server", slog.String(
 				fields.ErrorMessage, err.Error()))
+			log.WithError(err).Fatal("Error shutting down the server")
 		}
 		<-time.After(gracePeriod)
 
