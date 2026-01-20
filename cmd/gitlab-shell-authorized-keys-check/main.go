@@ -11,7 +11,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/console"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
 )
 
 var (
@@ -53,9 +52,6 @@ func execute(readWriter *readwriter.ReadWriter) (int, error) {
 	if err != nil {
 		return exitCodeFailure, fmt.Errorf("failed to read config, exiting")
 	}
-
-	logCloser := logger.Configure(config)
-	defer func() { _ = logCloser.Close() }()
 
 	cmd, err := cmd.New(os.Args[1:], config, readWriter)
 	if err != nil {
