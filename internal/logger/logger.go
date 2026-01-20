@@ -79,26 +79,3 @@ func Configure(cfg *config.Config) io.Closer {
 
 	return closer
 }
-
-// ConfigureStandalone configures the logging singleton for standalone operation. In this mode an
-// empty LogFile is treated as logging to stderr, and standard output is used as a fallback
-// when LogFile could not be opened for writing.
-func ConfigureStandalone(cfg *config.Config) io.Closer {
-	closer, err1 := log.Initialize(buildOpts(cfg)...)
-	if err1 != nil {
-		var err2 error
-
-		cfg.LogFile = "stdout"
-		closer, err2 = log.Initialize(buildOpts(cfg)...)
-
-		// Output this after the logger has been configured!
-		log.WithError(err1).WithField("log_file", cfg.LogFile).Warn("Unable to configure logging, falling back to STDOUT")
-
-		// LabKit v1.7.0 doesn't have any conditions where logging to "stdout" will fail
-		if err2 != nil {
-			log.WithError(err2).Warn("Unable to configure logging to STDOUT, leaving unconfigured")
-		}
-	}
-
-	return closer
-}
