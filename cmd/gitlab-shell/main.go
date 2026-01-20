@@ -51,6 +51,8 @@ func main() {
 	}
 
 	logCloser := logger.Configure(config)
+	//nolint
+	defer logCloser.Close()
 
 	env := sshenv.NewFromEnv()
 	cmd, err := shellCmd.New(os.Args[1:], env, config, readWriter)
@@ -58,7 +60,6 @@ func main() {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment
 		_, _ = fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
-		_ = logCloser.Close()
 		os.Exit(1)
 	}
 
@@ -77,11 +78,9 @@ func main() {
 			console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
 		}
 		finished()
-		_ = logCloser.Close()
 		os.Exit(1)
 	}
 
 	ctxlog.Info("gitlab-shell: main: command executed successfully")
 	finished()
-	_ = logCloser.Close()
 }

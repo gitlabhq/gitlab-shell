@@ -1,0 +1,1 @@
+cmd/gitlab-shell/main.go:63:3: exitAfterDefer: os.Exit will exit, and `defer logCloser.Close()` will not run (gocritic)
