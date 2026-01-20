@@ -45,7 +45,7 @@ func overrideConfigFromEnvironment(cfg *config.Config) {
 func main() {
 	ctx := context.Background()
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)
-
+	log := v2log.New()
 	flag.Parse()
 
 	cfg := new(config.Config)
@@ -53,21 +53,20 @@ func main() {
 		var err error
 		cfg, err = config.NewFromDir(*configDir)
 		if err != nil {
-			v2log.New().ErrorContext(ctx, "v2log: failed to load configuration from specified directory", slog.String(
+			log.ErrorContext(ctx, "v2log: failed to load configuration from specified directory", slog.String(
 				fields.ErrorMessage, err.Error(),
 			))
 		}
 	}
-	log := v2log.New()
 	log.InfoContext(ctx, "v2log: gitlab-sshd starting up...")
 
 	overrideConfigFromEnvironment(cfg)
 	if err := isConfigSane(cfg); err != nil {
 		ctx = v2log.WithFields(ctx, slog.String(fields.ErrorMessage, err.Error()))
 		if *configDir == "" {
-			v2log.New().ErrorContext(ctx, "v2log: no config-dir provided, using only environment variables")
+			log.ErrorContext(ctx, "v2log: no config-dir provided, using only environment variables")
 		} else {
-			v2log.New().ErrorContext(ctx, "v2log: configuration error")
+			log.ErrorContext(ctx, "v2log: configuration error")
 		}
 	}
 
