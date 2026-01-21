@@ -1,5 +1,5 @@
-cel.dev/expr v0.20.0 h1:OunBvVCfvpWlt4dN7zg3FM6TDkzOePe1+foGJ9AXeeI=
-cel.dev/expr v0.20.0/go.mod h1:MrpN08Q+lEBs+bGYdLxxHkZoUSsCp0nSKTs0nTymJgw=
+cel.dev/expr v0.23.1 h1:K4KOtPCJQjVggkARsjG9RWXP6O4R73aHeJMa/dmCQQg=
+cel.dev/expr v0.23.1/go.mod h1:hLPLo1W4QUmuYdA72RBX06QTs6MXw941piREPl3Yfiw=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.38.0/go.mod h1:990N+gfupTy94rShfmMCWGDn0LpTmnzTp2qbd1dvSRU=
@@ -348,8 +348,8 @@ github.com/googleapis/gax-go/v2 v2.13.0 h1:yitjD5f7jQHhyDsnhKEBU52NdvvdSeGzlAnDP
 github.com/googleapis/gax-go/v2 v2.13.0/go.mod h1:Z/fvTZXF8/uw7Xu5GuslPw+bplx6SS338j1Is2S+B7A=
 github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 h1:UH//fgunKIs4JdUbpDl1VZCDaL56wXCB/5+wF6uHfaI=
 github.com/grpc-ecosystem/go-grpc-middleware v1.4.0/go.mod h1:g5qyo/la0ALbONm6Vbp88Yd8NsDy6rZz+RcrMPxvld8=
-github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.1 h1:KcFzXwzM/kGhIRHvc8jdixfIJjVzuUJdnv+5xsPutog=
-github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.1/go.mod h1:qOchhhIlmRcqk/O9uCo/puJlyo07YINaIqdZfZG3Jkc=
+github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2 h1:sGm2vDRFUrQJO/Veii4h4zG2vvqG6uWNkBHSTqXOZk0=
+github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2/go.mod h1:wd1YpapPLivG6nQgbf7ZkG1hhSOXDhhn4MLTknx2aAc=
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 h1:Ovs26xHkKqVztRpIrF/92BcuyuQ/YW4NSIpoGtfXNho=
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0/go.mod h1:8NvIoxWQoOIhqOTXgfV/d3M/q6VIi02HzZEHgUlZvzk=
 github.com/grpc-ecosystem/grpc-gateway v1.16.0/go.mod h1:BDjrQk3hbvj6Nolgz8mAMFbcEtjT1g+wF4CSlocrBnw=
@@ -554,8 +554,8 @@ gitlab.com/gitlab-org/gitaly/v16 v16.11.0-rc1.0.20250408053233-c6d43513e93c h1:x
 gitlab.com/gitlab-org/gitaly/v16 v16.11.0-rc1.0.20250408053233-c6d43513e93c/go.mod h1:/rkj6992VsNymUeG6N3VnLZ8Pvb1Y9ZUo00Yy35t8WQ=
 gitlab.com/gitlab-org/go/reopen v1.0.0 h1:6BujZ0lkkjGIejTUJdNO1w56mN1SI10qcVQyQlOPM+8=
 gitlab.com/gitlab-org/go/reopen v1.0.0/go.mod h1:D6OID8YJDzEVZNYW02R/Pkj0v8gYFSIhXFTArAsBQw8=
-gitlab.com/gitlab-org/labkit v1.27.1 h1:c4gL4qfHPMZwetbFZO5HDam98MOS1Ul/CC8QTPon5/c=
-gitlab.com/gitlab-org/labkit v1.27.1/go.mod h1:ZHOQIOVQKeOEKvQ/GhGBjUNbV3zWsx8nty6D/SRCyd4=
+gitlab.com/gitlab-org/labkit v1.35.0 h1:6PSRUvmuEKFrAZpQPLlMNIdbtZHyKHaqyRlM4PDYDbs=
+gitlab.com/gitlab-org/labkit v1.35.0/go.mod h1:JqQLdgjV/KKAZJ6gvNodaLStmWeTT9mxgJPIEi66VHI=
 go.etcd.io/raft/v3 v3.6.0 h1:5NtvbDVYpnfZWcIHgGRk9DyzkBIXOi8j+DDp1IcnUWQ=
 go.etcd.io/raft/v3 v3.6.0/go.mod h1:nLvLevg6+xrVtHUmVaTcTz603gQPHfh7kUAwV6YpfGo=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
