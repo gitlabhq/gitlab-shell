@@ -1,0 +1,1 @@
+cmd/gitlab-sshd/main.go:49:6: Function 'main' has too many statements (41 > 40) (funlen)

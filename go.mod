@@ -23,7 +23,7 @@ require (
 	// Please do not override. Once v16.11.1 is released, this comment
 	// can be removed.
 	gitlab.com/gitlab-org/gitaly/v16 v16.11.0-rc1.0.20250408053233-c6d43513e93c
-	gitlab.com/gitlab-org/labkit v1.27.1
+	gitlab.com/gitlab-org/labkit v1.35.0
 	golang.org/x/crypto v0.41.0
 	golang.org/x/sync v0.16.0
 	google.golang.org/grpc v1.72.0
@@ -65,7 +65,7 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.1 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/yamux v0.1.2-0.20220728231024-8f49b6f63f18 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
