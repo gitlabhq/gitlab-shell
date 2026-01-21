@@ -52,6 +52,12 @@ type ServerConfig struct {
 	GSSAPI                  GSSAPIConfig `yaml:"gssapi,omitempty"`
 }
 
+// GitalyClientRetryConfig configures the Gitaly gRPC client retry policy
+type GitalyClientRetryConfig struct {
+	MaxAttempts int     `yaml:"max_attempts" json:"max_attempts"`
+	MaxBackoff  float64 `yaml:"max_backoff" json:"max_backoff"`
+}
+
 // HTTPSettingsConfig are HTTP related settings
 type HTTPSettingsConfig struct {
 	User               string `yaml:"user"`
@@ -80,13 +86,14 @@ type Config struct {
 	GitlabRelativeURLRoot string `yaml:"gitlab_relative_url_root"`
 	GitlabTracing         string `yaml:"gitlab_tracing"`
 	// SecretFilePath is only for parsing. Application code should always use Secret.
-	SecretFilePath string             `yaml:"secret_file"`
-	Secret         string             `yaml:"secret"`
-	SslCertDir     string             `yaml:"ssl_cert_dir"`
-	HTTPSettings   HTTPSettingsConfig `yaml:"http_settings"`
-	Server         ServerConfig       `yaml:"sshd"`
-	LFSConfig      LFSConfig          `yaml:"lfs"`
-	PATConfig      PATConfig          `yaml:"pat"`
+	SecretFilePath    string                  `yaml:"secret_file"`
+	Secret            string                  `yaml:"secret"`
+	SslCertDir        string                  `yaml:"ssl_cert_dir"`
+	HTTPSettings      HTTPSettingsConfig      `yaml:"http_settings"`
+	Server            ServerConfig            `yaml:"sshd"`
+	LFSConfig         LFSConfig               `yaml:"lfs"`
+	PATConfig         PATConfig               `yaml:"pat"`
+	GitalyRetryPolicy GitalyClientRetryConfig `yaml:"retry_policy"`
 
 	httpClient     *client.HTTPClient
 	httpClientErr  error
@@ -104,6 +111,15 @@ var (
 		Server:    DefaultServerConfig,
 		User:      "git",
 		PATConfig: DefaultPATConfig,
+		// MaxAttempts will default to 0, while MaxBackof will default to 1.4
+		// According to the gRPC retry spec
+		// (https://raw.githubusercontent.com/grpc/proposal/master/A6-client-retries.md),
+		// maxBackoff must be greater than 0, and the
+		// maxAttempts must be greater than 1.
+		GitalyRetryPolicy: GitalyClientRetryConfig{
+			MaxAttempts: 4,
+			MaxBackoff:  1.4,
+		},
 	}
 
 	DefaultServerConfig = ServerConfig{
@@ -142,6 +158,18 @@ func (d *YamlDuration) UnmarshalYAML(unmarshal func(interface{}) error) error {
 func (c *Config) ApplyGlobalState() {
 	if c.SslCertDir != "" {
 		os.Setenv("SSL_CERT_DIR", c.SslCertDir)
+	}
+}
+
+// ApplyDefaults applies default values for fields that are zero after YAML unmarshaling.
+// This is necessary because yaml.v3 zeros out entire nested structs when partially specified,
+// losing any defaults that were set before unmarshaling.
+func (c *Config) ApplyDefaults() {
+	if c.GitalyRetryPolicy.MaxAttempts == 0 {
+		c.GitalyRetryPolicy.MaxAttempts = DefaultConfig.GitalyRetryPolicy.MaxAttempts
+	}
+	if c.GitalyRetryPolicy.MaxBackoff < 1 {
+		c.GitalyRetryPolicy.MaxBackoff = DefaultConfig.GitalyRetryPolicy.MaxBackoff
 	}
 }
 
@@ -205,6 +233,8 @@ func newFromFile(path string) (*Config, error) {
 		return nil, err
 	}
 
+	cfg.ApplyDefaults()
+
 	if cfg.GitlabUrl != "" {
 		// This is only done for historic reasons, don't implement it for new config sources.
 		unescapedUrl, err := url.PathUnescape(cfg.GitlabUrl)
@@ -222,6 +252,10 @@ func newFromFile(path string) (*Config, error) {
 	if len(cfg.LogFile) > 0 && cfg.LogFile[0] != '/' && cfg.RootDir != "" {
 		cfg.LogFile = filepath.Join(cfg.RootDir, cfg.LogFile)
 	}
+
+	// Apply retry configuration to Gitaly client
+	cfg.GitalyClient.MaxAttempts = cfg.GitalyRetryPolicy.MaxAttempts
+	cfg.GitalyClient.MaxBackoff = cfg.GitalyRetryPolicy.MaxBackoff
 
 	return cfg, nil
 }

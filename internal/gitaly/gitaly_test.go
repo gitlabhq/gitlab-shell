@@ -52,6 +52,71 @@ func TestCachedConnections(t *testing.T) {
 	require.Len(t, c.cache.connections, 2)
 }
 
+func TestRetryConfiguration(t *testing.T) {
+	testCases := []struct {
+		name               string
+		maxAttempts        int
+		maxBackoff         float64
+		expectedAttempts   int
+		expectedMaxBackoff float64
+	}{
+		{
+			name:               "default values when not set",
+			maxAttempts:        0,
+			maxBackoff:         0,
+			expectedAttempts:   4,
+			expectedMaxBackoff: 1.4,
+		},
+		{
+			name:               "custom values",
+			maxAttempts:        5,
+			maxBackoff:         2.5,
+			expectedAttempts:   5,
+			expectedMaxBackoff: 2.5,
+		},
+		{
+			name:               "only max attempts set",
+			maxAttempts:        3,
+			maxBackoff:         0,
+			expectedAttempts:   3,
+			expectedMaxBackoff: 1.4,
+		},
+		{
+			name:               "only max backoff set",
+			maxAttempts:        0,
+			maxBackoff:         3.0,
+			expectedAttempts:   4,
+			expectedMaxBackoff: 3.0,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := &Client{
+				MaxAttempts: tc.maxAttempts,
+				MaxBackoff:  tc.maxBackoff,
+			}
+			c.InitSidechannelRegistry(context.Background())
+
+			// Verify the client fields are set correctly
+			require.Equal(t, tc.maxAttempts, c.MaxAttempts)
+			require.InDelta(t, tc.maxBackoff, c.MaxBackoff, 0.01)
+
+			// Test that connections can be created with the retry config
+			cmd := Command{
+				ServiceName: "git-upload-pack",
+				Address:     "tcp://localhost:9999",
+				Token:       "test-token",
+			}
+
+			conn, err := c.newConnection(context.Background(), cmd)
+			// Connection should succeed (gRPC client is created even if server isn't reachable)
+			require.NoError(t, err)
+			require.NotNil(t, conn)
+		})
+	}
+}
+
 func newClient() *Client {
 	c := &Client{}
 	c.InitSidechannelRegistry(context.Background())

@@ -35,6 +35,8 @@ type connectionsCache struct {
 // Client manages connections to Gitaly services and handles sidechannel communication.
 type Client struct {
 	SidechannelRegistry *gitalyclient.SidechannelRegistry
+	MaxAttempts         int
+	MaxBackoff          float64
 
 	cache connectionsCache
 }
@@ -75,6 +77,28 @@ func (c *Client) GetConnection(ctx context.Context, cmd Command) (*grpc.ClientCo
 	return newConn, nil
 }
 
+func (c *Client) getServiceConfig() string {
+	maxAttempts := c.MaxAttempts
+	maxBackoff := c.MaxBackoff
+
+	return fmt.Sprintf(`{
+		"methodConfig": [{
+			"name": [
+				{"service": "gitaly.SSHService", "method": "SSHUploadPackWithSidechannel"},
+				{"service": "gitaly.SSHService", "method": "SSHReceivePack"},
+				{"service": "gitaly.SSHService", "method": "SSHUploadArchive"}
+			],
+			"retryPolicy": {
+				"maxAttempts": %d,
+				"initialBackoff": "0.4s",
+				"maxBackoff": "%.1fs",
+				"backoffMultiplier": 2,
+				"retryableStatusCodes": ["UNAVAILABLE", "ABORTED"]
+			}
+		}]
+	}`, maxAttempts, maxBackoff)
+}
+
 func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.ClientConn, err error) {
 	defer func() {
 		label := "ok"
@@ -100,6 +124,8 @@ func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.Cli
 	connOpts := gitalyclient.DefaultDialOpts
 	connOpts = append(
 		connOpts,
+		grpc.WithDefaultServiceConfig(c.getServiceConfig()),
+
 		grpc.WithChainStreamInterceptor(
 			grpctracing.StreamClientTracingInterceptor(),
 			grpc_prometheus.StreamClientInterceptor,
