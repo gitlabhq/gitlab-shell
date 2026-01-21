@@ -92,7 +92,7 @@ coverage_golang:
 	[ -f cover.out ] && go tool cover -func cover.out
 
 lint:
-	@support/lint.sh ./...
+	@${GOLANGCI_LINT_FILE} run --print-issued-lines=false ${GOLANGCI_LINT_ARGS}
 
 golangci: ${GOLANGCI_LINT_FILE}
 	@${GOLANGCI_LINT_FILE} run --issues-exit-code 0 --print-issued-lines=false ${GOLANGCI_LINT_ARGS}
@@ -130,3 +130,6 @@ install: compile
 	install -m755 bin/gitlab-shell-authorized-keys-check $(DESTDIR)$(PREFIX)/bin/
 	install -m755 bin/gitlab-shell-authorized-principals-check $(DESTDIR)$(PREFIX)/bin/
 	install -m755 bin/gitlab-sshd $(DESTDIR)$(PREFIX)/bin/
+
+echo: ${ARGS}
+	echo ${ARGS}
