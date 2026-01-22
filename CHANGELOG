@@ -1,6 +1,10 @@
+v14.45.6
+
+- Adds test logs to help validate new V2 LabKit Logging Setup !1348
+
 v14.45.5
 
-- Update ruby version to 3.3.10
+- Update ruby version to 3.3.10 !1342
 
 v14.45.3
 
