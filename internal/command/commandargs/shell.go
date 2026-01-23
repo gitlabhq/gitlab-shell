@@ -3,6 +3,7 @@
 package commandargs
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -31,6 +32,12 @@ var (
 
 	// List of Git commands that are handled in a special way
 	GitCommands = []CommandType{LfsAuthenticate, UploadPack, ReceivePack, UploadArchive}
+)
+
+var (
+	// ErrOnlySSHAllowed - represents the error returned when the
+	// a non ssh connection is passed.
+	ErrOnlySSHAllowed = errors.New("Only SSH allowed")
 )
 
 // Shell represents a parsed shell command with its arguments and related information.
@@ -62,7 +69,7 @@ func (s *Shell) GetArguments() []string {
 
 func (s *Shell) validate() error {
 	if !s.Env.IsSSHConnection {
-		return fmt.Errorf("Only SSH allowed") //nolint:stylecheck //message is customer facing
+		return ErrOnlySSHAllowed //nolint:stylecheck //message is customer facing
 	}
 
 	if err := s.ParseCommand(s.Env.OriginalCommand); err != nil {

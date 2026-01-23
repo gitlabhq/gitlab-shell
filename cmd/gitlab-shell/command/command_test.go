@@ -1,7 +1,6 @@
 package command_test
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
@@ -216,7 +215,7 @@ func TestFailingNew(t *testing.T) {
 		{
 			desc:          "Parsing environment failed",
 			executable:    gitlabShellExec,
-			expectedError: errors.New("Only SSH allowed"),
+			expectedError: commandargs.ErrOnlySSHAllowed,
 		},
 		{
 			desc:          "Unknown command given",
