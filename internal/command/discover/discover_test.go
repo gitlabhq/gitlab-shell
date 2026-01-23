@@ -72,6 +72,22 @@ func TestExecute(t *testing.T) {
 			arguments:        &commandargs.Shell{GitlabUsername: "unknown"},
 			expectedUsername: "Anonymous",
 		},
+		{
+			desc: "with a known username - when other input is also given",
+			arguments: &commandargs.Shell{
+				Arguments:      []string{"foo"},
+				GitlabUsername: "alex-doe",
+			},
+			expectedUsername: "@alex-doe",
+		},
+		{
+			desc: "with a known key id - when other input is also given",
+			arguments: &commandargs.Shell{
+				Arguments:   []string{"2foo"},
+				GitlabKeyID: "1",
+			},
+			expectedUsername: "@alex-doe",
+		},
 	}
 
 	for _, tc := range testCases {

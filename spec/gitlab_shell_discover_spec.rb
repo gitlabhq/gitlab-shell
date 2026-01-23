@@ -62,22 +62,6 @@ describe 'bin/gitlab-shell' do
       expect(status).not_to be_success
     end
 
-    # Not so basic valid input
-    # (https://gitlab.com/gitlab-org/gitlab-shell/issues/145)
-    it 'succeeds and prints username when a valid known key id is given in the middle of other input' do
-      output, _, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "key-100", "2foo"])
-
-      expect(output).to eq("Welcome to GitLab, @someuser!\n")
-      expect(status).to be_success
-    end
-
-    it 'succeeds and prints username when a valid known username is given in the middle of other input' do
-      output, _, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-someuser" ,"foo"])
-
-      expect(output).to eq("Welcome to GitLab, @someuser!\n")
-      expect(status).to be_success
-    end
-
 
     it 'returns an error message when the API call fails with a message' do
       _, stderr, status = run!(["-c/usr/share/webapps/gitlab-shell/bin/gitlab-shell", "username-broken_message"])
