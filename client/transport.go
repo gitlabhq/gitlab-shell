@@ -2,16 +2,20 @@
 package client
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/tracing"
+	v2log "gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 type transport struct {
 	next http.RoundTripper
+
+	logger *slog.Logger
 }
 
 // RoundTrip executes a single HTTP transaction, adding logging and tracing capabilities.
@@ -27,33 +31,29 @@ func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 
 	start := time.Now()
 
+	ctx = v2log.WithFields(ctx,
+		slog.String("method", request.Method),
+		slog.String("url", request.URL.String()),
+		slog.Duration("duration_ms", time.Since(start)/time.Millisecond),
+	)
+
 	response, err := rt.next.RoundTrip(request)
-
-	fields := log.Fields{
-		"method":      request.Method,
-		"url":         request.URL.String(),
-		"duration_ms": time.Since(start) / time.Millisecond,
-	}
-	logger := log.WithContextFields(ctx, fields)
-
 	if err != nil {
-		logger.WithError(err).Error("Internal API unreachable")
+		rt.logger.ErrorContext(ctx, "Internal API unreachable", slog.String(fields.ErrorMessage, err.Error()))
 		return response, err
 	}
-
-	logger = logger.WithField("status", response.StatusCode)
+	ctx = v2log.WithFields(ctx, slog.Int("status", response.StatusCode))
 
 	if response.StatusCode >= 400 {
-		logger.WithError(err).Error("Internal API error")
+		rt.logger.ErrorContext(ctx, "Internal API error")
 		return response, err
 	}
 
 	if response.ContentLength >= 0 {
-		logger = logger.WithField("content_length_bytes", response.ContentLength)
+		ctx = v2log.WithFields(ctx, slog.Int64("content_length_bytes", response.ContentLength))
 	}
 
-	logger.Info("Finished HTTP request")
-
+	rt.logger.InfoContext(ctx, "Finished HTTP request")
 	return response, nil
 }
 
