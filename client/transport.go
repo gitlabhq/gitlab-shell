@@ -64,6 +64,9 @@ func DefaultTransport() http.RoundTripper {
 
 // NewTransport creates a new transport with logging, tracing, and correlation handling.
 func NewTransport(next http.RoundTripper) http.RoundTripper {
-	t := &transport{next: next}
+	t := &transport{
+		next:   next,
+		logger: v2log.New(),
+	}
 	return correlation.NewInstrumentedRoundTripper(tracing.NewRoundTripper(t))
 }
