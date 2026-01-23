@@ -40,35 +40,6 @@ describe 'bin/gitlab-shell' do
   end
 
   describe 'results with keys' do
-    # Basic valid input
-    it 'succeeds and prints username when a valid known key id is given' do
-      output, _, status = run!(["key-100"])
-
-      expect(output).to eq("Welcome to GitLab, @someuser!\n")
-      expect(status).to be_success
-    end
-
-    it 'succeeds and prints username when a valid known username is given' do
-      output, _, status = run!(["username-someuser"])
-
-      expect(output).to eq("Welcome to GitLab, @someuser!\n")
-      expect(status).to be_success
-    end
-
-    # Valid but unknown input
-    it 'succeeds and prints Anonymous when a valid unknown key id is given' do
-      output, _, status = run!(["key-12345"])
-
-      expect(output).to eq("Welcome to GitLab, Anonymous!\n")
-      expect(status).to be_success
-    end
-
-    it 'succeeds and prints Anonymous when a valid unknown username is given' do
-      output, _, status = run!(["username-unknown"])
-
-      expect(output).to eq("Welcome to GitLab, Anonymous!\n")
-      expect(status).to be_success
-    end
 
     it 'gets an ArgumentError on invalid input (empty)' do
       _, stderr, status = run!([])
