@@ -3,8 +3,6 @@ require_relative 'spec_helper'
 require 'open3'
 
 describe 'bin/gitlab-shell 2fa_recovery_codes' do
-  include_context 'gitlab shell'
-
   let(:env) { {'SSH_CONNECTION' => 'fake', 'SSH_ORIGINAL_COMMAND' => '2fa_recovery_codes' } }
 
   before(:context) do

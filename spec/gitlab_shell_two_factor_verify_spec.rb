@@ -4,7 +4,6 @@ require 'open3'
 require 'json'
 
 describe 'bin/gitlab-shell 2fa_verify' do
-  include_context 'gitlab shell'
 
   let(:env) do
     { 'SSH_CONNECTION' => 'fake',

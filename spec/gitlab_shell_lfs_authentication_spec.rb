@@ -3,8 +3,6 @@ require_relative 'spec_helper'
 require 'open3'
 
 describe 'bin/gitlab-shell git-lfs-authentication' do
-  include_context 'gitlab shell'
-
   let(:path) { "https://gitlab.com/repo/path" }
   let(:env) { {'SSH_CONNECTION' => 'fake', 'SSH_ORIGINAL_COMMAND' => 'git-lfs-authenticate project/repo download' } }
 

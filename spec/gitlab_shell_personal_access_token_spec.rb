@@ -5,8 +5,6 @@ require 'open3'
 require 'date'
 
 describe 'bin/gitlab-shell personal_access_token' do
-  include_context 'gitlab shell'
-
   before(:context) do
     write_config("gitlab_url" => "http+unix://#{CGI.escape(tmp_socket_path)}")
   end
