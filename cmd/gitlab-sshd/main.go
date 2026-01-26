@@ -42,10 +42,23 @@ func overrideConfigFromEnvironment(cfg *config.Config) {
 	}
 }
 
+// gitlab-sshd's log output can be configured to text as per the documentation:
+// https://docs.gitlab.com/omnibus/settings/logs/#json-logging
+// This is currently controlled by the GITLAB_LOG_FORMAT environment variable.
+func configureLogger() *slog.Logger {
+	if gitlabLogFormat := os.Getenv("GITLAB_LOG_FORMAT"); gitlabLogFormat == "text" {
+		return v2log.NewWithConfig(&v2log.Config{
+			UseTextFormat: true,
+		})
+	}
+	return v2log.New()
+}
+
 func main() {
 	ctx := context.Background()
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)
-	log := v2log.New()
+
+	log := configureLogger()
 	flag.Parse()
 
 	cfg := new(config.Config)
