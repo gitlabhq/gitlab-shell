@@ -55,10 +55,28 @@ func TestParseSuccess(t *testing.T) {
 		expectError  bool
 	}{
 		{
-			desc:         "It parses authorized-principals command",
+			desc:         "it parses authorized-principals command",
 			executable:   &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
 			arguments:    []string{"key", "principal-1", "principal-2"},
 			expectedArgs: &commandargs.AuthorizedPrincipals{Arguments: []string{"key", "principal-1", "principal-2"}, KeyID: "key", Principals: []string{"principal-1", "principal-2"}},
+		},
+		{
+			desc:        "it fails when a principal is empty",
+			executable:  &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
+			arguments:   []string{"key", "principal-1", ""},
+			expectError: true,
+		},
+		{
+			desc:        "it fails when a key_id is empty",
+			executable:  &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
+			arguments:   []string{"", "principal-1"},
+			expectError: true,
+		},
+		{
+			desc:        "it fails when not enough arguments are present",
+			executable:  &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
+			arguments:   []string{"key"},
+			expectError: true,
 		},
 	}
 
