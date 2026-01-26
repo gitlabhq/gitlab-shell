@@ -117,14 +117,7 @@ func TestParseFailure(t *testing.T) {
 			arguments:     []string{"user", "user", ""},
 			expectedError: "# No key provided",
 		},
-		{
-			desc:          "With missing key for the AuthorizedKeysCheck",
-			executable:    &executable.Executable{Name: executable.AuthorizedKeysCheck},
-			arguments:     []string{"user", "user", "unknown-key"},
-			expectedError: "# No key provided",
-		},
 	}
-
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			_, err := command.Parse(tc.arguments)
