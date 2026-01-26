@@ -60,6 +60,15 @@ func TestParseSuccess(t *testing.T) {
 			arguments:    []string{"git", "git", "key"},
 			expectedArgs: &commandargs.AuthorizedKeys{Arguments: []string{"git", "git", "key"}, ExpectedUser: "git", ActualUser: "git", Key: "key"},
 		},
+		{
+			// this seems counter-intuitive, but this ensures we're preserving the
+			// current logic when handling this situation/
+			desc:         "No error when expected user does not match actual user",
+			executable:   &executable.Executable{Name: executable.AuthorizedKeysCheck},
+			arguments:    []string{"expected", "actual", "key"},
+			expectedArgs: &commandargs.AuthorizedKeys{Arguments: []string{"expected", "actual", "key"}, ExpectedUser: "expected", ActualUser: "actual", Key: "key"},
+			expectError:  false,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -108,12 +117,17 @@ func TestParseFailure(t *testing.T) {
 			arguments:     []string{"user", "user", ""},
 			expectedError: "# No key provided",
 		},
+		{
+			desc:          "With missing key for the AuthorizedKeysCheck",
+			executable:    &executable.Executable{Name: executable.AuthorizedKeysCheck},
+			arguments:     []string{"user", "user", "unknown-key"},
+			expectedError: "# No key provided",
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			_, err := command.Parse(tc.arguments)
-
 			require.EqualError(t, err, tc.expectedError)
 		})
 	}
