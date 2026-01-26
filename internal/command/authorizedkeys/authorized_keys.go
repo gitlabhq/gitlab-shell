@@ -13,6 +13,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedkeys"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/keyline"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
 )
 
 // Command contains the configuration, arguments, and I/O interfaces.
@@ -24,10 +25,12 @@ type Command struct {
 
 // Execute runs the command to fetch and print the authorized SSH key.
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
+	logger := logger.ConfigureLogger()
 	// Do and return nothing when the expected and actual user don't match.
 	// This can happen when the user in sshd_config doesn't match the user
 	// trying to login. When nothing is printed, the user will be denied access.
 	if c.Args.ExpectedUser != c.Args.ActualUser {
+		logger
 		log.ContextLogger(ctx).WithFields(log.Fields{
 			"expected_user": c.Args.ExpectedUser,
 			"actual_user":   c.Args.ActualUser,

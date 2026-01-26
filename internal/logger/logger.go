@@ -4,14 +4,26 @@ package logger
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"log/syslog"
+
 	"os"
 	"time"
 
 	"gitlab.com/gitlab-org/labkit/log"
+	v2log "gitlab.com/gitlab-org/labkit/v2/log"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
+
+func ConfigureLogger() *slog.Logger {
+	if gitlabLogFormat := os.Getenv("GITLAB_LOG_FORMAT"); gitlabLogFormat == "text" {
+		return v2log.NewWithConfig(&v2log.Config{
+			UseTextFormat: true,
+		})
+	}
+	return v2log.New()
+}
 
 func logFmt(inFmt string) string {
 	// Hide the "combined" format, since that makes no sense in gitlab-shell.

@@ -4,11 +4,12 @@ package sshd
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net"
+	"os"
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/sync/semaphore"
 	grpccodes "google.golang.org/grpc/codes"
@@ -19,7 +20,9 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/fields"
+	v2log "gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 const (
@@ -39,6 +42,7 @@ type connection struct {
 	nconn              net.Conn
 	maxSessions        int64
 	remoteAddr         string
+	logger             *slog.Logger
 }
 
 type channelHandler func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error
@@ -52,11 +56,21 @@ func newConnection(cfg *config.Config, nconn net.Conn) *connection {
 		concurrentSessions: semaphore.NewWeighted(maxSessions),
 		nconn:              nconn,
 		remoteAddr:         nconn.RemoteAddr().String(),
+		logger:             configureLogger(),
 	}
 }
 
+
+
 func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handler channelHandler) {
-	log.WithContextFields(ctx, log.Fields{}).Info("server: handleConn: start")
+	// this is the main entry-point for most of the flows
+	// as such, we need to ensure the correlation_id is being preserved
+	correlationID := correlation.ExtractFromContext(ctx)
+	ctx = v2log.WithFields(ctx, slog.String(fields.CorrelationID, correlationID))
+	c.logger.InfoContext(ctx, "server: handleConn: start")
+
+	// enrich the context with the remote_addr
+	ctx = v2log.WithFields(ctx, slog.String("remote_addr", c.remoteAddr))
 
 	sconn, chans, err := c.initServerConn(ctx, srvCfg)
 	if err != nil {
@@ -71,8 +85,11 @@ func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handl
 
 	c.handleRequests(ctx, sconn, chans, handler)
 
-	reason := sconn.Wait()
-	log.WithContextFields(ctx, log.Fields{"reason": reason}).Info("server: handleConn: done")
+	connErr := sconn.Wait()
+	if connErr != nil {
+		ctx = v2log.WithFields(ctx, slog.String(fields.ErrorMessage, connErr.Error()))
+	}
+	c.logger.InfoContext(ctx, "server: handleConn: done")
 }
 
 func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfig) (*ssh.ServerConn, <-chan ssh.NewChannel, error) {
@@ -83,13 +100,13 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 
 	sconn, chans, reqs, err := ssh.NewServerConn(c.nconn, srvCfg)
 	if err != nil {
+		ctx = v2log.WithFields(ctx, slog.String(fields.ErrorMessage, err.Error()))
 		msg := "connection: initServerConn: failed to initialize SSH connection"
-		logger := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr}).WithError(err)
 
 		if strings.Contains(err.Error(), "no common algorithm for host key") || err.Error() == "EOF" {
-			logger.Debug(msg)
+			c.logger.DebugContext(ctx, msg)
 		} else {
-			logger.Warn(msg)
+			c.logger.WarnContext(ctx, msg)
 		}
 
 		return nil, nil, err
@@ -100,19 +117,17 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 }
 
 func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, handler channelHandler) {
-	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
-
 	for newChannel := range chans {
-		ctxlog.WithField("channel_type", newChannel.ChannelType()).Info("connection: handle: new channel requested")
+		c.logger.InfoContext(ctx, "connection: handle: new channel requested", slog.String("channel_type", newChannel.ChannelType()))
 
 		if newChannel.ChannelType() != "session" {
-			ctxlog.Info("connection: handleRequests: unknown channel type")
+			c.logger.InfoContext(ctx, "connection: handleRequests: unknown channel type")
 			_ = newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
 			continue
 		}
 
 		if !c.concurrentSessions.TryAcquire(1) {
-			ctxlog.Info("connection: handleRequests: too many concurrent sessions")
+			c.logger.InfoContext(ctx, "connection: handleRequests: too many concurrent sessions")
 			_ = newChannel.Reject(ssh.ResourceShortage, "too many concurrent sessions")
 			metrics.SshdHitMaxSessions.Inc()
 			continue
@@ -120,7 +135,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 
 		channel, requests, err := newChannel.Accept()
 		if err != nil {
-			ctxlog.WithError(err).Error("connection: handleRequests: accepting channel failed")
+			c.logger.ErrorContext(ctx, "connection: handleRequests: accepting channel failed", slog.String(fields.ErrorMessage, err.Error()))
 			c.concurrentSessions.Release(1)
 			continue
 		}
@@ -129,7 +144,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			defer func(started time.Time) {
 				duration := time.Since(started).Seconds()
 				metrics.SshdSessionDuration.Observe(duration)
-				ctxlog.WithFields(log.Fields{"duration_s": duration}).Info("connection: handleRequests: done")
+				c.logger.InfoContext(ctx, "connection: handleRequests: done", slog.Float64("duration_s", duration))
 			}(time.Now())
 
 			defer c.concurrentSessions.Release(1)
@@ -137,14 +152,14 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 			// Prevent a panic in a single session from taking out the whole server
 			defer func() {
 				if err := recover(); err != nil {
-					ctxlog.WithField("recovered_error", err).Error("panic handling session")
+					c.logger.ErrorContext(ctx, "panic handling session", slog.Any(fields.ErrorMessage, err))
 				}
 			}()
 
 			metrics.SliSshdSessionsTotal.Inc()
 			err := handler(ctx, sconn, channel, requests)
 			if err != nil {
-				c.trackError(ctxlog, err)
+				c.trackError(ctx, err)
 			}
 		}()
 	}
@@ -159,29 +174,27 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 }
 
 func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn, ticker *time.Ticker) {
-	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": c.remoteAddr})
-
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			ctxlog.Debug("connection: sendKeepAliveMsg: send keepalive message to a client")
+			c.logger.DebugContext(ctx, "connection: sendKeepAliveMsg: send keepalive message to a client")
 
 			status, payload, err := sconn.SendRequest(KeepAliveMsg, true, nil)
 			if err != nil {
-				ctxlog.Errorf("Error occurred while sending request :%v", err)
+				c.logger.ErrorContext(ctx, "Error occurred while sending request :%v", err)
 				return
 			}
 
 			if status {
-				ctxlog.Debugf("connection: sendKeepAliveMsg: payload: %v", string(payload))
+				c.logger.DebugContext(ctx, "connection: sendKeepAliveMsg: payload: %v", string(payload))
 			}
 		}
 	}
 }
 
-func (c *connection) trackError(ctxlog *logrus.Entry, err error) {
+func (c *connection) trackError(ctx context.Context, err error) {
 	var apiError *client.APIError
 	if errors.As(err, &apiError) {
 		return
@@ -199,5 +212,5 @@ func (c *connection) trackError(ctxlog *logrus.Entry, err error) {
 	}
 
 	metrics.SliSshdSessionsErrorsTotal.Inc()
-	ctxlog.WithError(err).Warn("connection: session error")
+	c.logger.WarnContext(ctx, "connection: session error", slog.String(fields.ErrorMessage, err.Error()))
 }
