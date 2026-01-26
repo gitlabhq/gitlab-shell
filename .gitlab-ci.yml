@@ -21,13 +21,16 @@ variables:
   BUNDLE_FROZEN: "true"
   GOPATH: $CI_PROJECT_DIR/.GOPATH
   DEBIAN_VERSION: "bookworm"
+  BUNDLE_PATH: vendor/ruby
   POLICY: pull
   CI_DEBUG_SERVICES: "true"
   DOCKER_VERSION: "20.10.15"
   GO_VERSION: "1.24"
+  RUBY_VERSION: "3.3.9"
   RUST_VERSION: "1.73"
   UBI_VERSION: "9.5"
   GITLAB_ADVANCED_SAST_ENABLED: "true"
+  IMAGE_TAG: "rubygems-3.5-git-2.49-exiftool-12.60"
   DEFAULT_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-ruby-${RUBY_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${IMAGE_TAG}"
   FIPS_IMAGE_TAG: "rubygems-3.5-git-2.49-exiftool-12.60"
   FIPS_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-ruby-${RUBY_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${FIPS_IMAGE_TAG}"
