@@ -15,7 +15,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
-// gitlab-sshd's log output can be configured to text as per the documentation:
+// ConfigureLogger - gitlab-sshd's log output can be configured to text as per the documentation:
 // https://docs.gitlab.com/omnibus/settings/logs/#json-logging
 // This is currently controlled by the GITLAB_LOG_FORMAT environment variable.
 func ConfigureLogger() *slog.Logger {
