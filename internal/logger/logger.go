@@ -4,14 +4,28 @@ package logger
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"log/syslog"
 	"os"
 	"time"
 
 	"gitlab.com/gitlab-org/labkit/log"
+	v2log "gitlab.com/gitlab-org/labkit/v2/log"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
+
+// ConfigureLogger - gitlab-sshd's log output can be configured to text as per the documentation:
+// https://docs.gitlab.com/omnibus/settings/logs/#json-logging
+// This is currently controlled by the GITLAB_LOG_FORMAT environment variable.
+func ConfigureLogger() *slog.Logger {
+	if gitlabLogFormat := os.Getenv("GITLAB_LOG_FORMAT"); gitlabLogFormat == "text" {
+		return v2log.NewWithConfig(&v2log.Config{
+			UseTextFormat: true,
+		})
+	}
+	return v2log.New()
+}
 
 func logFmt(inFmt string) string {
 	// Hide the "combined" format, since that makes no sense in gitlab-shell.
@@ -74,29 +88,6 @@ func Configure(cfg *config.Config) io.Closer {
 		closer, err = log.Initialize(buildOpts(cfg)...)
 		if err != nil {
 			log.WithError(err).Warn("Unable to configure logging to /dev/null, leaving unconfigured")
-		}
-	}
-
-	return closer
-}
-
-// ConfigureStandalone configures the logging singleton for standalone operation. In this mode an
-// empty LogFile is treated as logging to stderr, and standard output is used as a fallback
-// when LogFile could not be opened for writing.
-func ConfigureStandalone(cfg *config.Config) io.Closer {
-	closer, err1 := log.Initialize(buildOpts(cfg)...)
-	if err1 != nil {
-		var err2 error
-
-		cfg.LogFile = "stdout"
-		closer, err2 = log.Initialize(buildOpts(cfg)...)
-
-		// Output this after the logger has been configured!
-		log.WithError(err1).WithField("log_file", cfg.LogFile).Warn("Unable to configure logging, falling back to STDOUT")
-
-		// LabKit v1.7.0 doesn't have any conditions where logging to "stdout" will fail
-		if err2 != nil {
-			log.WithError(err2).Warn("Unable to configure logging to STDOUT, leaving unconfigured")
 		}
 	}
 

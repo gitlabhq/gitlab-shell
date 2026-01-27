@@ -4,7 +4,6 @@
 package config
 
 import (
-	"errors"
 	"net/url"
 	"os"
 	"path"
@@ -266,19 +265,5 @@ func parseSecret(cfg *Config) error {
 	}
 	cfg.Secret = string(secretFileContent)
 
-	return nil
-}
-
-// IsSane checks if the given config fulfills the minimum requirements to be able to run.
-// Any error returned by this function should be a startup error. On the other hand
-// if this function returns nil, this doesn't guarantee the config will work, but it's
-// at least worth a try.
-func (c *Config) IsSane() error {
-	if c.GitlabURL == "" {
-		return errors.New("gitlab_url is required")
-	}
-	if c.Secret == "" {
-		return errors.New("secret or secret_file_path is required")
-	}
 	return nil
 }
