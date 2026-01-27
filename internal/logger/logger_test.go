@@ -98,3 +98,22 @@ func createTempFile(t *testing.T) string {
 
 	return tmpFile.Name()
 }
+
+func TestConfigureLabkitV2Log(t *testing.T) {
+	tmpFile := createTempFile(t)
+	config := config.Config{
+		LogFile:   tmpFile,
+		LogFormat: "json",
+		LogLevel:  "debug",
+	}
+
+	logger := ConfigureLogger(&config)
+	logger.Info("this is a test")
+	logger.Debug("debug log message")
+
+	data, err := os.ReadFile(tmpFile)
+	dataStr := string(data)
+	require.NoError(t, err)
+	require.Contains(t, dataStr, `"msg":"this is a test"`)
+	require.Contains(t, dataStr, `"msg":"debug log message"`)
+}
