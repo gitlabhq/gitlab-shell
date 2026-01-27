@@ -46,8 +46,6 @@ func overrideConfigFromEnvironment(cfg *config.Config) {
 func main() {
 	ctx := context.Background()
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)
-
-	log := logger.ConfigureLogger()
 	flag.Parse()
 
 	cfg := new(config.Config)
@@ -55,11 +53,12 @@ func main() {
 		var err error
 		cfg, err = config.NewFromDir(*configDir)
 		if err != nil {
-			log.ErrorContext(ctx, "failed to load configuration from specified directory", slog.String(
+			v2log.New().ErrorContext(ctx, "failed to load configuration from specified directory", slog.String(
 				fields.ErrorMessage, err.Error(),
 			))
 		}
 	}
+	log := logger.ConfigureLogger(cfg)
 	log.InfoContext(ctx, "gitlab-sshd starting up...")
 
 	overrideConfigFromEnvironment(cfg)
