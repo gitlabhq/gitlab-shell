@@ -18,13 +18,49 @@ import (
 // ConfigureLogger - gitlab-sshd's log output can be configured to text as per the documentation:
 // https://docs.gitlab.com/omnibus/settings/logs/#json-logging
 // This is currently controlled by the GITLAB_LOG_FORMAT environment variable.
-func ConfigureLogger() *slog.Logger {
-	if gitlabLogFormat := os.Getenv("GITLAB_LOG_FORMAT"); gitlabLogFormat == "text" {
-		return v2log.NewWithConfig(&v2log.Config{
-			UseTextFormat: true,
-		})
+func ConfigureLogger(cfg *config.Config) *slog.Logger {
+	logConfig := &v2log.Config{
+		LogLevel: parseLogLevel(cfg.LogLevel),
 	}
-	return v2log.New()
+	logFile, err := os.OpenFile(cfg.LogFile, os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		syslogError(err)
+		logConfig.Writer = os.Stderr
+	} else {
+		logConfig.Writer = logFile
+	}
+
+	if gitlabLogFormat := os.Getenv("GITLAB_LOG_FORMAT"); gitlabLogFormat == "text" {
+		logConfig.UseTextFormat = true
+	}
+	return v2log.NewWithConfig(logConfig)
+}
+
+func parseLogLevel(level string) slog.Level {
+	switch level {
+	case "DEBUG", "debug":
+		return slog.LevelDebug
+	case "INFO", "info":
+		return slog.LevelInfo
+	case "WARN", "warn":
+		return slog.LevelWarn
+	case "ERROR", "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
+}
+
+func syslogError(err error) {
+	syslogLogger, syslogLoggerErr := syslog.NewLogger(syslog.LOG_ERR|syslog.LOG_USER, 0)
+	progName, _ := os.Executable()
+	if syslogLoggerErr == nil {
+		msg := fmt.Sprintf("%s: Unable to configure logging: %v\n", progName, err.Error())
+		syslogLogger.Print(msg)
+	} else {
+		msg := fmt.Sprintf("%s: Unable to configure logging: %v, %v\n", progName, err.Error(), syslogLoggerErr.Error())
+		fmt.Fprintln(os.Stderr, msg)
+	}
 }
 
 func logFmt(inFmt string) string {
@@ -74,15 +110,7 @@ func Configure(cfg *config.Config) io.Closer {
 	}
 
 	if err != nil {
-		progName, _ := os.Executable()
-		syslogLogger, syslogLoggerErr := syslog.NewLogger(syslog.LOG_ERR|syslog.LOG_USER, 0)
-		if syslogLoggerErr == nil {
-			msg := fmt.Sprintf("%s: Unable to configure logging: %v\n", progName, err.Error())
-			syslogLogger.Print(msg)
-		} else {
-			msg := fmt.Sprintf("%s: Unable to configure logging: %v, %v\n", progName, err.Error(), syslogLoggerErr.Error())
-			fmt.Fprintln(os.Stderr, msg)
-		}
+		syslogError(err)
 
 		cfg.LogFile = "/dev/null"
 		closer, err = log.Initialize(buildOpts(cfg)...)
