@@ -2,6 +2,5 @@ pre-push:
   commands:
     test:
       run: make test
-    # Disabled for now as there's _lots_ of linter errors
-    #lint:
-    #  run: make lint
+    lint:
+      run: make lint

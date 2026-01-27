@@ -64,18 +64,10 @@ verify_golang:
 fmt:
 	gofmt -w -s $(GO_SOURCES)
 
-test: test_ruby test_golang
-
-test_fancy: test_ruby test_golang_fancy
-
-# The Ruby tests are now all integration specs that test the Go implementation.
-test_ruby:
-	bundle exec rspec --color --format d spec
-
-test_golang:
+test: 
 	go test -cover -coverprofile=cover.out -count 1 -tags "$(GO_TAGS)" ./...
 
-test_golang_fancy: ${GOTESTSUM_FILE}
+test_fancy: 
 	@${GOTESTSUM_FILE} --version
 	@${GOTESTSUM_FILE} --junitfile ./cover.xml --format pkgname -- -coverprofile=./cover.out -covermode=atomic -count 1 -tags "$(GO_TAGS)" ./...
 
