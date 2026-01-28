@@ -28,7 +28,6 @@ Development documentation for GitLab Shell [has moved into the `gitlab` reposito
 | `client/` | HTTP and GitLab client logic that is used internally and by other modules, e.g. Gitaly. |
 | `bin/` | Compiled binaries are created here. |
 | `support/` | Scripts and tools that assist in development and/or testing. |
-| `spec/` | Ruby based integration tests. |
 
 ## Building
 
