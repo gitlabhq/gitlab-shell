@@ -196,7 +196,7 @@ race:
     - .go-matrix-job
     - .test-job
   script:
-    - make test_golang_race
+    - make test_race
 
 code_quality:
   stage: lint

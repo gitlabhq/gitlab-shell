@@ -473,23 +473,45 @@ func TwoFactorAuthVerifySuccess(t *testing.T) {
 }
 
 func TestGitLfsAuthenticateSuccess(t *testing.T) {
-	handler := customHandler{
-		url: "/api/v4/internal/lfs_authenticate",
-		caller: func(w http.ResponseWriter, _ *http.Request) {
-			fmt.Fprint(w, `{"username": "test-user", "lfs_token": "testlfstoken", "repo_path": "foo", "expires_in": 7200}`)
-		},
-	}
-	client := runSSHD(t, "ed25519", successAPI(t, handler))
+	t.Run("lfs is successfully authed when a correct user is provided", func(t *testing.T) {
+		handler := customHandler{
+			url: "/api/v4/internal/lfs_authenticate",
+			caller: func(w http.ResponseWriter, _ *http.Request) {
+				fmt.Fprint(w, `{"username": "test-user", "lfs_token": "testlfstoken", "repo_path": "foo", "expires_in": 7200}`)
+			},
+		}
+		client := runSSHD(t, "ed25519", successAPI(t, handler))
 
-	session, err := client.NewSession()
-	require.NoError(t, err)
-	defer session.Close()
+		session, err := client.NewSession()
+		require.NoError(t, err)
+		defer session.Close()
 
-	output, err := session.Output("git-lfs-authenticate test-user/repo.git download")
+		output, err := session.Output("git-lfs-authenticate test-user/repo.git download")
 
-	require.NoError(t, err)
-	require.JSONEq(t, `{"header":{"Authorization":"Basic dGVzdC11c2VyOnRlc3RsZnN0b2tlbg=="},"href":"/info/lfs","expires_in":7200}
+		require.NoError(t, err)
+		require.JSONEq(t, `{"header":{"Authorization":"Basic dGVzdC11c2VyOnRlc3RsZnN0b2tlbg=="},"href":"/info/lfs","expires_in":7200}
 `, string(output))
+	})
+
+	t.Run("lfs is not authenticated when a user is not allowed to perform an action", func(t *testing.T) {
+		handler := customHandler{
+			url: "/api/v4/internal/lfs_authenticate",
+			caller: func(w http.ResponseWriter, _ *http.Request) {
+				http.Error(w, "forbidden", http.StatusForbidden)
+			},
+		}
+		client := runSSHD(t, "ed25519", successAPI(t, handler))
+		session, err := client.NewSession()
+		require.NoError(t, err)
+		defer session.Close()
+
+		output, err := session.Output("git-lfs-authenticate test-user/repo.git download")
+
+		// we don't send back an error
+		require.NoError(t, err)
+		// we also ensure that we don't send back any output
+		require.Empty(t, string(output))
+	})
 }
 
 func TestGitReceivePackSuccess(t *testing.T) {
