@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -241,4 +242,31 @@ func errWithDetail(t *testing.T, detail proto.Message) error {
 	proto.Details = append(proto.Details, marshaled)
 
 	return grpcstatus.ErrorProto(proto)
+}
+
+func TestNewGitalyCommandWithRetryConfig(t *testing.T) {
+	retryConfig := json.RawMessage(`{"maxAttempts": 4}`)
+
+	cmd := NewGitalyCommand(
+		newConfig(),
+		string(commandargs.UploadPack),
+		&accessverifier.Response{
+			Gitaly:      accessverifier.Gitaly{Address: "tcp://localhost:9999"},
+			RetryConfig: retryConfig,
+		},
+	)
+
+	require.NotEmpty(t, cmd.Command.ServiceConfig)
+}
+
+func TestNewGitalyCommandWithoutRetryConfig(t *testing.T) {
+	cmd := NewGitalyCommand(
+		newConfig(),
+		string(commandargs.UploadPack),
+		&accessverifier.Response{
+			Gitaly: accessverifier.Gitaly{Address: "tcp://localhost:9999"},
+		},
+	)
+
+	require.Empty(t, cmd.Command.ServiceConfig)
 }

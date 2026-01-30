@@ -21,9 +21,10 @@ import (
 
 // Command represents a gRPC service command with its address and token.
 type Command struct {
-	ServiceName string
-	Address     string
-	Token       string
+	ServiceName   string
+	Address       string
+	Token         string
+	ServiceConfig string
 }
 
 type connectionsCache struct {
@@ -131,6 +132,10 @@ func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.Cli
 		connOpts = append(connOpts,
 			grpc.WithPerRPCCredentials(gitalyauth.RPCCredentialsV2(cmd.Token)),
 		)
+	}
+
+	if cmd.ServiceConfig != "" {
+		connOpts = append(connOpts, grpc.WithDefaultServiceConfig(cmd.ServiceConfig))
 	}
 
 	return gitalyclient.DialSidechannel(ctx, cmd.Address, c.SidechannelRegistry, connOpts)
