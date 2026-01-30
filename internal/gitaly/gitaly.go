@@ -19,17 +19,24 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
 
-// Command represents a gRPC service command with its address and token.
-type Command struct {
+// CacheKey contains the fields used for connection caching.
+type CacheKey struct {
 	ServiceName string
 	Address     string
 	Token       string
 }
 
+// Command represents a gRPC service command with its address and token.
+type Command struct {
+	CacheKey
+
+	RetryPolicy *gitalyclient.RetryPolicy
+}
+
 type connectionsCache struct {
 	sync.RWMutex
 
-	connections map[Command]*grpc.ClientConn
+	connections map[CacheKey]*grpc.ClientConn
 }
 
 // Client manages connections to Gitaly services and handles sidechannel communication.
@@ -46,8 +53,10 @@ func (c *Client) InitSidechannelRegistry(ctx context.Context) {
 
 // GetConnection returns a gRPC connection for the given command, using a cached connection if available.
 func (c *Client) GetConnection(ctx context.Context, cmd Command) (*grpc.ClientConn, error) {
+	key := CacheKey{ServiceName: cmd.ServiceName, Address: cmd.Address, Token: cmd.Token}
+
 	c.cache.RLock()
-	existingConn := c.cache.connections[cmd]
+	existingConn := c.cache.connections[key]
 	c.cache.RUnlock()
 
 	if existingConn != nil {
@@ -57,7 +66,7 @@ func (c *Client) GetConnection(ctx context.Context, cmd Command) (*grpc.ClientCo
 	c.cache.Lock()
 	defer c.cache.Unlock()
 
-	if cachedConn := c.cache.connections[cmd]; cachedConn != nil {
+	if cachedConn := c.cache.connections[key]; cachedConn != nil {
 		return cachedConn, nil
 	}
 
@@ -67,10 +76,10 @@ func (c *Client) GetConnection(ctx context.Context, cmd Command) (*grpc.ClientCo
 	}
 
 	if c.cache.connections == nil {
-		c.cache.connections = make(map[Command]*grpc.ClientConn)
+		c.cache.connections = make(map[CacheKey]*grpc.ClientConn)
 	}
 
-	c.cache.connections[cmd] = newConn
+	c.cache.connections[key] = newConn
 
 	return newConn, nil
 }
@@ -132,6 +141,10 @@ func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.Cli
 
 	connOpts := []gitalyclient.DialOption{
 		gitalyclient.WithGrpcOptions(grpcOpts),
+	}
+
+	if cmd.RetryPolicy != nil {
+		connOpts = append(connOpts, gitalyclient.WithRetryPolicy(cmd.RetryPolicy))
 	}
 
 	return gitalyclient.DialSidechannel(ctx, cmd.Address, c.SidechannelRegistry, connOpts...)

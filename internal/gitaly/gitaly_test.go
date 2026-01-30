@@ -15,7 +15,7 @@ func TestPrometheusMetrics(t *testing.T) {
 
 	c := newClient()
 
-	cmd := Command{ServiceName: "git-upload-pack", Address: "tcp://localhost:9999"}
+	cmd := Command{CacheKey: CacheKey{ServiceName: "git-upload-pack", Address: "tcp://localhost:9999"}}
 	c.newConnection(context.Background(), cmd)
 	c.newConnection(context.Background(), cmd)
 
@@ -23,7 +23,7 @@ func TestPrometheusMetrics(t *testing.T) {
 	require.InDelta(t, 2, testutil.ToFloat64(metrics.GitalyConnectionsTotal.WithLabelValues("ok")), 0.1)
 	require.InDelta(t, 0, testutil.ToFloat64(metrics.GitalyConnectionsTotal.WithLabelValues("fail")), 0.1)
 
-	cmd = Command{Address: ""}
+	cmd = Command{CacheKey: CacheKey{Address: ""}}
 	c.newConnection(context.Background(), cmd)
 
 	require.InDelta(t, 2, testutil.ToFloat64(metrics.GitalyConnectionsTotal.WithLabelValues("ok")), 0.1)
@@ -35,7 +35,7 @@ func TestCachedConnections(t *testing.T) {
 
 	require.Empty(t, c.cache.connections)
 
-	cmd := Command{ServiceName: "git-upload-pack", Address: "tcp://localhost:9999"}
+	cmd := Command{CacheKey: CacheKey{ServiceName: "git-upload-pack", Address: "tcp://localhost:9999"}}
 
 	conn, err := c.GetConnection(context.Background(), cmd)
 	require.NoError(t, err)
@@ -46,7 +46,7 @@ func TestCachedConnections(t *testing.T) {
 	require.Len(t, c.cache.connections, 1)
 	require.Equal(t, conn, newConn)
 
-	cmd = Command{ServiceName: "git-upload-pack", Address: "tcp://localhost:9998"}
+	cmd = Command{CacheKey: CacheKey{ServiceName: "git-upload-pack", Address: "tcp://localhost:9998"}}
 	_, err = c.GetConnection(context.Background(), cmd)
 	require.NoError(t, err)
 	require.Len(t, c.cache.connections, 2)

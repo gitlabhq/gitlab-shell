@@ -33,40 +33,47 @@ func BuildDisallowedByAPIHandlers(t *testing.T) []testserver.TestRequestHandler 
 
 // BuildAllowedWithGitalyHandlers returns test request handlers for allowed API calls with Gitaly.
 func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testserver.TestRequestHandler {
-	requests := []testserver.TestRequestHandler{
-		{
-			Path: "/api/v4/internal/allowed",
-			Handler: func(w http.ResponseWriter, _ *http.Request) {
-				body := map[string]interface{}{
-					"status":      true,
-					"gl_id":       "1",
-					"gl_key_type": "key",
-					"gl_key_id":   123,
-					"gl_username": "alex-doe",
-					"gitaly": map[string]interface{}{
-						"repository": map[string]interface{}{
-							"storage_name":                     "storage_name",
-							"relative_path":                    "relative_path",
-							"git_object_directory":             "path/to/git_object_directory",
-							"git_alternate_object_directories": []string{"path/to/git_alternate_object_directory"},
-							"gl_repository":                    "group/repo",
-							"gl_project_path":                  "group/project-path",
-						},
-						"address": gitalyAddress,
-						"token":   "token",
-						"features": map[string]string{
-							"gitaly-feature-cache_invalidator":        "true",
-							"gitaly-feature-inforef_uploadpack_cache": "false",
-							"some-other-ff":                           "true",
-						},
-					},
-				}
-				assert.NoError(t, json.NewEncoder(w).Encode(body))
+	return BuildAllowedWithGitalyHandlersAndRetryConfig(t, gitalyAddress, nil)
+}
+
+// BuildAllowedWithGitalyHandlersAndRetryConfig returns test request handlers for allowed API calls with Gitaly and retry config.
+func BuildAllowedWithGitalyHandlersAndRetryConfig(t *testing.T, gitalyAddress string, retryConfig map[string]interface{}) []testserver.TestRequestHandler {
+	body := map[string]interface{}{
+		"status":      true,
+		"gl_id":       "1",
+		"gl_key_type": "key",
+		"gl_key_id":   123,
+		"gl_username": "alex-doe",
+		"gitaly": map[string]interface{}{
+			"repository": map[string]interface{}{
+				"storage_name":                     "storage_name",
+				"relative_path":                    "relative_path",
+				"git_object_directory":             "path/to/git_object_directory",
+				"git_alternate_object_directories": []string{"path/to/git_alternate_object_directory"},
+				"gl_repository":                    "group/repo",
+				"gl_project_path":                  "group/project-path",
+			},
+			"address": gitalyAddress,
+			"token":   "token",
+			"features": map[string]string{
+				"gitaly-feature-cache_invalidator":        "true",
+				"gitaly-feature-inforef_uploadpack_cache": "false",
 			},
 		},
 	}
 
-	return requests
+	if retryConfig != nil {
+		body["retry_config"] = retryConfig
+	}
+
+	return []testserver.TestRequestHandler{
+		{
+			Path: "/api/v4/internal/allowed",
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
+				assert.NoError(t, json.NewEncoder(w).Encode(body))
+			},
+		},
+	}
 }
 
 // BuildAllowedWithCustomActionsHandlers returns test request handlers for allowed API calls with custom actions.
