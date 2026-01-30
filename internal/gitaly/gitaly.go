@@ -9,8 +9,8 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 
-	gitalyauth "gitlab.com/gitlab-org/gitaly/v16/auth"
-	gitalyclient "gitlab.com/gitlab-org/gitaly/v16/client"
+	gitalyauth "gitlab.com/gitlab-org/gitaly/v18/auth"
+	gitalyclient "gitlab.com/gitlab-org/gitaly/v18/client"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	grpccorrelation "gitlab.com/gitlab-org/labkit/correlation/grpc"
 	"gitlab.com/gitlab-org/labkit/log"

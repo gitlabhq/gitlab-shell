@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	pb "gitlab.com/gitlab-org/gitaly/v16/proto/go/gitalypb"
+	pb "gitlab.com/gitlab-org/gitaly/v18/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
