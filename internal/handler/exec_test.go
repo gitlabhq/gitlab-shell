@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -241,4 +242,94 @@ func errWithDetail(t *testing.T, detail proto.Message) error {
 	proto.Details = append(proto.Details, marshaled)
 
 	return grpcstatus.ErrorProto(proto)
+}
+
+func TestBuildServiceConfig(t *testing.T) {
+	tests := []struct {
+		name        string
+		retryConfig json.RawMessage
+		wantEmpty   bool
+	}{
+		{
+			name:        "nil retry config",
+			retryConfig: nil,
+			wantEmpty:   true,
+		},
+		{
+			name:        "empty retry config",
+			retryConfig: json.RawMessage{},
+			wantEmpty:   true,
+		},
+		{
+			name: "valid retry config",
+			retryConfig: json.RawMessage(`{
+				"maxAttempts": 4,
+				"initialBackoff": "0.4s",
+				"maxBackoff": "1.4s",
+				"backoffMultiplier": 2,
+				"retryableStatusCodes": ["UNAVAILABLE", "ABORTED"]
+			}`),
+			wantEmpty: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := buildServiceConfig(tt.retryConfig)
+
+			if tt.wantEmpty {
+				require.Empty(t, result)
+				return
+			}
+
+			require.NotEmpty(t, result)
+
+			var serviceConfig map[string]any
+			err := json.Unmarshal([]byte(result), &serviceConfig)
+			require.NoError(t, err)
+
+			methodConfig, ok := serviceConfig["methodConfig"].([]any)
+			require.True(t, ok)
+			require.Len(t, methodConfig, len(gitalyRPCMethods))
+
+			for i, mc := range methodConfig {
+				config := mc.(map[string]any)
+
+				names := config["name"].([]any)
+				require.Len(t, names, 1)
+				name := names[0].(map[string]any)
+				require.Equal(t, gitalyRPCMethods[i].service, name["service"])
+				require.Equal(t, gitalyRPCMethods[i].method, name["method"])
+
+				require.NotNil(t, config["retryPolicy"])
+			}
+		})
+	}
+}
+
+func TestNewGitalyCommandWithRetryConfig(t *testing.T) {
+	retryConfig := json.RawMessage(`{"maxAttempts": 4}`)
+
+	cmd := NewGitalyCommand(
+		newConfig(),
+		string(commandargs.UploadPack),
+		&accessverifier.Response{
+			Gitaly:      accessverifier.Gitaly{Address: "tcp://localhost:9999"},
+			RetryConfig: retryConfig,
+		},
+	)
+
+	require.NotEmpty(t, cmd.Command.ServiceConfig)
+}
+
+func TestNewGitalyCommandWithoutRetryConfig(t *testing.T) {
+	cmd := NewGitalyCommand(
+		newConfig(),
+		string(commandargs.UploadPack),
+		&accessverifier.Response{
+			Gitaly: accessverifier.Gitaly{Address: "tcp://localhost:9999"},
+		},
+	)
+
+	require.Empty(t, cmd.Command.ServiceConfig)
 }

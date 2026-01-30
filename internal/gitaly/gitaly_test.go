@@ -52,6 +52,33 @@ func TestCachedConnections(t *testing.T) {
 	require.Len(t, c.cache.connections, 2)
 }
 
+func TestCachedConnectionsWithServiceConfig(t *testing.T) {
+	c := newClient()
+
+	require.Empty(t, c.cache.connections)
+
+	cmd := Command{ServiceName: "git-upload-pack", Address: "tcp://localhost:9999"}
+
+	conn, err := c.GetConnection(context.Background(), cmd)
+	require.NoError(t, err)
+	require.Len(t, c.cache.connections, 1)
+
+	cmdWithConfig := Command{
+		ServiceName:   "git-upload-pack",
+		Address:       "tcp://localhost:9999",
+		ServiceConfig: `{"methodConfig":[]}`,
+	}
+	connWithConfig, err := c.GetConnection(context.Background(), cmdWithConfig)
+	require.NoError(t, err)
+	require.Len(t, c.cache.connections, 2)
+	require.NotEqual(t, conn, connWithConfig)
+
+	connWithConfigAgain, err := c.GetConnection(context.Background(), cmdWithConfig)
+	require.NoError(t, err)
+	require.Len(t, c.cache.connections, 2)
+	require.Equal(t, connWithConfig, connWithConfigAgain)
+}
+
 func newClient() *Client {
 	c := &Client{}
 	c.InitSidechannelRegistry(context.Background())

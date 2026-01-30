@@ -3,6 +3,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -33,15 +34,50 @@ type GitalyCommand struct {
 	Command  gitaly.Command
 }
 
+var gitalyRPCMethods = []struct {
+	service string
+	method  string
+}{
+	{"gitaly.SSHService", "SSHUploadPackWithSidechannel"},
+	{"gitaly.SSHService", "SSHReceivePack"},
+	{"gitaly.SSHService", "SSHUploadArchive"},
+}
+
 // NewGitalyCommand creates a new GitalyCommand instance
 func NewGitalyCommand(cfg *config.Config, serviceName string, response *accessverifier.Response) *GitalyCommand {
 	gc := gitaly.Command{
-		ServiceName: serviceName,
-		Address:     response.Gitaly.Address,
-		Token:       response.Gitaly.Token,
+		ServiceName:   serviceName,
+		Address:       response.Gitaly.Address,
+		Token:         response.Gitaly.Token,
+		ServiceConfig: buildServiceConfig(response.RetryConfig),
 	}
 
 	return &GitalyCommand{Config: cfg, Response: response, Command: gc}
+}
+
+func buildServiceConfig(retryConfig json.RawMessage) string {
+	if len(retryConfig) == 0 {
+		return ""
+	}
+
+	var methodConfigs []map[string]any
+	for _, m := range gitalyRPCMethods {
+		methodConfigs = append(methodConfigs, map[string]any{
+			"name":        []map[string]string{{"service": m.service, "method": m.method}},
+			"retryPolicy": json.RawMessage(retryConfig),
+		})
+	}
+
+	serviceConfig := map[string]any{
+		"methodConfig": methodConfigs,
+	}
+
+	result, err := json.Marshal(serviceConfig)
+	if err != nil {
+		return ""
+	}
+
+	return string(result)
 }
 
 // processGitalyError handles errors that come back from Gitaly that may be a

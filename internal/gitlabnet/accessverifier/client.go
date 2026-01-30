@@ -3,6 +3,7 @@ package accessverifier
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -85,7 +86,8 @@ type Response struct {
 	Who              string
 	StatusCode       int
 	// NeedAudit indicates whether git event should be audited to rails.
-	NeedAudit bool `json:"need_audit"`
+	NeedAudit   bool            `json:"need_audit"`
+	RetryConfig json.RawMessage `json:"retry_config,omitempty"`
 }
 
 // NewClient creates a new instance of Client
