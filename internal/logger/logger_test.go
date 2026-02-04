@@ -107,7 +107,9 @@ func TestConfigureLabkitV2Log(t *testing.T) {
 		LogLevel:  "debug",
 	}
 
-	logger := ConfigureLogger(&config)
+	logger, closer, err := ConfigureLogger(&config)
+	require.NoError(t, err)
+	defer closer.Close()
 	logger.Info("this is a test")
 	logger.Debug("debug log message")
 
