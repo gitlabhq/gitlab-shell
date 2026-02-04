@@ -2,6 +2,7 @@ package logger
 
 import (
 	"io"
+	"log/slog"
 	"os"
 	"regexp"
 	"testing"
@@ -108,11 +109,12 @@ func TestConfigureLabkitV2Log(t *testing.T) {
 		LogLevel:  "debug",
 	}
 
-	logger, closer, err := ConfigureLogger(&config)
-	require.NoError(t, err)
-	defer MustClose(t, closer)
-	logger.Info("this is a test")
-	logger.Debug("debug log message")
+	closer := ConfigureLogger(&config)
+	if closer != nil {
+		defer MustClose(t, closer)
+	}
+	slog.Info("this is a test")
+	slog.Debug("debug log message")
 
 	data, err := os.ReadFile(tmpFile)
 	dataStr := string(data)

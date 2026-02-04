@@ -51,8 +51,10 @@ func run() int {
 		return code
 	}
 
-	logCloser := logger.Configure(config)
-	defer logCloser.Close() //nolint:errcheck
+	logCloser := logger.ConfigureLogger(config)
+	if logCloser != nil {
+		defer logCloser.Close() //nolint:errcheck
+	}
 
 	cmd, err := checkCmd.New(config, readWriter)
 	if code := exitOnError(err, "Failed to create command"); code != 0 {
