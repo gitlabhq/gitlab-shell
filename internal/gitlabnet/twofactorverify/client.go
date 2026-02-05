@@ -4,19 +4,16 @@ package twofactorverify
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
 // Client represents a client for interacting with the two-factor verification API.
 type Client struct {
-	config *config.Config
 	client *client.GitlabNetClient
 }
 
@@ -34,13 +31,8 @@ type RequestBody struct {
 }
 
 // NewClient creates a new instance of the two-factor verification client.
-func NewClient(config *config.Config) (*Client, error) {
-	client, err := gitlabnet.GetClient(config)
-	if err != nil {
-		return nil, fmt.Errorf("error creating http client: %v", err)
-	}
-
-	return &Client{config: config, client: client}, nil
+func NewClient(gitlabClient *client.GitlabNetClient) (*Client, error) {
+	return &Client{client: gitlabClient}, nil
 }
 
 // VerifyOTP verifies the one-time password (OTP) for two-factor authentication.
@@ -89,8 +81,7 @@ func parse(hr *http.Response) error {
 }
 
 func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, otp string) (*RequestBody, error) {
-	client, err := discover.NewClient(c.config)
-
+	client, err := discover.NewClient(c.client)
 	if err != nil {
 		return nil, err
 	}

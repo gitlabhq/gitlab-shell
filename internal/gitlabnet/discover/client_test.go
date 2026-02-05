@@ -12,7 +12,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
 var (
@@ -142,9 +141,10 @@ func TestErrorResponses(t *testing.T) {
 }
 
 func setup(t *testing.T) *Client {
-	url := testserver.StartSocketHTTPServer(t, requests)
+	// url := testserver.StartSocketHTTPServer(t, requests)
 
-	client, err := NewClient(&config.Config{GitlabURL: url})
+	// TODO
+	client, err := NewClient(nil)
 	require.NoError(t, err)
 
 	return client

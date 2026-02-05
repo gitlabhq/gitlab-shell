@@ -8,22 +8,17 @@ import (
 	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
-
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
-// GetClient creates and returns a new GitlabNetClient configured with the provided settings.
-func GetClient(config *config.Config) (*client.GitlabNetClient, error) {
-	httpClient, err := config.HTTPClient()
-	if err != nil {
-		return nil, err
-	}
+type ClientOptions struct {
+	User     string
+	Password string
+	Secret   string
+	Client   *client.HTTPClient
+}
 
-	if httpClient == nil {
-		return nil, fmt.Errorf("Unsupported protocol")
-	}
-
-	return client.NewGitlabNetClient(config.HTTPSettings.User, config.HTTPSettings.Password, config.Secret, httpClient)
+func NewClient(opts ClientOptions) (*client.GitlabNetClient, error) {
+	return client.NewGitlabNetClient(opts.User, opts.Password, opts.Secret, opts.Client)
 }
 
 // ParseJSON decodes JSON from an HTTP response into the provided response interface.

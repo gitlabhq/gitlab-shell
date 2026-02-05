@@ -9,9 +9,9 @@ import (
 
 	"gitlab.com/gitlab-org/labkit/log"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/twofactorverify"
 )
 
@@ -22,14 +22,14 @@ const (
 
 // Command represents the command for two-factor verification
 type Command struct {
-	Config     *config.Config
-	Args       *commandargs.Shell
-	ReadWriter *readwriter.ReadWriter
+	GitlabClient *client.GitlabNetClient
+	Args         *commandargs.Shell
+	ReadWriter   *readwriter.ReadWriter
 }
 
 // Execute executes the two-factor verification command
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
-	client, err := twofactorverify.NewClient(c.Config)
+	client, err := twofactorverify.NewClient(c.GitlabClient)
 	if err != nil {
 		return ctx, err
 	}

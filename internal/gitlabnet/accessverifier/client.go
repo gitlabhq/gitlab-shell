@@ -3,13 +3,11 @@ package accessverifier
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	pb "gitlab.com/gitlab-org/gitaly/v16/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 )
 
@@ -86,13 +84,8 @@ type Response struct {
 }
 
 // NewClient creates a new instance of Client
-func NewClient(config *config.Config) (*Client, error) {
-	client, err := gitlabnet.GetClient(config)
-	if err != nil {
-		return nil, fmt.Errorf("error creating http client: %v", err)
-	}
-
-	return &Client{client: client}, nil
+func NewClient(gitlabClient *client.GitlabNetClient) (*Client, error) {
+	return &Client{client: gitlabClient}, nil
 }
 
 // Verify verifies access to a GitLab resource

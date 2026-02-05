@@ -12,6 +12,7 @@ import (
 	"gitlab.com/gitlab-org/labkit/fips"
 	"gitlab.com/gitlab-org/labkit/log"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	shellCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
@@ -19,6 +20,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/console"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
@@ -56,8 +58,24 @@ func main() {
 		LogLevel: config.LogLevel,
 	})
 
+	client, err := client.NewHTTPClientWithOpts(
+		config.GitlabURL,
+		config.GitlabRelativeURLRoot,
+		config.HTTPSettings.CaFile,
+		config.HTTPSettings.CaPath,
+		config.HTTPSettings.ReadTimeoutSeconds,
+		nil,
+	)
+	if err != nil {
+		_, _ = fmt.Fprintln(readWriter.ErrOut, "Failed to create http client, exiting:", err)
+		os.Exit(1)
+	}
+
+	tr := client.RetryableHTTP.HTTPClient.Transport
+	client.RetryableHTTP.HTTPClient.Transport = metrics.NewRoundTripper(tr)
+
 	env := sshenv.NewFromEnv()
-	cmd, err := shellCmd.New(os.Args[1:], env, config, readWriter)
+	cmd, err := shellCmd.New(os.Args[1:], env, config, readWriter, client)
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment

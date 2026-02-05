@@ -9,12 +9,12 @@ import (
 
 	"gitlab.com/gitlab-org/labkit/log"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/lfsauthenticate"
 )
 
@@ -25,9 +25,9 @@ const (
 
 // Command represents the LFS authentication command
 type Command struct {
-	Config     *config.Config
-	Args       *commandargs.Shell
-	ReadWriter *readwriter.ReadWriter
+	GitlabClient *client.GitlabNetClient
+	Args         *commandargs.Shell
+	ReadWriter   *readwriter.ReadWriter
 }
 
 // PayloadHeader represents the header of the LFS payload
@@ -108,9 +108,9 @@ func actionFromOperation(operation string) (commandargs.CommandType, error) {
 
 func (c *Command) verifyAccess(ctx context.Context, action commandargs.CommandType, repo string) (*accessverifier.Response, error) {
 	cmd := accessverifier.Command{
-		Config:     c.Config,
-		Args:       c.Args,
-		ReadWriter: c.ReadWriter,
+		GitlabClient: c.GitlabClient,
+		Args:         c.Args,
+		ReadWriter:   c.ReadWriter,
 	}
 
 	return cmd.Verify(ctx, action, repo)

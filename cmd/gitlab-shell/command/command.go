@@ -4,6 +4,7 @@ package command
 import (
 	"slices"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/discover"
@@ -23,13 +24,19 @@ import (
 )
 
 // New creates a new command based on the provided arguments, environment, config, and readWriter
-func New(arguments []string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
+func New(
+	arguments []string,
+	env sshenv.Env,
+	config *config.Config,
+	readWriter *readwriter.ReadWriter,
+	httpClient *client.HTTPClient,
+) (command.Command, error) {
 	args, err := Parse(arguments, env)
 	if err != nil {
 		return nil, err
 	}
 
-	if cmd := Build(args, config, readWriter); cmd != nil {
+	if cmd := Build(args, config, readWriter, httpClient); cmd != nil {
 		return cmd, nil
 	}
 
@@ -44,7 +51,8 @@ func NewWithKey(gitlabKeyID string, env sshenv.Env, config *config.Config, readW
 	}
 
 	args.GitlabKeyID = gitlabKeyID
-	if cmd := Build(args, config, readWriter); cmd != nil {
+	//TODO
+	if cmd := Build(args, config, readWriter, nil); cmd != nil {
 		return cmd, nil
 	}
 
@@ -59,7 +67,8 @@ func NewWithKrb5Principal(gitlabKrb5Principal string, env sshenv.Env, config *co
 	}
 
 	args.GitlabKrb5Principal = gitlabKrb5Principal
-	if cmd := Build(args, config, readWriter); cmd != nil {
+	// TODO
+	if cmd := Build(args, config, readWriter, nil); cmd != nil {
 		return cmd, nil
 	}
 
@@ -80,7 +89,8 @@ func NewWithUsername(gitlabUsername string, env sshenv.Env, config *config.Confi
 	}
 
 	args.GitlabUsername = gitlabUsername
-	if cmd := Build(args, config, readWriter); cmd != nil {
+	// TODO
+	if cmd := Build(args, config, readWriter, nil); cmd != nil {
 		return cmd, nil
 	}
 
@@ -99,17 +109,18 @@ func Parse(arguments []string, env sshenv.Env) (*commandargs.Shell, error) {
 }
 
 // Build constructs a command based on the provided arguments, config, and readWriter
-func Build(args *commandargs.Shell, config *config.Config, readWriter *readwriter.ReadWriter) command.Command {
+func Build(args *commandargs.Shell, config *config.Config, readWriter *readwriter.ReadWriter, httpClient *client.HTTPClient) command.Command {
+	gitlabClient, _ := client.NewGitlabNetClient(config.User, config.HTTPSettings.Password, config.Secret, httpClient)
 	switch args.CommandType {
 	case commandargs.Discover:
-		return &discover.Command{Config: config, Args: args, ReadWriter: readWriter}
+		return &discover.Command{GitlabClient: gitlabClient, Args: args, ReadWriter: readWriter}
 	case commandargs.TwoFactorRecover:
-		return &twofactorrecover.Command{Config: config, Args: args, ReadWriter: readWriter}
+		return &twofactorrecover.Command{GitlabClient: gitlabClient, Args: args, ReadWriter: readWriter}
 	case commandargs.TwoFactorVerify:
-		return &twofactorverify.Command{Config: config, Args: args, ReadWriter: readWriter}
+		return &twofactorverify.Command{GitlabClient: gitlabClient, Args: args, ReadWriter: readWriter}
 	case commandargs.LfsAuthenticate:
 		metrics.LfsHTTPConnectionsTotal.Inc()
-		return &lfsauthenticate.Command{Config: config, Args: args, ReadWriter: readWriter}
+		return &lfsauthenticate.Command{GitlabClient: gitlabClient, Args: args, ReadWriter: readWriter}
 	case commandargs.LfsTransfer:
 		if config.LFSConfig.PureSSHProtocol {
 			metrics.LfsSSHConnectionsTotal.Inc()

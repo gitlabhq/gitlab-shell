@@ -9,9 +9,9 @@ import (
 
 	"gitlab.com/gitlab-org/labkit/log"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/twofactorrecover"
 )
 
@@ -19,9 +19,9 @@ const readerLimit = 1024
 
 // Command provides arguments to configure 2FA
 type Command struct {
-	Config     *config.Config
-	Args       *commandargs.Shell
-	ReadWriter *readwriter.ReadWriter
+	GitlabClient *client.GitlabNetClient
+	Args         *commandargs.Shell
+	ReadWriter   *readwriter.ReadWriter
 }
 
 // Execute generates new recovery codes
@@ -75,7 +75,7 @@ func (c *Command) displayRecoveryCodes(ctx context.Context) {
 }
 
 func (c *Command) getRecoveryCodes(ctx context.Context) ([]string, error) {
-	client, err := twofactorrecover.NewClient(c.Config)
+	client, err := twofactorrecover.NewClient(c.GitlabClient)
 
 	if err != nil {
 		return nil, err

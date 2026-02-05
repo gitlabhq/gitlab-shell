@@ -97,7 +97,8 @@ func TestNew(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			command, err := cmd.New(tc.arguments, tc.env, tc.config, nil)
+			// TODO
+			command, err := cmd.New(tc.arguments, tc.env, tc.config, nil, nil)
 
 			require.NoError(t, err)
 			require.IsType(t, tc.expectedType, command)
@@ -112,7 +113,8 @@ func TestLFSAuthenticateCommands(t *testing.T) {
 
 	lfsHTTPConnectionsTotal := testutil.ToFloat64(metrics.LfsHTTPConnectionsTotal)
 
-	command, err := cmd.New(arguments, env, config, nil)
+	// TODO
+	command, err := cmd.New(arguments, env, config, nil, nil)
 
 	require.NoError(t, err)
 	require.IsType(t, &lfsauthenticate.Command{}, command)
@@ -152,7 +154,8 @@ func TestLFSTransferCommands(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			lfsSSHConnectionsTotal := testutil.ToFloat64(metrics.LfsSSHConnectionsTotal)
 
-			command, err := cmd.New(tc.arguments, tc.env, tc.config, nil)
+			// TODO
+			command, err := cmd.New(tc.arguments, tc.env, tc.config, nil, nil)
 
 			if len(tc.errorString) > 0 {
 				require.Equal(t, err.Error(), tc.errorString)
@@ -195,7 +198,8 @@ func TestPATCommands(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			command, err := cmd.New(tc.arguments, tc.env, tc.config, nil)
+			// TODO
+			command, err := cmd.New(tc.arguments, tc.env, tc.config, nil, nil)
 
 			if len(tc.errorString) > 0 {
 				require.Equal(t, err.Error(), tc.errorString)
@@ -227,7 +231,8 @@ func TestFailingNew(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			command, err := cmd.New([]string{}, tc.env, basicConfig, nil)
+			// TODO
+			command, err := cmd.New([]string{}, tc.env, basicConfig, nil, nil)
 			require.Nil(t, command)
 			require.Equal(t, tc.expectedError, err)
 		})

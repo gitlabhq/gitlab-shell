@@ -27,13 +27,8 @@ type Response struct {
 }
 
 // NewClient creates a new instance of the user discovery client
-func NewClient(config *config.Config) (*Client, error) {
-	client, err := gitlabnet.GetClient(config)
-	if err != nil {
-		return nil, fmt.Errorf("error creating http client: %v", err)
-	}
-
-	return &Client{config: config, client: client}, nil
+func NewClient(httpClient *client.GitlabNetClient) (*Client, error) {
+	return &Client{client: httpClient}, nil
 }
 
 // GetByCommandArgs retrieves user information based on command arguments

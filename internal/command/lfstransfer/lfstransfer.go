@@ -6,12 +6,12 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/git-lfs-transfer/transfer"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/lfsauthenticate"
 	"gitlab.com/gitlab-org/labkit/log"
 )
@@ -25,9 +25,9 @@ var (
 
 // Command handles git-lfs-transfer operations
 type Command struct {
-	Config     *config.Config
-	Args       *commandargs.Shell
-	ReadWriter *readwriter.ReadWriter
+	GitlabClient *client.GitlabNetClient
+	Args         *commandargs.Shell
+	ReadWriter   *readwriter.ReadWriter
 }
 
 // Execute runs the git-lfs-transfer command
