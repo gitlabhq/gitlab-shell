@@ -46,7 +46,11 @@ func run() int {
 		return 1
 	}
 
-	logCloser := logger.Configure(config)
+	logCloser := logger.Configure(logger.LogOptions{
+		LogFile:  config.LogFile,
+		LogFmt:   config.LogFormat,
+		LogLevel: config.LogLevel,
+	})
 	defer logCloser.Close() //nolint:errcheck
 
 	cmd, err := cmd.New(os.Args[1:], config, readWriter)

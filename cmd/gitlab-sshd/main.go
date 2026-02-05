@@ -58,7 +58,12 @@ func main() {
 			))
 		}
 	}
-	log := logger.ConfigureLogger(cfg)
+
+	log := logger.ConfigureLogger(logger.LogOptions{
+		LogFile:  cfg.LogFile,
+		LogFmt:   cfg.LogFormat,
+		LogLevel: cfg.LogLevel,
+	})
 	log.InfoContext(ctx, "gitlab-sshd starting up...")
 
 	overrideConfigFromEnvironment(cfg)

@@ -50,7 +50,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	logCloser := logger.Configure(config)
+	logCloser := logger.Configure(logger.LogOptions{
+		LogFile:  config.LogFile,
+		LogFmt:   config.LogFormat,
+		LogLevel: config.LogLevel,
+	})
 
 	env := sshenv.NewFromEnv()
 	cmd, err := shellCmd.New(os.Args[1:], env, config, readWriter)
