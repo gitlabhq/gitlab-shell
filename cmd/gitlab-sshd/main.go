@@ -64,7 +64,11 @@ func main() {
 		log.ErrorContext(ctx, "failed to log to file, reverting to stderr", slog.String(fields.ErrorMessage, err.Error()))
 	} else {
 		// nolint
-		defer logCloser.Close()
+		defer func() {
+			if err = logCloser.Close(); err != nil {
+				log.ErrorContext(ctx, "failed to close log file", slog.String(fields.ErrorMessage, err.Error()))
+			}
+		}()
 	}
 	log.InfoContext(ctx, "gitlab-sshd starting up...")
 
