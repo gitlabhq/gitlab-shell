@@ -16,6 +16,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/twofactorrecover"
 )
 
@@ -63,9 +64,7 @@ const (
 
 func TestExecute(t *testing.T) {
 	setup(t)
-
 	url := testserver.StartSocketHTTPServer(t, requests)
-
 	testCases := []struct {
 		desc           string
 		arguments      *commandargs.Shell
@@ -126,14 +125,17 @@ func TestExecute(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			output := &bytes.Buffer{}
 			input := bytes.NewBufferString(tc.answer)
-
+			gitlabClient, err := gitlabnet.NewGitLabClientFromConfig(&config.Config{
+				GitlabURL: url,
+			})
+			require.NoError(t, err)
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url},
-				Args:       tc.arguments,
-				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
+				GitlabClient: gitlabClient,
+				Args:         tc.arguments,
+				ReadWriter:   &readwriter.ReadWriter{Out: output, In: input},
 			}
 
-			_, err := cmd.Execute(context.Background())
+			_, err = cmd.Execute(context.Background())
 
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedOutput, output.String())

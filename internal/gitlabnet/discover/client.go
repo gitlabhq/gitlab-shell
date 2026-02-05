@@ -9,13 +9,11 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 )
 
 // Client represents a client for discovering GitLab users
 type Client struct {
-	config *config.Config
 	client *client.GitlabNetClient
 }
 
@@ -27,13 +25,8 @@ type Response struct {
 }
 
 // NewClient creates a new instance of the user discovery client
-func NewClient(config *config.Config) (*Client, error) {
-	client, err := gitlabnet.GetClient(config)
-	if err != nil {
-		return nil, fmt.Errorf("error creating http client: %v", err)
-	}
-
-	return &Client{config: config, client: client}, nil
+func NewClient(gitlabClient *client.GitlabNetClient) (*Client, error) {
+	return &Client{client: gitlabClient}, nil
 }
 
 // GetByCommandArgs retrieves user information based on command arguments

@@ -4,19 +4,16 @@ package twofactorrecover
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
 // Client represents a client for interacting with GitLab Two-Factor Authentication recovery codes
 type Client struct {
-	config *config.Config
 	client *client.GitlabNetClient
 }
 
@@ -34,13 +31,8 @@ type RequestBody struct {
 }
 
 // NewClient creates a new Client instance with the provided configuration
-func NewClient(config *config.Config) (*Client, error) {
-	client, err := gitlabnet.GetClient(config)
-	if err != nil {
-		return nil, fmt.Errorf("error creating http client: %v", err)
-	}
-
-	return &Client{config: config, client: client}, nil
+func NewClient(gitlabClient *client.GitlabNetClient) (*Client, error) {
+	return &Client{client: gitlabClient}, nil
 }
 
 // GetRecoveryCodes retrieves the recovery codes for the specified user
@@ -74,7 +66,7 @@ func parse(hr *http.Response) ([]string, error) {
 }
 
 func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell) (*RequestBody, error) {
-	client, err := discover.NewClient(c.config)
+	client, err := discover.NewClient(c.client)
 
 	if err != nil {
 		return nil, err

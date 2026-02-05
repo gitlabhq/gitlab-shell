@@ -15,7 +15,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/personalaccesstoken"
 )
 
@@ -79,14 +78,14 @@ const (
 func TestExecute(t *testing.T) {
 	setup(t)
 
-	url := testserver.StartSocketHTTPServer(t, requests)
+	// url := testserver.StartSocketHTTPServer(t, requests)
 
 	testCases := []struct {
-		desc           string
-		PATConfig      config.PATConfig
-		arguments      *commandargs.Shell
-		expectedOutput string
-		expectedError  string
+		desc             string
+		PATAllowedScopes []string
+		arguments        *commandargs.Shell
+		expectedOutput   string
+		expectedError    string
 	}{
 		{
 			desc:          "Without any arguments",
@@ -166,8 +165,8 @@ func TestExecute(t *testing.T) {
 			expectedError: "who='' is invalid",
 		},
 		{
-			desc:      "With restricted scopes",
-			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api"}},
+			desc:             "With restricted scopes",
+			PATAllowedScopes: []string{"read_api"},
 			arguments: &commandargs.Shell{
 				GitlabKeyID: "default",
 				SSHArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
@@ -177,8 +176,8 @@ func TestExecute(t *testing.T) {
 				"Expires: 9001-11-17\n",
 		},
 		{
-			desc:      "With unknown configured scopes",
-			PATConfig: config.PATConfig{AllowedScopes: []string{"read_reposotory"}}, //nolint:misspell //testing purpose
+			desc:             "With unknown configured scopes",
+			PATAllowedScopes: []string{"read_reposotory"}, //nolint:misspell //testing purpoe
 			arguments: &commandargs.Shell{
 				GitlabKeyID: "default",
 				SSHArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
@@ -188,8 +187,8 @@ func TestExecute(t *testing.T) {
 				"Expires: 9001-11-17\n",
 		},
 		{
-			desc:      "With unknown requested scopes",
-			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api", "read_repository"}},
+			desc:             "With unknown requested scopes",
+			PATAllowedScopes: []string{"read_api", "read_repository"},
 			arguments: &commandargs.Shell{
 				GitlabKeyID: "default",
 				SSHArgs:     []string{cmdname, "newtoken", "read_api,read_reposotory"}, //nolint:misspell //testing purpose
@@ -199,8 +198,8 @@ func TestExecute(t *testing.T) {
 				"Expires: 9001-11-17\n",
 		},
 		{
-			desc:      "With matching unknown requested scopes",
-			PATConfig: config.PATConfig{AllowedScopes: []string{"read_api", "read_reposotory"}}, //nolint:misspell //testing purpose
+			desc:             "With matching unknown requested scopes",
+			PATAllowedScopes: []string{"read_api", "read_reposotory"}, //nolint:misspell //testing purpoe
 			arguments: &commandargs.Shell{
 				GitlabKeyID: "invalidscope",
 				SSHArgs:     []string{cmdname, "newtoken", "read_reposotory"}, //nolint:misspell //testing purpose
@@ -215,9 +214,9 @@ func TestExecute(t *testing.T) {
 			input := bytes.NewBufferString("")
 
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url, PATConfig: tc.PATConfig},
-				Args:       tc.arguments,
-				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
+				PATAllowedScopes: tc.PATAllowedScopes,
+				Args:             tc.arguments,
+				ReadWriter:       &readwriter.ReadWriter{Out: output, In: input},
 			}
 
 			_, err := cmd.Execute(context.Background())

@@ -19,6 +19,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/uploadarchive"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/uploadpack"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
@@ -30,7 +31,7 @@ func New(arguments []string, env sshenv.Env, config *config.Config, readWriter *
 		return nil, err
 	}
 
-	gitlabClient, err := newGitLabClientFromConfig(config)
+	gitlabClient, err := gitlabnet.NewGitLabClientFromConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +50,7 @@ func NewWithKey(gitlabKeyID string, env sshenv.Env, config *config.Config, readW
 		return nil, err
 	}
 
-	gitlabClient, err := newGitLabClientFromConfig(config)
+	gitlabClient, err := gitlabnet.NewGitLabClientFromConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func NewWithKrb5Principal(gitlabKrb5Principal string, env sshenv.Env, config *co
 		return nil, err
 	}
 
-	gitlabClient, err := newGitLabClientFromConfig(config)
+	gitlabClient, err := gitlabnet.NewGitLabClientFromConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +96,7 @@ func NewWithUsername(gitlabUsername string, env sshenv.Env, config *config.Confi
 		}
 	}
 
-	gitlabClient, err := newGitLabClientFromConfig(config)
+	gitlabClient, err := gitlabnet.NewGitLabClientFromConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -119,19 +120,6 @@ func Parse(arguments []string, env sshenv.Env) (*commandargs.Shell, error) {
 	return args, nil
 }
 
-func newGitLabClientFromConfig(cfg *config.Config) (*client.GitlabNetClient, error) {
-	httpClient, err := client.NewHTTPClientWithOpts(cfg.GitlabURL, cfg.GitlabRelativeURLRoot, cfg.HTTPSettings.CaFile, cfg.HTTPSettings.CaPath, cfg.HTTPSettings.ReadTimeoutSeconds, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	gitlabClient, err := client.NewGitlabNetClient(cfg.HTTPSettings.User, cfg.HTTPSettings.Password, cfg.Secret, httpClient)
-	if err != nil {
-		return nil, err
-	}
-	return gitlabClient, nil
-}
-
 // Build constructs a command based on the provided arguments, config, and readWriter
 func Build(
 	args *commandargs.Shell,
@@ -141,11 +129,11 @@ func Build(
 ) command.Command {
 	switch args.CommandType {
 	case commandargs.Discover:
-		return &discover.Command{Config: config, Args: args, ReadWriter: readWriter}
+		return &discover.Command{GitlabClient: gitlabClient, Args: args, ReadWriter: readWriter}
 	case commandargs.TwoFactorRecover:
-		return &twofactorrecover.Command{Config: config, Args: args, ReadWriter: readWriter}
+		return &twofactorrecover.Command{GitlabClient: gitlabClient, Args: args, ReadWriter: readWriter}
 	case commandargs.TwoFactorVerify:
-		return &twofactorverify.Command{Config: config, Args: args, ReadWriter: readWriter}
+		return &twofactorverify.Command{GitlabClient: gitlabClient, Args: args, ReadWriter: readWriter}
 	case commandargs.LfsAuthenticate:
 		metrics.LfsHTTPConnectionsTotal.Inc()
 		return &lfsauthenticate.Command{Config: config, Args: args, ReadWriter: readWriter}
@@ -162,7 +150,7 @@ func Build(
 		return &uploadarchive.Command{Config: config, Args: args, ReadWriter: readWriter}
 	case commandargs.PersonalAccessToken:
 		if config.PATConfig.Enabled {
-			return &personalaccesstoken.Command{Config: config, Args: args, ReadWriter: readWriter}
+			return &personalaccesstoken.Command{PATAllowedScopes: config.PATConfig.AllowedScopes, Args: args, ReadWriter: readWriter}
 		}
 	}
 

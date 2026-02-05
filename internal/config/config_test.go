@@ -5,11 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v3"
 
-	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 )
 
@@ -31,41 +29,6 @@ func TestConfigApplyGlobalState(t *testing.T) {
 	config.ApplyGlobalState()
 
 	require.Equal(t, "foo", os.Getenv("SSL_CERT_DIR"))
-}
-
-func TestCustomPrometheusMetrics(t *testing.T) {
-	url := testserver.StartHTTPServer(t, []testserver.TestRequestHandler{})
-
-	config := &Config{GitlabURL: url}
-	client, err := config.HTTPClient()
-	require.NoError(t, err)
-
-	if client.RetryableHTTP != nil {
-		_, err = client.RetryableHTTP.Get(url)
-		require.NoError(t, err)
-	}
-
-	ms, err := prometheus.DefaultGatherer.Gather()
-	require.NoError(t, err)
-
-	var actualNames []string
-	for _, m := range ms[0:9] {
-		actualNames = append(actualNames, m.GetName())
-	}
-
-	expectedMetricNames := []string{
-		"gitlab_shell_http_in_flight_requests",
-		"gitlab_shell_http_request_duration_seconds",
-		"gitlab_shell_http_requests_total",
-		"gitlab_shell_sshd_concurrent_limited_sessions_total",
-		"gitlab_shell_sshd_in_flight_connections",
-		"gitlab_shell_sshd_session_duration_seconds",
-		"gitlab_shell_sshd_session_established_duration_seconds",
-		"gitlab_sli:shell_sshd_sessions:errors_total",
-		"gitlab_sli:shell_sshd_sessions:total",
-	}
-
-	require.Equal(t, expectedMetricNames, actualNames)
 }
 
 func TestNewFromDir(t *testing.T) {

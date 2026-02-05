@@ -13,9 +13,9 @@ import (
 
 	"gitlab.com/gitlab-org/labkit/log"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/personalaccesstoken"
 )
 
@@ -26,10 +26,11 @@ const (
 
 // Command represents a command to manage personal access tokens.
 type Command struct {
-	Config     *config.Config
-	Args       *commandargs.Shell
-	ReadWriter *readwriter.ReadWriter
-	TokenArgs  *tokenArgs
+	gitlabClient     *client.GitlabNetClient
+	Args             *commandargs.Shell
+	ReadWriter       *readwriter.ReadWriter
+	TokenArgs        *tokenArgs
+	PATAllowedScopes []string
 }
 
 type tokenArgs struct {
@@ -68,9 +69,9 @@ func (c *Command) parseTokenArgs() error {
 
 	var rectfiedScopes []string
 	requestedScopes := strings.Split(c.Args.SSHArgs[2], ",")
-	if len(c.Config.PATConfig.AllowedScopes) > 0 {
+	if len(c.PATAllowedScopes) > 0 {
 		for _, requestedScope := range requestedScopes {
-			if slices.Contains(c.Config.PATConfig.AllowedScopes, requestedScope) {
+			if slices.Contains(c.PATAllowedScopes, requestedScope) {
 				rectfiedScopes = append(rectfiedScopes, requestedScope)
 			}
 		}
@@ -99,7 +100,7 @@ func (c *Command) parseTokenArgs() error {
 }
 
 func (c *Command) getPersonalAccessToken(ctx context.Context) (*personalaccesstoken.Response, error) {
-	client, err := personalaccesstoken.NewClient(c.Config)
+	client, err := personalaccesstoken.NewClient(c.gitlabClient)
 	if err != nil {
 		return nil, err
 	}

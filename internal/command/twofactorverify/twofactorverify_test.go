@@ -15,6 +15,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/twofactorverify"
 )
 
@@ -93,7 +94,6 @@ const errorHeader = "OTP validation failed: "
 
 func TestExecute(t *testing.T) {
 	requests := setup(t)
-
 	url := testserver.StartSocketHTTPServer(t, requests)
 
 	testCases := []struct {
@@ -155,13 +155,18 @@ func TestExecute(t *testing.T) {
 				input = bytes.NewBufferString("123456\n")
 			}
 
+			gitlabClient, err := gitlabnet.NewGitLabClientFromConfig(&config.Config{
+				GitlabURL: url,
+			})
+			require.NoError(t, err)
+
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url},
-				Args:       tc.arguments,
-				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
+				GitlabClient: gitlabClient,
+				Args:         tc.arguments,
+				ReadWriter:   &readwriter.ReadWriter{Out: output, In: input},
 			}
 
-			_, err := cmd.Execute(context.Background())
+			_, err = cmd.Execute(context.Background())
 
 			require.NoError(t, err)
 			require.Equal(t, prompt+"\n"+tc.expectedOutput, output.String())
@@ -175,10 +180,15 @@ func TestCanceledContext(t *testing.T) {
 	output := &bytes.Buffer{}
 
 	url := testserver.StartSocketHTTPServer(t, requests)
+
+	gitlabClient, err := gitlabnet.NewGitLabClientFromConfig(&config.Config{
+		GitlabURL: url,
+	})
+	require.NoError(t, err)
 	cmd := &Command{
-		Config:     &config.Config{GitlabURL: url},
-		Args:       &commandargs.Shell{GitlabKeyID: "wait_infinitely"},
-		ReadWriter: &readwriter.ReadWriter{Out: output, In: &blockingReader{}},
+		GitlabClient: gitlabClient,
+		Args:         &commandargs.Shell{GitlabKeyID: "wait_infinitely"},
+		ReadWriter:   &readwriter.ReadWriter{Out: output, In: &blockingReader{}},
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

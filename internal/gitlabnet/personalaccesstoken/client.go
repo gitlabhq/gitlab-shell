@@ -4,19 +4,16 @@ package personalaccesstoken
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
 // Client represents a client for managing personal access tokens
 type Client struct {
-	config *config.Config
 	client *client.GitlabNetClient
 }
 
@@ -39,13 +36,8 @@ type RequestBody struct {
 }
 
 // NewClient creates a new instance of Client
-func NewClient(config *config.Config) (*Client, error) {
-	client, err := gitlabnet.GetClient(config)
-	if err != nil {
-		return nil, fmt.Errorf("error creating http client: %v", err)
-	}
-
-	return &Client{config: config, client: client}, nil
+func NewClient(gitlabClient *client.GitlabNetClient) (*Client, error) {
+	return &Client{client: gitlabClient}, nil
 }
 
 // GetPersonalAccessToken retrieves or creates a personal access token
@@ -78,7 +70,7 @@ func parse(hr *http.Response) (*Response, error) {
 }
 
 func (c *Client) getRequestBody(ctx context.Context, args *commandargs.Shell, name string, scopes *[]string, expiresAt string) (*RequestBody, error) {
-	client, err := discover.NewClient(c.config)
+	client, err := discover.NewClient(c.client)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"testing"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 
 	"github.com/stretchr/testify/assert"
@@ -14,7 +16,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
 func initialize(t *testing.T) []testserver.TestRequestHandler {
@@ -201,9 +202,11 @@ func TestErrorResponsesPush(t *testing.T) {
 func setup(t *testing.T) *Client {
 	requests := initialize(t)
 	url := testserver.StartSocketHTTPServer(t, requests)
-
-	client, err := NewClient(&config.Config{GitlabURL: url})
+	gitlabClient, err := gitlabnet.NewGitLabClientFromConfig(&config.Config{
+		GitlabURL: url,
+	})
 	require.NoError(t, err)
-
+	client, err := NewClient(gitlabClient)
+	require.NoError(t, err)
 	return client
 }

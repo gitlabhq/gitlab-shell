@@ -5,10 +5,10 @@ import (
 	"context"
 	"fmt"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
@@ -16,9 +16,9 @@ type logDataKey struct{}
 
 // Command struct encapsulates the necessary components for executing the Discover command.
 type Command struct {
-	Config     *config.Config
-	Args       *commandargs.Shell
-	ReadWriter *readwriter.ReadWriter
+	GitlabClient *client.GitlabNetClient
+	Args         *commandargs.Shell
+	ReadWriter   *readwriter.ReadWriter
 }
 
 // Execute runs the discover command, fetching and displaying user information.
@@ -43,7 +43,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 }
 
 func (c *Command) getUserInfo(ctx context.Context) (*discover.Response, error) {
-	client, err := discover.NewClient(c.Config)
+	client, err := discover.NewClient(c.GitlabClient)
 	if err != nil {
 		return nil, err
 	}

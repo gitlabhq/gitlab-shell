@@ -14,16 +14,22 @@ import (
 
 // GetClient creates and returns a new GitlabNetClient configured with the provided settings.
 func GetClient(config *config.Config) (*client.GitlabNetClient, error) {
-	httpClient, err := config.HTTPClient()
+	return NewGitLabClientFromConfig(config)
+}
+
+// NewGitLabClientFromConfig - this is a temporary constructor, it's purpose is to help facilitate
+// the
+func NewGitLabClientFromConfig(cfg *config.Config) (*client.GitlabNetClient, error) {
+	httpClient, err := client.NewHTTPClientWithOpts(cfg.GitlabURL, cfg.GitlabRelativeURLRoot, cfg.HTTPSettings.CaFile, cfg.HTTPSettings.CaPath, cfg.HTTPSettings.ReadTimeoutSeconds, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if httpClient == nil {
-		return nil, fmt.Errorf("Unsupported protocol")
+	gitlabClient, err := client.NewGitlabNetClient(cfg.HTTPSettings.User, cfg.HTTPSettings.Password, cfg.Secret, httpClient)
+	if err != nil {
+		return nil, err
 	}
-
-	return client.NewGitlabNetClient(config.HTTPSettings.User, config.HTTPSettings.Password, config.Secret, httpClient)
+	return gitlabClient, nil
 }
 
 // ParseJSON decodes JSON from an HTTP response into the provided response interface.

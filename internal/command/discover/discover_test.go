@@ -16,6 +16,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 )
 
 var requests = []testserver.TestRequestHandler{
@@ -93,10 +94,14 @@ func TestExecute(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			buffer := &bytes.Buffer{}
+			glClient, err := gitlabnet.NewGitLabClientFromConfig(&config.Config{
+				GitlabURL: url,
+			})
+			require.NoError(t, err)
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url},
-				Args:       tc.arguments,
-				ReadWriter: &readwriter.ReadWriter{Out: buffer},
+				GitlabClient: glClient,
+				Args:         tc.arguments,
+				ReadWriter:   &readwriter.ReadWriter{Out: buffer},
 			}
 
 			ctxWithLogData, err := cmd.Execute(context.Background())
@@ -139,13 +144,17 @@ func TestFailingExecute(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			buffer := &bytes.Buffer{}
+			glClient, err := gitlabnet.NewGitLabClientFromConfig(&config.Config{
+				GitlabURL: url,
+			})
+			require.NoError(t, err)
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url},
-				Args:       tc.arguments,
-				ReadWriter: &readwriter.ReadWriter{Out: buffer},
+				GitlabClient: glClient,
+				Args:         tc.arguments,
+				ReadWriter:   &readwriter.ReadWriter{Out: buffer},
 			}
 
-			_, err := cmd.Execute(context.Background())
+			_, err = cmd.Execute(context.Background())
 
 			require.Empty(t, buffer.String())
 			require.EqualError(t, err, tc.expectedError)
