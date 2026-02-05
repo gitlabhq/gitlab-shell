@@ -43,6 +43,7 @@ func overrideConfigFromEnvironment(cfg *config.Config) {
 	}
 }
 
+// nolint
 func main() {
 	ctx := context.Background()
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)

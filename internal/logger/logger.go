@@ -13,6 +13,9 @@ import (
 	v2log "gitlab.com/gitlab-org/labkit/v2/log"
 )
 
+// LogOptions - provides all the customization options
+// available to you for the loggers configured from this
+// package.
 type LogOptions struct {
 	LogFile  string
 	LogLevel string
