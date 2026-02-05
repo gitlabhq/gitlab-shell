@@ -4,6 +4,7 @@ package command
 import (
 	"slices"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/discover"
@@ -29,7 +30,12 @@ func New(arguments []string, env sshenv.Env, config *config.Config, readWriter *
 		return nil, err
 	}
 
-	if cmd := Build(args, config, readWriter); cmd != nil {
+	gitlabClient, err := newGitLabClientFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	if cmd := Build(args, config, readWriter, gitlabClient); cmd != nil {
 		return cmd, nil
 	}
 
@@ -43,8 +49,13 @@ func NewWithKey(gitlabKeyID string, env sshenv.Env, config *config.Config, readW
 		return nil, err
 	}
 
+	gitlabClient, err := newGitLabClientFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
 	args.GitlabKeyID = gitlabKeyID
-	if cmd := Build(args, config, readWriter); cmd != nil {
+	if cmd := Build(args, config, readWriter, gitlabClient); cmd != nil {
 		return cmd, nil
 	}
 
@@ -58,8 +69,13 @@ func NewWithKrb5Principal(gitlabKrb5Principal string, env sshenv.Env, config *co
 		return nil, err
 	}
 
+	gitlabClient, err := newGitLabClientFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
 	args.GitlabKrb5Principal = gitlabKrb5Principal
-	if cmd := Build(args, config, readWriter); cmd != nil {
+	if cmd := Build(args, config, readWriter, gitlabClient); cmd != nil {
 		return cmd, nil
 	}
 
@@ -79,8 +95,13 @@ func NewWithUsername(gitlabUsername string, env sshenv.Env, config *config.Confi
 		}
 	}
 
+	gitlabClient, err := newGitLabClientFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
 	args.GitlabUsername = gitlabUsername
-	if cmd := Build(args, config, readWriter); cmd != nil {
+	if cmd := Build(args, config, readWriter, gitlabClient); cmd != nil {
 		return cmd, nil
 	}
 
@@ -98,8 +119,26 @@ func Parse(arguments []string, env sshenv.Env) (*commandargs.Shell, error) {
 	return args, nil
 }
 
+func newGitLabClientFromConfig(cfg *config.Config) (*client.GitlabNetClient, error) {
+	httpClient, err := client.NewHTTPClientWithOpts(cfg.GitlabURL, cfg.GitlabRelativeURLRoot, cfg.HTTPSettings.CaFile, cfg.HTTPSettings.CaPath, cfg.HTTPSettings.ReadTimeoutSeconds, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	gitlabClient, err := client.NewGitlabNetClient(cfg.HTTPSettings.User, cfg.HTTPSettings.Password, cfg.Secret, httpClient)
+	if err != nil {
+		return nil, err
+	}
+	return gitlabClient, nil
+}
+
 // Build constructs a command based on the provided arguments, config, and readWriter
-func Build(args *commandargs.Shell, config *config.Config, readWriter *readwriter.ReadWriter) command.Command {
+func Build(
+	args *commandargs.Shell,
+	config *config.Config,
+	readWriter *readwriter.ReadWriter,
+	gitlabClient *client.GitlabNetClient,
+) command.Command {
 	switch args.CommandType {
 	case commandargs.Discover:
 		return &discover.Command{Config: config, Args: args, ReadWriter: readWriter}
