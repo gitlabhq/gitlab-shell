@@ -7,19 +7,17 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/labkit/log"
-
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
 func TestConfigure(t *testing.T) {
 	tmpFile := createTempFile(t)
 
-	config := config.Config{
-		LogFile:   tmpFile,
-		LogFormat: "json",
+	config := LogOptions{
+		LogFile: tmpFile,
+		LogFmt:  "json",
 	}
 
-	closer := Configure(&config)
+	closer := Configure(config)
 	defer closer.Close()
 
 	log.Info("this is a test")
@@ -36,13 +34,13 @@ func TestConfigure(t *testing.T) {
 func TestConfigureWithDebugLogLevel(t *testing.T) {
 	tmpFile := createTempFile(t)
 
-	config := config.Config{
-		LogFile:   tmpFile,
-		LogFormat: "json",
-		LogLevel:  "debug",
+	config := LogOptions{
+		LogFile:  tmpFile,
+		LogFmt:   "json",
+		LogLevel: "debug",
 	}
 
-	closer := Configure(&config)
+	closer := Configure(config)
 	defer closer.Close()
 
 	log.WithFields(log.Fields{}).Debug("debug log message")
@@ -55,12 +53,12 @@ func TestConfigureWithDebugLogLevel(t *testing.T) {
 func TestConfigureWithPermissionError(t *testing.T) {
 	tempDir := t.TempDir()
 
-	config := config.Config{
-		LogFile:   tempDir,
-		LogFormat: "json",
+	config := LogOptions{
+		LogFile: tempDir,
+		LogFmt:  "json",
 	}
 
-	closer := Configure(&config)
+	closer := Configure(config)
 	defer closer.Close()
 
 	log.Info("this is a test")
@@ -69,12 +67,12 @@ func TestConfigureWithPermissionError(t *testing.T) {
 func TestLogInUTC(t *testing.T) {
 	tmpFile := createTempFile(t)
 
-	config := config.Config{
-		LogFile:   tmpFile,
-		LogFormat: "json",
+	config := LogOptions{
+		LogFile: tmpFile,
+		LogFmt:  "json",
 	}
 
-	closer := Configure(&config)
+	closer := Configure(config)
 	defer closer.Close()
 
 	log.Info("this is a test")
@@ -101,13 +99,13 @@ func createTempFile(t *testing.T) string {
 
 func TestConfigureLabkitV2Log(t *testing.T) {
 	tmpFile := createTempFile(t)
-	config := config.Config{
-		LogFile:   tmpFile,
-		LogFormat: "json",
-		LogLevel:  "debug",
+	config := LogOptions{
+		LogFile:  tmpFile,
+		LogFmt:   "json",
+		LogLevel: "debug",
 	}
 
-	logger := ConfigureLogger(&config)
+	logger := ConfigureLogger(config)
 	logger.Info("this is a test")
 	logger.Debug("debug log message")
 

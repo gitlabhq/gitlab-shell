@@ -11,14 +11,18 @@ import (
 
 	"gitlab.com/gitlab-org/labkit/log"
 	v2log "gitlab.com/gitlab-org/labkit/v2/log"
-
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
+
+type LogOptions struct {
+	LogFile  string
+	LogLevel string
+	LogFmt   string
+}
 
 // ConfigureLogger - gitlab-sshd's log output can be configured to text as per the documentation:
 // https://docs.gitlab.com/omnibus/settings/logs/#json-logging
 // This is currently controlled by the GITLAB_LOG_FORMAT environment variable.
-func ConfigureLogger(cfg *config.Config) *slog.Logger {
+func ConfigureLogger(cfg LogOptions) *slog.Logger {
 	logConfig := &v2log.Config{
 		LogLevel: parseLogLevel(cfg.LogLevel),
 	}
@@ -89,9 +93,9 @@ func logFile(inFile string) string {
 	return inFile
 }
 
-func buildOpts(cfg *config.Config) []log.LoggerOption {
+func buildOpts(cfg LogOptions) []log.LoggerOption {
 	return []log.LoggerOption{
-		log.WithFormatter(logFmt(cfg.LogFormat)),
+		log.WithFormatter(logFmt(cfg.LogFmt)),
 		log.WithOutputName(logFile(cfg.LogFile)),
 		log.WithTimezone(time.UTC),
 		log.WithLogLevel(logLevel(cfg.LogLevel)),
@@ -101,7 +105,7 @@ func buildOpts(cfg *config.Config) []log.LoggerOption {
 // Configure configures the logging singleton for operation inside a remote TTY (like SSH). In this
 // mode an empty LogFile is not accepted and syslog is used as a fallback when LogFile could not be
 // opened for writing.
-func Configure(cfg *config.Config) io.Closer {
+func Configure(cfg LogOptions) io.Closer {
 	var closer io.Closer = io.NopCloser(nil)
 	err := fmt.Errorf("no logfile specified")
 
