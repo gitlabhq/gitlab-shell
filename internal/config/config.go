@@ -8,12 +8,10 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
 
-	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitaly"
 )
 
@@ -95,10 +93,6 @@ type Config struct {
 	Server         ServerConfig       `yaml:"sshd"`
 	LFSConfig      LFSConfig          `yaml:"lfs"`
 	PATConfig      PATConfig          `yaml:"pat"`
-
-	httpClient     *client.HTTPClient
-	httpClientErr  error
-	httpClientOnce sync.Once
 
 	GitalyClient gitaly.Client
 }
