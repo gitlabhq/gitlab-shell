@@ -59,7 +59,10 @@ func main() {
 			))
 		}
 	}
-	log, logCloser, err := logger.ConfigureLogger(cfg)
+	log, logCloser, err := logger.ConfigureLogger(&logger.LogOptions{
+		LogLevel: cfg.LogLevel,
+		LogFile:  cfg.LogFile,
+	})
 	if err != nil {
 		log.ErrorContext(ctx, "failed to log to file, reverting to stderr", slog.String(fields.ErrorMessage, err.Error()))
 	} else {

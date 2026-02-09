@@ -54,8 +54,13 @@ func execute(readWriter *readwriter.ReadWriter) (int, error) {
 		return exitCodeFailure, fmt.Errorf("failed to read config, exiting")
 	}
 
-	logCloser := logger.Configure(config)
-	defer func() { _ = logCloser.Close() }()
+	_, logCloser, err := logger.ConfigureLogger(&logger.LogOptions{
+		LogLevel: config.LogLevel,
+		LogFile:  config.LogFile,
+	})
+	if err != nil {
+		defer logCloser.Close() //nolint
+	}
 
 	cmd, err := cmd.New(os.Args[1:], config, readWriter)
 	if err != nil {

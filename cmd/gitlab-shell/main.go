@@ -3,14 +3,15 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"reflect"
 
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
+	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/fips"
-	"gitlab.com/gitlab-org/labkit/log"
 
 	shellCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
@@ -50,15 +51,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	logCloser := logger.Configure(config)
-
+	log, closer, err := logger.ConfigureLogger(&logger.LogOptions{
+		LogLevel: config.LogLevel,
+		LogFile:  config.LogFile,
+	})
+	if err != nil {
+		log.Error("error occurred configuring logger", slog.String(fields.ErrorMessage, err.Error()))
+	}
 	env := sshenv.NewFromEnv()
 	cmd, err := shellCmd.New(os.Args[1:], env, config, readWriter)
 	if err != nil {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment
 		_, _ = fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
-		_ = logCloser.Close()
+		_ = closer.Close()
 		os.Exit(1)
 	}
 
@@ -67,21 +73,20 @@ func main() {
 	config.GitalyClient.InitSidechannelRegistry(ctx)
 
 	cmdName := reflect.TypeOf(cmd).String()
-	ctxlog := log.ContextLogger(ctx)
-	ctxlog.WithFields(log.Fields{"env": env, "command": cmdName}).Info("gitlab-shell: main: executing command")
+	log.Info("gitlab-shell: main: executing command", slog.Any("env", env), slog.String("command", cmdName))
 	fips.Check()
 
 	if _, err := cmd.Execute(ctx); err != nil {
-		ctxlog.WithError(err).Warn("gitlab-shell: main: command execution failed")
+		log.WarnContext(ctx, "gitlab-shell: main: command execution failed", slog.String(fields.ErrorMessage, err.Error()))
 		if grpcstatus.Convert(err).Code() != grpccodes.Internal {
 			console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
 		}
 		finished()
-		_ = logCloser.Close()
+		_ = closer.Close()
 		os.Exit(1)
 	}
 
-	ctxlog.Info("gitlab-shell: main: command executed successfully")
+	log.InfoContext(ctx, "gitlab-shell: main: command executed successfully")
 	finished()
-	_ = logCloser.Close()
+	_ = closer.Close()
 }
