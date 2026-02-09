@@ -69,6 +69,46 @@ func NewGitlabNetClient(
 	}, nil
 }
 
+// ClientOpts - explicitly maps all of the
+// settings required to spin up a new GitLabClient
+type ClientOpts struct {
+	GitlabURL             string
+	GitlabRelativeURLRoot string
+	CAFile                string
+	CAPath                string
+	ReadTimeoutSeconds    uint64
+
+	User     string
+	Password string
+	Secret   string
+}
+
+// New creates a new GitLab client with the given options.
+func New(opts ClientOpts) (*GitlabNetClient, error) {
+	httpClient, err := NewHTTPClientWithOpts(
+		opts.GitlabURL,
+		opts.GitlabRelativeURLRoot,
+		opts.CAFile,
+		opts.CAPath,
+		opts.ReadTimeoutSeconds,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if httpClient == nil {
+		return nil, fmt.Errorf("unsupported protocol")
+	}
+
+	return &GitlabNetClient{
+		httpClient: httpClient,
+		user:       opts.User,
+		password:   opts.Password,
+		secret:     opts.Secret,
+	}, nil
+}
+
 // SetUserAgent overrides the default user agent for the User-Agent header field
 // for subsequent requests for the GitlabNetClient
 func (c *GitlabNetClient) SetUserAgent(ua string) {

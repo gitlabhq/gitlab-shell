@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/healthcheck"
 )
 
 var (
@@ -23,14 +23,14 @@ type Command struct {
 
 // Execute performs the health check and outputs the result.
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
-	response, err := c.runCheck(ctx)
+	healthCheck, err := c.runCheck(ctx)
 	if err != nil {
 		return ctx, fmt.Errorf("%v: FAILED - %v", apiMessage, err)
 	}
 
 	_, _ = fmt.Fprintf(c.ReadWriter.Out, "%v: OK\n", apiMessage)
 
-	if !response.Redis {
+	if !healthCheck.IsRedisHealthy {
 		return ctx, fmt.Errorf("%v: FAILED", redisMessage)
 	}
 
@@ -38,16 +38,31 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func (c *Command) runCheck(ctx context.Context) (*healthcheck.Response, error) {
-	client, err := healthcheck.NewClient(c.Config)
+type checkResponse struct {
+	IsRedisHealthy bool
+}
+
+func (c *Command) runCheck(ctx context.Context) (*checkResponse, error) {
+	client, err := client.New(client.ClientOpts{
+		GitlabURL:             c.Config.GitlabURL,
+		GitlabRelativeURLRoot: c.Config.GitlabRelativeURLRoot,
+		CAFile:                c.Config.HTTPSettings.CaFile,
+		CAPath:                c.Config.HTTPSettings.CaPath,
+		ReadTimeoutSeconds:    c.Config.HTTPSettings.ReadTimeoutSeconds,
+		User:                  c.Config.HTTPSettings.User,
+		Password:              c.Config.HTTPSettings.Password,
+		Secret:                c.Config.Secret,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := client.Check(ctx)
+	response, err := client.CheckHealth(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return response, nil
+	return &checkResponse{
+		IsRedisHealthy: response.Redis,
+	}, nil
 }

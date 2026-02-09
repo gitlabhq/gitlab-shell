@@ -1,4 +1,4 @@
-package healthcheck
+package client
 
 import (
 	"context"
@@ -6,10 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-
 	"github.com/stretchr/testify/require"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 )
 
 var (
@@ -22,7 +20,7 @@ var (
 		},
 	}
 
-	testResponse = &Response{
+	testResponse = &HealthResponse{
 		APIVersion:     "v4",
 		GitlabVersion:  "v12.0.0-ee",
 		GitlabRevision: "3b13818e8330f68625d80d9bf5d8049c41fbe197",
@@ -31,18 +29,13 @@ var (
 )
 
 func TestCheck(t *testing.T) {
-	client := setup(t)
+	url := testserver.StartSocketHTTPServer(t, requests)
+	client, err := New(ClientOpts{
+		GitlabURL: url,
+	})
+	require.NoError(t, err)
 
-	result, err := client.Check(context.Background())
+	result, err := client.CheckHealth(context.Background())
 	require.NoError(t, err)
 	require.Equal(t, testResponse, result)
-}
-
-func setup(t *testing.T) *Client {
-	url := testserver.StartSocketHTTPServer(t, requests)
-
-	client, err := NewClient(&config.Config{GitlabURL: url})
-	require.NoError(t, err)
-
-	return client
 }

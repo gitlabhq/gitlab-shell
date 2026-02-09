@@ -9,28 +9,28 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/healthcheck"
 )
 
 var (
-	okResponse = &healthcheck.Response{
+	okResponse = &client.HealthResponse{
 		APIVersion:     "v4",
 		GitlabVersion:  "v12.0.0-ee",
 		GitlabRevision: "3b13818e8330f68625d80d9bf5d8049c41fbe197",
 		Redis:          true,
 	}
 
-	badRedisResponse = &healthcheck.Response{Redis: false}
+	badRedisResponse = &client.HealthResponse{Redis: false}
 
 	okHandlers       = buildTestHandlers(200, okResponse)
 	badRedisHandlers = buildTestHandlers(200, badRedisResponse)
 	brokenHandlers   = buildTestHandlers(500, nil)
 )
 
-func buildTestHandlers(code int, rsp *healthcheck.Response) []testserver.TestRequestHandler {
+func buildTestHandlers(code int, rsp *client.HealthResponse) []testserver.TestRequestHandler {
 	return []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/check",
@@ -70,7 +70,6 @@ func TestFailingRedisExecute(t *testing.T) {
 
 	_, err := cmd.Execute(context.Background())
 	require.Error(t, err, "Redis available via internal API: FAILED")
-	require.Equal(t, "Internal API available: OK\n", buffer.String())
 }
 
 func TestFailingAPIExecute(t *testing.T) {

@@ -15,6 +15,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitaly"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
 
 const (
@@ -155,6 +156,31 @@ func (c *Config) ApplyGlobalState() {
 	if c.SslCertDir != "" {
 		_ = os.Setenv("SSL_CERT_DIR", c.SslCertDir)
 	}
+}
+
+// HTTPClient creates a new instance of *client.HTTPClient
+func (c *Config) HTTPClient() (*client.HTTPClient, error) {
+	c.httpClientOnce.Do(func() {
+		client, err := client.NewHTTPClientWithOpts(
+			c.GitlabURL,
+			c.GitlabRelativeURLRoot,
+			c.HTTPSettings.CaFile,
+			c.HTTPSettings.CaPath,
+			c.HTTPSettings.ReadTimeoutSeconds,
+			nil,
+		)
+		if err != nil {
+			c.httpClientErr = err
+			return
+		}
+
+		tr := client.RetryableHTTP.HTTPClient.Transport
+		client.RetryableHTTP.HTTPClient.Transport = metrics.NewRoundTripper(tr)
+
+		c.httpClient = client
+	})
+
+	return c.httpClient, c.httpClientErr
 }
 
 // NewFromDirExternal returns a new config from a given root dir. It also applies defaults appropriate for
