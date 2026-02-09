@@ -14,7 +14,14 @@ import (
 
 // GetClient creates and returns a new GitlabNetClient configured with the provided settings.
 func GetClient(config *config.Config) (*client.GitlabNetClient, error) {
-	httpClient, err := config.HTTPClient()
+	httpClient, err := client.NewHTTPClientWithOpts(
+		config.GitlabURL,
+		config.GitlabRelativeURLRoot,
+		config.HTTPSettings.CaFile,
+		config.HTTPSettings.CaPath,
+		config.HTTPSettings.ReadTimeoutSeconds,
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}
