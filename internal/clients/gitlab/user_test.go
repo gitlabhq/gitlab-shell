@@ -62,7 +62,7 @@ func TestGetUser(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		gitlabAPI := fakes.New(fakes.WithPort(10000))
+		gitlabAPI := fakes.New()
 		if tc.endpoint != nil {
 			gitlabAPI.Endpoint(tc.endpoint)
 		}
