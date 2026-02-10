@@ -91,7 +91,7 @@ func parseHostCerts(hostKeys []ssh.Signer, certFiles []string) map[string]*ssh.C
 
 			hostKeys[index] = certSigner
 		} else {
-			slog.Error("no matching private key for certificate", slog.String(fields.ErrorMessage, err.Error()), slog.String("filename", filename))
+			slog.Error("no matching private key for certificate", slog.String("filename", filename))
 		}
 	}
 

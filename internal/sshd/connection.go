@@ -4,6 +4,7 @@ package sshd
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 	"strings"
@@ -170,12 +171,12 @@ func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn
 
 			status, payload, err := sconn.SendRequest(KeepAliveMsg, true, nil)
 			if err != nil {
-				slog.ErrorContext(ctx, "Error occurred while sending request :%v", err)
+				slog.ErrorContext(ctx, fmt.Sprintf("Error occurred while sending request :%v", err))
 				return
 			}
 
 			if status {
-				slog.DebugContext(ctx, "connection: sendKeepAliveMsg: payload: %v", string(payload))
+				slog.DebugContext(ctx, fmt.Sprintf("connection: sendKeepAliveMsg: payload: %v", string(payload)))
 			}
 		}
 	}

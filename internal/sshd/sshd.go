@@ -240,7 +240,6 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 		slog.Float64("duration_s", time.Since(started).Seconds()),
 		slog.Int64("written_bytes", logData.WrittenBytes),
 		slog.Any("meta", logData.Meta))
-
 }
 
 func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {

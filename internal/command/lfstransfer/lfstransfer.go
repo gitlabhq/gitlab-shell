@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"log/slog"
 
 	"github.com/charmbracelet/git-lfs-transfer/transfer"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
@@ -14,7 +13,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/lfsauthenticate"
-	"gitlab.com/gitlab-org/labkit/fields"
+	"gitlab.com/gitlab-org/labkit/log"
 )
 
 var (
@@ -59,7 +58,8 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		accessResponse.RootNamespaceID,
 	))
 
-	slog.InfoContext(ctx, "processing action", slog.Any("action", action))
+	log.WithContextFields(ctxWithLogData, log.Fields{"action": action}).Info("processing action")
+
 	auth, err := c.authenticate(ctx, operation, repo, accessResponse.UserID)
 	if err != nil {
 		return ctxWithLogData, err
@@ -69,19 +69,21 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 }
 
 func (c *Command) processTransfer(ctx context.Context, operation string, action commandargs.CommandType, auth *GitlabAuthentication) (context.Context, error) {
+	logger := NewWrappedLoggerForGitLFSTransfer(ctx)
+
 	backend, err := NewGitlabBackend(ctx, c.Config, c.Args, auth)
 	if err != nil {
 		return ctx, err
 	}
 
-	handler := transfer.NewPktline(c.ReadWriter.In, c.ReadWriter.Out)
+	handler := transfer.NewPktline(c.ReadWriter.In, c.ReadWriter.Out, logger)
 
 	if err := c.sendCapabilities(ctx, handler); err != nil {
 		return ctx, err
 	}
 
-	p := transfer.NewProcessor(handler, backend)
-	defer slog.InfoContext(ctx, "done processing commands", slog.Any("action", action))
+	p := transfer.NewProcessor(handler, backend, logger)
+	defer log.WithContextFields(ctx, log.Fields{"action": action}).Info("done processing commands")
 
 	switch operation {
 	case transfer.DownloadOperation:
@@ -96,13 +98,12 @@ func (c *Command) processTransfer(ctx context.Context, operation string, action 
 func (c *Command) sendCapabilities(ctx context.Context, handler *transfer.Pktline) error {
 	for _, cap := range capabilities {
 		if err := handler.WritePacketText(cap); err != nil {
-			slog.ErrorContext(ctx, "error sending capability", slog.String(fields.ErrorMessage, err.Error()),
-				slog.String("capability", cap))
+			log.WithContextFields(ctx, log.Fields{"capability": cap}).WithError(err).Error("error sending capability")
 		}
 	}
 
 	if err := handler.WriteFlush(); err != nil {
-		slog.ErrorContext(ctx, "error flushing capabilities", slog.String(fields.ErrorMessage, err.Error()))
+		log.WithContextFields(ctx, log.Fields{}).WithError(err).Error("error flushing capabilities")
 		return err
 	}
 
