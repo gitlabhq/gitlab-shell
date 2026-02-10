@@ -9,8 +9,8 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"google.golang.org/grpc"
 
-	gitalyauth "gitlab.com/gitlab-org/gitaly/v16/auth"
-	gitalyclient "gitlab.com/gitlab-org/gitaly/v16/client"
+	gitalyauth "gitlab.com/gitlab-org/gitaly/v18/auth"
+	gitalyclient "gitlab.com/gitlab-org/gitaly/v18/client"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	grpccorrelation "gitlab.com/gitlab-org/labkit/correlation/grpc"
 	"gitlab.com/gitlab-org/labkit/log"
@@ -97,9 +97,7 @@ func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.Cli
 
 	serviceName = fmt.Sprintf("%s-%s", serviceName, cmd.ServiceName)
 
-	connOpts := gitalyclient.DefaultDialOpts
-	connOpts = append(
-		connOpts,
+	grpcOpts := []grpc.DialOption{
 		grpc.WithChainStreamInterceptor(
 			grpctracing.StreamClientTracingInterceptor(),
 			grpc_prometheus.StreamClientInterceptor,
@@ -115,7 +113,6 @@ func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.Cli
 				grpccorrelation.WithClientName(serviceName),
 			),
 		),
-
 		// In https://gitlab.com/groups/gitlab-org/-/epics/8971, we added DNS discovery support to Praefect. This was
 		// done by making two changes:
 		// - Configure client-side round-robin load-balancing in client dial options. We added that as a default option
@@ -125,13 +122,17 @@ func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.Cli
 		// Afterward, workhorse can detect and handle DNS discovery automatically. The user needs to setup and set
 		// Gitaly address to something like "dns:gitaly.service.dc1.consul"
 		gitalyclient.WithGitalyDNSResolver(gitalyclient.DefaultDNSResolverBuilderConfig()),
-	)
+	}
 
 	if cmd.Token != "" {
-		connOpts = append(connOpts,
+		grpcOpts = append(grpcOpts,
 			grpc.WithPerRPCCredentials(gitalyauth.RPCCredentialsV2(cmd.Token)),
 		)
 	}
 
-	return gitalyclient.DialSidechannel(ctx, cmd.Address, c.SidechannelRegistry, connOpts)
+	connOpts := []gitalyclient.DialOption{
+		gitalyclient.WithGrpcOptions(grpcOpts),
+	}
+
+	return gitalyclient.DialSidechannel(ctx, cmd.Address, c.SidechannelRegistry, connOpts...)
 }
