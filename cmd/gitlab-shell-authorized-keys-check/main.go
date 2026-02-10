@@ -2,7 +2,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
 	cmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell-authorized-keys-check/command"
@@ -12,6 +14,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/console"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
+	"gitlab.com/gitlab-org/labkit/fields"
 )
 
 var (
@@ -44,6 +47,7 @@ func main() {
 }
 
 func execute(readWriter *readwriter.ReadWriter) (int, error) {
+	ctx := context.Background()
 	executable, err := executable.New(executable.AuthorizedKeysCheck)
 	if err != nil {
 		return exitCodeFailure, fmt.Errorf("failed to determine executable, exiting")
@@ -54,8 +58,18 @@ func execute(readWriter *readwriter.ReadWriter) (int, error) {
 		return exitCodeFailure, fmt.Errorf("failed to read config, exiting")
 	}
 
-	logCloser := logger.Configure(config)
-	defer func() { _ = logCloser.Close() }()
+	log, logCloser, err := logger.ConfigureLogger(config)
+	if err != nil {
+		log.ErrorContext(ctx, "failed to log to file, reverting to stderr", slog.String(fields.ErrorMessage, err.Error()))
+	} else {
+		// nolint
+		defer func() {
+			if err = logCloser.Close(); err != nil {
+				log.ErrorContext(ctx, "failed to close log file", slog.String(fields.ErrorMessage, err.Error()))
+			}
+		}()
+	}
+	slog.SetDefault(log)
 
 	cmd, err := cmd.New(os.Args[1:], config, readWriter)
 	if err != nil {

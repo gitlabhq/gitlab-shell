@@ -2,15 +2,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"reflect"
 
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
+	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/fips"
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 
 	shellCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
@@ -29,7 +33,9 @@ var (
 	BuildTime = "19700101.000000" // Set at build time in the Makefile
 )
 
-func main() {
+// nolint
+func run() error {
+	ctx := context.Background()
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)
 
 	readWriter := &readwriter.ReadWriter{
@@ -41,16 +47,27 @@ func main() {
 	executable, err := executable.New(executable.GitlabShell)
 	if err != nil {
 		_, _ = fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
-		os.Exit(1)
+		return err
 	}
 
 	config, err := config.NewFromDirExternal(executable.RootDir)
 	if err != nil {
 		_, _ = fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting:", err)
-		os.Exit(1)
+		return err
 	}
 
-	logCloser := logger.Configure(config)
+	logger, logCloser, err := logger.ConfigureLogger(config)
+	if err != nil {
+		logger.ErrorContext(ctx, "failed to log to file, reverting to stderr", slog.String(fields.ErrorMessage, err.Error()))
+	} else {
+		// nolint
+		defer func() {
+			if err = logCloser.Close(); err != nil {
+				logger.ErrorContext(ctx, "failed to close log file", slog.String(fields.ErrorMessage, err.Error()))
+			}
+		}()
+	}
+	slog.SetDefault(logger)
 
 	env := sshenv.NewFromEnv()
 	cmd, err := shellCmd.New(os.Args[1:], env, config, readWriter)
@@ -58,8 +75,7 @@ func main() {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment
 		_, _ = fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
-		_ = logCloser.Close()
-		os.Exit(1)
+		return err
 	}
 
 	ctx, finished := command.Setup(executable.Name, config)
@@ -67,21 +83,31 @@ func main() {
 	config.GitalyClient.InitSidechannelRegistry(ctx)
 
 	cmdName := reflect.TypeOf(cmd).String()
-	ctxlog := log.ContextLogger(ctx)
-	ctxlog.WithFields(log.Fields{"env": env, "command": cmdName}).Info("gitlab-shell: main: executing command")
+	ctx = log.WithFields(ctx,
+		slog.String(fields.CorrelationID, correlation.ExtractFromContext(ctx)),
+		slog.Any("env", env),
+		slog.String("command", cmdName),
+	)
+
+	logger.InfoContext(ctx, "gitlab-shell: main: executing command")
 	fips.Check()
 
 	if _, err := cmd.Execute(ctx); err != nil {
-		ctxlog.WithError(err).Warn("gitlab-shell: main: command execution failed")
+		logger.WarnContext(ctx, "gitlab-shell: main: command execution failed", slog.String(fields.ErrorMessage, err.Error()))
 		if grpcstatus.Convert(err).Code() != grpccodes.Internal {
 			console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
 		}
 		finished()
-		_ = logCloser.Close()
-		os.Exit(1)
+		return err
 	}
 
-	ctxlog.Info("gitlab-shell: main: command executed successfully")
+	logger.InfoContext(ctx, "gitlab-shell: main: command executed successfully")
 	finished()
-	_ = logCloser.Close()
+	return nil
+}
+
+func main() {
+	if err := run(); err != nil {
+		os.Exit(1)
+	}
 }

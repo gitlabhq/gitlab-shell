@@ -70,6 +70,8 @@ func main() {
 			}
 		}()
 	}
+	slog.SetDefault(log)
+
 	log.InfoContext(ctx, "gitlab-sshd starting up...")
 
 	overrideConfigFromEnvironment(cfg)
