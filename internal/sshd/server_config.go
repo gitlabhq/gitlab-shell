@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -17,8 +18,9 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedcerts"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedkeys"
 
+	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/fips"
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 type serverConfig struct {
@@ -35,12 +37,12 @@ func parseHostKeys(keyFiles []string) []ssh.Signer {
 	for _, filename := range keyFiles {
 		keyRaw, err := os.ReadFile(filepath.Clean(filename))
 		if err != nil {
-			log.WithError(err).WithFields(log.Fields{"filename": filename}).Error("Failed to read host key")
+			slog.Error("Failed to read host key", slog.String(fields.ErrorMessage, err.Error()), slog.String("filename", filename))
 			continue
 		}
 		key, err := ssh.ParsePrivateKey(keyRaw)
 		if err != nil {
-			log.WithError(err).WithFields(log.Fields{"filename": filename}).Error("Failed to parse host key")
+			slog.Error("Failed to parse host key", slog.String(fields.ErrorMessage, err.Error()), slog.String("filename", filename))
 			continue
 		}
 
@@ -61,18 +63,18 @@ func parseHostCerts(hostKeys []ssh.Signer, certFiles []string) map[string]*ssh.C
 	for _, filename := range certFiles {
 		keyRaw, err := os.ReadFile(filepath.Clean(filename))
 		if err != nil {
-			log.WithError(err).WithFields(log.Fields{"filename": filename}).Error("failed to read host certificate")
+			slog.Error("failed to read host certificate", slog.String(fields.ErrorMessage, err.Error()), slog.String("filename", filename))
 			continue
 		}
 		publicKey, _, _, _, err := ssh.ParseAuthorizedKey(keyRaw)
 		if err != nil {
-			log.WithError(err).WithFields(log.Fields{"filename": filename}).Error("failed to parse host certificate")
+			slog.Error("failed to parse host certificate", slog.String(fields.ErrorMessage, err.Error()), slog.String("filename", filename))
 			continue
 		}
 
 		cert, ok := publicKey.(*ssh.Certificate)
 		if !ok {
-			log.WithFields(log.Fields{"filename": filename}).Error("failed to decode host certificate")
+			slog.Error("failed to decode host certificate", slog.String(fields.ErrorMessage, err.Error()), slog.String("filename", filename))
 			continue
 		}
 
@@ -83,13 +85,13 @@ func parseHostCerts(hostKeys []ssh.Signer, certFiles []string) map[string]*ssh.C
 
 			certSigner, err := ssh.NewCertSigner(cert, hostKeys[index])
 			if err != nil {
-				log.WithError(err).WithFields(log.Fields{"filename": filename}).Error("the host certificate doesn't match the host private key")
+				slog.Error("the host certificate doesn't match the host private key", slog.String(fields.ErrorMessage, err.Error()), slog.String("filename", filename))
 				continue
 			}
 
 			hostKeys[index] = certSigner
 		} else {
-			log.WithFields(log.Fields{"filename": filename}).Errorf("no matching private key for certificate %s", filename)
+			slog.Error("no matching private key for certificate", slog.String(fields.ErrorMessage, err.Error()), slog.String("filename", filename))
 		}
 	}
 
@@ -161,28 +163,24 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 		return nil, err
 	}
 
-	logger := log.WithContextFields(ctx,
-		log.Fields{
-			"ssh_user":               user,
-			"public_key_fingerprint": ssh.FingerprintSHA256(cert),
-			"signing_ca_fingerprint": fingerprint,
-			"certificate_identity":   cert.KeyId,
-		},
+	ctx = log.WithFields(ctx,
+		slog.String("ssh_user", user),
+		slog.String("public_key_fingerprint", ssh.FingerprintSHA256(cert)),
+		slog.String("signing_ca_fingerprint", fingerprint),
+		slog.String("certificate_identity", cert.KeyId),
 	)
 
 	res, err := s.authorizedCertsClient.GetByKey(ctx, cert.KeyId, strings.TrimPrefix(fingerprint, "SHA256:"))
 	if err != nil {
-		logger.WithError(err).Warn("user certificate is not signed by a trusted key")
-
+		slog.WarnContext(ctx, "user certificate is not signed by a trusted key", slog.String(fields.ErrorMessage, err.Error()))
 		return nil, err
 	}
 
-	logger.WithFields(
-		log.Fields{
-			"certificate_username":  res.Username,
-			"certificate_namespace": res.Namespace,
-		},
-	).Info("user certificate is signed by a trusted key")
+	ctx = log.WithFields(ctx,
+		slog.String("certificate_username", res.Username),
+		slog.String("certificate_namespace", res.Namespace),
+	)
+	slog.InfoContext(ctx, "user certificate is signed by a trusted key")
 
 	return &ssh.Permissions{
 		Extensions: map[string]string{
@@ -220,9 +218,7 @@ func (s *serverConfig) get(parentCtx context.Context) *ssh.ServerConfig {
 		PublicKeyCallback: func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
 			ctx, cancel := context.WithTimeout(parentCtx, 10*time.Second)
 			defer cancel()
-
-			log.WithContextFields(ctx, log.Fields{"ssh_key_type": key.Type()}).Info("public key authentication")
-
+			slog.InfoContext(ctx, "public key authentication", slog.String("ssh_key_type", key.Type()))
 			cert, ok := key.(*ssh.Certificate)
 			if ok {
 				return s.handleUserCertificate(ctx, conn.User(), cert)

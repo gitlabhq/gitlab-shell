@@ -2,7 +2,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
 	checkCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell-check/command"
@@ -11,6 +13,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
+	"gitlab.com/gitlab-org/labkit/fields"
 )
 
 var (
@@ -25,6 +28,7 @@ func main() {
 }
 
 func run() int {
+	ctx := context.Background()
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)
 
 	readWriter := &readwriter.ReadWriter{
@@ -51,8 +55,18 @@ func run() int {
 		return code
 	}
 
-	logCloser := logger.Configure(config)
-	defer logCloser.Close() //nolint:errcheck
+	log, logCloser, err := logger.ConfigureLogger(config)
+	if err != nil {
+		log.ErrorContext(ctx, "failed to log to file, reverting to stderr", slog.String(fields.ErrorMessage, err.Error()))
+	} else {
+		// nolint
+		defer func() {
+			if err = logCloser.Close(); err != nil {
+				log.ErrorContext(ctx, "failed to close log file", slog.String(fields.ErrorMessage, err.Error()))
+			}
+		}()
+	}
+	slog.SetDefault(log)
 
 	cmd, err := checkCmd.New(config, readWriter)
 	if code := exitOnError(err, "Failed to create command"); code != 0 {

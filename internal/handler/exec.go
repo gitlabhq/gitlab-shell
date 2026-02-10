@@ -4,6 +4,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 
@@ -18,7 +19,9 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 
 	pb "gitlab.com/gitlab-org/gitaly/v16/proto/go/gitalypb"
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/fields"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 // GitalyHandlerFunc implementations are responsible for making
@@ -68,18 +71,17 @@ func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHan
 	// We leave the connection open for future reuse
 	conn, err := gc.getConn(ctx)
 	if err != nil {
-		log.ContextLogger(ctx).WithError(fmt.Errorf("RunGitalyCommand: %v", err)).Error("Failed to get connection to execute Git command")
-
+		slog.ErrorContext(ctx, "Failed to get connection to execute Git command", slog.String(fields.ErrorMessage, fmt.Errorf("RunGitalyCommand: %v", err).Error()))
 		return err
 	}
 
 	childCtx := withOutgoingMetadata(ctx, gc.Response.Gitaly.Features)
-	ctxlog := log.ContextLogger(childCtx)
+
+	ctx = log.WithFields(ctx, slog.String(fields.CorrelationID, correlation.ExtractFromContext(childCtx)))
 	exitStatus, err := handler(childCtx, conn)
 
 	if err != nil {
-		ctxlog.WithError(err).WithFields(log.Fields{"exit_status": exitStatus}).Error("Failed to execute Git command")
-
+		slog.ErrorContext(ctx, "Failed to execute Git command", slog.String(fields.ErrorMessage, err.Error()), slog.Int("exit_status", int(exitStatus)))
 		if grpcstatus.Code(err) == grpccodes.Unavailable {
 			return processGitalyError(err)
 		}
@@ -110,19 +112,17 @@ func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repo
 
 // LogExecution logs the execution of a Git command
 func (gc *GitalyCommand) LogExecution(ctx context.Context, repository *pb.Repository, env sshenv.Env) {
-	fields := log.Fields{
-		"command":         gc.Command.ServiceName,
-		"gl_project_path": repository.GlProjectPath,
-		"gl_repository":   repository.GlRepository,
-		"user_id":         gc.Response.UserID,
-		"username":        gc.Response.Username,
-		"git_protocol":    env.GitProtocolVersion,
-		"remote_ip":       env.RemoteAddr,
-		"gl_key_type":     gc.Response.KeyType,
-		"gl_key_id":       gc.Response.KeyID,
-	}
-
-	log.WithContextFields(ctx, fields).Info("executing git command")
+	slog.InfoContext(ctx, "executing git command",
+		slog.String("command", gc.Command.ServiceName),
+		slog.String("gl_project_path", repository.GlProjectPath),
+		slog.String("gl_repository", repository.GlRepository),
+		slog.String("user_id", gc.Response.UserID),
+		slog.String("username", gc.Response.Username),
+		slog.String("git_protocol", env.GitProtocolVersion),
+		slog.String("remote_ip", env.RemoteAddr),
+		slog.String("gl_key_type", gc.Response.KeyType),
+		slog.Int("gl_key_id", gc.Response.KeyID),
+	)
 }
 
 func withOutgoingMetadata(ctx context.Context, features map[string]string) context.Context {

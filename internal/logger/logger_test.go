@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gitlab.com/gitlab-org/labkit/log"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
@@ -20,11 +19,12 @@ func TestConfigure(t *testing.T) {
 		LogFormat: "json",
 	}
 
-	closer := Configure(&config)
+	log, closer, err := ConfigureLogger(&config)
+	require.NoError(t, err)
 	defer MustClose(t, closer)
 
 	log.Info("this is a test")
-	log.WithFields(log.Fields{}).Debug("debug log message")
+	log.Debug("debug log message")
 
 	data, err := os.ReadFile(tmpFile)
 	dataStr := string(data)
@@ -43,10 +43,11 @@ func TestConfigureWithDebugLogLevel(t *testing.T) {
 		LogLevel:  "debug",
 	}
 
-	closer := Configure(&config)
+	log, closer, err := ConfigureLogger(&config)
+	require.NoError(t, err)
 	defer MustClose(t, closer)
 
-	log.WithFields(log.Fields{}).Debug("debug log message")
+	log.Debug("debug log message")
 
 	data, err := os.ReadFile(tmpFile)
 	require.NoError(t, err)
@@ -61,7 +62,8 @@ func TestConfigureWithPermissionError(t *testing.T) {
 		LogFormat: "json",
 	}
 
-	closer := Configure(&config)
+	log, closer, err := ConfigureLogger(&config)
+	require.NoError(t, err)
 	defer MustClose(t, closer)
 
 	log.Info("this is a test")
@@ -75,7 +77,8 @@ func TestLogInUTC(t *testing.T) {
 		LogFormat: "json",
 	}
 
-	closer := Configure(&config)
+	log, closer, err := ConfigureLogger(&config)
+	require.NoError(t, err)
 	defer MustClose(t, closer)
 
 	log.Info("this is a test")

@@ -4,10 +4,11 @@ package git
 import (
 	"context"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/fields"
 )
 
 var httpClient = &http.Client{
@@ -93,7 +94,7 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 	if response.StatusCode >= 400 {
 		defer func() {
 			if err := response.Body.Close(); err != nil {
-				log.WithError(err).Error("Unable to close response body")
+				slog.Error("Unable to close response body", slog.String(fields.ErrorMessage, err.Error()))
 			}
 		}()
 

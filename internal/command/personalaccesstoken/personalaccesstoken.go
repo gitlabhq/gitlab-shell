@@ -6,12 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
-
-	"gitlab.com/gitlab-org/labkit/log"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
@@ -45,9 +44,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	log.WithContextFields(ctx, log.Fields{
-		"token_args": c.TokenArgs,
-	}).Info("personalaccesstoken: execute: requesting token")
+	slog.InfoContext(ctx, "personalaccesstoken: execute: requesting token", slog.Any("token_args", c.TokenArgs))
 
 	response, err := c.getPersonalAccessToken(ctx)
 	if err != nil {

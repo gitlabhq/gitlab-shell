@@ -6,8 +6,9 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/fields"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
@@ -76,11 +77,12 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserID)
 	if err != nil {
 		// return nothing just like Ruby's GitlabShell#lfs_authenticate does
-		log.WithContextFields(
-			ctx,
-			log.Fields{"operation": operation, "repo": repo, "user_id": accessResponse.UserID},
-		).WithError(err).Debug("lfsauthenticate: execute: LFS authentication failed")
-
+		slog.DebugContext(ctx, "lfsauthenticate: execute: LFS authentication failed",
+			slog.String("operation", operation),
+			slog.String("repo", repo),
+			slog.String(fields.GitLabUserID, accessResponse.UserID),
+			slog.String(fields.ErrorMessage, err.Error()),
+		)
 		return ctxWithLogData, nil
 	}
 

@@ -4,6 +4,7 @@ package gitaly
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
@@ -92,7 +93,7 @@ func (c *Client) newConnection(ctx context.Context, cmd Command) (conn *grpc.Cli
 	if serviceName == "" {
 		serviceName = "gitlab-shell-unknown"
 
-		log.WithContextFields(ctx, log.Fields{"service_name": serviceName}).Warn("No gRPC service name specified, defaulting to gitlab-shell-unknown")
+		slog.WarnContext(ctx, "No gRPC service name specified, defaulting to gitlab-shell-unknown", slog.String("service_name", serviceName))
 	}
 
 	serviceName = fmt.Sprintf("%s-%s", serviceName, cmd.ServiceName)
