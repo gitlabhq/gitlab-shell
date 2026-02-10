@@ -27,9 +27,9 @@ import (
 	"github.com/pires/go-proxyproto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	gitalyClient "gitlab.com/gitlab-org/gitaly/v16/client"
-	pb "gitlab.com/gitlab-org/gitaly/v16/proto/go/gitalypb"
-	"gitlab.com/gitlab-org/gitaly/v16/streamio"
+	gitalyClient "gitlab.com/gitlab-org/gitaly/v18/client"
+	pb "gitlab.com/gitlab-org/gitaly/v18/proto/go/gitalypb"
+	"gitlab.com/gitlab-org/gitaly/v18/streamio"
 	"golang.org/x/crypto/ssh"
 	"google.golang.org/grpc"
 
@@ -108,7 +108,7 @@ func ensureGitalyRepository(t *testing.T) (*grpc.ClientConn, *pb.Repository) {
 		t.Skip("GITALY_CONNECTION_INFO is not set")
 	}
 
-	conn, err := gitalyClient.Dial(gitalyConnInfo.Address, gitalyClient.DefaultDialOpts)
+	conn, err := gitalyClient.Dial(gitalyConnInfo.Address)
 	require.NoError(t, err)
 
 	repository := pb.NewRepositoryServiceClient(conn)
