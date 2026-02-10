@@ -9,8 +9,9 @@ import (
 )
 
 type OTPVerifiedResponse struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
+	Success       bool     `json:"success"`
+	RecoveryCodes []string `json:"recovery_codes"`
+	Message       string   `json:"message"`
 }
 
 // OTPRequestBody represents the request body for two-factor verification.
@@ -51,9 +52,43 @@ func (c *Client) VerityOTP(ctx context.Context, args VerifyOTPArgs) (*OTPVerifie
 	return verifiedResponse, err
 }
 
-func (c *Client) PushAuth(ctx context.Context) {}
+func (c *Client) PushAuth(ctx context.Context, args VerifyOTPArgs) (*OTPVerifiedResponse, error) {
+	req, err := c.toOTPRequestBody(ctx, args)
+	if err != nil {
+		return nil, err
+	}
 
-func (c *Client) GetRecoveryCodes(ctx context.Context) {}
+	resp, err := c.Do(ctx, http.MethodPost, "/two_factor_push_otp_check", req)
+	if err != nil {
+		return nil, err
+	}
+
+	verifiedResponse := &OTPVerifiedResponse{}
+	if err := gitlabnet.ParseJSON(resp, verifiedResponse); err != nil {
+		return nil, err
+	}
+
+	return verifiedResponse, nil
+}
+
+func (c *Client) GetRecoveryCodes(ctx context.Context, args VerifyOTPArgs) (*OTPVerifiedResponse, error) {
+	req, err := c.toOTPRequestBody(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.Do(ctx, http.MethodPost, "/two_factor_manual_otp_check", req)
+	if err != nil {
+		return nil, err
+	}
+
+	verifiedResponse := &OTPVerifiedResponse{}
+	if err := gitlabnet.ParseJSON(resp, verifiedResponse); err != nil {
+		return nil, err
+	}
+
+	return verifiedResponse, nil
+}
 
 // a helper method that constructs the OTP request body for verification, push and recovery code
 // requests.
