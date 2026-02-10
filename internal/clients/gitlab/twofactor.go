@@ -51,9 +51,9 @@ func (c *Client) VerityOTP(ctx context.Context, args VerifyOTPArgs) (*OTPVerifie
 	return verifiedResponse, err
 }
 
-func (c *Client) PushAuth(ctx context.Context)
+func (c *Client) PushAuth(ctx context.Context) {}
 
-func (c *Client) GetRecoveryCodes(ctx context.Context)
+func (c *Client) GetRecoveryCodes(ctx context.Context) {}
 
 // a helper method that constructs the OTP request body for verification, push and recovery code
 // requests.
