@@ -4,6 +4,7 @@ package sshd
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"strings"
@@ -20,7 +21,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/fields"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 type status int
@@ -122,18 +124,15 @@ func (s *Server) listen(ctx context.Context) error {
 			ReadHeaderTimeout: time.Duration(s.Config.Server.ProxyHeaderTimeout),
 		}
 
-		log.ContextLogger(ctx).Info("Proxy protocol is enabled")
-	}
-
-	fields := log.Fields{
-		"tcp_address": sshListener.Addr().String(),
+		ctx = log.WithFields(ctx, slog.String("tcp_address", sshListener.Addr().String()))
+		slog.InfoContext(ctx, "Proxy protocol is enabled")
 	}
 
 	if len(s.serverConfig.cfg.Server.PublicKeyAlgorithms) > 0 {
-		fields["supported_public_key_algorithms"] = s.serverConfig.cfg.Server.PublicKeyAlgorithms
+		ctx = log.WithFields(ctx, slog.Any("supported_public_key_algorithms", s.serverConfig.cfg.Server.PublicKeyAlgorithms))
 	}
 
-	log.WithContextFields(ctx, fields).Info("Listening for SSH connections")
+	slog.InfoContext(ctx, "Listening for SSH connections")
 
 	s.listener = sshListener
 
@@ -150,7 +149,7 @@ func (s *Server) serve(ctx context.Context) {
 				break
 			}
 
-			log.ContextLogger(ctx).WithError(err).Warn("Failed to accept connection")
+			slog.WarnContext(ctx, "Failed to accept connection", slog.String(fields.ErrorMessage, err.Error()))
 			continue
 		}
 
@@ -197,19 +196,18 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 	ctx, cancel := context.WithCancel(contextWithValues(ctx, nconn))
 	defer cancel()
+	remoteAddr := nconn.RemoteAddr().String()
+	ctx = log.WithFields(ctx, slog.String("remote_addr", remoteAddr))
+
 	go func() {
 		<-ctx.Done()
 		_ = nconn.Close() // Close the connection when context is canceled
 	}()
 
-	remoteAddr := nconn.RemoteAddr().String()
-	ctxlog := log.WithContextFields(ctx, log.Fields{"remote_addr": remoteAddr})
-
 	// Prevent a panic in a single connection from taking out the whole server
 	defer func() {
 		if err := recover(); err != nil {
-			ctxlog.WithField("recovered_error", err).Error("panic handling session")
-
+			slog.ErrorContext(ctx, "panic handling session", slog.Any("recovered_error", err))
 			metrics.SliSshdSessionsErrorsTotal.Inc()
 		}
 	}()
@@ -238,12 +236,11 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	})
 
 	logData := extractLogDataFromContext(ctxWithLogData)
-
-	ctxlog.WithFields(log.Fields{
-		"duration_s":    time.Since(started).Seconds(),
-		"written_bytes": logData.WrittenBytes,
-		"meta":          logData.Meta,
-	}).Info("access: finish")
+	slog.InfoContext(ctx, "access: finish",
+		slog.Float64("duration_s", time.Since(started).Seconds()),
+		slog.Int64("written_bytes", logData.WrittenBytes),
+		slog.Any("meta", logData.Meta),
+	)
 }
 
 func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {

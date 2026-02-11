@@ -4,13 +4,13 @@ package sshd
 
 import (
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"github.com/openshift/gssapi"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/fields"
 )
 
 func NewGSSAPIServer(c *config.GSSAPIConfig) (*OSGSSAPIServer, error) {
@@ -43,7 +43,7 @@ func loadGSSAPILib(config *config.GSSAPIConfig) (*gssapi.Lib, error) {
 		lib, err = gssapi.Load(options)
 
 		if err != nil {
-			log.WithError(err).Error("Unable to load GSSAPI library, gssapi-with-mic is disabled")
+			slog.Error("Unable to load GSSAPI library, gssapi-with-mic is disabled", slog.String(fields.ErrorMessage, err.Error()))
 			config.Enabled = false
 		}
 	}

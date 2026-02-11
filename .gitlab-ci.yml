@@ -75,29 +75,15 @@ default:
     paths:
       - .GOPATH/pkg/mod/
 
-.cached-ruby: &cached_ruby
-  - key:
-      prefix: "ruby-${RUBY_VERSION}-cache"
-      files:
-        - Gemfile.lock
-    policy: $POLICY
-    paths:
-      - ${BUNDLE_PATH}
-
 .cached-go-job:
   variables:
     CACHE_COMPRESSION_LEVEL: "fastest"
   cache:
     - *cached_go
 
-.cached-ruby-job:
-  cache:
-    - *cached_ruby
-
 .cached-job:
   cache:
     - *cached_go
-    - *cached_ruby
 
 .go-matrix-job:
   parallel:
@@ -107,14 +93,6 @@ default:
 ################################################################################
 # Prepare jobs
 ################################################################################
-
-bundle:install:
-  stage: prepare
-  extends: .cached-ruby-job
-  variables:
-    POLICY: pull-push
-  script:
-    - bundle install --jobs $(nproc)
 
 modules:download:
   stage: prepare
@@ -131,7 +109,7 @@ modules:download:
 ################################################################################
 
 .test-job:
-  needs: ["bundle:install", "modules:download"]
+  needs: ["modules:download"]
   rules: !reference [".rules:go-changes", rules]
   variables:
     GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
@@ -140,7 +118,6 @@ modules:download:
     - make build
     - cp config.yml.example config.yml
     - go version
-    - which go
   services:
     - name: registry.gitlab.com/gitlab-org/build/cng/gitaly:master
       # Disable the hooks so we don't have to stub the GitLab API

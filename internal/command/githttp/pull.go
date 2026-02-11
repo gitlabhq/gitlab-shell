@@ -7,6 +7,7 @@ package githttp
 import (
 	"context"
 	"io"
+	"log/slog"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
@@ -14,7 +15,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/fields"
 )
 
 const pullService = "git-upload-pack"
@@ -63,7 +64,7 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 }
 
 func (c *PullCommand) requestSSHUploadPack(ctx context.Context, client *git.Client) error {
-	log.ContextLogger(ctx).Info("Using Git over SSH upload pack")
+	slog.InfoContext(ctx, "Using Git over SSH upload pack")
 
 	return executeSSHRequest(ctx, client.SSHUploadPack, c.ReadWriter)
 }
@@ -91,7 +92,7 @@ func (c *PullCommand) readFromStdin(pw *io.PipeWriter) {
 
 		_, err := pw.Write(line)
 		if err != nil {
-			log.WithError(err).Error("failed to write line")
+			slog.Error("failed to write line", slog.String(fields.ErrorMessage, err.Error()))
 		}
 
 		if pktline.IsDone(line) {
@@ -101,6 +102,6 @@ func (c *PullCommand) readFromStdin(pw *io.PipeWriter) {
 
 	err := pw.Close()
 	if err != nil {
-		log.WithError(err).Error("failed to close writer")
+		slog.Error("failed to close writer", slog.String(fields.ErrorMessage, err.Error()))
 	}
 }

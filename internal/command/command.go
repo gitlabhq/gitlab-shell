@@ -41,7 +41,7 @@ type LogData struct {
 
 type contextKey string
 
-// LogDataKey is the context key used to store ldog data in request contexts.
+// LogDataKey is the context key used to store log data in request contexts.
 const LogDataKey contextKey = "logData"
 
 // CheckForVersionFlag checks if the -version flag was passed and prints version info if so.

@@ -30,7 +30,7 @@ var (
 	BuildTime = "19700101.000000" // Set at build time in the Makefile
 )
 
-func main() {
+func run() int {
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)
 
 	readWriter := &readwriter.ReadWriter{
@@ -42,20 +42,19 @@ func main() {
 	executable, err := executable.New(executable.GitlabShell)
 	if err != nil {
 		_, _ = fmt.Fprintln(readWriter.ErrOut, "Failed to determine executable, exiting")
-		os.Exit(1)
+		return 1
 	}
 
 	config, err := config.NewFromDirExternal(executable.RootDir)
 	if err != nil {
 		_, _ = fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting:", err)
-		os.Exit(1)
+		return 1
 	}
 
-	logger, logCloser, err := logger.ConfigureLogger(config)
-	if err != nil && logCloser != nil {
-		logger.Error("Failed to configure logging", slog.String(fields.ErrorMessage, err.Error()))
+	logCloser := logger.ConfigureLogger(config)
+	if logCloser != nil {
+		defer logCloser.Close() //nolint:errcheck
 	}
-	slog.SetDefault(logger)
 
 	env := sshenv.NewFromEnv()
 	cmd, err := shellCmd.New(os.Args[1:], env, config, readWriter)
@@ -63,8 +62,7 @@ func main() {
 		// For now this could happen if `SSH_CONNECTION` is not set on
 		// the environment
 		_, _ = fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
-		_ = logCloser.Close()
-		os.Exit(1)
+		return 1
 	}
 
 	ctx, finished := command.Setup(executable.Name, config)
@@ -72,20 +70,23 @@ func main() {
 	config.GitalyClient.InitSidechannelRegistry(ctx)
 
 	cmdName := reflect.TypeOf(cmd).String()
-	logger.InfoContext(ctx, "gitlab-shell: main: executing command", slog.Any("env", env), slog.String("command", cmdName))
+	slog.InfoContext(ctx, "gitlab-shell: main: executing command", slog.Any("env", env), slog.String("command", cmdName))
 	fips.Check()
 
 	if _, err := cmd.Execute(ctx); err != nil {
-		logger.WarnContext(ctx, "gitlab-shell: main: command execution failed", slog.String(fields.ErrorMessage, err.Error()))
+		slog.WarnContext(ctx, "gitlab-shell: main: command execution failed", slog.String(fields.ErrorMessage, err.Error()))
 		if grpcstatus.Convert(err).Code() != grpccodes.Internal {
 			console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
 		}
 		finished()
-		_ = logCloser.Close()
-		os.Exit(1)
+		return 1
 	}
 
-	logger.InfoContext(ctx, "gitlab-shell: main: command executed successfully")
+	slog.InfoContext(ctx, "gitlab-shell: main: command executed successfully")
 	finished()
-	_ = logCloser.Close()
+	return 0
+}
+
+func main() {
+	os.Exit(run())
 }

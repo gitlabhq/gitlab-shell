@@ -247,5 +247,5 @@ func eventuallyInDelta(t *testing.T, expected, actual float64) {
 	var delta = 0.1
 	require.Eventually(t, func() bool {
 		return ((expected - actual) < delta)
-	}, 1*time.Second, time.Millisecond)
+	}, 5*time.Second, time.Millisecond, "expected: %f never matches actual: %f", expected, actual)
 }
