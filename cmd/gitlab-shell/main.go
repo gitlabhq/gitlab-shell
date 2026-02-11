@@ -3,14 +3,15 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
 	"reflect"
 
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
+	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/fips"
-	"gitlab.com/gitlab-org/labkit/log"
 
 	shellCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
@@ -50,7 +51,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	logCloser := logger.Configure(config)
+	logger, logCloser, err := logger.ConfigureLogger(config)
+	if err != nil && logCloser != nil {
+		logger.Error("Failed to configure logging", slog.String(fields.ErrorMessage, err.Error()))
+	}
+	slog.SetDefault(logger)
 
 	env := sshenv.NewFromEnv()
 	cmd, err := shellCmd.New(os.Args[1:], env, config, readWriter)
@@ -67,12 +72,11 @@ func main() {
 	config.GitalyClient.InitSidechannelRegistry(ctx)
 
 	cmdName := reflect.TypeOf(cmd).String()
-	ctxlog := log.ContextLogger(ctx)
-	ctxlog.WithFields(log.Fields{"env": env, "command": cmdName}).Info("gitlab-shell: main: executing command")
+	logger.InfoContext(ctx, "gitlab-shell: main: executing command", slog.Any("env", env), slog.String("command", cmdName))
 	fips.Check()
 
 	if _, err := cmd.Execute(ctx); err != nil {
-		ctxlog.WithError(err).Warn("gitlab-shell: main: command execution failed")
+		logger.WarnContext(ctx, "gitlab-shell: main: command execution failed", slog.String(fields.ErrorMessage, err.Error()))
 		if grpcstatus.Convert(err).Code() != grpccodes.Internal {
 			console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
 		}
@@ -81,7 +85,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctxlog.Info("gitlab-shell: main: command executed successfully")
+	logger.InfoContext(ctx, "gitlab-shell: main: command executed successfully")
 	finished()
 	_ = logCloser.Close()
 }
