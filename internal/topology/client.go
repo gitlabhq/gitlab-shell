@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	pb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
@@ -17,6 +18,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
 
 // ClassifyType constants mirror the proto enum values for convenience.
@@ -24,6 +27,12 @@ const (
 	ClassifyTypeFirstCell     = pb.ClassifyType_FIRST_CELL
 	ClassifyTypeSessionPrefix = pb.ClassifyType_SESSION_PREFIX
 	ClassifyTypeCellID        = pb.ClassifyType_CELL_ID
+)
+
+// Metric status labels
+const (
+	metricsStatusOK   = "ok"
+	metricsStatusFail = "fail"
 )
 
 // Client provides a gRPC client for the Topology Service.
@@ -67,8 +76,17 @@ func NewClient(cfg *Config) *Client {
 // a request for the given value. The value interpretation depends on the
 // configured ClassifyType (e.g., project path, session prefix, cell ID).
 func (c *Client) Classify(ctx context.Context, value string) (*pb.ClassifyResponse, error) {
+	start := time.Now()
+	var status string
+
+	defer func() {
+		metrics.TopologyRequestsTotal.WithLabelValues(status).Inc()
+		metrics.TopologyRequestDurationSeconds.Observe(time.Since(start).Seconds())
+	}()
+
 	client, err := c.getClient(ctx)
 	if err != nil {
+		status = metricsStatusFail
 		return nil, fmt.Errorf("failed to get topology client: %w", err)
 	}
 
@@ -80,7 +98,14 @@ func (c *Client) Classify(ctx context.Context, value string) (*pb.ClassifyRespon
 		Value: value,
 	}
 
-	return client.Classify(ctx, req)
+	resp, err := client.Classify(ctx, req)
+	if err != nil {
+		status = metricsStatusFail
+		return nil, err
+	}
+
+	status = metricsStatusOK
+	return resp, nil
 }
 
 // Close closes the gRPC connection to the Topology Service.
@@ -120,7 +145,15 @@ func (c *Client) getClient(ctx context.Context) (pb.ClassifyServiceClient, error
 }
 
 // dial establishes a gRPC connection to the Topology Service.
-func (c *Client) dial(ctx context.Context) (*grpc.ClientConn, error) {
+func (c *Client) dial(ctx context.Context) (conn *grpc.ClientConn, err error) {
+	defer func() {
+		status := metricsStatusOK
+		if err != nil {
+			status = metricsStatusFail
+		}
+		metrics.TopologyConnectionsTotal.WithLabelValues(status).Inc()
+	}()
+
 	serviceName := correlation.ExtractClientNameFromContext(ctx)
 	if serviceName == "" {
 		serviceName = "gitlab-shell-unknown"

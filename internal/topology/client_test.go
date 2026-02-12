@@ -12,11 +12,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	pb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"google.golang.org/grpc"
+
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
 
 func TestNewClient(t *testing.T) {
@@ -298,4 +301,36 @@ func TestBuildTLSCredentials(t *testing.T) {
 		require.Error(t, err)
 		require.Nil(t, creds)
 	})
+}
+
+func TestPrometheusMetrics(t *testing.T) {
+	metrics.TopologyConnectionsTotal.Reset()
+	metrics.TopologyRequestsTotal.Reset()
+
+	// Successful request
+	addr, stop := startMockServer(t, &mockClassifyServer{})
+	defer stop()
+
+	client := NewClient(&Config{Enabled: true, Address: addr, Timeout: 5 * time.Second})
+	defer client.Close()
+
+	_, err := client.Classify(context.Background(), "test-value")
+	require.NoError(t, err)
+
+	require.InDelta(t, 1, testutil.ToFloat64(metrics.TopologyConnectionsTotal.WithLabelValues("ok")), 0.1)
+	require.InDelta(t, 1, testutil.ToFloat64(metrics.TopologyRequestsTotal.WithLabelValues("ok")), 0.1)
+	require.Equal(t, 1, testutil.CollectAndCount(metrics.TopologyRequestDurationSeconds))
+
+	// Failed request (server error)
+	addrFail, stopFail := startMockServer(t, &mockClassifyServer{err: fmt.Errorf("error")})
+	defer stopFail()
+
+	clientFail := NewClient(&Config{Enabled: true, Address: addrFail, Timeout: 5 * time.Second})
+	defer clientFail.Close()
+
+	_, err = clientFail.Classify(context.Background(), "test-value")
+	require.Error(t, err)
+
+	require.InDelta(t, 2, testutil.ToFloat64(metrics.TopologyConnectionsTotal.WithLabelValues("ok")), 0.1)
+	require.InDelta(t, 1, testutil.ToFloat64(metrics.TopologyRequestsTotal.WithLabelValues("fail")), 0.1)
 }
