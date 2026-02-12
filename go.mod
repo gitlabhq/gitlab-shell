@@ -19,7 +19,7 @@ require (
 	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
 	gitlab.com/gitlab-org/gitaly/v18 v18.9.0-rc4
-	gitlab.com/gitlab-org/labkit v1.36.0
+	gitlab.com/gitlab-org/labkit v1.37.0
 	golang.org/x/crypto v0.47.0
 	golang.org/x/sync v0.19.0
 	google.golang.org/grpc v1.77.0

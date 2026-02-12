@@ -571,8 +571,8 @@ gitlab.com/gitlab-org/gitaly/v18 v18.9.0-rc4 h1:2PQlCQF5ioVdmcjY6Ut8zxwFY2TIgHWn
 gitlab.com/gitlab-org/gitaly/v18 v18.9.0-rc4/go.mod h1:ijDPC9GyV3UdmrZG4LiBQJyMjOuzLcbH5AuQ8GpSSIk=
 gitlab.com/gitlab-org/go/reopen v1.0.0 h1:6BujZ0lkkjGIejTUJdNO1w56mN1SI10qcVQyQlOPM+8=
 gitlab.com/gitlab-org/go/reopen v1.0.0/go.mod h1:D6OID8YJDzEVZNYW02R/Pkj0v8gYFSIhXFTArAsBQw8=
-gitlab.com/gitlab-org/labkit v1.36.0 h1:QA60DLXmtOyIRchrxaRwonrtbviWQogA623tR2JijE4=
-gitlab.com/gitlab-org/labkit v1.36.0/go.mod h1:JqQLdgjV/KKAZJ6gvNodaLStmWeTT9mxgJPIEi66VHI=
+gitlab.com/gitlab-org/labkit v1.37.0 h1:Nk7DIc5QB8QNQgrNhymDACMMSIwjjaHXL4CVSHmXvac=
+gitlab.com/gitlab-org/labkit v1.37.0/go.mod h1:JqQLdgjV/KKAZJ6gvNodaLStmWeTT9mxgJPIEi66VHI=
 go.etcd.io/raft/v3 v3.6.0 h1:5NtvbDVYpnfZWcIHgGRk9DyzkBIXOi8j+DDp1IcnUWQ=
 go.etcd.io/raft/v3 v3.6.0/go.mod h1:nLvLevg6+xrVtHUmVaTcTz603gQPHfh7kUAwV6YpfGo=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
