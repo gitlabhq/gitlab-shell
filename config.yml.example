@@ -128,3 +128,35 @@ pat:
   enabled: true
   # Configure which PAT scopes are allowable to generate using an SSH key
   # allowed_scopes: [read_repository]
+
+# Topology Service configuration for GitLab Cells routing.
+# This enables routing SSH requests to the appropriate cell in a multi-cell deployment.
+# See: https://handbook.gitlab.com/handbook/engineering/architecture/design-documents/cells/topology_service/
+#
+# topology_service:
+#   # Enable Topology Service integration
+#   enabled: false
+#
+#   # gRPC address of the Topology Service
+#   address: "topology.gitlab.com:443"
+#
+#   # ClassifyType to use when querying for cell routing.
+#   # Options: first_cell, session_prefix, cell_id
+#   classify_type: "first_cell"
+#
+#   # Timeout for Topology Service requests. Defaults to 5s.
+#   timeout: 5s
+#
+#   # TLS configuration for secure connections
+#   tls:
+#     # Enable TLS (recommended for production)
+#     enabled: true
+#     # Path to CA certificate file for server verification
+#     ca_file: "/etc/gitlab/ssl/topology-ca.crt"
+#     # Client certificate for mTLS (if required by Topology Service)
+#     # cert_file: "/etc/gitlab/ssl/client.crt"
+#     # key_file: "/etc/gitlab/ssl/client.key"
+#     # Expected server name for TLS verification
+#     # server_name: "topology.gitlab.com"
+#     # Skip TLS verification (development only, not recommended for production)
+#     # insecure_skip_verify: false

@@ -104,3 +104,67 @@ func TestYAMLDuration(t *testing.T) {
 		})
 	}
 }
+
+func TestTopologyServiceConfig(t *testing.T) {
+	t.Run("default test config has topology_service disabled", func(t *testing.T) {
+		testRoot := testhelper.PrepareTestRootDir(t)
+		cfg, err := NewFromDir(testRoot)
+		require.NoError(t, err)
+		require.False(t, cfg.TopologyService.Enabled)
+	})
+
+	t.Run("parses full topology_service configuration from YAML", func(t *testing.T) {
+		yamlData := `
+topology_service:
+  enabled: true
+  address: "topology.example.com:443"
+  classify_type: "first_cell"
+  timeout: 10s
+  tls:
+    enabled: true
+    ca_file: "/path/to/ca.crt"
+    cert_file: "/path/to/cert.crt"
+    key_file: "/path/to/key.pem"
+    server_name: "topology.example.com"
+    insecure_skip_verify: true
+`
+		var cfg Config
+		require.NoError(t, yaml.Unmarshal([]byte(yamlData), &cfg))
+
+		ts := cfg.TopologyService
+		require.True(t, ts.Enabled)
+		require.Equal(t, "topology.example.com:443", ts.Address)
+		require.Equal(t, "first_cell", ts.ClassifyType)
+		require.Equal(t, 10*time.Second, ts.Timeout)
+		require.True(t, ts.TLS.Enabled)
+		require.Equal(t, "/path/to/ca.crt", ts.TLS.CAFile)
+		require.Equal(t, "/path/to/cert.crt", ts.TLS.CertFile)
+		require.Equal(t, "/path/to/key.pem", ts.TLS.KeyFile)
+		require.Equal(t, "topology.example.com", ts.TLS.ServerName)
+		require.True(t, ts.TLS.InsecureSkipVerify)
+	})
+}
+
+func TestTopologyServiceConfigValidation(t *testing.T) {
+	t.Run("newFromFile rejects invalid topology config", func(t *testing.T) {
+		// Create a temporary directory with an invalid config
+		tmpDir := t.TempDir()
+		configPath := tmpDir + "/config.yml"
+		secretPath := tmpDir + "/.gitlab_shell_secret"
+
+		// Write secret file
+		require.NoError(t, os.WriteFile(secretPath, []byte("test-secret"), 0o600))
+
+		// Write config with enabled topology but missing address
+		invalidConfig := `
+topology_service:
+  enabled: true
+`
+		require.NoError(t, os.WriteFile(configPath, []byte(invalidConfig), 0o600))
+
+		_, err := NewFromDir(tmpDir)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "invalid topology_service config")
+		require.Contains(t, err.Error(), "address is required")
+	})
+}
