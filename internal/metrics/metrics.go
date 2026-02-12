@@ -10,10 +10,11 @@ import (
 )
 
 const (
-	namespace       = "gitlab_shell"
-	sshdSubsystem   = "sshd"
-	httpSubsystem   = "http"
-	gitalySubsystem = "gitaly"
+	namespace         = "gitlab_shell"
+	sshdSubsystem     = "sshd"
+	httpSubsystem     = "http"
+	gitalySubsystem   = "gitaly"
+	topologySubsystem = "topology"
 
 	httpInFlightRequestsMetricName       = "in_flight_requests"
 	httpRequestsTotalMetricName          = "requests_total"
@@ -31,7 +32,7 @@ const (
 	lfsHTTPConnectionsTotalName = "lfs_http_connections_total"
 	lfsSSHConnectionsTotalName  = "lfs_ssh_connections_total"
 
-	gitalyConnectionsTotalName = "connections_total"
+	connectionsTotalName = "connections_total"
 )
 
 var (
@@ -106,7 +107,7 @@ var (
 		prometheus.CounterOpts{
 			Namespace: namespace,
 			Subsystem: gitalySubsystem,
-			Name:      gitalyConnectionsTotalName,
+			Name:      connectionsTotalName,
 			Help:      "Number of Gitaly connections that have been established",
 		},
 		[]string{"status"},
@@ -168,6 +169,48 @@ var (
 		prometheus.CounterOpts{
 			Name: lfsSSHConnectionsTotalName,
 			Help: "Number of LFS over SSH connections that have been established",
+		},
+	)
+
+	// TopologyConnectionsTotal is the number of Topology Service connections that have been established.
+	TopologyConnectionsTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: topologySubsystem,
+			Name:      connectionsTotalName,
+			Help:      "Number of Topology Service connections that have been established",
+		},
+		[]string{"status"},
+	)
+
+	// TopologyRequestsTotal is the number of Topology Service Classify requests.
+	TopologyRequestsTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: topologySubsystem,
+			Name:      httpRequestsTotalMetricName,
+			Help:      "Number of Topology Service Classify requests",
+		},
+		[]string{"status"},
+	)
+
+	// TopologyRequestDurationSeconds is a histogram of latencies for Topology Service Classify requests.
+	TopologyRequestDurationSeconds = promauto.NewHistogram(
+		prometheus.HistogramOpts{
+			Namespace: namespace,
+			Subsystem: topologySubsystem,
+			Name:      httpRequestDurationSecondsMetricName,
+			Help:      "A histogram of latencies for Topology Service Classify requests",
+			Buckets: []float64{
+				0.005, /* 5ms */
+				0.01,  /* 10ms */
+				0.025, /* 25ms */
+				0.05,  /* 50ms */
+				0.1,   /* 100ms */
+				0.25,  /* 250ms */
+				0.5,   /* 500ms */
+				1.0,   /* 1s */
+			},
 		},
 	)
 )
