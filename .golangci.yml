@@ -145,6 +145,10 @@ linters-settings:
           - github.com/grpc-ecosystem/go-grpc-prometheus
           - github.com/mattn/go-shellwords
           - github.com/git-lfs/pktline
+          - gitlab.com/gitlab-org/cells/topology-service
+          - google.golang.org/grpc
+          - google.golang.org/protobuf
+          - gopkg.in/yaml.v3
 
   #   list-type: blacklist
   #   include-go-root: false
