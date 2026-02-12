@@ -43,6 +43,7 @@ func overrideConfigFromEnvironment(cfg *config.Config) {
 	}
 }
 
+// nolint
 func main() {
 	ctx := context.Background()
 	command.CheckForVersionFlag(os.Args, Version, BuildTime)
@@ -58,7 +59,17 @@ func main() {
 			))
 		}
 	}
-	log := logger.ConfigureLogger(cfg)
+	log, logCloser, err := logger.ConfigureLogger(cfg)
+	if err != nil {
+		log.ErrorContext(ctx, "failed to log to file, reverting to stderr", slog.String(fields.ErrorMessage, err.Error()))
+	} else {
+		// nolint
+		defer func() {
+			if err = logCloser.Close(); err != nil {
+				log.ErrorContext(ctx, "failed to close log file", slog.String(fields.ErrorMessage, err.Error()))
+			}
+		}()
+	}
 	log.InfoContext(ctx, "gitlab-sshd starting up...")
 
 	overrideConfigFromEnvironment(cfg)

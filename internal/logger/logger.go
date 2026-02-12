@@ -18,22 +18,14 @@ import (
 // ConfigureLogger - gitlab-sshd's log output can be configured to text as per the documentation:
 // https://docs.gitlab.com/omnibus/settings/logs/#json-logging
 // This is currently controlled by the GITLAB_LOG_FORMAT environment variable.
-func ConfigureLogger(cfg *config.Config) *slog.Logger {
+func ConfigureLogger(cfg *config.Config) (*slog.Logger, io.Closer, error) {
 	logConfig := &v2log.Config{
 		LogLevel: parseLogLevel(cfg.LogLevel),
 	}
-	logFile, err := os.OpenFile(cfg.LogFile, os.O_APPEND|os.O_WRONLY, 0600)
-	if err != nil {
-		syslogError(err)
-		logConfig.Writer = os.Stderr
-	} else {
-		logConfig.Writer = logFile
-	}
-
 	if gitlabLogFormat := os.Getenv("GITLAB_LOG_FORMAT"); gitlabLogFormat == "text" {
 		logConfig.UseTextFormat = true
 	}
-	return v2log.NewWithConfig(logConfig)
+	return v2log.NewWithFile(cfg.LogFile, logConfig)
 }
 
 func parseLogLevel(level string) slog.Level {

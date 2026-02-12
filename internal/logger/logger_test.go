@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"io"
 	"os"
 	"regexp"
 	"testing"
@@ -20,7 +21,7 @@ func TestConfigure(t *testing.T) {
 	}
 
 	closer := Configure(&config)
-	defer closer.Close()
+	defer MustClose(t, closer)
 
 	log.Info("this is a test")
 	log.WithFields(log.Fields{}).Debug("debug log message")
@@ -43,7 +44,7 @@ func TestConfigureWithDebugLogLevel(t *testing.T) {
 	}
 
 	closer := Configure(&config)
-	defer closer.Close()
+	defer MustClose(t, closer)
 
 	log.WithFields(log.Fields{}).Debug("debug log message")
 
@@ -61,7 +62,7 @@ func TestConfigureWithPermissionError(t *testing.T) {
 	}
 
 	closer := Configure(&config)
-	defer closer.Close()
+	defer MustClose(t, closer)
 
 	log.Info("this is a test")
 }
@@ -75,7 +76,7 @@ func TestLogInUTC(t *testing.T) {
 	}
 
 	closer := Configure(&config)
-	defer closer.Close()
+	defer MustClose(t, closer)
 
 	log.Info("this is a test")
 
@@ -107,7 +108,9 @@ func TestConfigureLabkitV2Log(t *testing.T) {
 		LogLevel:  "debug",
 	}
 
-	logger := ConfigureLogger(&config)
+	logger, closer, err := ConfigureLogger(&config)
+	require.NoError(t, err)
+	defer MustClose(t, closer)
 	logger.Info("this is a test")
 	logger.Debug("debug log message")
 
@@ -116,4 +119,12 @@ func TestConfigureLabkitV2Log(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, dataStr, `"msg":"this is a test"`)
 	require.Contains(t, dataStr, `"msg":"debug log message"`)
+}
+
+// MustClose calls Close() on the Closer and fails the test in case it returns
+// an error. This function is useful when closing via `defer`, as a simple
+// `defer require.NoError(t, closer.Close())` would cause `closer.Close()` to
+// be executed early already.
+func MustClose(tb testing.TB, closer io.Closer) {
+	require.NoError(tb, closer.Close())
 }
