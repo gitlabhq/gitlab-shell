@@ -4,6 +4,7 @@
 package config
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"path"
@@ -16,6 +17,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitaly"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology"
 )
 
 const (
@@ -96,6 +98,9 @@ type Config struct {
 	Server         ServerConfig       `yaml:"sshd"`
 	LFSConfig      LFSConfig          `yaml:"lfs"`
 	PATConfig      PATConfig          `yaml:"pat"`
+
+	// TopologyService contains Topology Service client configuration for Cells routing.
+	TopologyService topology.Config `yaml:"topology_service"`
 
 	httpClient     *client.HTTPClient
 	httpClientErr  error
@@ -240,6 +245,10 @@ func newFromFile(path string) (*Config, error) {
 
 	if len(cfg.LogFile) > 0 && cfg.LogFile[0] != '/' && cfg.RootDir != "" {
 		cfg.LogFile = filepath.Join(cfg.RootDir, cfg.LogFile)
+	}
+
+	if err := cfg.TopologyService.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid topology_service config: %w", err)
 	}
 
 	return cfg, nil
