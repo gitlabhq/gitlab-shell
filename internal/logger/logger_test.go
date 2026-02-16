@@ -141,7 +141,7 @@ func TestConfigureLoggerDirectoryFailure(t *testing.T) {
 	}
 
 	fileInfo, err := os.Stat(tempDir)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.True(t, fileInfo.IsDir())
 
 	old := os.Stderr
