@@ -6,13 +6,16 @@ package command
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 	"path"
 	"strings"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/tracing"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 // Command is the interface that all gitlab-shell commands must implement.
@@ -82,6 +85,7 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 	if correlationID == "" {
 		correlationID := correlation.SafeRandomID()
 		ctx = correlation.ContextWithCorrelation(ctx, correlationID)
+		ctx = log.WithFields(ctx, slog.String(fields.CorrelationID, correlationID))
 	}
 
 	return ctx, func() {

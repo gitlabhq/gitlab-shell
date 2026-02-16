@@ -59,26 +59,19 @@ func main() {
 			))
 		}
 	}
-	log, logCloser, err := logger.ConfigureLogger(cfg)
-	if err != nil {
-		log.ErrorContext(ctx, "failed to log to file, reverting to stderr", slog.String(fields.ErrorMessage, err.Error()))
-	} else {
-		// nolint
-		defer func() {
-			if err = logCloser.Close(); err != nil {
-				log.ErrorContext(ctx, "failed to close log file", slog.String(fields.ErrorMessage, err.Error()))
-			}
-		}()
+	logCloser := logger.ConfigureLogger(cfg)
+	if logCloser != nil {
+		defer logCloser.Close() //nolint:errcheck
 	}
-	log.InfoContext(ctx, "gitlab-sshd starting up...")
+	slog.InfoContext(ctx, "gitlab-sshd starting up...")
 
 	overrideConfigFromEnvironment(cfg)
 	if err := isConfigSane(cfg); err != nil {
 		ctx = v2log.WithFields(ctx, slog.String(fields.ErrorMessage, err.Error()))
 		if *configDir == "" {
-			log.ErrorContext(ctx, "no config-dir provided, using only environment variables")
+			slog.ErrorContext(ctx, "no config-dir provided, using only environment variables")
 		} else {
-			log.ErrorContext(ctx, "configuration error")
+			slog.ErrorContext(ctx, "configuration error")
 		}
 	}
 
@@ -90,14 +83,14 @@ func main() {
 
 	server, err := sshd.NewServer(cfg)
 	if err != nil {
-		log.ErrorContext(ctx, "Failed to start Gitlab built-in sshd", slog.String(
+		slog.ErrorContext(ctx, "Failed to start Gitlab built-in sshd", slog.String(
 			fields.ErrorMessage, err.Error(),
 		))
 	}
 
 	// Startup monitoring endpoint.
 	if cfg.Server.WebListen != "" {
-		startupMonitoringEndpoint(ctx, cfg, server, log)
+		startupMonitoringEndpoint(ctx, cfg, server)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -106,10 +99,10 @@ func main() {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
-	gracefulShutdown(ctx, done, cfg, server, cancel, log)
+	gracefulShutdown(ctx, done, cfg, server, cancel)
 
 	if err := server.ListenAndServe(ctx); err != nil {
-		log.ErrorContext(ctx, "GitLab built-in sshd failed to listen for new connections",
+		slog.ErrorContext(ctx, "GitLab built-in sshd failed to listen for new connections",
 			slog.String(fields.ErrorMessage, err.Error()))
 	}
 }
@@ -120,18 +113,17 @@ func gracefulShutdown(
 	cfg *config.Config,
 	server *sshd.Server,
 	cancel context.CancelFunc,
-	log *slog.Logger,
 ) {
 	go func() {
 		sig := <-done
 		signal.Reset(syscall.SIGINT, syscall.SIGTERM)
 
 		gracePeriod := time.Duration(cfg.Server.GracePeriod)
-		log.InfoContext(ctx, fmt.Sprintf("Shutdown initiated with grace period: %f", gracePeriod.Seconds()),
+		slog.InfoContext(ctx, fmt.Sprintf("Shutdown initiated with grace period: %f", gracePeriod.Seconds()),
 			slog.String("signal", sig.String()))
 
 		if err := server.Shutdown(); err != nil {
-			log.ErrorContext(ctx, "Error shutting down the server", slog.String(
+			slog.ErrorContext(ctx, "Error shutting down the server", slog.String(
 				fields.ErrorMessage, err.Error()))
 		}
 		<-time.After(gracePeriod)
@@ -140,7 +132,7 @@ func gracefulShutdown(
 	}()
 }
 
-func startupMonitoringEndpoint(ctx context.Context, cfg *config.Config, server *sshd.Server, log *slog.Logger) {
+func startupMonitoringEndpoint(ctx context.Context, cfg *config.Config, server *sshd.Server) {
 	go func() {
 		err := monitoring.Start(
 			monitoring.WithListenerAddress(cfg.Server.WebListen),
@@ -148,7 +140,7 @@ func startupMonitoringEndpoint(ctx context.Context, cfg *config.Config, server *
 			monitoring.WithServeMux(server.MonitoringServeMux()),
 		)
 
-		log.ErrorContext(ctx, "monitoring service raised an error", slog.String(
+		slog.ErrorContext(ctx, "monitoring service raised an error", slog.String(
 			fields.ErrorMessage, err.Error(),
 		))
 		panic(err)
