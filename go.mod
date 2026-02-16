@@ -16,7 +16,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/sirupsen/logrus v1.9.4
 	github.com/stretchr/testify v1.11.1
-	gitlab.com/gitlab-org/cells/topology-service v0.0.0-20260210121456-5d698110f3e7
+	gitlab.com/gitlab-org/cells/topology-service v0.0.0-20260213143839-af4593cd7194
 	gitlab.com/gitlab-org/gitaly/v18 v18.9.0-rc4
 	gitlab.com/gitlab-org/labkit v1.37.1
 	golang.org/x/crypto v0.47.0
