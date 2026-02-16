@@ -1,12 +1,14 @@
 package logger
 
 import (
+	"bytes"
 	"io"
 	"log/slog"
 	"os"
 	"regexp"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gitlab.com/gitlab-org/labkit/log"
 
@@ -61,7 +63,6 @@ func TestConfigureWithPermissionError(t *testing.T) {
 		LogFile:   tempDir,
 		LogFormat: "json",
 	}
-
 	closer := Configure(&config)
 	defer MustClose(t, closer)
 
@@ -129,4 +130,33 @@ func TestConfigureLabkitV2Log(t *testing.T) {
 // be executed early already.
 func MustClose(tb testing.TB, closer io.Closer) {
 	require.NoError(tb, closer.Close())
+}
+
+func TestConfigureLoggerDirectoryFailure(t *testing.T) {
+	tempDir := t.TempDir()
+
+	config := config.Config{
+		LogFile:   tempDir,
+		LogFormat: "json",
+	}
+
+	fileInfo, err := os.Stat(tempDir)
+	require.Nil(t, err)
+	assert.True(t, fileInfo.IsDir())
+
+	old := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
+	closer := ConfigureLogger(&config)
+	assert.Nil(t, closer)
+	slog.Info("this is a test")
+
+	w.Close()
+	var buf bytes.Buffer
+	io.Copy(&buf, r)
+	os.Stderr = old
+
+	assert.Contains(t, buf.String(), "failed to configure log file", "capture the error in stderr")
+	assert.Contains(t, buf.String(), "this is a test", "we should still be logging to stderr in this case")
 }

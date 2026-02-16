@@ -28,6 +28,7 @@ func ConfigureLogger(cfg *config.Config) io.Closer {
 	logger, logCloser, err := v2log.NewWithFile(cfg.LogFile, logConfig)
 	slog.SetDefault(logger)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to configure log file %q: %v\n", cfg.LogFile, err)
 		return nil
 	}
 
