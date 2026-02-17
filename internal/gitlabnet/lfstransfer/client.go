@@ -125,11 +125,89 @@ func newHTTPRequest(method string, ref string, reader io.Reader) (*retryablehttp
 	return req, nil
 }
 
+const maxRedirects = 10
+
 func newHTTPClient() *retryablehttp.Client {
 	client := retryablehttp.NewClient()
 	client.RetryMax = 3
 	client.Logger = nil
+
+	// Configure redirect policy to preserve HTTP method and body on redirects.
+	// By default, Go's http.Client changes POST/PUT to GET on 301/302 redirects,
+	// which breaks LFS API requests. This custom policy ensures the original
+	// method and body are preserved for all redirect status codes.
+	client.HTTPClient.CheckRedirect = checkRedirectFunc
+
 	return client
+}
+
+// checkRedirectFunc is a custom redirect policy that preserves the HTTP method,
+// body, and headers when following redirects. This is necessary because Go's
+// default behavior changes POST/PUT to GET on 301/302 redirects.
+func checkRedirectFunc(req *http.Request, via []*http.Request) error {
+	if len(via) >= maxRedirects {
+		return fmt.Errorf("stopped after %d redirects", maxRedirects)
+	}
+
+	if len(via) == 0 {
+		return nil
+	}
+
+	original := via[0]
+	req.Method = original.Method
+
+	if err := preserveBody(req, original); err != nil {
+		return err
+	}
+
+	preserveHeaders(req, original)
+
+	return nil
+}
+
+// preserveBody copies the GetBody function and body from the original request
+// to the redirected request, allowing the body to be re-read.
+func preserveBody(req, original *http.Request) error {
+	if original.GetBody == nil {
+		return nil
+	}
+
+	req.GetBody = original.GetBody
+	req.ContentLength = original.ContentLength
+
+	body, err := req.GetBody()
+	if err != nil {
+		return err
+	}
+	req.Body = body
+
+	return nil
+}
+
+// sensitiveHeaders lists headers that should not be forwarded to different hosts.
+var sensitiveHeaders = []string{"Authorization"}
+
+// preserveHeaders copies headers from the original request to the redirected
+// request for same-host redirects, and strips sensitive headers for cross-host
+// redirects to prevent credential leakage.
+func preserveHeaders(req, original *http.Request) {
+	if req.URL.Host != original.URL.Host {
+		// Cross-host redirect: strip sensitive headers to prevent credential leakage
+		for _, header := range sensitiveHeaders {
+			req.Header.Del(header)
+		}
+		return
+	}
+
+	// Same-host redirect: preserve headers that aren't already set
+	for key, values := range original.Header {
+		if _, exists := req.Header[key]; exists {
+			continue
+		}
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
+	}
 }
 
 // Batch performs a batch operation on objects and returns the result.
