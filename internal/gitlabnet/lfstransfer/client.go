@@ -119,9 +119,11 @@ func NewClient(config *config.Config, args *commandargs.Shell, href string, auth
 	client := retryablehttp.NewClient()
 	client.RetryMax = 3
 	client.Logger = nil
+	client.HTTPClient.CheckRedirect = checkRedirectFunc
 
 	return &Client{config: config, args: args, href: href, auth: auth, header: ClientHeader, client: client}, nil
 }
+
 func (c *Client) newAuthenticatedPostRequest(url string, body io.Reader) (*retryablehttp.Request, error) {
 	req, err := retryablehttp.NewRequest(http.MethodPost, url, body)
 	if err != nil {
@@ -131,6 +133,89 @@ func (c *Client) newAuthenticatedPostRequest(url string, body io.Reader) (*retry
 	req.Header.Set("Authorization", c.auth)
 
 	return req, nil
+}
+
+const maxRedirects = 10
+
+func checkRedirectFunc(req *http.Request, via []*http.Request) error {
+	if len(via) >= maxRedirects {
+		return fmt.Errorf("stopped after %d redirects", maxRedirects)
+	}
+
+	if len(via) == 0 {
+		return nil
+	}
+
+	previous := via[len(via)-1]
+	statusCode := req.Response.StatusCode
+	if previous.Method == http.MethodPost && isStandardSemanticsRedirect(statusCode) {
+		restoreContentType(req, previous)
+		if statusCode != http.StatusSeeOther {
+			restorePost(req, previous)
+		}
+	}
+	if (statusCode == http.StatusTemporaryRedirect || statusCode == http.StatusPermanentRedirect) &&
+		req.Method == previous.Method && req.Body == nil && previous.GetBody != nil {
+		if err := restoreBody(req, previous); err != nil {
+			return err
+		}
+	}
+
+	removeAuthorizationAfterCrossHostRedirect(req, via)
+
+	return nil
+}
+
+func isStandardSemanticsRedirect(statusCode int) bool {
+	return statusCode == http.StatusMovedPermanently ||
+		statusCode == http.StatusFound ||
+		statusCode == http.StatusSeeOther
+}
+
+func restoreContentType(req, previous *http.Request) {
+	if contentType := previous.Header.Get("Content-Type"); contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+}
+
+func restorePost(req, previous *http.Request) {
+	if previous.GetBody == nil {
+		return
+	}
+
+	if err := restoreBody(req, previous); err != nil {
+		return
+	}
+
+	req.Method = http.MethodPost
+}
+
+func restoreBody(req, previous *http.Request) error {
+	body, err := previous.GetBody()
+	if err != nil {
+		return err
+	}
+
+	req.Body = body
+	req.GetBody = previous.GetBody
+	req.ContentLength = previous.ContentLength
+
+	return nil
+}
+
+func removeAuthorizationAfterCrossHostRedirect(req *http.Request, via []*http.Request) {
+	originalHost := via[0].URL.Host
+	if req.URL.Host != originalHost {
+		req.Header.Del("Authorization")
+		return
+	}
+
+	for _, previous := range via[1:] {
+		if previous.URL.Host != originalHost {
+			req.Header.Del("Authorization")
+			return
+		}
+	}
 }
 
 // Batch performs a batch operation on objects and returns the result.
