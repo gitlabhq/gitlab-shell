@@ -80,3 +80,52 @@ func TestUploadPack(t *testing.T) {
 		})
 	}
 }
+
+func TestUploadPackWithRetryConfig(t *testing.T) {
+	gitalyAddress, testServer := testserver.StartGitalyServer(t, "tcp")
+
+	retryConfig := map[string]interface{}{
+		"maxAttempts":          4,
+		"initialBackoff":       "0.1s",
+		"maxBackoff":           "1s",
+		"backoffMultiplier":    2,
+		"retryableStatusCodes": []string{"UNAVAILABLE"},
+	}
+	requests := requesthandlers.BuildAllowedWithGitalyHandlersAndRetryConfig(t, gitalyAddress, retryConfig)
+	url := testserver.StartHTTPServer(t, requests)
+
+	output := &bytes.Buffer{}
+	input := &bytes.Buffer{}
+
+	repo := "group/repo"
+	env := sshenv.Env{
+		IsSSHConnection: true,
+		OriginalCommand: "git-upload-pack " + repo,
+		RemoteAddr:      "127.0.0.1",
+	}
+
+	args := &commandargs.Shell{
+		GitlabKeyID: "1",
+		CommandType: commandargs.UploadPack,
+		SSHArgs:     []string{"git-upload-pack", repo},
+		Env:         env,
+	}
+
+	ctx := correlation.ContextWithCorrelation(context.Background(), "retry-test")
+	ctx = correlation.ContextWithClientName(ctx, "gitlab-shell-tests")
+
+	cfg := &config.Config{GitlabURL: url}
+	cfg.GitalyClient.InitSidechannelRegistry(ctx)
+
+	cmd := &Command{
+		Config:     cfg,
+		Args:       args,
+		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
+	}
+
+	_, err := cmd.Execute(ctx)
+	require.NoError(t, err)
+
+	require.Equal(t, "SSHUploadPackWithSidechannel: "+repo, output.String())
+	require.Equal(t, "retry-test", testServer.ReceivedMD["x-gitlab-correlation-id"][0])
+}

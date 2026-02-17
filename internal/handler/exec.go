@@ -3,6 +3,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -11,13 +12,14 @@ import (
 	grpccodes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	grpcstatus "google.golang.org/grpc/status"
+	"google.golang.org/protobuf/encoding/protojson"
 
+	gitalyclient "gitlab.com/gitlab-org/gitaly/v18/client"
+	pb "gitlab.com/gitlab-org/gitaly/v18/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitaly"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
-
-	pb "gitlab.com/gitlab-org/gitaly/v18/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/labkit/log"
 )
 
@@ -36,12 +38,29 @@ type GitalyCommand struct {
 // NewGitalyCommand creates a new GitalyCommand instance
 func NewGitalyCommand(cfg *config.Config, serviceName string, response *accessverifier.Response) *GitalyCommand {
 	gc := gitaly.Command{
-		ServiceName: serviceName,
-		Address:     response.Gitaly.Address,
-		Token:       response.Gitaly.Token,
+		CacheKey: gitaly.CacheKey{
+			ServiceName: serviceName,
+			Address:     response.Gitaly.Address,
+			Token:       response.Gitaly.Token,
+		},
+		RetryPolicy: parseRetryConfig(response.RetryConfig),
 	}
 
 	return &GitalyCommand{Config: cfg, Response: response, Command: gc}
+}
+
+func parseRetryConfig(rawConfig json.RawMessage) *gitalyclient.RetryPolicy {
+	if len(rawConfig) == 0 {
+		return nil
+	}
+
+	var policy gitalyclient.RetryPolicy
+	if err := protojson.Unmarshal(rawConfig, &policy); err != nil {
+		log.WithError(err).Error("failed to unmarshal retry policy")
+		return nil
+	}
+
+	return &policy
 }
 
 // processGitalyError handles errors that come back from Gitaly that may be a
