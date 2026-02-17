@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 
@@ -241,4 +242,34 @@ func errWithDetail(t *testing.T, detail proto.Message) error {
 	proto.Details = append(proto.Details, marshaled)
 
 	return grpcstatus.ErrorProto(proto)
+}
+
+func TestNewGitalyCommandWithRetryConfig(t *testing.T) {
+	retryConfig := json.RawMessage(`{"maxAttempts":4,"initialBackoff":"0.1s","maxBackoff":"1s","backoffMultiplier":2,"retryableStatusCodes":["UNAVAILABLE"]}`)
+
+	cmd := NewGitalyCommand(
+		newConfig(),
+		string(commandargs.UploadPack),
+		&accessverifier.Response{
+			Gitaly:      accessverifier.Gitaly{Address: "tcp://localhost:9999"},
+			RetryConfig: retryConfig,
+		},
+	)
+
+	require.NotNil(t, cmd.Command.RetryPolicy)
+	require.Equal(t, uint32(4), cmd.Command.RetryPolicy.MaxAttempts)
+	require.InEpsilon(t, float32(2), cmd.Command.RetryPolicy.BackoffMultiplier, 0.0001)
+	require.Equal(t, []string{"UNAVAILABLE"}, cmd.Command.RetryPolicy.RetryableStatusCodes)
+}
+
+func TestNewGitalyCommandWithoutRetryConfig(t *testing.T) {
+	cmd := NewGitalyCommand(
+		newConfig(),
+		string(commandargs.UploadPack),
+		&accessverifier.Response{
+			Gitaly: accessverifier.Gitaly{Address: "tcp://localhost:9999"},
+		},
+	)
+
+	require.Nil(t, cmd.Command.RetryPolicy)
 }
