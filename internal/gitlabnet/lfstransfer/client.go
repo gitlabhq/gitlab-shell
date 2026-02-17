@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"net/http"
 	"net/url"
+	"slices"
 	"time"
 
 	"github.com/charmbracelet/git-lfs-transfer/transfer"
@@ -119,9 +120,11 @@ func NewClient(config *config.Config, args *commandargs.Shell, href string, auth
 	client := retryablehttp.NewClient()
 	client.RetryMax = 3
 	client.Logger = nil
+	client.HTTPClient.CheckRedirect = checkRedirectFunc
 
 	return &Client{config: config, args: args, href: href, auth: auth, header: ClientHeader, client: client}, nil
 }
+
 func (c *Client) newAuthenticatedPostRequest(url string, body io.Reader) (*retryablehttp.Request, error) {
 	req, err := retryablehttp.NewRequest(http.MethodPost, url, body)
 	if err != nil {
@@ -131,6 +134,72 @@ func (c *Client) newAuthenticatedPostRequest(url string, body io.Reader) (*retry
 	req.Header.Set("Authorization", c.auth)
 
 	return req, nil
+}
+
+const maxRedirects = 10
+
+func checkRedirectFunc(req *http.Request, via []*http.Request) error {
+	if len(via) >= maxRedirects {
+		return fmt.Errorf("stopped after %d redirects", maxRedirects)
+	}
+
+	original, previous := via[0], via[len(via)-1]
+	// net/http turns 301/302 for non-GET/HEAD requests into bodiless GETs and never
+	// re-attaches the body on later hops, including 307/308.
+	if shouldReplayOriginalRequest(req.Response.StatusCode, original.Method, previous.Method) &&
+		req.Body == nil && original.GetBody != nil {
+		if err := restoreBody(req, original); err != nil {
+			return err
+		}
+		req.Method = original.Method
+	}
+
+	removeAuthorizationAfterCrossHostRedirect(req, via)
+
+	return nil
+}
+
+// shouldReplayOriginalRequest replays the original method and body on 301/302/307/308
+// until a hop such as 303 changes the method; GET/HEAD have no body to replay.
+func shouldReplayOriginalRequest(statusCode int, originalMethod, previousMethod string) bool {
+	if originalMethod == http.MethodGet || originalMethod == http.MethodHead || previousMethod != originalMethod {
+		return false
+	}
+
+	switch statusCode {
+	case http.StatusMovedPermanently, http.StatusFound, http.StatusTemporaryRedirect, http.StatusPermanentRedirect:
+		return true
+	default:
+		return false
+	}
+}
+
+func restoreBody(req, original *http.Request) error {
+	body, err := original.GetBody()
+	if err != nil {
+		return err
+	}
+
+	req.Body = body
+	req.GetBody = original.GetBody
+	req.ContentLength = original.ContentLength
+	// Go 1.26+ strips body headers when a redirect drops the body; restore them alongside it.
+	for _, header := range []string{"Content-Encoding", "Content-Language", "Content-Location", "Content-Type"} {
+		if values := original.Header.Values(header); len(req.Header.Values(header)) == 0 && len(values) > 0 {
+			req.Header[header] = values
+		}
+	}
+
+	return nil
+}
+
+func removeAuthorizationAfterCrossHostRedirect(req *http.Request, via []*http.Request) {
+	host := via[0].URL.Host
+	// Unlike net/http, strip Authorization when host:port differs, including subdomains and port changes.
+	crossed := req.URL.Host != host || slices.ContainsFunc(via[1:], func(r *http.Request) bool { return r.URL.Host != host })
+	if crossed {
+		req.Header.Del("Authorization")
+	}
 }
 
 // Batch performs a batch operation on objects and returns the result.
