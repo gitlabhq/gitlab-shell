@@ -1,3 +1,19 @@
+v14.46.0
+
+- Add Gitaly retry policy  
+- Update gitlab.com/gitlab-org/cells/topology-service digest to af4593c !1386
+- Migrate all bar gitlab-shell to new slog labkit setup !1380
+- Bump Gitaly version to 18.9.0 !1373
+- Add Topology Service Go client dependency !1383
+- Add Topology Service configuration types !1382
+- Bumps the LabKit version to adopt the NewWithFile logging constructor !1372
+- Upgrade Gitaly to v18 !1373
+- Ensure logs are routed to correct file with correct min level !1369
+- Removes final Ruby Spec Tests from this repository !1368
+- Removes more Ruby Spec tests in favour of Go tests !1367
+- Fully Migrates gitlab-sshd over to Labkit v2 Log Package !1360
+- Removes and refactors Ruby Spec tests into Go !1364
+
 v14.45.6
 
 - Adds test logs to help validate new V2 LabKit Logging Setup !1348
