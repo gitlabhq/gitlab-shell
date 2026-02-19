@@ -18,7 +18,7 @@ import (
 const (
 	internalAPIPath     = "/api/v4/internal"
 	apiSecretHeaderName = "Gitlab-Shell-Api-Request" // #nosec G101
-	defaultUserAgent    = "GitLab-Shell"
+	DefaultUserAgent    = "GitLab-Shell"             //nolint:revive
 	jwtTTL              = time.Minute
 	jwtIssuer           = "gitlab-shell"
 )
@@ -65,7 +65,7 @@ func NewGitlabNetClient(
 		user:       user,
 		password:   password,
 		secret:     secret,
-		userAgent:  defaultUserAgent,
+		userAgent:  DefaultUserAgent,
 	}, nil
 }
 

@@ -14,6 +14,10 @@ var httpClient = &http.Client{
 	Transport: client.NewTransport(client.DefaultTransport()),
 }
 
+var sshPackClient = &http.Client{
+	Transport: client.NewStreamingTransport(client.DefaultTransport()),
+}
+
 const (
 	repoUnavailableErrMsg = "Remote repository is unavailable"
 	sshUploadPackPath     = "/ssh-upload-pack"
@@ -67,7 +71,7 @@ func (c *Client) SSHUploadPack(ctx context.Context, body io.Reader) (*http.Respo
 		return nil, err
 	}
 
-	return c.do(request)
+	return c.doStreaming(request)
 }
 
 // SSHReceivePack sends a SSH Git push request to the server.
@@ -77,10 +81,18 @@ func (c *Client) SSHReceivePack(ctx context.Context, body io.Reader) (*http.Resp
 		return nil, err
 	}
 
-	return c.do(request)
+	return c.doStreaming(request)
 }
 
 func (c *Client) do(request *http.Request) (*http.Response, error) {
+	return c.doWithClient(httpClient, request)
+}
+
+func (c *Client) doStreaming(request *http.Request) (*http.Response, error) {
+	return c.doWithClient(sshPackClient, request)
+}
+
+func (c *Client) doWithClient(httpClient *http.Client, request *http.Request) (*http.Response, error) {
 	for k, v := range c.Headers {
 		request.Header.Add(k, v)
 	}

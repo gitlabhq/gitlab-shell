@@ -228,3 +228,64 @@ func setup(t *testing.T) *Client {
 
 	return client
 }
+
+func TestConnectionCloseBehavior(t *testing.T) {
+	testCases := []struct {
+		desc            string
+		path            string
+		executeRequest  func(*Client) (*http.Response, error)
+		expectConnClose bool
+	}{
+		{
+			desc: "SSHUploadPack does not close connection",
+			path: sshUploadPackPath,
+			executeRequest: func(c *Client) (*http.Response, error) {
+				return c.SSHUploadPack(context.Background(), bytes.NewReader([]byte(refsBody)))
+			},
+			expectConnClose: false,
+		},
+		{
+			desc: "SSHReceivePack does not close connection",
+			path: sshReceivePackPath,
+			executeRequest: func(c *Client) (*http.Response, error) {
+				return c.SSHReceivePack(context.Background(), bytes.NewReader([]byte(refsBody)))
+			},
+			expectConnClose: false,
+		},
+		{
+			desc: "InfoRefs uses connection close",
+			path: "/info/refs",
+			executeRequest: func(c *Client) (*http.Response, error) {
+				return c.InfoRefs(context.Background(), "git-upload-pack")
+			},
+			expectConnClose: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			var connectionCloseReceived bool
+
+			requests := []testserver.TestRequestHandler{
+				{
+					Path: tc.path,
+					Handler: func(w http.ResponseWriter, r *http.Request) {
+						connectionCloseReceived = r.Close
+						w.Write([]byte("response"))
+					},
+				},
+			}
+
+			client := &Client{
+				URL:     testserver.StartHTTPServer(t, requests),
+				Headers: customHeaders,
+			}
+
+			response, err := tc.executeRequest(client)
+			require.NoError(t, err)
+			defer response.Body.Close()
+
+			assert.Equal(t, tc.expectConnClose, connectionCloseReceived)
+		})
+	}
+}

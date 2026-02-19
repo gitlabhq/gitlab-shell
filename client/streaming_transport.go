@@ -1,4 +1,3 @@
-// Package client provides an HTTP client with enhanced logging, tracing, and correlation handling.
 package client
 
 import (
@@ -10,19 +9,17 @@ import (
 	"gitlab.com/gitlab-org/labkit/tracing"
 )
 
-type transport struct {
+type streamingTransport struct {
 	next http.RoundTripper
 }
 
-// RoundTrip executes a single HTTP transaction, adding logging and tracing capabilities.
-func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
+func (rt *streamingTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	ctx := request.Context()
 
 	originalRemoteIP, ok := ctx.Value(OriginalRemoteIPContextKey{}).(string)
 	if ok {
 		request.Header.Add("X-Forwarded-For", originalRemoteIP)
 	}
-	request.Close = true
 	request.Header.Add("User-Agent", DefaultUserAgent)
 
 	start := time.Now()
@@ -37,33 +34,24 @@ func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 	logger := log.WithContextFields(ctx, fields)
 
 	if err != nil {
-		logger.WithError(err).Error("Internal API unreachable")
+		logger.WithError(err).Error("Streaming request failed")
 		return response, err
 	}
 
 	logger = logger.WithField("status", response.StatusCode)
 
-	if response.StatusCode >= 400 {
-		logger.WithError(err).Error("Internal API error")
-		return response, err
-	}
-
 	if response.ContentLength >= 0 {
 		logger = logger.WithField("content_length_bytes", response.ContentLength)
 	}
 
-	logger.Info("Finished HTTP request")
+	logger.Info("Finished streaming HTTP request")
 
 	return response, nil
 }
 
-// DefaultTransport returns a clone of the default HTTP transport.
-func DefaultTransport() http.RoundTripper {
-	return http.DefaultTransport.(*http.Transport).Clone()
-}
-
-// NewTransport creates a new transport with logging, tracing, and correlation handling.
-func NewTransport(next http.RoundTripper) http.RoundTripper {
-	t := &transport{next: next}
+// NewStreamingTransport creates a transport for long-lived streaming connections that does not
+// set request.Close, avoiding HTTP/2 stream resets during full-duplex communication.
+func NewStreamingTransport(next http.RoundTripper) http.RoundTripper {
+	t := &streamingTransport{next: next}
 	return correlation.NewInstrumentedRoundTripper(tracing.NewRoundTripper(t))
 }

@@ -101,7 +101,7 @@ func TestRequestWithUserAgent(t *testing.T) {
 		{
 			Path: "/api/v4/internal/default_user_agent",
 			Handler: func(_ http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, defaultUserAgent, r.UserAgent())
+				assert.Equal(t, DefaultUserAgent, r.UserAgent())
 			},
 		},
 		{
