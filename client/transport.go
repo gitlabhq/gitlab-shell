@@ -33,7 +33,7 @@ func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 	ctx = log.WithFields(ctx,
 		slog.String("method", request.Method),
 		slog.String("url", request.URL.String()),
-		slog.Duration("duration_s", time.Duration(time.Since(start).Seconds())),
+		slog.Float64("duration_s", time.Since(start).Seconds()),
 	)
 	if err != nil {
 		slog.ErrorContext(ctx, "Internal API unreachable", slog.String(fields.ErrorMessage, err.Error()))
