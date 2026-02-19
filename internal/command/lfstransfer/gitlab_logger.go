@@ -28,17 +28,10 @@ func (l *WrappedLoggerForGitLFSTransfer) Log(msg string, args ...any) {
 
 	for i := 0; i < len(args); i += 2 {
 		if i >= len(args)-1 {
-			fields = append(fields, slog.Any("args", args))
-			break
-		}
-	}
-
-	for i := 0; i < len(args); i += 2 {
-		if i >= len(args)-1 {
 			fields = fieldsFallback
 			break
 		}
-
+	
 		if arg, ok := args[i].(string); ok {
 			fields = append(fields, slog.Any(arg, args[i+1]))
 		} else {
@@ -46,6 +39,6 @@ func (l *WrappedLoggerForGitLFSTransfer) Log(msg string, args ...any) {
 			break
 		}
 	}
-	l.ctx = log.WithFields(l.ctx, fields...)
-	slog.InfoContext(l.ctx, msg)
+	ctx := log.WithFields(l.ctx, fields...)
+	slog.InfoContext(ctx, msg)
 }
