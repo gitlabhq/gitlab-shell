@@ -203,6 +203,16 @@ code_quality:
   extends: .use-docker-in-docker
   rules: *workflow_rules
 
+check_gitaly_version:
+  stage: lint
+  rules: *workflow_rules
+  ## In case the job fails, mark the job as warning
+  ## That way we don't block the pipeline but we warn the user
+  allow_failure: true
+  script:
+    - chmod +x ./support/lint_gitaly_version.sh
+    - ./support/lint_gitaly_version.sh
+
 # SAST
 semgrep-sast:
   stage: lint
