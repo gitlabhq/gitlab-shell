@@ -31,7 +31,7 @@ func (l *WrappedLoggerForGitLFSTransfer) Log(msg string, args ...any) {
 			fields = fieldsFallback
 			break
 		}
-	
+
 		if arg, ok := args[i].(string); ok {
 			fields = append(fields, slog.Any(arg, args[i+1]))
 		} else {
