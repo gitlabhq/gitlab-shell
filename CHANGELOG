@@ -1,3 +1,10 @@
+v14.47.0
+
+- Implement Topology Service gRPC client !1384
+- Migrate all logs to LabKit v2 !1381
+- Add Gitaly version linter !1371
+- Update module github.com/golang-jwt/jwt/v5 to v5.3.1 !1379
+
 v14.46.0
 
 - Add Gitaly retry policy  
