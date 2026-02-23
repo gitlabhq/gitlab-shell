@@ -51,7 +51,7 @@ auth_file: "/home/git/.ssh/authorized_keys"
 log_level: INFO
 
 # Log format. 'json' by default, can be changed to 'text' if needed
-# log_format: json
+log_format: text
 
 # Audit usernames.
 # Set to true to see real usernames in the logs instead of key ids, which is easier to follow, but

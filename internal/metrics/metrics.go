@@ -23,7 +23,6 @@ const (
 	sshdHitMaxSessionsName                    = "concurrent_limited_sessions_total"
 	sshdSessionDurationSecondsName            = "session_duration_seconds"
 	sshdSessionEstablishedDurationSecondsName = "session_established_duration_seconds"
-	sshdCanceledSessionsName                  = "canceled_sessions"
 
 	sliSshdSessionsTotalName       = "gitlab_sli:shell_sshd_sessions:total"
 	sliSshdSessionsErrorsTotalName = "gitlab_sli:shell_sshd_sessions:errors_total"

@@ -3,8 +3,9 @@ package lfstransfer
 
 import (
 	"context"
+	"log/slog"
 
-	"gitlab.com/gitlab-org/labkit/log"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 // WrappedLoggerForGitLFSTransfer is responsible for creating a compatible logger
@@ -20,10 +21,10 @@ func NewWrappedLoggerForGitLFSTransfer(ctx context.Context) *WrappedLoggerForGit
 }
 
 // Log allows logging in github.com/charmbracelet/git-lfs-transfer to take place
-// using gitlab.com/gitlab-org/labkit/log
-func (l *WrappedLoggerForGitLFSTransfer) Log(msg string, args ...interface{}) {
-	fields := make(map[string]interface{})
-	fieldsFallback := map[string]interface{}{"args": args}
+// using gitlab.com/gitlab-org/labkit/v2/log
+func (l *WrappedLoggerForGitLFSTransfer) Log(msg string, args ...any) {
+	fields := []slog.Attr{}
+	fieldsFallback := []slog.Attr{slog.Any("args", args)}
 
 	for i := 0; i < len(args); i += 2 {
 		if i >= len(args)-1 {
@@ -32,12 +33,12 @@ func (l *WrappedLoggerForGitLFSTransfer) Log(msg string, args ...interface{}) {
 		}
 
 		if arg, ok := args[i].(string); ok {
-			fields[arg] = args[i+1]
+			fields = append(fields, slog.Any(arg, args[i+1]))
 		} else {
 			fields = fieldsFallback
 			break
 		}
 	}
-
-	log.WithContextFields(l.ctx, fields).Info(msg)
+	ctx := log.WithFields(l.ctx, fields...)
+	slog.InfoContext(ctx, msg)
 }

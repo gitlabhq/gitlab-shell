@@ -1,4 +1,4 @@
-.PHONY: validate verify verify_ruby verify_golang test test_fancy coverage coverage_golang setup _script_install make_necessary_dirs build compile check clean install lint
+.PHONY: validate verify test test_fancy coverage setup make_necessary_dirs build compile check clean install lint
 
 FIPS_MODE ?= 0
 OS := $(shell uname | tr A-Z a-z)
@@ -67,14 +67,14 @@ test:
 
 test_fancy: ${GOTESTSUM_FILE}
 	@${GOTESTSUM_FILE} --version
-	@${GOTESTSUM_FILE} --junitfile ./cover.xml --format pkgname -- -coverprofile=./cover.out -covermode=atomic -count 1 -tags "$(GO_TAGS)" ./...
+	@${GOTESTSUM_FILE} --junitfile ./cover.xml --format pkgname -- -coverprofile=./cover.out -covermode=atomic -timeout 1m -count 1 -tags "$(GO_TAGS)" ./...
 
 ${GOTESTSUM_FILE}:
 	mkdir -p $(shell dirname ${GOTESTSUM_FILE})
 	curl -L https://github.com/gotestyourself/gotestsum/releases/download/v${GOTESTSUM_VERSION}/gotestsum_${GOTESTSUM_VERSION}_${OS}_${ARCH}.tar.gz | tar -zOxf - gotestsum > ${GOTESTSUM_FILE} && chmod +x ${GOTESTSUM_FILE}
 
 test_race:
-	go test -race -count 1 ./...
+	go test -race -timeout 1m -count 1 ./... -v
 
 coverage: 
 	[ -f cover.out ] && go tool cover -func cover.out
