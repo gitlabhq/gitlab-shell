@@ -40,7 +40,7 @@ func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 		return response, err
 	}
 
-	ctx = log.WithFields(ctx, slog.Int("status", response.StatusCode))
+	ctx = log.WithFields(ctx, slog.Int(fields.HTTPStatusCode, response.StatusCode))
 
 	if response.StatusCode >= 400 {
 		slog.ErrorContext(ctx, "Internal API error")
