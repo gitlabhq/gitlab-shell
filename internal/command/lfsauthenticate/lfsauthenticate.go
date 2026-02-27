@@ -79,7 +79,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		slog.DebugContext(ctx, "lfsauthenticate: execute: LFS authentication failed",
 			slog.String("operation", operation),
 			slog.String("gl_repository", repo),
-			slog.String("user_id", accessResponse.UserID),
+			slog.String(fields.GitLabUserID, accessResponse.UserID),
 			slog.String(fields.ErrorMessage, err.Error()),
 		)
 
