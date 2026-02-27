@@ -11,6 +11,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/gitauditevent"
+	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
@@ -20,7 +21,7 @@ func Audit(ctx context.Context, args *commandargs.Shell, c *config.Config, respo
 	ctx = log.WithFields(ctx,
 		slog.String("gl_repository", response.Repo),
 		slog.Any("command", args.CommandType),
-		slog.String("username", response.Username),
+		slog.String(fields.GitLabUserName, response.Username),
 	)
 
 	slog.DebugContext(ctx, "sending git audit event")

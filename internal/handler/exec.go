@@ -133,7 +133,7 @@ func (gc *GitalyCommand) LogExecution(ctx context.Context, repository *pb.Reposi
 		slog.String("gl_project_path", repository.GlProjectPath),
 		slog.String("gl_repository", repository.GlRepository),
 		slog.String(fields.GitLabUserID, gc.Response.UserID),
-		slog.String("username", gc.Response.Username),
+		slog.String(fields.GitLabUserName, gc.Response.Username),
 		slog.String("git_protocol", env.GitProtocolVersion),
 		slog.String("remote_ip", env.RemoteAddr),
 		slog.String("gl_key_type", gc.Response.KeyType),
