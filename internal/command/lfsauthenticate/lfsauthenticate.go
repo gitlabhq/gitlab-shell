@@ -16,7 +16,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/lfsauthenticate"
-	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
@@ -80,13 +79,13 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		// return nothing just like Ruby's GitlabShell#lfs_authenticate does
 		userID, convErr := strconv.Atoi(accessResponse.UserID)
 		if convErr != nil {
-			slog.WarnContext(ctx, "lfsauthenticate: execute: failed to parse user_id", slog.String(fields.ErrorMessage, convErr.Error()))
+			slog.WarnContext(ctx, "lfsauthenticate: execute: failed to parse user_id", log.ErrorMessage( convErr.Error()))
 		}
 		slog.DebugContext(ctx, "lfsauthenticate: execute: LFS authentication failed",
 			slog.String("operation", operation),
 			slog.String("gl_repository", repo),
 			log.GitLabUserID(userID),
-			slog.String(fields.ErrorMessage, err.Error()),
+			log.ErrorMessage( err.Error()),
 		)
 
 		return ctxWithLogData, nil

@@ -19,7 +19,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitaly"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
-	"gitlab.com/gitlab-org/labkit/fields"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 
 	pb "gitlab.com/gitlab-org/gitaly/v18/proto/go/gitalypb"
 )
@@ -57,7 +57,7 @@ func parseRetryConfig(rawConfig json.RawMessage) *gitalyclient.RetryPolicy {
 
 	var policy gitalyclient.RetryPolicy
 	if err := protojson.Unmarshal(rawConfig, &policy); err != nil {
-		slog.Error("failed to unmarshal retry policy", slog.String(fields.ErrorMessage, err.Error()))
+		slog.Error("failed to unmarshal retry policy", log.ErrorMessage( err.Error()))
 		return nil
 	}
 
@@ -88,7 +88,7 @@ func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHan
 	// We leave the connection open for future reuse
 	conn, err := gc.getConn(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to get connection to execute Git command", slog.String(fields.ErrorMessage, err.Error()))
+		slog.ErrorContext(ctx, "Failed to get connection to execute Git command", log.ErrorMessage( err.Error()))
 		return err
 	}
 
@@ -96,7 +96,7 @@ func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHan
 	exitStatus, err := handler(childCtx, conn)
 
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to execute Git command", slog.String(fields.ErrorMessage, err.Error()), slog.Int("exit_status", int(exitStatus)))
+		slog.ErrorContext(ctx, "Failed to execute Git command", log.ErrorMessage( err.Error()), slog.Int("exit_status", int(exitStatus)))
 
 		if grpcstatus.Code(err) == grpccodes.Unavailable {
 			return processGitalyError(err)
@@ -128,14 +128,15 @@ func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repo
 
 // LogExecution logs the execution of a Git command
 func (gc *GitalyCommand) LogExecution(ctx context.Context, repository *pb.Repository, env sshenv.Env) {
+	userID, _ := strconv.Atoi(gc.Response.UserID)
 	slog.InfoContext(ctx, "executing git command",
 		slog.String("command", gc.Command.ServiceName),
 		slog.String("gl_project_path", repository.GlProjectPath),
 		slog.String("gl_repository", repository.GlRepository),
-		slog.String(fields.GitLabUserID, gc.Response.UserID),
-		slog.String(fields.GitLabUserName, gc.Response.Username),
+		log.GitLabUserID(userID),
+		log.GitLabUserName(gc.Response.Username),
 		slog.String("git_protocol", env.GitProtocolVersion),
-		slog.String("remote_ip", env.RemoteAddr),
+		log.RemoteIP(env.RemoteAddr),
 		slog.String("gl_key_type", gc.Response.KeyType),
 		slog.Int("gl_key_id", gc.Response.KeyID),
 	)

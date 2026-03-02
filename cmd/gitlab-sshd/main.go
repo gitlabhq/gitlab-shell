@@ -17,7 +17,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/logger"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshd"
 
-	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/monitoring"
 	v2log "gitlab.com/gitlab-org/labkit/v2/log"
 )
@@ -54,9 +53,7 @@ func main() {
 		var err error
 		cfg, err = config.NewFromDir(*configDir)
 		if err != nil {
-			v2log.New().ErrorContext(ctx, "failed to load configuration from specified directory", slog.String(
-				fields.ErrorMessage, err.Error(),
-			))
+			v2log.New().ErrorContext(ctx, "failed to load configuration from specified directory", v2log.ErrorMessage(err.Error()))
 		}
 	}
 	logCloser := logger.ConfigureLogger(cfg)
@@ -67,7 +64,7 @@ func main() {
 
 	overrideConfigFromEnvironment(cfg)
 	if err := isConfigSane(cfg); err != nil {
-		ctx = v2log.WithFields(ctx, slog.String(fields.ErrorMessage, err.Error()))
+		ctx = v2log.WithFields(ctx, v2log.ErrorMessage(err.Error()))
 		if *configDir == "" {
 			slog.ErrorContext(ctx, "no config-dir provided, using only environment variables")
 		} else {
@@ -83,9 +80,7 @@ func main() {
 
 	server, err := sshd.NewServer(cfg)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to start Gitlab built-in sshd", slog.String(
-			fields.ErrorMessage, err.Error(),
-		))
+		slog.ErrorContext(ctx, "Failed to start Gitlab built-in sshd", v2log.ErrorMessage(err.Error()))
 	}
 
 	// Startup monitoring endpoint.
@@ -103,7 +98,7 @@ func main() {
 
 	if err := server.ListenAndServe(ctx); err != nil {
 		slog.ErrorContext(ctx, "GitLab built-in sshd failed to listen for new connections",
-			slog.String(fields.ErrorMessage, err.Error()))
+			v2log.ErrorMessage(err.Error()))
 	}
 }
 
@@ -123,8 +118,7 @@ func gracefulShutdown(
 			slog.String("signal", sig.String()))
 
 		if err := server.Shutdown(); err != nil {
-			slog.ErrorContext(ctx, "Error shutting down the server", slog.String(
-				fields.ErrorMessage, err.Error()))
+			slog.ErrorContext(ctx, "Error shutting down the server", v2log.ErrorMessage(err.Error()))
 		}
 		<-time.After(gracePeriod)
 
@@ -140,9 +134,7 @@ func startupMonitoringEndpoint(ctx context.Context, cfg *config.Config, server *
 			monitoring.WithServeMux(server.MonitoringServeMux()),
 		)
 
-		slog.ErrorContext(ctx, "monitoring service raised an error", slog.String(
-			fields.ErrorMessage, err.Error(),
-		))
+		slog.ErrorContext(ctx, "monitoring service raised an error", v2log.ErrorMessage(err.Error()))
 		panic(err)
 	}()
 }

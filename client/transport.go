@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
-	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/tracing"
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
@@ -31,16 +30,16 @@ func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 
 	response, err := rt.next.RoundTrip(request)
 	ctx = log.WithFields(ctx,
-		slog.String("method", request.Method),
-		slog.String("url", request.URL.String()),
-		slog.Float64("duration_s", time.Since(start).Seconds()),
+		log.HTTPMethod(request.Method),
+		log.HTTPURL(request.URL.String()),
+		log.DurationS(time.Since(start)),
 	)
 	if err != nil {
-		slog.ErrorContext(ctx, "Internal API unreachable", slog.String(fields.ErrorMessage, err.Error()))
+		slog.ErrorContext(ctx, "Internal API unreachable", log.ErrorMessage(err.Error()))
 		return response, err
 	}
 
-	ctx = log.WithFields(ctx, slog.Int(fields.HTTPStatusCode, response.StatusCode))
+	ctx = log.WithFields(ctx, log.HTTPStatusCode(response.StatusCode))
 
 	if response.StatusCode >= 400 {
 		slog.ErrorContext(ctx, "Internal API error")

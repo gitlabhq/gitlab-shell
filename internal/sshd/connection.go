@@ -20,7 +20,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 
-	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
@@ -75,7 +74,7 @@ func (c *connection) handle(ctx context.Context, srvCfg *ssh.ServerConfig, handl
 
 	reason := sconn.Wait()
 	if reason != nil {
-		slog.InfoContext(ctx, "server: handleConn: done", slog.String(fields.ErrorMessage, reason.Error()))
+		slog.InfoContext(ctx, "server: handleConn: done", log.ErrorMessage( reason.Error()))
 	}
 }
 
@@ -88,7 +87,7 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 	sconn, chans, reqs, err := ssh.NewServerConn(c.nconn, srvCfg)
 	if err != nil {
 		msg := "connection: initServerConn: failed to initialize SSH connection"
-		ctx = log.WithFields(ctx, slog.String(fields.ErrorMessage, err.Error()), slog.String("remote_addr", c.remoteAddr))
+		ctx = log.WithFields(ctx, log.ErrorMessage( err.Error()), slog.String("remote_addr", c.remoteAddr))
 
 		if strings.Contains(err.Error(), "no common algorithm for host key") || err.Error() == "EOF" {
 			slog.DebugContext(ctx, msg)
@@ -123,16 +122,16 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 
 		channel, requests, err := newChannel.Accept()
 		if err != nil {
-			slog.ErrorContext(requestCtx, "connection: handleRequests: accepting channel failed", slog.String(fields.ErrorMessage, err.Error()))
+			slog.ErrorContext(requestCtx, "connection: handleRequests: accepting channel failed", log.ErrorMessage( err.Error()))
 			c.concurrentSessions.Release(1)
 			continue
 		}
 
 		go func() {
 			defer func(started time.Time) {
-				duration := time.Since(started).Seconds()
-				metrics.SshdSessionDuration.Observe(duration)
-				slog.InfoContext(requestCtx, "connection: handleRequests: done", slog.Float64("duration_s", duration))
+				dur := time.Since(started)
+				metrics.SshdSessionDuration.Observe(dur.Seconds())
+				slog.InfoContext(requestCtx, "connection: handleRequests: done", log.DurationS(dur))
 			}(time.Now())
 
 			defer c.concurrentSessions.Release(1)
@@ -202,5 +201,5 @@ func (c *connection) trackError(ctx context.Context, err error) {
 	}
 
 	metrics.SliSshdSessionsErrorsTotal.Inc()
-	slog.WarnContext(ctx, "connection: session error", slog.String(fields.ErrorMessage, err.Error()))
+	slog.WarnContext(ctx, "connection: session error", log.ErrorMessage( err.Error()))
 }

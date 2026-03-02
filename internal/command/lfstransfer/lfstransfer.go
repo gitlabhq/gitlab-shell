@@ -14,7 +14,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/lfsauthenticate"
-	"gitlab.com/gitlab-org/labkit/fields"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 var (
@@ -98,12 +98,12 @@ func (c *Command) processTransfer(ctx context.Context, operation string, action 
 func (c *Command) sendCapabilities(ctx context.Context, handler *transfer.Pktline) error {
 	for _, cap := range capabilities {
 		if err := handler.WritePacketText(cap); err != nil {
-			slog.ErrorContext(ctx, "error sending capability", slog.String(fields.ErrorMessage, err.Error()), slog.String("capability", cap))
+			slog.ErrorContext(ctx, "error sending capability", log.ErrorMessage( err.Error()), slog.String("capability", cap))
 		}
 	}
 
 	if err := handler.WriteFlush(); err != nil {
-		slog.ErrorContext(ctx, "error flushing capabilities", slog.String(fields.ErrorMessage, err.Error()))
+		slog.ErrorContext(ctx, "error flushing capabilities", log.ErrorMessage( err.Error()))
 		return err
 	}
 

@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"gitlab.com/gitlab-org/labkit/fields"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
@@ -48,7 +48,7 @@ func (c *Command) getUserAnswer(ctx context.Context) string {
 
 	var answer string
 	if _, err := fmt.Fscanln(io.LimitReader(c.ReadWriter.In, readerLimit), &answer); err != nil {
-		slog.DebugContext(ctx, "twofactorrecover: getUserAnswer: Failed to get user input", slog.String(fields.ErrorMessage, err.Error()))
+		slog.DebugContext(ctx, "twofactorrecover: getUserAnswer: Failed to get user input", log.ErrorMessage( err.Error()))
 	}
 
 	return answer
@@ -67,7 +67,7 @@ func (c *Command) displayRecoveryCodes(ctx context.Context) {
 				"a new device so you do not lose access to your account again.\n"
 		_, _ = fmt.Fprint(c.ReadWriter.Out, messageWithCodes)
 	} else {
-		slog.ErrorContext(ctx, "twofactorrecover: displayRecoveryCodes: failed to generate recovery codes", slog.String(fields.ErrorMessage, err.Error()))
+		slog.ErrorContext(ctx, "twofactorrecover: displayRecoveryCodes: failed to generate recovery codes", log.ErrorMessage( err.Error()))
 		_, _ = fmt.Fprintf(c.ReadWriter.Out, "\nAn error occurred while trying to generate new recovery codes.\n%v\n", err)
 	}
 }
