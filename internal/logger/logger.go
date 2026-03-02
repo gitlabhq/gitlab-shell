@@ -16,9 +16,7 @@ import (
 // https://docs.gitlab.com/omnibus/settings/logs/#json-logging
 // This is currently controlled by the GITLAB_LOG_FORMAT environment variable.
 func ConfigureLogger(cfg *config.Config) io.Closer {
-	logConfig := &v2log.Config{
-		LogLevel: parseLogLevel(cfg.LogLevel),
-	}
+	logConfig := &v2log.Config{}
 	if gitlabLogFormat := os.Getenv("GITLAB_LOG_FORMAT"); gitlabLogFormat == "text" {
 		logConfig.UseTextFormat = true
 	}
@@ -30,19 +28,4 @@ func ConfigureLogger(cfg *config.Config) io.Closer {
 	}
 
 	return logCloser
-}
-
-func parseLogLevel(level string) slog.Level {
-	switch level {
-	case "DEBUG", "debug":
-		return slog.LevelDebug
-	case "INFO", "info":
-		return slog.LevelInfo
-	case "WARN", "warn":
-		return slog.LevelWarn
-	case "ERROR", "error":
-		return slog.LevelError
-	default:
-		return slog.LevelInfo
-	}
 }
