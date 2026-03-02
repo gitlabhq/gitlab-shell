@@ -90,7 +90,7 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (con
 
 			if req.WantReply {
 				if err = req.Reply(false, []byte{}); err != nil {
-					slog.DebugContext(ctx, "session: handle: Failed to reply", log.ErrorMessage( err.Error()))
+					slog.DebugContext(ctx, "session: handle: Failed to reply", log.ErrorMessage(err.Error()))
 				}
 			}
 		}
@@ -113,7 +113,7 @@ func (s *session) handleEnv(ctx context.Context, req *ssh.Request) (bool, error)
 	var envReq envRequest
 
 	if err := ssh.Unmarshal(req.Payload, &envReq); err != nil {
-		slog.ErrorContext(ctx, "session: handleEnv: failed to unmarshal request", log.ErrorMessage( err.Error()))
+		slog.ErrorContext(ctx, "session: handleEnv: failed to unmarshal request", log.ErrorMessage(err.Error()))
 		return false, err
 	}
 
@@ -127,7 +127,7 @@ func (s *session) handleEnv(ctx context.Context, req *ssh.Request) (bool, error)
 
 	if req.WantReply {
 		if err := req.Reply(accepted, []byte{}); err != nil {
-			slog.DebugContext(ctx, "session: handleEnv: Failed to reply", log.ErrorMessage( err.Error()))
+			slog.DebugContext(ctx, "session: handleEnv: Failed to reply", log.ErrorMessage(err.Error()))
 		}
 	}
 
@@ -157,7 +157,7 @@ func (s *session) handleExec(ctx context.Context, req *ssh.Request) (context.Con
 func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Context, uint32, error) {
 	if req.WantReply {
 		if err := req.Reply(true, []byte{}); err != nil {
-			slog.DebugContext(ctx, "session: handleShell: Failed to reply", log.ErrorMessage( err.Error()))
+			slog.DebugContext(ctx, "session: handleShell: Failed to reply", log.ErrorMessage(err.Error()))
 		}
 	}
 

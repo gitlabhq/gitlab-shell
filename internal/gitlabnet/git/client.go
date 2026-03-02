@@ -94,7 +94,7 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 	if response.StatusCode >= 400 {
 		defer func() {
 			if err := response.Body.Close(); err != nil {
-				slog.ErrorContext(request.Context(), "Unable to close response body", log.ErrorMessage( err.Error()))
+				slog.ErrorContext(request.Context(), "Unable to close response body", log.ErrorMessage(err.Error()))
 			}
 		}()
 

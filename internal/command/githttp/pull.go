@@ -92,7 +92,7 @@ func (c *PullCommand) readFromStdin(pw *io.PipeWriter) {
 
 		_, err := pw.Write(line)
 		if err != nil {
-			slog.Error("failed to write line", log.ErrorMessage( err.Error()))
+			slog.Error("failed to write line", log.ErrorMessage(err.Error()))
 		}
 
 		if pktline.IsDone(line) {
@@ -102,6 +102,6 @@ func (c *PullCommand) readFromStdin(pw *io.PipeWriter) {
 
 	err := pw.Close()
 	if err != nil {
-		slog.Error("failed to close writer", log.ErrorMessage( err.Error()))
+		slog.Error("failed to close writer", log.ErrorMessage(err.Error()))
 	}
 }

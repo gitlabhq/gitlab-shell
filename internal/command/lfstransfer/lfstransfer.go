@@ -98,12 +98,12 @@ func (c *Command) processTransfer(ctx context.Context, operation string, action 
 func (c *Command) sendCapabilities(ctx context.Context, handler *transfer.Pktline) error {
 	for _, cap := range capabilities {
 		if err := handler.WritePacketText(cap); err != nil {
-			slog.ErrorContext(ctx, "error sending capability", log.ErrorMessage( err.Error()), slog.String("capability", cap))
+			slog.ErrorContext(ctx, "error sending capability", log.ErrorMessage(err.Error()), slog.String("capability", cap))
 		}
 	}
 
 	if err := handler.WriteFlush(); err != nil {
-		slog.ErrorContext(ctx, "error flushing capabilities", log.ErrorMessage( err.Error()))
+		slog.ErrorContext(ctx, "error flushing capabilities", log.ErrorMessage(err.Error()))
 		return err
 	}
 

@@ -89,7 +89,7 @@ func (c *PushCommand) readFromStdin(pw *io.PipeWriter) {
 		line := scanner.Bytes()
 		_, err := pw.Write(line)
 		if err != nil {
-			slog.Error("failed to write line", log.ErrorMessage( err.Error()))
+			slog.Error("failed to write line", log.ErrorMessage(err.Error()))
 		}
 
 		if pktline.IsFlush(line) {
@@ -104,12 +104,12 @@ func (c *PushCommand) readFromStdin(pw *io.PipeWriter) {
 	if needsPackData {
 		_, err := io.Copy(pw, c.ReadWriter.In)
 		if err != nil {
-			slog.Error("failed to copy", log.ErrorMessage( err.Error()))
+			slog.Error("failed to copy", log.ErrorMessage(err.Error()))
 		}
 	}
 
 	err := pw.Close()
 	if err != nil {
-		slog.Error("failed to close writer", log.ErrorMessage( err.Error()))
+		slog.Error("failed to close writer", log.ErrorMessage(err.Error()))
 	}
 }

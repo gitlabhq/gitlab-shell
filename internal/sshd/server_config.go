@@ -36,12 +36,12 @@ func parseHostKeys(keyFiles []string) []ssh.Signer {
 	for _, filename := range keyFiles {
 		keyRaw, err := os.ReadFile(filepath.Clean(filename))
 		if err != nil {
-			slog.Error("Failed to read host key", slog.String("filename", filename), log.ErrorMessage( err.Error()))
+			slog.Error("Failed to read host key", slog.String("filename", filename), log.ErrorMessage(err.Error()))
 			continue
 		}
 		key, err := ssh.ParsePrivateKey(keyRaw)
 		if err != nil {
-			slog.Error("Failed to parse host key", slog.String("filename", filename), log.ErrorMessage( err.Error()))
+			slog.Error("Failed to parse host key", slog.String("filename", filename), log.ErrorMessage(err.Error()))
 			continue
 		}
 
@@ -64,12 +64,12 @@ func parseHostCerts(hostKeys []ssh.Signer, certFiles []string) map[string]*ssh.C
 		ctx := context.Background()
 		ctx = log.WithFields(ctx, slog.String("filename", filename))
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to read host certificate", log.ErrorMessage( err.Error()))
+			slog.ErrorContext(ctx, "failed to read host certificate", log.ErrorMessage(err.Error()))
 			continue
 		}
 		publicKey, _, _, _, err := ssh.ParseAuthorizedKey(keyRaw)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to parse host certificate", log.ErrorMessage( err.Error()))
+			slog.ErrorContext(ctx, "failed to parse host certificate", log.ErrorMessage(err.Error()))
 			continue
 		}
 
@@ -86,7 +86,7 @@ func parseHostCerts(hostKeys []ssh.Signer, certFiles []string) map[string]*ssh.C
 
 			certSigner, err := ssh.NewCertSigner(cert, hostKeys[index])
 			if err != nil {
-				slog.ErrorContext(ctx, "the host certificate doesn't match the host private key", log.ErrorMessage( err.Error()))
+				slog.ErrorContext(ctx, "the host certificate doesn't match the host private key", log.ErrorMessage(err.Error()))
 				continue
 			}
 
@@ -173,7 +173,7 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 
 	res, err := s.authorizedCertsClient.GetByKey(ctx, cert.KeyId, strings.TrimPrefix(fingerprint, "SHA256:"))
 	if err != nil {
-		slog.WarnContext(ctx, "user certificate is not signed by a trusted key", log.ErrorMessage( err.Error()))
+		slog.WarnContext(ctx, "user certificate is not signed by a trusted key", log.ErrorMessage(err.Error()))
 		return nil, err
 	}
 

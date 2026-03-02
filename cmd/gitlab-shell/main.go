@@ -74,7 +74,7 @@ func run() int {
 	fips.Check()
 
 	if _, err := cmd.Execute(ctx); err != nil {
-		slog.WarnContext(ctx, "gitlab-shell: main: command execution failed", log.ErrorMessage( err.Error()))
+		slog.WarnContext(ctx, "gitlab-shell: main: command execution failed", log.ErrorMessage(err.Error()))
 		if grpcstatus.Convert(err).Code() != grpccodes.Internal {
 			console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)
 		}

@@ -57,7 +57,7 @@ func parseRetryConfig(rawConfig json.RawMessage) *gitalyclient.RetryPolicy {
 
 	var policy gitalyclient.RetryPolicy
 	if err := protojson.Unmarshal(rawConfig, &policy); err != nil {
-		slog.Error("failed to unmarshal retry policy", log.ErrorMessage( err.Error()))
+		slog.Error("failed to unmarshal retry policy", log.ErrorMessage(err.Error()))
 		return nil
 	}
 
@@ -88,7 +88,7 @@ func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHan
 	// We leave the connection open for future reuse
 	conn, err := gc.getConn(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to get connection to execute Git command", log.ErrorMessage( err.Error()))
+		slog.ErrorContext(ctx, "Failed to get connection to execute Git command", log.ErrorMessage(err.Error()))
 		return err
 	}
 
@@ -96,7 +96,7 @@ func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHan
 	exitStatus, err := handler(childCtx, conn)
 
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to execute Git command", log.ErrorMessage( err.Error()), slog.Int("exit_status", int(exitStatus)))
+		slog.ErrorContext(ctx, "Failed to execute Git command", log.ErrorMessage(err.Error()), slog.Int("exit_status", int(exitStatus)))
 
 		if grpcstatus.Code(err) == grpccodes.Unavailable {
 			return processGitalyError(err)

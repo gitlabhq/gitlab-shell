@@ -79,7 +79,7 @@ func (c *Command) getOTP(ctx context.Context) (string, error) {
 	otpLength := int64(64)
 	reader := io.LimitReader(c.ReadWriter.In, otpLength)
 	if _, err := fmt.Fscanln(reader, &answer); err != nil {
-		slog.DebugContext(ctx, "twofactorverify: getOTP: Failed to get user input", log.ErrorMessage( err.Error()))
+		slog.DebugContext(ctx, "twofactorverify: getOTP: Failed to get user input", log.ErrorMessage(err.Error()))
 	}
 
 	if answer == "" {
