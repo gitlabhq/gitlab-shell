@@ -20,6 +20,12 @@ func ConfigureLogger(cfg *config.Config) io.Closer {
 	if gitlabLogFormat := os.Getenv("GITLAB_LOG_FORMAT"); gitlabLogFormat == "text" {
 		logConfig.UseTextFormat = true
 	}
+	if cfg.LogLevel != "" {
+		var level slog.Level
+		if err := level.UnmarshalText([]byte(cfg.LogLevel)); err == nil {
+			logConfig.LogLevel = &level
+		}
+	}
 	logger, logCloser, err := v2log.NewWithFile(cfg.LogFile, logConfig)
 	slog.SetDefault(logger)
 	if err != nil {
