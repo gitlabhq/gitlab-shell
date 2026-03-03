@@ -29,7 +29,7 @@ func TestConfigureLabkitV2Log(t *testing.T) {
 		LogFile:   tmpFile,
 		LogFormat: "json",
 	}
-	os.Setenv("GITLAB_LOG_LEVEL", "debug")
+	t.Setenv("GITLAB_LOG_LEVEL", "debug")
 
 	closer := ConfigureLogger(&config)
 	if closer != nil {
