@@ -128,7 +128,10 @@ func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repo
 
 // LogExecution logs the execution of a Git command
 func (gc *GitalyCommand) LogExecution(ctx context.Context, repository *pb.Repository, env sshenv.Env) {
-	userID, _ := strconv.Atoi(gc.Response.UserID)
+	userID, convErr := strconv.Atoi(gc.Response.UserID)
+	if convErr != nil {
+		slog.WarnContext(ctx, "handler: LogExecution: failed to parse user_id", log.ErrorMessage(convErr.Error()))
+	}
 	slog.InfoContext(ctx, "executing git command",
 		slog.String("command", gc.Command.ServiceName),
 		slog.String("gl_project_path", repository.GlProjectPath),
