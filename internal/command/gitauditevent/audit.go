@@ -20,7 +20,7 @@ func Audit(ctx context.Context, args *commandargs.Shell, c *config.Config, respo
 	ctx = log.WithFields(ctx,
 		slog.String("gl_repository", response.Repo),
 		slog.Any("command", args.CommandType),
-		slog.String("username", response.Username),
+		log.GitLabUserName(response.Username),
 	)
 
 	slog.DebugContext(ctx, "sending git audit event")

@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
-	"gitlab.com/gitlab-org/labkit/fields"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 var httpClient = &http.Client{
@@ -94,7 +94,7 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 	if response.StatusCode >= 400 {
 		defer func() {
 			if err := response.Body.Close(); err != nil {
-				slog.ErrorContext(request.Context(), "Unable to close response body", slog.String(fields.ErrorMessage, err.Error()))
+				slog.ErrorContext(request.Context(), "Unable to close response body", log.ErrorMessage(err.Error()))
 			}
 		}()
 

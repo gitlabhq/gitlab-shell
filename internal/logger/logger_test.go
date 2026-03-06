@@ -24,25 +24,48 @@ func createTempFile(t *testing.T) string {
 }
 
 func TestConfigureLabkitV2Log(t *testing.T) {
-	tmpFile := createTempFile(t)
-	config := config.Config{
-		LogFile:   tmpFile,
-		LogFormat: "json",
-		LogLevel:  "debug",
-	}
+	t.Run("log level from config file", func(t *testing.T) {
+		tmpFile := createTempFile(t)
+		cfg := config.Config{
+			LogFile:  tmpFile,
+			LogLevel: "debug",
+		}
+		t.Setenv("GITLAB_LOG_LEVEL", "")
 
-	closer := ConfigureLogger(&config)
-	if closer != nil {
-		defer MustClose(t, closer)
-	}
-	slog.Info("this is a test")
-	slog.Debug("debug log message")
+		closer := ConfigureLogger(&cfg)
+		if closer != nil {
+			defer MustClose(t, closer)
+		}
+		slog.Info("this is a test")
+		slog.Debug("debug log message")
 
-	data, err := os.ReadFile(tmpFile)
-	dataStr := string(data)
-	require.NoError(t, err)
-	require.Contains(t, dataStr, `"msg":"this is a test"`)
-	require.Contains(t, dataStr, `"msg":"debug log message"`)
+		data, err := os.ReadFile(tmpFile)
+		dataStr := string(data)
+		require.NoError(t, err)
+		require.Contains(t, dataStr, `"msg":"this is a test"`)
+		require.Contains(t, dataStr, `"msg":"debug log message"`)
+	})
+
+	t.Run("log level from GITLAB_LOG_LEVEL env var", func(t *testing.T) {
+		tmpFile := createTempFile(t)
+		cfg := config.Config{
+			LogFile: tmpFile,
+		}
+		t.Setenv("GITLAB_LOG_LEVEL", "debug")
+
+		closer := ConfigureLogger(&cfg)
+		if closer != nil {
+			defer MustClose(t, closer)
+		}
+		slog.Info("this is a test")
+		slog.Debug("debug log message")
+
+		data, err := os.ReadFile(tmpFile)
+		dataStr := string(data)
+		require.NoError(t, err)
+		require.Contains(t, dataStr, `"msg":"this is a test"`)
+		require.Contains(t, dataStr, `"msg":"debug log message"`)
+	})
 }
 
 // MustClose calls Close() on the Closer and fails the test in case it returns

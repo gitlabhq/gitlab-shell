@@ -15,7 +15,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
-	"gitlab.com/gitlab-org/labkit/fields"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 const pullService = "git-upload-pack"
@@ -92,7 +92,7 @@ func (c *PullCommand) readFromStdin(pw *io.PipeWriter) {
 
 		_, err := pw.Write(line)
 		if err != nil {
-			slog.Error("failed to write line", slog.String(fields.ErrorMessage, err.Error()))
+			slog.Error("failed to write line", log.ErrorMessage(err.Error()))
 		}
 
 		if pktline.IsDone(line) {
@@ -102,6 +102,6 @@ func (c *PullCommand) readFromStdin(pw *io.PipeWriter) {
 
 	err := pw.Close()
 	if err != nil {
-		slog.Error("failed to close writer", slog.String(fields.ErrorMessage, err.Error()))
+		slog.Error("failed to close writer", log.ErrorMessage(err.Error()))
 	}
 }
