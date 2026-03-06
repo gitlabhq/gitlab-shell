@@ -13,8 +13,8 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/labkit/correlation"
-	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/tracing"
+	"gitlab.com/gitlab-org/labkit/v2/fields"
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 

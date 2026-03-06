@@ -21,7 +21,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
-	"gitlab.com/gitlab-org/labkit/fields"
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
@@ -124,7 +123,7 @@ func (s *Server) listen(ctx context.Context) error {
 			ReadHeaderTimeout: time.Duration(s.Config.Server.ProxyHeaderTimeout),
 		}
 
-		ctx = log.WithFields(ctx, slog.String("tcp_address", sshListener.Addr().String()))
+		ctx = log.WithFields(ctx, log.TCPAddress(sshListener.Addr().String()))
 		slog.InfoContext(ctx, "Proxy protocol is enabled")
 	}
 
@@ -149,7 +148,7 @@ func (s *Server) serve(ctx context.Context) {
 				break
 			}
 
-			slog.WarnContext(ctx, "Failed to accept connection", slog.String(fields.ErrorMessage, err.Error()))
+			slog.WarnContext(ctx, "Failed to accept connection", log.ErrorMessage(err.Error()))
 			continue
 		}
 
@@ -237,7 +236,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 	logData := extractLogDataFromContext(ctxWithLogData)
 	slog.InfoContext(ctx, "access: finish",
-		slog.Float64("duration_s", time.Since(started).Seconds()),
+		log.DurationS(time.Since(started)),
 		slog.Int64("written_bytes", logData.WrittenBytes),
 		slog.Any("meta", logData.Meta),
 	)
