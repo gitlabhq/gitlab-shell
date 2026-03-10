@@ -99,6 +99,11 @@ func (c *Client) Post(ctx context.Context, path string, body any) (*http.Respons
 	return c.do(ctx, http.MethodPost, path, body)
 }
 
+// do is the single request path for all outbound calls. It exists to keep
+// Get/Post thin and ensure that header injection (JWT, basic auth, User-Agent)
+// is applied consistently regardless of the HTTP method. During the migration
+// from client.GitlabNetClient, additional methods (PUT, DELETE, …) can be
+// added here without duplicating the auth logic.
 func (c *Client) do(ctx context.Context, method, path string, data any) (*http.Response, error) {
 	url := strings.TrimSuffix(c.host, "/") + normalizePath(path)
 
@@ -123,6 +128,18 @@ func (c *Client) do(ctx context.Context, method, path string, data any) (*http.R
 	return c.inner.Do(req)
 }
 
+// setHeaders stamps every outbound request with the three auth/identity
+// signals that the GitLab internal API requires:
+//
+//   - Basic auth — used by some GitLab deployments that sit behind an
+//     nginx auth_basic gate; mirrored from HTTPSettingsConfig.User/Password
+//     in the existing config package.
+//   - JWT bearer token — the primary machine-to-machine secret; the Rails
+//     side validates the HS256 signature and rejects requests whose token has
+//     expired or was signed with the wrong key.
+//   - User-Agent — helps GitLab ops distinguish gitlab-shell traffic in
+//     access logs; kept identical to the value used by client.GitlabNetClient
+//     so log-based dashboards do not need updating during the migration.
 func (c *Client) setHeaders(req *http.Request) error {
 	if c.user != "" && c.password != "" {
 		req.SetBasicAuth(c.user, c.password)
@@ -140,6 +157,11 @@ func (c *Client) setHeaders(req *http.Request) error {
 	return nil
 }
 
+// jwtToken mints a short-lived HS256 token signed with the shared secret.
+// A fresh token is generated per request because the TTL is only one minute;
+// reusing a cached token across requests risks sending an expired credential
+// if the caller batches requests or retries after a delay. This matches the
+// behaviour of client.GitlabNetClient.DoRequest.
 func (c *Client) jwtToken() (string, error) {
 	claims := jwt.RegisteredClaims{
 		Issuer:    jwtIssuer,
@@ -149,6 +171,10 @@ func (c *Client) jwtToken() (string, error) {
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(strings.TrimSpace(c.secret)))
 }
 
+// normalizePath ensures every path is rooted under /api/v4/internal. This
+// mirrors the logic in client.GitlabNetClient so that callers migrated to
+// this package can pass the same short paths (e.g. "/check", "lfs/objects")
+// without any changes at the call site.
 func normalizePath(path string) string {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
@@ -159,6 +185,23 @@ func normalizePath(path string) string {
 	return path
 }
 
+// buildTransport selects the appropriate base http.RoundTripper for the
+// configured URL scheme and returns it alongside the resolved host string
+// that all request URLs will be prefixed with. The three schemes below
+// replicate the behaviour of client.NewHTTPClientWithOpts, which is the
+// function this package is intended to replace:
+//
+//   - http+unix:// — GitLab Workhorse / Rails communicate over a Unix domain
+//     socket in most single-node deployments. The standard net/http stack does
+//     not understand this scheme, so the DialContext is overridden to open a
+//     unix socket, and the URL is rewritten to http://unix/… so that the
+//     net/http request machinery produces valid Host headers.
+//   - http:// — plain TCP; no additional transport configuration required.
+//   - https:// — TLS with optional custom CA bundle; see buildHTTPSTransport.
+//
+// The returned transport is passed to httpclient.NewWithConfig as
+// Config.Transport, which layers LabKit's OTel tracing and structured logging
+// on top of it.
 func buildTransport(cfg *Config) (http.RoundTripper, string, error) {
 	switch {
 	case strings.HasPrefix(cfg.GitlabURL, unixSocketProtocol):
@@ -177,6 +220,13 @@ func buildTransport(cfg *Config) (http.RoundTripper, string, error) {
 	}
 }
 
+// buildSocketTransport creates a transport that dials over a Unix domain
+// socket. Because net/http requires an HTTP host in request URLs, the host
+// is set to the synthetic value "http://unix" (with an optional relative URL
+// root appended). The DialContext ignores the network/address arguments
+// supplied by net/http and always opens the socket path extracted from the
+// original http+unix:// URL, which is the same approach used by the existing
+// client package.
 func buildSocketTransport(gitlabURL, relativeURLRoot string) (http.RoundTripper, string) {
 	socketPath := strings.TrimPrefix(gitlabURL, unixSocketProtocol)
 	transport := &http.Transport{
@@ -191,6 +241,12 @@ func buildSocketTransport(gitlabURL, relativeURLRoot string) (http.RoundTripper,
 	return transport, host
 }
 
+// buildHTTPSTransport constructs a TLS-enabled transport. GitLab installations
+// that use a privately-signed certificate (common in self-managed deployments)
+// pass either a single CA file or a directory of CA files via the config YAML.
+// Both are loaded into the cert pool so that TLS handshakes succeed without
+// disabling certificate verification. The minimum TLS version is pinned to
+// 1.2 to match the existing client package and GitLab's own TLS policy.
 func buildHTTPSTransport(cfg *Config) (http.RoundTripper, error) {
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
