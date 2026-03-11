@@ -15,6 +15,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -47,7 +48,7 @@ type Config struct {
 	User string
 	// Password is the HTTP basic auth password.
 	Password string
-	// Secret is the HS256 JWT signing secret.
+	// Secret is the HS256 JWT signing secret. Must not be empty.
 	Secret string
 	// CaFile is the path to a custom CA certificate file.
 	CaFile string
@@ -68,6 +69,14 @@ type Client struct {
 
 // New creates a new Client from the given Config.
 func New(cfg *Config) (*Client, error) {
+	if cfg == nil {
+		return nil, errors.New("config must not be nil")
+	}
+
+	if strings.TrimSpace(cfg.Secret) == "" {
+		return nil, errors.New("secret must not be empty")
+	}
+
 	transport, host, err := buildTransport(cfg)
 	if err != nil {
 		return nil, err
@@ -108,13 +117,17 @@ func (c *Client) Post(ctx context.Context, path string, body any) (*http.Respons
 // from client.GitlabNetClient, additional methods (PUT, DELETE, …) can be
 // added here without duplicating the auth logic.
 func (c *Client) do(ctx context.Context, method, path string, data any) (*http.Response, error) {
-	url := strings.TrimSuffix(c.host, "/") + normalizePath(path)
+	normalized, err := normalizePath(path)
+	if err != nil {
+		return nil, err
+	}
+	url := strings.TrimSuffix(c.host, "/") + normalized
 
 	var bodyReader io.Reader
 	if data != nil {
-		encoded, err := json.Marshal(data)
-		if err != nil {
-			return nil, fmt.Errorf("marshaling request body: %w", err)
+		encoded, marshalErr := json.Marshal(data)
+		if marshalErr != nil {
+			return nil, fmt.Errorf("marshaling request body: %w", marshalErr)
 		}
 		bodyReader = bytes.NewReader(encoded)
 	}
@@ -136,7 +149,8 @@ func (c *Client) do(ctx context.Context, method, path string, data any) (*http.R
 //
 //   - Basic auth — used by some GitLab deployments that sit behind an
 //     nginx auth_basic gate; mirrored from HTTPSettingsConfig.User/Password
-//     in the existing config package.
+//     in the existing config package. Auth is set whenever a username is
+//     present, even with an empty password, to match HTTP basic auth semantics.
 //   - JWT bearer token — the primary machine-to-machine secret; the Rails
 //     side validates the HS256 signature and rejects requests whose token has
 //     expired or was signed with the wrong key.
@@ -144,7 +158,7 @@ func (c *Client) do(ctx context.Context, method, path string, data any) (*http.R
 //     access logs; kept identical to the value used by client.GitlabNetClient
 //     so log-based dashboards do not need updating during the migration.
 func (c *Client) setHeaders(req *http.Request) error {
-	if c.user != "" && c.password != "" {
+	if c.user != "" {
 		req.SetBasicAuth(c.user, c.password)
 	}
 
@@ -178,14 +192,23 @@ func (c *Client) jwtToken() (string, error) {
 // mirrors the logic in client.GitlabNetClient so that callers migrated to
 // this package can pass the same short paths (e.g. "/check", "lfs/objects")
 // without any changes at the call site.
-func normalizePath(path string) string {
-	if !strings.HasPrefix(path, "/") {
-		path = "/" + path
+//
+// path.Clean is applied after prefixing to collapse any traversal segments
+// (e.g. "/../") and repeated slashes. An error is returned if the cleaned
+// result no longer starts with /api/v4/internal, which would indicate a
+// traversal attempt escaping the internal API prefix.
+func normalizePath(p string) (string, error) {
+	if !strings.HasPrefix(p, "/") {
+		p = "/" + p
 	}
-	if !strings.HasPrefix(path, internalAPIPath) {
-		path = internalAPIPath + path
+	if !strings.HasPrefix(p, internalAPIPath) {
+		p = internalAPIPath + p
 	}
-	return path
+	cleaned := path.Clean(p)
+	if !strings.HasPrefix(cleaned, internalAPIPath) {
+		return "", fmt.Errorf("path %q escapes the internal API prefix", p)
+	}
+	return cleaned, nil
 }
 
 // buildTransport selects the appropriate base http.RoundTripper for the
@@ -213,7 +236,11 @@ func buildTransport(cfg *Config) (http.RoundTripper, string, error) {
 	case strings.HasPrefix(cfg.GitlabURL, httpProtocol):
 		return &http.Transport{}, cfg.GitlabURL, nil
 	case strings.HasPrefix(cfg.GitlabURL, httpsProtocol):
-		return buildHTTPSTransport(cfg), cfg.GitlabURL, nil
+		t, err := buildHTTPSTransport(cfg)
+		if err != nil {
+			return nil, "", err
+		}
+		return t, cfg.GitlabURL, nil
 	default:
 		return nil, "", errors.New("unknown GitLab URL prefix")
 	}
@@ -246,28 +273,21 @@ func buildSocketTransport(gitlabURL, relativeURLRoot string) (http.RoundTripper,
 // Both are loaded into the cert pool so that TLS handshakes succeed without
 // disabling certificate verification. The minimum TLS version is pinned to
 // 1.2 to match the existing client package and GitLab's own TLS policy.
-func buildHTTPSTransport(cfg *Config) http.RoundTripper {
+//
+// An error is returned if a specified CA file cannot be read or if it contains
+// no valid PEM certificates, making misconfigured TLS explicit at startup
+// rather than failing silently at connection time.
+func buildHTTPSTransport(cfg *Config) (http.RoundTripper, error) {
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
 		certPool = x509.NewCertPool()
 	}
 
-	if cfg.CaFile != "" {
-		if cert, readErr := os.ReadFile(filepath.Clean(cfg.CaFile)); readErr == nil {
-			certPool.AppendCertsFromPEM(cert)
-		}
+	if err := appendCaFile(certPool, cfg.CaFile); err != nil {
+		return nil, err
 	}
-
-	if cfg.CaPath != "" {
-		entries, _ := os.ReadDir(cfg.CaPath)
-		for _, entry := range entries {
-			if entry.IsDir() {
-				continue
-			}
-			if cert, readErr := os.ReadFile(filepath.Join(cfg.CaPath, entry.Name())); readErr == nil {
-				certPool.AppendCertsFromPEM(cert)
-			}
-		}
+	if err := appendCaDir(certPool, cfg.CaPath); err != nil {
+		return nil, err
 	}
 
 	return &http.Transport{
@@ -275,5 +295,59 @@ func buildHTTPSTransport(cfg *Config) http.RoundTripper {
 			RootCAs:    certPool,
 			MinVersion: tls.VersionTLS12,
 		},
+	}, nil
+}
+
+// appendCaFile loads a single PEM CA certificate file into pool.
+func appendCaFile(pool *x509.CertPool, caFile string) error {
+	if caFile == "" {
+		return nil
 	}
+	cert, err := os.ReadFile(filepath.Clean(caFile))
+	if err != nil {
+		return fmt.Errorf("reading CA file %q: %w", caFile, err)
+	}
+	if !pool.AppendCertsFromPEM(cert) {
+		return fmt.Errorf("CA file %q contains no valid PEM certificates", caFile)
+	}
+	return nil
+}
+
+// appendCaDir loads every certificate file found in caPath into pool.
+// Individual files in a CA directory may not be certificates (e.g. README,
+// .keep). Only .pem/.crt files that parse to nothing are treated as errors;
+// other non-PEM files are silently skipped.
+func appendCaDir(pool *x509.CertPool, caPath string) error {
+	if caPath == "" {
+		return nil
+	}
+	entries, err := os.ReadDir(caPath)
+	if err != nil {
+		return fmt.Errorf("reading CA directory %q: %w", caPath, err)
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		if err := appendCaDirEntry(pool, caPath, entry.Name()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func appendCaDirEntry(pool *x509.CertPool, dir, name string) error {
+	p := filepath.Join(dir, name)
+	cert, err := os.ReadFile(p) // #nosec G304
+	if err != nil {
+		return fmt.Errorf("reading CA file %q: %w", p, err)
+	}
+	isPEM := strings.HasSuffix(name, ".pem") || strings.HasSuffix(name, ".crt")
+	if isPEM && !pool.AppendCertsFromPEM(cert) {
+		return fmt.Errorf("CA file %q contains no valid PEM certificates", p)
+	}
+	if !isPEM {
+		pool.AppendCertsFromPEM(cert)
+	}
+	return nil
 }

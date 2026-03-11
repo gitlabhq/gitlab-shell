@@ -29,8 +29,23 @@ func newTestClient(t *testing.T, srv *httptest.Server) *gitlab.Client {
 	return c
 }
 
+func TestNew_NilConfig(t *testing.T) {
+	_, err := gitlab.New(nil)
+	require.ErrorContains(t, err, "config must not be nil")
+}
+
+func TestNew_EmptySecret(t *testing.T) {
+	_, err := gitlab.New(&gitlab.Config{GitlabURL: "http://localhost", Secret: ""})
+	require.ErrorContains(t, err, "secret must not be empty")
+}
+
+func TestNew_WhitespaceOnlySecret(t *testing.T) {
+	_, err := gitlab.New(&gitlab.Config{GitlabURL: "http://localhost", Secret: "   \n"})
+	require.ErrorContains(t, err, "secret must not be empty")
+}
+
 func TestNew_UnknownURLPrefix(t *testing.T) {
-	_, err := gitlab.New(&gitlab.Config{GitlabURL: "ftp://example.com"})
+	_, err := gitlab.New(&gitlab.Config{GitlabURL: "ftp://example.com", Secret: testSecret})
 	require.ErrorContains(t, err, "unknown GitLab URL prefix")
 }
 
@@ -95,6 +110,8 @@ func TestGet_NormalizesPath(t *testing.T) {
 		{"/check", "/api/v4/internal/check"},
 		{"check", "/api/v4/internal/check"},
 		{"/api/v4/internal/check", "/api/v4/internal/check"},
+		// Traversal segments within the prefix are collapsed safely.
+		{"/check/../other", "/api/v4/internal/other"},
 	}
 
 	for _, tc := range paths {
@@ -114,6 +131,23 @@ func TestGet_NormalizesPath(t *testing.T) {
 			require.Equal(t, tc.wantPath, gotPath)
 		})
 	}
+}
+
+func TestGet_PathTraversalRejected(t *testing.T) {
+	// Paths that escape /api/v4/internal after cleaning must be rejected
+	// rather than silently rewritten.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+	resp, err := c.Get(context.Background(), "/../../../etc/passwd")
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
+	require.Error(t, err)
+	require.ErrorContains(t, err, "escapes the internal API prefix")
 }
 
 func TestNew_BasicAuth(t *testing.T) {
@@ -138,6 +172,34 @@ func TestNew_BasicAuth(t *testing.T) {
 
 	require.Equal(t, "alice", gotUser)
 	require.Equal(t, "hunter2", gotPass)
+}
+
+func TestNew_BasicAuthEmptyPassword(t *testing.T) {
+	// Basic auth should be set whenever a username is present, even with an
+	// empty password, to match HTTP basic auth semantics.
+	var gotUser, gotPass string
+	var gotAuthHeader bool
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotUser, gotPass, gotAuthHeader = r.BasicAuth()
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	c, err := gitlab.New(&gitlab.Config{
+		GitlabURL: srv.URL,
+		User:      "alice",
+		Password:  "",
+		Secret:    testSecret,
+	})
+	require.NoError(t, err)
+
+	resp, err := c.Get(context.Background(), "/check")
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	require.True(t, gotAuthHeader)
+	require.Equal(t, "alice", gotUser)
+	require.Equal(t, "", gotPass)
 }
 
 func TestNew_UnixSocket(t *testing.T) {
@@ -177,6 +239,16 @@ func TestPost_WithSecretWhitespace(t *testing.T) {
 	defer func() { _ = resp.Body.Close() }()
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestNew_HTTPS_MissingCaFile(t *testing.T) {
+	_, err := gitlab.New(&gitlab.Config{
+		GitlabURL: "https://localhost",
+		Secret:    testSecret,
+		CaFile:    "/nonexistent/ca.pem",
+	})
+	require.Error(t, err)
+	require.ErrorContains(t, err, "reading CA file")
 }
 
 func TestGet_PathAlreadyPrefixed(t *testing.T) {
