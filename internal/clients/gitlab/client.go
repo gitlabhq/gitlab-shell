@@ -1,3 +1,6 @@
+// Package gitlab provides an HTTP client for the GitLab internal API.
+// It is the replacement for the client and gitlabnet packages and is being
+// introduced incrementally as part of the consolidation described in #834.
 package gitlab
 
 import (
@@ -70,7 +73,7 @@ func New(cfg *Config) (*Client, error) {
 		return nil, err
 	}
 
-	timeout := time.Duration(cfg.ReadTimeoutSeconds) * time.Second
+	timeout := time.Duration(cfg.ReadTimeoutSeconds) * time.Second // #nosec G115
 	if cfg.ReadTimeoutSeconds == 0 {
 		timeout = defaultReadTimeout
 	}
@@ -161,7 +164,7 @@ func (c *Client) setHeaders(req *http.Request) error {
 // A fresh token is generated per request because the TTL is only one minute;
 // reusing a cached token across requests risks sending an expired credential
 // if the caller batches requests or retries after a delay. This matches the
-// behaviour of client.GitlabNetClient.DoRequest.
+// behavior of client.GitlabNetClient.DoRequest.
 func (c *Client) jwtToken() (string, error) {
 	claims := jwt.RegisteredClaims{
 		Issuer:    jwtIssuer,
@@ -188,7 +191,7 @@ func normalizePath(path string) string {
 // buildTransport selects the appropriate base http.RoundTripper for the
 // configured URL scheme and returns it alongside the resolved host string
 // that all request URLs will be prefixed with. The three schemes below
-// replicate the behaviour of client.NewHTTPClientWithOpts, which is the
+// replicate the behavior of client.NewHTTPClientWithOpts, which is the
 // function this package is intended to replace:
 //
 //   - http+unix:// — GitLab Workhorse / Rails communicate over a Unix domain
@@ -210,11 +213,7 @@ func buildTransport(cfg *Config) (http.RoundTripper, string, error) {
 	case strings.HasPrefix(cfg.GitlabURL, httpProtocol):
 		return &http.Transport{}, cfg.GitlabURL, nil
 	case strings.HasPrefix(cfg.GitlabURL, httpsProtocol):
-		t, err := buildHTTPSTransport(cfg)
-		if err != nil {
-			return nil, "", err
-		}
-		return t, cfg.GitlabURL, nil
+		return buildHTTPSTransport(cfg), cfg.GitlabURL, nil
 	default:
 		return nil, "", errors.New("unknown GitLab URL prefix")
 	}
@@ -247,7 +246,7 @@ func buildSocketTransport(gitlabURL, relativeURLRoot string) (http.RoundTripper,
 // Both are loaded into the cert pool so that TLS handshakes succeed without
 // disabling certificate verification. The minimum TLS version is pinned to
 // 1.2 to match the existing client package and GitLab's own TLS policy.
-func buildHTTPSTransport(cfg *Config) (http.RoundTripper, error) {
+func buildHTTPSTransport(cfg *Config) http.RoundTripper {
 	certPool, err := x509.SystemCertPool()
 	if err != nil {
 		certPool = x509.NewCertPool()
@@ -276,5 +275,5 @@ func buildHTTPSTransport(cfg *Config) (http.RoundTripper, error) {
 			RootCAs:    certPool,
 			MinVersion: tls.VersionTLS12,
 		},
-	}, nil
+	}
 }

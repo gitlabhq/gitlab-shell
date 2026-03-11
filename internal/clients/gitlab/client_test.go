@@ -46,7 +46,7 @@ func TestGet_SetsRequiredHeaders(t *testing.T) {
 
 	resp, err := c.Get(context.Background(), "/check")
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 	require.Equal(t, "application/json", capturedReq.Header.Get("Content-Type"))
@@ -57,7 +57,7 @@ func TestGet_SetsRequiredHeaders(t *testing.T) {
 	tokenStr := capturedReq.Header.Get("Gitlab-Shell-Api-Request")
 	require.NotEmpty(t, tokenStr)
 
-	token, err := jwt.ParseWithClaims(tokenStr, &jwt.RegisteredClaims{}, func(t *jwt.Token) (any, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &jwt.RegisteredClaims{}, func(_ *jwt.Token) (any, error) {
 		return []byte(testSecret), nil
 	})
 	require.NoError(t, err)
@@ -82,7 +82,7 @@ func TestPost_SendsJSONBody(t *testing.T) {
 
 	resp, err := c.Post(context.Background(), "/lfs/objects", map[string]string{"key": "value"})
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	require.Equal(t, map[string]string{"key": "value"}, received)
 }
@@ -109,7 +109,7 @@ func TestGet_NormalizesPath(t *testing.T) {
 			c := newTestClient(t, srv)
 			resp, err := c.Get(context.Background(), tc.input)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			require.Equal(t, tc.wantPath, gotPath)
 		})
@@ -134,7 +134,7 @@ func TestNew_BasicAuth(t *testing.T) {
 
 	resp, err := c.Get(context.Background(), "/check")
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	require.Equal(t, "alice", gotUser)
 	require.Equal(t, "hunter2", gotPass)
@@ -160,7 +160,7 @@ func TestNew_DefaultTimeout(t *testing.T) {
 }
 
 func TestPost_WithSecretWhitespace(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
@@ -174,7 +174,7 @@ func TestPost_WithSecretWhitespace(t *testing.T) {
 
 	resp, err := c.Post(context.Background(), "/check", nil)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -190,7 +190,7 @@ func TestGet_PathAlreadyPrefixed(t *testing.T) {
 	c := newTestClient(t, srv)
 	resp, err := c.Get(context.Background(), "/api/v4/internal/check")
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Path must not be double-prefixed.
 	require.False(t, strings.HasPrefix(gotPath, "/api/v4/internal/api/v4/internal"),
