@@ -71,6 +71,33 @@ func TestHostKeyAndCerts(t *testing.T) {
 	require.Equal(t, cert, cfg.hostKeys[0].PublicKey())
 }
 
+func TestNewServerConfigLoadsTrustedCAKeys(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
+
+	// Create a CA key file
+	_, caPubKey := createCAKeyPair(t)
+	caKeyFile := path.Join(testRoot, "ca.pub")
+	err := os.WriteFile(caKeyFile, ssh.MarshalAuthorizedKey(caPubKey), 0600)
+	require.NoError(t, err)
+
+	srvCfg := config.ServerConfig{
+		Listen:                  "127.0.0.1",
+		ConcurrentSessionsLimit: 1,
+		HostKeyFiles: []string{
+			path.Join(testRoot, "certs/valid/server.key"),
+		},
+		TrustedUserCAKeys: []string{caKeyFile},
+	}
+
+	cfg, err := newServerConfig(
+		&config.Config{GitlabURL: "http://localhost", User: "user", Server: srvCfg},
+	)
+	require.NoError(t, err)
+
+	// Smoke test: verify CA keys were loaded via newServerConfig wiring
+	require.Len(t, cfg.trustedUserCAKeySet, 1)
+}
+
 func TestFailedAuthorizedKeysClient(t *testing.T) {
 	_, err := newServerConfig(&config.Config{GitlabURL: "ftp://localhost"})
 
@@ -400,11 +427,21 @@ func dsaPublicKey(t *testing.T) ssh.PublicKey {
 	return publicKey
 }
 
-func userCert(t *testing.T, certType uint32, validBefore time.Time) *ssh.Certificate {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+func createCAKeyPair(t *testing.T) (ssh.Signer, ssh.PublicKey) {
+	caPrivKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 
-	signer, err := ssh.NewSignerFromKey(privateKey)
+	caSigner, err := ssh.NewSignerFromKey(caPrivKey)
+	require.NoError(t, err)
+
+	caPubKey, err := ssh.NewPublicKey(&caPrivKey.PublicKey)
+	require.NoError(t, err)
+
+	return caSigner, caPubKey
+}
+
+func userCertSignedByCA(t *testing.T, caSigner ssh.Signer, certType uint32, validBefore time.Time, keyID string) *ssh.Certificate {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 
 	pubKey, err := ssh.NewPublicKey(&privateKey.PublicKey)
@@ -413,10 +450,246 @@ func userCert(t *testing.T, certType uint32, validBefore time.Time) *ssh.Certifi
 	cert := &ssh.Certificate{
 		CertType:    certType,
 		Key:         pubKey,
-		KeyId:       "root@example.com",
+		KeyId:       keyID,
 		ValidBefore: uint64(validBefore.Unix()),
 	}
-	require.NoError(t, cert.SignCert(rand.Reader, signer))
+	require.NoError(t, cert.SignCert(rand.Reader, caSigner))
 
 	return cert
+}
+
+func userCert(t *testing.T, certType uint32, validBefore time.Time) *ssh.Certificate {
+	signer, _ := createCAKeyPair(t)
+	return userCertSignedByCA(t, signer, certType, validBefore, "root@example.com")
+}
+
+func TestParseTrustedUserCAKeys(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
+
+	// Create a temporary CA key file
+	_, caPubKey := createCAKeyPair(t)
+
+	caKeyFile := path.Join(testRoot, "test_ca.pub")
+	err := os.WriteFile(caKeyFile, ssh.MarshalAuthorizedKey(caPubKey), 0600)
+	require.NoError(t, err)
+
+	// Create a file with multiple CA keys
+	_, caPubKey2 := createCAKeyPair(t)
+	multiCAKeyFile := path.Join(testRoot, "multi_ca.pub")
+	multiCAContent := append(ssh.MarshalAuthorizedKey(caPubKey), ssh.MarshalAuthorizedKey(caPubKey2)...)
+	err = os.WriteFile(multiCAKeyFile, multiCAContent, 0600)
+	require.NoError(t, err)
+
+	// Create an invalid key file
+	invalidKeyFile := path.Join(testRoot, "invalid_ca.pub")
+	err = os.WriteFile(invalidKeyFile, []byte("not a valid ssh key"), 0600)
+	require.NoError(t, err)
+
+	// Create a file with valid key followed by invalid content (partial parse)
+	partialCAKeyFile := path.Join(testRoot, "partial_ca.pub")
+	partialContent := append(ssh.MarshalAuthorizedKey(caPubKey), []byte("invalid trailing content\n")...)
+	err = os.WriteFile(partialCAKeyFile, partialContent, 0600)
+	require.NoError(t, err)
+
+	testCases := []struct {
+		desc          string
+		files         []string
+		expectedCount int
+	}{
+		{
+			desc:          "valid CA key file",
+			files:         []string{caKeyFile},
+			expectedCount: 1,
+		},
+		{
+			desc:          "multiple CA keys in one file",
+			files:         []string{multiCAKeyFile},
+			expectedCount: 2,
+		},
+		{
+			desc:          "multiple files with deduplication",
+			files:         []string{caKeyFile, multiCAKeyFile},
+			expectedCount: 2,
+		},
+		{
+			desc:          "non-existent file",
+			files:         []string{"/nonexistent/ca.pub"},
+			expectedCount: 0,
+		},
+		{
+			desc:          "invalid key file",
+			files:         []string{invalidKeyFile},
+			expectedCount: 0,
+		},
+		{
+			desc:          "empty list",
+			files:         []string{},
+			expectedCount: 0,
+		},
+		{
+			desc:          "mix of valid and invalid files",
+			files:         []string{caKeyFile, invalidKeyFile, "/nonexistent/ca.pub"},
+			expectedCount: 1,
+		},
+		{
+			desc:          "partial parse - valid key followed by invalid content",
+			files:         []string{partialCAKeyFile},
+			expectedCount: 1,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			keySet := parseTrustedUserCAKeys(tc.files)
+			require.Len(t, keySet, tc.expectedCount)
+		})
+	}
+}
+
+func TestIsLocallyTrustedCA(t *testing.T) {
+	_, caPubKey := createCAKeyPair(t)
+	_, otherPubKey := createCAKeyPair(t)
+
+	cfg := &serverConfig{
+		trustedUserCAKeySet: map[string]struct{}{
+			string(caPubKey.Marshal()): {},
+		},
+	}
+
+	require.True(t, cfg.isLocallyTrustedCA(caPubKey))
+	require.False(t, cfg.isLocallyTrustedCA(otherPubKey))
+
+	// Test with empty trusted keys
+	emptyCfg := &serverConfig{
+		trustedUserCAKeySet: map[string]struct{}{},
+	}
+	require.False(t, emptyCfg.isLocallyTrustedCA(caPubKey))
+
+	// Test with nil trusted keys
+	nilCfg := &serverConfig{}
+	require.False(t, nilCfg.isLocallyTrustedCA(caPubKey))
+}
+
+func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
+
+	// Create a trusted CA key pair
+	caSigner, caPubKey := createCAKeyPair(t)
+
+	// Create an untrusted CA key pair
+	untrustedSigner, _ := createCAKeyPair(t)
+
+	// Create certificates
+	validCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "testuser")
+	expiredCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(-time.Hour), "testuser")
+	hostCert := userCertSignedByCA(t, caSigner, ssh.HostCert, time.Now().Add(time.Hour), "testuser")
+	untrustedCert := userCertSignedByCA(t, untrustedSigner, ssh.UserCert, time.Now().Add(time.Hour), "testuser")
+	emptyKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "")
+
+	srvCfg := config.ServerConfig{
+		Listen:                  "127.0.0.1",
+		ConcurrentSessionsLimit: 1,
+		HostKeyFiles: []string{
+			path.Join(testRoot, "certs/valid/server.key"),
+		},
+	}
+
+	cfg, err := newServerConfig(
+		&config.Config{GitlabURL: "http://localhost", User: "user", Server: srvCfg},
+	)
+	require.NoError(t, err)
+
+	// Add the trusted CA
+	cfg.trustedUserCAKeySet = map[string]struct{}{
+		string(caPubKey.Marshal()): {},
+	}
+
+	testCases := []struct {
+		desc                string
+		cert                *ssh.Certificate
+		expectedErr         error
+		expectedPermissions *ssh.Permissions
+	}{
+		{
+			desc: "valid instance-level certificate",
+			cert: validCert,
+			expectedPermissions: &ssh.Permissions{
+				Extensions: map[string]string{
+					"username": "testuser",
+				},
+			},
+		},
+		{
+			desc:        "expired certificate",
+			cert:        expiredCert,
+			expectedErr: errors.New("ssh: cert has expired"),
+		},
+		{
+			desc:        "wrong cert type (host cert)",
+			cert:        hostCert,
+			expectedErr: errors.New("handleUserCertificate: cert has type 2"),
+		},
+		{
+			desc:        "untrusted CA without feature flag",
+			cert:        untrustedCert,
+			expectedErr: errors.New("handleUserCertificate: feature is disabled"),
+		},
+		{
+			desc:        "empty KeyId rejected",
+			cert:        emptyKeyIDCert,
+			expectedErr: errors.New("handleUserCertificate: certificate has empty KeyId"),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			permissions, err := cfg.handleUserCertificate(context.Background(), "user", tc.cert)
+			require.Equal(t, tc.expectedErr, err)
+			require.Equal(t, tc.expectedPermissions, permissions)
+		})
+	}
+}
+
+func TestUserCertificateHandling_InstanceLevelWithMultipleCAs(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
+
+	// Create two trusted CA key pairs
+	caSigner1, caPubKey1 := createCAKeyPair(t)
+	caSigner2, caPubKey2 := createCAKeyPair(t)
+
+	// Create certificates signed by different CAs
+	certFromCA1 := userCertSignedByCA(t, caSigner1, ssh.UserCert, time.Now().Add(time.Hour), "user1")
+	certFromCA2 := userCertSignedByCA(t, caSigner2, ssh.UserCert, time.Now().Add(time.Hour), "user2")
+
+	srvCfg := config.ServerConfig{
+		Listen:                  "127.0.0.1",
+		ConcurrentSessionsLimit: 1,
+		HostKeyFiles: []string{
+			path.Join(testRoot, "certs/valid/server.key"),
+		},
+	}
+
+	cfg, err := newServerConfig(
+		&config.Config{GitlabURL: "http://localhost", User: "user", Server: srvCfg},
+	)
+	require.NoError(t, err)
+
+	// Add both trusted CAs
+	cfg.trustedUserCAKeySet = map[string]struct{}{
+		string(caPubKey1.Marshal()): {},
+		string(caPubKey2.Marshal()): {},
+	}
+
+	// Both certificates should be trusted
+	permissions1, err := cfg.handleUserCertificate(context.Background(), "user", certFromCA1)
+	require.NoError(t, err)
+	require.Equal(t, &ssh.Permissions{
+		Extensions: map[string]string{"username": "user1"},
+	}, permissions1)
+
+	permissions2, err := cfg.handleUserCertificate(context.Background(), "user", certFromCA2)
+	require.NoError(t, err)
+	require.Equal(t, &ssh.Permissions{
+		Extensions: map[string]string{"username": "user2"},
+	}, permissions2)
 }
