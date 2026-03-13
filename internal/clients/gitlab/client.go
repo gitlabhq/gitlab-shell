@@ -38,9 +38,9 @@ const (
 	defaultReadTimeout  = 300 * time.Second
 
 	// Retry constants match the old retryablehttp-based client defaults.
-	defaultRetryMax          = 2
-	defaultRetryWaitMinimum  = 1 * time.Second
-	defaultRetryWaitMaximum  = 15 * time.Second
+	defaultRetryMax         = 2
+	defaultRetryWaitMinimum = 1 * time.Second
+	defaultRetryWaitMaximum = 15 * time.Second
 
 	socketBaseURL      = "http://unix"
 	unixSocketProtocol = "http+unix://"
