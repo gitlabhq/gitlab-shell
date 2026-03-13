@@ -287,12 +287,12 @@ func TestGet_ForwardsRemoteIP(t *testing.T) {
 	require.Equal(t, "1.2.3.4", gotForwardedFor)
 }
 
-func TestGet_RetriesOn5xx(t *testing.T) {
+func TestGet_RetriesOn503(t *testing.T) {
 	attempts := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		attempts++
 		if attempts < 3 {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusServiceUnavailable)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -303,8 +303,6 @@ func TestGet_RetriesOn5xx(t *testing.T) {
 		GitlabURL:          srv.URL,
 		Secret:             testSecret,
 		ReadTimeoutSeconds: 10,
-		RetryWaitMinimum:   time.Millisecond,
-		RetryWaitMaximum:   10 * time.Millisecond,
 	})
 	require.NoError(t, err)
 
@@ -342,10 +340,8 @@ func TestGet_NetworkErrorReturnsAPIError(t *testing.T) {
 	srv.Close()
 
 	c, err := gitlab.New(&gitlab.Config{
-		GitlabURL:        url,
-		Secret:           testSecret,
-		RetryWaitMinimum: time.Millisecond,
-		RetryWaitMaximum: time.Millisecond,
+		GitlabURL: url,
+		Secret:    testSecret,
 	})
 	require.NoError(t, err)
 

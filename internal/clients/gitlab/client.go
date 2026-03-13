@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"gitlab.com/gitlab-org/labkit/v2/httpclient"
 
@@ -36,12 +35,7 @@ const (
 	defaultUserAgent    = "GitLab-Shell"
 	jwtTTL              = time.Minute
 	jwtIssuer           = "gitlab-shell"
-	defaultReadTimeout  = 300 * time.Second
-
-	// Retry constants match the old retryablehttp-based client defaults.
-	defaultRetryMax         = 2
-	defaultRetryWaitMinimum = 1 * time.Second
-	defaultRetryWaitMaximum = 15 * time.Second
+	defaultReadTimeout = 300 * time.Second
 
 	socketBaseURL      = "http://unix"
 	unixSocketProtocol = "http+unix://"
@@ -67,10 +61,6 @@ type Config struct {
 	CaPath string
 	// ReadTimeoutSeconds is the HTTP read timeout. Defaults to 300s when zero.
 	ReadTimeoutSeconds uint64
-	// RetryWaitMinimum is the minimum backoff between retries. Defaults to 1s when zero.
-	RetryWaitMinimum time.Duration
-	// RetryWaitMaximum is the maximum backoff between retries. Defaults to 15s when zero.
-	RetryWaitMaximum time.Duration
 }
 
 // ParseJSON decodes a successful (< 400) HTTP response body into dst, or
@@ -122,29 +112,14 @@ func New(cfg *Config) (*Client, error) {
 	}
 
 	// Layer cross-cutting concerns on top of the base transport, innermost first:
-	//   1. retryablehttp.RoundTripper — retries on transient 5xx and network errors
-	//      with exponential backoff, using the same go-retryablehttp library as the
-	//      old client.GitlabNetClient.
-	//   2. forwardedIPTransport — propagates X-Forwarded-For from context so that
+	//   1. forwardedIPTransport — propagates X-Forwarded-For from context so that
 	//      GitLab can log the original client IP for SSH-over-HTTP connections.
-	//   3. metrics.NewRoundTripper — instruments every request with Prometheus
+	//   2. metrics.NewRoundTripper — instruments every request with Prometheus
 	//      counters/histograms, matching the old config.HTTPClient() behavior.
-	//   4. correlation.NewInstrumentedRoundTripper — injects the correlation ID
+	//   3. correlation.NewInstrumentedRoundTripper — injects the correlation ID
 	//      from context as the X-Request-Id header, matching the old transport chain.
-	retryMin, retryMax := cfg.RetryWaitMinimum, cfg.RetryWaitMaximum
-	if retryMin == 0 {
-		retryMin = defaultRetryWaitMinimum
-	}
-	if retryMax == 0 {
-		retryMax = defaultRetryWaitMaximum
-	}
-	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = defaultRetryMax
-	retryClient.RetryWaitMin = retryMin
-	retryClient.RetryWaitMax = retryMax
-	retryClient.HTTPClient.Transport = transport
-	retryClient.Logger = nil
-	transport = retryClient.StandardClient().Transport
+	//
+	// Retries are handled at the call site via httpclient.Client.DoWithRetry.
 	transport = &forwardedIPTransport{next: transport}
 	transport = metrics.NewRoundTripper(transport)
 	transport = correlation.NewInstrumentedRoundTripper(transport)
@@ -208,7 +183,7 @@ func (c *Client) do(ctx context.Context, method, path string, data any) (*http.R
 		return nil, err
 	}
 
-	// Provide GetBody so go-retryablehttp can restore the request body between
+	// Provide GetBody so DoWithRetry can restore the request body between
 	// retry attempts. bytes.NewReader supports Reset but http.Request.Body is
 	// an io.ReadCloser consumed after the first attempt; GetBody is the
 	// standard mechanism for re-creating it.
@@ -223,7 +198,7 @@ func (c *Client) do(ctx context.Context, method, path string, data any) (*http.R
 		return nil, err
 	}
 
-	resp, err := c.inner.Do(req)
+	resp, err := c.inner.DoWithRetry(req, nil)
 	if err != nil {
 		return nil, &client.APIError{Msg: "Internal API unreachable"}
 	}
