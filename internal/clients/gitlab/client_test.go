@@ -175,12 +175,11 @@ func TestNew_BasicAuth(t *testing.T) {
 }
 
 func TestNew_BasicAuthEmptyPassword(t *testing.T) {
-	// Basic auth should be set whenever a username is present, even with an
-	// empty password, to match HTTP basic auth semantics.
-	var gotUser, gotPass string
+	// Basic auth requires both a username and a password, matching the old
+	// client.GitlabNetClient behavior. A username alone is not sufficient.
 	var gotAuthHeader bool
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotUser, gotPass, gotAuthHeader = r.BasicAuth()
+		_, _, gotAuthHeader = r.BasicAuth()
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()
@@ -197,9 +196,7 @@ func TestNew_BasicAuthEmptyPassword(t *testing.T) {
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
-	require.True(t, gotAuthHeader)
-	require.Equal(t, "alice", gotUser)
-	require.Equal(t, "", gotPass)
+	require.False(t, gotAuthHeader)
 }
 
 func TestNew_UnixSocket(t *testing.T) {

@@ -1,6 +1,7 @@
 // Package gitlab provides an HTTP client for the GitLab internal API.
 // It is the replacement for the client and gitlabnet packages and is being
-// introduced incrementally as part of the consolidation described in #834.
+// introduced incrementally as part of the consolidation described in
+// https://gitlab.com/gitlab-org/gitlab-shell/-/issues/834.
 package gitlab
 
 import (
@@ -158,7 +159,7 @@ func (c *Client) do(ctx context.Context, method, path string, data any) (*http.R
 //     access logs; kept identical to the value used by client.GitlabNetClient
 //     so log-based dashboards do not need updating during the migration.
 func (c *Client) setHeaders(req *http.Request) error {
-	if c.user != "" {
+	if c.user != "" && c.password != "" {
 		req.SetBasicAuth(c.user, c.password)
 	}
 
@@ -180,10 +181,11 @@ func (c *Client) setHeaders(req *http.Request) error {
 // if the caller batches requests or retries after a delay. This matches the
 // behavior of client.GitlabNetClient.DoRequest.
 func (c *Client) jwtToken() (string, error) {
+	now := time.Now()
 	claims := jwt.RegisteredClaims{
 		Issuer:    jwtIssuer,
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(jwtTTL)),
+		IssuedAt:  jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(now.Add(jwtTTL)),
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(strings.TrimSpace(c.secret)))
 }
@@ -314,9 +316,9 @@ func appendCaFile(pool *x509.CertPool, caFile string) error {
 }
 
 // appendCaDir loads every certificate file found in caPath into pool.
-// Individual files in a CA directory may not be certificates (e.g. README,
-// .keep). Only .pem/.crt files that parse to nothing are treated as errors;
-// other non-PEM files are silently skipped.
+// Non-certificate files (e.g. README, .keep) are skipped before reading to
+// avoid unnecessary I/O. Only .pem and .crt files are considered; files with
+// those extensions that contain no valid PEM certificates are treated as errors.
 func appendCaDir(pool *x509.CertPool, caPath string) error {
 	if caPath == "" {
 		return nil
@@ -329,11 +331,18 @@ func appendCaDir(pool *x509.CertPool, caPath string) error {
 		if entry.IsDir() {
 			continue
 		}
+		if !isCertificateFile(entry.Name()) {
+			continue
+		}
 		if err := appendCaDirEntry(pool, caPath, entry.Name()); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func isCertificateFile(name string) bool {
+	return strings.HasSuffix(name, ".pem") || strings.HasSuffix(name, ".crt")
 }
 
 func appendCaDirEntry(pool *x509.CertPool, dir, name string) error {
@@ -342,12 +351,8 @@ func appendCaDirEntry(pool *x509.CertPool, dir, name string) error {
 	if err != nil {
 		return fmt.Errorf("reading CA file %q: %w", p, err)
 	}
-	isPEM := strings.HasSuffix(name, ".pem") || strings.HasSuffix(name, ".crt")
-	if isPEM && !pool.AppendCertsFromPEM(cert) {
+	if !pool.AppendCertsFromPEM(cert) {
 		return fmt.Errorf("CA file %q contains no valid PEM certificates", p)
-	}
-	if !isPEM {
-		pool.AppendCertsFromPEM(cert)
 	}
 	return nil
 }
