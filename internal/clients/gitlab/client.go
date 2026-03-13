@@ -22,7 +22,11 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"gitlab.com/gitlab-org/labkit/correlation"
 	"gitlab.com/gitlab-org/labkit/v2/httpclient"
+
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
 
 const (
@@ -82,6 +86,17 @@ func New(cfg *Config) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Layer cross-cutting concerns on top of the base transport, innermost first:
+	//   1. forwardedIPTransport — propagates X-Forwarded-For from context so that
+	//      GitLab can log the original client IP for SSH-over-HTTP connections.
+	//   2. metrics.NewRoundTripper — instruments every request with Prometheus
+	//      counters/histograms, matching the old config.HTTPClient() behavior.
+	//   3. correlation.NewInstrumentedRoundTripper — injects the correlation ID
+	//      from context as the X-Request-Id header, matching the old transport chain.
+	transport = &forwardedIPTransport{next: transport}
+	transport = metrics.NewRoundTripper(transport)
+	transport = correlation.NewInstrumentedRoundTripper(transport)
 
 	timeout := time.Duration(cfg.ReadTimeoutSeconds) * time.Second // #nosec G115
 	if cfg.ReadTimeoutSeconds == 0 {
@@ -150,8 +165,8 @@ func (c *Client) do(ctx context.Context, method, path string, data any) (*http.R
 //
 //   - Basic auth — used by some GitLab deployments that sit behind an
 //     nginx auth_basic gate; mirrored from HTTPSettingsConfig.User/Password
-//     in the existing config package. Auth is set whenever a username is
-//     present, even with an empty password, to match HTTP basic auth semantics.
+//     in the existing config package. Both username and password must be
+//     non-empty, matching the behavior of the old client.GitlabNetClient.
 //   - JWT bearer token — the primary machine-to-machine secret; the Rails
 //     side validates the HS256 signature and rejects requests whose token has
 //     expired or was signed with the wrong key.
@@ -355,4 +370,22 @@ func appendCaDirEntry(pool *x509.CertPool, dir, name string) error {
 		return fmt.Errorf("CA file %q contains no valid PEM certificates", p)
 	}
 	return nil
+}
+
+// forwardedIPTransport propagates the original client IP address as the
+// X-Forwarded-For header on every outbound request. The IP is read from the
+// request context using client.OriginalRemoteIPContextKey, which is set by the
+// SSH server when it accepts a connection. This matches the behavior of the old
+// client.transport.RoundTrip so that GitLab access logs continue to show the
+// real client IP rather than the gitlab-shell host address.
+type forwardedIPTransport struct {
+	next http.RoundTripper
+}
+
+func (t *forwardedIPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if ip, ok := req.Context().Value(client.OriginalRemoteIPContextKey{}).(string); ok && ip != "" {
+		req = req.Clone(req.Context())
+		req.Header.Add("X-Forwarded-For", ip)
+	}
+	return t.next.RoundTrip(req)
 }

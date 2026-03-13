@@ -13,6 +13,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/clients/gitlab"
 )
 
@@ -265,4 +266,39 @@ func TestGet_PathAlreadyPrefixed(t *testing.T) {
 	require.False(t, strings.HasPrefix(gotPath, "/api/v4/internal/api/v4/internal"),
 		"path was double-prefixed: %s", gotPath)
 	require.Equal(t, "/api/v4/internal/check", gotPath)
+}
+
+func TestGet_ForwardsRemoteIP(t *testing.T) {
+	var gotForwardedFor string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotForwardedFor = r.Header.Get("X-Forwarded-For")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+
+	ctx := context.WithValue(context.Background(), client.OriginalRemoteIPContextKey{}, "1.2.3.4")
+	resp, err := c.Get(ctx, "/check")
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	require.Equal(t, "1.2.3.4", gotForwardedFor)
+}
+
+func TestGet_NoForwardedIPWithoutContext(t *testing.T) {
+	var gotForwardedFor string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotForwardedFor = r.Header.Get("X-Forwarded-For")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv)
+
+	resp, err := c.Get(context.Background(), "/check")
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	require.Empty(t, gotForwardedFor)
 }
