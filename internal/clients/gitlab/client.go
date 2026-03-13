@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"gitlab.com/gitlab-org/labkit/v2/httpclient"
 
@@ -98,13 +99,11 @@ func ParseJSON(resp *http.Response, dst any) error {
 
 // Client is an HTTP client for the GitLab internal API.
 type Client struct {
-	inner        *httpclient.Client
-	host         string
-	user         string
-	password     string
-	secret       string
-	retryWaitMin time.Duration
-	retryWaitMax time.Duration
+	inner    *httpclient.Client
+	host     string
+	user     string
+	password string
+	secret   string
 }
 
 // New creates a new Client from the given Config.
@@ -123,8 +122,9 @@ func New(cfg *Config) (*Client, error) {
 	}
 
 	// Layer cross-cutting concerns on top of the base transport, innermost first:
-	//   1. retryTransport — retries on transient 5xx and network errors with
-	//      exponential backoff, matching the old retryablehttp-based client.
+	//   1. retryablehttp.RoundTripper — retries on transient 5xx and network errors
+	//      with exponential backoff, using the same go-retryablehttp library as the
+	//      old client.GitlabNetClient.
 	//   2. forwardedIPTransport — propagates X-Forwarded-For from context so that
 	//      GitLab can log the original client IP for SSH-over-HTTP connections.
 	//   3. metrics.NewRoundTripper — instruments every request with Prometheus
@@ -138,7 +138,13 @@ func New(cfg *Config) (*Client, error) {
 	if retryMax == 0 {
 		retryMax = defaultRetryWaitMaximum
 	}
-	transport = &retryTransport{next: transport, waitMin: retryMin, waitMax: retryMax}
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = defaultRetryMax
+	retryClient.RetryWaitMin = retryMin
+	retryClient.RetryWaitMax = retryMax
+	retryClient.HTTPClient.Transport = transport
+	retryClient.Logger = nil
+	transport = retryClient.StandardClient().Transport
 	transport = &forwardedIPTransport{next: transport}
 	transport = metrics.NewRoundTripper(transport)
 	transport = correlation.NewInstrumentedRoundTripper(transport)
@@ -154,13 +160,11 @@ func New(cfg *Config) (*Client, error) {
 	})
 
 	return &Client{
-		inner:        inner,
-		host:         host,
-		user:         cfg.User,
-		password:     cfg.Password,
-		secret:       cfg.Secret,
-		retryWaitMin: retryMin,
-		retryWaitMax: retryMax,
+		inner:    inner,
+		host:     host,
+		user:     cfg.User,
+		password: cfg.Password,
+		secret:   cfg.Secret,
 	}, nil
 }
 
@@ -204,7 +208,7 @@ func (c *Client) do(ctx context.Context, method, path string, data any) (*http.R
 		return nil, err
 	}
 
-	// Provide GetBody so retryTransport can restore the request body between
+	// Provide GetBody so go-retryablehttp can restore the request body between
 	// retry attempts. bytes.NewReader supports Reset but http.Request.Body is
 	// an io.ReadCloser consumed after the first attempt; GetBody is the
 	// standard mechanism for re-creating it.
@@ -456,59 +460,3 @@ func (t *forwardedIPTransport) RoundTrip(req *http.Request) (*http.Response, err
 	return t.next.RoundTrip(req)
 }
 
-// retryTransport retries requests on transient network errors and 5xx responses
-// using exponential backoff. The behavior matches the old retryablehttp-based
-// client: up to defaultRetryMax retries, waiting between defaultRetryWaitMin
-// and defaultRetryWaitMax. On the final attempt the response (or error) is
-// returned as-is to the caller.
-//
-// For POST requests the caller must set req.GetBody so the body can be
-// restored between attempts; do() always sets this when data is non-nil.
-type retryTransport struct {
-	next    http.RoundTripper
-	waitMin time.Duration
-	waitMax time.Duration
-}
-
-func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	var (
-		resp *http.Response
-		err  error
-	)
-	for attempt := 0; attempt <= defaultRetryMax; attempt++ {
-		if attempt > 0 {
-			select {
-			case <-req.Context().Done():
-				return nil, req.Context().Err()
-			case <-time.After(retryBackoff(attempt, t.waitMin, t.waitMax)):
-			}
-			if req.GetBody != nil {
-				req.Body, err = req.GetBody()
-				if err != nil {
-					return nil, err
-				}
-			}
-		}
-
-		resp, err = t.next.RoundTrip(req)
-		if err != nil {
-			continue
-		}
-		if resp.StatusCode < 500 {
-			return resp, nil
-		}
-		// Close the body before retrying; leave it open on the last attempt
-		// so the caller can read the error response.
-		if attempt < defaultRetryMax {
-			_ = resp.Body.Close()
-			resp = nil
-		}
-	}
-	return resp, err
-}
-
-// retryBackoff returns the wait duration for a retry attempt using exponential
-// backoff: waitMin * 2^(attempt-1), capped at waitMax.
-func retryBackoff(attempt int, waitMin, waitMax time.Duration) time.Duration {
-	return min(waitMin*(1<<(attempt-1)), waitMax)
-}
