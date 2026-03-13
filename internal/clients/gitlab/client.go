@@ -72,6 +72,30 @@ type Config struct {
 	RetryWaitMaximum time.Duration
 }
 
+// ParseJSON decodes a successful (< 400) HTTP response body into dst, or
+// returns a *client.APIError describing the failure. The error semantics
+// deliberately match those of the old client package so that sub-clients
+// migrated to this package do not need to change their error handling:
+//
+//   - 4xx/5xx with a JSON {"message":"…"} body → *client.APIError{Msg: message}
+//   - 4xx/5xx with no decodable message       → *client.APIError{Msg: "Internal API error (N)"}
+//   - 2xx with non-JSON body                  → errors.New("parsing failed")
+func ParseJSON(resp *http.Response, dst any) error {
+	if resp.StatusCode >= 400 {
+		var errResp struct {
+			Message string `json:"message"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&errResp); err != nil || errResp.Message == "" {
+			return &client.APIError{Msg: fmt.Sprintf("Internal API error (%d)", resp.StatusCode)}
+		}
+		return &client.APIError{Msg: errResp.Message}
+	}
+	if err := json.NewDecoder(resp.Body).Decode(dst); err != nil {
+		return errors.New("parsing failed")
+	}
+	return nil
+}
+
 // Client is an HTTP client for the GitLab internal API.
 type Client struct {
 	inner        *httpclient.Client
@@ -191,11 +215,15 @@ func (c *Client) do(ctx context.Context, method, path string, data any) (*http.R
 		}
 	}
 
-	if err := c.setHeaders(req); err != nil {
+	if err = c.setHeaders(req); err != nil {
 		return nil, err
 	}
 
-	return c.inner.Do(req)
+	resp, err := c.inner.Do(req)
+	if err != nil {
+		return nil, &client.APIError{Msg: "Internal API unreachable"}
+	}
+	return resp, nil
 }
 
 // setHeaders stamps every outbound request with the three auth/identity

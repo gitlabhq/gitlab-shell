@@ -1,6 +1,7 @@
 package gitlab_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -330,4 +331,80 @@ func TestGet_NoForwardedIPWithoutContext(t *testing.T) {
 	defer func() { _ = resp.Body.Close() }()
 
 	require.Empty(t, gotForwardedFor)
+}
+
+func TestGet_NetworkErrorReturnsAPIError(t *testing.T) {
+	// Close the server before making the request to force a connection-refused error.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	url := srv.URL
+	srv.Close()
+
+	c, err := gitlab.New(&gitlab.Config{
+		GitlabURL:        url,
+		Secret:           testSecret,
+		RetryWaitMinimum: time.Millisecond,
+		RetryWaitMaximum: time.Millisecond,
+	})
+	require.NoError(t, err)
+
+	resp, err := c.Get(context.Background(), "/check")
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
+	require.Error(t, err)
+
+	var apiErr *client.APIError
+	require.ErrorAs(t, err, &apiErr)
+	require.Equal(t, "Internal API unreachable", apiErr.Msg)
+}
+
+func TestParseJSON_SuccessDecodes(t *testing.T) {
+	body := bytes.NewBufferString(`{"key":"value"}`)
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(body),
+	}
+
+	var dst struct {
+		Key string `json:"key"`
+	}
+	err := gitlab.ParseJSON(resp, &dst)
+	require.NoError(t, err)
+	require.Equal(t, "value", dst.Key)
+}
+
+func TestParseJSON_BadJSONReturnsParsingFailed(t *testing.T) {
+	resp := &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       io.NopCloser(bytes.NewBufferString("not json")),
+	}
+	err := gitlab.ParseJSON(resp, &struct{}{})
+	require.EqualError(t, err, "parsing failed")
+}
+
+func TestParseJSON_4xxWithMessageReturnsAPIError(t *testing.T) {
+	body := bytes.NewBufferString(`{"message":"Not allowed!"}`)
+	resp := &http.Response{
+		StatusCode: http.StatusForbidden,
+		Body:       io.NopCloser(body),
+	}
+	err := gitlab.ParseJSON(resp, &struct{}{})
+
+	var apiErr *client.APIError
+	require.ErrorAs(t, err, &apiErr)
+	require.Equal(t, "Not allowed!", apiErr.Msg)
+}
+
+func TestParseJSON_5xxWithoutMessageReturnsAPIError(t *testing.T) {
+	resp := &http.Response{
+		StatusCode: http.StatusInternalServerError,
+		Body:       io.NopCloser(bytes.NewBufferString("")),
+	}
+	err := gitlab.ParseJSON(resp, &struct{}{})
+
+	var apiErr *client.APIError
+	require.ErrorAs(t, err, &apiErr)
+	require.Equal(t, "Internal API error (500)", apiErr.Msg)
 }
