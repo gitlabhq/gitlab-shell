@@ -37,6 +37,11 @@ const (
 	jwtIssuer           = "gitlab-shell"
 	defaultReadTimeout  = 300 * time.Second
 
+	// Retry constants match the old retryablehttp-based client defaults.
+	defaultRetryMax          = 2
+	defaultRetryWaitMinimum  = 1 * time.Second
+	defaultRetryWaitMaximum  = 15 * time.Second
+
 	socketBaseURL      = "http://unix"
 	unixSocketProtocol = "http+unix://"
 	httpProtocol       = "http://"
@@ -61,15 +66,21 @@ type Config struct {
 	CaPath string
 	// ReadTimeoutSeconds is the HTTP read timeout. Defaults to 300s when zero.
 	ReadTimeoutSeconds uint64
+	// RetryWaitMinimum is the minimum backoff between retries. Defaults to 1s when zero.
+	RetryWaitMinimum time.Duration
+	// RetryWaitMaximum is the maximum backoff between retries. Defaults to 15s when zero.
+	RetryWaitMaximum time.Duration
 }
 
 // Client is an HTTP client for the GitLab internal API.
 type Client struct {
-	inner    *httpclient.Client
-	host     string
-	user     string
-	password string
-	secret   string
+	inner        *httpclient.Client
+	host         string
+	user         string
+	password     string
+	secret       string
+	retryWaitMin time.Duration
+	retryWaitMax time.Duration
 }
 
 // New creates a new Client from the given Config.
@@ -88,12 +99,22 @@ func New(cfg *Config) (*Client, error) {
 	}
 
 	// Layer cross-cutting concerns on top of the base transport, innermost first:
-	//   1. forwardedIPTransport — propagates X-Forwarded-For from context so that
+	//   1. retryTransport — retries on transient 5xx and network errors with
+	//      exponential backoff, matching the old retryablehttp-based client.
+	//   2. forwardedIPTransport — propagates X-Forwarded-For from context so that
 	//      GitLab can log the original client IP for SSH-over-HTTP connections.
-	//   2. metrics.NewRoundTripper — instruments every request with Prometheus
+	//   3. metrics.NewRoundTripper — instruments every request with Prometheus
 	//      counters/histograms, matching the old config.HTTPClient() behavior.
-	//   3. correlation.NewInstrumentedRoundTripper — injects the correlation ID
+	//   4. correlation.NewInstrumentedRoundTripper — injects the correlation ID
 	//      from context as the X-Request-Id header, matching the old transport chain.
+	retryMin, retryMax := cfg.RetryWaitMinimum, cfg.RetryWaitMaximum
+	if retryMin == 0 {
+		retryMin = defaultRetryWaitMinimum
+	}
+	if retryMax == 0 {
+		retryMax = defaultRetryWaitMaximum
+	}
+	transport = &retryTransport{next: transport, waitMin: retryMin, waitMax: retryMax}
 	transport = &forwardedIPTransport{next: transport}
 	transport = metrics.NewRoundTripper(transport)
 	transport = correlation.NewInstrumentedRoundTripper(transport)
@@ -109,11 +130,13 @@ func New(cfg *Config) (*Client, error) {
 	})
 
 	return &Client{
-		inner:    inner,
-		host:     host,
-		user:     cfg.User,
-		password: cfg.Password,
-		secret:   cfg.Secret,
+		inner:        inner,
+		host:         host,
+		user:         cfg.User,
+		password:     cfg.Password,
+		secret:       cfg.Secret,
+		retryWaitMin: retryMin,
+		retryWaitMax: retryMax,
 	}, nil
 }
 
@@ -139,9 +162,13 @@ func (c *Client) do(ctx context.Context, method, path string, data any) (*http.R
 	}
 	url := strings.TrimSuffix(c.host, "/") + normalized
 
-	var bodyReader io.Reader
+	var (
+		bodyReader io.Reader
+		encoded    []byte
+	)
 	if data != nil {
-		encoded, marshalErr := json.Marshal(data)
+		var marshalErr error
+		encoded, marshalErr = json.Marshal(data)
 		if marshalErr != nil {
 			return nil, fmt.Errorf("marshaling request body: %w", marshalErr)
 		}
@@ -151,6 +178,17 @@ func (c *Client) do(ctx context.Context, method, path string, data any) (*http.R
 	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
 	if err != nil {
 		return nil, err
+	}
+
+	// Provide GetBody so retryTransport can restore the request body between
+	// retry attempts. bytes.NewReader supports Reset but http.Request.Body is
+	// an io.ReadCloser consumed after the first attempt; GetBody is the
+	// standard mechanism for re-creating it.
+	if len(encoded) > 0 {
+		snapshot := encoded
+		req.GetBody = func() (io.ReadCloser, error) {
+			return io.NopCloser(bytes.NewReader(snapshot)), nil
+		}
 	}
 
 	if err := c.setHeaders(req); err != nil {
@@ -388,4 +426,61 @@ func (t *forwardedIPTransport) RoundTrip(req *http.Request) (*http.Response, err
 		req.Header.Add("X-Forwarded-For", ip)
 	}
 	return t.next.RoundTrip(req)
+}
+
+// retryTransport retries requests on transient network errors and 5xx responses
+// using exponential backoff. The behavior matches the old retryablehttp-based
+// client: up to defaultRetryMax retries, waiting between defaultRetryWaitMin
+// and defaultRetryWaitMax. On the final attempt the response (or error) is
+// returned as-is to the caller.
+//
+// For POST requests the caller must set req.GetBody so the body can be
+// restored between attempts; do() always sets this when data is non-nil.
+type retryTransport struct {
+	next    http.RoundTripper
+	waitMin time.Duration
+	waitMax time.Duration
+}
+
+func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	var (
+		resp *http.Response
+		err  error
+	)
+	for attempt := 0; attempt <= defaultRetryMax; attempt++ {
+		if attempt > 0 {
+			select {
+			case <-req.Context().Done():
+				return nil, req.Context().Err()
+			case <-time.After(retryBackoff(attempt, t.waitMin, t.waitMax)):
+			}
+			if req.GetBody != nil {
+				req.Body, err = req.GetBody()
+				if err != nil {
+					return nil, err
+				}
+			}
+		}
+
+		resp, err = t.next.RoundTrip(req)
+		if err != nil {
+			continue
+		}
+		if resp.StatusCode < 500 {
+			return resp, nil
+		}
+		// Close the body before retrying; leave it open on the last attempt
+		// so the caller can read the error response.
+		if attempt < defaultRetryMax {
+			_ = resp.Body.Close()
+			resp = nil
+		}
+	}
+	return resp, err
+}
+
+// retryBackoff returns the wait duration for a retry attempt using exponential
+// backoff: waitMin * 2^(attempt-1), capped at waitMax.
+func retryBackoff(attempt int, waitMin, waitMax time.Duration) time.Duration {
+	return min(waitMin*(1<<(attempt-1)), waitMax)
 }

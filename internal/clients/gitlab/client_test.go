@@ -286,6 +286,35 @@ func TestGet_ForwardsRemoteIP(t *testing.T) {
 	require.Equal(t, "1.2.3.4", gotForwardedFor)
 }
 
+func TestGet_RetriesOn5xx(t *testing.T) {
+	attempts := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		attempts++
+		if attempts < 3 {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	c, err := gitlab.New(&gitlab.Config{
+		GitlabURL:          srv.URL,
+		Secret:             testSecret,
+		ReadTimeoutSeconds: 10,
+		RetryWaitMinimum:   time.Millisecond,
+		RetryWaitMaximum:   10 * time.Millisecond,
+	})
+	require.NoError(t, err)
+
+	resp, err := c.Get(context.Background(), "/check")
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.Equal(t, 3, attempts) // 2 failures + 1 success
+}
+
 func TestGet_NoForwardedIPWithoutContext(t *testing.T) {
 	var gotForwardedFor string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
