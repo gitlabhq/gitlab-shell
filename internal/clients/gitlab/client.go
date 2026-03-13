@@ -35,7 +35,7 @@ const (
 	defaultUserAgent    = "GitLab-Shell"
 	jwtTTL              = time.Minute
 	jwtIssuer           = "gitlab-shell"
-	defaultReadTimeout = 300 * time.Second
+	defaultReadTimeout  = 300 * time.Second
 
 	socketBaseURL      = "http://unix"
 	unixSocketProtocol = "http+unix://"
@@ -434,4 +434,3 @@ func (t *forwardedIPTransport) RoundTrip(req *http.Request) (*http.Response, err
 	}
 	return t.next.RoundTrip(req)
 }
-
