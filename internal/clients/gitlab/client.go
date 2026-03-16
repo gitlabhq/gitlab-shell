@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
-	lablog "gitlab.com/gitlab-org/labkit/v2/log"
 	"gitlab.com/gitlab-org/labkit/v2/httpclient"
+	lablog "gitlab.com/gitlab-org/labkit/v2/log"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
