@@ -11,12 +11,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"path"
 	"strings"
 	"time"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
+	lablog "gitlab.com/gitlab-org/labkit/v2/log"
 	"gitlab.com/gitlab-org/labkit/v2/httpclient"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
@@ -161,6 +163,7 @@ func (c *Client) do(ctx context.Context, method, apiPath string, data any) (*htt
 
 	resp, err := c.inner.DoWithRetry(req, nil)
 	if err != nil {
+		slog.ErrorContext(ctx, "Internal API unreachable", lablog.ErrorMessage(err.Error()))
 		return nil, &client.APIError{Msg: "Internal API unreachable"}
 	}
 	return resp, nil
