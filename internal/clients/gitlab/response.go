@@ -19,6 +19,7 @@ import (
 //   - 2xx with non-JSON body                  → errors.New("parsing failed")
 func ParseJSON(resp *http.Response, dst any) error {
 	if resp.StatusCode >= 400 {
+		defer func() { _ = resp.Body.Close() }()
 		var errResp struct {
 			Message string `json:"message"`
 		}
