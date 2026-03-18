@@ -22,6 +22,7 @@ import (
 	lablog "gitlab.com/gitlab-org/labkit/v2/log"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
 
@@ -57,6 +58,22 @@ type Client struct {
 	user     string
 	password string
 	secret   string
+}
+
+// ConfigFromShellConfig converts a *config.Config into the *Config required by
+// New. It is the standard adapter used by every gitlabnet sub-client so that
+// the field mapping is defined in one place rather than repeated per-client.
+func ConfigFromShellConfig(cfg *config.Config) *Config {
+	return &Config{
+		GitlabURL:          cfg.GitlabURL,
+		RelativeURLRoot:    cfg.GitlabRelativeURLRoot,
+		User:               cfg.HTTPSettings.User,
+		Password:           cfg.HTTPSettings.Password,
+		Secret:             cfg.Secret,
+		CaFile:             cfg.HTTPSettings.CaFile,
+		CaPath:             cfg.HTTPSettings.CaPath,
+		ReadTimeoutSeconds: cfg.HTTPSettings.ReadTimeoutSeconds,
+	}
 }
 
 // New creates a new Client from the given Config.

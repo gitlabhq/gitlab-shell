@@ -27,16 +27,7 @@ type Response struct {
 
 // NewClient instantiates a Client with config
 func NewClient(config *config.Config) (*Client, error) {
-	client, err := gitlab.New(&gitlab.Config{
-		GitlabURL:          config.GitlabURL,
-		RelativeURLRoot:    config.GitlabRelativeURLRoot,
-		User:               config.HTTPSettings.User,
-		Password:           config.HTTPSettings.Password,
-		Secret:             config.Secret,
-		CaFile:             config.HTTPSettings.CaFile,
-		CaPath:             config.HTTPSettings.CaPath,
-		ReadTimeoutSeconds: config.HTTPSettings.ReadTimeoutSeconds,
-	})
+	client, err := gitlab.New(gitlab.ConfigFromShellConfig(config))
 	if err != nil {
 		return nil, fmt.Errorf("error creating http client: %v", err)
 	}

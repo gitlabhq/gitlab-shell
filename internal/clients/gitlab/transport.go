@@ -179,7 +179,7 @@ type forwardedIPTransport struct {
 func (t *forwardedIPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if ip, ok := req.Context().Value(client.OriginalRemoteIPContextKey{}).(string); ok && ip != "" {
 		req = req.Clone(req.Context())
-		req.Header.Add("X-Forwarded-For", ip)
+		req.Header.Set("X-Forwarded-For", ip)
 	}
 	return t.next.RoundTrip(req)
 }

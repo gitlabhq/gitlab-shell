@@ -18,8 +18,9 @@ import (
 //   - 4xx/5xx with no decodable message       → *client.APIError{Msg: "Internal API error (N)"}
 //   - 2xx with non-JSON body                  → errors.New("parsing failed")
 func ParseJSON(resp *http.Response, dst any) error {
+	defer func() { _ = resp.Body.Close() }()
+
 	if resp.StatusCode >= 400 {
-		defer func() { _ = resp.Body.Close() }()
 		var errResp struct {
 			Message string `json:"message"`
 		}
