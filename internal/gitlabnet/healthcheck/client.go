@@ -47,15 +47,12 @@ func NewClient(config *config.Config) (*Client, error) {
 }
 
 // Check makes a GET request to healthcheck endpoint
-func (c *Client) Check(ctx context.Context) (response *Response, err error) {
+func (c *Client) Check(ctx context.Context) (*Response, error) {
 	resp, err := c.client.Get(ctx, checkPath)
 	if err != nil {
 		return nil, err
 	}
-
-	defer func() {
-		err = resp.Body.Close()
-	}()
+	defer func() { _ = resp.Body.Close() }()
 
 	return parse(resp)
 }

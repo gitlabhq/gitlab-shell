@@ -25,7 +25,7 @@ import (
 )
 
 func TestNewServerConfigWithoutHosts(t *testing.T) {
-	_, err := newServerConfig(&config.Config{GitlabURL: "http://localhost"})
+	_, err := newServerConfig(&config.Config{GitlabURL: "http://localhost", Secret: "test-secret"})
 
 	require.Error(t, err)
 	require.Equal(t, "no host keys could be loaded, aborting", err.Error())
@@ -50,7 +50,7 @@ func TestHostKeyAndCerts(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabURL: "http://localhost", User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: "http://localhost", User: "user", Secret: "test-secret", Server: srvCfg},
 	)
 	require.NoError(t, err)
 
@@ -72,7 +72,7 @@ func TestHostKeyAndCerts(t *testing.T) {
 }
 
 func TestFailedAuthorizedKeysClient(t *testing.T) {
-	_, err := newServerConfig(&config.Config{GitlabURL: "ftp://localhost"})
+	_, err := newServerConfig(&config.Config{GitlabURL: "ftp://localhost", Secret: "test-secret"})
 
 	require.Error(t, err)
 	require.Equal(t, "failed to initialize authorized keys client: error creating http client: unknown GitLab URL prefix", err.Error())
@@ -110,7 +110,7 @@ func TestUserKeyHandling(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabURL: url, User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: url, User: "user", Secret: "test-secret", Server: srvCfg},
 	)
 	require.NoError(t, err)
 
@@ -135,7 +135,7 @@ func TestUserKeyHandling(t *testing.T) {
 			desc:        "API error",
 			user:        "user",
 			key:         rsaPublicKey(t),
-			expectedErr: &client.APIError{Msg: "Internal API unreachable"},
+			expectedErr: &client.APIError{Msg: "Internal API error (500)"},
 		}, {
 			desc: "successful request",
 			user: "user",
@@ -187,7 +187,7 @@ func TestUserCertificateHandling(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabURL: url, User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: url, User: "user", Secret: "test-secret", Server: srvCfg},
 	)
 	require.NoError(t, err)
 
@@ -212,7 +212,7 @@ func TestUserCertificateHandling(t *testing.T) {
 			desc:             "API error",
 			cert:             userCert(t, ssh.UserCert, time.Now().Add(time.Hour)),
 			featureFlagValue: "1",
-			expectedErr:      &client.APIError{Msg: "Internal API unreachable"},
+			expectedErr:      &client.APIError{Msg: "Internal API error (500)"},
 		}, {
 			desc:             "successful request",
 			cert:             validUserCert,

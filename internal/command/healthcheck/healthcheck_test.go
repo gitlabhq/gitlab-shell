@@ -49,7 +49,7 @@ func TestExecute(t *testing.T) {
 
 	buffer := &bytes.Buffer{}
 	cmd := &Command{
-		Config:     &config.Config{GitlabURL: url},
+		Config:     &config.Config{GitlabURL: url, Secret: "test-secret"},
 		ReadWriter: &readwriter.ReadWriter{Out: buffer},
 	}
 
@@ -64,7 +64,7 @@ func TestFailingRedisExecute(t *testing.T) {
 
 	buffer := &bytes.Buffer{}
 	cmd := &Command{
-		Config:     &config.Config{GitlabURL: url},
+		Config:     &config.Config{GitlabURL: url, Secret: "test-secret"},
 		ReadWriter: &readwriter.ReadWriter{Out: buffer},
 	}
 
@@ -78,11 +78,11 @@ func TestFailingAPIExecute(t *testing.T) {
 
 	buffer := &bytes.Buffer{}
 	cmd := &Command{
-		Config:     &config.Config{GitlabURL: url},
+		Config:     &config.Config{GitlabURL: url, Secret: "test-secret"},
 		ReadWriter: &readwriter.ReadWriter{Out: buffer},
 	}
 
 	_, err := cmd.Execute(context.Background())
 	require.Empty(t, buffer.String())
-	require.EqualError(t, err, "Internal API available: FAILED - Internal API unreachable")
+	require.EqualError(t, err, "Internal API available: FAILED - Internal API error (500)")
 }

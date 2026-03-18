@@ -94,7 +94,7 @@ func TestExecute(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			buffer := &bytes.Buffer{}
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url},
+				Config:     &config.Config{GitlabURL: url, Secret: "test-secret"},
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
@@ -132,7 +132,7 @@ func TestFailingExecute(t *testing.T) {
 		{
 			desc:          "When the API fails",
 			arguments:     &commandargs.Shell{GitlabUsername: "broken"},
-			expectedError: "Failed to get username: Internal API unreachable",
+			expectedError: "Failed to get username: Internal API error (500)",
 		},
 	}
 
@@ -140,7 +140,7 @@ func TestFailingExecute(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			buffer := &bytes.Buffer{}
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url},
+				Config:     &config.Config{GitlabURL: url, Secret: "test-secret"},
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}

@@ -45,7 +45,7 @@ var (
 func TestExecute(t *testing.T) {
 	url := testserver.StartSocketHTTPServer(t, requests)
 
-	defaultConfig := &config.Config{RootDir: "/tmp", GitlabURL: url}
+	defaultConfig := &config.Config{RootDir: "/tmp", GitlabURL: url, Secret: "test-secret"}
 
 	testCases := []struct {
 		desc           string
