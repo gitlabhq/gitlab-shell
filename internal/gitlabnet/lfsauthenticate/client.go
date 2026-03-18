@@ -7,16 +7,14 @@ import (
 	"net/http"
 	"strings"
 
-	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/clients/gitlab"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 )
 
 // Client represents a client for LFS authentication
 type Client struct {
-	config *config.Config
-	client *client.GitlabNetClient
+	client *gitlab.Client
 	args   *commandargs.Shell
 }
 
@@ -38,12 +36,21 @@ type Response struct {
 
 // NewClient creates a new LFS authentication client
 func NewClient(config *config.Config, args *commandargs.Shell) (*Client, error) {
-	client, err := gitlabnet.GetClient(config)
+	client, err := gitlab.New(&gitlab.Config{
+		GitlabURL:          config.GitlabURL,
+		RelativeURLRoot:    config.GitlabRelativeURLRoot,
+		User:               config.HTTPSettings.User,
+		Password:           config.HTTPSettings.Password,
+		Secret:             config.Secret,
+		CaFile:             config.HTTPSettings.CaFile,
+		CaPath:             config.HTTPSettings.CaPath,
+		ReadTimeoutSeconds: config.HTTPSettings.ReadTimeoutSeconds,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
-	return &Client{config: config, client: client, args: args}, nil
+	return &Client{client: client, args: args}, nil
 }
 
 // Authenticate performs authentication for LFS requests
@@ -66,7 +73,7 @@ func (c *Client) Authenticate(ctx context.Context, operation, repo, userID strin
 
 func parse(hr *http.Response) (*Response, error) {
 	response := &Response{}
-	if err := gitlabnet.ParseJSON(hr, response); err != nil {
+	if err := gitlab.ParseJSON(hr, response); err != nil {
 		return nil, err
 	}
 

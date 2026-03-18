@@ -7,17 +7,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/clients/gitlab"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
 // Client represents a client for interacting with the two-factor verification API.
 type Client struct {
 	config *config.Config
-	client *client.GitlabNetClient
+	client *gitlab.Client
 }
 
 // Response represents the response from the two-factor verification API.
@@ -35,7 +34,16 @@ type RequestBody struct {
 
 // NewClient creates a new instance of the two-factor verification client.
 func NewClient(config *config.Config) (*Client, error) {
-	client, err := gitlabnet.GetClient(config)
+	client, err := gitlab.New(&gitlab.Config{
+		GitlabURL:          config.GitlabURL,
+		RelativeURLRoot:    config.GitlabRelativeURLRoot,
+		User:               config.HTTPSettings.User,
+		Password:           config.HTTPSettings.Password,
+		Secret:             config.Secret,
+		CaFile:             config.HTTPSettings.CaFile,
+		CaPath:             config.HTTPSettings.CaPath,
+		ReadTimeoutSeconds: config.HTTPSettings.ReadTimeoutSeconds,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
@@ -77,7 +85,7 @@ func (c *Client) PushAuth(ctx context.Context, args *commandargs.Shell) error {
 
 func parse(hr *http.Response) error {
 	response := &Response{}
-	if err := gitlabnet.ParseJSON(hr, response); err != nil {
+	if err := gitlab.ParseJSON(hr, response); err != nil {
 		return err
 	}
 

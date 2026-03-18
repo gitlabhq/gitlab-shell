@@ -156,7 +156,7 @@ func TestExecute(t *testing.T) {
 				GitlabKeyID: "broken",
 				SSHArgs:     []string{cmdname, "newtoken", "read_api,read_repository"},
 			},
-			expectedError: "Internal API unreachable",
+			expectedError: "Internal API error (500)",
 		},
 		{
 			desc: "Without KeyID or User",

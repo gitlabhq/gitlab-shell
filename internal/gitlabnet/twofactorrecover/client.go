@@ -7,17 +7,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/clients/gitlab"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
 // Client represents a client for interacting with GitLab Two-Factor Authentication recovery codes
 type Client struct {
 	config *config.Config
-	client *client.GitlabNetClient
+	client *gitlab.Client
 }
 
 // Response represents the response structure for Two-Factor Authentication recovery code requests
@@ -35,7 +34,16 @@ type RequestBody struct {
 
 // NewClient creates a new Client instance with the provided configuration
 func NewClient(config *config.Config) (*Client, error) {
-	client, err := gitlabnet.GetClient(config)
+	client, err := gitlab.New(&gitlab.Config{
+		GitlabURL:          config.GitlabURL,
+		RelativeURLRoot:    config.GitlabRelativeURLRoot,
+		User:               config.HTTPSettings.User,
+		Password:           config.HTTPSettings.Password,
+		Secret:             config.Secret,
+		CaFile:             config.HTTPSettings.CaFile,
+		CaPath:             config.HTTPSettings.CaPath,
+		ReadTimeoutSeconds: config.HTTPSettings.ReadTimeoutSeconds,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
@@ -62,7 +70,7 @@ func (c *Client) GetRecoveryCodes(ctx context.Context, args *commandargs.Shell) 
 
 func parse(hr *http.Response) ([]string, error) {
 	response := &Response{}
-	if err := gitlabnet.ParseJSON(hr, response); err != nil {
+	if err := gitlab.ParseJSON(hr, response); err != nil {
 		return nil, err
 	}
 

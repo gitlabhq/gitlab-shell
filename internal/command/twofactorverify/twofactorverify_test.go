@@ -137,7 +137,7 @@ func TestExecute(t *testing.T) {
 		{
 			desc:           "With API fails",
 			arguments:      &commandargs.Shell{GitlabKeyID: "broken"},
-			expectedOutput: errorHeader + "Internal API unreachable\n",
+			expectedOutput: errorHeader + "Internal API error (500)\n",
 		},
 		{
 			desc:           "With missing arguments",
