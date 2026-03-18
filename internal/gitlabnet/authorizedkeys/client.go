@@ -6,9 +6,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/clients/gitlab"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 )
 
 const (
@@ -18,8 +17,7 @@ const (
 
 // Client represents a client for interacting with authorized keys
 type Client struct {
-	config *config.Config
-	client *client.GitlabNetClient
+	client *gitlab.Client
 }
 
 // Response represents the response structure for authorized keys
@@ -30,12 +28,21 @@ type Response struct {
 
 // NewClient creates a new instance of the authorized keys client
 func NewClient(config *config.Config) (*Client, error) {
-	client, err := gitlabnet.GetClient(config)
+	client, err := gitlab.New(&gitlab.Config{
+		GitlabURL:          config.GitlabURL,
+		RelativeURLRoot:    config.GitlabRelativeURLRoot,
+		User:               config.HTTPSettings.User,
+		Password:           config.HTTPSettings.Password,
+		Secret:             config.Secret,
+		CaFile:             config.HTTPSettings.CaFile,
+		CaPath:             config.HTTPSettings.CaPath,
+		ReadTimeoutSeconds: config.HTTPSettings.ReadTimeoutSeconds,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
-	return &Client{config: config, client: client}, nil
+	return &Client{client: client}, nil
 }
 
 // GetByKey retrieves authorized keys by key
@@ -52,7 +59,7 @@ func (c *Client) GetByKey(ctx context.Context, key string) (*Response, error) {
 	defer func() { _ = response.Body.Close() }()
 
 	parsedResponse := &Response{}
-	if err := gitlabnet.ParseJSON(response, parsedResponse); err != nil {
+	if err := gitlab.ParseJSON(response, parsedResponse); err != nil {
 		return nil, err
 	}
 

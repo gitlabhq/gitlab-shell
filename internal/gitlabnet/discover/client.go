@@ -7,16 +7,14 @@ import (
 	"net/http"
 	"net/url"
 
-	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/clients/gitlab"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 )
 
 // Client represents a client for discovering GitLab users
 type Client struct {
-	config *config.Config
-	client *client.GitlabNetClient
+	client *gitlab.Client
 }
 
 // Response represents the response structure for user discovery
@@ -28,12 +26,21 @@ type Response struct {
 
 // NewClient creates a new instance of the user discovery client
 func NewClient(config *config.Config) (*Client, error) {
-	client, err := gitlabnet.GetClient(config)
+	client, err := gitlab.New(&gitlab.Config{
+		GitlabURL:          config.GitlabURL,
+		RelativeURLRoot:    config.GitlabRelativeURLRoot,
+		User:               config.HTTPSettings.User,
+		Password:           config.HTTPSettings.Password,
+		Secret:             config.Secret,
+		CaFile:             config.HTTPSettings.CaFile,
+		CaPath:             config.HTTPSettings.CaPath,
+		ReadTimeoutSeconds: config.HTTPSettings.ReadTimeoutSeconds,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
-	return &Client{config: config, client: client}, nil
+	return &Client{client: client}, nil
 }
 
 // GetByCommandArgs retrieves user information based on command arguments
@@ -69,7 +76,7 @@ func (c *Client) getResponse(ctx context.Context, params url.Values) (*Response,
 
 func parse(hr *http.Response) (*Response, error) {
 	response := &Response{}
-	if err := gitlabnet.ParseJSON(hr, response); err != nil {
+	if err := gitlab.ParseJSON(hr, response); err != nil {
 		return nil, err
 	}
 
