@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/sync/semaphore"
@@ -214,8 +215,8 @@ func TestSessionsMetrics(t *testing.T) {
 		return errors.New("custom error")
 	})
 
-	eventuallyInDelta(t, initialSessionsTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsTotal))
-	eventuallyInDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal))
+	eventuallyInDelta(t, initialSessionsTotal+1, func() float64 { return testutil.ToFloat64(metrics.SliSshdSessionsTotal) })
+	eventuallyInDelta(t, initialSessionsErrorTotal+1, func() float64 { return testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal) })
 
 	for i, ignoredError := range []struct {
 		desc string
@@ -237,15 +238,17 @@ func TestSessionsMetrics(t *testing.T) {
 				return ignored
 			})
 
-			eventuallyInDelta(t, initialSessionsTotal+2+float64(i), testutil.ToFloat64(metrics.SliSshdSessionsTotal))
-			eventuallyInDelta(t, initialSessionsErrorTotal+1, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal))
+			eventuallyInDelta(t, initialSessionsTotal+2+float64(i), func() float64 { return testutil.ToFloat64(metrics.SliSshdSessionsTotal) })
+			eventuallyInDelta(t, initialSessionsErrorTotal+1, func() float64 { return testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal) })
 		})
 	}
 }
 
-func eventuallyInDelta(t *testing.T, expected, actual float64) {
+func eventuallyInDelta(t *testing.T, expected float64, actualFunc func() float64) {
+	t.Helper()
 	var delta = 0.1
-	require.Eventually(t, func() bool {
-		return ((expected - actual) < delta)
-	}, 5*time.Second, time.Millisecond, "expected: %f never matches actual: %f", expected, actual)
+	require.EventuallyWithT(t, func(c *assert.CollectT) {
+		actual := actualFunc()
+		assert.InDelta(c, expected, actual, delta, "expected: %f, actual: %f", expected, actual)
+	}, 5*time.Second, time.Millisecond)
 }
