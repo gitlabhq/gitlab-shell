@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -11,6 +12,7 @@ import (
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	pb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
+	types_proto "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto/types/v1"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	grpccorrelation "gitlab.com/gitlab-org/labkit/correlation/grpc"
 	"gitlab.com/gitlab-org/labkit/log"
@@ -20,13 +22,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
-)
-
-// ClassifyType constants mirror the proto enum values for convenience.
-const (
-	ClassifyTypeFirstCell     = pb.ClassifyType_FIRST_CELL
-	ClassifyTypeSessionPrefix = pb.ClassifyType_SESSION_PREFIX
-	ClassifyTypeCellID        = pb.ClassifyType_CELL_ID
 )
 
 // Metric status labels
@@ -63,19 +58,19 @@ func NewClient(cfg *Config) *Client {
 	if configCopy.Timeout == 0 {
 		configCopy.Timeout = DefaultTimeout
 	}
-	if configCopy.ClassifyType == "" {
-		configCopy.ClassifyType = "first_cell"
-	}
-
 	return &Client{
 		config: &configCopy,
 	}
 }
 
 // Classify queries the Topology Service to determine which cell should handle
-// a request for the given value. The value interpretation depends on the
-// configured ClassifyType (e.g., project path, session prefix, cell ID).
-func (c *Client) Classify(ctx context.Context, value string) (resp *pb.ClassifyResponse, err error) {
+// the resource identified by the given claim. Claims support typed lookups
+// such as routes, SSH keys, project IDs, etc.
+func (c *Client) Classify(ctx context.Context, claim *types_proto.Claim) (resp *pb.ClassifyResponse, err error) {
+	if claim == nil {
+		return nil, errors.New("claim must not be nil")
+	}
+
 	start := time.Now()
 	status := metricsStatusOK
 
@@ -98,8 +93,9 @@ func (c *Client) Classify(ctx context.Context, value string) (resp *pb.ClassifyR
 	defer cancel()
 
 	req := &pb.ClassifyRequest{
-		Type:  parseClassifyType(c.config.ClassifyType),
-		Value: value,
+		ClassificationKey: &pb.ClassifyRequest_Claim{
+			Claim: claim,
+		},
 	}
 
 	resp, err = client.Classify(ctx, req)
@@ -232,19 +228,4 @@ func buildTLSCredentials(cfg *Config) (credentials.TransportCredentials, error) 
 	}
 
 	return credentials.NewTLS(tlsConfig), nil
-}
-
-// parseClassifyType converts a string classify type to the proto enum value.
-// Returns FIRST_CELL as the default for unrecognized values.
-func parseClassifyType(classifyType string) pb.ClassifyType {
-	switch classifyType {
-	case "first_cell":
-		return pb.ClassifyType_FIRST_CELL
-	case "session_prefix":
-		return pb.ClassifyType_SESSION_PREFIX
-	case "cell_id":
-		return pb.ClassifyType_CELL_ID
-	default:
-		return pb.ClassifyType_FIRST_CELL
-	}
 }

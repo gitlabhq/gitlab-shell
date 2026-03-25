@@ -41,26 +41,22 @@ func TestNewClient(t *testing.T) {
 
 		// Defaults applied to client config
 		require.Equal(t, DefaultTimeout, client.config.Timeout)
-		require.Equal(t, "first_cell", client.config.ClassifyType)
 
 		// Original config unchanged
 		require.Zero(t, cfg.Timeout)
-		require.Empty(t, cfg.ClassifyType)
 		require.NotSame(t, cfg, client.config)
 	})
 
 	t.Run("preserves custom values", func(t *testing.T) {
 		cfg := &Config{
-			Enabled:      true,
-			Address:      "localhost:9090",
-			Timeout:      10 * time.Second,
-			ClassifyType: "session_prefix",
+			Enabled: true,
+			Address: "localhost:9090",
+			Timeout: 10 * time.Second,
 		}
 
 		client := NewClient(cfg)
 
 		require.Equal(t, 10*time.Second, client.config.Timeout)
-		require.Equal(t, "session_prefix", client.config.ClassifyType)
 	})
 }
 
@@ -83,7 +79,7 @@ func TestClient_Close(t *testing.T) {
 		ctx := correlation.ContextWithClientName(context.Background(), "gitlab-shell-tests")
 
 		// Establish connection by making a request
-		result, err := client.Classify(ctx, "test-value")
+		result, err := client.Classify(ctx, RouteClaim("test-value"))
 		require.NoError(t, err)
 		require.NotNil(t, result)
 
@@ -99,7 +95,7 @@ func TestClient_Close(t *testing.T) {
 		require.Nil(t, client.client)
 
 		// Verify reconnection works
-		result, err = client.Classify(ctx, "test-value-2")
+		result, err = client.Classify(ctx, RouteClaim("test-value-2"))
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.NotNil(t, client.conn)
@@ -109,33 +105,16 @@ func TestClient_Close(t *testing.T) {
 	})
 }
 
-func TestParseClassifyType(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected pb.ClassifyType
-	}{
-		{"first_cell", pb.ClassifyType_FIRST_CELL},
-		{"session_prefix", pb.ClassifyType_SESSION_PREFIX},
-		{"cell_id", pb.ClassifyType_CELL_ID},
-		{"unknown", pb.ClassifyType_FIRST_CELL},
-		{"", pb.ClassifyType_FIRST_CELL},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			require.Equal(t, tt.expected, parseClassifyType(tt.input))
-		})
-	}
-}
-
 // mockClassifyServer implements the ClassifyService for testing.
 type mockClassifyServer struct {
 	pb.UnimplementedClassifyServiceServer
-	response *pb.ClassifyResponse
-	err      error
+	response    *pb.ClassifyResponse
+	err         error
+	lastRequest *pb.ClassifyRequest
 }
 
-func (m *mockClassifyServer) Classify(_ context.Context, _ *pb.ClassifyRequest) (*pb.ClassifyResponse, error) {
+func (m *mockClassifyServer) Classify(_ context.Context, req *pb.ClassifyRequest) (*pb.ClassifyResponse, error) {
+	m.lastRequest = req
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -165,8 +144,9 @@ func startMockServer(t *testing.T, mock *mockClassifyServer) (string, func()) {
 func TestClient_Classify(t *testing.T) {
 	ctx := correlation.ContextWithClientName(context.Background(), "gitlab-shell-tests")
 
-	t.Run("successful request returns proxy info", func(t *testing.T) {
-		addr, stop := startMockServer(t, &mockClassifyServer{})
+	t.Run("successful route claim returns proxy info", func(t *testing.T) {
+		mock := &mockClassifyServer{}
+		addr, stop := startMockServer(t, mock)
 		defer stop()
 
 		client := NewClient(&Config{
@@ -176,17 +156,23 @@ func TestClient_Classify(t *testing.T) {
 		})
 		defer client.Close()
 
-		result, err := client.Classify(ctx, "test-value")
+		claim := RouteClaim("my-group/my-project")
+		result, err := client.Classify(ctx, claim)
 
 		require.NoError(t, err)
 		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
 		require.Equal(t, "cell-1.gitlab.com:443", result.GetProxy().GetAddress())
+
+		// Verify the request was constructed correctly
+		require.NotNil(t, mock.lastRequest.GetClassificationKey())
+		require.Equal(t, "my-group/my-project", mock.lastRequest.GetClaim().GetRoute())
+		require.Equal(t, pb.ClassifyType_UNSPECIFIED, mock.lastRequest.GetType())
+		require.Empty(t, mock.lastRequest.GetValue())
 	})
 
-	t.Run("server error is propagated", func(t *testing.T) {
-		addr, stop := startMockServer(t, &mockClassifyServer{
-			err: fmt.Errorf("internal server error"),
-		})
+	t.Run("successful SSH key claim returns proxy info", func(t *testing.T) {
+		mock := &mockClassifyServer{}
+		addr, stop := startMockServer(t, mock)
 		defer stop()
 
 		client := NewClient(&Config{
@@ -196,7 +182,50 @@ func TestClient_Classify(t *testing.T) {
 		})
 		defer client.Close()
 
-		result, err := client.Classify(ctx, "test-value")
+		claim := SSHKeyClaim("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ")
+		result, err := client.Classify(ctx, claim)
+
+		require.NoError(t, err)
+		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
+		require.Equal(t, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ", mock.lastRequest.GetClaim().GetSshKey())
+	})
+
+	t.Run("successful project ID claim returns proxy info", func(t *testing.T) {
+		mock := &mockClassifyServer{}
+		addr, stop := startMockServer(t, mock)
+		defer stop()
+
+		client := NewClient(&Config{
+			Enabled: true,
+			Address: addr,
+			Timeout: 5 * time.Second,
+		})
+		defer client.Close()
+
+		claim := ProjectIDClaim(42)
+		result, err := client.Classify(ctx, claim)
+
+		require.NoError(t, err)
+		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
+		require.Equal(t, int64(42), mock.lastRequest.GetClaim().GetProjectId())
+	})
+
+	t.Run("server error is propagated", func(t *testing.T) {
+		mock := &mockClassifyServer{
+			err: fmt.Errorf("internal server error"),
+		}
+		addr, stop := startMockServer(t, mock)
+		defer stop()
+
+		client := NewClient(&Config{
+			Enabled: true,
+			Address: addr,
+			Timeout: 5 * time.Second,
+		})
+		defer client.Close()
+
+		claim := RouteClaim("test")
+		result, err := client.Classify(ctx, claim)
 
 		require.Error(t, err)
 		require.Nil(t, result)
@@ -206,15 +235,31 @@ func TestClient_Classify(t *testing.T) {
 	t.Run("unreachable server returns error", func(t *testing.T) {
 		client := NewClient(&Config{
 			Enabled: true,
-			Address: "localhost:1", // Port 1 is unlikely to have a server
+			Address: "localhost:1",
 			Timeout: 100 * time.Millisecond,
 		})
 		defer client.Close()
 
-		result, err := client.Classify(ctx, "test-value")
+		claim := RouteClaim("test")
+		result, err := client.Classify(ctx, claim)
 
 		require.Error(t, err)
 		require.Nil(t, result)
+	})
+
+	t.Run("nil claim returns error without calling server", func(t *testing.T) {
+		client := NewClient(&Config{
+			Enabled: true,
+			Address: "localhost:1",
+			Timeout: 5 * time.Second,
+		})
+		defer client.Close()
+
+		result, err := client.Classify(ctx, nil)
+
+		require.Error(t, err)
+		require.Nil(t, result)
+		require.EqualError(t, err, "claim must not be nil")
 	})
 }
 
@@ -264,7 +309,8 @@ func TestClient_ClassifyWithTLS(t *testing.T) {
 	defer client.Close()
 
 	ctx := correlation.ContextWithClientName(context.Background(), "gitlab-shell-tests")
-	result, err := client.Classify(ctx, "test-value")
+	claim := RouteClaim("test-value")
+	result, err := client.Classify(ctx, claim)
 
 	require.NoError(t, err)
 	require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
@@ -315,7 +361,7 @@ func TestPrometheusMetrics(t *testing.T) {
 	client := NewClient(&Config{Enabled: true, Address: addr, Timeout: 5 * time.Second})
 	defer client.Close()
 
-	_, err := client.Classify(context.Background(), "test-value")
+	_, err := client.Classify(context.Background(), RouteClaim("test-value"))
 	require.NoError(t, err)
 
 	require.InDelta(t, 1, testutil.ToFloat64(metrics.TopologyConnectionsTotal.WithLabelValues("ok")), 0)
@@ -330,7 +376,7 @@ func TestPrometheusMetrics(t *testing.T) {
 	clientFail := NewClient(&Config{Enabled: true, Address: addrFail, Timeout: 5 * time.Second})
 	defer clientFail.Close()
 
-	_, err = clientFail.Classify(context.Background(), "test-value")
+	_, err = clientFail.Classify(context.Background(), RouteClaim("test-value"))
 	require.Error(t, err)
 
 	require.InDelta(t, 2, testutil.ToFloat64(metrics.TopologyConnectionsTotal.WithLabelValues("ok")), 0)
