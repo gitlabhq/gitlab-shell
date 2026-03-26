@@ -98,20 +98,13 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 		ctx = log.WithFields(ctx, slog.String(fields.CorrelationID, correlationID))
 	}
 
-	var ffClient *featureflag.Client
-	if config.FeatureFlags.Enabled {
-		var ffErr error
-		ffClient, ffErr = featureflag.NewWithConfig(ctx, &featureflag.Config{
-			Name:      serviceName,
-			Endpoint:  config.FeatureFlags.Endpoint,
-			Namespace: config.FeatureFlags.Namespace,
-		})
-		if ffErr != nil {
-			slog.WarnContext(ctx, "feature flag client unavailable, flag checks will use defaults",
-				slog.String("reason", ffErr.Error()))
-		} else {
-			ctx = context.WithValue(ctx, featureFlagClientKey, ffClient)
-		}
+	ffClient, _ := featureflag.NewWithConfig(ctx, &featureflag.Config{
+		Name:      serviceName,
+		Endpoint:  config.FeatureFlags.Endpoint,
+		Namespace: config.FeatureFlags.Namespace,
+	})
+	if ffClient != nil {
+		ctx = context.WithValue(ctx, featureFlagClientKey, ffClient)
 	}
 
 	return ctx, func() {
