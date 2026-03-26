@@ -551,8 +551,8 @@ gitlab.com/gitlab-org/go/reopen v1.0.0 h1:6BujZ0lkkjGIejTUJdNO1w56mN1SI10qcVQyQl
 gitlab.com/gitlab-org/go/reopen v1.0.0/go.mod h1:D6OID8YJDzEVZNYW02R/Pkj0v8gYFSIhXFTArAsBQw8=
 gitlab.com/gitlab-org/labkit v1.40.1 h1:4Rx+uI1Ht1i9jDw8KxOv8VrR37+cR4VXBtM3cW5tlXY=
 gitlab.com/gitlab-org/labkit v1.40.1/go.mod h1:9P1ZHh9uXr1dY2w1m2heXPZ+BZsSlWimbn7QmxTfpbM=
-gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260310142729-826b25a7b550 h1:0ln145LrtqJyyg0t/MgtACAGRvmtel3XQ95HWH64MrY=
-gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260310142729-826b25a7b550/go.mod h1:DdL2IZrztOm0tVkJfZjY03sdcdwaDgDXUxqeuFniTBg=
+gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260325011833-45bdfd4bfc9f h1:rAktUTUsyrj7PtD7IgsdvogTEpdy5m4Z0fC8MCGAOJc=
+gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260325011833-45bdfd4bfc9f/go.mod h1:lZ4lZ6asIds8tO4xXn0FDaCfxOyuNFtKmuPcawNWEuk=
 go.etcd.io/raft/v3 v3.6.0 h1:5NtvbDVYpnfZWcIHgGRk9DyzkBIXOi8j+DDp1IcnUWQ=
 go.etcd.io/raft/v3 v3.6.0/go.mod h1:nLvLevg6+xrVtHUmVaTcTz603gQPHfh7kUAwV6YpfGo=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
