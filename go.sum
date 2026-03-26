@@ -301,6 +301,8 @@ github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c/go.mod h1:lNA+9X1NB3Z
 github.com/google/btree v1.0.0/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
 github.com/google/flatbuffers v25.2.10+incompatible h1:F3vclr7C3HpB1k9mxCGRMXq6FdUalZ6H/pNX4FP1v0Q=
 github.com/google/flatbuffers v25.2.10+incompatible/go.mod h1:1AeVuKshWv4vARoZatz6mlQ0JxURH0Kv5+zNeJKJCa8=
+github.com/google/gnostic-models v0.6.9 h1:MU/8wDLif2qCXZmzncUQ/BOfxWfthHi63KqpoNbWqVw=
+github.com/google/gnostic-models v0.6.9/go.mod h1:CiWsm0s6BSQd1hRn8/QmxqB6BesYcbSZxsz9b0KuDBw=
 github.com/google/go-cmp v0.2.0/go.mod h1:oXzfMopK8JAjlY9xF4vHSVASa0yLyX7SntLO5aqRK0M=
 github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
 github.com/google/go-cmp v0.3.1/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
@@ -449,6 +451,10 @@ github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7J
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
 github.com/onsi/gomega v1.35.1 h1:Cwbd75ZBPxFSuZ6T+rN/WCb/gOc6YgFBXLlZLhC7Ds4=
 github.com/onsi/gomega v1.35.1/go.mod h1:PvZbdDc8J6XJEpDK4HCuRBm8a6Fzp9/DmhC9C7yFlog=
+github.com/open-feature/go-sdk v1.17.1 h1:1AwQ2NppOv69sfGiRH9pWfsMVLembvkhQ3hdk9eAsTY=
+github.com/open-feature/go-sdk v1.17.1/go.mod h1:+2UML7oZADJa0Swg27d6pu5kLKeCpZM2X2hWcGQutJ0=
+github.com/open-feature/go-sdk-contrib/providers/flipt v0.1.5 h1:2QQzINcriaUNSIABYq+qKYB/HyiiuGqFdxxZuakFIzA=
+github.com/open-feature/go-sdk-contrib/providers/flipt v0.1.5/go.mod h1:Ak4etSQ4hJ3ZZ8/VHqt5YR6YuEQLCUQ2o9jdUDuqm3w=
 github.com/opencontainers/runtime-spec v1.3.0 h1:YZupQUdctfhpZy3TM39nN9Ika5CBWT5diQ8ibYCRkxg=
 github.com/opencontainers/runtime-spec v1.3.0/go.mod h1:jwyrGlmzljRJv/Fgzds9SsS/C5hL+LL3ko9hs6T5lQ0=
 github.com/openshift/gssapi v0.0.0-20161010215902-5fb4217df13b h1:it0YPE/evO6/m8t8wxis9KFI2F/aleOKsI6d9uz0cEk=
@@ -553,8 +559,16 @@ gitlab.com/gitlab-org/labkit v1.40.1 h1:4Rx+uI1Ht1i9jDw8KxOv8VrR37+cR4VXBtM3cW5t
 gitlab.com/gitlab-org/labkit v1.40.1/go.mod h1:9P1ZHh9uXr1dY2w1m2heXPZ+BZsSlWimbn7QmxTfpbM=
 gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260310142729-826b25a7b550 h1:0ln145LrtqJyyg0t/MgtACAGRvmtel3XQ95HWH64MrY=
 gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260310142729-826b25a7b550/go.mod h1:DdL2IZrztOm0tVkJfZjY03sdcdwaDgDXUxqeuFniTBg=
+gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260325011833-45bdfd4bfc9f h1:rAktUTUsyrj7PtD7IgsdvogTEpdy5m4Z0fC8MCGAOJc=
+gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260325011833-45bdfd4bfc9f/go.mod h1:lZ4lZ6asIds8tO4xXn0FDaCfxOyuNFtKmuPcawNWEuk=
 go.etcd.io/raft/v3 v3.6.0 h1:5NtvbDVYpnfZWcIHgGRk9DyzkBIXOi8j+DDp1IcnUWQ=
 go.etcd.io/raft/v3 v3.6.0/go.mod h1:nLvLevg6+xrVtHUmVaTcTz603gQPHfh7kUAwV6YpfGo=
+go.flipt.io/flipt/errors v1.45.0 h1:hT7QwjSb+cKscvvdHfqQBbV/GW0tpBz4SHv0oUJbUrA=
+go.flipt.io/flipt/errors v1.45.0/go.mod h1:td2x2amuk67RmNjv5kU7hIoQ2o9q2Mrjab435oSrXh0=
+go.flipt.io/flipt/rpc/flipt v1.54.0 h1:AcYMi/j3qa4RpIWWxN88n02JbfxQ4IangVFjjXHlFyY=
+go.flipt.io/flipt/rpc/flipt v1.54.0/go.mod h1:kmJldB90QqXBs1xer4EHxQwpTWP0M6UuX8FiycY6s/w=
+go.flipt.io/flipt/sdk/go v0.13.0 h1:H3tUrp3w5X2kRRgM6gR8TVppds7IoaO4SpQyUjPm1oA=
+go.flipt.io/flipt/sdk/go v0.13.0/go.mod h1:U9nermywP6mg+ahds384S5BW4IUNsYICCqREALweqFA=
 go.opencensus.io v0.21.0/go.mod h1:mSImk1erAIZhrmZN+AvHh14ztQfjbGwt4TtuofqLduU=
 go.opencensus.io v0.22.0/go.mod h1:+kGneAE2xo2IficOXnaByMWTGM9T73dGwxeWcUqIpI8=
 go.opencensus.io v0.22.2/go.mod h1:yxeiOL68Rb0Xd1ddK5vPZ/oVn4vY4Ynel7k9FzqtOIw=
@@ -601,6 +615,8 @@ go.uber.org/atomic v1.11.0/go.mod h1:LUxbIzbOniOlMKjJjyPfpl4v+PKK2cNJn91OQbhoJI0
 go.uber.org/goleak v1.1.10/go.mod h1:8a7PlsEVH3e/a/GLqe5IIrQx6GzcnRmZEufDUTk4A7A=
 go.uber.org/goleak v1.3.0 h1:2K3zAYmnTNqV73imy9J1T3WC+gmCePx2hEGkimedGto=
 go.uber.org/goleak v1.3.0/go.mod h1:CoHD4mav9JJNrW/WLlf7HGZPjdw8EucARQHekz1X6bE=
+go.uber.org/mock v0.6.0 h1:hyF9dfmbgIX5EfOdasqLsWD6xqpNZlXblLB/Dbnwv3Y=
+go.uber.org/mock v0.6.0/go.mod h1:KiVJ4BqZJaMj4svdfmHM0AUx4NJYO8ZNpPnZn1Z+BBU=
 go.uber.org/multierr v1.6.0/go.mod h1:cdWPpRnG4AhwMwsgIHip0KRBQjJy5kYEpYjJxpXp9iU=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
 go.uber.org/multierr v1.11.0/go.mod h1:20+QtiLqy0Nd6FdQB9TLXag12DsQkrbs3htMFfDN80Y=

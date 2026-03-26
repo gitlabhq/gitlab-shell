@@ -18,7 +18,7 @@ require (
 	gitlab.com/gitlab-org/cells/topology-service v0.0.0-20260213143839-af4593cd7194
 	gitlab.com/gitlab-org/gitaly/v18 v18.9.0-rc4
 	gitlab.com/gitlab-org/labkit v1.40.1
-	gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260310142729-826b25a7b550
+	gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260325011833-45bdfd4bfc9f
 	golang.org/x/crypto v0.48.0
 	golang.org/x/sync v0.19.0
 	google.golang.org/grpc v1.79.1
@@ -56,6 +56,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
+	github.com/google/gnostic-models v0.6.9 // indirect
 	github.com/google/pprof v0.0.0-20250607225305-033d6d78b36a // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -74,6 +75,8 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
+	github.com/open-feature/go-sdk v1.17.1 // indirect
+	github.com/open-feature/go-sdk-contrib/providers/flipt v0.1.5 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/otiai10/mint v1.6.3 // indirect
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
@@ -85,11 +88,15 @@ require (
 	github.com/prometheus/prometheus v0.54.0 // indirect
 	github.com/sebest/xff v0.0.0-20210106013422-671bd2870b3a // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tinylib/msgp v1.3.0 // indirect
 	github.com/uber/jaeger-client-go v2.30.0+incompatible // indirect
 	github.com/uber/jaeger-lib v2.4.1+incompatible // indirect
 	gitlab.com/gitlab-org/go/reopen v1.0.0 // indirect
 	go.etcd.io/raft/v3 v3.6.0 // indirect
+	go.flipt.io/flipt/errors v1.45.0 // indirect
+	go.flipt.io/flipt/rpc/flipt v1.54.0 // indirect
+	go.flipt.io/flipt/sdk/go v0.13.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.64.0 // indirect
@@ -105,6 +112,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.41.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.9.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
+	go.uber.org/mock v0.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	golang.org/x/net v0.50.0 // indirect

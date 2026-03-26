@@ -15,6 +15,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/featureflags"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitaly"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology"
@@ -101,6 +102,9 @@ type Config struct {
 
 	// TopologyService contains Topology Service client configuration for Cells routing.
 	TopologyService topology.Config `yaml:"topology_service"`
+
+	// FeatureFlags contains configuration for the labkit v2 feature flag client.
+	FeatureFlags featureflags.Config `yaml:"feature_flags"`
 
 	httpClient     *client.HTTPClient
 	httpClientErr  error
