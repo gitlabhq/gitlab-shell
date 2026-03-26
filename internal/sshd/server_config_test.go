@@ -98,6 +98,25 @@ func TestNewServerConfigLoadsTrustedCAKeys(t *testing.T) {
 	require.Len(t, cfg.trustedUserCAKeySet, 1)
 }
 
+func TestNewServerConfig_FailsOnBadCAKeyFile(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
+
+	srvCfg := config.ServerConfig{
+		Listen:                  "127.0.0.1",
+		ConcurrentSessionsLimit: 1,
+		HostKeyFiles: []string{
+			path.Join(testRoot, "certs/valid/server.key"),
+		},
+		TrustedUserCAKeys: []string{"/nonexistent/ca.pub"},
+	}
+
+	_, err := newServerConfig(
+		&config.Config{GitlabURL: "http://localhost", User: "user", Server: srvCfg},
+	)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to load trusted user CA keys")
+}
+
 func TestFailedAuthorizedKeysClient(t *testing.T) {
 	_, err := newServerConfig(&config.Config{GitlabURL: "ftp://localhost"})
 
@@ -495,6 +514,8 @@ func TestParseTrustedUserCAKeys(t *testing.T) {
 		desc          string
 		files         []string
 		expectedCount int
+		expectErr     bool
+		errContains   string
 	}{
 		{
 			desc:          "valid CA key file",
@@ -512,14 +533,16 @@ func TestParseTrustedUserCAKeys(t *testing.T) {
 			expectedCount: 2,
 		},
 		{
-			desc:          "non-existent file",
-			files:         []string{"/nonexistent/ca.pub"},
-			expectedCount: 0,
+			desc:        "non-existent file",
+			files:       []string{"/nonexistent/ca.pub"},
+			expectErr:   true,
+			errContains: "failed to read trusted user CA key file",
 		},
 		{
-			desc:          "invalid key file",
-			files:         []string{invalidKeyFile},
-			expectedCount: 0,
+			desc:        "invalid key file",
+			files:       []string{invalidKeyFile},
+			expectErr:   true,
+			errContains: "failed to parse trusted user CA key in file",
 		},
 		{
 			desc:          "empty list",
@@ -527,21 +550,29 @@ func TestParseTrustedUserCAKeys(t *testing.T) {
 			expectedCount: 0,
 		},
 		{
-			desc:          "mix of valid and invalid files",
-			files:         []string{caKeyFile, invalidKeyFile, "/nonexistent/ca.pub"},
-			expectedCount: 1,
+			desc:        "mix of valid then invalid files",
+			files:       []string{caKeyFile, invalidKeyFile},
+			expectErr:   true,
+			errContains: "failed to parse trusted user CA key in file",
 		},
 		{
-			desc:          "partial parse - valid key followed by invalid content",
-			files:         []string{partialCAKeyFile},
-			expectedCount: 1,
+			desc:        "partial parse - valid key followed by invalid content",
+			files:       []string{partialCAKeyFile},
+			expectErr:   true,
+			errContains: "failed to parse trusted user CA key in file",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			keySet := parseTrustedUserCAKeys(tc.files)
-			require.Len(t, keySet, tc.expectedCount)
+			keySet, err := parseTrustedUserCAKeys(tc.files)
+			if tc.expectErr {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tc.errContains)
+			} else {
+				require.NoError(t, err)
+				require.Len(t, keySet, tc.expectedCount)
+			}
 		})
 	}
 }
@@ -570,6 +601,50 @@ func TestIsLocallyTrustedCA(t *testing.T) {
 	require.False(t, nilCfg.isLocallyTrustedCA(caPubKey))
 }
 
+func TestValidateKeyID(t *testing.T) {
+	testCases := []struct {
+		desc      string
+		keyID     string
+		expectErr bool
+		errMsg    string
+	}{
+		{desc: "valid simple username", keyID: "testuser", expectErr: false},
+		{desc: "valid with dots", keyID: "jane.doe", expectErr: false},
+		{desc: "valid with hyphens", keyID: "user-name", expectErr: false},
+		{desc: "valid with underscores", keyID: "user_name", expectErr: false},
+		{desc: "valid minimum length", keyID: "ab", expectErr: false},
+		{desc: "valid maximum length", keyID: strings.Repeat("a", 255), expectErr: false},
+		{desc: "valid mixed separators", keyID: "user.name-test_123", expectErr: false},
+		{desc: "empty KeyId", keyID: "", expectErr: true, errMsg: "certificate has empty KeyId"},
+		{desc: "single character", keyID: "a", expectErr: true, errMsg: "certificate KeyId length 1 is outside valid range [2, 255]"},
+		{desc: "too long", keyID: strings.Repeat("a", 256), expectErr: true, errMsg: "certificate KeyId length 256 is outside valid range [2, 255]"},
+		{desc: "starts with hyphen", keyID: "-username", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
+		{desc: "ends with hyphen", keyID: "username-", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
+		{desc: "starts with dot", keyID: ".username", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
+		{desc: "ends with dot", keyID: "username.", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
+		{desc: "consecutive dots", keyID: "user..name", expectErr: true, errMsg: "certificate KeyId contains consecutive special characters"},
+		{desc: "consecutive hyphens", keyID: "user--name", expectErr: true, errMsg: "certificate KeyId contains consecutive special characters"},
+		{desc: "consecutive mixed specials", keyID: "user.-name", expectErr: true, errMsg: "certificate KeyId contains consecutive special characters"},
+		{desc: "contains newline", keyID: "user\nname", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
+		{desc: "contains space", keyID: "user name", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
+		{desc: "contains null byte", keyID: "user\x00name", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
+		{desc: "contains at sign", keyID: "user@domain.com", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
+		{desc: "non-ASCII characters", keyID: "пользователь", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := validateKeyID(tc.keyID)
+			if tc.expectErr {
+				require.Error(t, err)
+				require.Equal(t, tc.errMsg, err.Error())
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 	testRoot := testhelper.PrepareTestRootDir(t)
 
@@ -585,6 +660,11 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 	hostCert := userCertSignedByCA(t, caSigner, ssh.HostCert, time.Now().Add(time.Hour), "testuser")
 	untrustedCert := userCertSignedByCA(t, untrustedSigner, ssh.UserCert, time.Now().Add(time.Hour), "testuser")
 	emptyKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "")
+	singleCharKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "a")
+	newlineKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "user\nname")
+	atSignKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "user@domain.com")
+	dottedKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "jane.doe")
+	consecutiveSpecialsCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "user..name")
 
 	srvCfg := config.ServerConfig{
 		Listen:                  "127.0.0.1",
@@ -607,7 +687,7 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 	testCases := []struct {
 		desc                string
 		cert                *ssh.Certificate
-		expectedErr         error
+		expectedErr         string
 		expectedPermissions *ssh.Permissions
 	}{
 		{
@@ -620,31 +700,64 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 			},
 		},
 		{
+			desc: "valid instance-level certificate with dots in username",
+			cert: dottedKeyIDCert,
+			expectedPermissions: &ssh.Permissions{
+				Extensions: map[string]string{
+					"username": "jane.doe",
+				},
+			},
+		},
+		{
 			desc:        "expired certificate",
 			cert:        expiredCert,
-			expectedErr: errors.New("ssh: cert has expired"),
+			expectedErr: "ssh: cert has expired",
 		},
 		{
 			desc:        "wrong cert type (host cert)",
 			cert:        hostCert,
-			expectedErr: errors.New("handleUserCertificate: cert has type 2"),
+			expectedErr: "handleUserCertificate: cert has type 2",
 		},
 		{
 			desc:        "untrusted CA without feature flag",
 			cert:        untrustedCert,
-			expectedErr: errors.New("handleUserCertificate: feature is disabled"),
+			expectedErr: "handleUserCertificate: feature is disabled",
 		},
 		{
 			desc:        "empty KeyId rejected",
 			cert:        emptyKeyIDCert,
-			expectedErr: errors.New("handleUserCertificate: certificate has empty KeyId"),
+			expectedErr: "handleUserCertificate: certificate has empty KeyId",
+		},
+		{
+			desc:        "single char KeyId rejected",
+			cert:        singleCharKeyIDCert,
+			expectedErr: "handleUserCertificate: certificate KeyId length 1 is outside valid range [2, 255]",
+		},
+		{
+			desc:        "KeyId with newline rejected",
+			cert:        newlineKeyIDCert,
+			expectedErr: "handleUserCertificate: certificate KeyId does not match GitLab username format",
+		},
+		{
+			desc:        "KeyId with at sign rejected",
+			cert:        atSignKeyIDCert,
+			expectedErr: "handleUserCertificate: certificate KeyId does not match GitLab username format",
+		},
+		{
+			desc:        "KeyId with consecutive specials rejected",
+			cert:        consecutiveSpecialsCert,
+			expectedErr: "handleUserCertificate: certificate KeyId contains consecutive special characters",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			permissions, err := cfg.handleUserCertificate(context.Background(), "user", tc.cert)
-			require.Equal(t, tc.expectedErr, err)
+			if tc.expectedErr != "" {
+				require.EqualError(t, err, tc.expectedErr)
+			} else {
+				require.NoError(t, err)
+			}
 			require.Equal(t, tc.expectedPermissions, permissions)
 		})
 	}

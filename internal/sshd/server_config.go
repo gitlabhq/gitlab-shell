@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -100,36 +101,25 @@ func parseHostCerts(hostKeys []ssh.Signer, certFiles []string) map[string]*ssh.C
 	return keyToCertMap
 }
 
-// parseTrustedUserCAKeys loads and parses trusted user CA public key files.
-// Each file should contain one or more SSH public keys in authorized_keys format.
-// Returns a set of marshaled public key bytes for O(1) trust lookups.
-// Invalid or unreadable files are logged and skipped.
-func parseTrustedUserCAKeys(caKeyFiles []string) map[string]struct{} {
+// parseTrustedUserCAKeys loads trusted user CA public key files.
+// Unlike parseHostKeys, this fails on any error because trusted CA keys are a
+// security trust boundary: a partially loaded set could silently authenticate
+// the wrong users or fail to authenticate expected users.
+func parseTrustedUserCAKeys(caKeyFiles []string) (map[string]struct{}, error) {
 	result := make(map[string]struct{})
 
 	for _, filename := range caKeyFiles {
 		keyRaw, err := os.ReadFile(filepath.Clean(filename))
 		if err != nil {
-			slog.Error("Failed to read trusted user CA key file",
-				slog.String("filename", filename),
-				log.ErrorMessage(err.Error()))
-			continue
+			return nil, fmt.Errorf("failed to read trusted user CA key file %q: %w", filename, err)
 		}
 
-		// Parse all keys in the file (authorized_keys format allows multiple keys)
 		rest := keyRaw
 		keysFromFile := 0
 		for len(rest) > 0 {
 			publicKey, _, _, remaining, err := ssh.ParseAuthorizedKey(rest)
 			if err != nil {
-				// ssh.ParseAuthorizedKey consumes all remaining bytes; a parse error here means
-				// the rest of the file is not valid authorized_keys format, so we stop processing
-				// this file. Valid keys parsed before the error are still retained.
-				slog.Warn("Stopped parsing trusted user CA key file",
-					slog.String("filename", filename),
-					slog.Int("keys_parsed", keysFromFile),
-					log.ErrorMessage(err.Error()))
-				break
+				return nil, fmt.Errorf("failed to parse trusted user CA key in file %q after %d valid key(s): %w", filename, keysFromFile, err)
 			}
 			result[string(publicKey.Marshal())] = struct{}{}
 			keysFromFile++
@@ -137,7 +127,7 @@ func parseTrustedUserCAKeys(caKeyFiles []string) map[string]struct{} {
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 func newServerConfig(cfg *config.Config) (*serverConfig, error) {
@@ -158,8 +148,13 @@ func newServerConfig(cfg *config.Config) (*serverConfig, error) {
 
 	hostKeyToCertMap := parseHostCerts(hostKeys, cfg.Server.HostCertFiles)
 
-	// Load trusted user CA keys for instance-level certificate auth
-	trustedUserCAKeySet := parseTrustedUserCAKeys(cfg.Server.TrustedUserCAKeys)
+	trustedUserCAKeySet, err := parseTrustedUserCAKeys(cfg.Server.TrustedUserCAKeys)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load trusted user CA keys: %w", err)
+	}
+	if len(cfg.Server.TrustedUserCAKeys) > 0 && len(trustedUserCAKeySet) == 0 {
+		return nil, fmt.Errorf("trusted_user_ca_keys configured but no valid CA keys were loaded, aborting")
+	}
 	if len(trustedUserCAKeySet) > 0 {
 		slog.Info("Loaded trusted user CA keys for instance-level SSH certificates",
 			slog.Int("count", len(trustedUserCAKeySet)))
@@ -175,11 +170,32 @@ func newServerConfig(cfg *config.Config) (*serverConfig, error) {
 	}, nil
 }
 
-// isLocallyTrustedCA checks if the given public key matches any of the
-// configured trusted user CA keys for instance-level SSH certificate auth.
 func (s *serverConfig) isLocallyTrustedCA(signingKey ssh.PublicKey) bool {
 	_, ok := s.trustedUserCAKeySet[string(signingKey.Marshal())]
 	return ok
+}
+
+var (
+	validKeyIDPattern       = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._-]{0,253}[a-zA-Z0-9]$`)
+	consecutiveSpecialChars = regexp.MustCompile(`[._-]{2,}`)
+)
+
+// validateKeyID checks that the certificate KeyId conforms to GitLab's username
+// rules, since it is used directly as the username in API calls and logging.
+func validateKeyID(keyID string) error {
+	if keyID == "" {
+		return fmt.Errorf("certificate has empty KeyId")
+	}
+	if len(keyID) < 2 || len(keyID) > 255 {
+		return fmt.Errorf("certificate KeyId length %d is outside valid range [2, 255]", len(keyID))
+	}
+	if !validKeyIDPattern.MatchString(keyID) {
+		return fmt.Errorf("certificate KeyId does not match GitLab username format")
+	}
+	if consecutiveSpecialChars.MatchString(keyID) {
+		return fmt.Errorf("certificate KeyId contains consecutive special characters")
+	}
+	return nil
 }
 
 func (s *serverConfig) handleUserKey(ctx context.Context, user string, key ssh.PublicKey) (*ssh.Permissions, error) {
@@ -204,18 +220,10 @@ func (s *serverConfig) handleUserKey(ctx context.Context, user string, key ssh.P
 	}, nil
 }
 
-func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, cert *ssh.Certificate) (*ssh.Permissions, error) {
+func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, cert *ssh.Certificate) (*ssh.Permissions, error) { //nolint:funlen
 	fingerprint := ssh.FingerprintSHA256(cert.SignatureKey)
 
-	if cert.CertType != ssh.UserCert {
-		return nil, fmt.Errorf("handleUserCertificate: cert has type %d", cert.CertType)
-	}
-
-	certChecker := &ssh.CertChecker{}
-	if err := certChecker.CheckCert(user, cert); err != nil {
-		return nil, err
-	}
-
+	// Enrich context early so all rejection paths include audit-relevant fields.
 	ctx = log.WithFields(ctx,
 		slog.String("ssh_user", user),
 		slog.String("public_key_fingerprint", ssh.FingerprintSHA256(cert)),
@@ -223,10 +231,24 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 		slog.String("certificate_identity", cert.KeyId),
 	)
 
-	// Check if the CA is locally trusted (instance-level certificate)
+	if cert.CertType != ssh.UserCert {
+		slog.WarnContext(ctx, "certificate rejected: not a user certificate",
+			slog.Int("cert_type", int(cert.CertType)))
+		return nil, fmt.Errorf("handleUserCertificate: cert has type %d", cert.CertType)
+	}
+
+	certChecker := &ssh.CertChecker{}
+	if err := certChecker.CheckCert(user, cert); err != nil {
+		slog.WarnContext(ctx, "certificate rejected: validity check failed",
+			log.ErrorMessage(err.Error()))
+		return nil, err
+	}
+
 	if s.isLocallyTrustedCA(cert.SignatureKey) {
-		if cert.KeyId == "" {
-			return nil, fmt.Errorf("handleUserCertificate: certificate has empty KeyId")
+		if err := validateKeyID(cert.KeyId); err != nil {
+			slog.WarnContext(ctx, "instance-level certificate rejected: invalid KeyId",
+				log.ErrorMessage(err.Error()))
+			return nil, fmt.Errorf("handleUserCertificate: %w", err)
 		}
 
 		ctx = log.WithFields(ctx, slog.String("certificate_username", cert.KeyId))
