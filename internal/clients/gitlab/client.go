@@ -49,7 +49,7 @@ type Config struct {
 	CaPath string
 	// ReadTimeoutSeconds is the HTTP read timeout. Defaults to 300s when zero.
 	ReadTimeoutSeconds uint64
-	// FeatureFlags is an optional evaluator used to gate behaviour behind
+	// FeatureFlags is an optional evaluator used to gate behavior behind
 	// feature flags. Obtain one from command.FeatureFlagEvaluatorFromContext
 	// and pass it here. When nil all flag checks fall back to their default
 	// value (false / off).
