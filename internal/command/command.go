@@ -65,11 +65,12 @@ func CheckForVersionFlag(osArgs []string, version, buildTime string) {
 // background context from which all other contexts in the process should derive
 // from, as it has a service name and initial correlation ID set.
 //
-// If the FEATURE_FLAG_ENDPOINT environment variable is set, a labkit v2
-// feature flag client is created and stored in the returned context. Callers
-// can retrieve it with FeatureFlagEvaluatorFromContext. If the endpoint is not
-// configured the client is omitted and flag checks default to false — startup
-// is never blocked by a missing Flipt server.
+// A labkit v2 feature flag client is created when feature_flags.endpoint is
+// set in config.yml (or the FEATURE_FLAG_ENDPOINT environment variable is set
+// as a fallback handled by labkit). The client is stored in the returned
+// context and can be retrieved with FeatureFlagEvaluatorFromContext. If no
+// endpoint is configured the client is omitted and flag checks default to
+// false — startup is never blocked by a missing Flipt server.
 func Setup(serviceName string, config *config.Config) (context.Context, func()) {
 	closer := tracing.Initialize(
 		tracing.WithServiceName(serviceName),
@@ -110,7 +111,7 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 	return ctx, func() {
 		if ffClient != nil {
 			if err := ffClient.Shutdown(ctx); err != nil {
-				slog.WarnContext(ctx, "feature flag client shutdown error", slog.String("error", err.Error()))
+				slog.WarnContext(ctx, "feature flag client shutdown error", slog.String(fields.ErrorMessage, err.Error()))
 			}
 		}
 		finished()

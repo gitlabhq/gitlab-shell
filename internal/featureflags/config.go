@@ -7,15 +7,16 @@
 //	  endpoint: "http://flipt:8080"
 //	  namespace: "gitlab-shell"
 //
-// The endpoint can also be supplied via the FEATURE_FLAG_ENDPOINT environment
-// variable when it is not set in the YAML file. If neither is provided the
-// client is not started and all flag checks return their default values.
+// When endpoint is empty, the labkit featureflag client falls back to the
+// FEATURE_FLAG_ENDPOINT environment variable internally. If neither is
+// provided the client is not started and all flag checks return their default
+// values.
 package featureflags
 
 // Config contains feature flag client configuration settings.
 type Config struct {
 	// Endpoint is the HTTP address of the Flipt server
-	// (e.g. "http://flipt:8080"). When empty the client falls back to the
+	// (e.g. "http://flipt:8080"). When empty, labkit falls back to the
 	// FEATURE_FLAG_ENDPOINT environment variable. When neither is set the
 	// client is not started and all flag checks return their default value.
 	Endpoint string `yaml:"endpoint"`
