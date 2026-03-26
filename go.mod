@@ -120,4 +120,8 @@ require (
 	gopkg.in/DataDog/dd-trace-go.v1 v1.32.0 // indirect
 )
 
+tool (
+	gitlab.com/gitlab-org/labkit/v2/cmd/validate-log-fields
+)
+
 exclude github.com/prometheus/client_golang v1.12.1
