@@ -109,6 +109,13 @@ sshd:
     - /run/secrets/ssh-hostkeys/ssh_host_rsa_key-cert.pub
     - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key-cert.pub
     - /run/secrets/ssh-hostkeys/ssh_host_ed25519_key-cert.pub
+  # Trusted user CA public keys for instance-level SSH certificate authentication.
+  # Certificates signed by these CAs will be trusted for authentication.
+  # The certificate's KeyId must contain the GitLab username.
+  # This is the gitlab-sshd equivalent of OpenSSH's TrustedUserCAKeys directive.
+  # Example: ssh-keygen -s /path/to/ca -I <gitlab-username> -V +1d user-key.pub
+  # trusted_user_ca_keys:
+  #   - /etc/gitlab/ssh_user_ca.pub
   # GSSAPI-related settings
   gssapi:
     # Enable the gssapi-with-mic authentication method. Defaults to false.
