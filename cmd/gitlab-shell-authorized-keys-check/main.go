@@ -68,6 +68,7 @@ func execute(readWriter *readwriter.ReadWriter) (int, error) {
 
 	ctx, finished := command.Setup(executable.Name, config)
 	defer finished()
+	config.FeatureFlagEvaluator = command.FeatureFlagEvaluatorFromContext(ctx)
 
 	if _, err = cmd.Execute(ctx); err != nil {
 		console.DisplayWarningMessage(err.Error(), readWriter.ErrOut)

@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
-	"gitlab.com/gitlab-org/labkit/v2/featureflag"
 	"gitlab.com/gitlab-org/labkit/v2/httpclient"
 	lablog "gitlab.com/gitlab-org/labkit/v2/log"
 
@@ -49,21 +48,15 @@ type Config struct {
 	CaPath string
 	// ReadTimeoutSeconds is the HTTP read timeout. Defaults to 300s when zero.
 	ReadTimeoutSeconds uint64
-	// FeatureFlags is an optional evaluator used to gate behavior behind
-	// feature flags. Obtain one from command.FeatureFlagEvaluatorFromContext
-	// and pass it here. When nil all flag checks fall back to their default
-	// value (false / off).
-	FeatureFlags featureflag.Evaluator
 }
 
 // Client is an HTTP client for the GitLab internal API.
 type Client struct {
-	inner        *httpclient.Client
-	host         string
-	user         string
-	password     string
-	secret       string
-	featureFlags featureflag.Evaluator
+	inner    *httpclient.Client
+	host     string
+	user     string
+	password string
+	secret   string
 }
 
 // New creates a new Client from the given Config.
@@ -105,12 +98,11 @@ func New(cfg *Config) (*Client, error) {
 	})
 
 	return &Client{
-		inner:        inner,
-		host:         host,
-		user:         cfg.User,
-		password:     cfg.Password,
-		secret:       cfg.Secret,
-		featureFlags: cfg.FeatureFlags,
+		inner:    inner,
+		host:     host,
+		user:     cfg.User,
+		password: cfg.Password,
+		secret:   cfg.Secret,
 	}, nil
 }
 

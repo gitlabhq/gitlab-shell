@@ -19,6 +19,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitaly"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology"
+	"gitlab.com/gitlab-org/labkit/v2/featureflag"
 )
 
 const (
@@ -105,6 +106,12 @@ type Config struct {
 
 	// FeatureFlags contains configuration for the labkit v2 feature flag client.
 	FeatureFlags featureflags.Config `yaml:"feature_flags"`
+
+	// FeatureFlagEvaluator is the live feature flag client, set after process
+	// startup by the main entry point. Use this in gitlabnet.GetClient and
+	// other HTTP client construction sites to gate switching to the new
+	// labkit v2 HTTP client.
+	FeatureFlagEvaluator featureflag.Evaluator
 
 	httpClient     *client.HTTPClient
 	httpClientErr  error
