@@ -111,7 +111,7 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 	return ctx, func() {
 		if ffClient != nil {
 			if err := ffClient.Shutdown(ctx); err != nil {
-				slog.WarnContext(ctx, "feature flag client shutdown error", slog.String(fields.ErrorMessage, err.Error()))
+				slog.WarnContext(ctx, "feature flag client shutdown error", log.Error(err))
 			}
 		}
 		finished()
