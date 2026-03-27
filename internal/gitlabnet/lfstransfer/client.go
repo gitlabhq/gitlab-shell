@@ -150,7 +150,10 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 
 	jsonReader := bytes.NewReader(jsonData)
 
-	req, _ := newHTTPRequest(http.MethodPost, fmt.Sprintf("%s/objects/batch", c.href), jsonReader)
+	req, err := newHTTPRequest(http.MethodPost, fmt.Sprintf("%s/objects/batch", c.href), jsonReader)
+	if err != nil {
+		return nil, err
+	}
 
 	req.Header.Set("Content-Type", c.header)
 	req.Header.Set("Authorization", c.auth)
@@ -178,7 +181,10 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 
 // GetObject performs an HTTP GET request for the object
 func (c *Client) GetObject(_, href string, headers map[string]string) (io.ReadCloser, int64, error) {
-	req, _ := newHTTPRequest(http.MethodGet, href, nil)
+	req, err := newHTTPRequest(http.MethodGet, href, nil)
+	if err != nil {
+		return nil, 0, err
+	}
 	for key, value := range headers {
 		req.Header.Add(key, value)
 	}
@@ -199,7 +205,10 @@ func (c *Client) GetObject(_, href string, headers map[string]string) (io.ReadCl
 
 // PutObject performs an HTTP PUT request for the object
 func (c *Client) PutObject(_, href string, headers map[string]string, r io.Reader) error {
-	req, _ := newHTTPRequest(http.MethodPut, href, r)
+	req, err := newHTTPRequest(http.MethodPut, href, r)
+	if err != nil {
+		return err
+	}
 	for key, value := range headers {
 		req.Header.Add(key, value)
 	}
@@ -357,7 +366,10 @@ func (c *Client) ListLocksVerify(path, id, cursor string, limit int, ref string)
 	}
 	jsonReader := bytes.NewReader(jsonData)
 
-	req, _ := newHTTPRequest(http.MethodPost, url.String(), jsonReader)
+	req, err := newHTTPRequest(http.MethodPost, url.String(), jsonReader)
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Set("Content-Type", c.header)
 	req.Header.Set("Authorization", c.auth)
 

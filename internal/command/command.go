@@ -99,13 +99,16 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 		ctx = log.WithFields(ctx, slog.String(fields.CorrelationID, correlationID))
 	}
 
-	ffClient, _ := featureflag.NewWithConfig(ctx, &featureflag.Config{
-		Name:      serviceName,
-		Endpoint:  config.FeatureFlags.Endpoint,
-		Namespace: config.FeatureFlags.Namespace,
-	})
-	if ffClient != nil {
-		ctx = context.WithValue(ctx, featureFlagClientKey, ffClient)
+	var ffClient featureflag.Client
+	if config != nil {
+		ffClient, _ = featureflag.NewWithConfig(ctx, &featureflag.Config{
+			Name:      serviceName,
+			Endpoint:  config.FeatureFlags.Endpoint,
+			Namespace: config.FeatureFlags.Namespace,
+		})
+		if ffClient != nil {
+			ctx = context.WithValue(ctx, featureFlagClientKey, ffClient)
+		}
 	}
 
 	return ctx, func() {
