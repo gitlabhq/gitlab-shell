@@ -22,7 +22,7 @@ compile: version "go1.24.5" does not match go tool version "go1.26.1") (typechec
 internal/command/commandargs/shell.go:123:15: undefined: shellwords (typecheck)
 internal/config/config.go:18:2: could not import gitlab.com/gitlab-org/gitlab-shell/v14/internal/featureflags (-: # gitlab.com/gitlab-org/gitlab-shell/v14/internal/featureflags
 compile: version "go1.24.5" does not match go tool version "go1.26.1") (typecheck)
-internal/config/config.go:239:12: undefined: yaml (typecheck)
+internal/config/config.go:232:12: undefined: yaml (typecheck)
 internal/gitaly/gitaly.go:59:10: c.cache.RLock undefined (type connectionsCache has no field or method RLock) (typecheck)
 internal/gitaly/gitaly.go:61:10: c.cache.RUnlock undefined (type connectionsCache has no field or method RUnlock) (typecheck)
 internal/gitaly/gitaly.go:67:10: c.cache.Lock undefined (type connectionsCache has no field or method Lock) (typecheck)

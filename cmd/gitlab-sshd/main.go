@@ -75,7 +75,6 @@ func main() {
 	cfg.ApplyGlobalState()
 	ctx, finished := command.Setup("gitlab-sshd", cfg)
 	defer finished()
-	cfg.FeatureFlagEvaluator = command.FeatureFlagEvaluatorFromContext(ctx)
 
 	cfg.GitalyClient.InitSidechannelRegistry(ctx)
 

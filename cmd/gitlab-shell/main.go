@@ -66,7 +66,6 @@ func run() int {
 	}
 
 	ctx, finished := command.Setup(executable.Name, config)
-	config.FeatureFlagEvaluator = command.FeatureFlagEvaluatorFromContext(ctx)
 
 	config.GitalyClient.InitSidechannelRegistry(ctx)
 

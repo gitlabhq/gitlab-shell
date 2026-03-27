@@ -63,7 +63,6 @@ func run() int {
 
 	ctx, finished := command.Setup(executable.Name, config)
 	defer finished()
-	config.FeatureFlagEvaluator = command.FeatureFlagEvaluatorFromContext(ctx)
 
 	if _, err = cmd.Execute(ctx); err != nil {
 		_, _ = fmt.Fprintf(readWriter.ErrOut, "%v\n", err)
