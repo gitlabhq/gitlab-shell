@@ -274,3 +274,10 @@ nilaway:
     - cat /tmp/out.txt
     - exit ${NILAWAY_EXIT_CODE}
   allow_failure: true
+
+logging-field-validator:
+  stage: test
+  needs: ["modules:download"]
+  rules: !reference [".rules:go-changes", rules]
+  script:
+    - go run gitlab.com/gitlab-org/labkit/v2/cmd/validate-log-fields .
