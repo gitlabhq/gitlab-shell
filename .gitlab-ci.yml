@@ -278,6 +278,12 @@ nilaway:
 logging-field-validator:
   stage: test
   needs: ["modules:download"]
-  rules: !reference [".rules:go-changes", rules]
+  rules:
+    - changes:
+        - .gitlab-ci.yml
+        - "go.mod"
+        - "go.sum"
+        - "**/*.go"
+        - .labkit_logging_todo.yml
   script:
     - go run gitlab.com/gitlab-org/labkit/v2/cmd/validate-log-fields .
