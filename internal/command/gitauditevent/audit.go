@@ -31,7 +31,7 @@ func Audit(ctx context.Context, args *commandargs.Shell, c *config.Config, respo
 		return
 	}
 
-	errOnlyLog = gitAuditClient.Audit(ctx, response.Username, args, response.Repo, packfileStats)
+	errOnlyLog = gitAuditClient.Audit(ctx, response.Username, response.KeyID, args, response.Repo, packfileStats)
 	if errOnlyLog != nil {
 		slog.ErrorContext(ctx, fmt.Sprintf("failed to audit git event: %v", errOnlyLog))
 		return

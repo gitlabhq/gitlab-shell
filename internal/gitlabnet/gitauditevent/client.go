@@ -36,18 +36,20 @@ type Request struct {
 	Protocol      string                            `json:"protocol"`
 	Repo          string                            `json:"gl_repository"`
 	Username      string                            `json:"username"`
+	KeyID         int                               `json:"key_id,omitempty"`
 	PackfileStats *pb.PackfileNegotiationStatistics `json:"packfile_stats,omitempty"`
 	CheckIP       string                            `json:"check_ip,omitempty"`
 	Changes       string                            `json:"changes"`
 }
 
 // Audit sends an audit event to the GitLab API.
-func (c *Client) Audit(ctx context.Context, username string, args *commandargs.Shell, repo string, packfileStats *pb.PackfileNegotiationStatistics) error {
+func (c *Client) Audit(ctx context.Context, username string, keyID int, args *commandargs.Shell, repo string, packfileStats *pb.PackfileNegotiationStatistics) error {
 	request := &Request{
 		Action:        args.CommandType,
 		Repo:          repo,
 		Protocol:      "ssh",
 		Username:      username,
+		KeyID:         keyID,
 		PackfileStats: packfileStats,
 		CheckIP:       gitlabnet.ParseIP(args.Env.RemoteAddr),
 		Changes:       "_any",

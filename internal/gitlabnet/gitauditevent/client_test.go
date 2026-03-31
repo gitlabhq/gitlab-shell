@@ -18,6 +18,7 @@ import (
 
 var (
 	testUsername            = "gitlab-shell"
+	testKeyID               = 123
 	testRepo                = "gitlab-org/gitlab-shell"
 	testPackfileWants int64 = 100
 	testPackfileHaves int64 = 100
@@ -30,7 +31,7 @@ var (
 func TestAudit(t *testing.T) {
 	client := setup(t, http.StatusOK)
 
-	err := client.Audit(context.Background(), testUsername, testArgs, testRepo, &pb.PackfileNegotiationStatistics{
+	err := client.Audit(context.Background(), testUsername, testKeyID, testArgs, testRepo, &pb.PackfileNegotiationStatistics{
 		Wants: testPackfileWants,
 		Haves: testPackfileHaves,
 	})
@@ -40,7 +41,7 @@ func TestAudit(t *testing.T) {
 func TestAuditFailed(t *testing.T) {
 	client := setup(t, http.StatusBadRequest)
 
-	err := client.Audit(context.Background(), testUsername, testArgs, testRepo, &pb.PackfileNegotiationStatistics{
+	err := client.Audit(context.Background(), testUsername, testKeyID, testArgs, testRepo, &pb.PackfileNegotiationStatistics{
 		Wants: testPackfileWants,
 		Haves: testPackfileHaves,
 	})
@@ -59,6 +60,7 @@ func setup(t *testing.T, responseStatus int) *Client {
 				var request *Request
 				assert.NoError(t, json.Unmarshal(body, &request))
 				assert.Equal(t, testUsername, request.Username)
+				assert.Equal(t, testKeyID, request.KeyID)
 				assert.Equal(t, testArgs.Env.RemoteAddr, request.CheckIP)
 				assert.Equal(t, testArgs.CommandType, request.Action)
 				assert.Equal(t, testRepo, request.Repo)
