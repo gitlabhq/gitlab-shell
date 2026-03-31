@@ -18,6 +18,7 @@ import (
 
 var (
 	testUsername            = "gitlab-shell"
+	testKeyID               = 123
 	testRepo                = "gitlab-org/gitlab-shell"
 	testPackfileWants int64 = 100
 	testPackfileHaves int64 = 100
@@ -28,26 +29,57 @@ var (
 )
 
 func TestAudit(t *testing.T) {
-	client := setup(t, http.StatusOK)
+	tests := []struct {
+		name        string
+		keyID       int
+		expectKeyID bool
+	}{
+		{
+			name:        "with key_id",
+			keyID:       testKeyID,
+			expectKeyID: true,
+		},
+		{
+			name:        "without key_id",
+			keyID:       0,
+			expectKeyID: false,
+		},
+	}
 
-	err := client.Audit(context.Background(), testUsername, testArgs, testRepo, &pb.PackfileNegotiationStatistics{
-		Wants: testPackfileWants,
-		Haves: testPackfileHaves,
-	})
-	require.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			client := setup(t, http.StatusOK, tt.keyID, tt.expectKeyID)
+
+			err := client.Audit(context.Background(), AuditParams{
+				Username: testUsername,
+				KeyID:    tt.keyID,
+				Repo:     testRepo,
+				PackfileStats: &pb.PackfileNegotiationStatistics{
+					Wants: testPackfileWants,
+					Haves: testPackfileHaves,
+				},
+			}, testArgs)
+			require.NoError(t, err)
+		})
+	}
 }
 
 func TestAuditFailed(t *testing.T) {
-	client := setup(t, http.StatusBadRequest)
+	client := setup(t, http.StatusBadRequest, testKeyID, true)
 
-	err := client.Audit(context.Background(), testUsername, testArgs, testRepo, &pb.PackfileNegotiationStatistics{
-		Wants: testPackfileWants,
-		Haves: testPackfileHaves,
-	})
+	err := client.Audit(context.Background(), AuditParams{
+		Username: testUsername,
+		KeyID:    testKeyID,
+		Repo:     testRepo,
+		PackfileStats: &pb.PackfileNegotiationStatistics{
+			Wants: testPackfileWants,
+			Haves: testPackfileHaves,
+		},
+	}, testArgs)
 	require.Error(t, err)
 }
 
-func setup(t *testing.T, responseStatus int) *Client {
+func setup(t *testing.T, responseStatus int, keyID int, expectKeyID bool) *Client {
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: uri,
@@ -56,9 +88,20 @@ func setup(t *testing.T, responseStatus int) *Client {
 				assert.NoError(t, err)
 				defer r.Body.Close()
 
+				// Check if key_id is present/absent in raw JSON
+				var rawJSON map[string]interface{}
+				assert.NoError(t, json.Unmarshal(body, &rawJSON))
+				_, hasKeyID := rawJSON["key_id"]
+				if expectKeyID {
+					assert.True(t, hasKeyID, "key_id should be present in JSON")
+				} else {
+					assert.False(t, hasKeyID, "key_id should not be present in JSON")
+				}
+
 				var request *Request
 				assert.NoError(t, json.Unmarshal(body, &request))
 				assert.Equal(t, testUsername, request.Username)
+				assert.Equal(t, keyID, request.KeyID)
 				assert.Equal(t, testArgs.Env.RemoteAddr, request.CheckIP)
 				assert.Equal(t, testArgs.CommandType, request.Action)
 				assert.Equal(t, testRepo, request.Repo)
