@@ -20,41 +20,64 @@ import (
 var (
 	testUsername = "gitlab-shell"
 	testRepo     = "project-1"
+	testKeyID    = 123
 )
 
 func TestGitAudit(t *testing.T) {
-	called := false
-
-	requests := []testserver.TestRequestHandler{
-		{
-			Path: "/api/v4/internal/shellhorse/git_audit_event",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				called = true
-
-				body, err := io.ReadAll(r.Body)
-				assert.NoError(t, err)
-				defer r.Body.Close()
-
-				var request *gitauditevent.Request
-				assert.NoError(t, json.Unmarshal(body, &request))
-				assert.Equal(t, testUsername, request.Username)
-				assert.Equal(t, testRepo, request.Repo)
-
-				w.WriteHeader(http.StatusOK)
-			},
-		},
+	tests := []struct {
+		name        string
+		keyID       int
+		expectKeyID bool
+	}{
+		{name: "with deploy key", keyID: testKeyID, expectKeyID: true},
+		{name: "without deploy key", keyID: 0, expectKeyID: false},
 	}
 
-	args := &commandargs.Shell{
-		CommandType: commandargs.UploadArchive,
-		Env:         sshenv.Env{RemoteAddr: "18.245.0.42"},
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			called := false
+			requests := []testserver.TestRequestHandler{{
+				Path: "/api/v4/internal/shellhorse/git_audit_event",
+				Handler: func(w http.ResponseWriter, r *http.Request) {
+					called = true
+
+					body, err := io.ReadAll(r.Body)
+					assert.NoError(t, err)
+					defer r.Body.Close()
+
+					var rawJSON map[string]interface{}
+					assert.NoError(t, json.Unmarshal(body, &rawJSON))
+					_, hasKeyID := rawJSON["key_id"]
+					assert.Equal(t, tt.expectKeyID, hasKeyID)
+
+					if tt.expectKeyID {
+						keyIDFloat, ok := rawJSON["key_id"].(float64)
+						require.True(t, ok, "key_id should be a number")
+						assert.Equal(t, tt.keyID, int(keyIDFloat))
+					}
+
+					var request *gitauditevent.Request
+					assert.NoError(t, json.Unmarshal(body, &request))
+					assert.Equal(t, testUsername, request.Username)
+					assert.Equal(t, testRepo, request.Repo)
+
+					w.WriteHeader(http.StatusOK)
+				},
+			}}
+
+			args := &commandargs.Shell{
+				CommandType: commandargs.UploadArchive,
+				Env:         sshenv.Env{RemoteAddr: "18.245.0.42"},
+			}
+
+			url := testserver.StartSocketHTTPServer(t, requests)
+			Audit(context.Background(), args, &config.Config{GitlabURL: url}, &accessverifier.Response{
+				Username: testUsername,
+				Repo:     testRepo,
+				KeyID:    tt.keyID,
+			}, nil)
+
+			require.True(t, called)
+		})
 	}
-
-	url := testserver.StartSocketHTTPServer(t, requests)
-	Audit(context.Background(), args, &config.Config{GitlabURL: url}, &accessverifier.Response{
-		Username: testUsername,
-		Repo:     testRepo,
-	}, nil)
-
-	require.True(t, called)
 }
