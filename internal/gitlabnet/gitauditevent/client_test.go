@@ -31,20 +31,30 @@ var (
 func TestAudit(t *testing.T) {
 	client := setup(t, http.StatusOK)
 
-	err := client.Audit(context.Background(), testUsername, testKeyID, testArgs, testRepo, &pb.PackfileNegotiationStatistics{
-		Wants: testPackfileWants,
-		Haves: testPackfileHaves,
-	})
+	err := client.Audit(context.Background(), AuditParams{
+		Username: testUsername,
+		KeyID:    testKeyID,
+		Repo:     testRepo,
+		PackfileStats: &pb.PackfileNegotiationStatistics{
+			Wants: testPackfileWants,
+			Haves: testPackfileHaves,
+		},
+	}, testArgs)
 	require.NoError(t, err)
 }
 
 func TestAuditFailed(t *testing.T) {
 	client := setup(t, http.StatusBadRequest)
 
-	err := client.Audit(context.Background(), testUsername, testKeyID, testArgs, testRepo, &pb.PackfileNegotiationStatistics{
-		Wants: testPackfileWants,
-		Haves: testPackfileHaves,
-	})
+	err := client.Audit(context.Background(), AuditParams{
+		Username: testUsername,
+		KeyID:    testKeyID,
+		Repo:     testRepo,
+		PackfileStats: &pb.PackfileNegotiationStatistics{
+			Wants: testPackfileWants,
+			Haves: testPackfileHaves,
+		},
+	}, testArgs)
 	require.Error(t, err)
 }
 

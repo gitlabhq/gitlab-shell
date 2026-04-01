@@ -42,15 +42,23 @@ type Request struct {
 	Changes       string                            `json:"changes"`
 }
 
+// AuditParams contains parameters for sending an audit event.
+type AuditParams struct {
+	Username      string
+	KeyID         int
+	Repo          string
+	PackfileStats *pb.PackfileNegotiationStatistics
+}
+
 // Audit sends an audit event to the GitLab API.
-func (c *Client) Audit(ctx context.Context, username string, keyID int, args *commandargs.Shell, repo string, packfileStats *pb.PackfileNegotiationStatistics) error {
+func (c *Client) Audit(ctx context.Context, params AuditParams, args *commandargs.Shell) error {
 	request := &Request{
 		Action:        args.CommandType,
-		Repo:          repo,
+		Repo:          params.Repo,
 		Protocol:      "ssh",
-		Username:      username,
-		KeyID:         keyID,
-		PackfileStats: packfileStats,
+		Username:      params.Username,
+		KeyID:         params.KeyID,
+		PackfileStats: params.PackfileStats,
 		CheckIP:       gitlabnet.ParseIP(args.Env.RemoteAddr),
 		Changes:       "_any",
 	}
