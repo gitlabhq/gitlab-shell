@@ -58,6 +58,48 @@ func TestAuditFailed(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestAuditWithoutKeyID(t *testing.T) {
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: uri,
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				body, err := io.ReadAll(r.Body)
+				assert.NoError(t, err)
+				defer r.Body.Close()
+
+				// Verify key_id is not present in JSON when KeyID is 0
+				var rawJSON map[string]interface{}
+				assert.NoError(t, json.Unmarshal(body, &rawJSON))
+				_, hasKeyID := rawJSON["key_id"]
+				assert.False(t, hasKeyID, "key_id should not be present in JSON when KeyID is 0")
+
+				// Verify other fields are still present
+				var request *Request
+				assert.NoError(t, json.Unmarshal(body, &request))
+				assert.Equal(t, testUsername, request.Username)
+				assert.Equal(t, testRepo, request.Repo)
+
+				w.WriteHeader(http.StatusOK)
+			},
+		},
+	}
+
+	url := testserver.StartSocketHTTPServer(t, requests)
+	client, err := NewClient(&config.Config{GitlabURL: url})
+	require.NoError(t, err)
+
+	err = client.Audit(context.Background(), AuditParams{
+		Username: testUsername,
+		KeyID:    0, // No key ID (e.g., Kerberos auth)
+		Repo:     testRepo,
+		PackfileStats: &pb.PackfileNegotiationStatistics{
+			Wants: testPackfileWants,
+			Haves: testPackfileHaves,
+		},
+	}, testArgs)
+	require.NoError(t, err)
+}
+
 func setup(t *testing.T, responseStatus int) *Client {
 	requests := []testserver.TestRequestHandler{
 		{
