@@ -20,6 +20,7 @@ import (
 var (
 	testUsername = "gitlab-shell"
 	testRepo     = "project-1"
+	testKeyID    = 123
 )
 
 func TestGitAudit(t *testing.T) {
@@ -54,6 +55,85 @@ func TestGitAudit(t *testing.T) {
 	Audit(context.Background(), args, &config.Config{GitlabURL: url}, &accessverifier.Response{
 		Username: testUsername,
 		Repo:     testRepo,
+	}, nil)
+
+	require.True(t, called)
+}
+
+func TestGitAuditWithKeyID(t *testing.T) {
+	called := false
+
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/api/v4/internal/shellhorse/git_audit_event",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				called = true
+
+				body, err := io.ReadAll(r.Body)
+				assert.NoError(t, err)
+				defer r.Body.Close()
+
+				// Verify key_id is present in JSON
+				var rawJSON map[string]interface{}
+				assert.NoError(t, json.Unmarshal(body, &rawJSON))
+				keyID, hasKeyID := rawJSON["key_id"]
+				assert.True(t, hasKeyID, "key_id should be present in JSON when KeyID is set")
+				assert.Equal(t, float64(testKeyID), keyID)
+
+				w.WriteHeader(http.StatusOK)
+			},
+		},
+	}
+
+	args := &commandargs.Shell{
+		CommandType: commandargs.UploadArchive,
+		Env:         sshenv.Env{RemoteAddr: "18.245.0.42"},
+	}
+
+	url := testserver.StartSocketHTTPServer(t, requests)
+	Audit(context.Background(), args, &config.Config{GitlabURL: url}, &accessverifier.Response{
+		Username: testUsername,
+		Repo:     testRepo,
+		KeyID:    testKeyID,
+	}, nil)
+
+	require.True(t, called)
+}
+
+func TestGitAuditWithoutKeyID(t *testing.T) {
+	called := false
+
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/api/v4/internal/shellhorse/git_audit_event",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				called = true
+
+				body, err := io.ReadAll(r.Body)
+				assert.NoError(t, err)
+				defer r.Body.Close()
+
+				// Verify key_id is NOT present in JSON when KeyID is 0
+				var rawJSON map[string]interface{}
+				assert.NoError(t, json.Unmarshal(body, &rawJSON))
+				_, hasKeyID := rawJSON["key_id"]
+				assert.False(t, hasKeyID, "key_id should not be present in JSON when KeyID is 0")
+
+				w.WriteHeader(http.StatusOK)
+			},
+		},
+	}
+
+	args := &commandargs.Shell{
+		CommandType: commandargs.UploadArchive,
+		Env:         sshenv.Env{RemoteAddr: "18.245.0.42"},
+	}
+
+	url := testserver.StartSocketHTTPServer(t, requests)
+	Audit(context.Background(), args, &config.Config{GitlabURL: url}, &accessverifier.Response{
+		Username: testUsername,
+		Repo:     testRepo,
+		KeyID:    0, // No key ID (e.g., Kerberos auth)
 	}, nil)
 
 	require.True(t, called)
