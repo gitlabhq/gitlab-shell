@@ -13,6 +13,11 @@
 // values.
 package featureflags
 
+// DefaultNamespace is the Flipt namespace used when none is specified in
+// config.yml. All gitlab-shell feature flags must be created under this
+// namespace in the feature-flags service.
+const DefaultNamespace = "gitlab-shell"
+
 // Config contains feature flag client configuration settings.
 type Config struct {
 	// Endpoint is the HTTP address of the Flipt server
@@ -22,7 +27,6 @@ type Config struct {
 	Endpoint string `yaml:"endpoint"`
 
 	// Namespace is the Flipt namespace used for flag lookup and evaluation.
-	// When empty the Flipt provider's own default namespace ("default") is
-	// used.
+	// Defaults to DefaultNamespace ("gitlab-shell") when empty.
 	Namespace string `yaml:"namespace"`
 }

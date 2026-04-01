@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/featureflags"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"gitlab.com/gitlab-org/labkit/tracing"
 	"gitlab.com/gitlab-org/labkit/v2/featureflag"
@@ -99,10 +100,15 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 		ctx = log.WithFields(ctx, slog.String(fields.CorrelationID, correlationID))
 	}
 
+	namespace := config.FeatureFlags.Namespace
+	if namespace == "" {
+		namespace = featureflags.DefaultNamespace
+	}
+
 	ffClient, _ := featureflag.NewWithConfig(ctx, &featureflag.Config{
 		Name:      serviceName,
 		Endpoint:  config.FeatureFlags.Endpoint,
-		Namespace: config.FeatureFlags.Namespace,
+		Namespace: namespace,
 	})
 	if ffClient != nil {
 		ctx = context.WithValue(ctx, featureFlagClientKey, ffClient)
