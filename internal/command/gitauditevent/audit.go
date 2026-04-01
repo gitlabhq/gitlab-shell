@@ -21,6 +21,8 @@ func Audit(ctx context.Context, args *commandargs.Shell, c *config.Config, respo
 		slog.String("gl_repository", response.Repo),
 		slog.Any("command", args.CommandType),
 		log.GitLabUserName(response.Username),
+		slog.String("gl_key_type", response.KeyType),
+		slog.Int("gl_key_id", response.KeyID),
 	)
 
 	slog.DebugContext(ctx, "sending git audit event")
