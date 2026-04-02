@@ -286,4 +286,4 @@ logging-field-validator:
         - "**/*.go"
         - .labkit_logging_todo.yml
   script:
-    - go run gitlab.com/gitlab-org/labkit/v2/cmd/validate-log-fields .
+    - make validate-log-fields
