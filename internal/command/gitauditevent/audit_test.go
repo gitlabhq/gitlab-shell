@@ -41,7 +41,7 @@ func TestGitAudit(t *testing.T) {
 				assert.NoError(t, json.Unmarshal(body, &rawJSON))
 				keyID, hasKeyID := rawJSON["key_id"]
 				assert.True(t, hasKeyID, "key_id should be present in JSON when KeyID is set")
-				assert.Equal(t, testKeyID, int(keyID.(float64)))
+				assert.InDelta(t, float64(testKeyID), keyID, 0.0001)
 
 				var request *gitauditevent.Request
 				assert.NoError(t, json.Unmarshal(body, &request))
