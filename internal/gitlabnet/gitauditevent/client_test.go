@@ -30,9 +30,9 @@ var (
 
 func TestAudit(t *testing.T) {
 	tests := []struct {
-		name         string
-		keyID        int
-		expectKeyID  bool
+		name        string
+		keyID       int
+		expectKeyID bool
 	}{
 		{
 			name:        "with key_id",
