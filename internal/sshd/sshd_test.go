@@ -23,8 +23,7 @@ import (
 )
 
 const (
-	serverURL = "127.0.0.1:50000"
-	user      = "git"
+	user = "git"
 )
 
 var (
@@ -35,7 +34,7 @@ var (
 func TestListenAndServe(t *testing.T) {
 	s, testRoot := setupServer(t)
 
-	client, err := ssh.Dial("tcp", serverURL, clientConfig(t, testRoot))
+	client, err := ssh.Dial("tcp", s.Addr(), clientConfig(t, testRoot))
 	require.NoError(t, err)
 	defer client.Close()
 
@@ -44,8 +43,9 @@ func TestListenAndServe(t *testing.T) {
 
 	holdSession(t, client)
 
-	_, err = ssh.Dial("tcp", serverURL, clientConfig(t, testRoot))
-	require.Equal(t, "dial tcp 127.0.0.1:50000: connect: connection refused", err.Error())
+	_, err = ssh.Dial("tcp", s.Addr(), clientConfig(t, testRoot))
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "connection refused")
 
 	client.Close()
 
@@ -53,21 +53,6 @@ func TestListenAndServe(t *testing.T) {
 }
 
 func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {
-	testRoot := testhelper.PrepareTestRootDir(t)
-
-	target, err := net.ResolveTCPAddr("tcp", serverURL)
-	require.NoError(t, err)
-
-	header := &proxyproto.Header{
-		Version:           2,
-		Command:           proxyproto.PROXY,
-		TransportProtocol: proxyproto.TCPv4,
-		SourceAddr: &net.TCPAddr{
-			IP:   net.ParseIP("10.1.1.1"),
-			Port: 1000,
-		},
-		DestinationAddr: target,
-	}
 	xForwardedFor = "127.0.0.1"
 	defer func() {
 		xForwardedFor = "" // Cleanup for other test cases
@@ -77,110 +62,110 @@ func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {
 		desc         string
 		proxyPolicy  string
 		proxyAllowed []string
-		header       *proxyproto.Header
+		sendHeader   bool
 		isRejected   bool
 	}{
 		{
 			desc:        "USE (default) without a header",
 			proxyPolicy: "",
-			header:      nil,
+			sendHeader:  false,
 			isRejected:  false,
 		},
 		{
 			desc:        "USE (default) with a header",
 			proxyPolicy: "",
-			header:      header,
+			sendHeader:  true,
 			isRejected:  false,
 		},
 		{
 			desc:        "REQUIRE without a header",
 			proxyPolicy: "require",
-			header:      nil,
+			sendHeader:  false,
 			isRejected:  true,
 		},
 		{
 			desc:        "REQUIRE with a header",
 			proxyPolicy: "require",
-			header:      header,
+			sendHeader:  true,
 			isRejected:  false,
 		},
 		{
 			desc:        "REJECT without a header",
 			proxyPolicy: "reject",
-			header:      nil,
+			sendHeader:  false,
 			isRejected:  false,
 		},
 		{
 			desc:        "REJECT with a header",
 			proxyPolicy: "reject",
-			header:      header,
+			sendHeader:  true,
 			isRejected:  true,
 		},
 		{
 			desc:        "IGNORE without a header",
 			proxyPolicy: "ignore",
-			header:      nil,
+			sendHeader:  false,
 			isRejected:  false,
 		},
 		{
 			desc:        "IGNORE with a header",
 			proxyPolicy: "ignore",
-			header:      header,
+			sendHeader:  true,
 			isRejected:  false,
 		},
 		{
 			desc:         "Allow-listed IP with a header",
 			proxyAllowed: []string{"127.0.0.1"},
-			header:       header,
+			sendHeader:   true,
 			isRejected:   false,
 		},
 		{
 			desc:         "Allow-listed IP without a header",
 			proxyAllowed: []string{"127.0.0.1"},
-			header:       nil,
+			sendHeader:   false,
 			isRejected:   false,
 		},
 		{
 			desc:         "Allow-listed range with a header",
 			proxyAllowed: []string{"127.0.0.0/24"},
-			header:       header,
+			sendHeader:   true,
 			isRejected:   false,
 		},
 		{
 			desc:         "Allow-listed range without a header",
 			proxyAllowed: []string{"127.0.0.0/24"},
-			header:       nil,
+			sendHeader:   false,
 			isRejected:   false,
 		},
 		{
 			desc:         "Not allow-listed IP with a header",
 			proxyAllowed: []string{"192.168.1.1"},
-			header:       header,
+			sendHeader:   true,
 			isRejected:   true,
 		},
 		{
 			desc:         "Not allow-listed IP without a header",
 			proxyAllowed: []string{"192.168.1.1"},
-			header:       nil,
+			sendHeader:   false,
 			isRejected:   false,
 		},
 		{
 			desc:         "Not allow-listed range with a header",
 			proxyAllowed: []string{"192.168.1.0/24"},
-			header:       header,
+			sendHeader:   true,
 			isRejected:   true,
 		},
 		{
 			desc:         "Not allow-listed range without a header",
 			proxyAllowed: []string{"192.168.1.0/24"},
-			header:       nil,
+			sendHeader:   false,
 			isRejected:   false,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			setupServerWithConfig(t, &config.Config{
+			s, testRoot := setupServerWithConfig(t, &config.Config{
 				Server: config.ServerConfig{
 					ProxyProtocol: true,
 					ProxyPolicy:   tc.proxyPolicy,
@@ -188,15 +173,30 @@ func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {
 				},
 			})
 
-			conn, err := net.DialTCP("tcp", nil, target)
+			serverAddr := s.Addr()
+			target, err := net.ResolveTCPAddr("tcp", serverAddr)
 			require.NoError(t, err)
 
-			if tc.header != nil {
+			conn, err := net.DialTCP("tcp", nil, target)
+			require.NoError(t, err)
+			defer conn.Close()
+
+			if tc.sendHeader {
+				header := &proxyproto.Header{
+					Version:           2,
+					Command:           proxyproto.PROXY,
+					TransportProtocol: proxyproto.TCPv4,
+					SourceAddr: &net.TCPAddr{
+						IP:   net.ParseIP("10.1.1.1"),
+						Port: 1000,
+					},
+					DestinationAddr: target,
+				}
 				_, writeToErr := header.WriteTo(conn)
 				require.NoError(t, writeToErr)
 			}
 
-			sshConn, sshChans, sshRequs, err := ssh.NewClientConn(conn, serverURL, clientConfig(t, testRoot))
+			sshConn, sshChans, sshRequs, err := ssh.NewClientConn(conn, serverAddr, clientConfig(t, testRoot))
 			if sshConn != nil {
 				defer sshConn.Close()
 			}
@@ -216,9 +216,9 @@ func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {
 }
 
 func TestCorrelationId(t *testing.T) {
-	_, testRoot := setupServer(t)
+	s, testRoot := setupServer(t)
 
-	client, err := ssh.Dial("tcp", serverURL, clientConfig(t, testRoot))
+	client, err := ssh.Dial("tcp", s.Addr(), clientConfig(t, testRoot))
 	require.NoError(t, err)
 	defer client.Close()
 
@@ -226,7 +226,7 @@ func TestCorrelationId(t *testing.T) {
 
 	previousCorrelationID := correlationID
 
-	client, err = ssh.Dial("tcp", serverURL, clientConfig(t, testRoot))
+	client, err = ssh.Dial("tcp", s.Addr(), clientConfig(t, testRoot))
 	require.NoError(t, err)
 	defer client.Close()
 
@@ -281,11 +281,11 @@ func TestLivenessProbe(t *testing.T) {
 }
 
 func TestInvalidClientConfig(t *testing.T) {
-	_, testRoot := setupServer(t)
+	s, testRoot := setupServer(t)
 
 	cfg := clientConfig(t, testRoot)
 	cfg.User = "unknown"
-	_, err := ssh.Dial("tcp", serverURL, cfg)
+	_, err := ssh.Dial("tcp", s.Addr(), cfg)
 	require.Error(t, err)
 }
 
@@ -317,7 +317,7 @@ func TestClosingHangedConnections(t *testing.T) {
 
 	go func() {
 		// Start an SSH connection that never ends
-		ssh.Dial("tcp", serverURL, clientCfg)
+		ssh.Dial("tcp", s.Addr(), clientCfg)
 	}()
 
 	require.Equal(t, "authentication-started", <-unauthenticatedRequestStatus)
@@ -348,7 +348,7 @@ func TestLoginGraceTime(t *testing.T) {
 
 	go func() {
 		// Start an SSH connection that never ends
-		ssh.Dial("tcp", serverURL, clientCfg)
+		ssh.Dial("tcp", s.Addr(), clientCfg)
 	}()
 
 	require.Equal(t, "authentication-started", <-unauthenticatedRequestStatus)
@@ -436,7 +436,7 @@ func setupServerWithContext(ctx context.Context, t *testing.T, cfg *config.Confi
 	cfg.GitlabURL = url
 	cfg.RootDir = "/tmp"
 	cfg.User = user
-	cfg.Server.Listen = serverURL
+	cfg.Server.Listen = "127.0.0.1:0"
 	cfg.Server.ConcurrentSessionsLimit = 1
 	cfg.Server.HostKeyFiles = []string{path.Join(testRoot, "certs/valid/server.key")}
 
