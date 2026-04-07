@@ -52,7 +52,7 @@ func TestGitAudit(t *testing.T) {
 
 					if tt.expectKeyID {
 						keyIDFloat, ok := rawJSON["key_id"].(float64)
-						require.True(t, ok, "key_id should be a number")
+						assert.True(t, ok, "key_id should be a number")
 						assert.Equal(t, tt.keyID, int(keyIDFloat))
 					}
 
