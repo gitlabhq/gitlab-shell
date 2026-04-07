@@ -1,3 +1,13 @@
+v14.48.0
+
+- Add gl_key_type and gl_key_id to audit event logs !1412
+- Add support for instance-level SSH certificates via configuration !1396
+- Fix flaky TestSessionsMetrics test !1399
+- Bootstrap internal gitlab client using labkit v2 httpclient !1395
+- Add Prometheus metrics for Topology Service client !1385
+- Migrate logging to labkit v2 log helper methods !1394
+- Update LabKit to consolidate the HTTP Status !1393
+
 v14.47.0
 
 - Implement Topology Service gRPC client !1384
