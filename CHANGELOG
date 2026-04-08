@@ -1,3 +1,7 @@
+v14.49.0
+
+- Pass key_id to git_audit_event endpoint for deploy key auth !1411
+
 v14.48.0
 
 - Add gl_key_type and gl_key_id to audit event logs !1412
