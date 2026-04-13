@@ -21,7 +21,7 @@ require (
 	gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260310142729-826b25a7b550
 	golang.org/x/crypto v0.48.0
 	golang.org/x/sync v0.19.0
-	google.golang.org/grpc v1.79.1
+	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
 )
