@@ -1,4 +1,4 @@
-.PHONY: validate verify test test_fancy coverage setup make_necessary_dirs build compile check clean install lint
+.PHONY: validate verify test test_fancy coverage setup make_necessary_dirs build compile check clean install lint validate-log-fields
 
 FIPS_MODE ?= 0
 OS := $(shell uname | tr A-Z a-z)
@@ -19,6 +19,8 @@ GOTESTSUM_FILE := support/bin/gotestsum-${GOTESTSUM_VERSION}
 
 GOLANGCI_LINT_VERSION := 1.64.5
 GOLANGCI_LINT_FILE := support/bin/golangci-lint-${GOLANGCI_LINT_VERSION}
+
+LABKIT_VALIDATE_VERSION := v2.0.0-20260325011833-45bdfd4bfc9f
 
 export GOFLAGS := -mod=readonly
 
@@ -81,6 +83,9 @@ coverage:
 
 lint:
 	@support/lint.sh ./...
+
+validate-log-fields:
+	go run gitlab.com/gitlab-org/labkit/v2/cmd/validate-log-fields@${LABKIT_VALIDATE_VERSION} .
 
 golangci: ${GOLANGCI_LINT_FILE}
 	@${GOLANGCI_LINT_FILE} run --issues-exit-code 0 --print-issued-lines=false ${GOLANGCI_LINT_ARGS}
