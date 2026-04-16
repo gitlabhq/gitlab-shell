@@ -12,7 +12,7 @@ require (
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/openshift/gssapi v0.0.0-20161010215902-5fb4217df13b
 	github.com/otiai10/copy v1.14.1
-	github.com/pires/go-proxyproto v0.8.0
+	github.com/pires/go-proxyproto v0.11.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
 	gitlab.com/gitlab-org/cells/topology-service v0.0.0-20260213143839-af4593cd7194
