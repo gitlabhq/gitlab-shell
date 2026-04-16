@@ -260,7 +260,7 @@ type gitlabLock struct {
 }
 
 func (l *gitlabLock) Unlock() error {
-	lock, err := l.gitlabLockBackend.client.Unlock(l.id, l.gitlabLockBackend.args["force"] == "true", l.gitlabLockBackend.args["refname"])
+	lock, err := l.client.Unlock(l.id, l.args["force"] == "true", l.args["refname"])
 	if err != nil {
 		return err
 	}

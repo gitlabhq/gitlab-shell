@@ -46,5 +46,5 @@ func TestRemoteAddrFromEnv(t *testing.T) {
 }
 
 func TestEmptyRemoteAddrFromEnv(t *testing.T) {
-	require.Equal(t, "", remoteAddrFromEnv())
+	require.Empty(t, remoteAddrFromEnv())
 }

@@ -86,7 +86,7 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 		request.Header.Add(k, v)
 	}
 
-	response, err := httpClient.Do(request)
+	response, err := httpClient.Do(request) // #nosec G704 -- URL is constructed from configured GitLab internal API
 	if err != nil {
 		return nil, &client.APIError{Msg: repoUnavailableErrMsg}
 	}

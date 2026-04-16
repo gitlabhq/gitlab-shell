@@ -21,7 +21,7 @@ func TestReceivePack(t *testing.T) {
 	for _, network := range []string{"unix", "tcp", "dns"} {
 		t.Run(fmt.Sprintf("via %s network", network), func(t *testing.T) {
 			gitalyAddress, testServer := testserver.StartGitalyServer(t, network)
-			t.Log(fmt.Sprintf("Server address: %s", gitalyAddress))
+			t.Logf("Server address: %s", gitalyAddress)
 
 			requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)
 			url := testserver.StartHTTPServer(t, requests)
