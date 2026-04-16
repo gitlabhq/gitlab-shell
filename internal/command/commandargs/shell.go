@@ -37,7 +37,7 @@ var (
 var (
 	// ErrOnlySSHAllowed - represents the error returned when the
 	// a non ssh connection is passed.
-	ErrOnlySSHAllowed = errors.New("Only SSH allowed")
+	ErrOnlySSHAllowed = errors.New("Only SSH allowed") //nolint:staticcheck // message is customer facing
 )
 
 // Shell represents a parsed shell command with its arguments and related information.
@@ -69,11 +69,11 @@ func (s *Shell) GetArguments() []string {
 
 func (s *Shell) validate() error {
 	if !s.Env.IsSSHConnection {
-		return ErrOnlySSHAllowed //nolint:stylecheck //message is customer facing
+		return ErrOnlySSHAllowed //nolint:staticcheck // message is customer facing
 	}
 
 	if err := s.ParseCommand(s.Env.OriginalCommand); err != nil {
-		return fmt.Errorf("Invalid SSH command: %w", err) //nolint:stylecheck //message is customer facing
+		return fmt.Errorf("Invalid SSH command: %w", err) //nolint:staticcheck // message is customer facing
 	}
 
 	return nil
