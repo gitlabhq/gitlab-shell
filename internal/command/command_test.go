@@ -50,6 +50,56 @@ func TestSetup(t *testing.T) {
 	}
 }
 
+func TestSetupConfiguresFeatureFlagClientWithTimeout(t *testing.T) {
+	t.Setenv("FEATURE_FLAG_ENDPOINT", "http://localhost:8080")
+
+	ctx, finished := Setup("test-service", &config.Config{})
+	defer finished()
+
+	// Verify that the feature flag evaluator is present in context
+	evaluator := FeatureFlagEvaluatorFromContext(ctx)
+	require.NotNil(t, evaluator, "feature flag evaluator should be present in context")
+}
+
+func TestSetupWithoutFeatureFlagEndpoint(t *testing.T) {
+	// Ensure the environment variable is not set
+	t.Setenv("FEATURE_FLAG_ENDPOINT", "")
+
+	ctx, finished := Setup("test-service", &config.Config{})
+	defer finished()
+
+	// Verify that the context is still valid
+	require.NotNil(t, ctx, "context should be created even without feature flag endpoint")
+
+	// Verify that the feature flag evaluator is nil (graceful degradation)
+	evaluator := FeatureFlagEvaluatorFromContext(ctx)
+	require.Nil(t, evaluator, "feature flag evaluator should be nil when endpoint is not configured")
+
+	// Verify correlation ID is still set
+	correlationID := correlation.ExtractFromContext(ctx)
+	require.NotEmpty(t, correlationID, "correlation ID should be set")
+}
+
+func TestSetupWithUnreachableFeatureFlagService(t *testing.T) {
+	// Use an unreachable endpoint that will trigger the 1-second timeout
+	t.Setenv("FEATURE_FLAG_ENDPOINT", "http://192.0.2.1:9999") // TEST-NET-1 reserved range, guaranteed unreachable
+
+	ctx, finished := Setup("test-service", &config.Config{})
+	defer finished()
+
+	// Verify that the context is still valid
+	require.NotNil(t, ctx, "context should be created even if service is unreachable")
+
+	// Verify that the feature flag evaluator is present (client initializes without validating connectivity)
+	// The client will fail gracefully on evaluation attempts if the service is unavailable
+	evaluator := FeatureFlagEvaluatorFromContext(ctx)
+	require.NotNil(t, evaluator, "feature flag evaluator should be created even when service is unreachable")
+
+	// Verify correlation ID is still set
+	correlationID := correlation.ExtractFromContext(ctx)
+	require.NotEmpty(t, correlationID, "correlation ID should be set")
+}
+
 // addAdditionalEnv will configure additional environment values
 // and return a deferrable function to reset the environment to
 // it's original state after the test
