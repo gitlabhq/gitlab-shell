@@ -17,7 +17,7 @@ ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' | sed -e 's/aarch64/arm64/')
 GOTESTSUM_VERSION := 1.12.0
 GOTESTSUM_FILE := support/bin/gotestsum-${GOTESTSUM_VERSION}
 
-GOLANGCI_LINT_VERSION := 1.64.5
+GOLANGCI_LINT_VERSION := 2.11.4
 GOLANGCI_LINT_FILE := support/bin/golangci-lint-${GOLANGCI_LINT_VERSION}
 
 LABKIT_VALIDATE_VERSION := v2.0.0-20260325011833-45bdfd4bfc9f
@@ -88,7 +88,7 @@ validate-log-fields:
 	go run gitlab.com/gitlab-org/labkit/v2/cmd/validate-log-fields@${LABKIT_VALIDATE_VERSION} .
 
 golangci: ${GOLANGCI_LINT_FILE}
-	@${GOLANGCI_LINT_FILE} run --issues-exit-code 0 --print-issued-lines=false ${GOLANGCI_LINT_ARGS}
+	@${GOLANGCI_LINT_FILE} run --issues-exit-code 0 --output.text.print-issued-lines=false ${GOLANGCI_LINT_ARGS}
 
 ${GOLANGCI_LINT_FILE}:
 	@mkdir -p $(shell dirname ${GOLANGCI_LINT_FILE})
