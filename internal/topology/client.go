@@ -67,6 +67,9 @@ func NewClient(cfg *Config) *Client {
 // the resource identified by the given claim. Claims support typed lookups
 // such as routes, SSH keys, project IDs, etc.
 func (c *Client) Classify(ctx context.Context, claim *types_proto.Claim) (resp *pb.ClassifyResponse, err error) {
+	if c == nil {
+		return nil, errors.New("client is not initialized")
+	}
 	if claim == nil {
 		return nil, errors.New("claim must not be nil")
 	}
