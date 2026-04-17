@@ -86,6 +86,17 @@ func (s *Server) Shutdown() error {
 	return s.listener.Close()
 }
 
+// Addr returns the listener's network address, or an empty string if not yet listening.
+func (s *Server) Addr() string {
+	s.statusMu.RLock()
+	defer s.statusMu.RUnlock()
+
+	if s.listener == nil {
+		return ""
+	}
+	return s.listener.Addr().String()
+}
+
 // MonitoringServeMux returns the ServeMux for monitoring endpoints
 func (s *Server) MonitoringServeMux() *http.ServeMux {
 	mux := http.NewServeMux()
