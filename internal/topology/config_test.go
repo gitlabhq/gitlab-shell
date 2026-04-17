@@ -38,20 +38,6 @@ func TestConfigValidate(t *testing.T) {
 		}
 		require.NoError(t, cfg.Validate())
 	})
-
-	t.Run("invalid classify_type fails", func(t *testing.T) {
-		cfg := &Config{Enabled: true, Address: "localhost:8080", ClassifyType: "invalid_type"}
-		err := cfg.Validate()
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "invalid topology_service.classify_type")
-	})
-
-	t.Run("valid classify_types succeed", func(t *testing.T) {
-		for _, ct := range []string{"first_cell", "session_prefix", "cell_id", ""} {
-			cfg := &Config{Enabled: true, Address: "localhost:8080", ClassifyType: ct}
-			require.NoError(t, cfg.Validate(), "classify_type=%q should be valid", ct)
-		}
-	})
 }
 
 func TestTLSConfigValidate(t *testing.T) {
@@ -88,11 +74,6 @@ func TestTLSConfigValidate(t *testing.T) {
 		}
 		require.NoError(t, cfg.Validate())
 	})
-}
-
-func TestValidClassifyTypes(t *testing.T) {
-	expected := []string{"first_cell", "session_prefix", "cell_id"}
-	require.Equal(t, expected, ValidClassifyTypes)
 }
 
 func TestDefaultTimeout(t *testing.T) {

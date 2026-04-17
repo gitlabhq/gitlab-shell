@@ -119,7 +119,6 @@ func TestTopologyServiceConfig(t *testing.T) {
 topology_service:
   enabled: true
   address: "topology.example.com:443"
-  classify_type: "first_cell"
   timeout: 10s
   tls:
     enabled: true
@@ -135,7 +134,6 @@ topology_service:
 		ts := cfg.TopologyService
 		require.True(t, ts.Enabled)
 		require.Equal(t, "topology.example.com:443", ts.Address)
-		require.Equal(t, "first_cell", ts.ClassifyType)
 		require.Equal(t, 10*time.Second, ts.Timeout)
 		require.True(t, ts.TLS.Enabled)
 		require.Equal(t, "/path/to/ca.crt", ts.TLS.CAFile)

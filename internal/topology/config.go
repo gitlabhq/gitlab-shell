@@ -9,7 +9,6 @@
 //	topology_service:
 //	  enabled: true
 //	  address: "topology.gitlab.com:443"
-//	  classify_type: "first_cell"
 //	  tls:
 //	    enabled: true
 //	    ca_file: "/path/to/ca.crt"
@@ -22,14 +21,9 @@ package topology
 import (
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 	"time"
 )
-
-// ValidClassifyTypes contains the list of valid classify_type values.
-// These correspond to the ClassifyType enum in the Topology Service proto.
-var ValidClassifyTypes = []string{"first_cell", "session_prefix", "cell_id"}
 
 // DefaultTimeout is the default timeout for Topology Service requests.
 const DefaultTimeout = 5 * time.Second
@@ -41,11 +35,6 @@ type Config struct {
 
 	// Address is the gRPC address of the Topology Service (e.g., "topology.gitlab.com:443").
 	Address string `yaml:"address"`
-
-	// ClassifyType specifies which ClassifyType to use when querying the service.
-	// Valid values: "first_cell", "session_prefix", "cell_id".
-	// Default: "first_cell" (applied at runtime when empty).
-	ClassifyType string `yaml:"classify_type"`
 
 	// Timeout is the maximum duration to wait for a response from the Topology Service.
 	// Default: 5s (when zero).
@@ -93,10 +82,6 @@ func (c *Config) Validate() error {
 
 	if !strings.Contains(c.Address, ":") {
 		return errors.New("topology_service.address must be in host:port format")
-	}
-
-	if c.ClassifyType != "" && !slices.Contains(ValidClassifyTypes, c.ClassifyType) {
-		return fmt.Errorf("invalid topology_service.classify_type: %q, must be one of %v", c.ClassifyType, ValidClassifyTypes)
 	}
 
 	if err := c.TLS.Validate(); err != nil {

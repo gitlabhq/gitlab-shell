@@ -147,10 +147,6 @@ pat:
 #   # gRPC address of the Topology Service
 #   address: "topology.gitlab.com:443"
 #
-#   # ClassifyType to use when querying for cell routing.
-#   # Options: first_cell, session_prefix, cell_id
-#   classify_type: "first_cell"
-#
 #   # Timeout for Topology Service requests. Defaults to 5s.
 #   timeout: 5s
 #
