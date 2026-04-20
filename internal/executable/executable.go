@@ -53,7 +53,7 @@ func findRootDir(path string) (string, error) {
 	pathFromEnv := os.Getenv("GITLAB_SHELL_DIR")
 
 	if pathFromEnv != "" {
-		if _, err := os.Stat(pathFromEnv); os.IsNotExist(err) {
+		if _, err := os.Stat(pathFromEnv); os.IsNotExist(err) { // #nosec G703 -- path is from trusted GITLAB_SHELL_DIR env var
 			return "", err
 		}
 

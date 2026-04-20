@@ -138,7 +138,7 @@ func (c *GitlabNetClient) Post(ctx context.Context, path string, data interface{
 
 // Do executes a request
 func (c *GitlabNetClient) Do(request *http.Request) (*http.Response, error) {
-	response, respErr := c.httpClient.RetryableHTTP.HTTPClient.Do(request)
+	response, respErr := c.httpClient.RetryableHTTP.HTTPClient.Do(request) // #nosec G704 -- request is constructed by internal callers
 	if err := parseError(response, respErr); err != nil {
 		return nil, err
 	}

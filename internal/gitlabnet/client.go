@@ -20,7 +20,7 @@ func GetClient(config *config.Config) (*client.GitlabNetClient, error) {
 	}
 
 	if httpClient == nil {
-		return nil, fmt.Errorf("Unsupported protocol")
+		return nil, fmt.Errorf("unsupported protocol")
 	}
 
 	return client.NewGitlabNetClient(config.HTTPSettings.User, config.HTTPSettings.Password, config.Secret, httpClient)

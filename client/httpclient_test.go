@@ -83,7 +83,7 @@ func TestEmptyBasicAuthSettings(t *testing.T) {
 		{
 			Path: "/api/v4/internal/empty_basic_auth",
 			Handler: func(_ http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, "", r.Header.Get("Authorization"))
+				assert.Empty(t, r.Header.Get("Authorization"))
 			},
 		},
 	}
