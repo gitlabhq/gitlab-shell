@@ -3,20 +3,27 @@ package accessverifier
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	tspb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
 	pb "gitlab.com/gitlab-org/gitaly/v18/proto/go/gitalypb"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology/topologytest"
 )
 
 var (
@@ -288,6 +295,138 @@ func setup(t *testing.T, userResponses, keyResponses map[string]testResponse) *C
 	require.NoError(t, err)
 
 	return client
+}
+
+func TestVerifyWithTopologyService(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
+
+	t.Run("routes /allowed to cell when TS returns PROXY", func(t *testing.T) {
+		// Set up cell HTTP server
+		var cellReceived bool
+		cellServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			cellReceived = true
+			// Verify auth headers survive the WithHost swap
+			assert.NotEmpty(t, r.Header.Get("Gitlab-Shell-Api-Request"), "JWT header must be present on cell request")
+			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+			assert.NotEmpty(t, r.Header.Get("User-Agent"))
+			w.Header().Set("Content-Type", "application/json")
+			body := responseBody(t, testRoot, "allowed.json")
+			_, _ = w.Write(body)
+		}))
+		t.Cleanup(cellServer.Close)
+
+		// Set up default HTTP server (should NOT receive the request)
+		var defaultReceived bool
+		defaultServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			defaultReceived = true
+			w.Header().Set("Content-Type", "application/json")
+			body := responseBody(t, testRoot, "allowed.json")
+			_, _ = w.Write(body)
+		}))
+		t.Cleanup(defaultServer.Close)
+
+		// Set up mock TS that returns a PROXY action pointing to the cell.
+		// Strip the scheme because the Resolver prepends it based on the GitLab URL.
+		cellAddress := strings.TrimPrefix(cellServer.URL, "http://")
+		mock := &topologytest.MockClassifyServer{
+			Response: &tspb.ClassifyResponse{
+				Action: tspb.ClassifyAction_PROXY,
+				Proxy:  &tspb.ProxyInfo{Address: cellAddress},
+			},
+		}
+		tsAddr, tsStop := topologytest.StartMockServer(t, mock)
+		t.Cleanup(tsStop)
+
+		tsClient := topology.NewClient(&topology.Config{
+			Enabled: true,
+			Address: tsAddr,
+			Timeout: 5 * time.Second,
+		})
+		t.Cleanup(func() { _ = tsClient.Close() })
+
+		cfg := &config.Config{
+			GitlabURL:      defaultServer.URL,
+			Secret:         "test-secret",
+			TopologyClient: tsClient,
+		}
+
+		client, err := NewClient(cfg)
+		require.NoError(t, err)
+
+		args := &commandargs.Shell{GitlabKeyID: "1"}
+		result, err := client.Verify(context.Background(), args, receivePackAction, repo)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.True(t, result.Success)
+
+		require.True(t, cellReceived, "request should have been sent to the cell server")
+		require.False(t, defaultReceived, "request should NOT have been sent to the default server")
+	})
+
+	t.Run("falls back to default when TS is nil", func(t *testing.T) {
+		var defaultReceived bool
+		defaultServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			defaultReceived = true
+			w.Header().Set("Content-Type", "application/json")
+			body := responseBody(t, testRoot, "allowed.json")
+			_, _ = w.Write(body)
+		}))
+		t.Cleanup(defaultServer.Close)
+
+		cfg := &config.Config{
+			GitlabURL:      defaultServer.URL,
+			TopologyClient: nil,
+		}
+
+		client, err := NewClient(cfg)
+		require.NoError(t, err)
+
+		args := &commandargs.Shell{GitlabKeyID: "1"}
+		result, err := client.Verify(context.Background(), args, receivePackAction, repo)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.True(t, result.Success)
+		require.True(t, defaultReceived, "request should have been sent to the default server")
+	})
+
+	t.Run("falls back to default when TS returns error", func(t *testing.T) {
+		var defaultReceived bool
+		defaultServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			defaultReceived = true
+			w.Header().Set("Content-Type", "application/json")
+			body := responseBody(t, testRoot, "allowed.json")
+			_, _ = w.Write(body)
+		}))
+		t.Cleanup(defaultServer.Close)
+
+		mock := &topologytest.MockClassifyServer{
+			Err: fmt.Errorf("TS unavailable"),
+		}
+		tsAddr, tsStop := topologytest.StartMockServer(t, mock)
+		t.Cleanup(tsStop)
+
+		tsClient := topology.NewClient(&topology.Config{
+			Enabled: true,
+			Address: tsAddr,
+			Timeout: 5 * time.Second,
+		})
+		t.Cleanup(func() { _ = tsClient.Close() })
+
+		cfg := &config.Config{
+			GitlabURL:      defaultServer.URL,
+			TopologyClient: tsClient,
+		}
+
+		client, err := NewClient(cfg)
+		require.NoError(t, err)
+
+		args := &commandargs.Shell{GitlabKeyID: "1"}
+		result, err := client.Verify(context.Background(), args, receivePackAction, repo)
+		require.NoError(t, err)
+		require.NotNil(t, result)
+		require.True(t, result.Success)
+		require.True(t, defaultReceived, "request should have fallen back to the default server")
+	})
 }
 
 func setupWithAPIInspector(t *testing.T, inspector func(*Request)) *Client {

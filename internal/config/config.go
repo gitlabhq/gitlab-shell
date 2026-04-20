@@ -103,6 +103,10 @@ type Config struct {
 	// TopologyService contains Topology Service client configuration for Cells routing.
 	TopologyService topology.Config `yaml:"topology_service"`
 
+	// TopologyClient is the Topology Service gRPC client for Cells routing.
+	// It is nil when the Topology Service is disabled.
+	TopologyClient *topology.Client
+
 	httpClient     *client.HTTPClient
 	httpClientErr  error
 	httpClientOnce sync.Once
@@ -189,6 +193,16 @@ func (c *Config) HTTPClient() (*client.HTTPClient, error) {
 	return c.httpClient, c.httpClientErr
 }
 
+// Close releases resources owned by the Config, such as the Topology Service
+// gRPC client. It is safe to call Close on a zero-value or partially
+// initialised Config. Callers should defer Close() after loading the config.
+func (c *Config) Close() error {
+	if c.TopologyClient != nil {
+		return c.TopologyClient.Close()
+	}
+	return nil
+}
+
 // NewFromDirExternal returns a new config from a given root dir. It also applies defaults appropriate for
 // gitlab-shell running in an external SSH server.
 func NewFromDirExternal(dir string) (*Config, error) {
@@ -250,6 +264,10 @@ func newFromFile(path string) (*Config, error) {
 
 	if err := cfg.TopologyService.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid topology_service config: %w", err)
+	}
+
+	if cfg.TopologyService.Enabled {
+		cfg.TopologyClient = topology.NewClient(&cfg.TopologyService)
 	}
 
 	return cfg, nil

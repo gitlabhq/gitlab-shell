@@ -50,6 +50,7 @@ func run() int {
 	if code := exitOnError(err, "Failed to read config, exiting"); code != 0 {
 		return code
 	}
+	defer config.Close() //nolint:errcheck
 
 	logCloser := logger.ConfigureLogger(config)
 	if logCloser != nil {
