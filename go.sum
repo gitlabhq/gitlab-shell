@@ -558,8 +558,8 @@ gitlab.com/gitlab-org/go/reopen v1.0.0 h1:6BujZ0lkkjGIejTUJdNO1w56mN1SI10qcVQyQl
 gitlab.com/gitlab-org/go/reopen v1.0.0/go.mod h1:D6OID8YJDzEVZNYW02R/Pkj0v8gYFSIhXFTArAsBQw8=
 gitlab.com/gitlab-org/labkit v1.40.1 h1:4Rx+uI1Ht1i9jDw8KxOv8VrR37+cR4VXBtM3cW5tlXY=
 gitlab.com/gitlab-org/labkit v1.40.1/go.mod h1:9P1ZHh9uXr1dY2w1m2heXPZ+BZsSlWimbn7QmxTfpbM=
-gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260420085737-6ea4fabe1428 h1:GlwEv9UKScQn/pesMqIhCy8g0g6TcGkMxJhHVP27tpU=
-gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260420085737-6ea4fabe1428/go.mod h1:RlhMZBhClsFNNnQsC445H10NYSFN8bHz1jx7f5zimjo=
+gitlab.com/gitlab-org/labkit/v2 v2.2.0 h1:7RIL7E0cCi3oMIKQzZzKsEfKVJrcUGF8o9p27wGROJU=
+gitlab.com/gitlab-org/labkit/v2 v2.2.0/go.mod h1:uqLHK9rW8IgY985RsdmDhCeolIytep0q+WghmnF+AZE=
 go.etcd.io/raft/v3 v3.6.0 h1:5NtvbDVYpnfZWcIHgGRk9DyzkBIXOi8j+DDp1IcnUWQ=
 go.etcd.io/raft/v3 v3.6.0/go.mod h1:nLvLevg6+xrVtHUmVaTcTz603gQPHfh7kUAwV6YpfGo=
 go.flipt.io/flipt/errors v1.45.0 h1:hT7QwjSb+cKscvvdHfqQBbV/GW0tpBz4SHv0oUJbUrA=

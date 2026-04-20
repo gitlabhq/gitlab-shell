@@ -38,12 +38,12 @@ func parseHostKeys(keyFiles []string) []ssh.Signer {
 	for _, filename := range keyFiles {
 		keyRaw, err := os.ReadFile(filepath.Clean(filename))
 		if err != nil {
-			slog.Error("Failed to read host key", slog.String("filename", filename), log.ErrorMessage(err.Error()))
+			slog.Default().Error("Failed to read host key", slog.String("filename", filename), log.ErrorMessage(err.Error()))
 			continue
 		}
 		key, err := ssh.ParsePrivateKey(keyRaw)
 		if err != nil {
-			slog.Error("Failed to parse host key", slog.String("filename", filename), log.ErrorMessage(err.Error()))
+			slog.Default().Error("Failed to parse host key", slog.String("filename", filename), log.ErrorMessage(err.Error()))
 			continue
 		}
 
@@ -64,20 +64,20 @@ func parseHostCerts(hostKeys []ssh.Signer, certFiles []string) map[string]*ssh.C
 	for _, filename := range certFiles {
 		keyRaw, err := os.ReadFile(filepath.Clean(filename))
 		ctx := context.Background()
-		ctx = log.WithFields(ctx, slog.String("filename", filename))
+		ctx = log.WithLogger(ctx, slog.Default().With(slog.String("filename", filename)))
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to read host certificate", log.ErrorMessage(err.Error()))
+			log.FromContext(ctx).ErrorContext(ctx, "failed to read host certificate", log.ErrorMessage(err.Error()))
 			continue
 		}
 		publicKey, _, _, _, err := ssh.ParseAuthorizedKey(keyRaw)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to parse host certificate", log.ErrorMessage(err.Error()))
+			log.FromContext(ctx).ErrorContext(ctx, "failed to parse host certificate", log.ErrorMessage(err.Error()))
 			continue
 		}
 
 		cert, ok := publicKey.(*ssh.Certificate)
 		if !ok {
-			slog.ErrorContext(ctx, "failed to decode host certificate")
+			log.FromContext(ctx).ErrorContext(ctx, "failed to decode host certificate")
 			continue
 		}
 
@@ -88,13 +88,13 @@ func parseHostCerts(hostKeys []ssh.Signer, certFiles []string) map[string]*ssh.C
 
 			certSigner, err := ssh.NewCertSigner(cert, hostKeys[index])
 			if err != nil {
-				slog.ErrorContext(ctx, "the host certificate doesn't match the host private key", log.ErrorMessage(err.Error()))
+				log.FromContext(ctx).ErrorContext(ctx, "the host certificate doesn't match the host private key", log.ErrorMessage(err.Error()))
 				continue
 			}
 
 			hostKeys[index] = certSigner
 		} else {
-			slog.ErrorContext(ctx, "no matching private key for certificate")
+			log.FromContext(ctx).ErrorContext(ctx, "no matching private key for certificate")
 		}
 	}
 
@@ -156,7 +156,7 @@ func newServerConfig(cfg *config.Config) (*serverConfig, error) {
 		return nil, fmt.Errorf("trusted_user_ca_keys configured but no valid CA keys were loaded, aborting")
 	}
 	if len(trustedUserCAKeySet) > 0 {
-		slog.Info("Loaded trusted user CA keys for instance-level SSH certificates",
+		slog.Default().Info("Loaded trusted user CA keys for instance-level SSH certificates",
 			slog.Int("count", len(trustedUserCAKeySet)))
 	}
 
@@ -224,35 +224,35 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 	fingerprint := ssh.FingerprintSHA256(cert.SignatureKey)
 
 	// Enrich context early so all rejection paths include audit-relevant fields.
-	ctx = log.WithFields(ctx,
+	ctx = log.WithLogger(ctx, log.FromContext(ctx).With(
 		slog.String("ssh_user", user),
 		slog.String("public_key_fingerprint", ssh.FingerprintSHA256(cert)),
 		slog.String("signing_ca_fingerprint", fingerprint),
 		slog.String("certificate_identity", cert.KeyId),
-	)
+	))
 
 	if cert.CertType != ssh.UserCert {
-		slog.WarnContext(ctx, "certificate rejected: not a user certificate",
+		log.FromContext(ctx).WarnContext(ctx, "certificate rejected: not a user certificate",
 			slog.Int("cert_type", int(cert.CertType)))
 		return nil, fmt.Errorf("handleUserCertificate: cert has type %d", cert.CertType)
 	}
 
 	certChecker := &ssh.CertChecker{}
 	if err := certChecker.CheckCert(user, cert); err != nil {
-		slog.WarnContext(ctx, "certificate rejected: validity check failed",
+		log.FromContext(ctx).WarnContext(ctx, "certificate rejected: validity check failed",
 			log.ErrorMessage(err.Error()))
 		return nil, err
 	}
 
 	if s.isLocallyTrustedCA(cert.SignatureKey) {
 		if err := validateKeyID(cert.KeyId); err != nil {
-			slog.WarnContext(ctx, "instance-level certificate rejected: invalid KeyId",
+			log.FromContext(ctx).WarnContext(ctx, "instance-level certificate rejected: invalid KeyId",
 				log.ErrorMessage(err.Error()))
 			return nil, fmt.Errorf("handleUserCertificate: %w", err)
 		}
 
-		ctx = log.WithFields(ctx, slog.String("certificate_username", cert.KeyId))
-		slog.InfoContext(ctx, "user certificate is signed by a locally trusted CA (instance-level)")
+		ctx = log.WithLogger(ctx, log.FromContext(ctx).With(slog.String("certificate_username", cert.KeyId)))
+		log.FromContext(ctx).InfoContext(ctx, "user certificate is signed by a locally trusted CA (instance-level)")
 
 		// No namespace key = instance-wide access (no namespace restriction)
 		return &ssh.Permissions{
@@ -269,16 +269,16 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 
 	res, err := s.authorizedCertsClient.GetByKey(ctx, cert.KeyId, strings.TrimPrefix(fingerprint, "SHA256:"))
 	if err != nil {
-		slog.WarnContext(ctx, "user certificate is not signed by a trusted key", log.ErrorMessage(err.Error()))
+		log.FromContext(ctx).WarnContext(ctx, "user certificate is not signed by a trusted key", log.ErrorMessage(err.Error()))
 		return nil, err
 	}
 
-	ctx = log.WithFields(ctx,
+	ctx = log.WithLogger(ctx, log.FromContext(ctx).With(
 		slog.String("certificate_username", res.Username),
 		slog.String("certificate_namespace", res.Namespace),
-	)
+	))
 
-	slog.InfoContext(ctx, "user certificate is signed by a trusted key (group-level)")
+	log.FromContext(ctx).InfoContext(ctx, "user certificate is signed by a trusted key (group-level)")
 
 	return &ssh.Permissions{
 		Extensions: map[string]string{
@@ -316,7 +316,7 @@ func (s *serverConfig) get(parentCtx context.Context) *ssh.ServerConfig {
 		PublicKeyCallback: func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
 			ctx, cancel := context.WithTimeout(parentCtx, 10*time.Second)
 			defer cancel()
-			slog.InfoContext(ctx, "public key authentication", slog.String("ssh_key_type", key.Type()))
+			log.FromContext(ctx).InfoContext(ctx, "public key authentication", slog.String("ssh_key_type", key.Type()))
 
 			cert, ok := key.(*ssh.Certificate)
 			if ok {

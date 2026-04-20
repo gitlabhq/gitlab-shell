@@ -1,6 +1,6 @@
 module gitlab.com/gitlab-org/gitlab-shell/v14
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20250505094602-0d51139d5979
@@ -18,7 +18,7 @@ require (
 	gitlab.com/gitlab-org/cells/topology-service v0.0.0-20260318083504-2c08acaec79e
 	gitlab.com/gitlab-org/gitaly/v18 v18.9.0-rc4
 	gitlab.com/gitlab-org/labkit v1.40.1
-	gitlab.com/gitlab-org/labkit/v2 v2.0.0-20260420085737-6ea4fabe1428
+	gitlab.com/gitlab-org/labkit/v2 v2.2.0
 	golang.org/x/crypto v0.48.0
 	golang.org/x/sync v0.19.0
 	google.golang.org/grpc v1.80.0

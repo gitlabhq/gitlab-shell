@@ -58,7 +58,7 @@ func parseRetryConfig(rawConfig json.RawMessage) *gitalyclient.RetryPolicy {
 
 	var policy gitalyclient.RetryPolicy
 	if err := protojson.Unmarshal(rawConfig, &policy); err != nil {
-		slog.Error("failed to unmarshal retry policy", log.ErrorMessage(err.Error()))
+		slog.Default().Error("failed to unmarshal retry policy", log.ErrorMessage(err.Error()))
 		return nil
 	}
 
@@ -89,7 +89,7 @@ func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHan
 	// We leave the connection open for future reuse
 	conn, err := gc.getConn(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to get connection to execute Git command", log.ErrorMessage(err.Error()))
+		log.FromContext(ctx).ErrorContext(ctx, "Failed to get connection to execute Git command", log.ErrorMessage(err.Error()))
 		return err
 	}
 
@@ -97,7 +97,7 @@ func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHan
 	exitStatus, err := handler(childCtx, conn)
 
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to execute Git command", log.ErrorMessage(err.Error()), slog.Int("exit_status", int(exitStatus)))
+		log.FromContext(ctx).ErrorContext(ctx, "Failed to execute Git command", log.ErrorMessage(err.Error()), slog.Int("exit_status", int(exitStatus)))
 
 		if grpcstatus.Code(err) == grpccodes.Unavailable {
 			return processGitalyError(err)
@@ -142,12 +142,12 @@ func (gc *GitalyCommand) LogExecution(ctx context.Context, repository *pb.Reposi
 
 	glID, err := gitlabnet.ParseGlID(gc.Response.UserID)
 	if err != nil {
-		slog.WarnContext(ctx, "handler: LogExecution: failed to parse user_id", log.ErrorMessage(err.Error()))
+		log.FromContext(ctx).WarnContext(ctx, "handler: LogExecution: failed to parse user_id", log.ErrorMessage(err.Error()))
 	} else if userID, ok := glID.UserID(); ok {
 		attrs = append(attrs, log.GitLabUserID(userID))
 	}
 
-	slog.InfoContext(ctx, "executing git command", attrs...)
+	log.FromContext(ctx).InfoContext(ctx, "executing git command", attrs...)
 }
 
 func withOutgoingMetadata(ctx context.Context, features map[string]string) context.Context {

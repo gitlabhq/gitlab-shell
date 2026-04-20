@@ -134,15 +134,15 @@ func (s *Server) listen(ctx context.Context) error {
 			ReadHeaderTimeout: time.Duration(s.Config.Server.ProxyHeaderTimeout),
 		}
 
-		ctx = log.WithFields(ctx, log.TCPAddress(sshListener.Addr().String()))
-		slog.InfoContext(ctx, "Proxy protocol is enabled")
+		ctx = log.WithLogger(ctx, log.FromContext(ctx).With(log.TCPAddress(sshListener.Addr().String())))
+		log.FromContext(ctx).InfoContext(ctx, "Proxy protocol is enabled")
 	}
 
 	if len(s.serverConfig.cfg.Server.PublicKeyAlgorithms) > 0 {
-		ctx = log.WithFields(ctx, slog.Any("supported_public_key_algorithms", s.serverConfig.cfg.Server.PublicKeyAlgorithms))
+		ctx = log.WithLogger(ctx, log.FromContext(ctx).With(slog.Any("supported_public_key_algorithms", s.serverConfig.cfg.Server.PublicKeyAlgorithms)))
 	}
 
-	slog.InfoContext(ctx, "Listening for SSH connections")
+	log.FromContext(ctx).InfoContext(ctx, "Listening for SSH connections")
 
 	s.listener = sshListener
 
@@ -159,7 +159,7 @@ func (s *Server) serve(ctx context.Context) {
 				break
 			}
 
-			slog.WarnContext(ctx, "Failed to accept connection", log.ErrorMessage(err.Error()))
+			log.FromContext(ctx).WarnContext(ctx, "Failed to accept connection", log.ErrorMessage(err.Error()))
 			continue
 		}
 
@@ -207,7 +207,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	ctx, cancel := context.WithCancel(contextWithValues(ctx, nconn))
 	defer cancel()
 	remoteAddr := nconn.RemoteAddr().String()
-	ctx = log.WithFields(ctx, slog.String("remote_addr", remoteAddr))
+	ctx = log.WithLogger(ctx, log.FromContext(ctx).With(slog.String("remote_addr", remoteAddr)))
 
 	go func() {
 		<-ctx.Done()
@@ -217,7 +217,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	// Prevent a panic in a single connection from taking out the whole server
 	defer func() {
 		if err := recover(); err != nil {
-			slog.ErrorContext(ctx, "panic handling session", slog.Any("recovered_error", err))
+			log.FromContext(ctx).ErrorContext(ctx, "panic handling session", slog.Any("recovered_error", err))
 			metrics.SliSshdSessionsErrorsTotal.Inc()
 		}
 	}()
@@ -246,7 +246,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	})
 
 	logData := extractLogDataFromContext(ctxWithLogData)
-	slog.InfoContext(ctx, "access: finish",
+	log.FromContext(ctx).InfoContext(ctx, "access: finish",
 		log.DurationS(time.Since(started)),
 		slog.Int64("written_bytes", logData.WrittenBytes),
 		slog.Any("meta", logData.Meta),
