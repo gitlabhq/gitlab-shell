@@ -50,11 +50,8 @@ const LogDataKey contextKey = "logData"
 // featureFlagClientKey is the context key used to store the feature flag evaluator.
 const featureFlagClientKey contextKey = "featureFlagClient"
 
-// featureFlagClient is the interface for the feature flag client, including both evaluation and shutdown.
-type featureFlagClient interface {
-	featureflag.Evaluator
-	Shutdown(context.Context) error
-}
+// featureFlagEndpointEnv is the environment variable name for the feature flag service endpoint.
+const featureFlagEndpointEnv = "FEATURE_FLAG_ENDPOINT"
 
 // CheckForVersionFlag checks if the -version flag was passed and prints version info if so.
 // It exits the program after printing the version.
@@ -70,10 +67,10 @@ func CheckForVersionFlag(osArgs []string, version, buildTime string) {
 }
 
 // setupFeatureFlagClient initializes the feature flag client if FEATURE_FLAG_ENDPOINT is configured.
-// Returns nil if the endpoint is not set or initialization fails.
-func setupFeatureFlagClient(ctx context.Context, serviceName string) featureFlagClient {
-	if os.Getenv("FEATURE_FLAG_ENDPOINT") == "" {
-		return nil
+// Returns nil evaluator and shutdown function if the endpoint is not set or initialization fails.
+func setupFeatureFlagClient(ctx context.Context, serviceName string) (featureflag.Evaluator, func(context.Context) error) {
+	if os.Getenv(featureFlagEndpointEnv) == "" {
+		return nil, nil
 	}
 
 	ffHTTPClient := httpclient.NewWithConfig(&httpclient.Config{
@@ -89,10 +86,10 @@ func setupFeatureFlagClient(ctx context.Context, serviceName string) featureFlag
 	})
 	if err != nil {
 		slog.WarnContext(ctx, "feature flag client initialization failed", log.Error(err))
-		return nil
+		return nil, nil
 	}
 
-	return client
+	return client, client.Shutdown
 }
 
 // Setup initializes tracing from the configuration file and generates a
@@ -132,14 +129,14 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 		ctx = log.WithFields(ctx, slog.String(fields.CorrelationID, correlationID))
 	}
 
-	ffClient := setupFeatureFlagClient(ctx, serviceName)
-	if ffClient != nil {
-		ctx = context.WithValue(ctx, featureFlagClientKey, ffClient)
+	ffEvaluator, ffShutdown := setupFeatureFlagClient(ctx, serviceName)
+	if ffEvaluator != nil {
+		ctx = context.WithValue(ctx, featureFlagClientKey, ffEvaluator)
 	}
 
 	return ctx, func() {
-		if ffClient != nil {
-			if err := ffClient.Shutdown(ctx); err != nil {
+		if ffShutdown != nil {
+			if err := ffShutdown(ctx); err != nil {
 				slog.WarnContext(ctx, "feature flag client shutdown error", log.Error(err))
 			}
 		}

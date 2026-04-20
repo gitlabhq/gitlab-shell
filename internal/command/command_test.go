@@ -51,7 +51,7 @@ func TestSetup(t *testing.T) {
 }
 
 func TestSetupConfiguresFeatureFlagClientWithTimeout(t *testing.T) {
-	t.Setenv("FEATURE_FLAG_ENDPOINT", "http://localhost:8080")
+	t.Setenv(featureFlagEndpointEnv, "http://localhost:8080")
 
 	ctx, finished := Setup("test-service", &config.Config{})
 	defer finished()
@@ -63,7 +63,7 @@ func TestSetupConfiguresFeatureFlagClientWithTimeout(t *testing.T) {
 
 func TestSetupWithoutFeatureFlagEndpoint(t *testing.T) {
 	// Ensure the environment variable is not set
-	t.Setenv("FEATURE_FLAG_ENDPOINT", "")
+	t.Setenv(featureFlagEndpointEnv, "")
 
 	ctx, finished := Setup("test-service", &config.Config{})
 	defer finished()
@@ -82,7 +82,7 @@ func TestSetupWithoutFeatureFlagEndpoint(t *testing.T) {
 
 func TestSetupWithUnreachableFeatureFlagService(t *testing.T) {
 	// Use an unreachable endpoint that will trigger the 1-second timeout
-	t.Setenv("FEATURE_FLAG_ENDPOINT", "http://192.0.2.1:9999") // TEST-NET-1 reserved range, guaranteed unreachable
+	t.Setenv(featureFlagEndpointEnv, "http://192.0.2.1:9999") // TEST-NET-1 reserved range, guaranteed unreachable
 
 	ctx, finished := Setup("test-service", &config.Config{})
 	defer finished()
