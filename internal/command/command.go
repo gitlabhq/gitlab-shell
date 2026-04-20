@@ -50,6 +50,12 @@ const LogDataKey contextKey = "logData"
 // featureFlagClientKey is the context key used to store the feature flag evaluator.
 const featureFlagClientKey contextKey = "featureFlagClient"
 
+// featureFlagClient is the interface for the feature flag client, including both evaluation and shutdown.
+type featureFlagClient interface {
+	featureflag.Evaluator
+	Shutdown(context.Context) error
+}
+
 // CheckForVersionFlag checks if the -version flag was passed and prints version info if so.
 // It exits the program after printing the version.
 func CheckForVersionFlag(osArgs []string, version, buildTime string) {
@@ -61,6 +67,32 @@ func CheckForVersionFlag(osArgs []string, version, buildTime string) {
 		fmt.Printf("%s %s-%s\n", path.Base(osArgs[0]), version, buildTime)
 		os.Exit(0)
 	}
+}
+
+// setupFeatureFlagClient initializes the feature flag client if FEATURE_FLAG_ENDPOINT is configured.
+// Returns nil if the endpoint is not set or initialization fails.
+func setupFeatureFlagClient(ctx context.Context, serviceName string) featureFlagClient {
+	if os.Getenv("FEATURE_FLAG_ENDPOINT") == "" {
+		return nil
+	}
+
+	ffHTTPClient := httpclient.NewWithConfig(&httpclient.Config{
+		Timeout: 1 * time.Second,
+	}).HTTPClient()
+
+	client, err := featureflag.NewWithConfig(ctx, &featureflag.Config{
+		Name:       serviceName,
+		Namespace:  "gitlab-shell",
+		CacheTTL:   60 * time.Second,
+		CacheSize:  1000,
+		HTTPClient: ffHTTPClient,
+	})
+	if err != nil {
+		slog.WarnContext(ctx, "feature flag client initialization failed", log.Error(err))
+		return nil
+	}
+
+	return client
 }
 
 // Setup initializes tracing from the configuration file and generates a
@@ -100,18 +132,7 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 		ctx = log.WithFields(ctx, slog.String(fields.CorrelationID, correlationID))
 	}
 
-	// Create HTTP client with 1-second timeout to ensure Flipt requests fail fast
-	ffHTTPClient := httpclient.NewWithConfig(&httpclient.Config{
-		Timeout: 1 * time.Second,
-	}).HTTPClient()
-
-	ffClient, _ := featureflag.NewWithConfig(ctx, &featureflag.Config{
-		Name:       serviceName,
-		Namespace:  "gitlab-shell",
-		CacheTTL:   60 * time.Second,
-		CacheSize:  1000,
-		HTTPClient: ffHTTPClient,
-	})
+	ffClient := setupFeatureFlagClient(ctx, serviceName)
 	if ffClient != nil {
 		ctx = context.WithValue(ctx, featureFlagClientKey, ffClient)
 	}
