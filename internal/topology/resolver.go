@@ -34,7 +34,7 @@ func (r *Resolver) Resolve(ctx context.Context, claim *types_proto.Claim) string
 	resp, err := r.client.Classify(ctx, claim)
 	if err != nil {
 		log.WithContextFields(ctx, log.Fields{
-			"error": err.Error(),
+			"error_message": err.Error(),
 		}).Warn("Topology Service classify failed, falling back to default host")
 		return ""
 	}
