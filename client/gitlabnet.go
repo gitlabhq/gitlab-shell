@@ -180,3 +180,16 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 
 	return response, nil
 }
+
+// WithHost returns a shallow copy of the client that sends requests to the
+// specified host instead of the default one. The returned client shares the
+// same HTTP transport, TLS settings, and authentication credentials.
+// This is used for Cells routing where the Topology Service directs
+// requests to a specific cell.
+func (c *GitlabNetClient) WithHost(host string) *GitlabNetClient {
+	clone := *c
+	hostCopy := *c.httpClient
+	hostCopy.Host = host
+	clone.httpClient = &hostCopy
+	return &clone
+}

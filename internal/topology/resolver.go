@@ -55,6 +55,9 @@ func (r *Resolver) Resolve(ctx context.Context, claim *types_proto.Claim) string
 		return address
 	}
 
+	slog.DebugContext(ctx, "Topology Service returned non-PROXY response, falling back to default host",
+		slog.String("action", resp.GetAction().String()))
+
 	return ""
 }
 
@@ -79,7 +82,7 @@ func (r *Resolver) ResolveByRoute(ctx context.Context, repoPath string) string {
 //   - "group" → "group" (single-segment paths are valid for top-level namespaces)
 //   - "" → ""
 func ExtractTopLevelNamespace(repo string) string {
-	repo = strings.TrimPrefix(repo, "/")
+	repo = strings.TrimLeft(repo, "/")
 	repo = strings.TrimSuffix(repo, ".git")
 	if i := strings.IndexByte(repo, '/'); i > 0 {
 		return repo[:i]
