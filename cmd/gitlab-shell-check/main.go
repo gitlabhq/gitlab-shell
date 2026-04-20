@@ -50,6 +50,9 @@ func run() int {
 	if code := exitOnError(err, "Failed to read config, exiting"); code != 0 {
 		return code
 	}
+	if config.TopologyClient != nil {
+		defer config.TopologyClient.Close() //nolint:errcheck
+	}
 
 	logCloser := logger.ConfigureLogger(config)
 	if logCloser != nil {

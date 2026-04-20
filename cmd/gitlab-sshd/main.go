@@ -73,6 +73,9 @@ func main() {
 	}
 
 	cfg.ApplyGlobalState()
+	if cfg.TopologyClient != nil {
+		defer cfg.TopologyClient.Close() //nolint:errcheck
+	}
 	ctx, finished := command.Setup("gitlab-sshd", cfg)
 	defer finished()
 

@@ -144,6 +144,34 @@ topology_service:
 	})
 }
 
+func TestTopologyClient(t *testing.T) {
+	t.Run("TopologyClient is nil when topology service is disabled", func(t *testing.T) {
+		testRoot := testhelper.PrepareTestRootDir(t)
+		cfg, err := NewFromDir(testRoot)
+		require.NoError(t, err)
+		require.Nil(t, cfg.TopologyClient)
+	})
+
+	t.Run("TopologyClient is set when topology service is enabled", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := tmpDir + "/config.yml"
+		secretPath := tmpDir + "/.gitlab_shell_secret"
+
+		require.NoError(t, os.WriteFile(secretPath, []byte("test-secret"), 0o600))
+
+		validConfig := `
+topology_service:
+  enabled: true
+  address: "localhost:9090"
+`
+		require.NoError(t, os.WriteFile(configPath, []byte(validConfig), 0o600))
+
+		cfg, err := NewFromDir(tmpDir)
+		require.NoError(t, err)
+		require.NotNil(t, cfg.TopologyClient)
+	})
+}
+
 func TestTopologyServiceConfigValidation(t *testing.T) {
 	t.Run("newFromFile rejects invalid topology config", func(t *testing.T) {
 		// Create a temporary directory with an invalid config

@@ -45,6 +45,9 @@ func run() int {
 		_, _ = fmt.Fprintln(readWriter.ErrOut, "Failed to read config, exiting:", err)
 		return 1
 	}
+	if config.TopologyClient != nil {
+		defer config.TopologyClient.Close() //nolint:errcheck
+	}
 
 	logCloser := logger.ConfigureLogger(config)
 	if logCloser != nil {
