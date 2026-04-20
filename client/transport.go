@@ -19,6 +19,9 @@ type transport struct {
 func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 	ctx := request.Context()
 
+	// Ensure a logger is always present in the context; seed with slog.Default() if absent.
+	ctx = log.WithLogger(ctx, slog.Default())
+
 	originalRemoteIP, ok := ctx.Value(OriginalRemoteIPContextKey{}).(string)
 	if ok {
 		request.Header.Add("X-Forwarded-For", originalRemoteIP)

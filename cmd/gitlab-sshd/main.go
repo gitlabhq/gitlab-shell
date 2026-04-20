@@ -64,7 +64,7 @@ func main() {
 
 	overrideConfigFromEnvironment(cfg)
 	if err := isConfigSane(cfg); err != nil {
-		ctx = v2log.WithLogger(ctx, v2log.FromContext(ctx).With(v2log.ErrorMessage(err.Error())))
+		ctx = v2log.WithLogger(ctx, slog.Default().With(v2log.ErrorMessage(err.Error())))
 		if *configDir == "" {
 			v2log.FromContext(ctx).ErrorContext(ctx, "no config-dir provided, using only environment variables")
 		} else {
