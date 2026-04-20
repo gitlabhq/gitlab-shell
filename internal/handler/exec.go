@@ -57,7 +57,7 @@ func parseRetryConfig(rawConfig json.RawMessage) *gitalyclient.RetryPolicy {
 
 	var policy gitalyclient.RetryPolicy
 	if err := protojson.Unmarshal(rawConfig, &policy); err != nil {
-		slog.Error("failed to unmarshal retry policy", log.ErrorMessage(err.Error()))
+		slog.Default().Error("failed to unmarshal retry policy", log.ErrorMessage(err.Error()))
 		return nil
 	}
 
@@ -88,7 +88,7 @@ func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHan
 	// We leave the connection open for future reuse
 	conn, err := gc.getConn(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to get connection to execute Git command", log.ErrorMessage(err.Error()))
+		log.FromContext(ctx).ErrorContext(ctx, "Failed to get connection to execute Git command", log.ErrorMessage(err.Error()))
 		return err
 	}
 
@@ -96,7 +96,7 @@ func (gc *GitalyCommand) RunGitalyCommand(ctx context.Context, handler GitalyHan
 	exitStatus, err := handler(childCtx, conn)
 
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to execute Git command", log.ErrorMessage(err.Error()), slog.Int("exit_status", int(exitStatus)))
+		log.FromContext(ctx).ErrorContext(ctx, "Failed to execute Git command", log.ErrorMessage(err.Error()), slog.Int("exit_status", int(exitStatus)))
 
 		if grpcstatus.Code(err) == grpccodes.Unavailable {
 			return processGitalyError(err)
@@ -130,9 +130,9 @@ func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repo
 func (gc *GitalyCommand) LogExecution(ctx context.Context, repository *pb.Repository, env sshenv.Env) {
 	userID, convErr := strconv.Atoi(gc.Response.UserID)
 	if convErr != nil {
-		slog.WarnContext(ctx, "handler: LogExecution: failed to parse user_id", log.ErrorMessage(convErr.Error()))
+		log.FromContext(ctx).WarnContext(ctx, "handler: LogExecution: failed to parse user_id", log.ErrorMessage(convErr.Error()))
 	}
-	slog.InfoContext(ctx, "executing git command",
+	log.FromContext(ctx).InfoContext(ctx, "executing git command",
 		slog.String("command", gc.Command.ServiceName),
 		slog.String("gl_project_path", repository.GlProjectPath),
 		slog.String("gl_repository", repository.GlRepository),

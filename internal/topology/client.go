@@ -157,7 +157,7 @@ func (c *Client) dial(ctx context.Context) (conn *grpc.ClientConn, err error) {
 	if serviceName == "" {
 		serviceName = "gitlab-shell-unknown"
 
-		slog.WarnContext(log.WithFields(ctx, slog.String("service_name", serviceName)), "No gRPC service name specified, defaulting to gitlab-shell-unknown")
+		log.FromContext(ctx).With(slog.String("service_name", serviceName)).WarnContext(ctx, "No gRPC service name specified, defaulting to gitlab-shell-unknown")
 	}
 	serviceName = fmt.Sprintf("%s-%s", serviceName, "topology")
 
