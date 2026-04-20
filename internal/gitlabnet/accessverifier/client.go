@@ -12,6 +12,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology"
 )
 
 const (
@@ -21,7 +22,8 @@ const (
 
 // Client is a client for accessing resources
 type Client struct {
-	client *client.GitlabNetClient
+	client   *client.GitlabNetClient
+	resolver *topology.Resolver
 }
 
 // Request represents a request for accessing resources
@@ -94,7 +96,10 @@ func NewClient(config *config.Config) (*Client, error) {
 		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
-	return &Client{client: client}, nil
+	return &Client{
+		client:   client,
+		resolver: topology.NewResolver(config.TopologyClient),
+	}, nil
 }
 
 // Verify verifies access to a GitLab resource
@@ -118,7 +123,13 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 
 	request.CheckIP = gitlabnet.ParseIP(args.Env.RemoteAddr)
 
-	response, err := c.client.Post(ctx, "/allowed", request)
+	// Route to the correct cell if Topology Service is configured
+	httpClient := c.client
+	if cellHost := c.resolver.ResolveByRoute(ctx, repo); cellHost != "" {
+		httpClient = c.client.WithHost(cellHost)
+	}
+
+	response, err := httpClient.Post(ctx, "/allowed", request)
 	if err != nil {
 		return nil, err
 	}

@@ -316,6 +316,49 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 	return requests
 }
 
+func TestWithHost(t *testing.T) {
+	// Set up two test servers: one for the original host, one for the new host.
+	originalServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, "original")
+	}))
+	defer originalServer.Close()
+
+	newHostServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprint(w, "new-host")
+	}))
+	defer newHostServer.Close()
+
+	httpClient, err := NewHTTPClientWithOpts(originalServer.URL, "", "", "", 1, defaultHTTPOpts)
+	require.NoError(t, err)
+
+	client, err := NewGitlabNetClient("", "", secret, httpClient)
+	require.NoError(t, err)
+
+	t.Run("clone sends requests to new host", func(t *testing.T) {
+		clone := client.WithHost(newHostServer.URL)
+
+		resp, err := clone.Get(context.Background(), "/hello")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Equal(t, "new-host", string(body))
+	})
+
+	t.Run("original client is unaffected", func(t *testing.T) {
+		_ = client.WithHost(newHostServer.URL)
+
+		resp, err := client.Get(context.Background(), "/hello")
+		require.NoError(t, err)
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		require.Equal(t, "original", string(body))
+	})
+}
+
 func TestRetryOnFailure(t *testing.T) {
 	reqAttempts := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {

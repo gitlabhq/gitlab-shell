@@ -103,6 +103,10 @@ type Config struct {
 	// TopologyService contains Topology Service client configuration for Cells routing.
 	TopologyService topology.Config `yaml:"topology_service"`
 
+	// TopologyClient is the Topology Service gRPC client for Cells routing.
+	// It is nil when the Topology Service is disabled.
+	TopologyClient *topology.Client
+
 	httpClient     *client.HTTPClient
 	httpClientErr  error
 	httpClientOnce sync.Once
@@ -250,6 +254,10 @@ func newFromFile(path string) (*Config, error) {
 
 	if err := cfg.TopologyService.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid topology_service config: %w", err)
+	}
+
+	if cfg.TopologyService.Enabled {
+		cfg.TopologyClient = topology.NewClient(&cfg.TopologyService)
 	}
 
 	return cfg, nil

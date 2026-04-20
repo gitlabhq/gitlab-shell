@@ -116,6 +116,17 @@ func (c *Client) Post(ctx context.Context, path string, body any) (*http.Respons
 	return c.do(ctx, http.MethodPost, path, body)
 }
 
+// WithHost returns a shallow copy of the client that sends requests to the
+// specified host instead of the default one. The returned client shares the
+// same HTTP transport, TLS settings, and authentication credentials.
+// This is used for Cells routing where the Topology Service directs
+// requests to a specific cell.
+func (c *Client) WithHost(host string) *Client {
+	clone := *c
+	clone.host = host
+	return &clone
+}
+
 // do is the single request path for all outbound calls. It exists to keep
 // Get/Post thin and ensure that header injection (JWT, basic auth, User-Agent)
 // is applied consistently regardless of the HTTP method. During the migration
