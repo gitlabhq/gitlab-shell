@@ -85,8 +85,9 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 	if correlationID == "" {
 		correlationID := correlation.SafeRandomID()
 		ctx = correlation.ContextWithCorrelation(ctx, correlationID)
-		ctx = log.WithFields(ctx, slog.String(fields.CorrelationID, correlationID))
 	}
+
+	ctx = log.WithLogger(ctx, slog.Default().With(slog.String(fields.CorrelationID, correlationID)))
 
 	return ctx, func() {
 		finished()
