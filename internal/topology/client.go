@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"sync"
 	"time"
@@ -15,8 +16,8 @@ import (
 	types_proto "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto/types/v1"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	grpccorrelation "gitlab.com/gitlab-org/labkit/correlation/grpc"
-	"gitlab.com/gitlab-org/labkit/log"
 	grpctracing "gitlab.com/gitlab-org/labkit/tracing/grpc"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
@@ -156,7 +157,7 @@ func (c *Client) dial(ctx context.Context) (conn *grpc.ClientConn, err error) {
 	if serviceName == "" {
 		serviceName = "gitlab-shell-unknown"
 
-		log.WithContextFields(ctx, log.Fields{"service_name": serviceName}).Warn("No gRPC service name specified, defaulting to gitlab-shell-unknown")
+		slog.WarnContext(log.WithFields(ctx, slog.String("service_name", serviceName)), "No gRPC service name specified, defaulting to gitlab-shell-unknown")
 	}
 	serviceName = fmt.Sprintf("%s-%s", serviceName, "topology")
 
