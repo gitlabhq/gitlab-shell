@@ -253,9 +253,9 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	)
 }
 
-func (s *Server) proxyPolicy() (proxyproto.PolicyFunc, error) {
+func (s *Server) proxyPolicy() (proxyproto.ConnPolicyFunc, error) {
 	if len(s.Config.Server.ProxyAllowed) > 0 {
-		return proxyproto.StrictWhiteListPolicy(s.Config.Server.ProxyAllowed)
+		return proxyproto.ConnStrictWhiteListPolicy(s.Config.Server.ProxyAllowed)
 	}
 
 	// Set the Policy value based on config
@@ -286,7 +286,7 @@ func extractLogDataFromContext(ctx context.Context) command.LogData {
 	return logData
 }
 
-func staticProxyPolicy(policy proxyproto.Policy) proxyproto.PolicyFunc {
+func staticProxyPolicy(policy proxyproto.Policy) proxyproto.ConnPolicyFunc {
 	return func(_ net.Addr) (proxyproto.Policy, error) {
 		return policy, nil
 	}
