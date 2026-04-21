@@ -93,6 +93,7 @@ linters:
             - github.com/hashicorp/go-retryablehttp
             - github.com/mattn/go-shellwords
             - github.com/mikesmitty/edkey
+            - github.com/open-feature/go-sdk
             - github.com/otiai10/copy
             - github.com/pires/go-proxyproto
             - github.com/prometheus/client_golang/prometheus
