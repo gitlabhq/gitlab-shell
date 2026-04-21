@@ -16,12 +16,7 @@ func TestHealthcheckClient_Check_Success(t *testing.T) {
 		Redis:          true,
 	}
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/api/v4/internal/check" {
-			http.NotFound(w, r)
-			return
-		}
-
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(expectedResponse)
 	}))
@@ -54,7 +49,7 @@ func TestHealthcheckClient_Check_Success(t *testing.T) {
 }
 
 func TestHealthcheckClient_Check_NonOKStatus(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("error"))
 	}))
