@@ -25,7 +25,7 @@ variables:
   POLICY: pull
   CI_DEBUG_SERVICES: "true"
   DOCKER_VERSION: "20.10.15"
-  GO_VERSION: "1.24"
+  GO_VERSION: "1.25"
   RUBY_VERSION: "3.3.9"
   RUST_VERSION: "1.73"
   UBI_VERSION: "9.5"
@@ -88,7 +88,7 @@ default:
 .go-matrix-job:
   parallel:
     matrix:
-      - GO_VERSION: ["1.24", "1.25"]
+      - GO_VERSION: ["1.25"]
 
 ################################################################################
 # Prepare jobs
