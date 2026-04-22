@@ -52,6 +52,7 @@ const featureFlagClientKey contextKey = "featureFlagClient"
 
 // featureFlagEndpointEnv is the environment variable name for the feature flag service endpoint.
 const featureFlagEndpointEnv = "FEATURE_FLAG_ENDPOINT"
+
 // CheckForVersionFlag checks if the -version flag was passed and prints version info if so.
 // It exits the program after printing the version.
 func CheckForVersionFlag(osArgs []string, version, buildTime string) {
