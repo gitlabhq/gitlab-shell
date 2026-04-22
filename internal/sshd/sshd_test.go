@@ -3,6 +3,7 @@ package sshd
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -20,6 +21,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 const (
@@ -299,7 +301,7 @@ func TestInvalidServerConfig(t *testing.T) {
 }
 
 func TestClosingHangedConnections(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(log.WithLogger(context.Background(), slog.Default()))
 	defer cancel()
 
 	s, testRoot := setupServerWithContext(ctx, t, nil)
@@ -396,7 +398,7 @@ func setupServer(t *testing.T) (*Server, string) {
 func setupServerWithConfig(t *testing.T, cfg *config.Config) (*Server, string) {
 	t.Helper()
 
-	return setupServerWithContext(context.Background(), t, cfg)
+	return setupServerWithContext(log.WithLogger(context.Background(), slog.Default()), t, cfg)
 }
 
 func setupServerWithContext(ctx context.Context, t *testing.T, cfg *config.Config) (*Server, string) {

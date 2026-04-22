@@ -29,27 +29,30 @@ func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 	start := time.Now()
 
 	response, err := rt.next.RoundTrip(request)
-	ctx = log.WithFields(ctx,
+	logger := slog.Default().With(
 		log.HTTPMethod(request.Method),
 		log.HTTPURL(request.URL.String()),
 		log.DurationS(time.Since(start)),
 	)
+	ctx = log.WithLogger(ctx, logger)
 	if err != nil {
-		slog.ErrorContext(ctx, "Internal API unreachable", log.ErrorMessage(err.Error()))
+		log.FromContext(ctx).ErrorContext(ctx, "Internal API unreachable", log.ErrorMessage(err.Error()))
 		return response, err
 	}
 
-	ctx = log.WithFields(ctx, log.HTTPStatusCode(response.StatusCode))
+	logger = log.FromContext(ctx).With(log.HTTPStatusCode(response.StatusCode))
+	ctx = log.WithLogger(ctx, logger)
 
 	if response.StatusCode >= 400 {
-		slog.ErrorContext(ctx, "Internal API error")
+		log.FromContext(ctx).ErrorContext(ctx, "Internal API error")
 		return response, err
 	}
 
 	if response.ContentLength >= 0 {
-		ctx = log.WithFields(ctx, slog.Int64("content_length_bytes", response.ContentLength))
+		logger = log.FromContext(ctx).With(slog.Int64("content_length_bytes", response.ContentLength))
+		ctx = log.WithLogger(ctx, logger)
 	}
-	slog.InfoContext(ctx, "Finished HTTP request")
+	log.FromContext(ctx).InfoContext(ctx, "Finished HTTP request")
 	return response, nil
 }
 

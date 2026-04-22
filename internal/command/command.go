@@ -80,12 +80,13 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 
 	ctx, finished := tracing.ExtractFromEnv(context.Background())
 	ctx = correlation.ContextWithClientName(ctx, serviceName)
+	ctx = log.WithLogger(ctx, slog.Default())
 
 	correlationID := correlation.ExtractFromContext(ctx)
 	if correlationID == "" {
 		correlationID := correlation.SafeRandomID()
 		ctx = correlation.ContextWithCorrelation(ctx, correlationID)
-		ctx = log.WithFields(ctx, slog.String(fields.CorrelationID, correlationID))
+		ctx = log.WithLogger(ctx, log.FromContext(ctx).With(slog.String(fields.CorrelationID, correlationID)))
 	}
 
 	return ctx, func() {

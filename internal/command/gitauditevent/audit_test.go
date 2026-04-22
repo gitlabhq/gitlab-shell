@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"testing"
 
@@ -15,6 +16,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/gitauditevent"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
+
+	v2log "gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 var (
@@ -71,7 +74,8 @@ func TestGitAudit(t *testing.T) {
 			}
 
 			url := testserver.StartSocketHTTPServer(t, requests)
-			Audit(context.Background(), args, &config.Config{GitlabURL: url}, &accessverifier.Response{
+			ctx := v2log.WithLogger(context.Background(), slog.Default())
+			Audit(ctx, args, &config.Config{GitlabURL: url}, &accessverifier.Response{
 				Username: testUsername,
 				Repo:     testRepo,
 				KeyID:    tt.keyID,

@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"encoding/base64"
 	"errors"
+	"log/slog"
 	"net/http"
 	"os"
 	"path"
@@ -22,6 +23,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 	"gitlab.com/gitlab-org/labkit/fips"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 func TestNewServerConfigWithoutHosts(t *testing.T) {
@@ -286,7 +288,8 @@ func TestUserCertificateHandling(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			t.Setenv("FF_GITLAB_SHELL_SSH_CERTIFICATES", tc.featureFlagValue)
-			permissions, err := cfg.handleUserCertificate(context.Background(), "user", tc.cert)
+			ctx := log.WithLogger(context.Background(), slog.Default())
+			permissions, err := cfg.handleUserCertificate(ctx, "user", tc.cert)
 			require.Equal(t, tc.expectedErr, err)
 			require.Equal(t, tc.expectedPermissions, permissions)
 		})
@@ -752,7 +755,8 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			permissions, err := cfg.handleUserCertificate(context.Background(), "user", tc.cert)
+			ctx := log.WithLogger(context.Background(), slog.Default())
+			permissions, err := cfg.handleUserCertificate(ctx, "user", tc.cert)
 			if tc.expectedErr != "" {
 				require.EqualError(t, err, tc.expectedErr)
 			} else {
@@ -794,13 +798,14 @@ func TestUserCertificateHandling_InstanceLevelWithMultipleCAs(t *testing.T) {
 	}
 
 	// Both certificates should be trusted
-	permissions1, err := cfg.handleUserCertificate(context.Background(), "user", certFromCA1)
+	ctx := log.WithLogger(context.Background(), slog.Default())
+	permissions1, err := cfg.handleUserCertificate(ctx, "user", certFromCA1)
 	require.NoError(t, err)
 	require.Equal(t, &ssh.Permissions{
 		Extensions: map[string]string{"username": "user1"},
 	}, permissions1)
 
-	permissions2, err := cfg.handleUserCertificate(context.Background(), "user", certFromCA2)
+	permissions2, err := cfg.handleUserCertificate(ctx, "user", certFromCA2)
 	require.NoError(t, err)
 	require.Equal(t, &ssh.Permissions{
 		Extensions: map[string]string{"username": "user2"},

@@ -56,17 +56,17 @@ type exitStatusReq struct {
 func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (context.Context, error) {
 	ctxWithLogData := ctx
 
-	slog.DebugContext(ctx, "session: handle: entering request loop")
+	log.FromContext(ctx).DebugContext(ctx, "session: handle: entering request loop")
 
 	var err error
 	for req := range requests {
-		ctx = log.WithFields(ctx,
+		ctx = log.WithLogger(ctx, log.FromContext(ctx).With(
 			slog.Int("bytesize", len(req.Payload)),
 			slog.String("type", req.Type),
 			slog.Bool("want_reply", req.WantReply),
-		)
+		))
 
-		slog.DebugContext(ctx, "session: handle: request received")
+		log.FromContext(ctx).DebugContext(ctx, "session: handle: request received")
 
 		var shouldContinue bool
 		switch req.Type {
@@ -90,12 +90,12 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (con
 
 			if req.WantReply {
 				if err = req.Reply(false, []byte{}); err != nil {
-					slog.DebugContext(ctx, "session: handle: Failed to reply", log.ErrorMessage(err.Error()))
+					log.FromContext(ctx).DebugContext(ctx, "session: handle: Failed to reply", log.ErrorMessage(err.Error()))
 				}
 			}
 		}
 
-		slog.DebugContext(ctx, "session: handle: request processed", slog.Bool("should_continue", shouldContinue))
+		log.FromContext(ctx).DebugContext(ctx, "session: handle: request processed", slog.Bool("should_continue", shouldContinue))
 
 		if !shouldContinue {
 			_ = s.channel.Close()
@@ -103,7 +103,7 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (con
 		}
 	}
 
-	slog.DebugContext(ctx, "session: handle: exiting request loop")
+	log.FromContext(ctx).DebugContext(ctx, "session: handle: exiting request loop")
 
 	return ctxWithLogData, err
 }
@@ -113,7 +113,7 @@ func (s *session) handleEnv(ctx context.Context, req *ssh.Request) (bool, error)
 	var envReq envRequest
 
 	if err := ssh.Unmarshal(req.Payload, &envReq); err != nil {
-		slog.ErrorContext(ctx, "session: handleEnv: failed to unmarshal request", log.ErrorMessage(err.Error()))
+		log.FromContext(ctx).ErrorContext(ctx, "session: handleEnv: failed to unmarshal request", log.ErrorMessage(err.Error()))
 		return false, err
 	}
 
@@ -127,11 +127,11 @@ func (s *session) handleEnv(ctx context.Context, req *ssh.Request) (bool, error)
 
 	if req.WantReply {
 		if err := req.Reply(accepted, []byte{}); err != nil {
-			slog.DebugContext(ctx, "session: handleEnv: Failed to reply", log.ErrorMessage(err.Error()))
+			log.FromContext(ctx).DebugContext(ctx, "session: handleEnv: Failed to reply", log.ErrorMessage(err.Error()))
 		}
 	}
 
-	slog.DebugContext(ctx, "session: handleEnv: processed",
+	log.FromContext(ctx).DebugContext(ctx, "session: handleEnv: processed",
 		slog.Bool("accepted", accepted),
 		slog.String("env_request", fmt.Sprintf("%+v", envReq)),
 	)
@@ -157,7 +157,7 @@ func (s *session) handleExec(ctx context.Context, req *ssh.Request) (context.Con
 func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Context, uint32, error) {
 	if req.WantReply {
 		if err := req.Reply(true, []byte{}); err != nil {
-			slog.DebugContext(ctx, "session: handleShell: Failed to reply", log.ErrorMessage(err.Error()))
+			log.FromContext(ctx).DebugContext(ctx, "session: handleShell: Failed to reply", log.ErrorMessage(err.Error()))
 		}
 	}
 
@@ -186,7 +186,7 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 	cmdName := reflect.TypeOf(cmd).String()
 
 	establishSessionDuration := time.Since(s.started).Seconds()
-	slog.InfoContext(ctx, "session: handleShell: executing command",
+	log.FromContext(ctx).InfoContext(ctx, "session: handleShell: executing command",
 		slog.Any("env", env),
 		slog.String("command", cmdName),
 		slog.Float64("established_session_duration_s", establishSessionDuration),
@@ -209,7 +209,7 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 		return ctx, 1, err
 	}
 
-	slog.InfoContext(ctx, "session: handleShell: command executed successfully")
+	log.FromContext(ctx).InfoContext(ctx, "session: handleShell: command executed successfully")
 
 	return ctxWithLogData, 0, nil
 }
@@ -241,12 +241,12 @@ func (s *session) getCommand(env sshenv.Env, rw *readwriter.ReadWriter) (command
 
 func (s *session) toStderr(ctx context.Context, format string, args ...interface{}) {
 	out := fmt.Sprintf(format, args...)
-	slog.DebugContext(ctx, "session: toStderr: output", slog.String("stderr", out))
+	log.FromContext(ctx).DebugContext(ctx, "session: toStderr: output", slog.String("stderr", out))
 	console.DisplayWarningMessage(out, s.channel.Stderr())
 }
 
 func (s *session) exit(ctx context.Context, status uint32) {
-	slog.InfoContext(ctx, "session: exit: exiting", slog.Int("exit_status", int(status)))
+	log.FromContext(ctx).InfoContext(ctx, "session: exit: exiting", slog.Int("exit_status", int(status)))
 
 	req := exitStatusReq{ExitStatus: status}
 

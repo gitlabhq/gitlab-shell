@@ -39,6 +39,5 @@ func (l *WrappedLoggerForGitLFSTransfer) Log(msg string, args ...any) {
 			break
 		}
 	}
-	ctx := log.WithFields(l.ctx, fields...)
-	slog.InfoContext(ctx, msg)
+	log.FromContext(l.ctx).LogAttrs(l.ctx, slog.LevelInfo, msg, fields...)
 }

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -24,6 +25,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/lfsauthenticate"
+
+	v2log "gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 const (
@@ -41,12 +44,16 @@ var (
 	evenLargerFileOid  = hex.EncodeToString(evenLargerFileHash[:])
 )
 
+func ctxWithLogger() context.Context {
+	return v2log.WithLogger(context.Background(), slog.Default())
+}
+
 func setupWaitGroupForExecute(t *testing.T, cmd *Command) *sync.WaitGroup {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
 	go func() {
-		_, err := cmd.Execute(context.Background())
+		_, err := cmd.Execute(ctxWithLogger())
 		assert.NoError(t, err)
 		wg.Done()
 	}()
@@ -276,7 +283,7 @@ func TestLfsTransferCapabilities(t *testing.T) {
 
 func TestLfsTransferNoPermissions(t *testing.T) {
 	_, cmd, _ := setup(t, "ro", "upload")
-	_, err := cmd.Execute(context.Background())
+	_, err := cmd.Execute(ctxWithLogger())
 	require.Equal(t, "Disallowed by API call", err.Error())
 }
 

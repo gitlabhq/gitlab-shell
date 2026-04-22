@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"log/slog"
 	"net/http"
 	"testing"
 
@@ -14,6 +15,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/console"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 type fakeChannel struct {
@@ -93,7 +95,7 @@ func TestHandleEnv(t *testing.T) {
 			s := &session{gitProtocolVersion: "1"}
 			r := &ssh.Request{Payload: tc.payload}
 
-			shouldContinue, err := s.handleEnv(context.Background(), r)
+			shouldContinue, err := s.handleEnv(log.WithLogger(context.Background(), slog.Default()), r)
 
 			require.Equal(t, tc.expectedErr, err)
 			require.Equal(t, tc.expectedResult, shouldContinue)
@@ -153,7 +155,7 @@ func TestHandleExec(t *testing.T) {
 
 				s.channel = f
 				shouldContinue := false
-				_, err := s.handleExec(context.Background(), r)
+				_, err := s.handleExec(log.WithLogger(context.Background(), slog.Default()), r)
 
 				require.Equal(t, tc.expectedErr, err)
 				require.False(t, shouldContinue)
@@ -225,7 +227,7 @@ func TestHandleShell(t *testing.T) {
 			}
 			r := &ssh.Request{}
 
-			ctxWithLogData, exitCode, err := s.handleShell(context.Background(), r)
+			ctxWithLogData, exitCode, err := s.handleShell(log.WithLogger(context.Background(), slog.Default()), r)
 
 			logInfo := extractLogDataFromContext(ctxWithLogData)
 

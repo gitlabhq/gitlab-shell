@@ -3,6 +3,7 @@ package sshd
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
 	"testing"
 	"time"
@@ -19,6 +20,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
+
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 type rejectCall struct {
@@ -93,13 +96,17 @@ func setup(newChannel *fakeNewChannel) (*connection, chan ssh.NewChannel) {
 	return conn, chans
 }
 
+func ctxWithLogger() context.Context {
+	return log.WithLogger(context.Background(), slog.Default())
+}
+
 func TestPanicDuringSessionIsRecovered(t *testing.T) {
 	newChannel := &fakeNewChannel{channelType: "session"}
 	conn, chans := setup(newChannel)
 
 	numSessions := 0
 	require.NotPanics(t, func() {
-		conn.handleRequests(context.Background(), nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
+		conn.handleRequests(ctxWithLogger(), nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 			numSessions++
 			close(chans)
 			panic("This is a panic")
@@ -117,7 +124,7 @@ func TestUnknownChannelType(t *testing.T) {
 	conn, chans := setup(newChannel)
 
 	go func() {
-		conn.handleRequests(context.Background(), nil, chans, nil)
+		conn.handleRequests(ctxWithLogger(), nil, chans, nil)
 	}()
 
 	rejectionData := <-rejectCh
@@ -133,11 +140,11 @@ func TestTooManySessions(t *testing.T) {
 	newChannel := &fakeNewChannel{channelType: "session", rejectCh: rejectCh}
 	conn, chans := setup(newChannel)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctxWithLogger())
 	defer cancel()
 
 	go func() {
-		conn.handleRequests(context.Background(), nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
+		conn.handleRequests(ctxWithLogger(), nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 			<-ctx.Done() // Keep the accepted channel open until the end of the test
 			return nil
 		})
@@ -150,7 +157,7 @@ func TestTooManySessions(t *testing.T) {
 func TestAcceptSessionSucceeds(t *testing.T) {
 	newChannel := &fakeNewChannel{channelType: "session"}
 	conn, chans := setup(newChannel)
-	ctx := context.Background()
+	ctx := ctxWithLogger()
 
 	channelHandled := false
 	conn.handleRequests(ctx, nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
@@ -169,7 +176,7 @@ func TestAcceptSessionFails(t *testing.T) {
 	acceptErr := errors.New("some failure")
 	newChannel := &fakeNewChannel{channelType: "session", acceptCh: acceptCh, acceptErr: acceptErr}
 	conn, chans := setup(newChannel)
-	ctx := context.Background()
+	ctx := ctxWithLogger()
 
 	channelHandled := false
 	go func() {
@@ -195,7 +202,7 @@ func TestClientAliveInterval(t *testing.T) {
 	defer ticker.Stop()
 
 	conn := &connection{}
-	go conn.sendKeepAliveMsg(context.Background(), &ssh.ServerConn{Conn: f, Permissions: nil}, ticker)
+	go conn.sendKeepAliveMsg(ctxWithLogger(), &ssh.ServerConn{Conn: f, Permissions: nil}, ticker)
 
 	require.Eventually(t, func() bool { return KeepAliveMsg == f.SentRequestName() }, time.Second, time.Millisecond)
 }
@@ -208,7 +215,7 @@ func TestSessionsMetrics(t *testing.T) {
 
 	newChannel := &fakeNewChannel{channelType: "session"}
 	conn, chans := setup(newChannel)
-	ctx := context.Background()
+	ctx := ctxWithLogger()
 
 	conn.handleRequests(ctx, nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 		close(chans)
@@ -231,7 +238,7 @@ func TestSessionsMetrics(t *testing.T) {
 		t.Run(ignoredError.desc, func(t *testing.T) {
 			conn, chans := setup(newChannel)
 			ignored := ignoredError.err
-			ctx := context.Background()
+			ctx := ctxWithLogger()
 
 			conn.handleRequests(ctx, nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
 				close(chans)
