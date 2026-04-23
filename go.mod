@@ -3,6 +3,7 @@ module gitlab.com/gitlab-org/gitlab-shell/v14
 go 1.24.5
 
 require (
+	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20250505094602-0d51139d5979
 	github.com/git-lfs/pktline v0.0.0-20230103162542-ca444d533ef1
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -42,7 +43,6 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/aws/aws-sdk-go v1.55.6 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
-	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect

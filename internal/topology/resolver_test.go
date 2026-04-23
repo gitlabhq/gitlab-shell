@@ -165,3 +165,95 @@ func TestResolveByRoute(t *testing.T) {
 		require.Empty(t, result)
 	})
 }
+
+func TestResolveRetry(t *testing.T) {
+	t.Run("retries on transient error and succeeds", func(t *testing.T) {
+		mock := &topologytest.MockClassifyServer{
+			Err:             fmt.Errorf("transient"),
+			ErrUntilAttempt: 2,
+			Response: &pb.ClassifyResponse{
+				Action: pb.ClassifyAction_PROXY,
+				Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+			},
+		}
+		addr, stop := topologytest.StartMockServer(t, mock)
+		defer stop()
+
+		client := NewClient(&Config{
+			Enabled: true,
+			Address: addr,
+			Timeout: 5 * time.Second,
+		})
+		defer client.Close()
+
+		resolver := NewResolver(client)
+		result := resolver.Resolve(context.Background(), RouteClaim("my-group"))
+		require.Equal(t, "http://cell-2:8080", result)
+		require.Equal(t, 2, mock.CallCount)
+	})
+
+	t.Run("exhausts all retries and returns empty string", func(t *testing.T) {
+		mock := &topologytest.MockClassifyServer{
+			Err: fmt.Errorf("persistent failure"),
+		}
+		addr, stop := topologytest.StartMockServer(t, mock)
+		defer stop()
+
+		client := NewClient(&Config{
+			Enabled: true,
+			Address: addr,
+			Timeout: 5 * time.Second,
+		})
+		defer client.Close()
+
+		resolver := NewResolver(client)
+		result := resolver.Resolve(context.Background(), RouteClaim("my-group"))
+		require.Empty(t, result)
+		require.Equal(t, int(classifyMaxRetries), mock.CallCount)
+	})
+
+	t.Run("does not retry on successful non-PROXY response", func(t *testing.T) {
+		mock := &topologytest.MockClassifyServer{
+			Response: &pb.ClassifyResponse{
+				Action: pb.ClassifyAction_ACTION_UNSPECIFIED,
+			},
+		}
+		addr, stop := topologytest.StartMockServer(t, mock)
+		defer stop()
+
+		client := NewClient(&Config{
+			Enabled: true,
+			Address: addr,
+			Timeout: 5 * time.Second,
+		})
+		defer client.Close()
+
+		resolver := NewResolver(client)
+		result := resolver.Resolve(context.Background(), RouteClaim("my-group"))
+		require.Empty(t, result)
+		require.Equal(t, 1, mock.CallCount)
+	})
+
+	t.Run("respects context cancellation during retry", func(t *testing.T) {
+		mock := &topologytest.MockClassifyServer{
+			Err: fmt.Errorf("fail"),
+		}
+		addr, stop := topologytest.StartMockServer(t, mock)
+		defer stop()
+
+		client := NewClient(&Config{
+			Enabled: true,
+			Address: addr,
+			Timeout: 5 * time.Second,
+		})
+		defer client.Close()
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		resolver := NewResolver(client)
+		result := resolver.Resolve(ctx, RouteClaim("my-group"))
+		require.Empty(t, result)
+		require.LessOrEqual(t, mock.CallCount, 1)
+	})
+}

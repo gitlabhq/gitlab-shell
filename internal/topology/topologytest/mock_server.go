@@ -25,14 +25,26 @@ type MockClassifyServer struct {
 	Err error
 	// LastRequest is the most recent ClassifyRequest received by the server.
 	LastRequest *pb.ClassifyRequest
+	// CallCount is incremented on each Classify call.
+	CallCount int
+	// ErrUntilAttempt, when set to N, causes the server to return Err for
+	// calls 1..N-1 and then succeed from call N onwards.
+	ErrUntilAttempt int
 }
 
 // Classify implements the ClassifyService RPC.
 func (m *MockClassifyServer) Classify(_ context.Context, req *pb.ClassifyRequest) (*pb.ClassifyResponse, error) {
+	m.CallCount++
 	m.LastRequest = req
-	if m.Err != nil {
+
+	if m.ErrUntilAttempt > 0 && m.CallCount < m.ErrUntilAttempt {
 		return nil, m.Err
 	}
+
+	if m.ErrUntilAttempt == 0 && m.Err != nil {
+		return nil, m.Err
+	}
+
 	if m.Response != nil {
 		return m.Response, nil
 	}

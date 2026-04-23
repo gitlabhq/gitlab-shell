@@ -4,10 +4,18 @@ import (
 	"context"
 	"log/slog"
 	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff/v5"
 	pb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
 	types_proto "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto/types/v1"
 	"gitlab.com/gitlab-org/labkit/v2/log"
+)
+
+const (
+	classifyMaxRetries      = 3
+	classifyInitialInterval = 100 * time.Millisecond
+	classifyMaxInterval     = 500 * time.Millisecond
 )
 
 // Resolver queries the Topology Service to determine which cell should
@@ -27,15 +35,33 @@ func NewResolver(client *Client) *Resolver {
 // Resolve queries the Topology Service with the given claim and returns
 // the proxy address as an HTTP URL string (e.g. "http://cell-2:8080").
 // Returns empty string on any failure or when TS is not configured.
+// Transient errors are retried with exponential backoff.
 func (r *Resolver) Resolve(ctx context.Context, claim *types_proto.Claim) string {
 	if r == nil || r.client == nil || claim == nil {
 		return ""
 	}
 
-	resp, err := r.client.Classify(ctx, claim)
+	b := backoff.NewExponentialBackOff()
+	b.InitialInterval = classifyInitialInterval
+	b.MaxInterval = classifyMaxInterval
+
+	resp, err := backoff.Retry(ctx, func() (*pb.ClassifyResponse, error) {
+		return r.client.Classify(ctx, claim)
+	},
+		backoff.WithBackOff(b),
+		backoff.WithMaxTries(classifyMaxRetries),
+		backoff.WithNotify(func(err error, duration time.Duration) {
+			slog.WarnContext(ctx, "Topology Service classify attempt failed, retrying",
+				slog.Duration("retry_in", duration),
+				log.ErrorMessage(err.Error()),
+			)
+		}),
+	)
 	if err != nil {
-		slog.WarnContext(ctx, "Topology Service classify failed, falling back to default host",
-			log.ErrorMessage(err.Error()))
+		slog.WarnContext(ctx, "Topology Service classify failed after retries, falling back to default host",
+			slog.Int("max_attempts", classifyMaxRetries),
+			log.ErrorMessage(err.Error()),
+		)
 		return ""
 	}
 
