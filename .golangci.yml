@@ -85,6 +85,7 @@ linters:
             - gitlab.com/gitlab-org/labkit
             - gitlab.com/gitlab-org/gitaly
             - gitlab.com/gitlab-org/cells/topology-service
+            - github.com/cenkalti/backoff/v5
             - github.com/charmbracelet/git-lfs-transfer
             - github.com/git-lfs/pktline
             - github.com/golang-jwt/jwt
