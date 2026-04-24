@@ -124,7 +124,7 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 
 	correlationID := correlation.ExtractFromContext(ctx)
 	if correlationID == "" {
-		correlationID := correlation.SafeRandomID()
+		correlationID = correlation.SafeRandomID()
 		ctx = correlation.ContextWithCorrelation(ctx, correlationID)
 	}
 
