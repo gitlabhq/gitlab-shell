@@ -1,6 +1,9 @@
 package command
 
 import (
+	"bytes"
+	"encoding/json"
+	"log/slog"
 	"os"
 	"os/exec"
 	"testing"
@@ -9,6 +12,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 func TestSetup(t *testing.T) {
@@ -98,6 +102,41 @@ func TestSetupWithUnreachableFeatureFlagService(t *testing.T) {
 	// Verify correlation ID is still set
 	correlationID := correlation.ExtractFromContext(ctx)
 	require.NotEmpty(t, correlationID, "correlation ID should be set")
+}
+
+func TestSetupAttachesCorrelationIDToLogger(t *testing.T) {
+	testCases := []struct {
+		name          string
+		additionalEnv map[string]string
+	}{
+		{name: "generates a new correlation ID when none is set"},
+		{
+			name:          "uses the correlation ID from the environment",
+			additionalEnv: map[string]string{"CORRELATION_ID": "abc123"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			addAdditionalEnv(t, tc.additionalEnv)
+
+			var buf bytes.Buffer
+			originalDefault := slog.Default()
+			slog.SetDefault(slog.New(slog.NewJSONHandler(&buf, nil)))
+			t.Cleanup(func() { slog.SetDefault(originalDefault) })
+
+			ctx, finished := Setup("foo", &config.Config{})
+			defer finished()
+
+			log.FromContext(ctx).InfoContext(ctx, "marker")
+
+			var entry map[string]any
+			require.NoError(t, json.Unmarshal(buf.Bytes(), &entry))
+
+			require.Equal(t, correlation.ExtractFromContext(ctx), entry["correlation_id"])
+			require.NotEmpty(t, entry["correlation_id"])
+		})
+	}
 }
 
 // addAdditionalEnv will configure additional environment values
