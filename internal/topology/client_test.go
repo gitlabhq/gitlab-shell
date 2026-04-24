@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"net"
 	"os"
 	"path"
 	"path/filepath"
@@ -16,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	pb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology/topologytest"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"google.golang.org/grpc"
 
@@ -67,7 +67,7 @@ func TestClient_Close(t *testing.T) {
 	})
 
 	t.Run("closing client with active connection clears state and allows reconnection", func(t *testing.T) {
-		addr, stop := startMockServer(t, &mockClassifyServer{})
+		addr, stop := topologytest.StartMockServer(t, &topologytest.MockClassifyServer{})
 		defer stop()
 
 		client := NewClient(&Config{
@@ -105,48 +105,12 @@ func TestClient_Close(t *testing.T) {
 	})
 }
 
-// mockClassifyServer implements the ClassifyService for testing.
-type mockClassifyServer struct {
-	pb.UnimplementedClassifyServiceServer
-	response    *pb.ClassifyResponse
-	err         error
-	lastRequest *pb.ClassifyRequest
-}
-
-func (m *mockClassifyServer) Classify(_ context.Context, req *pb.ClassifyRequest) (*pb.ClassifyResponse, error) {
-	m.lastRequest = req
-	if m.err != nil {
-		return nil, m.err
-	}
-	if m.response != nil {
-		return m.response, nil
-	}
-	return &pb.ClassifyResponse{
-		Action: pb.ClassifyAction_PROXY,
-		Proxy:  &pb.ProxyInfo{Address: "cell-1.gitlab.com:443"},
-	}, nil
-}
-
-// startMockServer starts a gRPC server with the given mock and returns the address.
-func startMockServer(t *testing.T, mock *mockClassifyServer) (string, func()) {
-	t.Helper()
-	lis, err := net.Listen("tcp", "localhost:0")
-	require.NoError(t, err)
-
-	server := grpc.NewServer()
-	pb.RegisterClassifyServiceServer(server, mock)
-
-	go func() { _ = server.Serve(lis) }()
-
-	return lis.Addr().String(), server.Stop
-}
-
 func TestClient_Classify(t *testing.T) {
 	ctx := correlation.ContextWithClientName(context.Background(), "gitlab-shell-tests")
 
 	t.Run("successful route claim returns proxy info", func(t *testing.T) {
-		mock := &mockClassifyServer{}
-		addr, stop := startMockServer(t, mock)
+		mock := &topologytest.MockClassifyServer{}
+		addr, stop := topologytest.StartMockServer(t, mock)
 		defer stop()
 
 		client := NewClient(&Config{
@@ -164,15 +128,15 @@ func TestClient_Classify(t *testing.T) {
 		require.Equal(t, "cell-1.gitlab.com:443", result.GetProxy().GetAddress())
 
 		// Verify the request was constructed correctly
-		require.NotNil(t, mock.lastRequest.GetClassificationKey())
-		require.Equal(t, "my-group/my-project", mock.lastRequest.GetClaim().GetRoute())
-		require.Equal(t, pb.ClassifyType_UNSPECIFIED, mock.lastRequest.GetType())
-		require.Empty(t, mock.lastRequest.GetValue())
+		require.NotNil(t, mock.LastRequest.GetClassificationKey())
+		require.Equal(t, "my-group/my-project", mock.LastRequest.GetClaim().GetRoute())
+		require.Equal(t, pb.ClassifyType_UNSPECIFIED, mock.LastRequest.GetType())
+		require.Empty(t, mock.LastRequest.GetValue())
 	})
 
 	t.Run("successful SSH key claim returns proxy info", func(t *testing.T) {
-		mock := &mockClassifyServer{}
-		addr, stop := startMockServer(t, mock)
+		mock := &topologytest.MockClassifyServer{}
+		addr, stop := topologytest.StartMockServer(t, mock)
 		defer stop()
 
 		client := NewClient(&Config{
@@ -187,12 +151,12 @@ func TestClient_Classify(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
-		require.Equal(t, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ", mock.lastRequest.GetClaim().GetSshKey())
+		require.Equal(t, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ", mock.LastRequest.GetClaim().GetSshKey())
 	})
 
 	t.Run("successful project ID claim returns proxy info", func(t *testing.T) {
-		mock := &mockClassifyServer{}
-		addr, stop := startMockServer(t, mock)
+		mock := &topologytest.MockClassifyServer{}
+		addr, stop := topologytest.StartMockServer(t, mock)
 		defer stop()
 
 		client := NewClient(&Config{
@@ -207,14 +171,14 @@ func TestClient_Classify(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
-		require.Equal(t, int64(42), mock.lastRequest.GetClaim().GetProjectId())
+		require.Equal(t, int64(42), mock.LastRequest.GetClaim().GetProjectId())
 	})
 
 	t.Run("server error is propagated", func(t *testing.T) {
-		mock := &mockClassifyServer{
-			err: fmt.Errorf("internal server error"),
+		mock := &topologytest.MockClassifyServer{
+			Err: fmt.Errorf("internal server error"),
 		}
-		addr, stop := startMockServer(t, mock)
+		addr, stop := topologytest.StartMockServer(t, mock)
 		defer stop()
 
 		client := NewClient(&Config{
@@ -287,7 +251,7 @@ func TestClient_ClassifyWithTLS(t *testing.T) {
 	require.NoError(t, err)
 
 	server := grpc.NewServer()
-	pb.RegisterClassifyServiceServer(server, &mockClassifyServer{})
+	pb.RegisterClassifyServiceServer(server, &topologytest.MockClassifyServer{})
 	go func() { _ = server.Serve(lis) }()
 	defer server.Stop()
 
@@ -355,7 +319,7 @@ func TestPrometheusMetrics(t *testing.T) {
 	// TopologyRequestDurationSeconds (Histogram) does not support Reset().
 
 	// Successful request
-	addr, stop := startMockServer(t, &mockClassifyServer{})
+	addr, stop := topologytest.StartMockServer(t, &topologytest.MockClassifyServer{})
 	defer stop()
 
 	client := NewClient(&Config{Enabled: true, Address: addr, Timeout: 5 * time.Second})
@@ -370,7 +334,7 @@ func TestPrometheusMetrics(t *testing.T) {
 	require.Equal(t, 1, testutil.CollectAndCount(metrics.TopologyRequestDurationSeconds))
 
 	// Failed request (server error)
-	addrFail, stopFail := startMockServer(t, &mockClassifyServer{err: fmt.Errorf("error")})
+	addrFail, stopFail := topologytest.StartMockServer(t, &topologytest.MockClassifyServer{Err: fmt.Errorf("error")})
 	defer stopFail()
 
 	clientFail := NewClient(&Config{Enabled: true, Address: addrFail, Timeout: 5 * time.Second})
