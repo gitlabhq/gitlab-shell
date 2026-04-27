@@ -50,7 +50,9 @@ func (r *Resolver) Resolve(ctx context.Context, claim *types_proto.Claim) string
 	if resp.GetAction() == pb.ClassifyAction_PROXY && resp.GetProxy() != nil {
 		address := resp.GetProxy().GetAddress()
 		if address != "" {
-			address = r.scheme + "://" + address
+			if !strings.Contains(address, "://") {
+				address = r.scheme + "://" + address
+			}
 		}
 		return address
 	}
