@@ -195,7 +195,7 @@ func (c *Config) HTTPClient() (*client.HTTPClient, error) {
 
 // Close releases resources owned by the Config, such as the Topology Service
 // gRPC client. It is safe to call Close on a zero-value or partially
-// initialised Config. Callers should defer Close() after loading the config.
+// initialized Config. Callers should defer Close() after loading the config.
 func (c *Config) Close() error {
 	if c.TopologyClient != nil {
 		return c.TopologyClient.Close()
