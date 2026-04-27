@@ -280,14 +280,34 @@ func TestConnectionLoggerCorrelationIDMatchesContext(t *testing.T) {
 	require.NotEqual(t, processCorrelationID, perConnectionID,
 		"contextWithValues should mint a fresh correlation_id for each connection")
 
-	log.FromContext(ctx).InfoContext(ctx, "connection log line")
+	const marker = "connection log line"
+	log.FromContext(ctx).InfoContext(ctx, marker)
 
-	var entry map[string]any
-	require.NoError(t, json.Unmarshal(buf.Bytes(), &entry))
+	// Other goroutines in this package (server lifecycle tests, keepalives,
+	// etc.) can land log lines in slog.Default() between SetDefault and now,
+	// so locate our line by its message rather than assuming the buffer
+	// contains exactly one record.
+	entry := findJSONLogByMessage(t, buf.Bytes(), marker)
 
 	require.Equal(t, perConnectionID, entry["correlation_id"],
 		"log lines emitted during a connection must carry the per-connection correlation_id that outbound HTTP requests use, not the parent/process one")
 	require.Equal(t, serverEnd.RemoteAddr().String(), entry["remote_addr"])
+}
+
+func findJSONLogByMessage(t *testing.T, output []byte, msg string) map[string]any {
+	t.Helper()
+	for _, line := range bytes.Split(bytes.TrimRight(output, "\n"), []byte("\n")) {
+		if len(line) == 0 {
+			continue
+		}
+		var entry map[string]any
+		require.NoError(t, json.Unmarshal(line, &entry))
+		if entry["msg"] == msg {
+			return entry
+		}
+	}
+	t.Fatalf("no log entry with msg=%q found in:\n%s", msg, output)
+	return nil
 }
 
 func TestReadinessProbe(t *testing.T) {
