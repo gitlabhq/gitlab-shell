@@ -60,11 +60,11 @@ func (s *session) handle(ctx context.Context, requests <-chan *ssh.Request) (con
 
 	var err error
 	for req := range requests {
-		ctx = log.WithLogger(ctx, log.FromContext(ctx).With(
+		ctx = log.AppendFields(ctx,
 			slog.Int("bytesize", len(req.Payload)),
 			slog.String("type", req.Type),
 			slog.Bool("want_reply", req.WantReply),
-		))
+		)
 
 		log.FromContext(ctx).DebugContext(ctx, "session: handle: request received")
 

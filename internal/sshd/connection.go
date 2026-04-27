@@ -87,7 +87,7 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 	sconn, chans, reqs, err := ssh.NewServerConn(c.nconn, srvCfg)
 	if err != nil {
 		msg := "connection: initServerConn: failed to initialize SSH connection"
-		ctx = log.WithLogger(ctx, log.FromContext(ctx).With(log.ErrorMessage(err.Error()), slog.String("remote_addr", c.remoteAddr)))
+		ctx = log.AppendFields(ctx, log.ErrorMessage(err.Error()), slog.String("remote_addr", c.remoteAddr))
 
 		if strings.Contains(err.Error(), "no common algorithm for host key") || err.Error() == "EOF" {
 			log.FromContext(ctx).DebugContext(ctx, msg)
@@ -103,7 +103,7 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 }
 
 func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, chans <-chan ssh.NewChannel, handler channelHandler) {
-	requestCtx := log.WithLogger(ctx, log.FromContext(ctx).With(slog.String("remote_addr", c.remoteAddr)))
+	requestCtx := log.AppendFields(ctx, slog.String("remote_addr", c.remoteAddr))
 	for newChannel := range chans {
 		log.FromContext(requestCtx).InfoContext(requestCtx, "connection: handle: new channel requested", slog.String("channel_type", newChannel.ChannelType()))
 
@@ -161,7 +161,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 }
 
 func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn, ticker *time.Ticker) {
-	ctx = log.WithLogger(ctx, log.FromContext(ctx).With(slog.String("remote_addr", c.remoteAddr)))
+	ctx = log.AppendFields(ctx, slog.String("remote_addr", c.remoteAddr))
 
 	for {
 		select {

@@ -251,8 +251,8 @@ func TestCorrelationId(t *testing.T) {
 // The test exercises the exact two-step transformation from handleConn:
 //  1. contextWithValues(parent, nconn) — assigns a fresh per-connection
 //     correlation_id to the context
-//  2. log.WithLogger(ctx, log.FromContext(ctx).With(remote_addr)) — adds the
-//     remote_addr field to the logger
+//  2. log.AppendFields(ctx, remote_addr) — adds the remote_addr field to the
+//     logger
 //
 // A process-level parent context carrying an existing "process" correlation_id
 // in both the correlation value and the logger attr simulates what
@@ -273,7 +273,7 @@ func TestConnectionLoggerCorrelationIDMatchesContext(t *testing.T) {
 	t.Cleanup(func() { serverEnd.Close(); clientEnd.Close() })
 
 	ctx := contextWithValues(parent, serverEnd)
-	ctx = log.WithLogger(ctx, log.FromContext(ctx).With(slog.String("remote_addr", serverEnd.RemoteAddr().String())))
+	ctx = log.AppendFields(ctx, slog.String("remote_addr", serverEnd.RemoteAddr().String()))
 
 	perConnectionID := correlation.ExtractFromContext(ctx)
 	require.NotEmpty(t, perConnectionID)

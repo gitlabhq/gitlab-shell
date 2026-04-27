@@ -135,12 +135,12 @@ func (s *Server) listen(ctx context.Context) error {
 			ReadHeaderTimeout: time.Duration(s.Config.Server.ProxyHeaderTimeout),
 		}
 
-		ctx = log.WithLogger(ctx, log.FromContext(ctx).With(log.TCPAddress(sshListener.Addr().String())))
+		ctx = log.AppendFields(ctx, log.TCPAddress(sshListener.Addr().String()))
 		log.FromContext(ctx).InfoContext(ctx, "Proxy protocol is enabled")
 	}
 
 	if len(s.serverConfig.cfg.Server.PublicKeyAlgorithms) > 0 {
-		ctx = log.WithLogger(ctx, log.FromContext(ctx).With(slog.Any("supported_public_key_algorithms", s.serverConfig.cfg.Server.PublicKeyAlgorithms)))
+		ctx = log.AppendFields(ctx, slog.Any("supported_public_key_algorithms", s.serverConfig.cfg.Server.PublicKeyAlgorithms))
 	}
 
 	log.FromContext(ctx).InfoContext(ctx, "Listening for SSH connections")
@@ -214,7 +214,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	ctx, cancel := context.WithCancel(contextWithValues(ctx, nconn))
 	defer cancel()
 	remoteAddr := nconn.RemoteAddr().String()
-	ctx = log.WithLogger(ctx, log.FromContext(ctx).With(slog.String("remote_addr", remoteAddr)))
+	ctx = log.AppendFields(ctx, slog.String("remote_addr", remoteAddr))
 
 	go func() {
 		<-ctx.Done()

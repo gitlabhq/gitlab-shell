@@ -224,12 +224,12 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 	fingerprint := ssh.FingerprintSHA256(cert.SignatureKey)
 
 	// Enrich context early so all rejection paths include audit-relevant fields.
-	ctx = log.WithLogger(ctx, log.FromContext(ctx).With(
+	ctx = log.AppendFields(ctx,
 		slog.String("ssh_user", user),
 		slog.String("public_key_fingerprint", ssh.FingerprintSHA256(cert)),
 		slog.String("signing_ca_fingerprint", fingerprint),
 		slog.String("certificate_identity", cert.KeyId),
-	))
+	)
 
 	if cert.CertType != ssh.UserCert {
 		log.FromContext(ctx).WarnContext(ctx, "certificate rejected: not a user certificate",
@@ -251,7 +251,7 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 			return nil, fmt.Errorf("handleUserCertificate: %w", err)
 		}
 
-		ctx = log.WithLogger(ctx, log.FromContext(ctx).With(slog.String("certificate_username", cert.KeyId)))
+		ctx = log.AppendFields(ctx, slog.String("certificate_username", cert.KeyId))
 		log.FromContext(ctx).InfoContext(ctx, "user certificate is signed by a locally trusted CA (instance-level)")
 
 		// No namespace key = instance-wide access (no namespace restriction)
@@ -273,10 +273,10 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 		return nil, err
 	}
 
-	ctx = log.WithLogger(ctx, log.FromContext(ctx).With(
+	ctx = log.AppendFields(ctx,
 		slog.String("certificate_username", res.Username),
 		slog.String("certificate_namespace", res.Namespace),
-	))
+	)
 
 	log.FromContext(ctx).InfoContext(ctx, "user certificate is signed by a trusted key (group-level)")
 

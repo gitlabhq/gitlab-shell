@@ -17,13 +17,13 @@ import (
 // Audit is called conditionally during `git-receive-pack` and `git-upload-pack` to generate streaming audit events.
 // Errors are not propagated since this is more a logging process.
 func Audit(ctx context.Context, args *commandargs.Shell, c *config.Config, response *accessverifier.Response, packfileStats *pb.PackfileNegotiationStatistics) {
-	ctx = log.WithLogger(ctx, log.FromContext(ctx).With(
+	ctx = log.AppendFields(ctx,
 		slog.String("gl_repository", response.Repo),
 		slog.Any("command", args.CommandType),
 		log.GitLabUserName(response.Username),
 		slog.String("gl_key_type", response.KeyType),
 		slog.Int("gl_key_id", response.KeyID),
-	))
+	)
 
 	log.FromContext(ctx).DebugContext(ctx, "sending git audit event")
 

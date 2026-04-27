@@ -187,7 +187,7 @@ func TestSetupCorrelationIDStableAcrossRequest(t *testing.T) {
 			defer cancel()
 			log.FromContext(childCtx).InfoContext(childCtx, "child-cancel-ctx")
 
-			enrichedCtx := log.WithLogger(ctx, log.FromContext(ctx).With(slog.String("extra", "value")))
+			enrichedCtx := log.AppendFields(ctx, slog.String("extra", "value"))
 			log.FromContext(enrichedCtx).InfoContext(enrichedCtx, "enriched-ctx")
 
 			log.FromContext(ctx).InfoContext(ctx, "request-end")

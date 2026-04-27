@@ -29,17 +29,17 @@ func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 	start := time.Now()
 
 	response, err := rt.next.RoundTrip(request)
-	ctx = log.WithLogger(ctx, log.FromContext(ctx).With(
+	ctx = log.AppendFields(ctx,
 		log.HTTPMethod(request.Method),
 		log.HTTPURL(request.URL.String()),
 		log.DurationS(time.Since(start)),
-	))
+	)
 	if err != nil {
 		log.FromContext(ctx).ErrorContext(ctx, "Internal API unreachable", log.ErrorMessage(err.Error()))
 		return response, err
 	}
 
-	ctx = log.WithLogger(ctx, log.FromContext(ctx).With(log.HTTPStatusCode(response.StatusCode)))
+	ctx = log.AppendFields(ctx, log.HTTPStatusCode(response.StatusCode))
 
 	if response.StatusCode >= 400 {
 		log.FromContext(ctx).ErrorContext(ctx, "Internal API error")
@@ -47,7 +47,7 @@ func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 	}
 
 	if response.ContentLength >= 0 {
-		ctx = log.WithLogger(ctx, log.FromContext(ctx).With(slog.Int64("content_length_bytes", response.ContentLength)))
+		ctx = log.AppendFields(ctx, slog.Int64("content_length_bytes", response.ContentLength))
 	}
 	log.FromContext(ctx).InfoContext(ctx, "Finished HTTP request")
 	return response, nil
