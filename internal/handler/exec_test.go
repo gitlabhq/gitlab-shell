@@ -176,7 +176,7 @@ func TestPrepareContext(t *testing.T) {
 				&accessverifier.Response{
 					KeyID:    1,
 					KeyType:  "key",
-					UserID:   "6",
+					UserID:   "user-6",
 					Username: "jane.doe",
 					Gitaly: accessverifier.Gitaly{
 						Address: "tcp://localhost:9999",
@@ -199,7 +199,7 @@ func TestPrepareContext(t *testing.T) {
 			want: map[string]string{
 				"key_id":    "1",
 				"key_type":  "key",
-				"user_id":   "6",
+				"user_id":   "user-6",
 				"username":  "jane.doe",
 				"remote_ip": "10.0.0.1",
 			},

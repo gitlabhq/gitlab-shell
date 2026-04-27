@@ -67,7 +67,7 @@ func TestUploadArchive(t *testing.T) {
 				"gitaly-feature-inforef_uploadpack_cache": "false",
 				"x-gitlab-client-name":                    "gitlab-shell-tests-git-upload-archive",
 				"key_id":                                  "123",
-				"user_id":                                 "1",
+				"user_id":                                 "user-1",
 				"remote_ip":                               "127.0.0.1",
 				"key_type":                                "key",
 			} {

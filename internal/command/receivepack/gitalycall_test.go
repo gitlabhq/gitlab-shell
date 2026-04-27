@@ -76,7 +76,7 @@ func TestReceivePack(t *testing.T) {
 				require.NoError(t, err)
 
 				if tc.username != "" {
-					require.Equal(t, "ReceivePack: 1 "+repo, output.String())
+					require.Equal(t, "ReceivePack: user-1 "+repo, output.String())
 				} else {
 					require.Equal(t, "ReceivePack: key-123 "+repo, output.String())
 				}
@@ -86,7 +86,7 @@ func TestReceivePack(t *testing.T) {
 					"gitaly-feature-inforef_uploadpack_cache": "false",
 					"x-gitlab-client-name":                    "gitlab-shell-tests-git-receive-pack",
 					"key_id":                                  "123",
-					"user_id":                                 "1",
+					"user_id":                                 "user-1",
 					"remote_ip":                               "127.0.0.1",
 					"key_type":                                "key",
 				} {
