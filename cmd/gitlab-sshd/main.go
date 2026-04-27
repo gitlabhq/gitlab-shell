@@ -60,8 +60,9 @@ func main() {
 	if logCloser != nil {
 		defer logCloser.Close() //nolint:errcheck
 	}
-	slog.Default().InfoContext(ctx, "gitlab-sshd starting up...")
+	ctx = v2log.WithLogger(ctx, slog.Default())
 
+	v2log.FromContext(ctx).InfoContext(ctx, "gitlab-sshd starting up...")
 	overrideConfigFromEnvironment(cfg)
 	if err := isConfigSane(cfg); err != nil {
 		ctx = v2log.WithLogger(ctx, v2log.FromContext(ctx).With(v2log.ErrorMessage(err.Error())))
