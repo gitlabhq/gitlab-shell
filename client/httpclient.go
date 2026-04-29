@@ -32,7 +32,10 @@ const (
 // ErrCafileNotFound indicates that the specified CA file was not found
 var ErrCafileNotFound = errors.New("cafile not found")
 
-// HTTPClient provides an HTTP client with retry capabilities
+// HTTPClient provides an HTTP client with retry capabilities.
+// Fields other than Host must be safe to share across shallow copies,
+// because GitlabNetClient.WithHost creates a copy with a different Host
+// while sharing the same RetryableHTTP transport.
 type HTTPClient struct {
 	RetryableHTTP *retryablehttp.Client
 	Host          string

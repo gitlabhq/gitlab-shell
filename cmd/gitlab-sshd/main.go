@@ -73,6 +73,7 @@ func main() {
 	}
 
 	cfg.ApplyGlobalState()
+	defer cfg.Close() //nolint:errcheck
 	ctx, finished := command.Setup("gitlab-sshd", cfg)
 	defer finished()
 

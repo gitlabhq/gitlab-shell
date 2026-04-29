@@ -22,6 +22,9 @@ func TestExtractTopLevelNamespace(t *testing.T) {
 		{"", ""},
 		{"group", "group"},
 		{".git", ""},
+		{"//group/project.git", "group"},
+		{"///group/project.git", "group"},
+		{"//group", "group"},
 	}
 
 	for _, tc := range tests {

@@ -14,12 +14,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	pb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology/topologytest"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"google.golang.org/grpc"
-
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
 
 func TestNewClient(t *testing.T) {
