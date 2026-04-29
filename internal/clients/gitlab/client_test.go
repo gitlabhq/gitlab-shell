@@ -356,6 +356,48 @@ func TestGet_NetworkErrorReturnsAPIError(t *testing.T) {
 	require.Equal(t, "Internal API unreachable", apiErr.Msg)
 }
 
+func TestWithHost(t *testing.T) {
+	originalServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"source":"original"}`))
+	}))
+	defer originalServer.Close()
+
+	newHostServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"source":"new-host"}`))
+	}))
+	defer newHostServer.Close()
+
+	c := newTestClient(t, originalServer)
+
+	t.Run("clone sends requests to new host", func(t *testing.T) {
+		clone := c.WithHost(newHostServer.URL)
+
+		resp, err := clone.Get(context.Background(), "/check")
+		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
+
+		var dst struct {
+			Source string `json:"source"`
+		}
+		require.NoError(t, gitlab.ParseJSON(resp, &dst))
+		require.Equal(t, "new-host", dst.Source)
+	})
+
+	t.Run("original client is unaffected", func(t *testing.T) {
+		_ = c.WithHost(newHostServer.URL)
+
+		resp, err := c.Get(context.Background(), "/check")
+		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
+
+		var dst struct {
+			Source string `json:"source"`
+		}
+		require.NoError(t, gitlab.ParseJSON(resp, &dst))
+		require.Equal(t, "original", dst.Source)
+	})
+}
+
 func TestParseJSON_SuccessDecodes(t *testing.T) {
 	body := bytes.NewBufferString(`{"key":"value"}`)
 	resp := &http.Response{
