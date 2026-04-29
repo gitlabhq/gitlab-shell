@@ -40,7 +40,7 @@ func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testse
 func BuildAllowedWithGitalyHandlersAndRetryConfig(t *testing.T, gitalyAddress string, retryConfig map[string]interface{}) []testserver.TestRequestHandler {
 	body := map[string]interface{}{
 		"status":      true,
-		"gl_id":       "1",
+		"gl_id":       "user-1",
 		"gl_key_type": "key",
 		"gl_key_id":   123,
 		"gl_username": "alex-doe",
@@ -100,7 +100,7 @@ func BuildAllowedWithCustomActionsHandlers(t *testing.T) []testserver.TestReques
 			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := map[string]interface{}{
 					"status": true,
-					"gl_id":  "1",
+					"gl_id":  "user-1",
 					"payload": map[string]interface{}{
 						"action": "geo_proxy_to_primary",
 						"data": map[string]interface{}{

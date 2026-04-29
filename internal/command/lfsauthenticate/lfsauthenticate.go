@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"strconv"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
@@ -15,6 +14,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/lfsauthenticate"
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
@@ -77,16 +77,20 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserID)
 	if err != nil {
 		// return nothing just like Ruby's GitlabShell#lfs_authenticate does
-		userID, convErr := strconv.Atoi(accessResponse.UserID)
-		if convErr != nil {
-			slog.WarnContext(ctx, "lfsauthenticate: execute: failed to parse user_id", log.ErrorMessage(convErr.Error()))
-		}
-		slog.DebugContext(ctx, "lfsauthenticate: execute: LFS authentication failed",
+		attrs := []any{
 			slog.String("operation", operation),
 			slog.String("gl_repository", repo),
-			log.GitLabUserID(userID),
 			log.ErrorMessage(err.Error()),
-		)
+		}
+
+		glID, parseErr := gitlabnet.ParseGlID(accessResponse.UserID)
+		if parseErr != nil {
+			slog.WarnContext(ctx, "lfsauthenticate: execute: failed to parse user_id", log.ErrorMessage(parseErr.Error()))
+		} else if userID, ok := glID.UserID(); ok {
+			attrs = append(attrs, log.GitLabUserID(userID))
+		}
+
+		slog.DebugContext(ctx, "lfsauthenticate: execute: LFS authentication failed", attrs...)
 
 		return ctxWithLogData, nil
 	}

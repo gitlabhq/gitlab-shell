@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 
@@ -33,6 +35,50 @@ func ParseJSON(hr *http.Response, response interface{}) error {
 	}
 
 	return nil
+}
+
+// GlID represents a parsed GitLab gl_id identifier.
+// Use UserID() or DeployTokenID() to extract the typed value.
+type GlID struct {
+	userID        int
+	deployTokenID int
+}
+
+// UserID returns the numeric user ID and true if the gl_id represents a user.
+func (g *GlID) UserID() (int, bool) {
+	return g.userID, g.userID != 0
+}
+
+// DeployTokenID returns the numeric deploy token ID and true if the gl_id
+// represents a deploy token.
+func (g *GlID) DeployTokenID() (int, bool) {
+	return g.deployTokenID, g.deployTokenID != 0
+}
+
+// ParseGlID parses a GitLab gl_id string into its typed representation.
+//
+// Known gl_id formats (see https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/gl_id.rb):
+//   - "user-<N>"         → UserID() returns (N, true)
+//   - "deploy-token-<N>" → DeployTokenID() returns (N, true)
+//
+// Returns an error for unrecognized or malformed formats.
+func ParseGlID(glID string) (*GlID, error) {
+	switch {
+	case strings.HasPrefix(glID, "user-"):
+		id, err := strconv.Atoi(glID[len("user-"):])
+		if err != nil {
+			return nil, fmt.Errorf("invalid user gl_id %q: %w", glID, err)
+		}
+		return &GlID{userID: id}, nil
+	case strings.HasPrefix(glID, "deploy-token-"):
+		id, err := strconv.Atoi(glID[len("deploy-token-"):])
+		if err != nil {
+			return nil, fmt.Errorf("invalid deploy-token gl_id %q: %w", glID, err)
+		}
+		return &GlID{deployTokenID: id}, nil
+	default:
+		return nil, fmt.Errorf("unknown gl_id format %q", glID)
+	}
 }
 
 // ParseIP extracts and returns the IP address from a remote address string.

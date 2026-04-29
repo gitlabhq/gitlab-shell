@@ -17,6 +17,7 @@ import (
 	gitalyclient "gitlab.com/gitlab-org/gitaly/v18/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitaly"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 	"gitlab.com/gitlab-org/labkit/v2/log"
@@ -128,21 +129,25 @@ func (gc *GitalyCommand) PrepareContext(ctx context.Context, repository *pb.Repo
 
 // LogExecution logs the execution of a Git command
 func (gc *GitalyCommand) LogExecution(ctx context.Context, repository *pb.Repository, env sshenv.Env) {
-	userID, convErr := strconv.Atoi(gc.Response.UserID)
-	if convErr != nil {
-		slog.WarnContext(ctx, "handler: LogExecution: failed to parse user_id", log.ErrorMessage(convErr.Error()))
-	}
-	slog.InfoContext(ctx, "executing git command",
+	attrs := []any{
 		slog.String("command", gc.Command.ServiceName),
 		slog.String("gl_project_path", repository.GlProjectPath),
 		slog.String("gl_repository", repository.GlRepository),
-		log.GitLabUserID(userID),
 		log.GitLabUserName(gc.Response.Username),
 		slog.String("git_protocol", env.GitProtocolVersion),
 		log.RemoteIP(env.RemoteAddr),
 		slog.String("gl_key_type", gc.Response.KeyType),
 		slog.Int("gl_key_id", gc.Response.KeyID),
-	)
+	}
+
+	glID, err := gitlabnet.ParseGlID(gc.Response.UserID)
+	if err != nil {
+		slog.WarnContext(ctx, "handler: LogExecution: failed to parse user_id", log.ErrorMessage(err.Error()))
+	} else if userID, ok := glID.UserID(); ok {
+		attrs = append(attrs, log.GitLabUserID(userID))
+	}
+
+	slog.InfoContext(ctx, "executing git command", attrs...)
 }
 
 func withOutgoingMetadata(ctx context.Context, features map[string]string) context.Context {

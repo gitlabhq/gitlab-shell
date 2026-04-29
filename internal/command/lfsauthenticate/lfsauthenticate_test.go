@@ -65,7 +65,7 @@ func TestFailedRequests(t *testing.T) {
 }
 
 func TestLfsAuthenticateRequests(t *testing.T) {
-	userID := "123"
+	glID := "user-123"
 	operation := "upload"
 
 	requests := []testserver.TestRequestHandler{
@@ -80,7 +80,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 				assert.NoError(t, json.Unmarshal(b, &request))
 				assert.Equal(t, request.Operation, operation)
 
-				if request.UserID == userID {
+				if request.UserID == "123" {
 					body := map[string]interface{}{
 						"username":             "john",
 						"lfs_token":            "sometoken",
@@ -103,15 +103,15 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 				var request *accessverifier.Request
 				assert.NoError(t, json.Unmarshal(b, &request))
 
-				var glID string
+				var responseGlID string
 				if request.Username == "somename" {
-					glID = userID
+					responseGlID = glID
 				} else {
-					glID = "100"
+					responseGlID = "100"
 				}
 
 				body := map[string]interface{}{
-					"gl_id":       glID,
+					"gl_id":       responseGlID,
 					"status":      true,
 					"gl_username": "alex-doe",
 					"gitaly": map[string]interface{}{
