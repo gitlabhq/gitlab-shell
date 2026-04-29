@@ -17,7 +17,7 @@ import (
 // Audit is called conditionally during `git-receive-pack` and `git-upload-pack` to generate streaming audit events.
 // Errors are not propagated since this is more a logging process.
 func Audit(ctx context.Context, args *commandargs.Shell, c *config.Config, response *accessverifier.Response, packfileStats *pb.PackfileNegotiationStatistics) {
-	ctx = log.WithFields(ctx,
+	ctx = log.AppendFields(ctx,
 		slog.String("gl_repository", response.Repo),
 		slog.Any("command", args.CommandType),
 		log.GitLabUserName(response.Username),
@@ -25,11 +25,11 @@ func Audit(ctx context.Context, args *commandargs.Shell, c *config.Config, respo
 		slog.Int("gl_key_id", response.KeyID),
 	)
 
-	slog.DebugContext(ctx, "sending git audit event")
+	log.FromContext(ctx).DebugContext(ctx, "sending git audit event")
 
 	gitAuditClient, errOnlyLog := gitauditevent.NewClient(c)
 	if errOnlyLog != nil {
-		slog.ErrorContext(ctx, fmt.Sprintf("failed to create gitauditevent client: %v", errOnlyLog))
+		log.FromContext(ctx).ErrorContext(ctx, fmt.Sprintf("failed to create gitauditevent client: %v", errOnlyLog))
 		return
 	}
 
@@ -40,7 +40,7 @@ func Audit(ctx context.Context, args *commandargs.Shell, c *config.Config, respo
 		PackfileStats: packfileStats,
 	}, args)
 	if errOnlyLog != nil {
-		slog.ErrorContext(ctx, fmt.Sprintf("failed to audit git event: %v", errOnlyLog))
+		log.FromContext(ctx).ErrorContext(ctx, fmt.Sprintf("failed to audit git event: %v", errOnlyLog))
 		return
 	}
 }

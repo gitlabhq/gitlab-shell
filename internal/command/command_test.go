@@ -1,6 +1,10 @@
 package command
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"log/slog"
 	"os"
 	"os/exec"
 	"testing"
@@ -9,6 +13,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 func TestSetup(t *testing.T) {
@@ -98,6 +103,119 @@ func TestSetupWithUnreachableFeatureFlagService(t *testing.T) {
 	// Verify correlation ID is still set
 	correlationID := correlation.ExtractFromContext(ctx)
 	require.NotEmpty(t, correlationID, "correlation ID should be set")
+}
+
+func TestSetupAttachesCorrelationIDToLogger(t *testing.T) {
+	testCases := []struct {
+		name          string
+		additionalEnv map[string]string
+	}{
+		{name: "generates a new correlation ID when none is set"},
+		{
+			name:          "uses the correlation ID from the environment",
+			additionalEnv: map[string]string{"CORRELATION_ID": "abc123"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			addAdditionalEnv(t, tc.additionalEnv)
+
+			var buf bytes.Buffer
+			originalDefault := slog.Default()
+			slog.SetDefault(slog.New(slog.NewJSONHandler(&buf, nil)))
+			t.Cleanup(func() { slog.SetDefault(originalDefault) })
+
+			ctx, finished := Setup("foo", &config.Config{})
+			defer finished()
+
+			log.FromContext(ctx).InfoContext(ctx, "marker")
+
+			var entry map[string]any
+			require.NoError(t, json.Unmarshal(buf.Bytes(), &entry))
+
+			require.Equal(t, correlation.ExtractFromContext(ctx), entry["correlation_id"])
+			require.NotEmpty(t, entry["correlation_id"])
+		})
+	}
+}
+
+// TestSetupCorrelationIDStableAcrossRequest verifies that the correlation_id
+// established by Setup is attached to the context once per request and that
+// every log emission originating from that context — including emissions from
+// nested handlers that receive ctx by argument and from contexts derived via
+// WithCancel / log.WithLogger — shares the same value. Each request gets a
+// single correlation_id that never mutates mid-flow.
+func TestSetupCorrelationIDStableAcrossRequest(t *testing.T) {
+	testCases := []struct {
+		name          string
+		additionalEnv map[string]string
+	}{
+		{name: "new correlation ID generated"},
+		{
+			name:          "existing correlation ID from environment",
+			additionalEnv: map[string]string{"CORRELATION_ID": "fixed-request-id"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			addAdditionalEnv(t, tc.additionalEnv)
+
+			var buf bytes.Buffer
+			originalDefault := slog.Default()
+			slog.SetDefault(slog.New(slog.NewJSONHandler(&buf, nil)))
+			t.Cleanup(func() { slog.SetDefault(originalDefault) })
+
+			ctx, finished := Setup("test-service", &config.Config{})
+			defer finished()
+
+			expected := correlation.ExtractFromContext(ctx)
+			require.NotEmpty(t, expected)
+
+			// Simulate a request flow: the top-level handler logs, calls a
+			// nested handler that receives ctx, and later emits from a
+			// derived context (cancel + additional logger field).
+			nested := func(ctx context.Context) {
+				log.FromContext(ctx).InfoContext(ctx, "nested-handler")
+			}
+
+			log.FromContext(ctx).InfoContext(ctx, "request-start")
+			nested(ctx)
+
+			childCtx, cancel := context.WithCancel(ctx)
+			defer cancel()
+			log.FromContext(childCtx).InfoContext(childCtx, "child-cancel-ctx")
+
+			enrichedCtx := log.AppendFields(ctx, slog.String("extra", "value"))
+			log.FromContext(enrichedCtx).InfoContext(enrichedCtx, "enriched-ctx")
+
+			log.FromContext(ctx).InfoContext(ctx, "request-end")
+
+			ids := correlationIDsFromJSONLogs(t, buf.Bytes())
+			require.Len(t, ids, 5, "expected one log entry per emission")
+			for i, id := range ids {
+				require.Equalf(t, expected, id,
+					"log entry %d should carry the request's correlation_id", i)
+			}
+		})
+	}
+}
+
+func correlationIDsFromJSONLogs(t *testing.T, output []byte) []string {
+	t.Helper()
+	lines := bytes.Split(bytes.TrimRight(output, "\n"), []byte("\n"))
+	ids := make([]string, 0, len(lines))
+	for _, line := range lines {
+		if len(line) == 0 {
+			continue
+		}
+		var entry map[string]any
+		require.NoError(t, json.Unmarshal(line, &entry))
+		id, _ := entry["correlation_id"].(string)
+		ids = append(ids, id)
+	}
+	return ids
 }
 
 // addAdditionalEnv will configure additional environment values

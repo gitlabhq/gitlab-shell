@@ -21,6 +21,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 
 	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/v2/fields"
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
@@ -134,15 +135,15 @@ func (s *Server) listen(ctx context.Context) error {
 			ReadHeaderTimeout: time.Duration(s.Config.Server.ProxyHeaderTimeout),
 		}
 
-		ctx = log.WithFields(ctx, log.TCPAddress(sshListener.Addr().String()))
-		slog.InfoContext(ctx, "Proxy protocol is enabled")
+		ctx = log.AppendFields(ctx, log.TCPAddress(sshListener.Addr().String()))
+		log.FromContext(ctx).InfoContext(ctx, "Proxy protocol is enabled")
 	}
 
 	if len(s.serverConfig.cfg.Server.PublicKeyAlgorithms) > 0 {
-		ctx = log.WithFields(ctx, slog.Any("supported_public_key_algorithms", s.serverConfig.cfg.Server.PublicKeyAlgorithms))
+		ctx = log.AppendFields(ctx, slog.Any("supported_public_key_algorithms", s.serverConfig.cfg.Server.PublicKeyAlgorithms))
 	}
 
-	slog.InfoContext(ctx, "Listening for SSH connections")
+	log.FromContext(ctx).InfoContext(ctx, "Listening for SSH connections")
 
 	s.listener = sshListener
 
@@ -159,7 +160,7 @@ func (s *Server) serve(ctx context.Context) {
 				break
 			}
 
-			slog.WarnContext(ctx, "Failed to accept connection", log.ErrorMessage(err.Error()))
+			log.FromContext(ctx).WarnContext(ctx, "Failed to accept connection", log.ErrorMessage(err.Error()))
 			continue
 		}
 
@@ -186,7 +187,13 @@ func (s *Server) getStatus() status {
 }
 
 func contextWithValues(parent context.Context, nconn net.Conn) context.Context {
-	ctx := correlation.ContextWithCorrelation(parent, correlation.SafeRandomID())
+	correlationID := correlation.SafeRandomID()
+	ctx := correlation.ContextWithCorrelation(parent, correlationID)
+	// Seed a logger carrying the per-connection correlation_id so log lines
+	// emitted during this connection stay in sync with the value outbound HTTP
+	// requests propagate via X-Request-Id. Without this step the logger
+	// inherits the parent/process correlation_id and the two diverge.
+	ctx = log.WithLogger(ctx, slog.Default().With(slog.String(fields.CorrelationID, correlationID)))
 
 	// If we're dealing with a PROXY connection, register the original requester's IP
 	mconn, ok := nconn.(*proxyproto.Conn)
@@ -207,7 +214,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	ctx, cancel := context.WithCancel(contextWithValues(ctx, nconn))
 	defer cancel()
 	remoteAddr := nconn.RemoteAddr().String()
-	ctx = log.WithFields(ctx, slog.String("remote_addr", remoteAddr))
+	ctx = log.AppendFields(ctx, slog.String("remote_addr", remoteAddr))
 
 	go func() {
 		<-ctx.Done()
@@ -217,7 +224,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	// Prevent a panic in a single connection from taking out the whole server
 	defer func() {
 		if err := recover(); err != nil {
-			slog.ErrorContext(ctx, "panic handling session", slog.Any("recovered_error", err))
+			log.FromContext(ctx).ErrorContext(ctx, "panic handling session", slog.Any("recovered_error", err))
 			metrics.SliSshdSessionsErrorsTotal.Inc()
 		}
 	}()
@@ -246,7 +253,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	})
 
 	logData := extractLogDataFromContext(ctxWithLogData)
-	slog.InfoContext(ctx, "access: finish",
+	log.FromContext(ctx).InfoContext(ctx, "access: finish",
 		log.DurationS(time.Since(started)),
 		slog.Int64("written_bytes", logData.WrittenBytes),
 		slog.Any("meta", logData.Meta),

@@ -85,7 +85,7 @@ func setupFeatureFlagClient(ctx context.Context, serviceName string) (featurefla
 		HTTPClient: ffHTTPClient,
 	})
 	if err != nil {
-		slog.WarnContext(ctx, "feature flag client initialization failed", log.Error(err))
+		log.FromContext(ctx).WarnContext(ctx, "feature flag client initialization failed", log.Error(err))
 		return nil, nil
 	}
 
@@ -124,10 +124,11 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 
 	correlationID := correlation.ExtractFromContext(ctx)
 	if correlationID == "" {
-		correlationID := correlation.SafeRandomID()
+		correlationID = correlation.SafeRandomID()
 		ctx = correlation.ContextWithCorrelation(ctx, correlationID)
-		ctx = log.WithFields(ctx, slog.String(fields.CorrelationID, correlationID))
 	}
+
+	ctx = log.WithLogger(ctx, slog.Default().With(slog.String(fields.CorrelationID, correlationID)))
 
 	ffEvaluator, ffShutdown := setupFeatureFlagClient(ctx, serviceName)
 	if ffEvaluator != nil {
@@ -137,7 +138,7 @@ func Setup(serviceName string, config *config.Config) (context.Context, func()) 
 	return ctx, func() {
 		if ffShutdown != nil {
 			if err := ffShutdown(ctx); err != nil {
-				slog.WarnContext(ctx, "feature flag client shutdown error", log.Error(err))
+				log.FromContext(ctx).WarnContext(ctx, "feature flag client shutdown error", log.Error(err))
 			}
 		}
 		finished()

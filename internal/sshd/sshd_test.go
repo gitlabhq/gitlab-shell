@@ -1,8 +1,11 @@
 package sshd
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -20,6 +23,9 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
+	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/v2/fields"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 const (
@@ -233,6 +239,75 @@ func TestCorrelationId(t *testing.T) {
 	holdSession(t, client)
 
 	require.NotEqual(t, previousCorrelationID, correlationID)
+}
+
+// TestConnectionLoggerCorrelationIDMatchesContext verifies that the
+// per-connection ctx derivation performed at the top of handleConn keeps the
+// logger's correlation_id field in lockstep with the ctx's correlation value.
+// This is the invariant that keeps log lines emitted during a connection tied
+// to the same correlation_id that outbound HTTP requests propagate via the
+// X-Request-Id header.
+//
+// The test exercises the exact two-step transformation from handleConn:
+//  1. contextWithValues(parent, nconn) — assigns a fresh per-connection
+//     correlation_id to the context
+//  2. log.AppendFields(ctx, remote_addr) — adds the remote_addr field to the
+//     logger
+//
+// A process-level parent context carrying an existing "process" correlation_id
+// in both the correlation value and the logger attr simulates what
+// command.Setup produces at server startup, ensuring the test catches the
+// shadowing failure mode where the logger keeps emitting the parent's
+// correlation_id even after the per-connection ID is assigned.
+func TestConnectionLoggerCorrelationIDMatchesContext(t *testing.T) {
+	var buf bytes.Buffer
+	originalDefault := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&buf, nil)))
+	t.Cleanup(func() { slog.SetDefault(originalDefault) })
+
+	const processCorrelationID = "process-correlation-id"
+	parent := correlation.ContextWithCorrelation(context.Background(), processCorrelationID)
+	parent = log.WithLogger(parent, slog.Default().With(slog.String(fields.CorrelationID, processCorrelationID)))
+
+	serverEnd, clientEnd := net.Pipe()
+	t.Cleanup(func() { serverEnd.Close(); clientEnd.Close() })
+
+	ctx := contextWithValues(parent, serverEnd)
+	ctx = log.AppendFields(ctx, slog.String("remote_addr", serverEnd.RemoteAddr().String()))
+
+	perConnectionID := correlation.ExtractFromContext(ctx)
+	require.NotEmpty(t, perConnectionID)
+	require.NotEqual(t, processCorrelationID, perConnectionID,
+		"contextWithValues should mint a fresh correlation_id for each connection")
+
+	const marker = "connection log line"
+	log.FromContext(ctx).InfoContext(ctx, marker)
+
+	// Other goroutines in this package (server lifecycle tests, keepalives,
+	// etc.) can land log lines in slog.Default() between SetDefault and now,
+	// so locate our line by its message rather than assuming the buffer
+	// contains exactly one record.
+	entry := findJSONLogByMessage(t, buf.Bytes(), marker)
+
+	require.Equal(t, perConnectionID, entry["correlation_id"],
+		"log lines emitted during a connection must carry the per-connection correlation_id that outbound HTTP requests use, not the parent/process one")
+	require.Equal(t, serverEnd.RemoteAddr().String(), entry["remote_addr"])
+}
+
+func findJSONLogByMessage(t *testing.T, output []byte, msg string) map[string]any {
+	t.Helper()
+	for _, line := range bytes.Split(bytes.TrimRight(output, "\n"), []byte("\n")) {
+		if len(line) == 0 {
+			continue
+		}
+		var entry map[string]any
+		require.NoError(t, json.Unmarshal(line, &entry))
+		if entry["msg"] == msg {
+			return entry
+		}
+	}
+	t.Fatalf("no log entry with msg=%q found in:\n%s", msg, output)
+	return nil
 }
 
 func TestReadinessProbe(t *testing.T) {

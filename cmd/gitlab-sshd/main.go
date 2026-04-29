@@ -53,22 +53,23 @@ func main() {
 		var err error
 		cfg, err = config.NewFromDir(*configDir)
 		if err != nil {
-			v2log.New().ErrorContext(ctx, "failed to load configuration from specified directory", v2log.ErrorMessage(err.Error()))
+			slog.Default().ErrorContext(ctx, "failed to load configuration from specified directory", v2log.ErrorMessage(err.Error()))
 		}
 	}
 	logCloser := logger.ConfigureLogger(cfg)
 	if logCloser != nil {
 		defer logCloser.Close() //nolint:errcheck
 	}
-	slog.InfoContext(ctx, "gitlab-sshd starting up...")
+	ctx = v2log.WithLogger(ctx, slog.Default())
 
+	v2log.FromContext(ctx).InfoContext(ctx, "gitlab-sshd starting up...")
 	overrideConfigFromEnvironment(cfg)
 	if err := isConfigSane(cfg); err != nil {
-		ctx = v2log.WithFields(ctx, v2log.ErrorMessage(err.Error()))
+		ctx = v2log.AppendFields(ctx, v2log.ErrorMessage(err.Error()))
 		if *configDir == "" {
-			slog.ErrorContext(ctx, "no config-dir provided, using only environment variables")
+			v2log.FromContext(ctx).ErrorContext(ctx, "no config-dir provided, using only environment variables")
 		} else {
-			slog.ErrorContext(ctx, "configuration error")
+			v2log.FromContext(ctx).ErrorContext(ctx, "configuration error")
 		}
 	}
 
@@ -81,7 +82,7 @@ func main() {
 
 	server, err := sshd.NewServer(cfg)
 	if err != nil {
-		slog.ErrorContext(ctx, "Failed to start Gitlab built-in sshd", v2log.ErrorMessage(err.Error()))
+		v2log.FromContext(ctx).ErrorContext(ctx, "Failed to start Gitlab built-in sshd", v2log.ErrorMessage(err.Error()))
 	}
 
 	// Startup monitoring endpoint.
@@ -98,7 +99,7 @@ func main() {
 	gracefulShutdown(ctx, done, cfg, server, cancel)
 
 	if err := server.ListenAndServe(ctx); err != nil {
-		slog.ErrorContext(ctx, "GitLab built-in sshd failed to listen for new connections",
+		v2log.FromContext(ctx).ErrorContext(ctx, "GitLab built-in sshd failed to listen for new connections",
 			v2log.ErrorMessage(err.Error()))
 	}
 }
@@ -115,11 +116,11 @@ func gracefulShutdown(
 		signal.Reset(syscall.SIGINT, syscall.SIGTERM)
 
 		gracePeriod := time.Duration(cfg.Server.GracePeriod)
-		slog.InfoContext(ctx, fmt.Sprintf("Shutdown initiated with grace period: %f", gracePeriod.Seconds()),
+		v2log.FromContext(ctx).InfoContext(ctx, fmt.Sprintf("Shutdown initiated with grace period: %f", gracePeriod.Seconds()),
 			slog.String("signal", sig.String()))
 
 		if err := server.Shutdown(); err != nil {
-			slog.ErrorContext(ctx, "Error shutting down the server", v2log.ErrorMessage(err.Error()))
+			v2log.FromContext(ctx).ErrorContext(ctx, "Error shutting down the server", v2log.ErrorMessage(err.Error()))
 		}
 		<-time.After(gracePeriod)
 
@@ -135,7 +136,7 @@ func startupMonitoringEndpoint(ctx context.Context, cfg *config.Config, server *
 			monitoring.WithServeMux(server.MonitoringServeMux()),
 		)
 
-		slog.ErrorContext(ctx, "monitoring service raised an error", v2log.ErrorMessage(err.Error()))
+		v2log.FromContext(ctx).ErrorContext(ctx, "monitoring service raised an error", v2log.ErrorMessage(err.Error()))
 		panic(err)
 	}()
 }
