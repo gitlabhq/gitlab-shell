@@ -287,7 +287,56 @@ func TestGet_ForwardsRemoteIP(t *testing.T) {
 	require.Equal(t, "1.2.3.4", gotForwardedFor)
 }
 
-func TestGet_RetriesOn503(t *testing.T) {
+// TestGet_RetryPolicy pins the retry behavior to match the legacy
+// client.GitlabNetClient (hashicorp/go-retryablehttp with RetryMax=2):
+// 3 total attempts on transient 5xx and 429, single attempt on
+// terminal statuses including 501 (Not Implemented) and any 2xx/4xx.
+func TestGet_RetryPolicy(t *testing.T) {
+	cases := []struct {
+		name         string
+		serverStatus int
+		wantAttempts int
+	}{
+		{"429_retried", http.StatusTooManyRequests, 3},
+		{"500_retried", http.StatusInternalServerError, 3},
+		{"502_retried", http.StatusBadGateway, 3},
+		{"503_retried", http.StatusServiceUnavailable, 3},
+		{"504_retried", http.StatusGatewayTimeout, 3},
+		{"501_not_retried", http.StatusNotImplemented, 1},
+		{"200_not_retried", http.StatusOK, 1},
+		{"403_not_retried", http.StatusForbidden, 1},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			attempts := 0
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				attempts++
+				w.WriteHeader(tc.serverStatus)
+			}))
+			defer srv.Close()
+
+			c, err := gitlab.New(&gitlab.Config{
+				GitlabURL:          srv.URL,
+				Secret:             testSecret,
+				ReadTimeoutSeconds: 10,
+			})
+			require.NoError(t, err)
+
+			resp, err := c.Get(context.Background(), "/check")
+			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
+
+			require.Equal(t, tc.serverStatus, resp.StatusCode)
+			require.Equal(t, tc.wantAttempts, attempts)
+		})
+	}
+}
+
+// TestGet_RetryRecoversFromTransient5xx asserts that a transient failure
+// followed by success returns the success response — proving the retry
+// loop actually completes rather than just incrementing a counter.
+func TestGet_RetryRecoversFromTransient5xx(t *testing.T) {
 	attempts := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		attempts++
@@ -299,19 +348,13 @@ func TestGet_RetriesOn503(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	c, err := gitlab.New(&gitlab.Config{
-		GitlabURL:          srv.URL,
-		Secret:             testSecret,
-		ReadTimeoutSeconds: 10,
-	})
-	require.NoError(t, err)
-
+	c := newTestClient(t, srv)
 	resp, err := c.Get(context.Background(), "/check")
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
-	require.Equal(t, 3, attempts) // 2 failures + 1 success
+	require.Equal(t, 3, attempts)
 }
 
 func TestGet_NoForwardedIPWithoutContext(t *testing.T) {
