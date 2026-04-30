@@ -1,4 +1,4 @@
-.PHONY: validate verify test test_fancy coverage setup make_necessary_dirs build compile check clean install lint validate-log-fields
+.PHONY: validate verify test test_fancy acceptance-test coverage setup make_necessary_dirs build compile check clean install lint validate-log-fields
 
 FIPS_MODE ?= 0
 OS := $(shell uname | tr A-Z a-z)
@@ -78,7 +78,10 @@ ${GOTESTSUM_FILE}:
 test_race:
 	go test -race -timeout 1m -count 1 ./... -v
 
-coverage: 
+acceptance-test:
+	go test -tags=acceptance -count=1 -timeout=5m ./acceptance/...
+
+coverage:
 	[ -f cover.out ] && go tool cover -func cover.out
 
 lint:
