@@ -66,6 +66,7 @@ func TestGet_SetsRequiredHeaders(t *testing.T) {
 	defer func() { _ = resp.Body.Close() }()
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
+	require.NotNil(t, capturedReq, "expected the test handler to have been called")
 	require.Equal(t, "application/json", capturedReq.Header.Get("Content-Type"))
 	require.Equal(t, "GitLab-Shell", capturedReq.Header.Get("User-Agent"))
 	require.Equal(t, "/api/v4/internal/check", capturedReq.URL.Path)
@@ -396,6 +397,7 @@ func TestGet_NetworkErrorReturnsAPIError(t *testing.T) {
 
 	var apiErr *client.APIError
 	require.ErrorAs(t, err, &apiErr)
+	require.NotNil(t, apiErr)
 	require.Equal(t, "Internal API unreachable", apiErr.Msg)
 }
 
@@ -475,6 +477,7 @@ func TestParseJSON_4xxWithMessageReturnsAPIError(t *testing.T) {
 
 	var apiErr *client.APIError
 	require.ErrorAs(t, err, &apiErr)
+	require.NotNil(t, apiErr)
 	require.Equal(t, "Not allowed!", apiErr.Msg)
 }
 
@@ -487,5 +490,6 @@ func TestParseJSON_5xxWithoutMessageReturnsAPIError(t *testing.T) {
 
 	var apiErr *client.APIError
 	require.ErrorAs(t, err, &apiErr)
+	require.NotNil(t, apiErr)
 	require.Equal(t, "Internal API error (500)", apiErr.Msg)
 }
