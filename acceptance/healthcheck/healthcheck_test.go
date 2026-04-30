@@ -35,19 +35,28 @@ func TestHealthcheck_FFOff(t *testing.T) {
 		apiStatus    int
 		apiBody      string
 		wantExitZero bool
+		gateAuth     bool
 	}{
-		{"api_healthy", http.StatusOK, `{"api_version":"v4","redis":true}`, true},
-		{"api_500", http.StatusInternalServerError, `boom`, false},
+		{"api_healthy", http.StatusOK, `{"api_version":"v4","redis":true}`, true, true},
+		{"api_500", http.StatusInternalServerError, `boom`, false, false},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			api := fakes.New().Endpoint(&fakes.Endpoint{
-				Path:       "/api/v4/internal/check",
-				Methods:    []string{http.MethodGet, http.MethodPost},
-				StatusCode: tc.apiStatus,
-				Response:   tc.apiBody,
-			})
+			var captured *http.Request
+			var endpoint *fakes.Endpoint
+			if tc.gateAuth {
+				endpoint = authGatedHealthcheckEndpoint("test-secret", tc.apiBody, &captured)
+			} else {
+				endpoint = &fakes.Endpoint{
+					Path:       "/api/v4/internal/check",
+					Methods:    []string{http.MethodGet, http.MethodPost},
+					StatusCode: tc.apiStatus,
+					Response:   tc.apiBody,
+				}
+			}
+
+			api := fakes.New().Endpoint(endpoint)
 			api.Run(t)
 
 			res := acceptancetest.Run(t, acceptancetest.Config{
@@ -65,6 +74,11 @@ func TestHealthcheck_FFOff(t *testing.T) {
 				require.NotEqual(t, 0, res.ExitCode, "expected non-zero; stdout: %s\nstderr: %s", res.Stdout, res.Stderr)
 				require.Contains(t, res.Stderr, "Internal API available: FAILED")
 			}
+
+			if tc.gateAuth {
+				require.NotNil(t, captured, "expected request to be captured")
+				require.Equal(t, "GitLab-Shell", captured.Header.Get("User-Agent"))
+			}
 		})
 	}
 }
@@ -75,9 +89,10 @@ func TestHealthcheck_FFOn(t *testing.T) {
 		apiStatus    int
 		apiBody      string
 		wantExitZero bool
+		gateAuth     bool
 	}{
-		{"api_healthy", http.StatusOK, `{"api_version":"v4","redis":true}`, true},
-		{"api_500", http.StatusInternalServerError, `boom`, false},
+		{"api_healthy", http.StatusOK, `{"api_version":"v4","redis":true}`, true, true},
+		{"api_500", http.StatusInternalServerError, `boom`, false, false},
 	}
 
 	for _, tc := range cases {
@@ -85,12 +100,20 @@ func TestHealthcheck_FFOn(t *testing.T) {
 			ff := fakes.New().Endpoint(fakeFliptEndpoint(true))
 			ff.Run(t)
 
-			api := fakes.New().Endpoint(&fakes.Endpoint{
-				Path:       "/api/v4/internal/check",
-				Methods:    []string{http.MethodGet, http.MethodPost},
-				StatusCode: tc.apiStatus,
-				Response:   tc.apiBody,
-			})
+			var captured *http.Request
+			var endpoint *fakes.Endpoint
+			if tc.gateAuth {
+				endpoint = authGatedHealthcheckEndpoint("test-secret", tc.apiBody, &captured)
+			} else {
+				endpoint = &fakes.Endpoint{
+					Path:       "/api/v4/internal/check",
+					Methods:    []string{http.MethodGet, http.MethodPost},
+					StatusCode: tc.apiStatus,
+					Response:   tc.apiBody,
+				}
+			}
+
+			api := fakes.New().Endpoint(endpoint)
 			api.Run(t)
 
 			res := acceptancetest.Run(t, acceptancetest.Config{
@@ -105,6 +128,11 @@ func TestHealthcheck_FFOn(t *testing.T) {
 				require.Contains(t, res.Stdout, "Internal API available: OK")
 			} else {
 				require.NotEqual(t, 0, res.ExitCode, "expected non-zero; stdout: %s\nstderr: %s", res.Stdout, res.Stderr)
+			}
+
+			if tc.gateAuth {
+				require.NotNil(t, captured, "expected request to be captured")
+				require.Equal(t, "GitLab-Shell", captured.Header.Get("User-Agent"))
 			}
 		})
 	}
