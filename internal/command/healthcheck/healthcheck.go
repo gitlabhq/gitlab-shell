@@ -45,7 +45,13 @@ func (c *Command) runCheck(ctx context.Context) (*healthcheck.Response, error) {
 	// Check if we should use the new client via feature flag
 	evaluator := command.FeatureFlagEvaluatorFromContext(ctx)
 	if evaluator != nil {
-		evalCtx := openfeature.NewEvaluationContext("", nil)
+		// Use a stable targeting key so the Flipt provider doesn't bail
+		// out with TargetingKeyMissingResolutionError before making the
+		// HTTP call. Healthcheck is a per-process operation with no user
+		// identity, so a constant key is the right grain — flag rules
+		// keyed on this should target the gitlab-shell service rather
+		// than individual entities.
+		evalCtx := openfeature.NewEvaluationContext("healthcheck", nil)
 		details, err := evaluator.BooleanValueDetails(ctx, "use_new_healthcheck_client", false, evalCtx)
 		if err == nil && details.Value {
 			return c.runCheckNewClient(ctx)
