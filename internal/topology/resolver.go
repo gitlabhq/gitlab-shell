@@ -101,6 +101,17 @@ func (r *Resolver) ResolveByRoute(ctx context.Context, repoPath string) string {
 	return r.Resolve(ctx, RouteClaim(namespace))
 }
 
+// ResolveBySSHKey resolves a cell address from an SSH key identifier.
+// The key is an opaque string used as the Topology Service SSHKeyClaim:
+// typically a base64-encoded public key for /authorized_keys, or a CA
+// fingerprint for /authorized_certs.
+func (r *Resolver) ResolveBySSHKey(ctx context.Context, key string) string {
+	if r == nil || key == "" {
+		return ""
+	}
+	return r.Resolve(ctx, SSHKeyClaim(key))
+}
+
 // ExtractTopLevelNamespace returns the first path segment from a
 // repository path (the top-level namespace in GitLab).
 // Examples:

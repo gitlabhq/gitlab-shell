@@ -269,3 +269,64 @@ func TestResolveRetry(t *testing.T) {
 		})
 	}
 }
+
+func TestResolveBySSHKey(t *testing.T) {
+	t.Run("resolves cell address from SSH key", func(t *testing.T) {
+		mock := &topologytest.MockClassifyServer{
+			Response: &pb.ClassifyResponse{
+				Action: pb.ClassifyAction_PROXY,
+				Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+			},
+		}
+		addr, stop := topologytest.StartMockServer(t, mock)
+		defer stop()
+
+		client := NewClient(&Config{
+			Enabled: true,
+			Address: addr,
+			Timeout: 5 * time.Second,
+		})
+		defer client.Close()
+
+		resolver := NewResolver(client, "http://localhost")
+		result := resolver.ResolveBySSHKey(context.Background(), "ssh-rsa AAAAB3...")
+		require.Equal(t, "http://cell-2:8080", result)
+
+		// Verify the claim sent to the server used the SSH key
+		require.Equal(t, "ssh-rsa AAAAB3...", mock.LastRequest.GetClaim().GetSshKey())
+	})
+
+	t.Run("empty key returns empty string", func(t *testing.T) {
+		resolver := NewResolver(nil, "http://localhost")
+		result := resolver.ResolveBySSHKey(context.Background(), "")
+		require.Empty(t, result)
+	})
+
+	t.Run("nil client returns empty string", func(t *testing.T) {
+		resolver := NewResolver(nil, "http://localhost")
+		result := resolver.ResolveBySSHKey(context.Background(), "ssh-rsa AAAAB3...")
+		require.Empty(t, result)
+	})
+
+	t.Run("uses https scheme from gitlabURL", func(t *testing.T) {
+		mock := &topologytest.MockClassifyServer{
+			Response: &pb.ClassifyResponse{
+				Action: pb.ClassifyAction_PROXY,
+				Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+			},
+		}
+		addr, stop := topologytest.StartMockServer(t, mock)
+		defer stop()
+
+		client := NewClient(&Config{
+			Enabled: true,
+			Address: addr,
+			Timeout: 5 * time.Second,
+		})
+		defer client.Close()
+
+		resolver := NewResolver(client, "https://gitlab.example.com")
+		result := resolver.ResolveBySSHKey(context.Background(), "ssh-rsa AAAAB3...")
+		require.Equal(t, "https://cell-2:8080", result)
+	})
+}

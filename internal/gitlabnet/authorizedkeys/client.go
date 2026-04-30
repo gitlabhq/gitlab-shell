@@ -9,6 +9,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology"
 )
 
 const (
@@ -18,8 +19,9 @@ const (
 
 // Client represents a client for interacting with authorized keys
 type Client struct {
-	config *config.Config
-	client *client.GitlabNetClient
+	config   *config.Config
+	client   *client.GitlabNetClient
+	resolver *topology.Resolver
 }
 
 // Response represents the response structure for authorized keys
@@ -35,7 +37,11 @@ func NewClient(config *config.Config) (*Client, error) {
 		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
-	return &Client{config: config, client: client}, nil
+	return &Client{
+		config:   config,
+		client:   client,
+		resolver: topology.NewResolver(config.TopologyClient, config.GitlabURL),
+	}, nil
 }
 
 // GetByKey retrieves authorized keys by key
@@ -45,7 +51,13 @@ func (c *Client) GetByKey(ctx context.Context, key string) (*Response, error) {
 		return nil, err
 	}
 
-	response, err := c.client.Get(ctx, path)
+	// Route to the correct cell if Topology Service is configured
+	httpClient := c.client
+	if cellHost := c.resolver.ResolveBySSHKey(ctx, key); cellHost != "" {
+		httpClient = c.client.WithHost(cellHost)
+	}
+
+	response, err := httpClient.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}
