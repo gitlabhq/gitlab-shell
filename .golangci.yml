@@ -87,6 +87,7 @@ linters:
             - gitlab.com/gitlab-org/cells/topology-service
             - github.com/cenkalti/backoff
             - github.com/charmbracelet/git-lfs-transfer
+            - github.com/elliotforbes/fakes
             - github.com/git-lfs/pktline
             - github.com/golang-jwt/jwt
             - github.com/grpc-ecosystem/go-grpc-prometheus
