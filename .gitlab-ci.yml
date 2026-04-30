@@ -27,7 +27,7 @@ variables:
   DOCKER_VERSION: "20.10.15"
   GO_VERSION: "1.25"
   RUBY_VERSION: "3.3.11"
-  RUST_VERSION: "1.73"
+  RUST_VERSION: "1.89"
   UBI_VERSION: "9.5"
   GITLAB_ADVANCED_SAST_ENABLED: "true"
   IMAGE_TAG: "rubygems-3.5-git-2.49-exiftool-12.60"
