@@ -185,3 +185,87 @@ func TestResolveByRoute(t *testing.T) {
 		require.Equal(t, "https://cell-1:8080", result)
 	})
 }
+
+func TestResolveRetry(t *testing.T) {
+	tests := []struct {
+		name        string
+		mock        *topologytest.MockClassifyServer
+		cancelCtx   bool
+		expected    string
+		expectCalls int
+		maxCalls    bool // when true, use require.LessOrEqual instead of require.Equal for call count
+	}{
+		{
+			name: "retries on transient error and succeeds",
+			mock: &topologytest.MockClassifyServer{
+				Err:             fmt.Errorf("transient"),
+				ErrUntilAttempt: 2,
+				Response: &pb.ClassifyResponse{
+					Action: pb.ClassifyAction_PROXY,
+					Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+				},
+			},
+			expected:    "http://cell-2:8080",
+			expectCalls: 2,
+		},
+		{
+			name: "exhausts all retries and returns empty string",
+			mock: &topologytest.MockClassifyServer{
+				Err: fmt.Errorf("persistent failure"),
+			},
+			expected:    "",
+			expectCalls: int(classifyMaxAttempts),
+		},
+		{
+			name: "does not retry on successful non-PROXY response",
+			mock: &topologytest.MockClassifyServer{
+				Response: &pb.ClassifyResponse{
+					Action: pb.ClassifyAction_ACTION_UNSPECIFIED,
+				},
+			},
+			expected:    "",
+			expectCalls: 1,
+		},
+		{
+			name: "respects context cancellation during retry",
+			mock: &topologytest.MockClassifyServer{
+				Err: fmt.Errorf("fail"),
+			},
+			cancelCtx:   true,
+			expected:    "",
+			expectCalls: 1,
+			maxCalls:    true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			addr, stop := topologytest.StartMockServer(t, tc.mock)
+			defer stop()
+
+			client := NewClient(&Config{
+				Enabled: true,
+				Address: addr,
+				Timeout: 5 * time.Second,
+			})
+			defer client.Close()
+
+			ctx := context.Background()
+			if tc.cancelCtx {
+				var cancel context.CancelFunc
+				ctx, cancel = context.WithCancel(ctx)
+				cancel()
+			}
+
+			resolver := NewResolver(client, "http://localhost")
+			result := resolver.Resolve(ctx, RouteClaim("my-group"))
+			require.Equal(t, tc.expected, result)
+
+			if tc.maxCalls {
+				require.LessOrEqual(t, tc.mock.CallCount, tc.expectCalls)
+			} else {
+				require.Equal(t, tc.expectCalls, tc.mock.CallCount)
+			}
+		})
+	}
+}
