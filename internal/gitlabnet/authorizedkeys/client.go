@@ -51,13 +51,7 @@ func (c *Client) GetByKey(ctx context.Context, key string) (*Response, error) {
 		return nil, err
 	}
 
-	// Route to the correct cell if Topology Service is configured
-	httpClient := c.client
-	if cellHost := c.resolver.ResolveBySSHKey(ctx, key); cellHost != "" {
-		httpClient = c.client.WithHost(cellHost)
-	}
-
-	response, err := httpClient.Get(ctx, path)
+	response, err := c.resolver.ClientForSSHKey(ctx, c.client, key).Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}

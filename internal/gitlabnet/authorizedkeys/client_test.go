@@ -161,107 +161,70 @@ func TestGetByKeyWithTopologyService(t *testing.T) {
 		require.Equal(t, "key", mock.LastRequest.GetClaim().GetSshKey())
 	})
 
-	t.Run("falls back to default when TS is nil", func(t *testing.T) {
-		var defaultReceived bool
-		defaultServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			defaultReceived = true
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = fmt.Fprintf(w, `{"id": 1, "key": "public-key"}`)
-		}))
-		t.Cleanup(defaultServer.Close)
-
-		cfg := &config.Config{
-			GitlabURL:      defaultServer.URL,
-			Secret:         "test-secret",
-			TopologyClient: nil,
-		}
-
-		client, err := NewClient(cfg)
-		require.NoError(t, err)
-
-		result, err := client.GetByKey(context.Background(), "key")
-		require.NoError(t, err)
-		require.NotNil(t, result)
-		require.Equal(t, int64(1), result.ID)
-		require.True(t, defaultReceived, "request should have been sent to the default server")
-	})
-
-	t.Run("falls back to default when TS returns error", func(t *testing.T) {
-		var defaultReceived bool
-		defaultServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			defaultReceived = true
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = fmt.Fprintf(w, `{"id": 1, "key": "public-key"}`)
-		}))
-		t.Cleanup(defaultServer.Close)
-
-		mock := &topologytest.MockClassifyServer{
-			Err: fmt.Errorf("TS unavailable"),
-		}
-		tsAddr, tsStop := topologytest.StartMockServer(t, mock)
-		t.Cleanup(tsStop)
-
-		tsClient := topology.NewClient(&topology.Config{
-			Enabled: true,
-			Address: tsAddr,
-			Timeout: 5 * time.Second,
-		})
-		t.Cleanup(func() { _ = tsClient.Close() })
-
-		cfg := &config.Config{
-			GitlabURL:      defaultServer.URL,
-			Secret:         "test-secret",
-			TopologyClient: tsClient,
-		}
-
-		client, err := NewClient(cfg)
-		require.NoError(t, err)
-
-		result, err := client.GetByKey(context.Background(), "key")
-		require.NoError(t, err)
-		require.NotNil(t, result)
-		require.Equal(t, int64(1), result.ID)
-		require.True(t, defaultReceived, "request should have fallen back to the default server")
-	})
-
-	t.Run("falls back to default when TS returns non-PROXY action", func(t *testing.T) {
-		var defaultReceived bool
-		defaultServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			defaultReceived = true
-			w.Header().Set("Content-Type", "application/json")
-			_, _ = fmt.Fprintf(w, `{"id": 1, "key": "public-key"}`)
-		}))
-		t.Cleanup(defaultServer.Close)
-
-		mock := &topologytest.MockClassifyServer{
-			Response: &tspb.ClassifyResponse{
-				Action: tspb.ClassifyAction_ACTION_UNSPECIFIED,
+	t.Run("falls back to default", func(t *testing.T) {
+		tests := []struct {
+			name string
+			mock *topologytest.MockClassifyServer // nil means TS not configured
+		}{
+			{
+				name: "when TS is nil",
+				mock: nil,
+			},
+			{
+				name: "when TS returns error",
+				mock: &topologytest.MockClassifyServer{
+					Err: fmt.Errorf("TS unavailable"),
+				},
+			},
+			{
+				name: "when TS returns non-PROXY action",
+				mock: &topologytest.MockClassifyServer{
+					Response: &tspb.ClassifyResponse{
+						Action: tspb.ClassifyAction_ACTION_UNSPECIFIED,
+					},
+				},
 			},
 		}
-		tsAddr, tsStop := topologytest.StartMockServer(t, mock)
-		t.Cleanup(tsStop)
 
-		tsClient := topology.NewClient(&topology.Config{
-			Enabled: true,
-			Address: tsAddr,
-			Timeout: 5 * time.Second,
-		})
-		t.Cleanup(func() { _ = tsClient.Close() })
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				var defaultReceived bool
+				defaultServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+					defaultReceived = true
+					w.Header().Set("Content-Type", "application/json")
+					_, _ = fmt.Fprintf(w, `{"id": 1, "key": "public-key"}`)
+				}))
+				t.Cleanup(defaultServer.Close)
 
-		cfg := &config.Config{
-			GitlabURL:      defaultServer.URL,
-			Secret:         "test-secret",
-			TopologyClient: tsClient,
+				cfg := &config.Config{
+					GitlabURL: defaultServer.URL,
+					Secret:    "test-secret",
+				}
+
+				if tc.mock != nil {
+					tsAddr, tsStop := topologytest.StartMockServer(t, tc.mock)
+					t.Cleanup(tsStop)
+
+					tsClient := topology.NewClient(&topology.Config{
+						Enabled: true,
+						Address: tsAddr,
+						Timeout: 5 * time.Second,
+					})
+					t.Cleanup(func() { _ = tsClient.Close() })
+
+					cfg.TopologyClient = tsClient
+				}
+
+				client, err := NewClient(cfg)
+				require.NoError(t, err)
+
+				result, err := client.GetByKey(context.Background(), "key")
+				require.NoError(t, err)
+				require.NotNil(t, result)
+				require.Equal(t, int64(1), result.ID)
+				require.True(t, defaultReceived, "request should have been sent to the default server")
+			})
 		}
-
-		client, err := NewClient(cfg)
-		require.NoError(t, err)
-
-		result, err := client.GetByKey(context.Background(), "key")
-		require.NoError(t, err)
-		require.NotNil(t, result)
-		require.Equal(t, int64(1), result.ID)
-		require.True(t, defaultReceived, "request should have fallen back to the default server")
 	})
 }
 

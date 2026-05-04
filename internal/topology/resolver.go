@@ -9,6 +9,7 @@ import (
 	"github.com/cenkalti/backoff/v5"
 	pb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
 	types_proto "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto/types/v1"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
@@ -102,14 +103,39 @@ func (r *Resolver) ResolveByRoute(ctx context.Context, repoPath string) string {
 }
 
 // ResolveBySSHKey resolves a cell address from an SSH key identifier.
-// The key is an opaque string used as the Topology Service SSHKeyClaim:
-// typically a base64-encoded public key for /authorized_keys, or a CA
-// fingerprint for /authorized_certs.
+// The key is an opaque string used as the Topology Service SSHKeyClaim.
+// Callers are responsible for choosing a value that the Topology Service
+// recognizes; common values are:
+//   - the raw "key" string passed by sshd to /authorized_keys (base64 body), and
+//   - the SHA256 fingerprint of a signing CA (without the "SHA256:" prefix)
+//     for /authorized_certs.
+//
+// The Topology Service is the source of truth for how these claims are matched.
 func (r *Resolver) ResolveBySSHKey(ctx context.Context, key string) string {
-	if r == nil || key == "" {
+	if key == "" {
 		return ""
 	}
 	return r.Resolve(ctx, SSHKeyClaim(key))
+}
+
+// ClientForSSHKey returns httpClient routed to the cell resolved for key,
+// or the original httpClient if the Topology Service is not configured,
+// returns an error, or returns a non-PROXY action.
+func (r *Resolver) ClientForSSHKey(ctx context.Context, httpClient *client.GitlabNetClient, key string) *client.GitlabNetClient {
+	if host := r.ResolveBySSHKey(ctx, key); host != "" {
+		return httpClient.WithHost(host)
+	}
+	return httpClient
+}
+
+// ClientForRoute returns httpClient routed to the cell resolved for repoPath,
+// or the original httpClient if the Topology Service is not configured,
+// returns an error, or returns a non-PROXY action.
+func (r *Resolver) ClientForRoute(ctx context.Context, httpClient *client.GitlabNetClient, repoPath string) *client.GitlabNetClient {
+	if host := r.ResolveByRoute(ctx, repoPath); host != "" {
+		return httpClient.WithHost(host)
+	}
+	return httpClient
 }
 
 // ExtractTopLevelNamespace returns the first path segment from a

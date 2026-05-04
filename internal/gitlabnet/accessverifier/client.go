@@ -123,13 +123,7 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 
 	request.CheckIP = gitlabnet.ParseIP(args.Env.RemoteAddr)
 
-	// Route to the correct cell if Topology Service is configured
-	httpClient := c.client
-	if cellHost := c.resolver.ResolveByRoute(ctx, repo); cellHost != "" {
-		httpClient = c.client.WithHost(cellHost)
-	}
-
-	response, err := httpClient.Post(ctx, "/allowed", request)
+	response, err := c.resolver.ClientForRoute(ctx, c.client, repo).Post(ctx, "/allowed", request)
 	if err != nil {
 		return nil, err
 	}
