@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -121,4 +122,34 @@ func setup(t *testing.T, responseStatus int, keyID int, expectKeyID bool) *Clien
 	require.NoError(t, err)
 
 	return client
+}
+
+func TestAuditWithCellAddress(t *testing.T) {
+	var cellReceived bool
+	cellServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		cellReceived = true
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(cellServer.Close)
+
+	var defaultReceived bool
+	defaultServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		defaultReceived = true
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(defaultServer.Close)
+
+	client, err := NewClient(&config.Config{GitlabURL: defaultServer.URL})
+	require.NoError(t, err)
+
+	err = client.Audit(context.Background(), AuditParams{
+		Username:    testUsername,
+		KeyID:       testKeyID,
+		Repo:        testRepo,
+		CellAddress: cellServer.URL,
+	}, testArgs)
+	require.NoError(t, err)
+
+	require.True(t, cellReceived, "request should have been sent to the cell server")
+	require.False(t, defaultReceived, "request should NOT have been sent to the default server")
 }

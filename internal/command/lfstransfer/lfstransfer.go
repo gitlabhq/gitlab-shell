@@ -60,7 +60,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	))
 
 	slog.InfoContext(ctxWithLogData, "processing action", slog.Any("action", action))
-	auth, err := c.authenticate(ctx, operation, repo, accessResponse.UserID)
+	auth, err := c.authenticate(ctx, operation, repo, accessResponse.UserID, accessResponse.CellAddress)
 	if err != nil {
 		return ctxWithLogData, err
 	}
@@ -135,13 +135,13 @@ func (c *Command) verifyAccess(ctx context.Context, action commandargs.CommandTy
 	return cmd.Verify(ctx, action, repo)
 }
 
-func (c *Command) authenticate(ctx context.Context, operation string, repo string, userID string) (*GitlabAuthentication, error) {
+func (c *Command) authenticate(ctx context.Context, operation string, repo string, userID string, cellAddress string) (*GitlabAuthentication, error) {
 	client, err := lfsauthenticate.NewClient(c.Config, c.Args)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := client.Authenticate(ctx, operation, repo, userID)
+	response, err := client.Authenticate(ctx, operation, repo, userID, cellAddress)
 	if err != nil {
 		return nil, err
 	}

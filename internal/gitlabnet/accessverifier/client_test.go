@@ -361,6 +361,7 @@ func TestVerifyWithTopologyService(t *testing.T) {
 
 		require.True(t, cellReceived, "request should have been sent to the cell server")
 		require.False(t, defaultReceived, "request should NOT have been sent to the default server")
+		require.Equal(t, "http://"+cellAddress, result.CellAddress)
 	})
 
 	t.Run("falls back to default when TS is nil", func(t *testing.T) {
@@ -387,6 +388,7 @@ func TestVerifyWithTopologyService(t *testing.T) {
 		require.NotNil(t, result)
 		require.True(t, result.Success)
 		require.True(t, defaultReceived, "request should have been sent to the default server")
+		require.Empty(t, result.CellAddress)
 	})
 
 	t.Run("falls back to default when TS returns error", func(t *testing.T) {
@@ -426,6 +428,7 @@ func TestVerifyWithTopologyService(t *testing.T) {
 		require.NotNil(t, result)
 		require.True(t, result.Success)
 		require.True(t, defaultReceived, "request should have fallen back to the default server")
+		require.Empty(t, result.CellAddress)
 	})
 }
 

@@ -48,6 +48,7 @@ type AuditParams struct {
 	KeyID         int
 	Repo          string
 	PackfileStats *pb.PackfileNegotiationStatistics
+	CellAddress   string
 }
 
 // Audit sends an audit event to the GitLab API.
@@ -63,7 +64,12 @@ func (c *Client) Audit(ctx context.Context, params AuditParams, args *commandarg
 		Changes:       "_any",
 	}
 
-	response, err := c.client.Post(ctx, uri, request)
+	httpClient := c.client
+	if params.CellAddress != "" {
+		httpClient = httpClient.WithHost(params.CellAddress)
+	}
+
+	response, err := httpClient.Post(ctx, uri, request)
 	if err != nil {
 		return err
 	}

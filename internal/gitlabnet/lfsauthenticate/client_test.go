@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -86,7 +87,7 @@ func TestFailedRequests(t *testing.T) {
 
 			operation := tc.args.SSHArgs[2]
 
-			_, err = client.Authenticate(context.Background(), operation, repo, "")
+			_, err = client.Authenticate(context.Background(), operation, repo, "", "")
 			require.Error(t, err)
 
 			assert.Equal(t, tc.expectedOutput, err.Error())
@@ -119,7 +120,7 @@ func TestSuccessfulRequests(t *testing.T) {
 			client, err := NewClient(&config.Config{GitlabURL: url}, args)
 			require.NoError(t, err)
 
-			response, err := client.Authenticate(context.Background(), operation, repo, "")
+			response, err := client.Authenticate(context.Background(), operation, repo, "", "")
 			require.NoError(t, err)
 
 			expectedResponse := &Response{
@@ -132,4 +133,43 @@ func TestSuccessfulRequests(t *testing.T) {
 			assert.Equal(t, expectedResponse, response)
 		})
 	}
+}
+
+func TestAuthenticateWithCellAddress(t *testing.T) {
+	var cellReceived bool
+	cellServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		cellReceived = true
+		body := map[string]interface{}{
+			"username":             "john",
+			"lfs_token":            "sometoken",
+			"repository_http_path": "https://gitlab.com/repo/path",
+			"expires_in":           1800,
+		}
+		assert.NoError(t, json.NewEncoder(w).Encode(body))
+	}))
+	t.Cleanup(cellServer.Close)
+
+	var defaultReceived bool
+	defaultServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		defaultReceived = true
+		body := map[string]interface{}{
+			"username":             "john",
+			"lfs_token":            "sometoken",
+			"repository_http_path": "https://gitlab.com/repo/path",
+			"expires_in":           1800,
+		}
+		assert.NoError(t, json.NewEncoder(w).Encode(body))
+	}))
+	t.Cleanup(defaultServer.Close)
+
+	args := &commandargs.Shell{GitlabKeyID: keyID, CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, "download"}}
+	client, err := NewClient(&config.Config{GitlabURL: defaultServer.URL}, args)
+	require.NoError(t, err)
+
+	response, err := client.Authenticate(context.Background(), "download", repo, "", cellServer.URL)
+	require.NoError(t, err)
+	require.NotNil(t, response)
+
+	require.True(t, cellReceived, "request should have been sent to the cell server")
+	require.False(t, defaultReceived, "request should NOT have been sent to the default server")
 }

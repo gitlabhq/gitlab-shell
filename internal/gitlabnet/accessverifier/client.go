@@ -87,6 +87,13 @@ type Response struct {
 	// NeedAudit indicates whether git event should be audited to rails.
 	NeedAudit   bool            `json:"need_audit"`
 	RetryConfig json.RawMessage `json:"retry_config,omitempty"`
+	// CellAddress is the URL of the cell that owns this repository,
+	// resolved by the Topology Service during the /allowed call.
+	// Empty when the Topology Service is not configured or returned
+	// a non-PROXY response. Downstream API calls (e.g., /lfs_authenticate,
+	// /git_audit_event) should reuse this address instead of making
+	// additional Topology Service queries.
+	CellAddress string `json:"-"`
 }
 
 // NewClient creates a new instance of Client
@@ -123,13 +130,24 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 
 	request.CheckIP = gitlabnet.ParseIP(args.Env.RemoteAddr)
 
-	response, err := c.resolver.ClientForRoute(ctx, c.client, repo).Post(ctx, "/allowed", request)
+	cellAddress := c.resolver.ResolveByRoute(ctx, repo)
+	httpClient := c.client
+	if cellAddress != "" {
+		httpClient = httpClient.WithHost(cellAddress)
+	}
+
+	response, err := httpClient.Post(ctx, "/allowed", request)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = response.Body.Close() }()
 
-	return parse(response, args)
+	resp, err := parse(response, args)
+	if err != nil {
+		return nil, err
+	}
+	resp.CellAddress = cellAddress
+	return resp, nil
 }
 
 func parse(hr *http.Response, args *commandargs.Shell) (*Response, error) {
