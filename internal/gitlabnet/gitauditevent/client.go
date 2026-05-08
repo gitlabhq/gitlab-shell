@@ -40,6 +40,7 @@ type Request struct {
 	PackfileStats *pb.PackfileNegotiationStatistics `json:"packfile_stats,omitempty"`
 	CheckIP       string                            `json:"check_ip,omitempty"`
 	Changes       string                            `json:"changes"`
+	NamespacePath string                            `json:"namespace_path,omitempty"`
 }
 
 // AuditParams contains parameters for sending an audit event.
@@ -61,6 +62,7 @@ func (c *Client) Audit(ctx context.Context, params AuditParams, args *commandarg
 		PackfileStats: params.PackfileStats,
 		CheckIP:       gitlabnet.ParseIP(args.Env.RemoteAddr),
 		Changes:       "_any",
+		NamespacePath: args.Env.NamespacePath,
 	}
 
 	response, err := c.client.Post(ctx, uri, request)
