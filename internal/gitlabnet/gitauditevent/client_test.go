@@ -22,8 +22,9 @@ var (
 	testRepo                = "gitlab-org/gitlab-shell"
 	testPackfileWants int64 = 100
 	testPackfileHaves int64 = 100
+	testNamespacePath       = "gitlab-org"
 	testArgs                = &commandargs.Shell{
-		Env:         sshenv.Env{RemoteAddr: "18.245.0.42"},
+		Env:         sshenv.Env{RemoteAddr: "18.245.0.42", NamespacePath: testNamespacePath},
 		CommandType: "git-upload-pack",
 	}
 )
@@ -109,6 +110,7 @@ func setup(t *testing.T, responseStatus int, keyID int, expectKeyID bool) *Clien
 				assert.Equal(t, testPackfileWants, request.PackfileStats.Wants)
 				assert.Equal(t, testPackfileHaves, request.PackfileStats.Haves)
 				assert.Equal(t, "_any", request.Changes)
+				assert.Equal(t, testNamespacePath, request.NamespacePath)
 
 				w.WriteHeader(responseStatus)
 			},
