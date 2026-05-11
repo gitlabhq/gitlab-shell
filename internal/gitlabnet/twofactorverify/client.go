@@ -56,7 +56,8 @@ func (c *Client) VerifyOTP(ctx context.Context, args *commandargs.Shell, otp str
 		return err
 	}
 
-	response, err := c.resolver.ClientForUserArgs(ctx, c.client, args.UserArgs()).Post(ctx, "/two_factor_manual_otp_check", requestBody)
+	routed := c.resolver.ClientForUserArgs(ctx, c.client, args.UserArgs())
+	response, err := routed.Client.Post(ctx, "/two_factor_manual_otp_check", requestBody)
 	if err != nil {
 		return err
 	}
@@ -72,7 +73,8 @@ func (c *Client) PushAuth(ctx context.Context, args *commandargs.Shell) error {
 		return err
 	}
 
-	response, err := c.resolver.ClientForUserArgs(ctx, c.client, args.UserArgs()).Post(ctx, "/two_factor_push_otp_check", requestBody)
+	routed := c.resolver.ClientForUserArgs(ctx, c.client, args.UserArgs())
+	response, err := routed.Client.Post(ctx, "/two_factor_push_otp_check", requestBody)
 	if err != nil {
 		return err
 	}

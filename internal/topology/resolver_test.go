@@ -98,14 +98,14 @@ func TestResolve(t *testing.T) {
 			defer client.Close()
 
 			resolver := NewResolver(client, tc.gitlabURL)
-			result := resolver.Resolve(context.Background(), RouteClaim("my-group"))
+			result := resolver.resolve(context.Background(), RouteClaim("my-group"))
 			require.Equal(t, tc.expected, result)
 		})
 	}
 
 	t.Run("nil client returns empty string", func(t *testing.T) {
 		resolver := NewResolver(nil, "http://localhost")
-		result := resolver.Resolve(context.Background(), RouteClaim("my-group"))
+		result := resolver.resolve(context.Background(), RouteClaim("my-group"))
 		require.Empty(t, result)
 	})
 
@@ -122,7 +122,7 @@ func TestResolve(t *testing.T) {
 		defer client.Close()
 
 		resolver := NewResolver(client, "http://localhost")
-		result := resolver.Resolve(context.Background(), nil)
+		result := resolver.resolve(context.Background(), nil)
 		require.Empty(t, result)
 	})
 }
@@ -146,7 +146,7 @@ func TestResolveByRoute(t *testing.T) {
 		defer client.Close()
 
 		resolver := NewResolver(client, "http://localhost")
-		result := resolver.ResolveByRoute(context.Background(), "group/project.git")
+		result := resolver.resolveByRoute(context.Background(), "group/project.git")
 		require.Equal(t, "http://cell-1:8080", result)
 
 		// Verify the claim sent to the server used just the top-level namespace
@@ -155,13 +155,13 @@ func TestResolveByRoute(t *testing.T) {
 
 	t.Run("empty repo path returns empty string", func(t *testing.T) {
 		resolver := NewResolver(nil, "")
-		result := resolver.ResolveByRoute(context.Background(), "")
+		result := resolver.resolveByRoute(context.Background(), "")
 		require.Empty(t, result)
 	})
 
 	t.Run("nil client returns empty string", func(t *testing.T) {
 		resolver := NewResolver(nil, "http://localhost")
-		result := resolver.ResolveByRoute(context.Background(), "group/project.git")
+		result := resolver.resolveByRoute(context.Background(), "group/project.git")
 		require.Empty(t, result)
 	})
 
@@ -183,7 +183,7 @@ func TestResolveByRoute(t *testing.T) {
 		defer client.Close()
 
 		resolver := NewResolver(client, "https://gitlab.example.com")
-		result := resolver.ResolveByRoute(context.Background(), "group/project.git")
+		result := resolver.resolveByRoute(context.Background(), "group/project.git")
 		require.Equal(t, "https://cell-1:8080", result)
 	})
 }
@@ -292,7 +292,7 @@ func TestResolveRetry(t *testing.T) {
 			}
 
 			resolver := NewResolver(client, "http://localhost")
-			result := resolver.Resolve(ctx, RouteClaim("my-group"))
+			result := resolver.resolve(ctx, RouteClaim("my-group"))
 			require.Equal(t, tc.expected, result)
 
 			if tc.maxCalls {
@@ -323,7 +323,7 @@ func TestResolveBySSHKey(t *testing.T) {
 		defer client.Close()
 
 		resolver := NewResolver(client, "http://localhost")
-		result := resolver.ResolveBySSHKey(context.Background(), "ssh-rsa AAAAB3...")
+		result := resolver.resolveBySSHKey(context.Background(), "ssh-rsa AAAAB3...")
 		require.Equal(t, "http://cell-2:8080", result)
 
 		// Verify the claim sent to the server used the SSH key
@@ -332,13 +332,13 @@ func TestResolveBySSHKey(t *testing.T) {
 
 	t.Run("empty key returns empty string", func(t *testing.T) {
 		resolver := NewResolver(nil, "http://localhost")
-		result := resolver.ResolveBySSHKey(context.Background(), "")
+		result := resolver.resolveBySSHKey(context.Background(), "")
 		require.Empty(t, result)
 	})
 
 	t.Run("nil client returns empty string", func(t *testing.T) {
 		resolver := NewResolver(nil, "http://localhost")
-		result := resolver.ResolveBySSHKey(context.Background(), "ssh-rsa AAAAB3...")
+		result := resolver.resolveBySSHKey(context.Background(), "ssh-rsa AAAAB3...")
 		require.Empty(t, result)
 	})
 
@@ -360,7 +360,7 @@ func TestResolveBySSHKey(t *testing.T) {
 		defer client.Close()
 
 		resolver := NewResolver(client, "https://gitlab.example.com")
-		result := resolver.ResolveBySSHKey(context.Background(), "ssh-rsa AAAAB3...")
+		result := resolver.resolveBySSHKey(context.Background(), "ssh-rsa AAAAB3...")
 		require.Equal(t, "https://cell-2:8080", result)
 	})
 }
@@ -384,7 +384,7 @@ func TestResolveByUserArgs(t *testing.T) {
 		defer client.Close()
 
 		resolver := NewResolver(client, "http://localhost")
-		result := resolver.ResolveByUserArgs(context.Background(), UserArgs{Username: "jane-doe"})
+		result := resolver.resolveByUserArgs(context.Background(), UserArgs{Username: "jane-doe"})
 		require.Equal(t, "http://cell-2:8080", result)
 
 		// Verify the claim sent to the server used the username
@@ -403,7 +403,7 @@ func TestResolveByUserArgs(t *testing.T) {
 	for _, tc := range fallbackTests {
 		t.Run(tc.name+" returns empty string", func(t *testing.T) {
 			resolver := NewResolver(nil, "http://localhost")
-			result := resolver.ResolveByUserArgs(context.Background(), tc.args)
+			result := resolver.resolveByUserArgs(context.Background(), tc.args)
 			require.Empty(t, result)
 		})
 	}
@@ -426,7 +426,7 @@ func TestResolveByUserArgs(t *testing.T) {
 		defer client.Close()
 
 		resolver := NewResolver(client, "http://localhost")
-		result := resolver.ResolveByUserArgs(context.Background(), UserArgs{KeyID: "123"})
+		result := resolver.resolveByUserArgs(context.Background(), UserArgs{KeyID: "123"})
 		require.Empty(t, result)
 
 		// Verify the Topology Service was never contacted
@@ -435,7 +435,7 @@ func TestResolveByUserArgs(t *testing.T) {
 
 	t.Run("nil resolver returns empty string", func(t *testing.T) {
 		var resolver *Resolver
-		result := resolver.ResolveByUserArgs(context.Background(), UserArgs{Username: "jane-doe"})
+		result := resolver.resolveByUserArgs(context.Background(), UserArgs{Username: "jane-doe"})
 		require.Empty(t, result)
 	})
 
@@ -457,7 +457,7 @@ func TestResolveByUserArgs(t *testing.T) {
 		defer client.Close()
 
 		resolver := NewResolver(client, "https://gitlab.example.com")
-		result := resolver.ResolveByUserArgs(context.Background(), UserArgs{Username: "jane-doe"})
+		result := resolver.resolveByUserArgs(context.Background(), UserArgs{Username: "jane-doe"})
 		require.Equal(t, "https://cell-2:8080", result)
 	})
 }
