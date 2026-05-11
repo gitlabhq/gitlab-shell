@@ -11,6 +11,8 @@ import (
 	types_proto "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto/types/v1"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/labkit/v2/log"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -55,7 +57,11 @@ func (r *Resolver) Resolve(ctx context.Context, claim *types_proto.Claim) string
 	b.MaxInterval = classifyMaxInterval
 
 	resp, err := backoff.Retry(ctx, func() (*pb.ClassifyResponse, error) {
-		return r.client.Classify(ctx, claim)
+		resp, err := r.client.Classify(ctx, claim)
+		if err != nil && !isRetryableError(err) {
+			return resp, backoff.Permanent(err)
+		}
+		return resp, err
 	},
 		backoff.WithBackOff(b),
 		backoff.WithMaxTries(classifyMaxAttempts),
@@ -174,6 +180,25 @@ func (r *Resolver) ClientForUserArgs(ctx context.Context, httpClient *client.Git
 		return httpClient.WithHost(host)
 	}
 	return httpClient
+}
+
+// isRetryableError returns true if the gRPC error is transient and the
+// request should be retried. Non-gRPC errors are assumed retryable
+// (e.g., connection failures).
+func isRetryableError(err error) bool {
+	s, ok := status.FromError(err)
+	if !ok {
+		// Not a gRPC status error (e.g., connection error) — retry.
+		return true
+	}
+
+	switch s.Code() {
+	case codes.Unavailable, codes.ResourceExhausted, codes.Aborted,
+		codes.Internal, codes.DeadlineExceeded, codes.Unknown:
+		return true
+	default:
+		return false
+	}
 }
 
 // ExtractTopLevelNamespace returns the first path segment from a
