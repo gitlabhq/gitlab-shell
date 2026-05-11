@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
@@ -44,9 +45,18 @@ func NewClient(config *config.Config) (*Client, error) {
 	}, nil
 }
 
-// GetByKey retrieves authorized keys by key
+// GetByKey retrieves authorized keys by key.
+// The key may be in full authorized_keys format ("ssh-ed25519 AAAAC3...")
+// from gitlab-sshd or just the base64 body ("AAAAC3...") from AuthorizedKeysCommand.
+// The full key is forwarded to the Topology Service claim; only the base64 body
+// is sent to the Rails API query parameter.
 func (c *Client) GetByKey(ctx context.Context, key string) (*Response, error) {
-	path, err := pathWithKey(key)
+	keyBody := key
+	if _, body, found := strings.Cut(key, " "); found {
+		keyBody = body
+	}
+
+	path, err := pathWithKey(keyBody)
 	if err != nil {
 		return nil, err
 	}

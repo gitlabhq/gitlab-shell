@@ -150,7 +150,7 @@ func TestGetByKeyWithTopologyService(t *testing.T) {
 		client, err := NewClient(cfg)
 		require.NoError(t, err)
 
-		result, err := client.GetByKey(context.Background(), "key")
+		result, err := client.GetByKey(context.Background(), "ssh-ed25519 key")
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, int64(1), result.ID)
@@ -158,7 +158,51 @@ func TestGetByKeyWithTopologyService(t *testing.T) {
 		require.True(t, cellReceived, "request should have been sent to the cell server")
 		require.False(t, defaultReceived, "request should NOT have been sent to the default server")
 
-		require.Equal(t, "key", mock.LastRequest.GetClaim().GetSshKey())
+		require.Equal(t, "ssh-ed25519 key", mock.LastRequest.GetClaim().GetSshKey())
+	})
+
+	t.Run("handles base64-only key from AuthorizedKeysCommand", func(t *testing.T) {
+		var cellReceived bool
+		cellServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			cellReceived = true
+			assert.Equal(t, "AAAAC3base64body", r.URL.Query().Get("key"))
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = fmt.Fprintf(w, `{"id": 1, "key": "public-key"}`)
+		}))
+		t.Cleanup(cellServer.Close)
+
+		cellAddress := strings.TrimPrefix(cellServer.URL, "http://")
+		mock := &topologytest.MockClassifyServer{
+			Response: &tspb.ClassifyResponse{
+				Action: tspb.ClassifyAction_PROXY,
+				Proxy:  &tspb.ProxyInfo{Address: cellAddress},
+			},
+		}
+		tsAddr, tsStop := topologytest.StartMockServer(t, mock)
+		t.Cleanup(tsStop)
+
+		tsClient := topology.NewClient(&topology.Config{
+			Enabled: true,
+			Address: tsAddr,
+			Timeout: 5 * time.Second,
+		})
+		t.Cleanup(func() { _ = tsClient.Close() })
+
+		cfg := &config.Config{
+			GitlabURL:      cellServer.URL,
+			Secret:         "test-secret",
+			TopologyClient: tsClient,
+		}
+
+		client, err := NewClient(cfg)
+		require.NoError(t, err)
+
+		result, err := client.GetByKey(context.Background(), "AAAAC3base64body")
+		require.NoError(t, err)
+		require.NotNil(t, result)
+
+		require.True(t, cellReceived)
+		require.Equal(t, "AAAAC3base64body", mock.LastRequest.GetClaim().GetSshKey())
 	})
 
 	t.Run("falls back to default", func(t *testing.T) {

@@ -207,7 +207,9 @@ func (s *serverConfig) handleUserKey(ctx context.Context, user string, key ssh.P
 		return nil, fmt.Errorf("DSA is prohibited")
 	}
 
-	res, err := s.authorizedKeysClient.GetByKey(ctx, base64.RawStdEncoding.EncodeToString(key.Marshal()))
+	keyBody := base64.RawStdEncoding.EncodeToString(key.Marshal())
+	fullKey := key.Type() + " " + keyBody
+	res, err := s.authorizedKeysClient.GetByKey(ctx, fullKey)
 	if err != nil {
 		return nil, err
 	}
