@@ -30,6 +30,31 @@ const (
 	defaultReadTimeout = 300 * time.Second
 )
 
+// defaultRetryConfig mirrors the legacy client.GitlabNetClient retry policy
+// (hashicorp/go-retryablehttp with RetryMax=2): three total attempts, retries
+// on transient network errors and on all 5xx codes except 501 Not Implemented,
+// plus 429 Too Many Requests. Backoff caps at 15s to match the old client.
+var defaultRetryConfig = &httpclient.RetryConfig{
+	MaxAttempts:     3,
+	RetryableStatus: buildRetryableStatuses(),
+	RetryOnError:    true,
+	BaseDelay:       time.Second,
+	MaxDelay:        15 * time.Second,
+}
+
+// buildRetryableStatuses returns the set of HTTP status codes that should
+// trigger a retry: 429 plus all 5xx except 501 Not Implemented.
+func buildRetryableStatuses() []int {
+	statuses := []int{http.StatusTooManyRequests}
+	for code := 500; code < 600; code++ {
+		if code == http.StatusNotImplemented {
+			continue
+		}
+		statuses = append(statuses, code)
+	}
+	return statuses
+}
+
 // Config holds the configuration for the GitLab internal API client.
 type Config struct {
 	// GitlabURL is the base URL of the GitLab instance.
@@ -172,7 +197,7 @@ func (c *Client) do(ctx context.Context, method, apiPath string, data any) (*htt
 		return nil, err
 	}
 
-	resp, err := c.inner.DoWithRetry(req, nil)
+	resp, err := c.inner.DoWithRetry(req, defaultRetryConfig)
 	if err != nil {
 		slog.ErrorContext(ctx, "Internal API unreachable", lablog.ErrorMessage(err.Error()))
 		return nil, &client.APIError{Msg: "Internal API unreachable"}
