@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 	pb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology/topologytest"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestExtractTopLevelNamespace(t *testing.T) {
@@ -236,6 +238,38 @@ func TestResolveRetry(t *testing.T) {
 			expectCalls: 1,
 			maxCalls:    true,
 		},
+		{
+			name: "does not retry on NotFound error",
+			mock: &topologytest.MockClassifyServer{
+				Err: status.Errorf(codes.NotFound, "claim not found"),
+			},
+			expected:    "",
+			expectCalls: 1,
+		},
+		{
+			name: "does not retry on PermissionDenied error",
+			mock: &topologytest.MockClassifyServer{
+				Err: status.Errorf(codes.PermissionDenied, "permission denied"),
+			},
+			expected:    "",
+			expectCalls: 1,
+		},
+		{
+			name: "does not retry on InvalidArgument error",
+			mock: &topologytest.MockClassifyServer{
+				Err: status.Errorf(codes.InvalidArgument, "invalid argument"),
+			},
+			expected:    "",
+			expectCalls: 1,
+		},
+		{
+			name: "retries on Unavailable error",
+			mock: &topologytest.MockClassifyServer{
+				Err: status.Errorf(codes.Unavailable, "service unavailable"),
+			},
+			expected:    "",
+			expectCalls: int(classifyMaxAttempts),
+		},
 	}
 
 	for _, tc := range tests {
@@ -425,5 +459,45 @@ func TestResolveByUserArgs(t *testing.T) {
 		resolver := NewResolver(client, "https://gitlab.example.com")
 		result := resolver.ResolveByUserArgs(context.Background(), UserArgs{Username: "jane-doe"})
 		require.Equal(t, "https://cell-2:8080", result)
+	})
+}
+
+func TestIsRetryableError(t *testing.T) {
+	retryableCodes := []codes.Code{
+		codes.Unavailable,
+		codes.ResourceExhausted,
+		codes.Aborted,
+		codes.Internal,
+		codes.DeadlineExceeded,
+		codes.Unknown,
+	}
+
+	for _, code := range retryableCodes {
+		t.Run(fmt.Sprintf("%s is retryable", code), func(t *testing.T) {
+			require.True(t, isRetryableError(status.Errorf(code, "test")))
+		})
+	}
+
+	nonRetryableCodes := []codes.Code{
+		codes.NotFound,
+		codes.PermissionDenied,
+		codes.InvalidArgument,
+		codes.Unauthenticated,
+		codes.AlreadyExists,
+		codes.FailedPrecondition,
+		codes.Unimplemented,
+		codes.OutOfRange,
+		codes.DataLoss,
+		codes.Canceled,
+	}
+
+	for _, code := range nonRetryableCodes {
+		t.Run(fmt.Sprintf("%s is not retryable", code), func(t *testing.T) {
+			require.False(t, isRetryableError(status.Errorf(code, "test")))
+		})
+	}
+
+	t.Run("non-gRPC error is retryable", func(t *testing.T) {
+		require.True(t, isRetryableError(fmt.Errorf("connection refused")))
 	})
 }
