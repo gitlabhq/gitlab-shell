@@ -74,7 +74,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	)
 	ctxWithLogData := context.WithValue(ctx, logInfo{}, logData)
 
-	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserID)
+	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserID, accessResponse.CellAddress)
 	if err != nil {
 		// return nothing just like Ruby's GitlabShell#lfs_authenticate does
 		attrs := []any{
@@ -127,13 +127,13 @@ func (c *Command) verifyAccess(ctx context.Context, action commandargs.CommandTy
 	return cmd.Verify(ctx, action, repo)
 }
 
-func (c *Command) authenticate(ctx context.Context, operation string, repo, userID string) ([]byte, error) {
+func (c *Command) authenticate(ctx context.Context, operation string, repo, userID, cellAddress string) ([]byte, error) {
 	client, err := lfsauthenticate.NewClient(c.Config, c.Args)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := client.Authenticate(ctx, operation, repo, userID)
+	response, err := client.Authenticate(ctx, operation, repo, userID, cellAddress)
 	if err != nil {
 		return nil, err
 	}
