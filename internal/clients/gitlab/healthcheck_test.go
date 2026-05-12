@@ -1,4 +1,4 @@
-package gitlab
+package gitlab_test
 
 import (
 	"context"
@@ -6,94 +6,55 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/clients/gitlab"
 )
 
 func TestHealthcheckClient_Check_Success(t *testing.T) {
-	expectedResponse := HealthcheckResponse{
+	expectedResponse := gitlab.HealthcheckResponse{
 		APIVersion:     "1.0",
 		GitlabVersion:  "15.0.0",
 		GitlabRevision: "abc123",
 		Redis:          true,
 	}
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(expectedResponse)
+		if err := json.NewEncoder(w).Encode(expectedResponse); err != nil {
+			t.Errorf("failed to encode response: %v", err)
+		}
 	}))
-	defer server.Close()
+	defer srv.Close()
 
-	cfg := &Config{
-		GitlabURL: server.URL,
-		Secret:    "test-secret",
-	}
-
-	client, err := New(cfg)
-	if err != nil {
-		t.Fatalf("failed to create client: %v", err)
-	}
-
-	hc := NewHealthcheckClient(client)
+	hc := gitlab.NewHealthcheckClient(newTestClient(t, srv))
 	resp, err := hc.Check(context.Background())
 
-	if err != nil {
-		t.Fatalf("Check() returned unexpected error: %v", err)
-	}
-
-	if resp.Redis != expectedResponse.Redis {
-		t.Errorf("Redis field mismatch: got %v, want %v", resp.Redis, expectedResponse.Redis)
-	}
-
-	if resp.APIVersion != expectedResponse.APIVersion {
-		t.Errorf("APIVersion mismatch: got %s, want %s", resp.APIVersion, expectedResponse.APIVersion)
-	}
+	require.NoError(t, err)
+	require.Equal(t, expectedResponse.Redis, resp.Redis)
+	require.Equal(t, expectedResponse.APIVersion, resp.APIVersion)
 }
 
 func TestHealthcheckClient_Check_NonOKStatus(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("error"))
 	}))
-	defer server.Close()
+	defer srv.Close()
 
-	cfg := &Config{
-		GitlabURL: server.URL,
-		Secret:    "test-secret",
-	}
-
-	client, err := New(cfg)
-	if err != nil {
-		t.Fatalf("failed to create client: %v", err)
-	}
-
-	hc := NewHealthcheckClient(client)
-	_, err = hc.Check(context.Background())
-
-	if err == nil {
-		t.Fatal("Check() expected error for non-OK status, got nil")
-	}
+	hc := gitlab.NewHealthcheckClient(newTestClient(t, srv))
+	_, err := hc.Check(context.Background())
+	require.Error(t, err)
 }
 
 func TestHealthcheckClient_Check_InvalidJSON(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("invalid json"))
+		_, _ = w.Write([]byte("invalid json"))
 	}))
-	defer server.Close()
+	defer srv.Close()
 
-	cfg := &Config{
-		GitlabURL: server.URL,
-		Secret:    "test-secret",
-	}
-
-	client, err := New(cfg)
-	if err != nil {
-		t.Fatalf("failed to create client: %v", err)
-	}
-
-	hc := NewHealthcheckClient(client)
-	_, err = hc.Check(context.Background())
-
-	if err == nil {
-		t.Fatal("Check() expected error for invalid JSON, got nil")
-	}
+	hc := gitlab.NewHealthcheckClient(newTestClient(t, srv))
+	_, err := hc.Check(context.Background())
+	require.Error(t, err)
 }

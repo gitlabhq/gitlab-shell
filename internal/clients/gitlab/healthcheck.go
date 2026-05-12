@@ -1,11 +1,8 @@
 package gitlab
 
-import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
-)
+import "context"
+
+const healthcheckPath = "/check"
 
 // HealthcheckResponse contains healthcheck endpoint response data.
 type HealthcheckResponse struct {
@@ -27,23 +24,15 @@ func NewHealthcheckClient(client *Client) *HealthcheckClient {
 
 // Check makes a GET request to the healthcheck endpoint and returns the response.
 func (hc *HealthcheckClient) Check(ctx context.Context) (*HealthcheckResponse, error) {
-	resp, err := hc.client.Get(ctx, "/check")
+	resp, err := hc.client.Get(ctx, healthcheckPath)
 	if err != nil {
 		return nil, err
 	}
-
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("healthcheck endpoint returned status %d", resp.StatusCode)
-	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var response HealthcheckResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("failed to decode healthcheck response: %w", err)
+	if err := ParseJSON(resp, &response); err != nil {
+		return nil, err
 	}
-
 	return &response, nil
 }
