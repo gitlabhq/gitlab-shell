@@ -1,3 +1,10 @@
+v14.51.0
+
+- Skip retries for non-transient Topology Service errors !1464
+- Add namespace_path to git audit event request !1460
+- Route user-scoped SSH command API calls via Topology Service !1457
+- Add username-based Topology Service resolution !1456
+
 v14.50.0
 
 - Update github.com/pires/go-proxyproto from v0.8.0 to v0.12.0 !1454
