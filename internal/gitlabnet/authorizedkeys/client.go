@@ -51,7 +51,8 @@ func (c *Client) GetByKey(ctx context.Context, key string) (*Response, error) {
 		return nil, err
 	}
 
-	response, err := c.resolver.ClientForSSHKey(ctx, c.client, key).Get(ctx, path)
+	routed := c.resolver.ClientForSSHKey(ctx, c.client, key)
+	response, err := routed.Client.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}

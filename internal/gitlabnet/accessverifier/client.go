@@ -130,13 +130,9 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 
 	request.CheckIP = gitlabnet.ParseIP(args.Env.RemoteAddr)
 
-	cellAddress := c.resolver.ResolveByRoute(ctx, repo)
-	httpClient := c.client
-	if cellAddress != "" {
-		httpClient = httpClient.WithHost(cellAddress)
-	}
+	routed := c.resolver.ClientForRoute(ctx, c.client, repo)
 
-	response, err := httpClient.Post(ctx, "/allowed", request)
+	response, err := routed.Client.Post(ctx, "/allowed", request)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +142,7 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 	if err != nil {
 		return nil, err
 	}
-	resp.CellAddress = cellAddress
+	resp.CellAddress = routed.Address
 	return resp, nil
 }
 

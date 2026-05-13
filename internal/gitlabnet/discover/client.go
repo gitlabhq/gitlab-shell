@@ -64,7 +64,8 @@ func (c *Client) GetByCommandArgs(ctx context.Context, args *commandargs.Shell) 
 func (c *Client) getResponse(ctx context.Context, params url.Values, userArgs topology.UserArgs) (*Response, error) {
 	path := "/discover?" + params.Encode()
 
-	response, err := c.resolver.ClientForUserArgs(ctx, c.client, userArgs).Get(ctx, path)
+	routed := c.resolver.ClientForUserArgs(ctx, c.client, userArgs)
+	response, err := routed.Client.Get(ctx, path)
 	if err != nil {
 		return nil, err
 	}
