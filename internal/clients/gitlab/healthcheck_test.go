@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/clients/gitlab"
 )
 
@@ -38,13 +39,16 @@ func TestHealthcheckClient_Check_Success(t *testing.T) {
 
 func TestHealthcheckClient_Check_NonOKStatus(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadGateway)
 	}))
 	defer srv.Close()
 
 	hc := gitlab.NewHealthcheckClient(newTestClient(t, srv))
 	_, err := hc.Check(context.Background())
-	require.Error(t, err)
+
+	var apiErr *client.APIError
+	require.ErrorAs(t, err, &apiErr)
+	require.Equal(t, "Internal API error (502)", apiErr.Msg)
 }
 
 func TestHealthcheckClient_Check_InvalidJSON(t *testing.T) {
@@ -56,5 +60,5 @@ func TestHealthcheckClient_Check_InvalidJSON(t *testing.T) {
 
 	hc := gitlab.NewHealthcheckClient(newTestClient(t, srv))
 	_, err := hc.Check(context.Background())
-	require.Error(t, err)
+	require.EqualError(t, err, "parsing failed")
 }
