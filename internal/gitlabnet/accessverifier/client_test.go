@@ -432,6 +432,18 @@ func TestVerifyWithTopologyService(t *testing.T) {
 	})
 }
 
+func TestIsCellRouted(t *testing.T) {
+	t.Run("returns true when CellAddress is set", func(t *testing.T) {
+		response := &Response{CellAddress: "http://cell1.example.com"}
+		require.True(t, response.IsCellRouted())
+	})
+
+	t.Run("returns false when CellAddress is empty", func(t *testing.T) {
+		response := &Response{}
+		require.False(t, response.IsCellRouted())
+	})
+}
+
 func setupWithAPIInspector(t *testing.T, inspector func(*Request)) *Client {
 	t.Helper()
 	requests := []testserver.TestRequestHandler{
