@@ -43,6 +43,10 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		response.RootNamespaceID,
 	))
 
+	if response.IsCellRouted() {
+		return ctxWithLogData, githttp.NewCellsPushCommand(c.Config, c.ReadWriter, c.Args, response).Execute(ctx)
+	}
+
 	if response.IsCustomAction() {
 		// A Git over HTTP direct request to primary repo is performed
 		// (instead of formerly proxying the request through Gitlab Rails).
