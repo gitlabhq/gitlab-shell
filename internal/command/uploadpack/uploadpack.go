@@ -45,6 +45,15 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	)
 	ctxWithLogData := context.WithValue(ctx, logDataKey{}, logData)
 
+	if response.IsCellRouted() {
+		return ctxWithLogData, (&githttp.CellsPullCommand{
+			Config:     c.Config,
+			ReadWriter: c.ReadWriter,
+			Args:       c.Args,
+			Response:   response,
+		}).Execute(ctx)
+	}
+
 	if response.IsCustomAction() {
 		cmd := githttp.PullCommand{
 			Config:     c.Config,
