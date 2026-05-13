@@ -57,7 +57,8 @@ func (c *Client) GetRecoveryCodes(ctx context.Context, args *commandargs.Shell) 
 		return nil, err
 	}
 
-	response, err := c.resolver.ClientForUserArgs(ctx, c.client, args.UserArgs()).Post(ctx, "/two_factor_recovery_codes", requestBody)
+	routed := c.resolver.ClientForUserArgs(ctx, c.client, args.UserArgs())
+	response, err := routed.Client.Post(ctx, "/two_factor_recovery_codes", requestBody)
 	if err != nil {
 		return nil, err
 	}

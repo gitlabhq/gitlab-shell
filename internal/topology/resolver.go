@@ -30,8 +30,29 @@ type Resolver struct {
 	scheme string // "http" or "https", inferred from the original GitLab URL
 }
 
+// RoutedClient holds an HTTP client that may have been routed to a
+// specific cell, along with that cell's address. When the Topology
+// Service is not configured or returned a non-PROXY response, Address
+// is empty and Client is the original unmodified client.
+//
+// Obtain via [Resolver.ClientForSSHKey], [Resolver.ClientForRoute], or
+// [Resolver.ClientForUserArgs]; the zero value is not valid for use.
+type RoutedClient struct {
+	Client  *client.GitlabNetClient
+	Address string
+}
+
+// UserArgs holds the user identity fields needed for cell resolution.
+// It mirrors the relevant fields from commandargs.Shell but avoids
+// importing the command layer into the topology package.
+type UserArgs struct {
+	Username      string
+	KeyID         string
+	Krb5Principal string
+}
+
 // NewResolver creates a new Resolver. If client is nil (TS disabled),
-// all Resolve calls return empty string immediately. The gitlabURL is used
+// all resolve calls return empty string immediately. The gitlabURL is used
 // to infer the URL scheme (http or https) for schemaless addresses returned
 // by the Topology Service.
 func NewResolver(client *Client, gitlabURL string) *Resolver {
@@ -42,12 +63,49 @@ func NewResolver(client *Client, gitlabURL string) *Resolver {
 	return &Resolver{client: client, scheme: scheme}
 }
 
-// Resolve queries the Topology Service with the given claim and returns
+// ClientForSSHKey resolves the cell that owns key and returns a RoutedClient.
+// When the Topology Service is not configured, returns an error, or returns a
+// non-PROXY action, Address is empty and Client is the original httpClient.
+func (r *Resolver) ClientForSSHKey(ctx context.Context, httpClient *client.GitlabNetClient, key string) RoutedClient {
+	return attachHost(httpClient, r.resolveBySSHKey(ctx, key))
+}
+
+// ClientForRoute resolves the cell that owns repoPath and returns a RoutedClient.
+// When the Topology Service is not configured, returns an error, or returns a
+// non-PROXY action, Address is empty and Client is the original httpClient.
+func (r *Resolver) ClientForRoute(ctx context.Context, httpClient *client.GitlabNetClient, repoPath string) RoutedClient {
+	return attachHost(httpClient, r.resolveByRoute(ctx, repoPath))
+}
+
+// ClientForUserArgs resolves the cell that owns the user identity in args
+// and returns a RoutedClient. When the Topology Service is not configured,
+// returns an error, or returns a non-PROXY action, Address is empty and
+// Client is the original httpClient.
+func (r *Resolver) ClientForUserArgs(ctx context.Context, httpClient *client.GitlabNetClient, args UserArgs) RoutedClient {
+	return attachHost(httpClient, r.resolveByUserArgs(ctx, args))
+}
+
+// ExtractTopLevelNamespace returns the first path segment from a
+// repository path (the top-level namespace in GitLab).
+// Examples:
+//   - "group/project.git" → "group"
+//   - "group" → "group" (single-segment paths are valid for top-level namespaces)
+//   - "" → ""
+func ExtractTopLevelNamespace(repo string) string {
+	repo = strings.TrimLeft(repo, "/")
+	repo = strings.TrimSuffix(repo, ".git")
+	if i := strings.IndexByte(repo, '/'); i > 0 {
+		return repo[:i]
+	}
+	return repo
+}
+
+// resolve queries the Topology Service with the given claim and returns
 // the proxy address as an HTTP(S) URL string. The scheme is inferred from
 // the original GitLab URL when the Topology Service returns a schemaless
 // address. Returns empty string on any failure or when TS is not configured.
 // Transient errors are retried with exponential backoff.
-func (r *Resolver) Resolve(ctx context.Context, claim *types_proto.Claim) string {
+func (r *Resolver) resolve(ctx context.Context, claim *types_proto.Claim) string {
 	if r == nil || r.client == nil || claim == nil {
 		return ""
 	}
@@ -94,10 +152,10 @@ func (r *Resolver) Resolve(ctx context.Context, claim *types_proto.Claim) string
 	return ""
 }
 
-// ResolveByRoute resolves a cell address from a repository path.
+// resolveByRoute resolves a cell address from a repository path.
 // It extracts the top-level namespace and creates a RouteClaim.
 // Suitable for repo-scoped endpoints: /allowed, /lfs_authenticate, /git_audit_event.
-func (r *Resolver) ResolveByRoute(ctx context.Context, repoPath string) string {
+func (r *Resolver) resolveByRoute(ctx context.Context, repoPath string) string {
 	if r == nil {
 		return ""
 	}
@@ -105,10 +163,10 @@ func (r *Resolver) ResolveByRoute(ctx context.Context, repoPath string) string {
 	if namespace == "" {
 		return ""
 	}
-	return r.Resolve(ctx, RouteClaim(namespace))
+	return r.resolve(ctx, RouteClaim(namespace))
 }
 
-// ResolveBySSHKey resolves a cell address from an SSH key identifier.
+// resolveBySSHKey resolves a cell address from an SSH key identifier.
 // The key is an opaque string used as the Topology Service SSHKeyClaim.
 // Callers are responsible for choosing a value that the Topology Service
 // recognizes; common values are:
@@ -117,43 +175,17 @@ func (r *Resolver) ResolveByRoute(ctx context.Context, repoPath string) string {
 //     for /authorized_certs.
 //
 // The Topology Service is the source of truth for how these claims are matched.
-func (r *Resolver) ResolveBySSHKey(ctx context.Context, key string) string {
+func (r *Resolver) resolveBySSHKey(ctx context.Context, key string) string {
+	if r == nil {
+		return ""
+	}
 	if key == "" {
 		return ""
 	}
-	return r.Resolve(ctx, SSHKeyClaim(key))
+	return r.resolve(ctx, SSHKeyClaim(key))
 }
 
-// ClientForSSHKey returns httpClient routed to the cell resolved for key,
-// or the original httpClient if the Topology Service is not configured,
-// returns an error, or returns a non-PROXY action.
-func (r *Resolver) ClientForSSHKey(ctx context.Context, httpClient *client.GitlabNetClient, key string) *client.GitlabNetClient {
-	if host := r.ResolveBySSHKey(ctx, key); host != "" {
-		return httpClient.WithHost(host)
-	}
-	return httpClient
-}
-
-// ClientForRoute returns httpClient routed to the cell resolved for repoPath,
-// or the original httpClient if the Topology Service is not configured,
-// returns an error, or returns a non-PROXY action.
-func (r *Resolver) ClientForRoute(ctx context.Context, httpClient *client.GitlabNetClient, repoPath string) *client.GitlabNetClient {
-	if host := r.ResolveByRoute(ctx, repoPath); host != "" {
-		return httpClient.WithHost(host)
-	}
-	return httpClient
-}
-
-// UserArgs holds the user identity fields needed for cell resolution.
-// It mirrors the relevant fields from commandargs.Shell but avoids
-// importing the command layer into the topology package.
-type UserArgs struct {
-	Username      string
-	KeyID         string
-	Krb5Principal string
-}
-
-// ResolveByUserArgs resolves a cell address from the user identity in
+// resolveByUserArgs resolves a cell address from the user identity in
 // command arguments. It picks the best available claim type:
 //   - Username → UsernameClaim
 //   - KeyID / Krb5Principal → returns "" (default host fallback, no matching
@@ -162,24 +194,23 @@ type UserArgs struct {
 // This is used for user-scoped endpoints (/discover, /two_factor_recovery_codes,
 // /two_factor_manual_otp_check, /two_factor_push_otp_check, /personal_access_token)
 // that have no repository path for route-based classification.
-func (r *Resolver) ResolveByUserArgs(ctx context.Context, args UserArgs) string {
+func (r *Resolver) resolveByUserArgs(ctx context.Context, args UserArgs) string {
 	if r == nil {
 		return ""
 	}
 	if args.Username != "" {
-		return r.Resolve(ctx, UsernameClaim(args.Username))
+		return r.resolve(ctx, UsernameClaim(args.Username))
 	}
 	return ""
 }
 
-// ClientForUserArgs returns httpClient routed to the cell resolved for the
-// user identity in args, or the original httpClient if the Topology Service
-// is not configured, returns an error, or returns a non-PROXY action.
-func (r *Resolver) ClientForUserArgs(ctx context.Context, httpClient *client.GitlabNetClient, args UserArgs) *client.GitlabNetClient {
-	if host := r.ResolveByUserArgs(ctx, args); host != "" {
-		return httpClient.WithHost(host)
+// attachHost returns a RoutedClient. If addr is non-empty, the client
+// is re-targeted to addr via WithHost; otherwise it is returned as-is.
+func attachHost(c *client.GitlabNetClient, addr string) RoutedClient {
+	if addr == "" {
+		return RoutedClient{Client: c}
 	}
-	return httpClient
+	return RoutedClient{Client: c.WithHost(addr), Address: addr}
 }
 
 // isRetryableError returns true if the gRPC error is transient and the
@@ -199,19 +230,4 @@ func isRetryableError(err error) bool {
 	default:
 		return false
 	}
-}
-
-// ExtractTopLevelNamespace returns the first path segment from a
-// repository path (the top-level namespace in GitLab).
-// Examples:
-//   - "group/project.git" → "group"
-//   - "group" → "group" (single-segment paths are valid for top-level namespaces)
-//   - "" → ""
-func ExtractTopLevelNamespace(repo string) string {
-	repo = strings.TrimLeft(repo, "/")
-	repo = strings.TrimSuffix(repo, ".git")
-	if i := strings.IndexByte(repo, '/'); i > 0 {
-		return repo[:i]
-	}
-	return repo
 }

@@ -61,7 +61,8 @@ func (c *Client) GetPersonalAccessToken(ctx context.Context, args *commandargs.S
 		return nil, err
 	}
 
-	response, err := c.resolver.ClientForUserArgs(ctx, c.client, args.UserArgs()).Post(ctx, "/personal_access_token", requestBody)
+	routed := c.resolver.ClientForUserArgs(ctx, c.client, args.UserArgs())
+	response, err := routed.Client.Post(ctx, "/personal_access_token", requestBody)
 	if err != nil {
 		return nil, err
 	}
