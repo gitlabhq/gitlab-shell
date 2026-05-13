@@ -640,7 +640,6 @@ func TestGitUploadArchiveSuccess(t *testing.T) {
 	output, err := io.ReadAll(stdout)
 	require.NoError(t, err)
 
-	t.Logf("output: %q", output)
 	require.Equal(t, []byte("0000"), output[len(output)-4:])
 }
 
