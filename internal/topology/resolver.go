@@ -125,7 +125,7 @@ func (r *Resolver) resolve(ctx context.Context, claim *types_proto.Claim) string
 		backoff.WithMaxTries(classifyMaxAttempts),
 		backoff.WithNotify(func(err error, duration time.Duration) {
 			slog.InfoContext(ctx, "Topology Service classify attempt failed, retrying",
-				slog.Duration("retry_in", duration),
+				slog.Float64("retry_in_s", duration.Seconds()),
 				log.ErrorMessage(err.Error()),
 			)
 		}),
@@ -143,6 +143,8 @@ func (r *Resolver) resolve(ctx context.Context, claim *types_proto.Claim) string
 		if address != "" {
 			address = r.scheme + "://" + address
 		}
+		slog.DebugContext(ctx, "Topology Service resolved cell address",
+			slog.String("address", address))
 		return address
 	}
 
