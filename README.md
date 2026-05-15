@@ -49,7 +49,7 @@ Run `make test`.
 This repository is mirrored to security and dev mirrors. Mirror syncs happen within minutes of changes to the canonical repo, so please follow these guidelines when managing tags:
 
 1. **Use caution when deleting and recreating tags** - if a tag has already been synced to the mirrors, recreating it will cause SHA divergence and break the mirror sync.
-2. **If a tag needs to be re-created**, coordinate with the release managers first to delete the tag from all mirrors (security + dev) before recreating it on canonical.
+2. **If a tag needs to be re-created**, [create an issue on the Delivery tracker](https://gitlab.com/gitlab-com/gl-infra/delivery/-/issues/new) and coordinate with the release managers to delete the tag from all mirrors (security + dev) before recreating it on canonical.
 3. **If a mirror sync fails due to tag SHA divergence**, contact the release managers in `#g_release_and_deploy` to manually fix the mirrors.
 
 ## Licensing
