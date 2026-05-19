@@ -11,11 +11,18 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/healthcheck"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 )
+
+const useNewHealthcheckClientFlag = "use_new_healthcheck_client"
 
 var (
 	apiMessage   = "Internal API available"
 	redisMessage = "Redis available via internal API"
+
+	// healthcheckEvalCtx is the evaluation context for feature flag checks. A
+	// constant targeting key is used because healthcheck has no user identity.
+	healthcheckEvalCtx = openfeature.NewEvaluationContext("healthcheck", nil)
 )
 
 // Command handles the execution of health checks.
@@ -45,18 +52,12 @@ func (c *Command) runCheck(ctx context.Context) (*healthcheck.Response, error) {
 	// Check if we should use the new client via feature flag
 	evaluator := command.FeatureFlagEvaluatorFromContext(ctx)
 	if evaluator != nil {
-		// Use a stable targeting key so the Flipt provider doesn't bail
-		// out with TargetingKeyMissingResolutionError before making the
-		// HTTP call. Healthcheck is a per-process operation with no user
-		// identity, so a constant key is the right grain — flag rules
-		// keyed on this should target the gitlab-shell service rather
-		// than individual entities.
-		evalCtx := openfeature.NewEvaluationContext("healthcheck", nil)
-		details, err := evaluator.BooleanValueDetails(ctx, "use_new_healthcheck_client", false, evalCtx)
-		if err == nil && details.Value {
+		details, err := evaluator.BooleanValueDetails(ctx, useNewHealthcheckClientFlag, false, healthcheckEvalCtx)
+		if err != nil {
+			log.FromContext(ctx).WarnContext(ctx, "healthcheck FF evaluation failed; using legacy client", log.Error(err))
+		} else if details.Value {
 			return c.runCheckNewClient(ctx)
 		}
-		// If flag check fails or flag is false, fall through to old client
 	}
 
 	// Use the old client (default, safe path)
