@@ -1,3 +1,13 @@
+v14.53.0
+
+- feat(command/healthcheck): gate client selection on feature flag !1467
+- feat(clients/gitlab): add HealthcheckClient for /check endpoint !1466
+- fix(clients/gitlab): match legacy client retry policy !1465
+- Improve Topology Service resolver logging !1470
+- Refactor ClientForRoute to return resolved cell address !1462
+- Remove verbose binary output logging in acceptance test !1471
+- Add Delivery tracker link to tag management guidelines !1473
+
 v14.51.0
 
 - Skip retries for non-transient Topology Service errors !1464
