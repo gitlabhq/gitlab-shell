@@ -154,6 +154,12 @@ func FeatureFlagEvaluatorFromContext(ctx context.Context) featureflag.Evaluator 
 	return v
 }
 
+// ContextWithEvaluator returns ctx with the given evaluator stored under the
+// feature flag client key. Intended for use in tests only.
+func ContextWithEvaluator(ctx context.Context, evaluator featureflag.Evaluator) context.Context {
+	return context.WithValue(ctx, featureFlagClientKey, evaluator)
+}
+
 // NewLogData creates a new LogData instance with the given project, username, and IDs.
 // It extracts the root namespace from the project path.
 func NewLogData(project, username string, projectID, rootNamespaceID int) LogData {
