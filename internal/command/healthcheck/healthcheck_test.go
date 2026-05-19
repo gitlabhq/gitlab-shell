@@ -32,22 +32,10 @@ func (m *mockEvaluator) StringValueDetails(_ context.Context, _ string, defaultV
 	return openfeature.StringEvaluationDetails{Value: defaultValue}, nil
 }
 
-var (
-	okResponse = &healthcheck.Response{
-		APIVersion:     "v4",
-		GitlabVersion:  "v12.0.0-ee",
-		GitlabRevision: "3b13818e8330f68625d80d9bf5d8049c41fbe197",
-		Redis:          true,
-	}
-
-	badRedisResponse = &healthcheck.Response{Redis: false}
-
-	okHandlers       = buildTestHandlers(200, okResponse)
-	badRedisHandlers = buildTestHandlers(200, badRedisResponse)
-	brokenHandlers   = buildTestHandlers(500, nil)
-)
-
-func buildTestHandlers(code int, rsp *healthcheck.Response) []testserver.TestRequestHandler {
+// checkHandlers builds test handlers for /api/v4/internal/check.
+// Both the legacy client and the new gitlab client normalise their paths to
+// /api/v4/internal/check, so a single set of handlers covers both code paths.
+func checkHandlers(code int, rsp *healthcheck.Response) []testserver.TestRequestHandler {
 	return []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/check",
@@ -61,96 +49,193 @@ func buildTestHandlers(code int, rsp *healthcheck.Response) []testserver.TestReq
 	}
 }
 
-func TestExecute(t *testing.T) {
-	url := testserver.StartSocketHTTPServer(t, okHandlers)
+var (
+	okResponse = &healthcheck.Response{
+		APIVersion:     "v4",
+		GitlabVersion:  "v12.0.0-ee",
+		GitlabRevision: "3b13818e8330f68625d80d9bf5d8049c41fbe197",
+		Redis:          true,
+	}
+	badRedisResponse = &healthcheck.Response{Redis: false}
+)
 
-	buffer := &bytes.Buffer{}
-	cmd := &Command{
-		Config:     &config.Config{GitlabURL: url},
-		ReadWriter: &readwriter.ReadWriter{Out: buffer},
+// TestClientDispatch verifies that runCheck routes to the correct underlying
+// client based on the feature flag evaluator in context.
+func TestClientDispatch(t *testing.T) {
+	tests := []struct {
+		name      string
+		evaluator *mockEvaluator
+		wantOut   string
+		wantErr   string
+	}{
+		{
+			name:      "no evaluator in context — uses legacy client",
+			evaluator: nil,
+			wantOut:   "Internal API available: OK\nRedis available via internal API: OK\n",
+		},
+		{
+			name:      "evaluator present but flag off — uses legacy client",
+			evaluator: &mockEvaluator{value: false},
+			wantOut:   "Internal API available: OK\nRedis available via internal API: OK\n",
+		},
+		{
+			name:      "evaluator present and flag on — uses new client",
+			evaluator: &mockEvaluator{value: true},
+			wantOut:   "Internal API available: OK\nRedis available via internal API: OK\n",
+		},
+		{
+			name:      "evaluator errors — warns and falls back to legacy client",
+			evaluator: &mockEvaluator{err: errors.New("ff service unavailable")},
+			wantOut:   "Internal API available: OK\nRedis available via internal API: OK\n",
+		},
 	}
 
-	_, err := cmd.Execute(context.Background())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			url := testserver.StartSocketHTTPServer(t, checkHandlers(200, okResponse))
 
-	require.NoError(t, err)
-	require.Equal(t, "Internal API available: OK\nRedis available via internal API: OK\n", buffer.String())
+			buffer := &bytes.Buffer{}
+			cmd := &Command{
+				// Secret is required by the new client; harmless for the legacy client.
+				Config:     &config.Config{GitlabURL: url, Secret: "test-secret"},
+				ReadWriter: &readwriter.ReadWriter{Out: buffer},
+			}
+
+			ctx := context.Background()
+			if tt.evaluator != nil {
+				ctx = command.ContextWithEvaluator(ctx, tt.evaluator)
+			}
+
+			_, err := cmd.Execute(ctx)
+
+			if tt.wantErr != "" {
+				require.EqualError(t, err, tt.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tt.wantOut, buffer.String())
+		})
+	}
 }
 
-func TestFailingRedisExecute(t *testing.T) {
-	url := testserver.StartSocketHTTPServer(t, badRedisHandlers)
-
-	buffer := &bytes.Buffer{}
-	cmd := &Command{
-		Config:     &config.Config{GitlabURL: url},
-		ReadWriter: &readwriter.ReadWriter{Out: buffer},
+// TestLegacyClientResponses verifies Execute output for every response shape the
+// legacy client can receive, including construction failure.
+func TestLegacyClientResponses(t *testing.T) {
+	tests := []struct {
+		name       string
+		gitlabURL  string // leave empty to use a live test server
+		handlers   []testserver.TestRequestHandler
+		wantOut    string
+		wantErrMsg string
+	}{
+		{
+			name:     "api and redis both healthy",
+			handlers: checkHandlers(200, okResponse),
+			wantOut:  "Internal API available: OK\nRedis available via internal API: OK\n",
+		},
+		{
+			name:       "api healthy but redis unavailable",
+			handlers:   checkHandlers(200, badRedisResponse),
+			wantOut:    "Internal API available: OK\n",
+			wantErrMsg: "Redis available via internal API: FAILED",
+		},
+		{
+			name:       "api returns 500",
+			handlers:   checkHandlers(500, nil),
+			wantErrMsg: "Internal API available: FAILED - Internal API unreachable",
+		},
+		{
+			name:       "unsupported protocol — client construction fails",
+			gitlabURL:  "ftp://unsupported.invalid",
+			wantErrMsg: "Internal API available: FAILED - error creating http client: unknown GitLab URL prefix",
+		},
 	}
 
-	_, err := cmd.Execute(context.Background())
-	require.Error(t, err, "Redis available via internal API: FAILED")
-	require.Equal(t, "Internal API available: OK\n", buffer.String())
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			url := tt.gitlabURL
+			if url == "" {
+				url = testserver.StartSocketHTTPServer(t, tt.handlers)
+			}
+
+			buffer := &bytes.Buffer{}
+			cmd := &Command{
+				Config:     &config.Config{GitlabURL: url},
+				ReadWriter: &readwriter.ReadWriter{Out: buffer},
+			}
+
+			_, err := cmd.Execute(context.Background())
+
+			if tt.wantErrMsg != "" {
+				require.EqualError(t, err, tt.wantErrMsg)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tt.wantOut, buffer.String())
+		})
+	}
 }
 
-func TestFailingAPIExecute(t *testing.T) {
-	url := testserver.StartSocketHTTPServer(t, brokenHandlers)
-
-	buffer := &bytes.Buffer{}
-	cmd := &Command{
-		Config:     &config.Config{GitlabURL: url},
-		ReadWriter: &readwriter.ReadWriter{Out: buffer},
+// TestNewClientResponses verifies Execute output for every response shape the
+// new gitlab client can receive when the feature flag is enabled.
+func TestNewClientResponses(t *testing.T) {
+	tests := []struct {
+		name       string
+		secret     string
+		handlers   []testserver.TestRequestHandler
+		wantOut    string
+		wantErrMsg string
+	}{
+		{
+			name:     "api and redis both healthy",
+			secret:   "test-secret",
+			handlers: checkHandlers(200, okResponse),
+			wantOut:  "Internal API available: OK\nRedis available via internal API: OK\n",
+		},
+		{
+			name:       "api healthy but redis unavailable",
+			secret:     "test-secret",
+			handlers:   checkHandlers(200, badRedisResponse),
+			wantOut:    "Internal API available: OK\n",
+			wantErrMsg: "Redis available via internal API: FAILED",
+		},
+		{
+			name:       "api returns 500",
+			secret:     "test-secret",
+			handlers:   checkHandlers(500, nil),
+			wantErrMsg: "Internal API available: FAILED - Internal API error (500)",
+		},
+		{
+			name:       "client construction fails — secret is empty",
+			secret:     "",
+			wantErrMsg: "Internal API available: FAILED - secret must not be empty",
+		},
 	}
 
-	_, err := cmd.Execute(context.Background())
-	require.Empty(t, buffer.String())
-	require.EqualError(t, err, "Internal API available: FAILED - Internal API unreachable")
-}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var url string
+			if tt.handlers != nil {
+				url = testserver.StartSocketHTTPServer(t, tt.handlers)
+			} else {
+				url = "http+unix:///dev/null"
+			}
 
-func TestExecuteWithFeatureFlagEnabled(t *testing.T) {
-	// Both clients normalise the path to /api/v4/internal/check, so okHandlers works for both.
-	url := testserver.StartSocketHTTPServer(t, okHandlers)
+			buffer := &bytes.Buffer{}
+			cmd := &Command{
+				Config:     &config.Config{GitlabURL: url, Secret: tt.secret},
+				ReadWriter: &readwriter.ReadWriter{Out: buffer},
+			}
 
-	buffer := &bytes.Buffer{}
-	cmd := &Command{
-		Config:     &config.Config{GitlabURL: url, Secret: "test-secret"},
-		ReadWriter: &readwriter.ReadWriter{Out: buffer},
+			ctx := command.ContextWithEvaluator(context.Background(), &mockEvaluator{value: true})
+			_, err := cmd.Execute(ctx)
+
+			if tt.wantErrMsg != "" {
+				require.EqualError(t, err, tt.wantErrMsg)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, tt.wantOut, buffer.String())
+		})
 	}
-
-	ctx := command.ContextWithEvaluator(context.Background(), &mockEvaluator{value: true})
-	_, err := cmd.Execute(ctx)
-
-	require.NoError(t, err)
-	require.Equal(t, "Internal API available: OK\nRedis available via internal API: OK\n", buffer.String())
-}
-
-func TestExecuteWithFeatureFlagDisabled(t *testing.T) {
-	// Flag is false — must use old client path (/api/v4/internal/check).
-	url := testserver.StartSocketHTTPServer(t, okHandlers)
-
-	buffer := &bytes.Buffer{}
-	cmd := &Command{
-		Config:     &config.Config{GitlabURL: url},
-		ReadWriter: &readwriter.ReadWriter{Out: buffer},
-	}
-
-	ctx := command.ContextWithEvaluator(context.Background(), &mockEvaluator{value: false})
-	_, err := cmd.Execute(ctx)
-
-	require.NoError(t, err)
-	require.Equal(t, "Internal API available: OK\nRedis available via internal API: OK\n", buffer.String())
-}
-
-func TestExecuteWithFeatureFlagEvaluationError(t *testing.T) {
-	// Evaluation error — must fall back to old client and not propagate the error.
-	url := testserver.StartSocketHTTPServer(t, okHandlers)
-
-	buffer := &bytes.Buffer{}
-	cmd := &Command{
-		Config:     &config.Config{GitlabURL: url},
-		ReadWriter: &readwriter.ReadWriter{Out: buffer},
-	}
-
-	ctx := command.ContextWithEvaluator(context.Background(), &mockEvaluator{err: errors.New("ff service unavailable")})
-	_, err := cmd.Execute(ctx)
-
-	require.NoError(t, err)
-	require.Equal(t, "Internal API available: OK\nRedis available via internal API: OK\n", buffer.String())
 }
