@@ -220,6 +220,16 @@ func (s *serverConfig) handleUserKey(ctx context.Context, user string, key ssh.P
 	}, nil
 }
 
+// buildCertPermissions constructs ssh.Permissions for an authenticated certificate.
+// It propagates cert.CriticalOptions so that crypto/ssh can enforce restrictions
+// such as source-address, and rejects connections with unknown critical options.
+func buildCertPermissions(cert *ssh.Certificate, extensions map[string]string) *ssh.Permissions {
+	return &ssh.Permissions{
+		CriticalOptions: cert.CriticalOptions,
+		Extensions:      extensions,
+	}
+}
+
 func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, cert *ssh.Certificate) (*ssh.Permissions, error) { //nolint:funlen
 	fingerprint := ssh.FingerprintSHA256(cert.SignatureKey)
 
@@ -254,12 +264,15 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 		ctx = log.AppendFields(ctx, slog.String("certificate_username", cert.KeyId))
 		log.FromContext(ctx).InfoContext(ctx, "user certificate is signed by a locally trusted CA (instance-level)")
 
+		if addr, ok := cert.CriticalOptions["source-address"]; ok {
+			log.FromContext(ctx).InfoContext(ctx, "certificate authorized with source-address restriction",
+				slog.String("source_address", addr))
+		}
+
 		// No namespace key = instance-wide access (no namespace restriction)
-		return &ssh.Permissions{
-			Extensions: map[string]string{
-				"username": cert.KeyId,
-			},
-		}, nil
+		return buildCertPermissions(cert, map[string]string{
+			"username": cert.KeyId,
+		}), nil
 	}
 
 	// Fall back to group-level certificate check via Rails API
@@ -280,12 +293,15 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 
 	log.FromContext(ctx).InfoContext(ctx, "user certificate is signed by a trusted key (group-level)")
 
-	return &ssh.Permissions{
-		Extensions: map[string]string{
-			"username":  res.Username,
-			"namespace": res.Namespace,
-		},
-	}, nil
+	if addr, ok := cert.CriticalOptions["source-address"]; ok {
+		log.FromContext(ctx).InfoContext(ctx, "certificate authorized with source-address restriction",
+			slog.String("source_address", addr))
+	}
+
+	return buildCertPermissions(cert, map[string]string{
+		"username":  res.Username,
+		"namespace": res.Namespace,
+	}), nil
 }
 
 func (s *serverConfig) get(parentCtx context.Context) *ssh.ServerConfig {

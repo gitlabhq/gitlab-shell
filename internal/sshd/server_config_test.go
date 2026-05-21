@@ -204,7 +204,9 @@ func TestUserKeyHandling(t *testing.T) {
 func TestUserCertificateHandling(t *testing.T) {
 	testRoot := testhelper.PrepareTestRootDir(t)
 
-	validUserCert := userCert(t, ssh.UserCert, time.Now().Add(time.Hour))
+	caSigner, _ := createCAKeyPair(t)
+	validUserCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "root@example.com")
+	validUserCertWithSourceAddr := userCertSignedByCAWithOptions(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "root@example.com", map[string]string{"source-address": "10.0.0.0/8"})
 
 	requests := []testserver.TestRequestHandler{
 		{
@@ -280,6 +282,17 @@ func TestUserCertificateHandling(t *testing.T) {
 			featureFlagValue:    "0",
 			expectedErr:         errors.New("handleUserCertificate: feature is disabled"),
 			expectedPermissions: nil,
+		}, {
+			desc:             "successful request with source-address",
+			cert:             validUserCertWithSourceAddr,
+			featureFlagValue: "1",
+			expectedPermissions: &ssh.Permissions{
+				CriticalOptions: map[string]string{"source-address": "10.0.0.0/8"},
+				Extensions: map[string]string{
+					"username":  "root",
+					"namespace": "namespace",
+				},
+			},
 		},
 	}
 
@@ -460,6 +473,10 @@ func createCAKeyPair(t *testing.T) (ssh.Signer, ssh.PublicKey) {
 }
 
 func userCertSignedByCA(t *testing.T, caSigner ssh.Signer, certType uint32, validBefore time.Time, keyID string) *ssh.Certificate {
+	return userCertSignedByCAWithOptions(t, caSigner, certType, validBefore, keyID, nil)
+}
+
+func userCertSignedByCAWithOptions(t *testing.T, caSigner ssh.Signer, certType uint32, validBefore time.Time, keyID string, criticalOptions map[string]string) *ssh.Certificate {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	require.NoError(t, err)
 
@@ -471,6 +488,9 @@ func userCertSignedByCA(t *testing.T, caSigner ssh.Signer, certType uint32, vali
 		Key:         pubKey,
 		KeyId:       keyID,
 		ValidBefore: uint64(validBefore.Unix()),
+		Permissions: ssh.Permissions{
+			CriticalOptions: criticalOptions,
+		},
 	}
 	require.NoError(t, cert.SignCert(rand.Reader, caSigner))
 
@@ -665,6 +685,8 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 	atSignKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "user@domain.com")
 	dottedKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "jane.doe")
 	consecutiveSpecialsCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "user..name")
+	sourceAddrCert := userCertSignedByCAWithOptions(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "testuser", map[string]string{"source-address": "10.0.0.0/8,192.168.1.0/24"})
+	multiOptionsCert := userCertSignedByCAWithOptions(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "testuser", map[string]string{"source-address": "10.0.0.1", "force-command": "/usr/bin/git"})
 
 	srvCfg := config.ServerConfig{
 		Listen:                  "127.0.0.1",
@@ -747,6 +769,21 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 			desc:        "KeyId with consecutive specials rejected",
 			cert:        consecutiveSpecialsCert,
 			expectedErr: "handleUserCertificate: certificate KeyId contains consecutive special characters",
+		},
+		{
+			desc: "valid instance-level certificate with source-address",
+			cert: sourceAddrCert,
+			expectedPermissions: &ssh.Permissions{
+				CriticalOptions: map[string]string{"source-address": "10.0.0.0/8,192.168.1.0/24"},
+				Extensions: map[string]string{
+					"username": "testuser",
+				},
+			},
+		},
+		{
+			desc:        "instance-level certificate with unsupported critical option is rejected",
+			cert:        multiOptionsCert,
+			expectedErr: `ssh: unsupported critical option "force-command" in certificate`,
 		},
 	}
 
