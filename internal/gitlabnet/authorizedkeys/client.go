@@ -3,6 +3,8 @@ package authorizedkeys
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"net/url"
 
@@ -51,7 +53,8 @@ func (c *Client) GetByKey(ctx context.Context, key string) (*Response, error) {
 		return nil, err
 	}
 
-	routed := c.resolver.ClientForSSHKey(ctx, c.client, key)
+	routed := c.resolver.ClientForSSHFingerprint(ctx, c.client, computeFingerprint(key))
+
 	response, err := routed.Client.Get(ctx, path)
 	if err != nil {
 		return nil, err
@@ -64,6 +67,23 @@ func (c *Client) GetByKey(ctx context.Context, key string) (*Response, error) {
 	}
 
 	return parsedResponse, nil
+}
+
+// computeFingerprint computes the SHA-256 fingerprint of an SSH key in the
+// raw base64 format expected by the Topology Service (43 chars, no "SHA256:" prefix).
+// The key parameter is the raw base64-encoded wire-format bytes of the public key
+// (as produced by base64.RawStdEncoding.EncodeToString(key.Marshal())).
+// Returns empty string if the key cannot be decoded.
+func computeFingerprint(key string) string {
+	if key == "" {
+		return ""
+	}
+	keyBytes, err := base64.RawStdEncoding.DecodeString(key)
+	if err != nil {
+		return ""
+	}
+	hash := sha256.Sum256(keyBytes)
+	return base64.RawStdEncoding.EncodeToString(hash[:])
 }
 
 func pathWithKey(key string) (string, error) {

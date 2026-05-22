@@ -25,6 +25,12 @@ func TestProjectIDClaim(t *testing.T) {
 	require.Equal(t, int64(42), claim.GetProjectId())
 }
 
+func TestSSHFingerprintClaim(t *testing.T) {
+	claim := SSHFingerprintClaim("W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo")
+	require.IsType(t, &types_proto.Claim_SshKeyFingerprint{}, claim.GetClaim())
+	require.Equal(t, "W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo", claim.GetSshKeyFingerprint())
+}
+
 func TestUsernameClaim(t *testing.T) {
 	claim := UsernameClaim("jane-doe")
 	require.IsType(t, &types_proto.Claim_Username{}, claim.GetClaim())

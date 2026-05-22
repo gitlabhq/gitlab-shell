@@ -365,6 +365,66 @@ func TestResolveBySSHKey(t *testing.T) {
 	})
 }
 
+func TestResolveBySSHFingerprint(t *testing.T) {
+	t.Run("resolves cell address from SSH fingerprint", func(t *testing.T) {
+		mock := &topologytest.MockClassifyServer{
+			Response: &pb.ClassifyResponse{
+				Action: pb.ClassifyAction_PROXY,
+				Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+			},
+		}
+		addr, stop := topologytest.StartMockServer(t, mock)
+		defer stop()
+
+		client := NewClient(&Config{
+			Enabled: true,
+			Address: addr,
+			Timeout: 5 * time.Second,
+		})
+		defer client.Close()
+
+		resolver := NewResolver(client, "http://localhost")
+		result := resolver.resolveBySSHFingerprint(context.Background(), "W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo")
+		require.Equal(t, "http://cell-2:8080", result)
+
+		require.Equal(t, "W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo", mock.LastRequest.GetClaim().GetSshKeyFingerprint())
+	})
+
+	t.Run("empty fingerprint returns empty string", func(t *testing.T) {
+		resolver := NewResolver(nil, "http://localhost")
+		result := resolver.resolveBySSHFingerprint(context.Background(), "")
+		require.Empty(t, result)
+	})
+
+	t.Run("nil client returns empty string", func(t *testing.T) {
+		resolver := NewResolver(nil, "http://localhost")
+		result := resolver.resolveBySSHFingerprint(context.Background(), "W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo")
+		require.Empty(t, result)
+	})
+
+	t.Run("uses https scheme from gitlabURL", func(t *testing.T) {
+		mock := &topologytest.MockClassifyServer{
+			Response: &pb.ClassifyResponse{
+				Action: pb.ClassifyAction_PROXY,
+				Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+			},
+		}
+		addr, stop := topologytest.StartMockServer(t, mock)
+		defer stop()
+
+		client := NewClient(&Config{
+			Enabled: true,
+			Address: addr,
+			Timeout: 5 * time.Second,
+		})
+		defer client.Close()
+
+		resolver := NewResolver(client, "https://gitlab.example.com")
+		result := resolver.resolveBySSHFingerprint(context.Background(), "W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo")
+		require.Equal(t, "https://cell-2:8080", result)
+	})
+}
+
 func TestResolveByUserArgs(t *testing.T) {
 	t.Run("resolves cell address from username", func(t *testing.T) {
 		mock := &topologytest.MockClassifyServer{
