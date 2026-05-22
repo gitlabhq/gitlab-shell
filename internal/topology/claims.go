@@ -13,8 +13,17 @@ func RouteClaim(route string) *types_proto.Claim {
 }
 
 // SSHKeyClaim creates a Claim for an SSH public key.
+//
+// Deprecated: Use SSHFingerprintClaim instead to classify by SHA-256 fingerprint.
 func SSHKeyClaim(key string) *types_proto.Claim {
 	return &types_proto.Claim{Claim: &types_proto.Claim_SshKey{SshKey: key}}
+}
+
+// SSHFingerprintClaim creates a Claim for an SSH key's SHA-256 fingerprint.
+// The fingerprint must be the raw base64 body (43 chars), without the "SHA256:" prefix.
+// This matches the keys.fingerprint_sha256 format stored in the GitLab database.
+func SSHFingerprintClaim(fingerprint string) *types_proto.Claim {
+	return &types_proto.Claim{Claim: &types_proto.Claim_SshKeyFingerprint{SshKeyFingerprint: fingerprint}}
 }
 
 // ProjectIDClaim creates a Claim for a project ID.

@@ -35,7 +35,7 @@ type Resolver struct {
 // Service is not configured or returned a non-PROXY response, Address
 // is empty and Client is the original unmodified client.
 //
-// Obtain via [Resolver.ClientForSSHKey], [Resolver.ClientForRoute], or
+// Obtain via [Resolver.ClientForSSHFingerprint], [Resolver.ClientForRoute], or
 // [Resolver.ClientForUserArgs]; the zero value is not valid for use.
 type RoutedClient struct {
 	Client  *client.GitlabNetClient
@@ -66,8 +66,19 @@ func NewResolver(client *Client, gitlabURL string) *Resolver {
 // ClientForSSHKey resolves the cell that owns key and returns a RoutedClient.
 // When the Topology Service is not configured, returns an error, or returns a
 // non-PROXY action, Address is empty and Client is the original httpClient.
+//
+// Deprecated: Use ClientForSSHFingerprint instead to classify by SHA-256 fingerprint.
 func (r *Resolver) ClientForSSHKey(ctx context.Context, httpClient *client.GitlabNetClient, key string) RoutedClient {
 	return attachHost(httpClient, r.resolveBySSHKey(ctx, key))
+}
+
+// ClientForSSHFingerprint resolves the cell that owns the SSH key identified by
+// its SHA-256 fingerprint and returns a RoutedClient.
+// The fingerprint must be the raw base64 body (43 chars), without the "SHA256:" prefix.
+// When the Topology Service is not configured, returns an error, or returns a
+// non-PROXY action, Address is empty and Client is the original httpClient.
+func (r *Resolver) ClientForSSHFingerprint(ctx context.Context, httpClient *client.GitlabNetClient, fingerprint string) RoutedClient {
+	return attachHost(httpClient, r.resolveBySSHFingerprint(ctx, fingerprint))
 }
 
 // ClientForRoute resolves the cell that owns repoPath and returns a RoutedClient.
@@ -168,15 +179,8 @@ func (r *Resolver) resolveByRoute(ctx context.Context, repoPath string) string {
 	return r.resolve(ctx, RouteClaim(namespace))
 }
 
-// resolveBySSHKey resolves a cell address from an SSH key identifier.
-// The key is an opaque string used as the Topology Service SSHKeyClaim.
-// Callers are responsible for choosing a value that the Topology Service
-// recognizes; common values are:
-//   - the raw "key" string passed by sshd to /authorized_keys (base64 body), and
-//   - the SHA256 fingerprint of a signing CA (without the "SHA256:" prefix)
-//     for /authorized_certs.
-//
-// The Topology Service is the source of truth for how these claims are matched.
+// Deprecated: resolveBySSHKey resolves a cell address from an SSH key identifier.
+// Use resolveBySSHFingerprint instead to classify by SHA-256 fingerprint.
 func (r *Resolver) resolveBySSHKey(ctx context.Context, key string) string {
 	if r == nil {
 		return ""
@@ -185,6 +189,19 @@ func (r *Resolver) resolveBySSHKey(ctx context.Context, key string) string {
 		return ""
 	}
 	return r.resolve(ctx, SSHKeyClaim(key))
+}
+
+// resolveBySSHFingerprint resolves a cell address from an SSH key's SHA-256 fingerprint.
+// The fingerprint is the raw base64 body (43 chars, no "SHA256:" prefix),
+// matching the format in keys.fingerprint_sha256.
+func (r *Resolver) resolveBySSHFingerprint(ctx context.Context, fingerprint string) string {
+	if r == nil {
+		return ""
+	}
+	if fingerprint == "" {
+		return ""
+	}
+	return r.resolve(ctx, SSHFingerprintClaim(fingerprint))
 }
 
 // resolveByUserArgs resolves a cell address from the user identity in
