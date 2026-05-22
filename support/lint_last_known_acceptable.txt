@@ -1,0 +1,2 @@
+internal/topology/claims.go:17:1: exported: exported function SSHKeyClaim should have comment or be unexported (revive)
+internal/topology/resolver.go:70:1: exported: exported method Resolver.ClientForSSHKey should have comment or be unexported (revive)
