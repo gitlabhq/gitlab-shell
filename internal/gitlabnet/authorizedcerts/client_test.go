@@ -159,7 +159,7 @@ func TestGetByKeyWithTopologyService(t *testing.T) {
 		require.True(t, cellReceived, "request should have been sent to the cell server")
 		require.False(t, defaultReceived, "request should NOT have been sent to the default server")
 
-		require.Equal(t, "fingerprint-value", mock.LastRequest.GetClaim().GetSshKey())
+		require.Equal(t, "fingerprint-value", mock.LastRequest.GetClaim().GetSshKeyFingerprint())
 	})
 
 	t.Run("falls back to default", func(t *testing.T) {
