@@ -51,9 +51,9 @@ func (c *Client) GetByKey(ctx context.Context, userID, fingerprint string) (*Res
 	}
 
 	// The fingerprint here is the signing CA's SHA256 hash (without the
-	// "SHA256:" prefix), used as the SSHKeyClaim to identify which cell
+	// "SHA256:" prefix), used as the SSHFingerprintClaim to identify which cell
 	// holds certificates signed by this CA.
-	routed := c.resolver.ClientForSSHKey(ctx, c.client, fingerprint)
+	routed := c.resolver.ClientForSSHFingerprint(ctx, c.client, fingerprint)
 	response, err := routed.Client.Get(ctx, path)
 	if err != nil {
 		return nil, err
