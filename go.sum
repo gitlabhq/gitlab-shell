@@ -507,8 +507,8 @@ github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7J
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
 github.com/onsi/gomega v1.35.1 h1:Cwbd75ZBPxFSuZ6T+rN/WCb/gOc6YgFBXLlZLhC7Ds4=
 github.com/onsi/gomega v1.35.1/go.mod h1:PvZbdDc8J6XJEpDK4HCuRBm8a6Fzp9/DmhC9C7yFlog=
-github.com/open-feature/go-sdk v1.17.1 h1:1AwQ2NppOv69sfGiRH9pWfsMVLembvkhQ3hdk9eAsTY=
-github.com/open-feature/go-sdk v1.17.1/go.mod h1:+2UML7oZADJa0Swg27d6pu5kLKeCpZM2X2hWcGQutJ0=
+github.com/open-feature/go-sdk v1.17.2 h1:pTdeNks/hgnPrlqdgtFwltnIron1oOxqg4FmLlirJlY=
+github.com/open-feature/go-sdk v1.17.2/go.mod h1:kTMCquVtck18XdSCI6rBoNFEBLvkOy4Tphu2pV8bq34=
 github.com/open-feature/go-sdk-contrib/providers/flipt v0.1.5 h1:2QQzINcriaUNSIABYq+qKYB/HyiiuGqFdxxZuakFIzA=
 github.com/open-feature/go-sdk-contrib/providers/flipt v0.1.5/go.mod h1:Ak4etSQ4hJ3ZZ8/VHqt5YR6YuEQLCUQ2o9jdUDuqm3w=
 github.com/open-telemetry/opentelemetry-collector-contrib/pkg/sampling v0.125.0 h1:0dOJCEtabevxxDQmxed69oMzSw+gb3ErCnFwFYZFu0M=
