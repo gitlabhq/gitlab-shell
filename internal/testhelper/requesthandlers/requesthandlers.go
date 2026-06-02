@@ -12,14 +12,19 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 )
 
+const (
+	allowedAPIPath = "/api/v4/internal/allowed"
+	statusKey      = "status"
+)
+
 // BuildDisallowedByAPIHandlers returns test request handlers for disallowed API calls.
 func BuildDisallowedByAPIHandlers(t *testing.T) []testserver.TestRequestHandler {
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/allowed",
+			Path: allowedAPIPath,
 			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := map[string]interface{}{
-					"status":  false,
+					statusKey:  false,
 					"message": "Disallowed by API call",
 				}
 				w.WriteHeader(http.StatusForbidden)
@@ -39,7 +44,7 @@ func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testse
 // BuildAllowedWithGitalyHandlersAndRetryConfig returns test request handlers for allowed API calls with Gitaly and retry config.
 func BuildAllowedWithGitalyHandlersAndRetryConfig(t *testing.T, gitalyAddress string, retryConfig map[string]interface{}) []testserver.TestRequestHandler {
 	body := map[string]interface{}{
-		"status":      true,
+		statusKey:      true,
 		"gl_id":       "user-1",
 		"gl_key_type": "key",
 		"gl_key_id":   123,
@@ -68,7 +73,7 @@ func BuildAllowedWithGitalyHandlersAndRetryConfig(t *testing.T, gitalyAddress st
 
 	return []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/allowed",
+			Path: allowedAPIPath,
 			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				assert.NoError(t, json.NewEncoder(w).Encode(body))
 			},
@@ -96,10 +101,10 @@ func BuildAllowedWithCustomActionsHandlers(t *testing.T) []testserver.TestReques
 
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/allowed",
+			Path: allowedAPIPath,
 			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := map[string]interface{}{
-					"status": true,
+					statusKey: true,
 					"gl_id":  "user-1",
 					"payload": map[string]interface{}{
 						"action": "geo_proxy_to_primary",

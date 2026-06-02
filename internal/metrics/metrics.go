@@ -32,6 +32,8 @@ const (
 	lfsSSHConnectionsTotalName  = "lfs_ssh_connections_total"
 
 	connectionsTotalName = "connections_total"
+
+	statusLabel = "status"
 )
 
 var (
@@ -109,7 +111,7 @@ var (
 			Name:      connectionsTotalName,
 			Help:      "Number of Gitaly connections that have been established",
 		},
-		[]string{"status"},
+		[]string{statusLabel},
 	)
 
 	// The metrics and the buckets size are similar to the ones we have for handlers in Labkit
@@ -179,7 +181,7 @@ var (
 			Name:      connectionsTotalName,
 			Help:      "Number of Topology Service connections that have been established",
 		},
-		[]string{"status"},
+		[]string{statusLabel},
 	)
 
 	// TopologyRequestsTotal is the number of Topology Service Classify requests.
@@ -190,7 +192,7 @@ var (
 			Name:      httpRequestsTotalMetricName,
 			Help:      "Number of Topology Service Classify requests",
 		},
-		[]string{"status"},
+		[]string{statusLabel},
 	)
 
 	// TopologyRequestDurationSeconds is a histogram of latencies for Topology Service Classify requests.

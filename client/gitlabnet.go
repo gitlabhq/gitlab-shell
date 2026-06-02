@@ -16,11 +16,12 @@ import (
 )
 
 const (
-	internalAPIPath     = "/api/v4/internal"
-	apiSecretHeaderName = "Gitlab-Shell-Api-Request" // #nosec G101
-	defaultUserAgent    = "GitLab-Shell"
-	jwtTTL              = time.Minute
-	jwtIssuer           = "gitlab-shell"
+	internalAPIPath        = "/api/v4/internal"
+	apiSecretHeaderName    = "Gitlab-Shell-Api-Request" // #nosec G101
+	defaultUserAgent       = "GitLab-Shell"
+	jwtTTL                 = time.Minute
+	jwtIssuer              = "gitlab-shell"
+	internalAPIUnreachable = "Internal API unreachable"
 )
 
 // ErrorResponse represents an error response from the API
@@ -111,7 +112,7 @@ func newRequest(ctx context.Context, method, host, path string, data interface{}
 
 func parseError(resp *http.Response, respErr error) error {
 	if resp == nil || respErr != nil {
-		return &APIError{"Internal API unreachable"}
+		return &APIError{internalAPIUnreachable}
 	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode <= 399 {
