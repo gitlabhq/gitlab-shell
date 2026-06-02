@@ -18,12 +18,12 @@ import (
 )
 
 const (
-	argToken    = "token"
-	argID       = "id"
-	opUpload    = "upload"
-	opDownload  = "download"
-	argForce    = "force"
-	strTrue     = "true"
+	argToken   = "token"
+	argID      = "id"
+	opUpload   = "upload"
+	opDownload = "download"
+	argForce   = "force"
+	strTrue    = "true"
 )
 
 type errCustom struct {

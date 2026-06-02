@@ -24,7 +24,7 @@ func BuildDisallowedByAPIHandlers(t *testing.T) []testserver.TestRequestHandler 
 			Path: allowedAPIPath,
 			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := map[string]interface{}{
-					statusKey:  false,
+					statusKey: false,
 					"message": "Disallowed by API call",
 				}
 				w.WriteHeader(http.StatusForbidden)
@@ -44,7 +44,7 @@ func BuildAllowedWithGitalyHandlers(t *testing.T, gitalyAddress string) []testse
 // BuildAllowedWithGitalyHandlersAndRetryConfig returns test request handlers for allowed API calls with Gitaly and retry config.
 func BuildAllowedWithGitalyHandlersAndRetryConfig(t *testing.T, gitalyAddress string, retryConfig map[string]interface{}) []testserver.TestRequestHandler {
 	body := map[string]interface{}{
-		statusKey:      true,
+		statusKey:     true,
 		"gl_id":       "user-1",
 		"gl_key_type": "key",
 		"gl_key_id":   123,
@@ -105,7 +105,7 @@ func BuildAllowedWithCustomActionsHandlers(t *testing.T) []testserver.TestReques
 			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				body := map[string]interface{}{
 					statusKey: true,
-					"gl_id":  "user-1",
+					"gl_id":   "user-1",
 					"payload": map[string]interface{}{
 						"action": "geo_proxy_to_primary",
 						"data": map[string]interface{}{
