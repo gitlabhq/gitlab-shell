@@ -12,6 +12,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
+const anonymousUsername = "Anonymous"
+
 type logDataKey struct{}
 
 // Command struct encapsulates the necessary components for executing the Discover command.
@@ -30,8 +32,8 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 
 	logData := command.LogData{}
 	if response.IsAnonymous() {
-		logData.Username = "Anonymous"
-		_, _ = fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, Anonymous!\n")
+		logData.Username = anonymousUsername
+		_, _ = fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, %s!\n", anonymousUsername)
 	} else {
 		logData.Username = response.Username
 		_, _ = fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, @%s!\n", response.Username)

@@ -41,6 +41,12 @@ const (
 	StatusClosed
 )
 
+const (
+	proxyPolicyRequire = "require"
+	proxyPolicyIgnore  = "ignore"
+	proxyPolicyReject  = "reject"
+)
+
 // Server represents an SSH server instance
 type Server struct {
 	Config *config.Config
@@ -240,8 +246,8 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 			channel:             channel,
 			gitlabKeyID:         sconn.Permissions.Extensions["key-id"],
 			gitlabKrb5Principal: sconn.Permissions.Extensions["krb5principal"],
-			gitlabUsername:      sconn.Permissions.Extensions["username"],
-			namespace:           sconn.Permissions.Extensions["namespace"],
+			gitlabUsername:      sconn.Permissions.Extensions[certPermUsername],
+			namespace:           sconn.Permissions.Extensions[certPermNamespace],
 			remoteAddr:          remoteAddr,
 			started:             time.Now(),
 		}
@@ -268,11 +274,11 @@ func (s *Server) proxyPolicy() (proxyproto.ConnPolicyFunc, error) {
 	// Set the Policy value based on config
 	// Values are taken from https://github.com/pires/go-proxyproto/blob/195fedcfbfc1be163f3a0d507fac1709e9d81fed/policy.go#L20
 	switch strings.ToLower(s.Config.Server.ProxyPolicy) {
-	case "require":
+	case proxyPolicyRequire:
 		return staticProxyPolicy(proxyproto.REQUIRE), nil
-	case "ignore":
+	case proxyPolicyIgnore:
 		return staticProxyPolicy(proxyproto.IGNORE), nil
-	case "reject":
+	case proxyPolicyReject:
 		return staticProxyPolicy(proxyproto.REJECT), nil
 	default:
 		return staticProxyPolicy(proxyproto.USE), nil

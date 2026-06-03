@@ -27,6 +27,9 @@ const (
 	// KeepAliveMsg is the message used for keeping SSH connections alive.
 	KeepAliveMsg = "keepalive@openssh.com"
 
+	// sessionChannelType is the SSH channel type for interactive sessions.
+	sessionChannelType = "session"
+
 	// NotOurRefError represents the error message indicating that the git upload-pack is not our reference
 	NotOurRefError = `exit status 128, stderr: "fatal: git upload-pack: not our ref `
 )
@@ -107,7 +110,7 @@ func (c *connection) handleRequests(ctx context.Context, sconn *ssh.ServerConn, 
 	for newChannel := range chans {
 		log.FromContext(requestCtx).InfoContext(requestCtx, "connection: handle: new channel requested", slog.String("channel_type", newChannel.ChannelType()))
 
-		if newChannel.ChannelType() != "session" {
+		if newChannel.ChannelType() != sessionChannelType {
 			log.FromContext(requestCtx).InfoContext(requestCtx, "connection: handleRequests: unknown channel type")
 			_ = newChannel.Reject(ssh.UnknownChannelType, "unknown channel type")
 			continue

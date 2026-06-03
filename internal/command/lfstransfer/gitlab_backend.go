@@ -17,6 +17,15 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/lfstransfer"
 )
 
+const (
+	argToken   = "token"
+	argID      = "id"
+	opUpload   = "upload"
+	opDownload = "download"
+	argForce   = "force"
+	strTrue    = "true"
+)
+
 type errCustom struct {
 	err     error
 	message string
@@ -84,8 +93,8 @@ func (b *GitlabBackend) issueBatchArgs(op string, oid string, href string, heade
 	}
 
 	args = transfer.Args{
-		"id":    "",
-		"token": "",
+		argID:    "",
+		argToken: "",
 	}
 	dataBinary, err := json.Marshal(data)
 	if err != nil {
@@ -98,8 +107,8 @@ func (b *GitlabBackend) issueBatchArgs(op string, oid string, href string, heade
 		return args, err
 	}
 
-	args["id"] = base64.StdEncoding.EncodeToString(dataBinary)
-	args["token"] = base64.StdEncoding.EncodeToString(h.Sum(nil))
+	args[argID] = base64.StdEncoding.EncodeToString(dataBinary)
+	args[argToken] = base64.StdEncoding.EncodeToString(h.Sum(nil))
 
 	return args, nil
 }
@@ -138,7 +147,7 @@ func (b *GitlabBackend) Batch(op string, pointers []transfer.BatchItem, args tra
 			}
 		}
 
-		if op == "upload" {
+		if op == opUpload {
 			present = !present
 		}
 
@@ -218,7 +227,7 @@ func (b *GitlabBackend) parseAndCheckBatchArgs(op, oid, id, token string) (href 
 
 // Upload uploads an LFS object to GitLab
 func (b *GitlabBackend) Upload(oid string, _ int64, r io.Reader, args transfer.Args) error {
-	href, headers, err := b.parseAndCheckBatchArgs("upload", oid, args["id"], args["token"])
+	href, headers, err := b.parseAndCheckBatchArgs(opUpload, oid, args[argID], args[argToken])
 	if err != nil {
 		_, _ = io.Copy(io.Discard, r)
 		return err
@@ -234,7 +243,7 @@ func (b *GitlabBackend) Verify(_ string, _ int64, _ transfer.Args) (transfer.Sta
 
 // Download downloads an LFS object from GitLab
 func (b *GitlabBackend) Download(oid string, args transfer.Args) (io.ReadCloser, int64, error) {
-	href, headers, err := b.parseAndCheckBatchArgs("download", oid, args["id"], args["token"])
+	href, headers, err := b.parseAndCheckBatchArgs(opDownload, oid, args[argID], args[argToken])
 	if err != nil {
 		return nil, 0, err
 	}
@@ -260,7 +269,7 @@ type gitlabLock struct {
 }
 
 func (l *gitlabLock) Unlock() error {
-	lock, err := l.client.Unlock(l.id, l.args["force"] == "true", l.args["refname"])
+	lock, err := l.client.Unlock(l.id, l.args[argForce] == strTrue, l.args["refname"])
 	if err != nil {
 		return err
 	}
@@ -373,7 +382,7 @@ func (b *gitlabLockBackend) FromID(id string) (transfer.Lock, error) {
 }
 
 func (b *gitlabLockBackend) Range(cursor string, limit int, iter func(transfer.Lock) error) (string, error) {
-	res, err := b.client.ListLocksVerify(b.args["path"], b.args["id"], cursor, limit, b.args["refname"])
+	res, err := b.client.ListLocksVerify(b.args["path"], b.args[argID], cursor, limit, b.args["refname"])
 	if err != nil {
 		return "", err
 	}

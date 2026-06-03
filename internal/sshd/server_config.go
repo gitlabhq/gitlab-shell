@@ -23,6 +23,11 @@ import (
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
+const (
+	certPermUsername  = "username"
+	certPermNamespace = "namespace"
+)
+
 type serverConfig struct {
 	cfg                   *config.Config
 	hostKeys              []ssh.Signer
@@ -271,7 +276,7 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 
 		// No namespace key = instance-wide access (no namespace restriction)
 		return buildCertPermissions(cert, map[string]string{
-			"username": cert.KeyId,
+			certPermUsername: cert.KeyId,
 		}), nil
 	}
 
@@ -299,8 +304,8 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 	}
 
 	return buildCertPermissions(cert, map[string]string{
-		"username":  res.Username,
-		"namespace": res.Namespace,
+		certPermUsername:  res.Username,
+		certPermNamespace: res.Namespace,
 	}), nil
 }
 
