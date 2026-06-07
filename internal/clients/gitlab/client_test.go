@@ -37,12 +37,12 @@ func TestNew_NilConfig(t *testing.T) {
 }
 
 func TestNew_EmptySecret(t *testing.T) {
-	_, err := gitlab.New(&gitlab.Config{GitlabURL: "http://localhost", Secret: ""})
+	_, err := gitlab.New(&gitlab.Config{GitlabURL: testLocalhost, Secret: ""})
 	require.ErrorContains(t, err, "secret must not be empty")
 }
 
 func TestNew_WhitespaceOnlySecret(t *testing.T) {
-	_, err := gitlab.New(&gitlab.Config{GitlabURL: "http://localhost", Secret: "   \n"})
+	_, err := gitlab.New(&gitlab.Config{GitlabURL: testLocalhost, Secret: "   \n"})
 	require.ErrorContains(t, err, "secret must not be empty")
 }
 
@@ -69,7 +69,7 @@ func TestGet_SetsRequiredHeaders(t *testing.T) {
 	require.NotNil(t, capturedReq, "expected the test handler to have been called")
 	require.Equal(t, "application/json", capturedReq.Header.Get("Content-Type"))
 	require.Equal(t, "GitLab-Shell", capturedReq.Header.Get("User-Agent"))
-	require.Equal(t, "/api/v4/internal/check", capturedReq.URL.Path)
+	require.Equal(t, testCheckAPIPath, capturedReq.URL.Path)
 
 	// JWT header must be present and valid
 	tokenStr := capturedReq.Header.Get("Gitlab-Shell-Api-Request")
@@ -110,9 +110,9 @@ func TestGet_NormalizesPath(t *testing.T) {
 		input    string
 		wantPath string
 	}{
-		{"/check", "/api/v4/internal/check"},
-		{"check", "/api/v4/internal/check"},
-		{"/api/v4/internal/check", "/api/v4/internal/check"},
+		{"/check", testCheckAPIPath},
+		{"check", testCheckAPIPath},
+		{testCheckAPIPath, testCheckAPIPath},
 		// Traversal segments within the prefix are collapsed safely.
 		{"/check/../other", "/api/v4/internal/other"},
 	}
@@ -215,7 +215,7 @@ func TestNew_UnixSocket(t *testing.T) {
 func TestNew_DefaultTimeout(t *testing.T) {
 	// ReadTimeoutSeconds == 0 should not error; default 300s is applied internally.
 	_, err := gitlab.New(&gitlab.Config{
-		GitlabURL: "http://localhost",
+		GitlabURL: testLocalhost,
 		Secret:    testSecret,
 	})
 	require.NoError(t, err)
@@ -260,14 +260,14 @@ func TestGet_PathAlreadyPrefixed(t *testing.T) {
 	defer srv.Close()
 
 	c := newTestClient(t, srv)
-	resp, err := c.Get(context.Background(), "/api/v4/internal/check")
+	resp, err := c.Get(context.Background(), testCheckAPIPath)
 	require.NoError(t, err)
 	defer func() { _ = resp.Body.Close() }()
 
 	// Path must not be double-prefixed.
 	require.False(t, strings.HasPrefix(gotPath, "/api/v4/internal/api/v4/internal"),
 		"path was double-prefixed: %s", gotPath)
-	require.Equal(t, "/api/v4/internal/check", gotPath)
+	require.Equal(t, testCheckAPIPath, gotPath)
 }
 
 func TestGet_ForwardsRemoteIP(t *testing.T) {

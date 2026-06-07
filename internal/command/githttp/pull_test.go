@@ -19,6 +19,11 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
+const (
+	testInfoRefsPath       = "/info/refs"
+	testUnexpectedResponse = "unexpected response"
+)
+
 var cloneResponse = `0090want 11d731b83788cd556abea7b465c6bee52d89923c multi_ack_detailed side-band-64k thin-pack ofs-delta deepen-since deepen-not agent=git/2.41.0
 0032want e56497bb5f03a90a51293fc6d516788730953899
 00000009done
@@ -85,7 +90,7 @@ func TestPullExecuteWithFailedInfoRefs(t *testing.T) {
 		}, {
 			desc:            "unexpected response",
 			statusCode:      http.StatusOK,
-			responseContent: "unexpected response",
+			responseContent: testUnexpectedResponse,
 			expectedErr:     "unexpected git-upload-pack response",
 		},
 	}
@@ -94,7 +99,7 @@ func TestPullExecuteWithFailedInfoRefs(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			requests := []testserver.TestRequestHandler{
 				{
-					Path: "/info/refs",
+					Path: testInfoRefsPath,
 					Handler: func(w http.ResponseWriter, r *http.Request) {
 						assert.Equal(t, "git-upload-pack", r.URL.Query().Get("service"))
 
@@ -147,7 +152,7 @@ func setupPull(t *testing.T, uploadPackStatusCode int) string {
 
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/info/refs",
+			Path: testInfoRefsPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, "git-upload-pack", r.URL.Query().Get("service"))
 

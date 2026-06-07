@@ -12,6 +12,11 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
+const (
+	testKeyID      = "key"
+	testPrincipal1 = "principal-1"
+)
+
 var (
 	authorizedPrincipalsExec = &executable.Executable{Name: executable.AuthorizedPrincipalsCheck}
 	basicConfig              = &config.Config{GitlabURL: "http+unix://gitlab.socket"}
@@ -29,7 +34,7 @@ func TestNew(t *testing.T) {
 		{
 			desc:         "it returns a AuthorizedPrincipals command",
 			executable:   authorizedPrincipalsExec,
-			arguments:    []string{"key", "principal"},
+			arguments:    []string{testKeyID, "principal"},
 			config:       basicConfig,
 			expectedType: &authorizedprincipals.Command{},
 		},
@@ -57,25 +62,25 @@ func TestParseSuccess(t *testing.T) {
 		{
 			desc:         "it parses authorized-principals command",
 			executable:   &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
-			arguments:    []string{"key", "principal-1", "principal-2"},
-			expectedArgs: &commandargs.AuthorizedPrincipals{Arguments: []string{"key", "principal-1", "principal-2"}, KeyID: "key", Principals: []string{"principal-1", "principal-2"}},
+			arguments:    []string{testKeyID, testPrincipal1, "principal-2"},
+			expectedArgs: &commandargs.AuthorizedPrincipals{Arguments: []string{testKeyID, testPrincipal1, "principal-2"}, KeyID: testKeyID, Principals: []string{testPrincipal1, "principal-2"}},
 		},
 		{
 			desc:        "it fails when a principal is empty",
 			executable:  &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
-			arguments:   []string{"key", "principal-1", ""},
+			arguments:   []string{testKeyID, testPrincipal1, ""},
 			expectError: true,
 		},
 		{
 			desc:        "it fails when a key_id is empty",
 			executable:  &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
-			arguments:   []string{"", "principal-1"},
+			arguments:   []string{"", testPrincipal1},
 			expectError: true,
 		},
 		{
 			desc:        "it fails when not enough arguments are present",
 			executable:  &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
-			arguments:   []string{"key"},
+			arguments:   []string{testKeyID},
 			expectError: true,
 		},
 	}
@@ -105,7 +110,7 @@ func TestParseFailure(t *testing.T) {
 		{
 			desc:          "With not enough arguments for the AuthorizedPrincipalsCheck",
 			executable:    &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
-			arguments:     []string{"key"},
+			arguments:     []string{testKeyID},
 			expectedError: "# Insufficient arguments. 1. Usage\n#\tgitlab-shell-authorized-principals-check <key-id> <principal1> [<principal2>...]",
 		},
 		{
@@ -117,7 +122,7 @@ func TestParseFailure(t *testing.T) {
 		{
 			desc:          "With blank principal for the AuthorizedPrincipalsCheck",
 			executable:    &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
-			arguments:     []string{"key", "principal", ""},
+			arguments:     []string{testKeyID, "principal", ""},
 			expectedError: "# An invalid principal was provided",
 		},
 	}

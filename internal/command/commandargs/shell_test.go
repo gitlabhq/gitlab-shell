@@ -7,6 +7,11 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology"
 )
 
+const (
+	testUsername      = "jane-doe"
+	testKrb5Principal = "jane@EXAMPLE.COM"
+)
+
 func TestUserArgs(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -16,20 +21,20 @@ func TestUserArgs(t *testing.T) {
 		{
 			name: "all fields populated",
 			shell: Shell{
-				GitlabUsername:      "jane-doe",
+				GitlabUsername:      testUsername,
 				GitlabKeyID:         "123",
-				GitlabKrb5Principal: "jane@EXAMPLE.COM",
+				GitlabKrb5Principal: testKrb5Principal,
 			},
 			expected: topology.UserArgs{
-				Username:      "jane-doe",
+				Username:      testUsername,
 				KeyID:         "123",
-				Krb5Principal: "jane@EXAMPLE.COM",
+				Krb5Principal: testKrb5Principal,
 			},
 		},
 		{
 			name:     "only username",
-			shell:    Shell{GitlabUsername: "jane-doe"},
-			expected: topology.UserArgs{Username: "jane-doe"},
+			shell:    Shell{GitlabUsername: testUsername},
+			expected: topology.UserArgs{Username: testUsername},
 		},
 		{
 			name:     "only key ID",
@@ -38,8 +43,8 @@ func TestUserArgs(t *testing.T) {
 		},
 		{
 			name:     "only krb5 principal",
-			shell:    Shell{GitlabKrb5Principal: "jane@EXAMPLE.COM"},
-			expected: topology.UserArgs{Krb5Principal: "jane@EXAMPLE.COM"},
+			shell:    Shell{GitlabKrb5Principal: testKrb5Principal},
+			expected: topology.UserArgs{Krb5Principal: testKrb5Principal},
 		},
 		{
 			name:     "empty shell",

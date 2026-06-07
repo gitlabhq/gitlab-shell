@@ -63,7 +63,7 @@ func TestExecuteWithFailedInfoRefs(t *testing.T) {
 		}, {
 			desc:            "unexpected response",
 			statusCode:      http.StatusOK,
-			responseContent: "unexpected response",
+			responseContent: testUnexpectedResponse,
 			expectedErr:     "unexpected git-receive-pack response",
 		},
 	}
@@ -72,7 +72,7 @@ func TestExecuteWithFailedInfoRefs(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			requests := []testserver.TestRequestHandler{
 				{
-					Path: "/info/refs",
+					Path: testInfoRefsPath,
 					Handler: func(w http.ResponseWriter, r *http.Request) {
 						assert.Equal(t, "git-receive-pack", r.URL.Query().Get("service"))
 
@@ -162,7 +162,7 @@ func setup(t *testing.T, receivePackStatusCode int) (string, io.Reader) {
 
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/info/refs",
+			Path: testInfoRefsPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, "git-receive-pack", r.URL.Query().Get("service"))
 

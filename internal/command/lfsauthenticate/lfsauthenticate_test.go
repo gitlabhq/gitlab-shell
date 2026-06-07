@@ -27,6 +27,11 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology/topologytest"
 )
 
+const (
+	testLFSAuthenticate = testLFSAuthenticate
+	testSomename        = testSomename
+)
+
 func TestFailedRequests(t *testing.T) {
 	requests := requesthandlers.BuildDisallowedByAPIHandlers(t)
 	url := testserver.StartHTTPServer(t, requests)
@@ -43,12 +48,12 @@ func TestFailedRequests(t *testing.T) {
 		},
 		{
 			desc:           "With disallowed command",
-			arguments:      &commandargs.Shell{GitlabKeyID: "1", SSHArgs: []string{"git-lfs-authenticate", "group/repo", "unknown"}},
+			arguments:      &commandargs.Shell{GitlabKeyID: "1", SSHArgs: []string{testLFSAuthenticate, "group/repo", "unknown"}},
 			expectedOutput: "Disallowed command",
 		},
 		{
 			desc:           "With disallowed user",
-			arguments:      &commandargs.Shell{GitlabKeyID: "disallowed", SSHArgs: []string{"git-lfs-authenticate", "group/repo", "download"}},
+			arguments:      &commandargs.Shell{GitlabKeyID: "disallowed", SSHArgs: []string{testLFSAuthenticate, "group/repo", "download"}},
 			expectedOutput: "Disallowed by API call",
 		},
 	}
@@ -110,7 +115,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 				assert.NoError(t, json.Unmarshal(b, &request))
 
 				var responseGlID string
-				if request.Username == "somename" {
+				if request.Username == testSomename {
 					responseGlID = glID
 				} else {
 					responseGlID = "100"
@@ -140,7 +145,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 	}{
 		{
 			desc:           "With successful response from API",
-			username:       "somename",
+			username:       testSomename,
 			expectedOutput: "{\"header\":{\"Authorization\":\"Basic am9objpzb21ldG9rZW4=\"},\"href\":\"https://gitlab.com/repo/path/info/lfs\",\"expires_in\":1800}\n",
 		},
 		{
@@ -155,7 +160,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 			output := &bytes.Buffer{}
 			cmd := &Command{
 				Config:     &config.Config{GitlabURL: url},
-				Args:       &commandargs.Shell{GitlabUsername: tc.username, SSHArgs: []string{"git-lfs-authenticate", "group/repo", operation}},
+				Args:       &commandargs.Shell{GitlabUsername: tc.username, SSHArgs: []string{testLFSAuthenticate, "group/repo", operation}},
 				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 			}
 
@@ -239,8 +244,8 @@ func TestLfsAuthenticateWithTopologyService(t *testing.T) {
 	cmd := &Command{
 		Config: cfg,
 		Args: &commandargs.Shell{
-			GitlabUsername: "somename",
-			SSHArgs:        []string{"git-lfs-authenticate", "group/repo", "upload"},
+			GitlabUsername: testSomename,
+			SSHArgs:        []string{testLFSAuthenticate, "group/repo", "upload"},
 		},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 	}

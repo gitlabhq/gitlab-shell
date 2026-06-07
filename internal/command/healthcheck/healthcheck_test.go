@@ -18,6 +18,11 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/healthcheck"
 )
 
+const (
+	testHealthyOutput = "Internal API available: OK\nRedis available via internal API: OK\n"
+	testSecret        = "[REDACTED]"
+)
+
 // mockEvaluator is a test double for featureflag.Evaluator.
 type mockEvaluator struct {
 	value bool
@@ -71,22 +76,22 @@ func TestClientDispatch(t *testing.T) {
 		{
 			name:      "no evaluator in context — uses legacy client",
 			evaluator: nil,
-			wantOut:   "Internal API available: OK\nRedis available via internal API: OK\n",
+			wantOut:   testHealthyOutput,
 		},
 		{
 			name:      "evaluator present but flag off — uses legacy client",
 			evaluator: &mockEvaluator{value: false},
-			wantOut:   "Internal API available: OK\nRedis available via internal API: OK\n",
+			wantOut:   testHealthyOutput,
 		},
 		{
 			name:      "evaluator present and flag on — uses new client",
 			evaluator: &mockEvaluator{value: true},
-			wantOut:   "Internal API available: OK\nRedis available via internal API: OK\n",
+			wantOut:   testHealthyOutput,
 		},
 		{
 			name:      "evaluator errors — warns and falls back to legacy client",
 			evaluator: &mockEvaluator{err: errors.New("ff service unavailable")},
-			wantOut:   "Internal API available: OK\nRedis available via internal API: OK\n",
+			wantOut:   testHealthyOutput,
 		},
 	}
 
@@ -131,7 +136,7 @@ func TestLegacyClientResponses(t *testing.T) {
 		{
 			name:     "api and redis both healthy",
 			handlers: checkHandlers(200, okResponse),
-			wantOut:  "Internal API available: OK\nRedis available via internal API: OK\n",
+			wantOut:  testHealthyOutput,
 		},
 		{
 			name:       "api healthy but redis unavailable",
@@ -190,7 +195,7 @@ func TestNewClientResponses(t *testing.T) {
 			name:     "api and redis both healthy",
 			secret:   "test-secret",
 			handlers: checkHandlers(200, okResponse),
-			wantOut:  "Internal API available: OK\nRedis available via internal API: OK\n",
+			wantOut:  testHealthyOutput,
 		},
 		{
 			name:       "api healthy but redis unavailable",
