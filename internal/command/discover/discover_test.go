@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	testUsername    = "alex-doe"
-	testUsernameAt  = "@alex-doe"
+	testUsername   = "alex-doe"
+	testUsernameAt = "@alex-doe"
 )
 
 var requests = []testserver.TestRequestHandler{

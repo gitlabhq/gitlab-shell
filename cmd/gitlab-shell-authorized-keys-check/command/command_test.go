@@ -13,9 +13,9 @@ import (
 )
 
 const (
-	testGitUser  = "git"
-	testActual   = "actual"
-	testUser     = "user"
+	testGitUser = "git"
+	testActual  = "actual"
+	testUser    = "user"
 )
 
 var (
