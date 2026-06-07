@@ -18,7 +18,11 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/clients/gitlab"
 )
 
-const testSecret = "test-secret-value"
+const (
+	testSecret       = "test-secret-value"
+	testLocalhost    = "http://localhost"
+	testCheckAPIPath = "/api/v4/internal/check"
+)
 
 func newTestClient(t *testing.T, srv *httptest.Server) *gitlab.Client {
 	t.Helper()

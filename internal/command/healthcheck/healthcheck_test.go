@@ -20,7 +20,7 @@ import (
 
 const (
 	testHealthyOutput = "Internal API available: OK\nRedis available via internal API: OK\n"
-	testSecret        = "[REDACTED]"
+	testSecret        = "test-secret"
 )
 
 // mockEvaluator is a test double for featureflag.Evaluator.
@@ -102,7 +102,7 @@ func TestClientDispatch(t *testing.T) {
 			buffer := &bytes.Buffer{}
 			cmd := &Command{
 				// Secret is required by the new client; harmless for the legacy client.
-				Config:     &config.Config{GitlabURL: url, Secret: "test-secret"},
+				Config:     &config.Config{GitlabURL: url, Secret: testSecret},
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
 
@@ -193,20 +193,20 @@ func TestNewClientResponses(t *testing.T) {
 	}{
 		{
 			name:     "api and redis both healthy",
-			secret:   "test-secret",
+			secret:   testSecret,
 			handlers: checkHandlers(200, okResponse),
 			wantOut:  testHealthyOutput,
 		},
 		{
 			name:       "api healthy but redis unavailable",
-			secret:     "test-secret",
+			secret:     testSecret,
 			handlers:   checkHandlers(200, badRedisResponse),
 			wantOut:    "Internal API available: OK\n",
 			wantErrMsg: "Redis available via internal API: FAILED",
 		},
 		{
 			name:       "api returns 500",
-			secret:     "test-secret",
+			secret:     testSecret,
 			handlers:   checkHandlers(500, nil),
 			wantErrMsg: "Internal API available: FAILED - Internal API error (500)",
 		},

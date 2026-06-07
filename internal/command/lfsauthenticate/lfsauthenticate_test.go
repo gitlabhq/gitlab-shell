@@ -28,8 +28,8 @@ import (
 )
 
 const (
-	testLFSAuthenticate = testLFSAuthenticate
-	testSomename        = testSomename
+	testLFSAuthenticate = "git-lfs-authenticate"
+	testSomename        = "somename"
 )
 
 func TestFailedRequests(t *testing.T) {
