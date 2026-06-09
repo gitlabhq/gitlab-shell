@@ -88,7 +88,7 @@ default:
 .go-matrix-job:
   parallel:
     matrix:
-      - GO_VERSION: ["1.25"]
+      - GO_VERSION: ["1.25", "1.26"]
 
 ################################################################################
 # Prepare jobs
