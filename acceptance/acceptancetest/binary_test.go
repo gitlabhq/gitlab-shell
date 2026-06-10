@@ -29,11 +29,10 @@ func TestBuildBinary_unknownBinaryFailsTest(t *testing.T) {
 	tt := &subTestRecorder{T: t}
 	defer func() {
 		_ = recover()
+		require.True(t, tt.failed, "expected BuildBinary to call Fatalf for unknown binary")
 	}()
 
 	BuildBinary(tt, "this-binary-does-not-exist")
-
-	require.True(t, tt.failed, "expected BuildBinary to call Fatalf for unknown binary")
 }
 
 // subTestRecorder is a minimal *testing.T-shaped helper that captures

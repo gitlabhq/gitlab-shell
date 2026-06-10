@@ -175,6 +175,16 @@ race:
   script:
     - make test_race
 
+acceptance:
+  stage: test
+  extends:
+    - .cached-go-job
+    - .go-matrix-job
+  needs: ["modules:download"]
+  rules: !reference [".rules:go-changes", rules]
+  script:
+    - make acceptance-test
+
 code_quality:
   stage: lint
   extends: .use-docker-in-docker
