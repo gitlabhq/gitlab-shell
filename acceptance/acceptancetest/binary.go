@@ -8,7 +8,6 @@
 package acceptancetest
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -58,20 +57,13 @@ func BuildBinary(t testingT, name string) string {
 
 		out := filepath.Join(dir, name)
 
-		// Fast-path: a prior run (or a sibling test process in this run)
-		// already produced a complete binary at the final path. Skip the
-		// build entirely — overwriting a binary that another process is
-		// about to exec is what produces ETXTBSY.
-		if _, err := os.Stat(out); err == nil {
-			be.path = out
-			return
-		}
-
-		// Build into a temp file in the same directory, then install with
-		// os.Link. Hard-linking is atomic and fails with EEXIST if another
-		// process already installed the binary — first writer wins, the
-		// losing process just discards its temp file. The exec'd path
-		// always points to a fully-written file.
+		// Build into a temp file in the same directory, then atomically
+		// install with os.Rename. Rename swaps the directory entry rather
+		// than writing into the live inode, so a process currently exec'ing
+		// the previous binary keeps its inode and any new exec gets the
+		// fresh one. Every run installs the freshly built binary — no
+		// staleness — and ETXTBSY is avoided because nothing ever writes
+		// into the exec'd file.
 		tmp, err := os.CreateTemp(dir, name+".tmp.*")
 		if err != nil {
 			be.err = fmt.Errorf("creating temp file for %s: %w", name, err)
@@ -88,7 +80,7 @@ func BuildBinary(t testingT, name string) string {
 			return
 		}
 
-		if err := os.Link(tmpPath, out); err != nil && !errors.Is(err, os.ErrExist) {
+		if err := os.Rename(tmpPath, out); err != nil {
 			be.err = fmt.Errorf("installing %s: %w", name, err)
 			return
 		}
