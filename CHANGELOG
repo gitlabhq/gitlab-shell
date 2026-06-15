@@ -1,3 +1,19 @@
+v14.54.0
+
+- Update module golang.org/x/crypto to v0.52.0 !1487
+- test(acceptance): subprocess acceptance test harness for healthcheck !1468
+- Add Go 1.26 to CI testing matrix !1491
+- Update github.com/charmbracelet/git-lfs-transfer digest to 1241631 !1479
+- Fix goconst violations in production code (part 1/3) !1485
+- Update module gitlab.com/gitlab-org/labkit to v1.64.2 !1484
+- Update dependency golangci-lint to v2.12.2 in Makefile !1482
+- Update dependency golangci-lint to v2.12.2 !1481
+- Update gitlab.com/gitlab-org/cells/topology-service digest to 2c761c2 !1480
+- Update module github.com/mattn/go-shellwords to v1.0.13 !1458
+- Update module github.com/open-feature/go-sdk to v1.17.2 !1478
+- Migrate SSH routing from SSHKey claim to SSHFingerprint claim !1476
+- Propagate SSH certificate CriticalOptions in permissions !1475
+
 v14.53.0
 
 - feat(command/healthcheck): gate client selection on feature flag !1467
