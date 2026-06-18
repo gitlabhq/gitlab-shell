@@ -29,6 +29,66 @@ import (
 const (
 	largeFileContents      = "This is a large file\n"
 	evenLargerFileContents = "This is an even larger file\n"
+
+	// JSON field names used in LFS batch responses
+	fieldOid           = "oid"
+	fieldHref          = "href"
+	fieldHeaders       = "headers"
+	fieldAuthorization = "Authorization"
+	fieldContentType   = "Content-Type"
+	fieldMessage       = "message"
+	fieldLock          = "lock"
+	fieldPath          = "path"
+	fieldLockedAt      = "locked_at"
+	fieldOwner         = "owner"
+	fieldName          = "name"
+
+	// Test argument values
+	testIDGgg       = "id=ggg"
+	testTokenGgg    = "token=ggg"
+	testSizeZero    = "size=0"
+	testOperation   = "operation"
+	testAuthHeader  = "Basic 1234567890"
+	testContentType = "application/octet-stream"
+
+	// Error messages
+	errTokenHashMismatch = "error: token hash mismatch"
+
+	// Lock/file paths and IDs
+	lockID1    = "lock1"
+	lockID2    = "lock2"
+	lockID3    = "lock3"
+	filePath1  = "/large/file/1"
+	filePath2  = "/large/file/2"
+	filePath3  = "/large/file/3"
+	lockedAt1  = "2023-10-03T13:56:20Z"
+	lockedAt2  = "1955-11-12T22:04:00Z"
+	ownerJohn  = "johndoe"
+	ownerMarty = "marty"
+	ownerJane  = "janedoe"
+
+	// Lock list output entries
+	lockLock1        = "lock lock1"
+	pathLock1        = "path lock1 /large/file/1"
+	lockedAtLock1    = "locked-at lock1 2023-10-03T13:56:20Z"
+	ownernameLock1   = "ownername lock1 johndoe"
+	lockLock2        = "lock lock2"
+	pathLock2        = "path lock2 /large/file/2"
+	lockedAtLock2    = "locked-at lock2 1955-11-12T22:04:00Z"
+	ownernameLock2   = "ownername lock2 marty"
+	lockLock3        = "lock lock3"
+	pathLock3        = "path lock3 /large/file/3"
+	lockedAtLock3    = "locked-at lock3 2023-10-03T13:56:20Z"
+	ownernameLock3   = "ownername lock3 janedoe"
+	ownerLock1Ours   = "owner lock1 ours"
+	ownerLock2Theirs = "owner lock2 theirs"
+
+	// Lock command args (pktline format)
+	argIDLock1    = "id=lock1"
+	argPathFile1  = "path=/large/file/1"
+	argPathFile2  = "path=/large/file/2"
+	argLockedAt1  = "locked-at=2023-10-03T13:56:20Z"
+	argOwnername1 = "ownername=johndoe"
 )
 
 var (
@@ -266,7 +326,7 @@ func quit(t *testing.T, pl *pktline.Pktline) {
 }
 
 func TestLfsTransferCapabilities(t *testing.T) {
-	_, cmd, pl := setup(t, "rw", "upload")
+	_, cmd, pl := setup(t, "rw", opUpload)
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -275,13 +335,13 @@ func TestLfsTransferCapabilities(t *testing.T) {
 }
 
 func TestLfsTransferNoPermissions(t *testing.T) {
-	_, cmd, _ := setup(t, "ro", "upload")
+	_, cmd, _ := setup(t, "ro", opUpload)
 	_, err := cmd.Execute(context.Background())
 	require.Equal(t, "Disallowed by API call", err.Error())
 }
 
 func TestLfsTransferBatchDownload(t *testing.T) {
-	url, cmd, pl := setup(t, "rw", "download")
+	url, cmd, pl := setup(t, "rw", opDownload)
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -322,12 +382,12 @@ func TestLfsTransferBatchDownload(t *testing.T) {
 	var id map[string]interface{}
 	require.NoError(t, json.Unmarshal(idBinary, &id))
 	require.Equal(t, map[string]interface{}{
-		"operation": "download",
-		"oid":       largeFileOid,
-		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
-		"headers": map[string]interface{}{
-			"Authorization": "Basic 1234567890",
-			"Content-Type":  "application/octet-stream",
+		testOperation: opDownload,
+		fieldOid:      largeFileOid,
+		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
+		fieldHeaders: map[string]interface{}{
+			fieldAuthorization: testAuthHeader,
+			fieldContentType:   testContentType,
 		},
 	}, id)
 
@@ -347,7 +407,7 @@ func TestLfsTransferBatchDownload(t *testing.T) {
 }
 
 func TestLfsTransferBatchUpload(t *testing.T) {
-	url, cmd, pl := setup(t, "rw", "upload")
+	url, cmd, pl := setup(t, "rw", opUpload)
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -367,7 +427,7 @@ func TestLfsTransferBatchUpload(t *testing.T) {
 	require.Len(t, evenLargerFileArgs, 5)
 	require.Equal(t, evenLargerFileOid, evenLargerFileArgs[0])
 	require.Equal(t, fmt.Sprint(evenLargerFileLen), evenLargerFileArgs[1])
-	require.Equal(t, "upload", evenLargerFileArgs[2])
+	require.Equal(t, opUpload, evenLargerFileArgs[2])
 
 	var idArg string
 	var tokenArg string
@@ -389,12 +449,12 @@ func TestLfsTransferBatchUpload(t *testing.T) {
 	var id map[string]interface{}
 	require.NoError(t, json.Unmarshal(idBinary, &id))
 	require.Equal(t, map[string]interface{}{
-		"operation": "upload",
-		"oid":       evenLargerFileOid,
-		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
-		"headers": map[string]interface{}{
-			"Authorization": "Basic 1234567890",
-			"Content-Type":  "application/octet-stream",
+		testOperation: opUpload,
+		fieldOid:      evenLargerFileOid,
+		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
+		fieldHeaders: map[string]interface{}{
+			fieldAuthorization: testAuthHeader,
+			fieldContentType:   testContentType,
 		},
 	}, id)
 
@@ -411,7 +471,7 @@ func TestLfsTransferBatchUpload(t *testing.T) {
 }
 
 func TestLfsTransferGetObject(t *testing.T) {
-	url, cmd, pl := setup(t, "rw", "download")
+	url, cmd, pl := setup(t, "rw", opDownload)
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -423,7 +483,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 		"error: missing id",
 	}, data)
 
-	writeCommandArgs(t, pl, "get-object 00000000", []string{"id=ggg"})
+	writeCommandArgs(t, pl, "get-object 00000000", []string{testIDGgg})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 401", status)
 	require.Empty(t, args)
@@ -431,7 +491,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 		"error: missing token",
 	}, data)
 
-	writeCommandArgs(t, pl, "get-object 00000000", []string{"id=ggg", "token=ggg"})
+	writeCommandArgs(t, pl, "get-object 00000000", []string{testIDGgg, testTokenGgg})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 400", status)
 	require.Empty(t, args)
@@ -440,7 +500,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 	}, data)
 
 	id := base64.StdEncoding.EncodeToString([]byte("{}"))
-	writeCommandArgs(t, pl, "get-object 00000000", []string{fmt.Sprintf("id=%s", id), "token=ggg"})
+	writeCommandArgs(t, pl, "get-object 00000000", []string{fmt.Sprintf("id=%s", id), testTokenGgg})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 400", status)
 	require.Empty(t, args)
@@ -455,16 +515,16 @@ func TestLfsTransferGetObject(t *testing.T) {
 	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: token hash mismatch",
+		errTokenHashMismatch,
 	}, data)
 
 	idJSON := map[string]interface{}{
-		"operation": "download",
-		"oid":       largeFileOid,
-		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
-		"headers": map[string]interface{}{
-			"Authorization": "Basic 1234567890",
-			"Content-Type":  "application/octet-stream",
+		testOperation: opDownload,
+		fieldOid:      largeFileOid,
+		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
+		fieldHeaders: map[string]interface{}{
+			fieldAuthorization: testAuthHeader,
+			fieldContentType:   testContentType,
 		},
 	}
 	idBinary, _ := json.Marshal(idJSON)
@@ -482,12 +542,12 @@ func TestLfsTransferGetObject(t *testing.T) {
 	require.Equal(t, [][]byte{[]byte(largeFileContents)}, binData)
 
 	idJSON = map[string]interface{}{
-		"operation": "download",
-		"oid":       evenLargerFileOid,
-		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, evenLargerFileOid),
-		"headers": map[string]interface{}{
-			"Authorization": "Basic 1234567890",
-			"Content-Type":  "application/octet-stream",
+		testOperation: opDownload,
+		fieldOid:      evenLargerFileOid,
+		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, evenLargerFileOid),
+		fieldHeaders: map[string]interface{}{
+			fieldAuthorization: testAuthHeader,
+			fieldContentType:   testContentType,
 		},
 	}
 	idBinary, _ = json.Marshal(idJSON)
@@ -505,12 +565,12 @@ func TestLfsTransferGetObject(t *testing.T) {
 	}, data)
 
 	idJSON = map[string]interface{}{
-		"operation": "upload",
-		"oid":       largeFileOid,
-		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
-		"headers": map[string]interface{}{
-			"Authorization": "Basic 1234567890",
-			"Content-Type":  "application/octet-stream",
+		testOperation: opUpload,
+		fieldOid:      largeFileOid,
+		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
+		fieldHeaders: map[string]interface{}{
+			fieldAuthorization: testAuthHeader,
+			fieldContentType:   testContentType,
 		},
 	}
 	idBinary, _ = json.Marshal(idJSON)
@@ -528,12 +588,12 @@ func TestLfsTransferGetObject(t *testing.T) {
 	}, data)
 
 	idJSON = map[string]interface{}{
-		"operation": "download",
-		"oid":       evenLargerFileOid,
-		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
-		"headers": map[string]interface{}{
-			"Authorization": "Basic 1234567890",
-			"Content-Type":  "application/octet-stream",
+		testOperation: opDownload,
+		fieldOid:      evenLargerFileOid,
+		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
+		fieldHeaders: map[string]interface{}{
+			fieldAuthorization: testAuthHeader,
+			fieldContentType:   testContentType,
 		},
 	}
 	idBinary, _ = json.Marshal(idJSON)
@@ -551,12 +611,12 @@ func TestLfsTransferGetObject(t *testing.T) {
 	}, data)
 
 	idJSON = map[string]interface{}{
-		"operation": "download",
-		"oid":       largeFileOid,
-		"href":      fmt.Sprintf("%s/evil-url", url),
-		"headers": map[string]interface{}{
-			"Authorization": "Basic 1234567890",
-			"Content-Type":  "application/octet-stream",
+		testOperation: opDownload,
+		fieldOid:      largeFileOid,
+		fieldHref:     fmt.Sprintf("%s/evil-url", url),
+		fieldHeaders: map[string]interface{}{
+			fieldAuthorization: testAuthHeader,
+			fieldContentType:   testContentType,
 		},
 	}
 	idBinary, _ = json.Marshal(idJSON)
@@ -570,7 +630,7 @@ func TestLfsTransferGetObject(t *testing.T) {
 	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: token hash mismatch",
+		errTokenHashMismatch,
 	}, data)
 
 	quit(t, pl)
@@ -578,11 +638,11 @@ func TestLfsTransferGetObject(t *testing.T) {
 }
 
 func TestLfsTransferPutObject(t *testing.T) {
-	url, cmd, pl := setup(t, "rw", "upload")
+	url, cmd, pl := setup(t, "rw", opUpload)
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
-	writeCommandArgsAndBinaryData(t, pl, "put-object 00000000", []string{"size=0"}, nil)
+	writeCommandArgsAndBinaryData(t, pl, "put-object 00000000", []string{testSizeZero}, nil)
 	status, args, data := readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 400", status)
 	require.Empty(t, args)
@@ -590,7 +650,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 		"error: missing id",
 	}, data)
 
-	writeCommandArgsAndBinaryData(t, pl, "put-object 00000000", []string{"size=0", "id=ggg"}, nil)
+	writeCommandArgsAndBinaryData(t, pl, "put-object 00000000", []string{testSizeZero, testIDGgg}, nil)
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 401", status)
 	require.Empty(t, args)
@@ -598,7 +658,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 		"error: missing token",
 	}, data)
 
-	writeCommandArgsAndBinaryData(t, pl, "put-object 00000000", []string{"size=0", "id=ggg", "token=ggg"}, nil)
+	writeCommandArgsAndBinaryData(t, pl, "put-object 00000000", []string{testSizeZero, testIDGgg, testTokenGgg}, nil)
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 400", status)
 	require.Empty(t, args)
@@ -607,7 +667,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 	}, data)
 
 	id := base64.StdEncoding.EncodeToString([]byte("{}"))
-	writeCommandArgsAndBinaryData(t, pl, "put-object 00000000", []string{"size=0", fmt.Sprintf("id=%s", id), "token=ggg"}, nil)
+	writeCommandArgsAndBinaryData(t, pl, "put-object 00000000", []string{testSizeZero, fmt.Sprintf("id=%s", id), testTokenGgg}, nil)
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 400", status)
 	require.Empty(t, args)
@@ -617,21 +677,21 @@ func TestLfsTransferPutObject(t *testing.T) {
 
 	id = base64.StdEncoding.EncodeToString([]byte("{}"))
 	token := base64.StdEncoding.EncodeToString([]byte("aaa"))
-	writeCommandArgsAndBinaryData(t, pl, "put-object 00000000", []string{"size=0", fmt.Sprintf("id=%s", id), fmt.Sprintf("token=%s", token)}, nil)
+	writeCommandArgsAndBinaryData(t, pl, "put-object 00000000", []string{testSizeZero, fmt.Sprintf("id=%s", id), fmt.Sprintf("token=%s", token)}, nil)
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: token hash mismatch",
+		errTokenHashMismatch,
 	}, data)
 
 	idJSON := map[string]interface{}{
-		"operation": "upload",
-		"oid":       largeFileOid,
-		"href":      fmt.Sprintf("%s/group/noexist/gitlab-lfs/objects/%s/%d", url, largeFileOid, largeFileLen),
-		"headers": map[string]interface{}{
-			"Authorization": "Basic 1234567890",
-			"Content-Type":  "application/octet-stream",
+		testOperation: opUpload,
+		fieldOid:      largeFileOid,
+		fieldHref:     fmt.Sprintf("%s/group/noexist/gitlab-lfs/objects/%s/%d", url, largeFileOid, largeFileLen),
+		fieldHeaders: map[string]interface{}{
+			fieldAuthorization: testAuthHeader,
+			fieldContentType:   testContentType,
 		},
 	}
 	idBinary, _ := json.Marshal(idJSON)
@@ -649,12 +709,12 @@ func TestLfsTransferPutObject(t *testing.T) {
 	}, data)
 
 	idJSON = map[string]interface{}{
-		"operation": "upload",
-		"oid":       evenLargerFileOid,
-		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
-		"headers": map[string]interface{}{
-			"Authorization": "Basic 1234567890",
-			"Content-Type":  "application/octet-stream",
+		testOperation: opUpload,
+		fieldOid:      evenLargerFileOid,
+		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
+		fieldHeaders: map[string]interface{}{
+			fieldAuthorization: testAuthHeader,
+			fieldContentType:   testContentType,
 		},
 	}
 	idBinary, _ = json.Marshal(idJSON)
@@ -668,12 +728,12 @@ func TestLfsTransferPutObject(t *testing.T) {
 	require.Equal(t, "status 200", status)
 
 	idJSON = map[string]interface{}{
-		"operation": "download",
-		"oid":       evenLargerFileOid,
-		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
-		"headers": map[string]interface{}{
-			"Authorization": "Basic 1234567890",
-			"Content-Type":  "application/octet-stream",
+		testOperation: opDownload,
+		fieldOid:      evenLargerFileOid,
+		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
+		fieldHeaders: map[string]interface{}{
+			fieldAuthorization: testAuthHeader,
+			fieldContentType:   testContentType,
 		},
 	}
 	idBinary, _ = json.Marshal(idJSON)
@@ -691,12 +751,12 @@ func TestLfsTransferPutObject(t *testing.T) {
 	}, data)
 
 	idJSON = map[string]interface{}{
-		"operation": "upload",
-		"oid":       largeFileOid,
-		"href":      fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
-		"headers": map[string]interface{}{
-			"Authorization": "Basic 1234567890",
-			"Content-Type":  "application/octet-stream",
+		testOperation: opUpload,
+		fieldOid:      largeFileOid,
+		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
+		fieldHeaders: map[string]interface{}{
+			fieldAuthorization: testAuthHeader,
+			fieldContentType:   testContentType,
 		},
 	}
 	idBinary, _ = json.Marshal(idJSON)
@@ -714,12 +774,12 @@ func TestLfsTransferPutObject(t *testing.T) {
 	}, data)
 
 	idJSON = map[string]interface{}{
-		"operation": "upload",
-		"oid":       largeFileOid,
-		"href":      fmt.Sprintf("%s/evil-url", url),
-		"headers": map[string]interface{}{
-			"Authorization": "Basic 1234567890",
-			"Content-Type":  "application/octet-stream",
+		testOperation: opUpload,
+		fieldOid:      largeFileOid,
+		fieldHref:     fmt.Sprintf("%s/evil-url", url),
+		fieldHeaders: map[string]interface{}{
+			fieldAuthorization: testAuthHeader,
+			fieldContentType:   testContentType,
 		},
 	}
 	idBinary, _ = json.Marshal(idJSON)
@@ -733,7 +793,7 @@ func TestLfsTransferPutObject(t *testing.T) {
 	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"error: token hash mismatch",
+		errTokenHashMismatch,
 	}, data)
 
 	quit(t, pl)
@@ -741,11 +801,11 @@ func TestLfsTransferPutObject(t *testing.T) {
 }
 
 func TestLfsTransferVerifyObject(t *testing.T) {
-	_, cmd, pl := setup(t, "rw", "upload")
+	_, cmd, pl := setup(t, "rw", opUpload)
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
-	writeCommandArgs(t, pl, "verify-object 00000000", []string{"size=0"})
+	writeCommandArgs(t, pl, "verify-object 00000000", []string{testSizeZero})
 	status := readStatus(t, pl)
 	require.Equal(t, "status 200", status)
 
@@ -754,24 +814,24 @@ func TestLfsTransferVerifyObject(t *testing.T) {
 }
 
 func TestLfsTransferLock(t *testing.T) {
-	_, cmd, pl := setup(t, "rw", "upload")
+	_, cmd, pl := setup(t, "rw", opUpload)
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
-	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/1"})
+	writeCommandArgs(t, pl, "lock", []string{argPathFile1})
 	status, args, data := readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 409", status)
 	require.Equal(t, []string{
-		"id=lock1",
-		"path=/large/file/1",
-		"locked-at=2023-10-03T13:56:20Z",
-		"ownername=johndoe",
+		argIDLock1,
+		argPathFile1,
+		argLockedAt1,
+		argOwnername1,
 	}, args)
 	require.Equal(t, []string{
 		"conflict",
 	}, data)
 
-	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/2"})
+	writeCommandArgs(t, pl, "lock", []string{argPathFile2})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
@@ -793,8 +853,8 @@ func TestLfsTransferLock(t *testing.T) {
 	require.Equal(t, []string{
 		"id=lock4",
 		"path=/large/file/4",
-		"locked-at=2023-10-03T13:56:20Z",
-		"ownername=johndoe",
+		argLockedAt1,
+		argOwnername1,
 	}, args)
 
 	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/5", "refname=refs/heads/main"})
@@ -803,8 +863,8 @@ func TestLfsTransferLock(t *testing.T) {
 	require.Equal(t, []string{
 		"id=lock5",
 		"path=/large/file/5",
-		"locked-at=2023-10-03T13:56:20Z",
-		"ownername=johndoe",
+		argLockedAt1,
+		argOwnername1,
 	}, args)
 
 	quit(t, pl)
@@ -812,7 +872,7 @@ func TestLfsTransferLock(t *testing.T) {
 }
 
 func TestLfsTransferUnlock(t *testing.T) {
-	_, cmd, pl := setup(t, "rw", "upload")
+	_, cmd, pl := setup(t, "rw", opUpload)
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -820,10 +880,10 @@ func TestLfsTransferUnlock(t *testing.T) {
 	status, args := readStatusArgs(t, pl)
 	require.Equal(t, "status 200", status)
 	require.Equal(t, []string{
-		"id=lock1",
-		"path=/large/file/1",
-		"locked-at=2023-10-03T13:56:20Z",
-		"ownername=johndoe",
+		argIDLock1,
+		argPathFile1,
+		argLockedAt1,
+		argOwnername1,
 	}, args)
 
 	writeCommandArgs(t, pl, "unlock lock2", []string{"force=true"})
@@ -831,7 +891,7 @@ func TestLfsTransferUnlock(t *testing.T) {
 	require.Equal(t, "status 200", status)
 	require.Equal(t, []string{
 		"id=lock2",
-		"path=/large/file/2",
+		argPathFile2,
 		"locked-at=1955-11-12T22:04:00Z",
 		"ownername=marty",
 	}, args)
@@ -857,7 +917,7 @@ func TestLfsTransferUnlock(t *testing.T) {
 }
 
 func TestLfsTransferListLockDownload(t *testing.T) {
-	_, cmd, pl := setup(t, "rw", "download")
+	_, cmd, pl := setup(t, "rw", opDownload)
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -866,20 +926,20 @@ func TestLfsTransferListLockDownload(t *testing.T) {
 	require.Equal(t, "status 200", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"lock lock1",
-		"path lock1 /large/file/1",
-		"locked-at lock1 2023-10-03T13:56:20Z",
-		"ownername lock1 johndoe",
+		lockLock1,
+		pathLock1,
+		lockedAtLock1,
+		ownernameLock1,
 
-		"lock lock2",
-		"path lock2 /large/file/2",
-		"locked-at lock2 1955-11-12T22:04:00Z",
-		"ownername lock2 marty",
+		lockLock2,
+		pathLock2,
+		lockedAtLock2,
+		ownernameLock2,
 
-		"lock lock3",
-		"path lock3 /large/file/3",
-		"locked-at lock3 2023-10-03T13:56:20Z",
-		"ownername lock3 janedoe",
+		lockLock3,
+		pathLock3,
+		lockedAtLock3,
+		ownernameLock3,
 	}, data)
 
 	writeCommandArgs(t, pl, "list-lock", []string{"limit=2"})
@@ -889,15 +949,15 @@ func TestLfsTransferListLockDownload(t *testing.T) {
 		"next-cursor=lock3",
 	}, args)
 	require.Equal(t, []string{
-		"lock lock1",
-		"path lock1 /large/file/1",
-		"locked-at lock1 2023-10-03T13:56:20Z",
-		"ownername lock1 johndoe",
+		lockLock1,
+		pathLock1,
+		lockedAtLock1,
+		ownernameLock1,
 
-		"lock lock2",
-		"path lock2 /large/file/2",
-		"locked-at lock2 1955-11-12T22:04:00Z",
-		"ownername lock2 marty",
+		lockLock2,
+		pathLock2,
+		lockedAtLock2,
+		ownernameLock2,
 	}, data)
 
 	writeCommandArgs(t, pl, "list-lock", []string{"cursor=lock2"})
@@ -905,37 +965,37 @@ func TestLfsTransferListLockDownload(t *testing.T) {
 	require.Equal(t, "status 200", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"lock lock2",
-		"path lock2 /large/file/2",
-		"locked-at lock2 1955-11-12T22:04:00Z",
-		"ownername lock2 marty",
+		lockLock2,
+		pathLock2,
+		lockedAtLock2,
+		ownernameLock2,
 
-		"lock lock3",
-		"path lock3 /large/file/3",
-		"locked-at lock3 2023-10-03T13:56:20Z",
-		"ownername lock3 janedoe",
+		lockLock3,
+		pathLock3,
+		lockedAtLock3,
+		ownernameLock3,
 	}, data)
 
-	writeCommandArgs(t, pl, "list-lock", []string{"id=lock1"})
+	writeCommandArgs(t, pl, "list-lock", []string{argIDLock1})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 200", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"lock lock1",
-		"path lock1 /large/file/1",
-		"locked-at lock1 2023-10-03T13:56:20Z",
-		"ownername lock1 johndoe",
+		lockLock1,
+		pathLock1,
+		lockedAtLock1,
+		ownernameLock1,
 	}, data)
 
-	writeCommandArgs(t, pl, "list-lock", []string{"path=/large/file/2"})
+	writeCommandArgs(t, pl, "list-lock", []string{argPathFile2})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 200", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"lock lock2",
-		"path lock2 /large/file/2",
-		"locked-at lock2 1955-11-12T22:04:00Z",
-		"ownername lock2 marty",
+		lockLock2,
+		pathLock2,
+		lockedAtLock2,
+		ownernameLock2,
 	}, data)
 
 	quit(t, pl)
@@ -943,7 +1003,7 @@ func TestLfsTransferListLockDownload(t *testing.T) {
 }
 
 func TestLfsTransferListLockUpload(t *testing.T) {
-	_, cmd, pl := setup(t, "rw", "upload")
+	_, cmd, pl := setup(t, "rw", opUpload)
 	wg := setupWaitGroupForExecute(t, cmd)
 	negotiateVersion(t, pl)
 
@@ -952,22 +1012,22 @@ func TestLfsTransferListLockUpload(t *testing.T) {
 	require.Equal(t, "status 200", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"lock lock1",
-		"path lock1 /large/file/1",
-		"locked-at lock1 2023-10-03T13:56:20Z",
-		"ownername lock1 johndoe",
-		"owner lock1 ours",
+		lockLock1,
+		pathLock1,
+		lockedAtLock1,
+		ownernameLock1,
+		ownerLock1Ours,
 
-		"lock lock2",
-		"path lock2 /large/file/2",
-		"locked-at lock2 1955-11-12T22:04:00Z",
-		"ownername lock2 marty",
-		"owner lock2 theirs",
+		lockLock2,
+		pathLock2,
+		lockedAtLock2,
+		ownernameLock2,
+		ownerLock2Theirs,
 
-		"lock lock3",
-		"path lock3 /large/file/3",
-		"locked-at lock3 2023-10-03T13:56:20Z",
-		"ownername lock3 janedoe",
+		lockLock3,
+		pathLock3,
+		lockedAtLock3,
+		ownernameLock3,
 		"owner lock3 theirs",
 	}, data)
 
@@ -978,17 +1038,17 @@ func TestLfsTransferListLockUpload(t *testing.T) {
 		"next-cursor=lock3",
 	}, args)
 	require.Equal(t, []string{
-		"lock lock1",
-		"path lock1 /large/file/1",
-		"locked-at lock1 2023-10-03T13:56:20Z",
-		"ownername lock1 johndoe",
-		"owner lock1 ours",
+		lockLock1,
+		pathLock1,
+		lockedAtLock1,
+		ownernameLock1,
+		ownerLock1Ours,
 
-		"lock lock2",
-		"path lock2 /large/file/2",
-		"locked-at lock2 1955-11-12T22:04:00Z",
-		"ownername lock2 marty",
-		"owner lock2 theirs",
+		lockLock2,
+		pathLock2,
+		lockedAtLock2,
+		ownernameLock2,
+		ownerLock2Theirs,
 	}, data)
 
 	writeCommandArgs(t, pl, "list-lock", []string{"cursor=lock2"})
@@ -996,41 +1056,41 @@ func TestLfsTransferListLockUpload(t *testing.T) {
 	require.Equal(t, "status 200", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"lock lock2",
-		"path lock2 /large/file/2",
-		"locked-at lock2 1955-11-12T22:04:00Z",
-		"ownername lock2 marty",
-		"owner lock2 theirs",
+		lockLock2,
+		pathLock2,
+		lockedAtLock2,
+		ownernameLock2,
+		ownerLock2Theirs,
 
-		"lock lock3",
-		"path lock3 /large/file/3",
-		"locked-at lock3 2023-10-03T13:56:20Z",
-		"ownername lock3 janedoe",
+		lockLock3,
+		pathLock3,
+		lockedAtLock3,
+		ownernameLock3,
 		"owner lock3 theirs",
 	}, data)
 
-	writeCommandArgs(t, pl, "list-lock", []string{"id=lock1"})
+	writeCommandArgs(t, pl, "list-lock", []string{argIDLock1})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 200", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"lock lock1",
-		"path lock1 /large/file/1",
-		"locked-at lock1 2023-10-03T13:56:20Z",
-		"ownername lock1 johndoe",
-		"owner lock1 ours",
+		lockLock1,
+		pathLock1,
+		lockedAtLock1,
+		ownernameLock1,
+		ownerLock1Ours,
 	}, data)
 
-	writeCommandArgs(t, pl, "list-lock", []string{"path=/large/file/2"})
+	writeCommandArgs(t, pl, "list-lock", []string{argPathFile2})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 200", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"lock lock2",
-		"path lock2 /large/file/2",
-		"locked-at lock2 1955-11-12T22:04:00Z",
-		"ownername lock2 marty",
-		"owner lock2 theirs",
+		lockLock2,
+		pathLock2,
+		lockedAtLock2,
+		ownernameLock2,
+		ownerLock2Theirs,
 	}, data)
 
 	quit(t, pl)
@@ -1055,19 +1115,19 @@ func listLocks(cursor string, limit int, refspec string, id string, path string)
 		{
 			Refspec: "main",
 			LockInfo: &LockInfo{
-				ID:       "lock1",
-				Path:     "/large/file/1",
+				ID:       lockID1,
+				Path:     filePath1,
 				LockedAt: time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
 				Owner: &Owner{
-					Name: "johndoe",
+					Name: ownerJohn,
 				},
 			},
 		},
 		{
 			Refspec: "my-branch",
 			LockInfo: &LockInfo{
-				ID:       "lock2",
-				Path:     "/large/file/2",
+				ID:       lockID2,
+				Path:     filePath2,
 				LockedAt: time.Date(1955, 11, 12, 22, 04, 0, 0, time.UTC).Format(time.RFC3339),
 				Owner: &Owner{
 					Name: "marty",
@@ -1077,8 +1137,8 @@ func listLocks(cursor string, limit int, refspec string, id string, path string)
 		{
 			Refspec: "",
 			LockInfo: &LockInfo{
-				ID:       "lock3",
-				Path:     "/large/file/3",
+				ID:       lockID3,
+				Path:     filePath3,
 				LockedAt: time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
 				Owner: &Owner{
 					Name: "janedoe",
@@ -1183,8 +1243,8 @@ func buildAllowedHandler(t *testing.T, gitalyAddress string) testserver.TestRequ
 				},
 			}
 			disallowed := map[string]interface{}{
-				"status":  false,
-				"message": "Disallowed by API call",
+				"status":     false,
+				fieldMessage: "Disallowed by API call",
 			}
 
 			var body map[string]interface{}
@@ -1240,7 +1300,7 @@ func buildBatchHandler(t *testing.T, url *string, op string) testserver.TestRequ
 			for _, o := range reqObjects {
 				reqObject := o.(map[string]interface{})
 				retObject := map[string]interface{}{
-					"oid": reqObject["oid"],
+					fieldOid: reqObject["oid"],
 				}
 				switch reqObject["oid"] {
 				case largeFileOid:
@@ -1248,10 +1308,10 @@ func buildBatchHandler(t *testing.T, url *string, op string) testserver.TestRequ
 					if op == "download" {
 						retObject["actions"] = map[string]interface{}{
 							"download": map[string]interface{}{
-								"href": fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", *url, largeFileOid),
+								fieldHref: fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", *url, largeFileOid),
 								"header": map[string]interface{}{
-									"Authorization": "Basic 1234567890",
-									"Content-Type":  "application/octet-stream",
+									fieldAuthorization: testAuthHeader,
+									fieldContentType:   testContentType,
 								},
 							},
 						}
@@ -1262,10 +1322,10 @@ func buildBatchHandler(t *testing.T, url *string, op string) testserver.TestRequ
 					if op == "upload" {
 						retObject["actions"] = map[string]interface{}{
 							"upload": map[string]interface{}{
-								"href": fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", *url, evenLargerFileOid, evenLargerFileLen),
+								fieldHref: fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", *url, evenLargerFileOid, evenLargerFileLen),
 								"header": map[string]interface{}{
-									"Authorization": "Basic 1234567890",
-									"Content-Type":  "application/octet-stream",
+									fieldAuthorization: testAuthHeader,
+									fieldContentType:   testContentType,
 								},
 							},
 						}
@@ -1273,8 +1333,8 @@ func buildBatchHandler(t *testing.T, url *string, op string) testserver.TestRequ
 				default:
 					retObject["size"] = reqObject["size"]
 					retObject["error"] = map[string]interface{}{
-						"code":    404,
-						"message": "Not found",
+						"code":       404,
+						fieldMessage: "Not found",
 					}
 				}
 				retObjects = append(retObjects, retObject)
@@ -1302,7 +1362,7 @@ func buildLargeFileObjectHandler(t *testing.T) testserver.TestRequestHandler {
 	return testserver.TestRequestHandler{
 		Path: fmt.Sprintf("/group/repo/gitlab-lfs/objects/%s", largeFileOid),
 		Handler: func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, "Basic 1234567890", r.Header.Get("Authorization"))
+			assert.Equal(t, testAuthHeader, r.Header.Get("Authorization"))
 			w.Write([]byte(largeFileContents))
 		},
 	}
@@ -1313,7 +1373,7 @@ func buildEvenLargerFileObjectHandler(t *testing.T) testserver.TestRequestHandle
 		Path: fmt.Sprintf("/group/repo/gitlab-lfs/objects/%s/%d", evenLargerFileOid, evenLargerFileLen),
 		Handler: func(_ http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPut, r.Method)
-			assert.Equal(t, "Basic 1234567890", r.Header.Get("Authorization"))
+			assert.Equal(t, testAuthHeader, r.Header.Get("Authorization"))
 			body, _ := io.ReadAll(r.Body)
 			assert.Equal(t, []byte(evenLargerFileContents), body)
 		},
@@ -1342,7 +1402,7 @@ func buildLocksVerifyHandler(t *testing.T) testserver.TestRequestHandler {
 			var locks []*LockInfo
 			locks, bodyJSON.NextCursor = listLocks(requestJSON.Cursor, requestJSON.Limit, requestJSON.Ref.Name, r.URL.Query().Get("id"), r.URL.Query().Get("path"))
 			for _, lock := range locks {
-				if lock.ID == "lock1" {
+				if lock.ID == lockID1 {
 					bodyJSON.Ours = append(bodyJSON.Ours, lock)
 				} else {
 					bodyJSON.Theirs = append(bodyJSON.Theirs, lock)
@@ -1390,32 +1450,32 @@ func handleLocksPost(t *testing.T, w http.ResponseWriter, r *http.Request) {
 
 	var response map[string]interface{}
 	switch body["path"] {
-	case "/large/file/1":
+	case filePath1:
 		response = map[string]interface{}{
-			"lock": map[string]interface{}{
-				"id":        "lock1",
-				"path":      "/large/file/1",
-				"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
-				"owner": map[string]interface{}{
-					"name": "johndoe",
+			fieldLock: map[string]interface{}{
+				"id":          lockID1,
+				fieldPath:     filePath1,
+				fieldLockedAt: time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+				fieldOwner: map[string]interface{}{
+					fieldName: ownerJohn,
 				},
 			},
-			"message": "already created lock",
+			fieldMessage: "already created lock",
 		}
 		w.WriteHeader(http.StatusConflict)
-	case "/large/file/2":
+	case filePath2:
 		response = map[string]interface{}{
-			"message": "no permission",
+			fieldMessage: "no permission",
 		}
 		w.WriteHeader(http.StatusForbidden)
 	case "/large/file/4":
 		response = map[string]interface{}{
-			"lock": map[string]interface{}{
-				"id":        "lock4",
-				"path":      "/large/file/4",
-				"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
-				"owner": map[string]interface{}{
-					"name": "johndoe",
+			fieldLock: map[string]interface{}{
+				"id":          "lock4",
+				fieldPath:     "/large/file/4",
+				fieldLockedAt: time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+				fieldOwner: map[string]interface{}{
+					fieldName: ownerJohn,
 				},
 			},
 		}
@@ -1424,19 +1484,19 @@ func handleLocksPost(t *testing.T, w http.ResponseWriter, r *http.Request) {
 		ref := body["ref"].(map[string]interface{})
 		assert.Equal(t, "refs/heads/main", ref["name"])
 		response = map[string]interface{}{
-			"lock": map[string]interface{}{
-				"id":        "lock5",
-				"path":      "/large/file/5",
-				"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
-				"owner": map[string]interface{}{
-					"name": "johndoe",
+			fieldLock: map[string]interface{}{
+				"id":          "lock5",
+				fieldPath:     "/large/file/5",
+				fieldLockedAt: time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+				fieldOwner: map[string]interface{}{
+					fieldName: ownerJohn,
 				},
 			},
 		}
 		w.WriteHeader(http.StatusCreated)
 	default:
 		response = map[string]interface{}{
-			"message": "internal error",
+			fieldMessage: "internal error",
 		}
 		w.WriteHeader(http.StatusInternalServerError)
 	}
@@ -1453,18 +1513,18 @@ func buildUnlockLock1Handler(t *testing.T) testserver.TestRequestHandler {
 			assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
 			assert.Equal(t, map[string]interface{}{
 				"ref": map[string]interface{}{
-					"name": "refs/heads/main",
+					fieldName: "refs/heads/main",
 				},
-				"force": false,
+				argForce: false,
 			}, body)
 
 			lock := map[string]interface{}{
-				"lock": map[string]interface{}{
-					"id":        "lock1",
-					"path":      "/large/file/1",
-					"locked_at": time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
-					"owner": map[string]interface{}{
-						"name": "johndoe",
+				fieldLock: map[string]interface{}{
+					"id":          lockID1,
+					fieldPath:     filePath1,
+					fieldLockedAt: time.Date(2023, 10, 3, 13, 56, 20, 0, time.UTC).Format(time.RFC3339),
+					fieldOwner: map[string]interface{}{
+						fieldName: ownerJohn,
 					},
 				},
 			}
@@ -1482,16 +1542,16 @@ func buildUnlockLock2Handler(t *testing.T) testserver.TestRequestHandler {
 			var body map[string]interface{}
 			assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
 			assert.Equal(t, map[string]interface{}{
-				"force": true,
+				argForce: true,
 			}, body)
 
 			lock := map[string]interface{}{
-				"lock": map[string]interface{}{
-					"id":        "lock2",
-					"path":      "/large/file/2",
-					"locked_at": time.Date(1955, 11, 12, 22, 4, 0, 0, time.UTC).Format(time.RFC3339),
-					"owner": map[string]interface{}{
-						"name": "marty",
+				fieldLock: map[string]interface{}{
+					"id":          lockID2,
+					fieldPath:     filePath2,
+					fieldLockedAt: time.Date(1955, 11, 12, 22, 4, 0, 0, time.UTC).Format(time.RFC3339),
+					fieldOwner: map[string]interface{}{
+						fieldName: "marty",
 					},
 				},
 			}
@@ -1509,11 +1569,11 @@ func buildUnlockLock3Handler(t *testing.T) testserver.TestRequestHandler {
 			var body map[string]interface{}
 			assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
 			assert.Equal(t, map[string]interface{}{
-				"force": false,
+				argForce: false,
 			}, body)
 
 			lock := map[string]interface{}{
-				"message": "forbidden",
+				fieldMessage: "forbidden",
 			}
 			w.WriteHeader(http.StatusForbidden)
 			writer := json.NewEncoder(w)
@@ -1530,11 +1590,11 @@ func buildUnlockLock4Handler(t *testing.T) testserver.TestRequestHandler {
 			var body map[string]interface{}
 			assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
 			assert.Equal(t, map[string]interface{}{
-				"force": false,
+				argForce: false,
 			}, body)
 
 			lock := map[string]interface{}{
-				"message": "not found",
+				fieldMessage: "not found",
 			}
 			w.WriteHeader(http.StatusNotFound)
 			writer := json.NewEncoder(w)

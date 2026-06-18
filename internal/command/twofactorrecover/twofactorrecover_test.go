@@ -59,6 +59,7 @@ const (
 	question = "Are you sure you want to generate new two-factor recovery codes?\n" +
 		"Any existing recovery codes you saved will be invalidated. (yes/no)\n\n"
 	errorHeader = "An error occurred while trying to generate new recovery codes.\n"
+	answerYes   = "yes\n"
 )
 
 func TestExecute(t *testing.T) {
@@ -75,7 +76,7 @@ func TestExecute(t *testing.T) {
 		{
 			desc:      "With a known key id",
 			arguments: &commandargs.Shell{GitlabKeyID: "1"},
-			answer:    "yes\n",
+			answer:    answerYes,
 			expectedOutput: question +
 				"Your two-factor authentication recovery codes are:\n\nrecovery\ncodes\n\n" +
 				"During sign in, use one of the codes above when prompted for\n" +
@@ -85,25 +86,25 @@ func TestExecute(t *testing.T) {
 		{
 			desc:           "With bad response",
 			arguments:      &commandargs.Shell{GitlabKeyID: "-1"},
-			answer:         "yes\n",
+			answer:         answerYes,
 			expectedOutput: question + errorHeader + "parsing failed\n",
 		},
 		{
 			desc:           "With API returns an error",
 			arguments:      &commandargs.Shell{GitlabKeyID: "forbidden"},
-			answer:         "yes\n",
+			answer:         answerYes,
 			expectedOutput: question + errorHeader + "Forbidden!\n",
 		},
 		{
 			desc:           "With API fails",
 			arguments:      &commandargs.Shell{GitlabKeyID: "broken"},
-			answer:         "yes\n",
+			answer:         answerYes,
 			expectedOutput: question + errorHeader + "Internal API unreachable\n",
 		},
 		{
 			desc:           "With missing arguments",
 			arguments:      &commandargs.Shell{},
-			answer:         "yes\n",
+			answer:         answerYes,
 			expectedOutput: question + errorHeader + "who='' is invalid\n",
 		},
 		{
