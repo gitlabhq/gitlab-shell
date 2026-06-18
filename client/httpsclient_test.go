@@ -78,7 +78,7 @@ func TestFailedRequests(t *testing.T) {
 		{
 			desc:          "Invalid CaFile",
 			caFile:        path.Join(testRoot, "certs/invalid/server.crt"),
-			expectedError: "Internal API unreachable",
+			expectedError: internalAPIUnreachable,
 		},
 		{
 			desc:                   "Missing CaFile",
@@ -88,11 +88,11 @@ func TestFailedRequests(t *testing.T) {
 		{
 			desc:          "Invalid CaPath",
 			caPath:        path.Join(testRoot, "certs/invalid"),
-			expectedError: "Internal API unreachable",
+			expectedError: internalAPIUnreachable,
 		},
 		{
 			desc:          "Empty config",
-			expectedError: "Internal API unreachable",
+			expectedError: internalAPIUnreachable,
 		},
 	}
 

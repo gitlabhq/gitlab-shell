@@ -16,6 +16,13 @@ import (
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
+const (
+	testCorrelationIDEnv = "CORRELATION_ID"
+	testCorrelationID    = "abc123"
+	testUsername         = "alex-doe"
+	testNamespace        = "flightjs"
+)
+
 func TestSetup(t *testing.T) {
 	testCases := []struct {
 		name                  string
@@ -28,9 +35,9 @@ func TestSetup(t *testing.T) {
 		{
 			name: "CORRELATION_ID in environment",
 			additionalEnv: map[string]string{
-				"CORRELATION_ID": "abc123",
+				testCorrelationIDEnv: testCorrelationID,
 			},
-			expectedCorrelationID: "abc123",
+			expectedCorrelationID: testCorrelationID,
 		},
 	}
 	for _, tc := range testCases {
@@ -113,7 +120,7 @@ func TestSetupAttachesCorrelationIDToLogger(t *testing.T) {
 		{name: "generates a new correlation ID when none is set"},
 		{
 			name:          "uses the correlation ID from the environment",
-			additionalEnv: map[string]string{"CORRELATION_ID": "abc123"},
+			additionalEnv: map[string]string{testCorrelationIDEnv: testCorrelationID},
 		},
 	}
 
@@ -238,25 +245,25 @@ func TestNewLogData(t *testing.T) {
 	}{
 		{
 			desc:                  "Project under single namespace",
-			project:               "flightjs/Flight",
-			username:              "alex-doe",
-			expectedRootNamespace: "flightjs",
+			project:               testNamespace + "/Flight",
+			username:              testUsername,
+			expectedRootNamespace: testNamespace,
 			projectID:             1,
 			rootNamespaceID:       2,
 		},
 		{
 			desc:                  "Project under single odd namespace",
-			project:               "flightjs///Flight",
-			username:              "alex-doe",
-			expectedRootNamespace: "flightjs",
+			project:               testNamespace + "///Flight",
+			username:              testUsername,
+			expectedRootNamespace: testNamespace,
 			projectID:             1,
 			rootNamespaceID:       2,
 		},
 		{
 			desc:                  "Project under deeper namespace",
-			project:               "flightjs/one/Flight",
-			username:              "alex-doe",
-			expectedRootNamespace: "flightjs",
+			project:               testNamespace + "/one/Flight",
+			username:              testUsername,
+			expectedRootNamespace: testNamespace,
 			projectID:             1,
 			rootNamespaceID:       2,
 		},

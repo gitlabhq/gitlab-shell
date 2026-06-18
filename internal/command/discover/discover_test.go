@@ -18,14 +18,19 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
+const (
+	testUsername   = "alex-doe"
+	testUsernameAt = "@alex-doe"
+)
+
 var requests = []testserver.TestRequestHandler{
 	{
 		Path: "/api/v4/internal/discover",
 		Handler: func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Query().Get("key_id") == "1" || r.URL.Query().Get("username") == "alex-doe" {
+			if r.URL.Query().Get("key_id") == "1" || r.URL.Query().Get("username") == testUsername {
 				body := map[string]interface{}{
 					"id":       2,
-					"username": "alex-doe",
+					"username": testUsername,
 					"name":     "Alex Doe",
 				}
 				json.NewEncoder(w).Encode(body)
@@ -54,13 +59,13 @@ func TestExecute(t *testing.T) {
 	}{
 		{
 			desc:             "With a known username",
-			arguments:        &commandargs.Shell{GitlabUsername: "alex-doe"},
-			expectedUsername: "@alex-doe",
+			arguments:        &commandargs.Shell{GitlabUsername: testUsername},
+			expectedUsername: testUsernameAt,
 		},
 		{
 			desc:             "With a known key id",
 			arguments:        &commandargs.Shell{GitlabKeyID: "1"},
-			expectedUsername: "@alex-doe",
+			expectedUsername: testUsernameAt,
 		},
 		{
 			desc:             "With an unknown key",
@@ -76,9 +81,9 @@ func TestExecute(t *testing.T) {
 			desc: "with a known username - when other input is also given",
 			arguments: &commandargs.Shell{
 				Arguments:      []string{"foo"},
-				GitlabUsername: "alex-doe",
+				GitlabUsername: testUsername,
 			},
-			expectedUsername: "@alex-doe",
+			expectedUsername: testUsernameAt,
 		},
 		{
 			desc: "with a known key id - when other input is also given",
@@ -86,7 +91,7 @@ func TestExecute(t *testing.T) {
 				Arguments:   []string{"2foo"},
 				GitlabKeyID: "1",
 			},
-			expectedUsername: "@alex-doe",
+			expectedUsername: testUsernameAt,
 		},
 	}
 

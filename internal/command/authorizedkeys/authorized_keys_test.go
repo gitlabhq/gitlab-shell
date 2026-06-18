@@ -15,12 +15,17 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 )
 
+const (
+	testKey  = "key"
+	testUser = "user"
+)
+
 var (
 	requests = []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/authorized_keys",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Query().Get("key") == "key" {
+				if r.URL.Query().Get("key") == testKey {
 					body := map[string]interface{}{
 						"id":  1,
 						"key": "public-key",
@@ -54,22 +59,22 @@ func TestExecute(t *testing.T) {
 	}{
 		{
 			desc:           "With matching username and key",
-			arguments:      &commandargs.AuthorizedKeys{ExpectedUser: "user", ActualUser: "user", Key: "key"},
+			arguments:      &commandargs.AuthorizedKeys{ExpectedUser: testUser, ActualUser: testUser, Key: testKey},
 			expectedOutput: "command=\"/tmp/bin/gitlab-shell key-1\",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty public-key\n",
 		},
 		{
 			desc:           "When key doesn't match any existing key",
-			arguments:      &commandargs.AuthorizedKeys{ExpectedUser: "user", ActualUser: "user", Key: "not-found"},
+			arguments:      &commandargs.AuthorizedKeys{ExpectedUser: testUser, ActualUser: testUser, Key: "not-found"},
 			expectedOutput: "# No key was found for not-found\n",
 		},
 		{
 			desc:           "When the API returns an error",
-			arguments:      &commandargs.AuthorizedKeys{ExpectedUser: "user", ActualUser: "user", Key: "broken-message"},
+			arguments:      &commandargs.AuthorizedKeys{ExpectedUser: testUser, ActualUser: testUser, Key: "broken-message"},
 			expectedOutput: "# No key was found for broken-message\n",
 		},
 		{
 			desc:           "When the API fails",
-			arguments:      &commandargs.AuthorizedKeys{ExpectedUser: "user", ActualUser: "user", Key: "broken"},
+			arguments:      &commandargs.AuthorizedKeys{ExpectedUser: testUser, ActualUser: testUser, Key: "broken"},
 			expectedOutput: "# No key was found for broken\n",
 		},
 	}
