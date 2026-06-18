@@ -13,9 +13,11 @@ import (
 )
 
 const (
-	testGitUser = "git"
-	testActual  = "actual"
-	testUser    = "user"
+	testGitUser  = "git"
+	testActual   = "actual"
+	testUser     = "user"
+	testKey      = "key"
+	testExpected = "expected"
 )
 
 var (
@@ -35,7 +37,7 @@ func TestNew(t *testing.T) {
 		{
 			desc:         "it returns a AuthorizedKeys command",
 			executable:   authorizedKeysExec,
-			arguments:    []string{testGitUser, testGitUser, "key"},
+			arguments:    []string{testGitUser, testGitUser, testKey},
 			config:       basicConfig,
 			expectedType: &authorizedkeys.Command{},
 		},
@@ -63,16 +65,16 @@ func TestParseSuccess(t *testing.T) {
 		{
 			desc:         "It parses authorized-keys command",
 			executable:   &executable.Executable{Name: executable.AuthorizedKeysCheck},
-			arguments:    []string{testGitUser, testGitUser, "key"},
-			expectedArgs: &commandargs.AuthorizedKeys{Arguments: []string{testGitUser, testGitUser, "key"}, ExpectedUser: testGitUser, ActualUser: testGitUser, Key: "key"},
+			arguments:    []string{testGitUser, testGitUser, testKey},
+			expectedArgs: &commandargs.AuthorizedKeys{Arguments: []string{testGitUser, testGitUser, testKey}, ExpectedUser: testGitUser, ActualUser: testGitUser, Key: testKey},
 		},
 		{
 			// this seems counter-intuitive, but this ensures we're preserving the
 			// current logic when handling this situation/
 			desc:         "No error when expected user does not match actual user",
 			executable:   &executable.Executable{Name: executable.AuthorizedKeysCheck},
-			arguments:    []string{"expected", testActual, "key"},
-			expectedArgs: &commandargs.AuthorizedKeys{Arguments: []string{"expected", testActual, "key"}, ExpectedUser: "expected", ActualUser: testActual, Key: "key"},
+			arguments:    []string{testExpected, testActual, testKey},
+			expectedArgs: &commandargs.AuthorizedKeys{Arguments: []string{testExpected, testActual, testKey}, ExpectedUser: testExpected, ActualUser: testActual, Key: testKey},
 			expectError:  false,
 		},
 	}
@@ -108,13 +110,13 @@ func TestParseFailure(t *testing.T) {
 		{
 			desc:          "With too many arguments for the AuthorizedKeysCheck",
 			executable:    &executable.Executable{Name: executable.AuthorizedKeysCheck},
-			arguments:     []string{testUser, testUser, "key", "something-else"},
+			arguments:     []string{testUser, testUser, testKey, "something-else"},
 			expectedError: "# Insufficient arguments. 4. Usage\n#\tgitlab-shell-authorized-keys-check <expected-username> <actual-username> <key>",
 		},
 		{
 			desc:          "With missing username for the AuthorizedKeysCheck",
 			executable:    &executable.Executable{Name: executable.AuthorizedKeysCheck},
-			arguments:     []string{testUser, "", "key"},
+			arguments:     []string{testUser, "", testKey},
 			expectedError: "# No username provided",
 		},
 		{

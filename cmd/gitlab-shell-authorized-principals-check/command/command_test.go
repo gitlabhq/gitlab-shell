@@ -15,6 +15,8 @@ import (
 const (
 	testKeyID      = "key"
 	testPrincipal1 = "principal-1"
+	testPrincipal  = "principal"
+	testPrincipal2 = "principal-2"
 )
 
 var (
@@ -34,7 +36,7 @@ func TestNew(t *testing.T) {
 		{
 			desc:         "it returns a AuthorizedPrincipals command",
 			executable:   authorizedPrincipalsExec,
-			arguments:    []string{testKeyID, "principal"},
+			arguments:    []string{testKeyID, testPrincipal},
 			config:       basicConfig,
 			expectedType: &authorizedprincipals.Command{},
 		},
@@ -62,8 +64,8 @@ func TestParseSuccess(t *testing.T) {
 		{
 			desc:         "it parses authorized-principals command",
 			executable:   &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
-			arguments:    []string{testKeyID, testPrincipal1, "principal-2"},
-			expectedArgs: &commandargs.AuthorizedPrincipals{Arguments: []string{testKeyID, testPrincipal1, "principal-2"}, KeyID: testKeyID, Principals: []string{testPrincipal1, "principal-2"}},
+			arguments:    []string{testKeyID, testPrincipal1, testPrincipal2},
+			expectedArgs: &commandargs.AuthorizedPrincipals{Arguments: []string{testKeyID, testPrincipal1, testPrincipal2}, KeyID: testKeyID, Principals: []string{testPrincipal1, testPrincipal2}},
 		},
 		{
 			desc:        "it fails when a principal is empty",
@@ -116,13 +118,13 @@ func TestParseFailure(t *testing.T) {
 		{
 			desc:          "With missing key_id for the AuthorizedPrincipalsCheck",
 			executable:    &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
-			arguments:     []string{"", "principal"},
+			arguments:     []string{"", testPrincipal},
 			expectedError: "# No key_id provided",
 		},
 		{
 			desc:          "With blank principal for the AuthorizedPrincipalsCheck",
 			executable:    &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
-			arguments:     []string{testKeyID, "principal", ""},
+			arguments:     []string{testKeyID, testPrincipal, ""},
 			expectedError: "# An invalid principal was provided",
 		},
 	}
