@@ -28,7 +28,7 @@ type Client struct {
 	retryOpts retryOptions
 }
 
-// retryOptions controls the retry behaviour of the internal HTTP client.
+// retryOptions controls the retry behavior of the internal HTTP client.
 // The zero value uses the go-retryablehttp defaults (RetryMax=3, 1s min wait).
 type retryOptions struct {
 	retryMax     int

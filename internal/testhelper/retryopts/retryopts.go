@@ -1,5 +1,5 @@
 // Package retryopts provides test helpers for configuring fast HTTP retry
-// behaviour in tests. It is a separate package from testhelper to avoid an
+// behavior in tests. It is a separate package from testhelper to avoid an
 // import cycle: the client package's own tests import testhelper, so testhelper
 // must not import client.
 package retryopts

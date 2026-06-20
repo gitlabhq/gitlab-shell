@@ -118,7 +118,7 @@ type Config struct {
 	// default (3 attempts, 1s base delay) is used. Intended for test use only.
 	NewClientRetryConfig *httpclient.RetryConfig
 
-	// LFSRetryMax, LFSRetryWaitMin, LFSRetryWaitMax control the retry behaviour
+	// LFSRetryMax, LFSRetryWaitMin, LFSRetryWaitMax control the retry behavior
 	// of the LFS transfer HTTP client. Zero values mean "use the client default".
 	// These fields are not YAML-serialisable and are intended for test use only.
 	LFSRetryMax     int
