@@ -20,11 +20,20 @@ import (
 
 // Client holds configuration, arguments, and authentication details for the client.
 type Client struct {
-	config *config.Config
-	args   *commandargs.Shell
-	href   string
-	auth   string
-	header string
+	config    *config.Config
+	args      *commandargs.Shell
+	href      string
+	auth      string
+	header    string
+	retryOpts retryOptions
+}
+
+// retryOptions controls the retry behaviour of the internal HTTP client.
+// The zero value uses the go-retryablehttp defaults (RetryMax=3, 1s min wait).
+type retryOptions struct {
+	retryMax     int
+	retryWaitMin time.Duration
+	retryWaitMax time.Duration
 }
 
 // BatchAction represents an action for a batch operation with metadata.
@@ -115,8 +124,20 @@ var ClientHeader = "application/vnd.git-lfs+json"
 
 // NewClient creates a new Client instance using the provided configuration and credentials.
 func NewClient(config *config.Config, args *commandargs.Shell, href string, auth string) (*Client, error) {
-	return &Client{config: config, args: args, href: href, auth: auth, header: ClientHeader}, nil
+	return &Client{
+		config: config,
+		args:   args,
+		href:   href,
+		auth:   auth,
+		header: ClientHeader,
+		retryOpts: retryOptions{
+			retryMax:     config.LFSRetryMax,
+			retryWaitMin: config.LFSRetryWaitMin,
+			retryWaitMax: config.LFSRetryWaitMax,
+		},
+	}, nil
 }
+
 func newHTTPRequest(method string, ref string, reader io.Reader) (*retryablehttp.Request, error) {
 	req, err := retryablehttp.NewRequest(method, ref, reader)
 	if err != nil {
@@ -125,11 +146,20 @@ func newHTTPRequest(method string, ref string, reader io.Reader) (*retryablehttp
 	return req, nil
 }
 
-func newHTTPClient() *retryablehttp.Client {
-	client := retryablehttp.NewClient()
-	client.RetryMax = 3
-	client.Logger = nil
-	return client
+func (c *Client) newHTTPClient() *retryablehttp.Client {
+	httpClient := retryablehttp.NewClient()
+	httpClient.RetryMax = 3
+	httpClient.Logger = nil
+	if c.retryOpts.retryMax > 0 {
+		httpClient.RetryMax = c.retryOpts.retryMax
+	}
+	if c.retryOpts.retryWaitMin > 0 {
+		httpClient.RetryWaitMin = c.retryOpts.retryWaitMin
+	}
+	if c.retryOpts.retryWaitMax > 0 {
+		httpClient.RetryWaitMax = c.retryOpts.retryWaitMax
+	}
+	return httpClient
 }
 
 // Batch performs a batch operation on objects and returns the result.
@@ -154,7 +184,7 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 
 	req.Header.Set("Content-Type", c.header)
 	req.Header.Set("Authorization", c.auth)
-	client := newHTTPClient()
+	client := c.newHTTPClient()
 
 	res, err := client.Do(req)
 	if err != nil {
@@ -183,7 +213,7 @@ func (c *Client) GetObject(_, href string, headers map[string]string) (io.ReadCl
 		req.Header.Add(key, value)
 	}
 
-	client := newHTTPClient()
+	client := c.newHTTPClient()
 	// See https://gitlab.com/gitlab-org/gitlab-shell/-/merge_requests/989#note_1891153531 for
 	// discussion on bypassing the linter
 	res, err := client.Do(req) // nolint:bodyclose
@@ -204,7 +234,7 @@ func (c *Client) PutObject(_, href string, headers map[string]string, r io.Reade
 		req.Header.Add(key, value)
 	}
 
-	client := newHTTPClient()
+	client := c.newHTTPClient()
 	res, err := client.Do(req)
 	if err != nil {
 		return err
@@ -245,7 +275,7 @@ func (c *Client) Lock(path, refname string) (*Lock, error) {
 	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
 	req.Header.Set("Authorization", c.auth)
 
-	client := newHTTPClient()
+	client := c.newHTTPClient()
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -303,7 +333,7 @@ func (c *Client) Unlock(id string, force bool, refname string) (*Lock, error) {
 	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
 	req.Header.Set("Authorization", c.auth)
 
-	client := newHTTPClient()
+	client := c.newHTTPClient()
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -361,7 +391,7 @@ func (c *Client) ListLocksVerify(path, id, cursor string, limit int, ref string)
 	req.Header.Set("Content-Type", c.header)
 	req.Header.Set("Authorization", c.auth)
 
-	client := newHTTPClient()
+	client := c.newHTTPClient()
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, err

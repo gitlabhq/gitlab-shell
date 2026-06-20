@@ -73,15 +73,19 @@ type Config struct {
 	CaPath string
 	// ReadTimeoutSeconds is the HTTP read timeout. Defaults to 300s when zero.
 	ReadTimeoutSeconds uint64
+	// RetryConfig overrides the default retry policy. When nil, defaultRetryConfig
+	// is used. This field is intended for tests that need fast (near-zero) backoff.
+	RetryConfig *httpclient.RetryConfig
 }
 
 // Client is an HTTP client for the GitLab internal API.
 type Client struct {
-	inner    *httpclient.Client
-	host     string
-	user     string
-	password string
-	secret   string
+	inner       *httpclient.Client
+	host        string
+	user        string
+	password    string
+	secret      string
+	retryConfig *httpclient.RetryConfig
 }
 
 // New creates a new Client from the given Config.
@@ -122,12 +126,18 @@ func New(cfg *Config) (*Client, error) {
 		Timeout:   timeout,
 	})
 
+	retryCfg := defaultRetryConfig
+	if cfg.RetryConfig != nil {
+		retryCfg = cfg.RetryConfig
+	}
+
 	return &Client{
-		inner:    inner,
-		host:     host,
-		user:     cfg.User,
-		password: cfg.Password,
-		secret:   cfg.Secret,
+		inner:       inner,
+		host:        host,
+		user:        cfg.User,
+		password:    cfg.Password,
+		secret:      cfg.Secret,
+		retryConfig: retryCfg,
 	}, nil
 }
 
@@ -197,7 +207,7 @@ func (c *Client) do(ctx context.Context, method, apiPath string, data any) (*htt
 		return nil, err
 	}
 
-	resp, err := c.inner.DoWithRetry(req, defaultRetryConfig)
+	resp, err := c.inner.DoWithRetry(req, c.retryConfig)
 	if err != nil {
 		slog.ErrorContext(ctx, "Internal API unreachable", lablog.ErrorMessage(err.Error()))
 		return nil, &client.APIError{Msg: "Internal API unreachable"}

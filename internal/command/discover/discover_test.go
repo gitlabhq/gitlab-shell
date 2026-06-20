@@ -16,6 +16,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper/retryopts"
 )
 
 const (
@@ -51,6 +52,7 @@ var requests = []testserver.TestRequestHandler{
 
 func TestExecute(t *testing.T) {
 	url := testserver.StartSocketHTTPServer(t, requests)
+	cfg := &config.Config{GitlabURL: url, HTTPClientOpts: retryopts.FastRetryOpts()}
 
 	testCases := []struct {
 		desc             string
@@ -99,7 +101,7 @@ func TestExecute(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			buffer := &bytes.Buffer{}
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url},
+				Config:     cfg,
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
@@ -118,6 +120,7 @@ func TestExecute(t *testing.T) {
 
 func TestFailingExecute(t *testing.T) {
 	url := testserver.StartSocketHTTPServer(t, requests)
+	cfg := &config.Config{GitlabURL: url, HTTPClientOpts: retryopts.FastRetryOpts()}
 
 	testCases := []struct {
 		desc          string
@@ -145,7 +148,7 @@ func TestFailingExecute(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			buffer := &bytes.Buffer{}
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url},
+				Config:     cfg,
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}

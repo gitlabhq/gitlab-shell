@@ -13,6 +13,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper/retryopts"
 )
 
 const (
@@ -50,7 +51,7 @@ var (
 func TestExecute(t *testing.T) {
 	url := testserver.StartSocketHTTPServer(t, requests)
 
-	defaultConfig := &config.Config{RootDir: "/tmp", GitlabURL: url}
+	defaultConfig := &config.Config{RootDir: "/tmp", GitlabURL: url, HTTPClientOpts: retryopts.FastRetryOpts()}
 
 	testCases := []struct {
 		desc           string

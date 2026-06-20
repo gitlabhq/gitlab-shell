@@ -16,6 +16,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/clients/gitlab"
+	"gitlab.com/gitlab-org/labkit/v2/httpclient"
 )
 
 const (
@@ -24,12 +25,33 @@ const (
 	testCheckAPIPath = "/api/v4/internal/check"
 )
 
+// fastRetryConfig returns a RetryConfig with near-zero delays so that tests
+// exercising retry paths complete in milliseconds instead of seconds.
+// The retryable status list mirrors defaultRetryConfig in client.go.
+var fastRetryConfig = &httpclient.RetryConfig{
+	MaxAttempts: 3,
+	RetryableStatus: func() []int {
+		statuses := []int{http.StatusTooManyRequests}
+		for code := 500; code < 600; code++ {
+			if code == http.StatusNotImplemented {
+				continue
+			}
+			statuses = append(statuses, code)
+		}
+		return statuses
+	}(),
+	RetryOnError: true,
+	BaseDelay:    time.Millisecond,
+	MaxDelay:     time.Millisecond,
+}
+
 func newTestClient(t *testing.T, srv *httptest.Server) *gitlab.Client {
 	t.Helper()
 	c, err := gitlab.New(&gitlab.Config{
 		GitlabURL:          srv.URL,
 		Secret:             testSecret,
 		ReadTimeoutSeconds: 10,
+		RetryConfig:        fastRetryConfig,
 	})
 	require.NoError(t, err)
 	return c
@@ -325,6 +347,7 @@ func TestGet_RetryPolicy(t *testing.T) {
 				GitlabURL:          srv.URL,
 				Secret:             testSecret,
 				ReadTimeoutSeconds: 10,
+				RetryConfig:        fastRetryConfig,
 			})
 			require.NoError(t, err)
 
@@ -388,8 +411,9 @@ func TestGet_NetworkErrorReturnsAPIError(t *testing.T) {
 	srv.Close()
 
 	c, err := gitlab.New(&gitlab.Config{
-		GitlabURL: url,
-		Secret:    testSecret,
+		GitlabURL:   url,
+		Secret:      testSecret,
+		RetryConfig: fastRetryConfig,
 	})
 	require.NoError(t, err)
 

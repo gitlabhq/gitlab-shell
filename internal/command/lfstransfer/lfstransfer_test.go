@@ -1125,7 +1125,15 @@ func setup(t *testing.T, keyID string, op string) (string, *Command, *pktline.Pk
 	_, errorSink := io.Pipe()
 
 	cmd := &Command{
-		Config:     &config.Config{GitlabURL: url, Secret: "very secret"},
+		Config: &config.Config{
+			GitlabURL: url,
+			Secret:    "very secret",
+			// Use near-zero retry delays so tests that exercise error paths
+			// (e.g. 500 responses from the lock endpoint) complete quickly.
+			LFSRetryMax:     1,
+			LFSRetryWaitMin: time.Millisecond,
+			LFSRetryWaitMax: time.Millisecond,
+		},
 		Args:       &commandargs.Shell{GitlabKeyID: keyID, SSHArgs: []string{"git-lfs-transfer", repo, op}},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: errorSink, Out: outputSink, In: inputSource},
 	}

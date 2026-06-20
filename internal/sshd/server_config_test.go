@@ -21,6 +21,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper/retryopts"
 	"gitlab.com/gitlab-org/labkit/fips"
 )
 
@@ -156,7 +157,7 @@ func TestUserKeyHandling(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabURL: url, User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: url, User: "user", Server: srvCfg, HTTPClientOpts: retryopts.FastRetryOpts()},
 	)
 	require.NoError(t, err)
 
@@ -235,7 +236,7 @@ func TestUserCertificateHandling(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabURL: url, User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: url, User: "user", Server: srvCfg, HTTPClientOpts: retryopts.FastRetryOpts()},
 	)
 	require.NoError(t, err)
 

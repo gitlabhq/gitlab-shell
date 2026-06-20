@@ -17,6 +17,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/personalaccesstoken"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper/retryopts"
 )
 
 var requests []testserver.TestRequestHandler
@@ -215,7 +216,7 @@ func TestExecute(t *testing.T) {
 			input := bytes.NewBufferString("")
 
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url, PATConfig: tc.PATConfig},
+				Config:     &config.Config{GitlabURL: url, PATConfig: tc.PATConfig, HTTPClientOpts: retryopts.FastRetryOpts()},
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 			}

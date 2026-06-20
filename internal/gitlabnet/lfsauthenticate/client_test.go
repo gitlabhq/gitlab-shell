@@ -14,6 +14,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper/retryopts"
 )
 
 const (
@@ -82,7 +83,7 @@ func TestFailedRequests(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			client, err := NewClient(&config.Config{GitlabURL: url}, tc.args)
+			client, err := NewClient(&config.Config{GitlabURL: url, HTTPClientOpts: retryopts.FastRetryOpts()}, tc.args)
 			require.NoError(t, err)
 
 			operation := tc.args.SSHArgs[2]
@@ -117,7 +118,7 @@ func TestSuccessfulRequests(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			operation := tc.operation
 			args := &commandargs.Shell{GitlabKeyID: keyID, CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, operation}}
-			client, err := NewClient(&config.Config{GitlabURL: url}, args)
+			client, err := NewClient(&config.Config{GitlabURL: url, HTTPClientOpts: retryopts.FastRetryOpts()}, args)
 			require.NoError(t, err)
 
 			response, err := client.Authenticate(context.Background(), operation, repo, "", "")

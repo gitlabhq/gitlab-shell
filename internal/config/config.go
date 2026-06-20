@@ -18,6 +18,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitaly"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology"
+	"gitlab.com/gitlab-org/labkit/v2/httpclient"
 )
 
 const (
@@ -107,6 +108,23 @@ type Config struct {
 	// It is nil when the Topology Service is disabled.
 	TopologyClient *topology.Client
 
+	// HTTPClientOpts are additional options forwarded to NewHTTPClientWithOpts.
+	// They are intentionally not YAML-serialisable; the field is used by tests
+	// to inject fast retry timings without touching production defaults.
+	HTTPClientOpts []client.HTTPClientOpt
+
+	// NewClientRetryConfig overrides the retry policy used by the new
+	// internal/clients/gitlab HTTP client. When nil, the client's built-in
+	// default (3 attempts, 1s base delay) is used. Intended for test use only.
+	NewClientRetryConfig *httpclient.RetryConfig
+
+	// LFSRetryMax, LFSRetryWaitMin, LFSRetryWaitMax control the retry behaviour
+	// of the LFS transfer HTTP client. Zero values mean "use the client default".
+	// These fields are not YAML-serialisable and are intended for test use only.
+	LFSRetryMax     int
+	LFSRetryWaitMin time.Duration
+	LFSRetryWaitMax time.Duration
+
 	httpClient     *client.HTTPClient
 	httpClientErr  error
 	httpClientOnce sync.Once
@@ -177,7 +195,7 @@ func (c *Config) HTTPClient() (*client.HTTPClient, error) {
 			c.HTTPSettings.CaFile,
 			c.HTTPSettings.CaPath,
 			c.HTTPSettings.ReadTimeoutSeconds,
-			nil,
+			c.HTTPClientOpts,
 		)
 		if err != nil {
 			c.httpClientErr = err

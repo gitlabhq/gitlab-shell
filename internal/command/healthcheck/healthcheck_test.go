@@ -7,15 +7,18 @@ import (
 	"errors"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/open-feature/go-sdk/openfeature"
 	"github.com/stretchr/testify/require"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/healthcheck"
+	"gitlab.com/gitlab-org/labkit/v2/httpclient"
 )
 
 const (
@@ -35,6 +38,23 @@ func (m *mockEvaluator) BooleanValueDetails(_ context.Context, _ string, _ bool,
 
 func (m *mockEvaluator) StringValueDetails(_ context.Context, _ string, defaultValue string, _ openfeature.EvaluationContext, _ ...openfeature.Option) (openfeature.StringEvaluationDetails, error) {
 	return openfeature.StringEvaluationDetails{Value: defaultValue}, nil
+}
+
+// fastRetryOpts returns HTTPClientOpts and NewClientRetryConfig that use
+// near-zero backoff delays so that tests exercising retry paths (e.g. 500
+// responses) complete in milliseconds instead of seconds.
+func fastRetryOpts() ([]client.HTTPClientOpt, *httpclient.RetryConfig) {
+	legacyOpts := []client.HTTPClientOpt{
+		client.WithHTTPRetryOpts(time.Millisecond, time.Millisecond, 2),
+	}
+	newClientCfg := &httpclient.RetryConfig{
+		MaxAttempts:     3,
+		RetryableStatus: []int{http.StatusInternalServerError},
+		RetryOnError:    true,
+		BaseDelay:       time.Millisecond,
+		MaxDelay:        time.Millisecond,
+	}
+	return legacyOpts, newClientCfg
 }
 
 // checkHandlers builds test handlers for /api/v4/internal/check.
@@ -156,6 +176,7 @@ func TestLegacyClientResponses(t *testing.T) {
 		},
 	}
 
+	legacyOpts, _ := fastRetryOpts()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			url := tt.gitlabURL
@@ -165,7 +186,7 @@ func TestLegacyClientResponses(t *testing.T) {
 
 			buffer := &bytes.Buffer{}
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url},
+				Config:     &config.Config{GitlabURL: url, HTTPClientOpts: legacyOpts},
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
 
@@ -217,6 +238,7 @@ func TestNewClientResponses(t *testing.T) {
 		},
 	}
 
+	_, newClientCfg := fastRetryOpts()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var url string
@@ -228,7 +250,7 @@ func TestNewClientResponses(t *testing.T) {
 
 			buffer := &bytes.Buffer{}
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url, Secret: tt.secret},
+				Config:     &config.Config{GitlabURL: url, Secret: tt.secret, NewClientRetryConfig: newClientCfg},
 				ReadWriter: &readwriter.ReadWriter{Out: buffer},
 			}
 

@@ -89,6 +89,7 @@ func (c *Command) runCheckNewClient(ctx context.Context) (*healthcheck.Response,
 		CaFile:             c.Config.HTTPSettings.CaFile,
 		CaPath:             c.Config.HTTPSettings.CaPath,
 		ReadTimeoutSeconds: c.Config.HTTPSettings.ReadTimeoutSeconds,
+		RetryConfig:        c.Config.NewClientRetryConfig,
 	})
 	if err != nil {
 		return nil, err

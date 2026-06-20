@@ -16,6 +16,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/twofactorverify"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper/retryopts"
 )
 
 type blockingReader struct{}
@@ -156,7 +157,7 @@ func TestExecute(t *testing.T) {
 			}
 
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url},
+				Config:     &config.Config{GitlabURL: url, HTTPClientOpts: retryopts.FastRetryOpts()},
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 			}
@@ -176,7 +177,7 @@ func TestCanceledContext(t *testing.T) {
 
 	url := testserver.StartSocketHTTPServer(t, requests)
 	cmd := &Command{
-		Config:     &config.Config{GitlabURL: url},
+		Config:     &config.Config{GitlabURL: url, HTTPClientOpts: retryopts.FastRetryOpts()},
 		Args:       &commandargs.Shell{GitlabKeyID: "wait_infinitely"},
 		ReadWriter: &readwriter.ReadWriter{Out: output, In: &blockingReader{}},
 	}

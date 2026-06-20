@@ -17,6 +17,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/twofactorrecover"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper/retryopts"
 )
 
 var requests []testserver.TestRequestHandler
@@ -128,7 +129,7 @@ func TestExecute(t *testing.T) {
 			input := bytes.NewBufferString(tc.answer)
 
 			cmd := &Command{
-				Config:     &config.Config{GitlabURL: url},
+				Config:     &config.Config{GitlabURL: url, HTTPClientOpts: retryopts.FastRetryOpts()},
 				Args:       tc.arguments,
 				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 			}
