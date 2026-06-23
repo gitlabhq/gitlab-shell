@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"path"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -314,6 +315,40 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 	}
 
 	return requests
+}
+
+func TestRedirectsAreNotFollowed(t *testing.T) {
+	// Mimics the Cells incident: the configured host issues a 301 (e.g. a public
+	// URL bouncing the internal API path). The client must NOT follow it, since
+	// following a 301 downgrades the POST to a GET and silently misroutes it.
+	var targetHits int32
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		atomic.AddInt32(&targetHits, 1)
+		fmt.Fprint(w, "should never be reached")
+	}))
+	defer target.Close()
+
+	redirector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, target.URL+r.URL.Path, http.StatusMovedPermanently)
+	}))
+	defer redirector.Close()
+
+	httpClient, err := NewHTTPClientWithOpts(redirector.URL, "", "", "", 1, defaultHTTPOpts)
+	require.NoError(t, err)
+
+	client, err := NewGitlabNetClient("", "", secret, httpClient)
+	require.NoError(t, err)
+
+	t.Run("POST does not follow redirect and surfaces an error", func(t *testing.T) {
+		resp, err := client.Post(context.Background(), "/allowed", map[string]string{})
+		if resp != nil {
+			resp.Body.Close()
+		}
+		require.Nil(t, resp)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "301")
+		require.Zero(t, atomic.LoadInt32(&targetHits), "redirect target must not be reached")
+	})
 }
 
 func TestWithHost(t *testing.T) {

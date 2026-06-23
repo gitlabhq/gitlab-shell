@@ -115,6 +115,18 @@ func parseError(resp *http.Response, respErr error) error {
 		return &APIError{internalAPIUnreachable}
 	}
 
+	// Redirects are never followed for internal API requests (see
+	// NewHTTPClientWithOpts). If one of the redirect status codes that Go's
+	// client would otherwise follow comes back, the request was misrouted to a
+	// host that wants to redirect us; surface it instead of treating it as
+	// success and silently parsing the redirect body. Note 300 Multiple Choices
+	// is NOT a redirect here: the internal API uses it for custom actions (e.g.
+	// Geo) and its body must be parsed normally.
+	if IsFollowedRedirect(resp.StatusCode) {
+		defer func() { _ = resp.Body.Close() }()
+		return &APIError{fmt.Sprintf("Internal API returned redirect (%d) to %q", resp.StatusCode, resp.Header.Get("Location"))}
+	}
+
 	if resp.StatusCode >= 200 && resp.StatusCode <= 399 {
 		return nil
 	}

@@ -30,6 +30,22 @@ const (
 	password = "basic_auth_password"
 )
 
+func TestIsFollowedRedirect(t *testing.T) {
+	for code, want := range map[int]bool{
+		http.StatusOK:                false,
+		http.StatusMultipleChoices:   false, // 300: Geo custom action, must be parsed
+		http.StatusMovedPermanently:  true,  // 301
+		http.StatusFound:             true,  // 302
+		http.StatusSeeOther:          true,  // 303
+		http.StatusNotModified:       false, // 304: Go does not follow
+		http.StatusTemporaryRedirect: true,  // 307
+		http.StatusPermanentRedirect: true,  // 308
+		http.StatusNotFound:          false,
+	} {
+		require.Equalf(t, want, IsFollowedRedirect(code), "status %d", code)
+	}
+}
+
 func TestBasicAuthSettings(t *testing.T) {
 	requests := []testserver.TestRequestHandler{
 		{

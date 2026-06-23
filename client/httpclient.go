@@ -130,9 +130,38 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	c.HTTPClient.Transport = NewTransport(transport)
 	c.HTTPClient.Timeout = readTimeout(readTimeoutSeconds)
 
+	// The internal API (/api/v4/internal/*) must never be redirected. Go's
+	// default redirect policy follows 3xx responses and, on a 301/302/303,
+	// downgrades a POST to a GET and drops the body. That silently misroutes
+	// internal API requests (e.g. to a public host that bounces http->https),
+	// turning them into method-downgraded GETs that 404. Refuse to follow
+	// redirects so they surface as errors instead; parseError reports any
+	// status matching IsFollowedRedirect as a failure.
+	c.HTTPClient.CheckRedirect = func(_ *http.Request, _ []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
 	client := &HTTPClient{RetryableHTTP: c, Host: host}
 
 	return client, nil
+}
+
+// IsFollowedRedirect reports whether code is one of the 3xx statuses that Go's
+// http.Client would follow, i.e. the ones a CheckRedirect hook intercepts. A
+// followed redirect downgrades a POST to a GET on 301/302/303 and drops the
+// body, so internal API clients refuse them and treat them as errors.
+//
+// 300 Multiple Choices and 304/305/306 are deliberately excluded: Go does not
+// follow them, and the GitLab internal API uses 300 for custom actions (e.g.
+// Geo) whose body must be parsed normally.
+func IsFollowedRedirect(code int) bool {
+	switch code {
+	case http.StatusMovedPermanently, http.StatusFound, http.StatusSeeOther,
+		http.StatusTemporaryRedirect, http.StatusPermanentRedirect:
+		return true
+	default:
+		return false
+	}
 }
 
 func buildSocketTransport(gitlabURL, gitlabRelativeURLRoot string) (*http.Transport, string) {
