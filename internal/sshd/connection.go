@@ -43,6 +43,35 @@ type connection struct {
 	nconn              net.Conn
 	maxSessions        int64
 	remoteAddr         string
+	auth               authObserver
+}
+
+// authObserver records the outcome of public-key authentication attempts on a
+// single connection so initServerConn can emit authentication SLI metrics. It
+// is written by the PublicKeyCallback and read after the SSH handshake; both
+// run synchronously in the same goroutine (ssh.NewServerConn invokes the
+// callback inline), so no locking is needed.
+type authObserver struct {
+	// attempted is true once public-key auth has been tried at least once.
+	attempted bool
+	// systemErr holds the last internal API / transport failure seen during
+	// auth (a System *client.APIError), as opposed to an expected client-side
+	// failure such as an unknown key.
+	systemErr error
+}
+
+// observe records one public-key auth attempt and its result. err is the error
+// returned by the auth handler (nil on success).
+func (o *authObserver) observe(err error) {
+	o.attempted = true
+	if err == nil {
+		return
+	}
+
+	var apiErr *client.APIError
+	if errors.As(err, &apiErr) && apiErr.System {
+		o.systemErr = err
+	}
 }
 
 type channelHandler func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error
@@ -88,6 +117,22 @@ func (c *connection) initServerConn(ctx context.Context, srvCfg *ssh.ServerConfi
 	}
 
 	sconn, chans, reqs, err := ssh.NewServerConn(c.nconn, srvCfg)
+
+	// Authentication SLI. Authentication failures never reach handleRequests, so
+	// they are invisible to the session SLI; track them separately here. Only
+	// connections that actually attempted public-key auth count toward the
+	// denominator, and only internal API / transport failures (not expected
+	// client-side failures such as an unknown key) count as errors.
+	if c.auth.attempted {
+		metrics.SliSshdAuthenticationTotal.Inc()
+		if err != nil && c.auth.systemErr != nil {
+			metrics.SliSshdAuthenticationErrorsTotal.Inc()
+			log.FromContext(ctx).ErrorContext(ctx,
+				"connection: initServerConn: authentication failed due to internal API error",
+				log.ErrorMessage(c.auth.systemErr.Error()), slog.String("remote_addr", c.remoteAddr))
+		}
+	}
+
 	if err != nil {
 		msg := "connection: initServerConn: failed to initialize SSH connection"
 		ctx = log.AppendFields(ctx, log.ErrorMessage(err.Error()), slog.String("remote_addr", c.remoteAddr))

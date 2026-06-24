@@ -3,6 +3,7 @@ package sshd
 import (
 	"context"
 	"errors"
+	"net"
 	"sync"
 	"testing"
 	"time"
@@ -278,6 +279,84 @@ func TestSessionErrorMetricDistinguishesAPIErrors(t *testing.T) {
 				expected = initialErrorTotal + 1
 			}
 			eventuallyInDelta(t, expected, func() float64 { return testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal) })
+		})
+	}
+}
+
+func TestAuthObserverObserve(t *testing.T) {
+	t.Run("nil error marks attempted without a system error", func(t *testing.T) {
+		var o authObserver
+		o.observe(nil)
+		require.True(t, o.attempted)
+		require.NoError(t, o.systemErr)
+	})
+
+	t.Run("system APIError is recorded", func(t *testing.T) {
+		var o authObserver
+		sysErr := &client.APIError{Msg: "redirect", StatusCode: 301, System: true}
+		o.observe(sysErr)
+		require.True(t, o.attempted)
+		require.Equal(t, sysErr, o.systemErr)
+	})
+
+	t.Run("policy APIError is not recorded as a system error", func(t *testing.T) {
+		var o authObserver
+		o.observe(&client.APIError{Msg: "You are not allowed", StatusCode: 403})
+		require.True(t, o.attempted)
+		require.NoError(t, o.systemErr)
+	})
+
+	t.Run("plain error is not recorded as a system error", func(t *testing.T) {
+		var o authObserver
+		o.observe(errors.New("unknown user"))
+		require.True(t, o.attempted)
+		require.NoError(t, o.systemErr)
+	})
+}
+
+func TestInitServerConnEmitsAuthenticationMetrics(t *testing.T) {
+	for _, tc := range []struct {
+		desc       string
+		auth       authObserver
+		wantTotal  float64
+		wantErrors float64
+	}{
+		{
+			desc:       "no auth attempted (e.g. failed before public-key auth)",
+			auth:       authObserver{},
+			wantTotal:  0,
+			wantErrors: 0,
+		},
+		{
+			desc:       "client-side auth failure counts as an attempt, not an error",
+			auth:       authObserver{attempted: true},
+			wantTotal:  1,
+			wantErrors: 0,
+		},
+		{
+			desc:       "server-side (system) auth failure counts as an error",
+			auth:       authObserver{attempted: true, systemErr: &client.APIError{Msg: "redirect", StatusCode: 301, System: true}},
+			wantTotal:  1,
+			wantErrors: 1,
+		},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			initialTotal := testutil.ToFloat64(metrics.SliSshdAuthenticationTotal)
+			initialErrors := testutil.ToFloat64(metrics.SliSshdAuthenticationErrorsTotal)
+
+			// A closed pipe makes ssh.NewServerConn fail immediately, standing in
+			// for a handshake that failed after the auth attempt recorded in tc.auth.
+			clientConn, serverConn := net.Pipe()
+			require.NoError(t, clientConn.Close())
+			defer serverConn.Close()
+
+			c := &connection{cfg: &config.Config{}, nconn: serverConn, remoteAddr: "127.0.0.1:0", auth: tc.auth}
+
+			_, _, err := c.initServerConn(context.Background(), &ssh.ServerConfig{})
+			require.Error(t, err)
+
+			require.InDelta(t, initialTotal+tc.wantTotal, testutil.ToFloat64(metrics.SliSshdAuthenticationTotal), 0.01)
+			require.InDelta(t, initialErrors+tc.wantErrors, testutil.ToFloat64(metrics.SliSshdAuthenticationErrorsTotal), 0.01)
 		})
 	}
 }

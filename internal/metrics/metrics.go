@@ -28,6 +28,9 @@ const (
 	sliSshdSessionsTotalName       = "gitlab_sli:shell_sshd_sessions:total"
 	sliSshdSessionsErrorsTotalName = "gitlab_sli:shell_sshd_sessions:errors_total"
 
+	sliSshdAuthenticationTotalName       = "gitlab_sli:shell_sshd_authentication:total"
+	sliSshdAuthenticationErrorsTotalName = "gitlab_sli:shell_sshd_authentication:errors_total"
+
 	lfsHTTPConnectionsTotalName = "lfs_http_connections_total"
 	lfsSSHConnectionsTotalName  = "lfs_ssh_connections_total"
 
@@ -100,6 +103,29 @@ var (
 		prometheus.CounterOpts{
 			Name: sliSshdSessionsErrorsTotalName,
 			Help: "Number of SSH sessions that have failed",
+		},
+	)
+
+	// SliSshdAuthenticationTotal is the number of SSH connections that attempted
+	// public-key authentication. It is the denominator for the authentication
+	// error SLI and, unlike SliSshdSessionsTotal, is incremented even when no
+	// session is established (i.e. when authentication fails).
+	SliSshdAuthenticationTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: sliSshdAuthenticationTotalName,
+			Help: "Number of SSH connections that attempted public-key authentication",
+		},
+	)
+
+	// SliSshdAuthenticationErrorsTotal is the number of SSH connections whose
+	// authentication failed due to an internal API / transport error (e.g. the
+	// internal API was unreachable or returned a redirect), as opposed to an
+	// expected client-side failure such as an unknown key. Counted at most once
+	// per connection.
+	SliSshdAuthenticationErrorsTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: sliSshdAuthenticationErrorsTotalName,
+			Help: "Number of SSH connections whose authentication failed due to an internal API error",
 		},
 	)
 

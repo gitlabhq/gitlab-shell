@@ -309,7 +309,32 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 	}), nil
 }
 
-func (s *serverConfig) get(parentCtx context.Context) *ssh.ServerConfig {
+// publicKeyCallback returns the SSH PublicKeyCallback. It authenticates the key
+// (or certificate) against the internal API and reports the outcome to auth (if
+// non-nil) so the connection can emit authentication SLI metrics.
+func (s *serverConfig) publicKeyCallback(parentCtx context.Context, auth *authObserver) func(ssh.ConnMetadata, ssh.PublicKey) (*ssh.Permissions, error) {
+	return func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
+		ctx, cancel := context.WithTimeout(parentCtx, 10*time.Second)
+		defer cancel()
+		log.FromContext(ctx).InfoContext(ctx, "public key authentication", slog.String("ssh_key_type", key.Type()))
+
+		var perms *ssh.Permissions
+		var err error
+		if cert, ok := key.(*ssh.Certificate); ok {
+			perms, err = s.handleUserCertificate(ctx, conn.User(), cert)
+		} else {
+			perms, err = s.handleUserKey(ctx, conn.User(), key)
+		}
+
+		if auth != nil {
+			auth.observe(err)
+		}
+
+		return perms, err
+	}
+}
+
+func (s *serverConfig) get(parentCtx context.Context, auth *authObserver) *ssh.ServerConfig {
 	var gssapiWithMICConfig *ssh.GSSAPIWithMICConfig
 	if s.cfg.Server.GSSAPI.Enabled {
 		gssAPIServer, _ := NewGSSAPIServer(&s.cfg.Server.GSSAPI)
@@ -334,18 +359,7 @@ func (s *serverConfig) get(parentCtx context.Context) *ssh.ServerConfig {
 	}
 
 	sshCfg := &ssh.ServerConfig{
-		PublicKeyCallback: func(conn ssh.ConnMetadata, key ssh.PublicKey) (*ssh.Permissions, error) {
-			ctx, cancel := context.WithTimeout(parentCtx, 10*time.Second)
-			defer cancel()
-			log.FromContext(ctx).InfoContext(ctx, "public key authentication", slog.String("ssh_key_type", key.Type()))
-
-			cert, ok := key.(*ssh.Certificate)
-			if ok {
-				return s.handleUserCertificate(ctx, conn.User(), cert)
-			}
-
-			return s.handleUserKey(ctx, conn.User(), key)
-		},
+		PublicKeyCallback:   s.publicKeyCallback(parentCtx, auth),
 		GSSAPIWithMICConfig: gssapiWithMICConfig,
 		ServerVersion:       "SSH-2.0-GitLab-SSHD",
 	}
