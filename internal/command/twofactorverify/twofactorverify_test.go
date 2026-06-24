@@ -42,17 +42,17 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 				assert.NoError(t, json.Unmarshal(b, &requestBody))
 
 				switch requestBody.KeyID {
-				case "verify_via_otp", "verify_via_otp_with_push_error":
+				case testVerifyViaOTP, testVerifyViaOTPWithPush:
 					body := map[string]interface{}{
-						"success": true,
+						testSuccessKey: true,
 					}
 					json.NewEncoder(w).Encode(body)
 				case "wait_infinitely":
 					<-waitInfinitely
 				case "error":
 					body := map[string]interface{}{
-						"success": false,
-						"message": "error message",
+						testSuccessKey: false,
+						"message":      "error message",
 					}
 					assert.NoError(t, json.NewEncoder(w).Encode(body))
 				case "broken":
@@ -74,10 +74,10 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 				switch requestBody.KeyID {
 				case "verify_via_push":
 					body := map[string]interface{}{
-						"success": true,
+						testSuccessKey: true,
 					}
 					json.NewEncoder(w).Encode(body)
-				case "verify_via_otp_with_push_error":
+				case testVerifyViaOTPWithPush:
 					w.WriteHeader(http.StatusInternalServerError)
 				default:
 					<-waitInfinitely
@@ -89,7 +89,12 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 	return requests
 }
 
-const errorHeader = "OTP validation failed: "
+const (
+	errorHeader              = "OTP validation failed: "
+	testVerifyViaOTP         = "verify_via_otp"
+	testVerifyViaOTPWithPush = "verify_via_otp_with_push_error"
+	testSuccessKey           = "success"
+)
 
 func TestExecute(t *testing.T) {
 	requests := setup(t)
@@ -104,12 +109,12 @@ func TestExecute(t *testing.T) {
 	}{
 		{
 			desc:           "Verify via OTP",
-			arguments:      &commandargs.Shell{GitlabKeyID: "verify_via_otp"},
+			arguments:      &commandargs.Shell{GitlabKeyID: testVerifyViaOTP},
 			expectedOutput: "OTP validation successful. Git operations are now allowed.\n",
 		},
 		{
 			desc:           "Verify via OTP",
-			arguments:      &commandargs.Shell{GitlabKeyID: "verify_via_otp_with_push_error"},
+			arguments:      &commandargs.Shell{GitlabKeyID: testVerifyViaOTPWithPush},
 			expectedOutput: "OTP validation successful. Git operations are now allowed.\n",
 		},
 		{
@@ -120,7 +125,7 @@ func TestExecute(t *testing.T) {
 		},
 		{
 			desc:           "With an empty OTP",
-			arguments:      &commandargs.Shell{GitlabKeyID: "verify_via_otp"},
+			arguments:      &commandargs.Shell{GitlabKeyID: testVerifyViaOTP},
 			input:          bytes.NewBufferString("\n"),
 			expectedOutput: errorHeader + "OTP cannot be blank\n",
 		},

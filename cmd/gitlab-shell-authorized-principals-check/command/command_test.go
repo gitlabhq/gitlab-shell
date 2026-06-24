@@ -76,7 +76,7 @@ func TestParseSuccess(t *testing.T) {
 		{
 			desc:        "it fails when a key_id is empty",
 			executable:  &executable.Executable{Name: executable.AuthorizedPrincipalsCheck},
-			arguments:   []string{"", testPrincipal1},
+			arguments:   []string{"", testPrincipal},
 			expectError: true,
 		},
 		{
