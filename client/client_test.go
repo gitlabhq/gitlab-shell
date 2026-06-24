@@ -400,6 +400,9 @@ func TestParseErrorClassification(t *testing.T) {
 		},
 	} {
 		t.Run(tc.desc, func(t *testing.T) {
+			if tc.resp != nil {
+				defer tc.resp.Body.Close()
+			}
 			err := parseError(tc.resp, tc.respErr)
 
 			var apiErr *APIError
