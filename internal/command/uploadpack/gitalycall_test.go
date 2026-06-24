@@ -17,6 +17,12 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper/requesthandlers"
 )
 
+const (
+	testRepo          = "group/repo"
+	testRemoteAddr    = "127.0.0.1"
+	testGitUploadPack = "git-upload-pack"
+)
+
 func TestUploadPack(t *testing.T) {
 	for _, network := range []string{"unix", "tcp", "dns"} {
 		t.Run(fmt.Sprintf("via %s network", network), func(t *testing.T) {
@@ -30,18 +36,18 @@ func TestUploadPack(t *testing.T) {
 			input := &bytes.Buffer{}
 
 			userID := "1"
-			repo := "group/repo"
+			repo := testRepo
 
 			env := sshenv.Env{
 				IsSSHConnection: true,
 				OriginalCommand: "git-upload-pack " + repo,
-				RemoteAddr:      "127.0.0.1",
+				RemoteAddr:      testRemoteAddr,
 			}
 
 			args := &commandargs.Shell{
 				GitlabKeyID: userID,
 				CommandType: commandargs.UploadPack,
-				SSHArgs:     []string{"git-upload-pack", repo},
+				SSHArgs:     []string{testGitUploadPack, repo},
 				Env:         env,
 			}
 
@@ -68,7 +74,7 @@ func TestUploadPack(t *testing.T) {
 				"x-gitlab-client-name":                    "gitlab-shell-tests-git-upload-pack",
 				"key_id":                                  "123",
 				"user_id":                                 "user-1",
-				"remote_ip":                               "127.0.0.1",
+				"remote_ip":                               testRemoteAddr,
 				"key_type":                                "key",
 			} {
 				actual := testServer.ReceivedMD[k]
@@ -97,17 +103,17 @@ func TestUploadPackWithRetryConfig(t *testing.T) {
 	output := &bytes.Buffer{}
 	input := &bytes.Buffer{}
 
-	repo := "group/repo"
+	repo := testRepo
 	env := sshenv.Env{
 		IsSSHConnection: true,
 		OriginalCommand: "git-upload-pack " + repo,
-		RemoteAddr:      "127.0.0.1",
+		RemoteAddr:      testRemoteAddr,
 	}
 
 	args := &commandargs.Shell{
 		GitlabKeyID: "1",
 		CommandType: commandargs.UploadPack,
-		SSHArgs:     []string{"git-upload-pack", repo},
+		SSHArgs:     []string{testGitUploadPack, repo},
 		Env:         env,
 	}
 

@@ -7,6 +7,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testNameEmpty          = "empty"
+	testNameBasicallyEmpty = "basically empty"
+	testNameSomething      = "something"
+	testNameHere           = "here"
+)
+
 func TestDisplayWarningMessage(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -14,18 +21,18 @@ func TestDisplayWarningMessage(t *testing.T) {
 		wantOut string
 	}{
 		{
-			name:    "empty",
+			name:    testNameEmpty,
 			message: "",
 			wantOut: "",
 		},
 		{
-			name:    "basically empty",
+			name:    testNameBasicallyEmpty,
 			message: " ",
 			wantOut: "",
 		},
 		{
-			name:    "something",
-			message: "something",
+			name:    testNameSomething,
+			message: testNameSomething,
 			wantOut: `remote: 
 remote: ========================================================================
 remote: 
@@ -54,18 +61,18 @@ func TestDisplayWarningMessages(t *testing.T) {
 		wantOut  string
 	}{
 		{
-			name:     "empty",
+			name:     testNameEmpty,
 			messages: []string{""},
 			wantOut:  "",
 		},
 		{
-			name:     "basically empty",
+			name:     testNameBasicallyEmpty,
 			messages: []string{" "},
 			wantOut:  "",
 		},
 		{
-			name:     "something",
-			messages: []string{"something", "here"},
+			name:     testNameSomething,
+			messages: []string{testNameSomething, testNameHere},
 			wantOut: `remote: 
 remote: ========================================================================
 remote: 
@@ -95,18 +102,18 @@ func TestDisplayInfoMessage(t *testing.T) {
 		wantOut string
 	}{
 		{
-			name:    "empty",
+			name:    testNameEmpty,
 			message: "",
 			wantOut: "",
 		},
 		{
-			name:    "basically empty",
+			name:    testNameBasicallyEmpty,
 			message: " ",
 			wantOut: "",
 		},
 		{
-			name:    "something",
-			message: "something",
+			name:    testNameSomething,
+			message: testNameSomething,
 			wantOut: `remote: 
 remote: something
 remote: 
@@ -131,18 +138,18 @@ func TestDisplayInfoMessages(t *testing.T) {
 		wantOut  string
 	}{
 		{
-			name:     "empty",
+			name:     testNameEmpty,
 			messages: []string{""},
 			wantOut:  "",
 		},
 		{
-			name:     "basically empty",
+			name:     testNameBasicallyEmpty,
 			messages: []string{" "},
 			wantOut:  "",
 		},
 		{
-			name:     "something",
-			messages: []string{"something", "here"},
+			name:     testNameSomething,
+			messages: []string{testNameSomething, testNameHere},
 			wantOut:  "remote: \nremote: something\nremote: here\nremote: \n",
 		},
 	}
@@ -164,18 +171,18 @@ func Test_noMessages(t *testing.T) {
 		want     bool
 	}{
 		{
-			name:     "empty",
+			name:     testNameEmpty,
 			messages: []string{""},
 			want:     true,
 		},
 		{
-			name:     "basically empty",
+			name:     testNameBasicallyEmpty,
 			messages: []string{" "},
 			want:     true,
 		},
 		{
-			name:     "something",
-			messages: []string{"something", "here"},
+			name:     testNameSomething,
+			messages: []string{testNameSomething, testNameHere},
 			want:     false,
 		},
 	}
@@ -188,7 +195,7 @@ func Test_noMessages(t *testing.T) {
 }
 
 func Test_formatLine(t *testing.T) {
-	require.Equal(t, "remote: something\n", formatLine("something"))
+	require.Equal(t, "remote: something\n", formatLine(testNameSomething))
 }
 
 func Test_divider(t *testing.T) {

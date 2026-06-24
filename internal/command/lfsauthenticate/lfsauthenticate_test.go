@@ -30,6 +30,7 @@ import (
 const (
 	testLFSAuthenticate = "git-lfs-authenticate"
 	testSomename        = "somename"
+	testRepo            = "group/repo"
 )
 
 func TestFailedRequests(t *testing.T) {
@@ -48,12 +49,12 @@ func TestFailedRequests(t *testing.T) {
 		},
 		{
 			desc:           "With disallowed command",
-			arguments:      &commandargs.Shell{GitlabKeyID: "1", SSHArgs: []string{testLFSAuthenticate, "group/repo", "unknown"}},
+			arguments:      &commandargs.Shell{GitlabKeyID: "1", SSHArgs: []string{testLFSAuthenticate, testRepo, "unknown"}},
 			expectedOutput: "Disallowed command",
 		},
 		{
 			desc:           "With disallowed user",
-			arguments:      &commandargs.Shell{GitlabKeyID: "disallowed", SSHArgs: []string{testLFSAuthenticate, "group/repo", "download"}},
+			arguments:      &commandargs.Shell{GitlabKeyID: "disallowed", SSHArgs: []string{testLFSAuthenticate, testRepo, "download"}},
 			expectedOutput: "Disallowed by API call",
 		},
 	}
@@ -160,7 +161,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 			output := &bytes.Buffer{}
 			cmd := &Command{
 				Config:     &config.Config{GitlabURL: url},
-				Args:       &commandargs.Shell{GitlabUsername: tc.username, SSHArgs: []string{testLFSAuthenticate, "group/repo", operation}},
+				Args:       &commandargs.Shell{GitlabUsername: tc.username, SSHArgs: []string{testLFSAuthenticate, testRepo, operation}},
 				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 			}
 
@@ -245,7 +246,7 @@ func TestLfsAuthenticateWithTopologyService(t *testing.T) {
 		Config: cfg,
 		Args: &commandargs.Shell{
 			GitlabUsername: testSomename,
-			SSHArgs:        []string{testLFSAuthenticate, "group/repo", "upload"},
+			SSHArgs:        []string{testLFSAuthenticate, testRepo, "upload"},
 		},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output},
 	}

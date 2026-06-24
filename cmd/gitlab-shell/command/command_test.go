@@ -28,11 +28,11 @@ const (
 	testHello              = "hello"
 	testTwoFARecoveryCodes = "2fa_recovery_codes"
 	testReceivePack        = "git-receive-pack"
-	testReceivePackRepo    = "git-receive-pack 'group/repo'"
+	testRepo               = "group/repo"
+	testReceivePackRepo    = "git-receive-pack '" + testRepo + "'"
 	testUsername           = "username"
 	testNamespace          = "group"
-	testKeyID              = "key-123"
-	testRepo               = "group/repo"
+	testKeyID123           = "key-123"
 )
 
 var (
@@ -273,22 +273,22 @@ func TestParseSuccess(t *testing.T) {
 			desc:         "It finds the key id in any passed arguments",
 			executable:   &executable.Executable{Name: executable.GitlabShell},
 			env:          sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"},
-			arguments:    []string{testHello, testKeyID},
-			expectedArgs: &commandargs.Shell{Arguments: []string{testHello, testKeyID}, SSHArgs: []string{}, CommandType: commandargs.Discover, GitlabKeyID: "123", Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
+			arguments:    []string{testHello, testKeyID123},
+			expectedArgs: &commandargs.Shell{Arguments: []string{testHello, testKeyID123}, SSHArgs: []string{}, CommandType: commandargs.Discover, GitlabKeyID: "123", Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
 		},
 		{
 			desc:         "It finds the key id only if the argument is of <key-id> format",
 			executable:   &executable.Executable{Name: executable.GitlabShell},
 			env:          sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"},
-			arguments:    []string{testHello, "username-key-123"},
-			expectedArgs: &commandargs.Shell{Arguments: []string{testHello, "username-key-123"}, SSHArgs: []string{}, CommandType: commandargs.Discover, GitlabUsername: testKeyID, Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
+			arguments:    []string{testHello, "username-" + testKeyID123},
+			expectedArgs: &commandargs.Shell{Arguments: []string{testHello, "username-" + testKeyID123}, SSHArgs: []string{}, CommandType: commandargs.Discover, GitlabUsername: testKeyID123, Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
 		},
 		{
 			desc:         "It finds the key id if the key is listed as the last argument",
 			executable:   &executable.Executable{Name: executable.GitlabShell},
 			env:          sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"},
-			arguments:    []string{testHello, "gitlab-shell -c key-123"},
-			expectedArgs: &commandargs.Shell{Arguments: []string{testHello, "gitlab-shell -c key-123"}, SSHArgs: []string{}, CommandType: commandargs.Discover, GitlabKeyID: "123", Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
+			arguments:    []string{testHello, "gitlab-shell -c " + testKeyID123},
+			expectedArgs: &commandargs.Shell{Arguments: []string{testHello, "gitlab-shell -c " + testKeyID123}, SSHArgs: []string{}, CommandType: commandargs.Discover, GitlabKeyID: "123", Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
 		},
 		{
 			desc:         "It finds the username if the username is listed as the last argument",
@@ -301,8 +301,8 @@ func TestParseSuccess(t *testing.T) {
 			desc:         "It finds the key id only if the last argument is of <key-id> format",
 			executable:   &executable.Executable{Name: executable.GitlabShell},
 			env:          sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"},
-			arguments:    []string{testHello, "gitlab-shell -c username-key-123"},
-			expectedArgs: &commandargs.Shell{Arguments: []string{testHello, "gitlab-shell -c username-key-123"}, SSHArgs: []string{}, CommandType: commandargs.Discover, GitlabUsername: "key-123", Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
+			arguments:    []string{testHello, "gitlab-shell -c username-" + testKeyID123},
+			expectedArgs: &commandargs.Shell{Arguments: []string{testHello, "gitlab-shell -c username-" + testKeyID123}, SSHArgs: []string{}, CommandType: commandargs.Discover, GitlabUsername: testKeyID123, Env: sshenv.Env{IsSSHConnection: true, RemoteAddr: "1"}},
 		},
 		{
 			desc:         "It finds the username in any passed arguments",
@@ -335,44 +335,44 @@ func TestParseSuccess(t *testing.T) {
 		{
 			desc:         `It parses "git receive-pack" command`,
 			executable:   &executable.Executable{Name: executable.GitlabShell},
-			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: `git-receive-pack "group/repo"`},
+			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: `git-receive-pack "` + testRepo + `"`},
 			arguments:    []string{},
-			expectedArgs: &commandargs.Shell{Arguments: []string{}, SSHArgs: []string{"git-receive-pack", testRepo}, CommandType: commandargs.ReceivePack, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: `git-receive-pack "group/repo"`}},
+			expectedArgs: &commandargs.Shell{Arguments: []string{}, SSHArgs: []string{"git-receive-pack", testRepo}, CommandType: commandargs.ReceivePack, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: `git-receive-pack "` + testRepo + `"`}},
 		},
 		{
 			desc:         `It parses a command followed by control characters`,
 			executable:   &executable.Executable{Name: executable.GitlabShell},
-			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: `git-receive-pack group/repo; any command`},
+			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: `git-receive-pack ` + testRepo + `; any command`},
 			arguments:    []string{},
-			expectedArgs: &commandargs.Shell{Arguments: []string{}, SSHArgs: []string{"git-receive-pack", testRepo}, CommandType: commandargs.ReceivePack, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: `git-receive-pack group/repo; any command`}},
+			expectedArgs: &commandargs.Shell{Arguments: []string{}, SSHArgs: []string{"git-receive-pack", testRepo}, CommandType: commandargs.ReceivePack, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: `git-receive-pack ` + testRepo + `; any command`}},
 		},
 		{
 			desc:         "It parses git-upload-pack command",
 			executable:   &executable.Executable{Name: executable.GitlabShell},
-			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: `git upload-pack "group/repo"`},
+			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: `git upload-pack "` + testRepo + `"`},
 			arguments:    []string{},
-			expectedArgs: &commandargs.Shell{Arguments: []string{}, SSHArgs: []string{"git-upload-pack", testRepo}, CommandType: commandargs.UploadPack, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: `git upload-pack "group/repo"`}},
+			expectedArgs: &commandargs.Shell{Arguments: []string{}, SSHArgs: []string{"git-upload-pack", testRepo}, CommandType: commandargs.UploadPack, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: `git upload-pack "` + testRepo + `"`}},
 		},
 		{
 			desc:         "It parses git-upload-archive command",
 			executable:   &executable.Executable{Name: executable.GitlabShell},
-			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-upload-archive 'group/repo'"},
+			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-upload-archive '" + testRepo + "'"},
 			arguments:    []string{},
-			expectedArgs: &commandargs.Shell{Arguments: []string{}, SSHArgs: []string{"git-upload-archive", testRepo}, CommandType: commandargs.UploadArchive, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-upload-archive 'group/repo'"}},
+			expectedArgs: &commandargs.Shell{Arguments: []string{}, SSHArgs: []string{"git-upload-archive", testRepo}, CommandType: commandargs.UploadArchive, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-upload-archive '" + testRepo + "'"}},
 		},
 		{
 			desc:         "It parses git-lfs-authenticate command",
 			executable:   &executable.Executable{Name: executable.GitlabShell},
-			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-lfs-authenticate 'group/repo' download"},
+			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-lfs-authenticate '" + testRepo + "' download"},
 			arguments:    []string{},
-			expectedArgs: &commandargs.Shell{Arguments: []string{}, SSHArgs: []string{"git-lfs-authenticate", testRepo, "download"}, CommandType: commandargs.LfsAuthenticate, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-lfs-authenticate 'group/repo' download"}},
+			expectedArgs: &commandargs.Shell{Arguments: []string{}, SSHArgs: []string{"git-lfs-authenticate", testRepo, "download"}, CommandType: commandargs.LfsAuthenticate, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-lfs-authenticate '" + testRepo + "' download"}},
 		},
 		{
 			desc:         "It parses git-lfs-transfer command",
 			executable:   &executable.Executable{Name: executable.GitlabShell},
-			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-lfs-transfer 'group/repo' download"},
+			env:          sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-lfs-transfer '" + testRepo + "' download"},
 			arguments:    []string{},
-			expectedArgs: &commandargs.Shell{Arguments: []string{}, SSHArgs: []string{"git-lfs-transfer", testRepo, "download"}, CommandType: commandargs.LfsTransfer, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-lfs-transfer 'group/repo' download"}},
+			expectedArgs: &commandargs.Shell{Arguments: []string{}, SSHArgs: []string{"git-lfs-transfer", testRepo, "download"}, CommandType: commandargs.LfsTransfer, Env: sshenv.Env{IsSSHConnection: true, OriginalCommand: "git-lfs-transfer '" + testRepo + "' download"}},
 		},
 	}
 
