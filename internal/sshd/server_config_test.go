@@ -181,7 +181,7 @@ func TestUserKeyHandling(t *testing.T) {
 			desc:        "API error",
 			user:        "user",
 			key:         rsaPublicKey(t),
-			expectedErr: &client.APIError{Msg: "Internal API unreachable"},
+			expectedErr: &client.APIError{Msg: "Internal API unreachable", System: true},
 		}, {
 			desc: "successful request",
 			user: "user",
@@ -260,7 +260,7 @@ func TestUserCertificateHandling(t *testing.T) {
 			desc:             "API error",
 			cert:             userCert(t, ssh.UserCert, time.Now().Add(time.Hour)),
 			featureFlagValue: "1",
-			expectedErr:      &client.APIError{Msg: "Internal API unreachable"},
+			expectedErr:      &client.APIError{Msg: "Internal API unreachable", System: true},
 		}, {
 			desc:             "successful request",
 			cert:             validUserCert,

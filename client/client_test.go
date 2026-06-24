@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -349,6 +350,71 @@ func TestRedirectsAreNotFollowed(t *testing.T) {
 		require.Contains(t, err.Error(), "301")
 		require.Zero(t, atomic.LoadInt32(&targetHits), "redirect target must not be reached")
 	})
+}
+
+func TestParseErrorClassification(t *testing.T) {
+	for _, tc := range []struct {
+		desc       string
+		status     int // 0 simulates a connection failure (nil response, non-nil error)
+		body       string
+		wantSystem bool
+		wantCode   int
+	}{
+		{
+			desc:       "connection failure is a system error",
+			status:     0,
+			wantSystem: true,
+			wantCode:   0,
+		},
+		{
+			desc:       "4xx with a structured message is a policy response",
+			status:     http.StatusForbidden,
+			body:       `{"message":"You are not allowed to push"}`,
+			wantSystem: false,
+			wantCode:   http.StatusForbidden,
+		},
+		{
+			desc:       "5xx with a structured message is a system error",
+			status:     http.StatusInternalServerError,
+			body:       `{"message":"boom"}`,
+			wantSystem: true,
+			wantCode:   http.StatusInternalServerError,
+		},
+		{
+			desc:       "non-JSON error body is a system error",
+			status:     http.StatusNotFound,
+			body:       "<html>not found</html>",
+			wantSystem: true,
+			wantCode:   http.StatusNotFound,
+		},
+		{
+			desc:       "followed redirect is a system error",
+			status:     http.StatusMovedPermanently,
+			wantSystem: true,
+			wantCode:   http.StatusMovedPermanently,
+		},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			var resp *http.Response
+			var respErr error
+			if tc.status == 0 {
+				respErr = errors.New("dial tcp: connection refused")
+			} else {
+				resp = &http.Response{
+					StatusCode: tc.status,
+					Header:     http.Header{},
+					Body:       io.NopCloser(strings.NewReader(tc.body)),
+				}
+			}
+
+			err := parseError(resp, respErr)
+
+			var apiErr *APIError
+			require.ErrorAs(t, err, &apiErr)
+			require.Equal(t, tc.wantSystem, apiErr.System)
+			require.Equal(t, tc.wantCode, apiErr.StatusCode)
+		})
+	}
 }
 
 func TestWithHost(t *testing.T) {
