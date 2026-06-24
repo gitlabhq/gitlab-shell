@@ -1,14 +1,20 @@
 package topology
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"log/slog"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 	pb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology/topologytest"
+	"gitlab.com/gitlab-org/labkit/correlation"
+	"gitlab.com/gitlab-org/labkit/v2/fields"
+	"gitlab.com/gitlab-org/labkit/v2/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -125,6 +131,48 @@ func TestResolve(t *testing.T) {
 		result := resolver.resolve(context.Background(), nil)
 		require.Empty(t, result)
 	})
+}
+
+func TestResolveLogsIncludeCorrelationID(t *testing.T) {
+	const correlationID = "test-correlation-id"
+
+	mock := &topologytest.MockClassifyServer{
+		Err: fmt.Errorf("internal server error"),
+	}
+	addr, stop := topologytest.StartMockServer(t, mock)
+	defer stop()
+
+	client := NewClient(&Config{
+		Enabled: true,
+		Address: addr,
+		Timeout: 5 * time.Second,
+	})
+	defer client.Close()
+
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	ctx := correlation.ContextWithCorrelation(context.Background(), correlationID)
+	extracted := correlation.ExtractFromContext(ctx)
+	ctx = log.WithLogger(ctx, logger.With(slog.String(fields.CorrelationID, extracted)))
+
+	resolver := NewResolver(client, "http://localhost")
+	result := resolver.resolve(ctx, RouteClaim("my-group"))
+	require.Empty(t, result)
+
+	require.Contains(t, buf.String(), "Topology Service classify failed after retries")
+
+	var found bool
+	for _, line := range bytes.Split(bytes.TrimRight(buf.Bytes(), "\n"), []byte("\n")) {
+		var entry map[string]any
+		if err := json.Unmarshal(line, &entry); err != nil {
+			continue
+		}
+		if entry["msg"] == "Topology Service classify failed after retries, falling back to default host" {
+			require.Equal(t, extracted, entry["correlation_id"])
+			found = true
+		}
+	}
+	require.True(t, found, "expected fallback warning log line to be emitted")
 }
 
 func TestResolveByRoute(t *testing.T) {
