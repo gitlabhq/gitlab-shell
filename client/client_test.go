@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -349,6 +350,64 @@ func TestRedirectsAreNotFollowed(t *testing.T) {
 		require.Contains(t, err.Error(), "301")
 		require.Zero(t, atomic.LoadInt32(&targetHits), "redirect target must not be reached")
 	})
+}
+
+func TestParseErrorClassification(t *testing.T) {
+	newResp := func(status int, body string) *http.Response {
+		return &http.Response{
+			StatusCode: status,
+			Header:     http.Header{},
+			Body:       io.NopCloser(strings.NewReader(body)),
+		}
+	}
+
+	for _, tc := range []struct {
+		desc       string
+		resp       *http.Response
+		respErr    error
+		wantSystem bool
+		wantCode   int
+	}{
+		{
+			desc:       "connection failure is a system error",
+			respErr:    errors.New("dial tcp: connection refused"),
+			wantSystem: true,
+			wantCode:   0,
+		},
+		{
+			desc:       "4xx with a structured message is a policy response",
+			resp:       newResp(http.StatusForbidden, `{"message":"You are not allowed to push"}`),
+			wantSystem: false,
+			wantCode:   http.StatusForbidden,
+		},
+		{
+			desc:       "5xx with a structured message is a system error",
+			resp:       newResp(http.StatusInternalServerError, `{"message":"boom"}`),
+			wantSystem: true,
+			wantCode:   http.StatusInternalServerError,
+		},
+		{
+			desc:       "non-JSON error body is a system error",
+			resp:       newResp(http.StatusNotFound, "<html>not found</html>"),
+			wantSystem: true,
+			wantCode:   http.StatusNotFound,
+		},
+		{
+			desc:       "followed redirect is a system error",
+			resp:       newResp(http.StatusMovedPermanently, ""),
+			wantSystem: true,
+			wantCode:   http.StatusMovedPermanently,
+		},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := parseError(tc.resp, tc.respErr)
+
+			var apiErr *APIError
+			require.ErrorAs(t, err, &apiErr)
+			require.Equal(t, tc.wantSystem, apiErr.System)
+			require.Equal(t, tc.wantCode, apiErr.StatusCode)
+		})
+	}
 }
 
 func TestWithHost(t *testing.T) {

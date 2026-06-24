@@ -244,6 +244,44 @@ func TestSessionsMetrics(t *testing.T) {
 	}
 }
 
+func TestSessionErrorMetricDistinguishesAPIErrors(t *testing.T) {
+	newChannel := &fakeNewChannel{channelType: "session"}
+
+	for _, tc := range []struct {
+		desc    string
+		err     error
+		counted bool
+	}{
+		{
+			desc:    "policy API error is not counted",
+			err:     &client.APIError{Msg: "You are not allowed to push", StatusCode: 403},
+			counted: false,
+		},
+		{
+			desc:    "system API error (redirect misroute) is counted",
+			err:     &client.APIError{Msg: `Internal API returned redirect (301) to "http://gitlab.com"`, StatusCode: 301, System: true},
+			counted: true,
+		},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			initialErrorTotal := testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal)
+
+			conn, chans := setup(newChannel)
+			err := tc.err
+			conn.handleRequests(context.Background(), nil, chans, func(context.Context, *ssh.ServerConn, ssh.Channel, <-chan *ssh.Request) error {
+				close(chans)
+				return err
+			})
+
+			expected := initialErrorTotal
+			if tc.counted {
+				expected = initialErrorTotal + 1
+			}
+			eventuallyInDelta(t, expected, func() float64 { return testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal) })
+		})
+	}
+}
+
 func eventuallyInDelta(t *testing.T, expected float64, actualFunc func() float64) {
 	t.Helper()
 	var delta = 0.1
