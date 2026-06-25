@@ -282,6 +282,101 @@ func TestSessionErrorMetricDistinguishesAPIErrors(t *testing.T) {
 	}
 }
 
+func TestConnOutcomeObserveAuth(t *testing.T) {
+	t.Run("nil error marks attempted without a server error", func(t *testing.T) {
+		var o connOutcome
+		o.observeAuth(nil)
+		require.True(t, o.authAttempted)
+		require.False(t, o.serverError.Load())
+	})
+
+	t.Run("system APIError marks a server error", func(t *testing.T) {
+		var o connOutcome
+		o.observeAuth(&client.APIError{Msg: "redirect", StatusCode: 301, System: true})
+		require.True(t, o.authAttempted)
+		require.True(t, o.serverError.Load())
+	})
+
+	t.Run("policy APIError does not mark a server error", func(t *testing.T) {
+		var o connOutcome
+		o.observeAuth(&client.APIError{Msg: "You are not allowed", StatusCode: 403})
+		require.True(t, o.authAttempted)
+		require.False(t, o.serverError.Load())
+	})
+
+	t.Run("plain error does not mark a server error", func(t *testing.T) {
+		var o connOutcome
+		o.observeAuth(errors.New("unknown user"))
+		require.True(t, o.authAttempted)
+		require.False(t, o.serverError.Load())
+	})
+
+	t.Run("a later successful attempt clears an earlier server error", func(t *testing.T) {
+		var o connOutcome
+		o.observeAuth(&client.APIError{Msg: "redirect", StatusCode: 301, System: true})
+		require.True(t, o.serverError.Load())
+
+		// The next key the client offers authenticates successfully.
+		o.observeAuth(nil)
+		require.True(t, o.authAttempted)
+		require.False(t, o.serverError.Load(), "ultimate success must not count as an error")
+	})
+}
+
+func TestTrackErrorFeedsConnectionOutcome(t *testing.T) {
+	t.Run("server-side session error marks the connection outcome", func(t *testing.T) {
+		c := &connection{}
+		c.trackError(context.Background(), &client.APIError{Msg: "boom", StatusCode: 500, System: true})
+		require.True(t, c.outcome.serverError.Load())
+	})
+
+	t.Run("client-side session error does not", func(t *testing.T) {
+		c := &connection{}
+		c.trackError(context.Background(), &client.APIError{Msg: "denied", StatusCode: 403})
+		require.False(t, c.outcome.serverError.Load())
+	})
+}
+
+func TestTrackConnection(t *testing.T) {
+	for _, tc := range []struct {
+		desc       string
+		setup      func(*connOutcome)
+		wantTotal  float64
+		wantErrors float64
+	}{
+		{
+			desc:       "no auth attempted is not counted (e.g. port scanner / health check)",
+			setup:      func(*connOutcome) {},
+			wantTotal:  0,
+			wantErrors: 0,
+		},
+		{
+			desc:       "auth attempted and succeeded counts as a connection, not an error",
+			setup:      func(o *connOutcome) { o.authAttempted = true },
+			wantTotal:  1,
+			wantErrors: 0,
+		},
+		{
+			desc:       "server-side failure counts as a connection error",
+			setup:      func(o *connOutcome) { o.authAttempted = true; o.serverError.Store(true) },
+			wantTotal:  1,
+			wantErrors: 1,
+		},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			initTotal := testutil.ToFloat64(metrics.SliSshdConnectionsTotal)
+			initErrors := testutil.ToFloat64(metrics.SliSshdConnectionsErrorsTotal)
+
+			c := &connection{}
+			tc.setup(&c.outcome)
+			c.trackConnection()
+
+			require.InDelta(t, initTotal+tc.wantTotal, testutil.ToFloat64(metrics.SliSshdConnectionsTotal), 0.01)
+			require.InDelta(t, initErrors+tc.wantErrors, testutil.ToFloat64(metrics.SliSshdConnectionsErrorsTotal), 0.01)
+		})
+	}
+}
+
 func eventuallyInDelta(t *testing.T, expected float64, actualFunc func() float64) {
 	t.Helper()
 	var delta = 0.1

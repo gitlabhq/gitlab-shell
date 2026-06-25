@@ -312,7 +312,7 @@ func TestFipsDefaultAlgorithms(t *testing.T) {
 	}
 
 	srvCfg := &serverConfig{cfg: &config.Config{}}
-	sshServerConfig := srvCfg.get(context.Background())
+	sshServerConfig := srvCfg.get(context.Background(), nil)
 
 	algorithms := fips.DefaultAlgorithms()
 
@@ -347,7 +347,7 @@ func TestNonFipsDefaultAlgorithms(t *testing.T) {
 	}
 
 	srvCfg := &serverConfig{cfg: &config.Config{}}
-	sshServerConfig := srvCfg.get(context.Background())
+	sshServerConfig := srvCfg.get(context.Background(), nil)
 
 	defaultCfg := ssh.ServerConfig{}
 	defaultCfg.SetDefaults()
@@ -374,7 +374,7 @@ func TestCustomAlgorithms(t *testing.T) {
 			},
 		},
 	}
-	sshServerConfig := srvCfg.get(context.Background())
+	sshServerConfig := srvCfg.get(context.Background(), nil)
 
 	require.Equal(t, customMACs, sshServerConfig.MACs)
 	require.Equal(t, customKexAlgos, sshServerConfig.KeyExchanges)
@@ -399,7 +399,7 @@ func TestGSSAPIWithMIC(t *testing.T) {
 			},
 		},
 	}
-	sshServerConfig := srvCfg.get(context.Background())
+	sshServerConfig := srvCfg.get(context.Background(), nil)
 	server := sshServerConfig.GSSAPIWithMICConfig.Server.(*OSGSSAPIServer)
 
 	require.NotNil(t, sshServerConfig.GSSAPIWithMICConfig)
@@ -425,7 +425,7 @@ func TestGSSAPIWithMICDisabled(t *testing.T) {
 			},
 		},
 	}
-	sshServerConfig := srvCfg.get(context.Background())
+	sshServerConfig := srvCfg.get(context.Background(), nil)
 
 	require.Nil(t, sshServerConfig.GSSAPIWithMICConfig)
 

@@ -28,6 +28,9 @@ const (
 	sliSshdSessionsTotalName       = "gitlab_sli:shell_sshd_sessions:total"
 	sliSshdSessionsErrorsTotalName = "gitlab_sli:shell_sshd_sessions:errors_total"
 
+	sliSshdConnectionsTotalName       = "gitlab_sli:shell_sshd_connections:total"
+	sliSshdConnectionsErrorsTotalName = "gitlab_sli:shell_sshd_connections:errors_total"
+
 	lfsHTTPConnectionsTotalName = "lfs_http_connections_total"
 	lfsSSHConnectionsTotalName  = "lfs_ssh_connections_total"
 
@@ -100,6 +103,29 @@ var (
 		prometheus.CounterOpts{
 			Name: sliSshdSessionsErrorsTotalName,
 			Help: "Number of SSH sessions that have failed",
+		},
+	)
+
+	// SliSshdConnectionsTotal is the number of SSH connections that reached
+	// authentication. Unlike SliSshdSessionsTotal (which counts post-auth session
+	// channels), this counts once per connection that attempted to authenticate,
+	// so it captures the full user-facing attempt and excludes connections that
+	// never got past the transport handshake (port scanners, health checks).
+	SliSshdConnectionsTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: sliSshdConnectionsTotalName,
+			Help: "Number of SSH connections that reached authentication",
+		},
+	)
+
+	// SliSshdConnectionsErrorsTotal is the number of SSH connections that failed
+	// due to a server-side error (internal API / transport failure) at either the
+	// authentication or session phase, as opposed to an expected client-side
+	// failure. Counted at most once per connection.
+	SliSshdConnectionsErrorsTotal = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Name: sliSshdConnectionsErrorsTotalName,
+			Help: "Number of SSH connections that failed due to a server-side error",
 		},
 	)
 
