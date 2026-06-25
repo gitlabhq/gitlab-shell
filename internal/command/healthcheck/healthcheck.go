@@ -5,24 +5,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/open-feature/go-sdk/openfeature"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/clients/gitlab"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/healthcheck"
-	"gitlab.com/gitlab-org/labkit/v2/log"
 )
-
-const useNewHealthcheckClientFlag = "use_new_healthcheck_client"
 
 var (
 	apiMessage   = "Internal API available"
 	redisMessage = "Redis available via internal API"
-
-	// healthcheckEvalCtx is the evaluation context for feature flag checks. A
-	// constant targeting key is used because healthcheck has no user identity.
-	healthcheckEvalCtx = openfeature.NewEvaluationContext("healthcheck", nil)
 )
 
 // Command handles the execution of health checks.
@@ -48,39 +38,10 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	return ctx, nil
 }
 
-func (c *Command) runCheck(ctx context.Context) (*healthcheck.Response, error) {
-	// Check if we should use the new client via feature flag
-	evaluator := command.FeatureFlagEvaluatorFromContext(ctx)
-	if evaluator != nil {
-		details, err := evaluator.BooleanValueDetails(ctx, useNewHealthcheckClientFlag, false, healthcheckEvalCtx)
-		if err != nil {
-			log.FromContext(ctx).WarnContext(ctx, "healthcheck FF evaluation failed; using legacy client", log.Error(err))
-		} else if details.Value {
-			return c.runCheckNewClient(ctx)
-		}
-	}
-
-	// Use the old client (default, safe path)
-	return c.runCheckOldClient(ctx)
-}
-
-// runCheckOldClient uses the old gitlabnet healthcheck client.
-func (c *Command) runCheckOldClient(ctx context.Context) (*healthcheck.Response, error) {
-	client, err := healthcheck.NewClient(c.Config)
-	if err != nil {
-		return nil, err
-	}
-
-	response, err := client.Check(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return response, nil
-}
-
-// runCheckNewClient uses the new internal/clients/gitlab healthcheck client.
-func (c *Command) runCheckNewClient(ctx context.Context) (*healthcheck.Response, error) {
+// runCheck queries the internal API health endpoint using the unified gitlab
+// client. The legacy gitlabnet healthcheck client and its feature-flag gate
+// were removed once acceptance tests confirmed the two paths were equivalent.
+func (c *Command) runCheck(ctx context.Context) (*gitlab.HealthcheckResponse, error) {
 	newClient, err := gitlab.New(&gitlab.Config{
 		GitlabURL:          c.Config.GitlabURL,
 		User:               c.Config.HTTPSettings.User,
@@ -94,17 +55,5 @@ func (c *Command) runCheckNewClient(ctx context.Context) (*healthcheck.Response,
 		return nil, err
 	}
 
-	hc := gitlab.NewHealthcheckClient(newClient)
-	resp, err := hc.Check(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Convert from gitlab.HealthcheckResponse to healthcheck.Response
-	return &healthcheck.Response{
-		APIVersion:     resp.APIVersion,
-		GitlabVersion:  resp.GitlabVersion,
-		GitlabRevision: resp.GitlabRevision,
-		Redis:          resp.Redis,
-	}, nil
+	return gitlab.NewHealthcheckClient(newClient).Check(ctx)
 }
