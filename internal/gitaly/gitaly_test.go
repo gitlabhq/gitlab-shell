@@ -10,12 +10,14 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
 
+const gitUploadPack = "git-upload-pack"
+
 func TestPrometheusMetrics(t *testing.T) {
 	metrics.GitalyConnectionsTotal.Reset()
 
 	c := newClient()
 
-	cmd := Command{CacheKey: CacheKey{ServiceName: "git-upload-pack", Address: "tcp://localhost:9999"}}
+	cmd := Command{CacheKey: CacheKey{ServiceName: gitUploadPack, Address: "tcp://localhost:9999"}}
 	c.newConnection(context.Background(), cmd)
 	c.newConnection(context.Background(), cmd)
 
@@ -35,7 +37,7 @@ func TestCachedConnections(t *testing.T) {
 
 	require.Empty(t, c.cache.connections)
 
-	cmd := Command{CacheKey: CacheKey{ServiceName: "git-upload-pack", Address: "tcp://localhost:9999"}}
+	cmd := Command{CacheKey: CacheKey{ServiceName: gitUploadPack, Address: "tcp://localhost:9999"}}
 
 	conn, err := c.GetConnection(context.Background(), cmd)
 	require.NoError(t, err)
@@ -46,7 +48,7 @@ func TestCachedConnections(t *testing.T) {
 	require.Len(t, c.cache.connections, 1)
 	require.Equal(t, conn, newConn)
 
-	cmd = Command{CacheKey: CacheKey{ServiceName: "git-upload-pack", Address: "tcp://localhost:9998"}}
+	cmd = Command{CacheKey: CacheKey{ServiceName: gitUploadPack, Address: "tcp://localhost:9998"}}
 	_, err = c.GetConnection(context.Background(), cmd)
 	require.NoError(t, err)
 	require.Len(t, c.cache.connections, 2)

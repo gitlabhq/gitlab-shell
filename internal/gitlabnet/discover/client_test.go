@@ -16,6 +16,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology"
 )
 
+const janeDoe = "jane-doe"
+
 var (
 	requests []testserver.TestRequestHandler
 )
@@ -33,10 +35,10 @@ func init() {
 						Name:     "Alex Doe",
 					}
 					json.NewEncoder(w).Encode(body)
-				case r.URL.Query().Get("username") == "jane-doe":
+				case r.URL.Query().Get("username") == janeDoe:
 					body := &Response{
 						UserID:   1,
-						Username: "jane-doe",
+						Username: janeDoe,
 						Name:     "Jane Doe",
 					}
 					json.NewEncoder(w).Encode(body)
@@ -79,10 +81,10 @@ func TestGetByUsername(t *testing.T) {
 	client := setup(t)
 
 	params := url.Values{}
-	params.Add("username", "jane-doe")
-	result, err := client.getResponse(context.Background(), params, topology.UserArgs{Username: "jane-doe"})
+	params.Add("username", janeDoe)
+	result, err := client.getResponse(context.Background(), params, topology.UserArgs{Username: janeDoe})
 	require.NoError(t, err)
-	require.Equal(t, &Response{UserID: 1, Username: "jane-doe", Name: "Jane Doe"}, result)
+	require.Equal(t, &Response{UserID: 1, Username: janeDoe, Name: "Jane Doe"}, result)
 }
 
 func TestGetByKrb5Principal(t *testing.T) {

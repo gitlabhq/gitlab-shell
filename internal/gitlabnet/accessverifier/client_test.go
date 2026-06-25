@@ -26,6 +26,13 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology/topologytest"
 )
 
+const (
+	testUserID  = "user-1"
+	testCustom  = "custom"
+	testIPv4    = "18.245.0.42"
+	testIPv6    = "2001:0db8:85a3:0000:0000:8a2e:0370:7334"
+)
+
 var (
 	namespace         = "group"
 	repo              = "group/private"
@@ -37,7 +44,7 @@ var (
 func buildExpectedResponse(who string) *Response {
 	response := &Response{
 		Success:          true,
-		UserID:           "user-1",
+		UserID:           testUserID,
 		Repo:             "project-26",
 		Username:         "root",
 		GitConfigOptions: []string{"option"},
@@ -83,11 +90,11 @@ func TestSuccessfulResponses(t *testing.T) {
 		}, {
 			desc: "Provide username within the request",
 			args: &commandargs.Shell{GitlabUsername: "first", Env: defaultEnv},
-			who:  "user-1",
+			who:  testUserID,
 		}, {
 			desc: "Provide krb5principal within the request",
 			args: &commandargs.Shell{GitlabKrb5Principal: "test@TEST.TEST"},
-			who:  "user-1",
+			who:  testUserID,
 		},
 	}
 
@@ -105,23 +112,23 @@ func TestSuccessfulResponses(t *testing.T) {
 func TestGeoPushGetCustomAction(t *testing.T) {
 	testRoot := testhelper.PrepareTestRootDir(t)
 	client := setup(t, map[string]testResponse{
-		"custom": {
+		testCustom: {
 			body:   responseBody(t, testRoot, "allowed_with_push_payload.json"),
 			status: 300,
 		},
 	}, nil)
 
-	args := &commandargs.Shell{GitlabUsername: "custom", Env: defaultEnv}
+	args := &commandargs.Shell{GitlabUsername: testCustom, Env: defaultEnv}
 	result, err := client.Verify(context.Background(), args, receivePackAction, repo)
 	require.NoError(t, err)
 
-	response := buildExpectedResponse("user-1")
+	response := buildExpectedResponse(testUserID)
 	response.Payload = CustomPayload{
 		Action: "geo_proxy_to_primary",
 		Data: CustomPayloadData{
 			APIEndpoints:   []string{"geo/proxy_git_ssh/info_refs_receive_pack", "geo/proxy_git_ssh/receive_pack"},
 			RequestHeaders: map[string]string{"Authorization": "Bearer token"},
-			Username:       "custom",
+			Username:       testCustom,
 			PrimaryRepo:    "https://repo/path",
 		},
 	}
@@ -134,22 +141,22 @@ func TestGeoPushGetCustomAction(t *testing.T) {
 func TestGeoPullGetCustomAction(t *testing.T) {
 	testRoot := testhelper.PrepareTestRootDir(t)
 	client := setup(t, map[string]testResponse{
-		"custom": {
+		testCustom: {
 			body:   responseBody(t, testRoot, "allowed_with_pull_payload.json"),
 			status: 300,
 		},
 	}, nil)
 
-	args := &commandargs.Shell{GitlabUsername: "custom", Env: defaultEnv}
+	args := &commandargs.Shell{GitlabUsername: testCustom, Env: defaultEnv}
 	result, err := client.Verify(context.Background(), args, uploadPackAction, repo)
 	require.NoError(t, err)
 
-	response := buildExpectedResponse("user-1")
+	response := buildExpectedResponse(testUserID)
 	response.Payload = CustomPayload{
 		Action: "geo_proxy_to_primary",
 		Data: CustomPayloadData{
 			APIEndpoints:   []string{"geo/proxy_git_ssh/info_refs_upload_pack", "geo/proxy_git_ssh/upload_pack"},
-			Username:       "custom",
+			Username:       testCustom,
 			PrimaryRepo:    "https://repo/path",
 			RequestHeaders: map[string]string{"Authorization": "Bearer token"},
 		},
@@ -208,23 +215,23 @@ func TestCheckIP(t *testing.T) {
 	}{
 		{
 			desc:            "IPv4 address",
-			remoteAddr:      "18.245.0.42",
-			expectedCheckIP: "18.245.0.42",
+			remoteAddr:      testIPv4,
+			expectedCheckIP: testIPv4,
 		},
 		{
 			desc:            "IPv6 address",
-			remoteAddr:      "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
-			expectedCheckIP: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+			remoteAddr:      testIPv6,
+			expectedCheckIP: testIPv6,
 		},
 		{
 			desc:            "Host and port",
-			remoteAddr:      "18.245.0.42:6345",
-			expectedCheckIP: "18.245.0.42",
+			remoteAddr:      testIPv4 + ":6345",
+			expectedCheckIP: testIPv4,
 		},
 		{
 			desc:            "IPv6 host and port",
-			remoteAddr:      "[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:80",
-			expectedCheckIP: "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+			remoteAddr:      "[" + testIPv6 + "]:80",
+			expectedCheckIP: testIPv6,
 		},
 		{
 			desc:            "Bad remote addr",

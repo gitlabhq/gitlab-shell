@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const tmpDir = "/tmp"
+
 type fakeOs struct {
 	OldExecutable func() (string, error)
 	Path          string
@@ -37,16 +39,16 @@ func TestNewSuccess(t *testing.T) {
 	}{
 		{
 			desc:            "GITLAB_SHELL_DIR env var is not defined",
-			fakeOs:          &fakeOs{Path: "/tmp/bin/gitlab-shell"},
-			expectedRootDir: "/tmp",
+			fakeOs:          &fakeOs{Path: tmpDir + "/bin/gitlab-shell"},
+			expectedRootDir: tmpDir,
 		},
 		{
 			desc:   "GITLAB_SHELL_DIR env var is defined",
 			fakeOs: &fakeOs{Path: "/opt/bin/gitlab-shell"},
 			environment: map[string]string{
-				"GITLAB_SHELL_DIR": "/tmp",
+				"GITLAB_SHELL_DIR": tmpDir,
 			},
-			expectedRootDir: "/tmp",
+			expectedRootDir: tmpDir,
 		},
 	}
 
@@ -79,9 +81,9 @@ func TestNewFailure(t *testing.T) {
 		},
 		{
 			desc:   "GITLAB_SHELL_DIR doesn't exist",
-			fakeOs: &fakeOs{Path: "/tmp/bin/gitlab-shell"},
+			fakeOs: &fakeOs{Path: tmpDir + "/bin/gitlab-shell"},
 			environment: map[string]string{
-				"GITLAB_SHELL_DIR": "/tmp/non/existing/directory",
+				"GITLAB_SHELL_DIR": tmpDir + "/non/existing/directory",
 			},
 		},
 	}

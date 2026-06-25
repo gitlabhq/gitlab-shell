@@ -17,8 +17,13 @@ import (
 )
 
 const (
-	keyID = "123"
-	repo  = "group/repo"
+	keyID           = "123"
+	repo            = "group/repo"
+	lfsUsername     = "john"
+	lfsTokenKey     = "lfs_token"
+	lfsRepoPath     = "https://gitlab.com/repo/path"
+	lfsExpiresInKey = "expires_in"
+	lfsDownload     = "download"
 )
 
 func setup(t *testing.T) []testserver.TestRequestHandler {
@@ -36,10 +41,10 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 				switch request.KeyID {
 				case keyID:
 					body := map[string]interface{}{
-						"username":             "john",
-						"lfs_token":            "sometoken",
-						"repository_http_path": "https://gitlab.com/repo/path",
-						"expires_in":           1800,
+						"username":             lfsUsername,
+						lfsTokenKey:            "sometoken",
+						"repository_http_path": lfsRepoPath,
+						lfsExpiresInKey:        1800,
 					}
 					assert.NoError(t, json.NewEncoder(w).Encode(body))
 				case "forbidden":
@@ -65,17 +70,17 @@ func TestFailedRequests(t *testing.T) {
 	}{
 		{
 			desc:           "With bad response",
-			args:           &commandargs.Shell{GitlabKeyID: "-1", CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, "download"}},
+			args:           &commandargs.Shell{GitlabKeyID: "-1", CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, lfsDownload}},
 			expectedOutput: "parsing failed",
 		},
 		{
 			desc:           "With API returns an error",
-			args:           &commandargs.Shell{GitlabKeyID: "forbidden", CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, "download"}},
+			args:           &commandargs.Shell{GitlabKeyID: "forbidden", CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, lfsDownload}},
 			expectedOutput: "Internal API error (403)",
 		},
 		{
 			desc:           "With API fails",
-			args:           &commandargs.Shell{GitlabKeyID: "broken", CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, "download"}},
+			args:           &commandargs.Shell{GitlabKeyID: "broken", CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, lfsDownload}},
 			expectedOutput: "Internal API unreachable",
 		},
 	}
@@ -124,9 +129,9 @@ func TestSuccessfulRequests(t *testing.T) {
 			require.NoError(t, err)
 
 			expectedResponse := &Response{
-				Username:  "john",
+				Username:  lfsUsername,
 				LfsToken:  "sometoken",
-				RepoPath:  "https://gitlab.com/repo/path",
+				RepoPath:  lfsRepoPath,
 				ExpiresIn: 1800,
 			}
 
@@ -140,10 +145,10 @@ func TestAuthenticateWithCellAddress(t *testing.T) {
 	cellServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		cellReceived = true
 		body := map[string]interface{}{
-			"username":             "john",
-			"lfs_token":            "sometoken",
-			"repository_http_path": "https://gitlab.com/repo/path",
-			"expires_in":           1800,
+			"username":             lfsUsername,
+			lfsTokenKey:            "sometoken",
+			"repository_http_path": lfsRepoPath,
+			lfsExpiresInKey:        1800,
 		}
 		assert.NoError(t, json.NewEncoder(w).Encode(body))
 	}))
@@ -153,20 +158,20 @@ func TestAuthenticateWithCellAddress(t *testing.T) {
 	defaultServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		defaultReceived = true
 		body := map[string]interface{}{
-			"username":             "john",
-			"lfs_token":            "sometoken",
-			"repository_http_path": "https://gitlab.com/repo/path",
-			"expires_in":           1800,
+			"username":             lfsUsername,
+			lfsTokenKey:            "sometoken",
+			"repository_http_path": lfsRepoPath,
+			lfsExpiresInKey:        1800,
 		}
 		assert.NoError(t, json.NewEncoder(w).Encode(body))
 	}))
 	t.Cleanup(defaultServer.Close)
 
-	args := &commandargs.Shell{GitlabKeyID: keyID, CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, "download"}}
+	args := &commandargs.Shell{GitlabKeyID: keyID, CommandType: commandargs.LfsAuthenticate, SSHArgs: []string{"git-lfs-authenticate", repo, lfsDownload}}
 	client, err := NewClient(&config.Config{GitlabURL: defaultServer.URL}, args)
 	require.NoError(t, err)
 
-	response, err := client.Authenticate(context.Background(), "download", repo, "", cellServer.URL)
+	response, err := client.Authenticate(context.Background(), lfsDownload, repo, "", cellServer.URL)
 	require.NoError(t, err)
 	require.NotNil(t, response)
 
