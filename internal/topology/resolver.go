@@ -135,14 +135,14 @@ func (r *Resolver) resolve(ctx context.Context, claim *types_proto.Claim) string
 		backoff.WithBackOff(b),
 		backoff.WithMaxTries(classifyMaxAttempts),
 		backoff.WithNotify(func(err error, duration time.Duration) {
-			slog.InfoContext(ctx, "Topology Service classify attempt failed, retrying",
+			log.FromContext(ctx).InfoContext(ctx, "Topology Service classify attempt failed, retrying",
 				slog.Float64("retry_in_s", duration.Seconds()),
 				log.ErrorMessage(err.Error()),
 			)
 		}),
 	)
 	if err != nil {
-		slog.WarnContext(ctx, "Topology Service classify failed after retries, falling back to default host",
+		log.FromContext(ctx).WarnContext(ctx, "Topology Service classify failed after retries, falling back to default host",
 			slog.Int("max_attempts", classifyMaxAttempts),
 			log.ErrorMessage(err.Error()),
 		)
@@ -154,12 +154,12 @@ func (r *Resolver) resolve(ctx context.Context, claim *types_proto.Claim) string
 		if address != "" {
 			address = r.scheme + "://" + address
 		}
-		slog.DebugContext(ctx, "Topology Service resolved cell address",
+		log.FromContext(ctx).DebugContext(ctx, "Topology Service resolved cell address",
 			slog.String("address", address))
 		return address
 	}
 
-	slog.DebugContext(ctx, "Topology Service returned non-PROXY response, falling back to default host",
+	log.FromContext(ctx).DebugContext(ctx, "Topology Service returned non-PROXY response, falling back to default host",
 		slog.String("action", resp.GetAction().String()))
 
 	return ""
