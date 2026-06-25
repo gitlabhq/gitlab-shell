@@ -10,6 +10,11 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/executable"
 )
 
+const (
+	testRootDir  = "/tmp"
+	testPrincipal = "principal1"
+)
+
 func TestFailingNewPublicKeyLine(t *testing.T) {
 	testCases := []struct {
 		desc          string
@@ -33,7 +38,7 @@ func TestFailingNewPublicKeyLine(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			result, err := NewPublicKeyLine(tc.id, tc.publicKey, &config.Config{RootDir: "/tmp", SslCertDir: "/tmp/certs"})
+			result, err := NewPublicKeyLine(tc.id, tc.publicKey, &config.Config{RootDir: testRootDir, SslCertDir: testRootDir + "/certs"})
 
 			require.Empty(t, result)
 			require.EqualError(t, err, tc.expectedError)
@@ -63,14 +68,14 @@ func TestFailingNewPrincipalKeyLine(t *testing.T) {
 		{
 			desc:          "When KeyID has an invalid character in it",
 			keyID:         "user.name@domain",
-			principal:     "principal1",
+			principal:     testPrincipal,
 			expectedError: "invalid key_id: user.name@domain",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			result, err := NewPrincipalKeyLine(tc.keyID, tc.principal, &config.Config{RootDir: "/tmp", SslCertDir: "/tmp/certs"})
+			result, err := NewPrincipalKeyLine(tc.keyID, tc.principal, &config.Config{RootDir: testRootDir, SslCertDir: testRootDir + "/certs"})
 
 			require.Empty(t, result)
 			require.EqualError(t, err, tc.expectedError)
@@ -87,28 +92,28 @@ func TestSuccessfulNewPrincipalKeyLine(t *testing.T) {
 		{
 			desc:      "KeyID with dot",
 			keyID:     "user.name",
-			principal: "principal1",
+			principal: testPrincipal,
 		},
 		{
 			desc:      "KeyID with uppercase",
 			keyID:     "UserName",
-			principal: "principal1",
+			principal: testPrincipal,
 		},
 		{
 			desc:      "KeyID with dot and uppercase",
 			keyID:     "User.Name.DEPARTMENT",
-			principal: "principal1",
+			principal: testPrincipal,
 		},
 		{
 			desc:      "KeyID with hyphen, dot, uppercase, no space",
 			keyID:     "User-name.Department_9",
-			principal: "principal1",
+			principal: testPrincipal,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			currentConfig := &config.Config{RootDir: "/tmp", SslCertDir: "/tmp/certs"}
+			currentConfig := &config.Config{RootDir: testRootDir, SslCertDir: testRootDir + "/certs"}
 			keyLine, err := NewPrincipalKeyLine(tc.keyID, tc.principal, currentConfig)
 			require.NoError(t, err)
 			require.NotNil(t, keyLine)
@@ -129,7 +134,7 @@ func TestToString(t *testing.T) {
 		ID:     "1",
 		Value:  "public-key",
 		Prefix: "key",
-		Config: &config.Config{RootDir: "/tmp"},
+		Config: &config.Config{RootDir: testRootDir},
 	}
 
 	result := keyLine.ToString()

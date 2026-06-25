@@ -16,6 +16,12 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
+const (
+	patSuccess  = "success"
+	patReadAPI  = "read_api"
+	patAPI      = "api"
+)
+
 var (
 	requests []testserver.TestRequestHandler
 )
@@ -36,16 +42,16 @@ func initialize(t *testing.T) {
 				switch requestBody.KeyID {
 				case "0":
 					body := map[string]interface{}{
-						"success":    true,
+						patSuccess:   true,
 						"token":      "aAY1G3YPeemECgUvxuXY",
-						"scopes":     [2]string{"read_api", "read_repository"},
+						"scopes":     [2]string{patReadAPI, "read_repository"},
 						"expires_at": "9001-11-17",
 					}
 					json.NewEncoder(w).Encode(body)
 				case "1":
 					body := map[string]interface{}{
-						"success": false,
-						"message": "missing user",
+						patSuccess: false,
+						"message":  "missing user",
 					}
 					json.NewEncoder(w).Encode(body)
 				case "2":
@@ -62,9 +68,9 @@ func initialize(t *testing.T) {
 
 				if requestBody.UserID == 1 {
 					body := map[string]interface{}{
-						"success":    true,
+						patSuccess:   true,
 						"token":      "YXuxvUgCEmeePY3G1YAa",
-						"scopes":     [1]string{"api"},
+						"scopes":     [1]string{patAPI},
 						"expires_at": nil,
 					}
 					json.NewEncoder(w).Encode(body)
@@ -90,13 +96,13 @@ func TestGetPersonalAccessTokenByKeyId(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabKeyID: "0"}
 	result, err := client.GetPersonalAccessToken(
-		context.Background(), args, "newtoken", &[]string{"read_api", "read_repository"}, "",
+		context.Background(), args, "newtoken", &[]string{patReadAPI, "read_repository"}, "",
 	)
 	require.NoError(t, err)
 	response := &Response{
 		true,
 		"aAY1G3YPeemECgUvxuXY",
-		[]string{"read_api", "read_repository"},
+		[]string{patReadAPI, "read_repository"},
 		"9001-11-17",
 		"",
 	}
@@ -108,10 +114,10 @@ func TestGetRecoveryCodesByUsername(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabUsername: "jane-doe"}
 	result, err := client.GetPersonalAccessToken(
-		context.Background(), args, "newtoken", &[]string{"api"}, "",
+		context.Background(), args, "newtoken", &[]string{patAPI}, "",
 	)
 	require.NoError(t, err)
-	response := &Response{true, "YXuxvUgCEmeePY3G1YAa", []string{"api"}, "", ""}
+	response := &Response{true, "YXuxvUgCEmeePY3G1YAa", []string{patAPI}, "", ""}
 	require.Equal(t, response, result)
 }
 
@@ -120,7 +126,7 @@ func TestMissingUser(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabKeyID: "1"}
 	_, err := client.GetPersonalAccessToken(
-		context.Background(), args, "newtoken", &[]string{"api"}, "",
+		context.Background(), args, "newtoken", &[]string{patAPI}, "",
 	)
 	require.Equal(t, "missing user", err.Error())
 }
@@ -154,7 +160,7 @@ func TestErrorResponses(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			args := &commandargs.Shell{GitlabKeyID: tc.fakeID}
 			resp, err := client.GetPersonalAccessToken(
-				context.Background(), args, "newtoken", &[]string{"api"}, "",
+				context.Background(), args, "newtoken", &[]string{patAPI}, "",
 			)
 
 			require.EqualError(t, err, tc.expectedError)

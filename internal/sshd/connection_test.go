@@ -94,7 +94,7 @@ func setup(newChannel *fakeNewChannel) (*connection, chan ssh.NewChannel) {
 }
 
 func TestPanicDuringSessionIsRecovered(t *testing.T) {
-	newChannel := &fakeNewChannel{channelType: "session"}
+	newChannel := &fakeNewChannel{channelType: sessionChannelType}
 	conn, chans := setup(newChannel)
 
 	numSessions := 0
@@ -130,7 +130,7 @@ func TestTooManySessions(t *testing.T) {
 	rejectCh := make(chan rejectCall)
 	defer close(rejectCh)
 
-	newChannel := &fakeNewChannel{channelType: "session", rejectCh: rejectCh}
+	newChannel := &fakeNewChannel{channelType: sessionChannelType, rejectCh: rejectCh}
 	conn, chans := setup(newChannel)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -148,7 +148,7 @@ func TestTooManySessions(t *testing.T) {
 }
 
 func TestAcceptSessionSucceeds(t *testing.T) {
-	newChannel := &fakeNewChannel{channelType: "session"}
+	newChannel := &fakeNewChannel{channelType: sessionChannelType}
 	conn, chans := setup(newChannel)
 	ctx := context.Background()
 
@@ -167,7 +167,7 @@ func TestAcceptSessionFails(t *testing.T) {
 	defer close(acceptCh)
 
 	acceptErr := errors.New("some failure")
-	newChannel := &fakeNewChannel{channelType: "session", acceptCh: acceptCh, acceptErr: acceptErr}
+	newChannel := &fakeNewChannel{channelType: sessionChannelType, acceptCh: acceptCh, acceptErr: acceptErr}
 	conn, chans := setup(newChannel)
 	ctx := context.Background()
 
@@ -206,7 +206,7 @@ func TestSessionsMetrics(t *testing.T) {
 	initialSessionsTotal := testutil.ToFloat64(metrics.SliSshdSessionsTotal)
 	initialSessionsErrorTotal := testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal)
 
-	newChannel := &fakeNewChannel{channelType: "session"}
+	newChannel := &fakeNewChannel{channelType: sessionChannelType}
 	conn, chans := setup(newChannel)
 	ctx := context.Background()
 

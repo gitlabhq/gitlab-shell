@@ -30,19 +30,19 @@ func initialize(t *testing.T) []testserver.TestRequestHandler {
 		switch requestBody.KeyID {
 		case "0":
 			body := map[string]interface{}{
-				"success": true,
+				successKey: true,
 			}
 			assert.NoError(t, json.NewEncoder(w).Encode(body))
 		case "1":
 			body := map[string]interface{}{
-				"success": false,
-				"message": "error message",
+				successKey: false,
+				"message":  "error message",
 			}
 			assert.NoError(t, json.NewEncoder(w).Encode(body))
 		case "2":
 			w.WriteHeader(http.StatusForbidden)
 			body := &client.ErrorResponse{
-				Message: "Not allowed!",
+				Message: notAllowedMsg,
 			}
 			assert.NoError(t, json.NewEncoder(w).Encode(body))
 		case "3":
@@ -53,7 +53,7 @@ func initialize(t *testing.T) []testserver.TestRequestHandler {
 
 		if requestBody.UserID == 1 {
 			body := map[string]interface{}{
-				"success": true,
+				successKey: true,
 			}
 			assert.NoError(t, json.NewEncoder(w).Encode(body))
 		}
@@ -85,7 +85,9 @@ func initialize(t *testing.T) []testserver.TestRequestHandler {
 }
 
 const (
-	otpAttempt = "123456"
+	otpAttempt     = "123456"
+	successKey     = "success"
+	notAllowedMsg  = "Not allowed!"
 )
 
 func TestVerifyOTPByKeyId(t *testing.T) {
@@ -123,7 +125,7 @@ func TestErrorResponses(t *testing.T) {
 		{
 			desc:          "A response with an error message",
 			fakeID:        "2",
-			expectedError: "Not allowed!",
+			expectedError: notAllowedMsg,
 		},
 		{
 			desc:          "A response with bad JSON",
@@ -174,7 +176,7 @@ func TestErrorResponsesPush(t *testing.T) {
 		{
 			desc:          "A response with an error message",
 			fakeID:        "2",
-			expectedError: "Not allowed!",
+			expectedError: notAllowedMsg,
 		},
 		{
 			desc:          "A response with bad JSON",

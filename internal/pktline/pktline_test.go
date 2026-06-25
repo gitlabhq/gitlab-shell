@@ -7,6 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	helloWorldPacket = "0010hello world!"
+)
+
 var (
 	largestString = strings.Repeat("z", 0xffff-4)
 )
@@ -21,30 +25,30 @@ func TestScanner(t *testing.T) {
 	}{
 		{
 			desc: "happy path",
-			in:   "0010hello world!000000010010hello world!",
-			out:  []string{"0010hello world!", "0000", "0001", "0010hello world!"},
+			in:   helloWorldPacket + "0000" + "0001" + helloWorldPacket,
+			out:  []string{helloWorldPacket, "0000", "0001", helloWorldPacket},
 		},
 		{
 			desc: "large input",
-			in:   "0010hello world!0000" + largestPacket + "0000",
-			out:  []string{"0010hello world!", "0000", largestPacket, "0000"},
+			in:   helloWorldPacket + "0000" + largestPacket + "0000",
+			out:  []string{helloWorldPacket, "0000", largestPacket, "0000"},
 		},
 		{
 			desc: "missing byte middle",
-			in:   "0010hello world!00000010010hello world!",
-			out:  []string{"0010hello world!", "0000", "0010010hello wor"},
+			in:   helloWorldPacket + "00000010010hello world!",
+			out:  []string{helloWorldPacket, "0000", "0010010hello wor"},
 			fail: true,
 		},
 		{
 			desc: "unfinished prefix",
-			in:   "0010hello world!000",
-			out:  []string{"0010hello world!"},
+			in:   helloWorldPacket + "000",
+			out:  []string{helloWorldPacket},
 			fail: true,
 		},
 		{
 			desc: "short read in data, only prefix",
-			in:   "0010hello world!0005",
-			out:  []string{"0010hello world!"},
+			in:   helloWorldPacket + "0005",
+			out:  []string{helloWorldPacket},
 			fail: true,
 		},
 	}

@@ -22,6 +22,11 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 )
 
+const (
+	gitalyAddress = "tcp://localhost:9999"
+	featureTrue   = "true"
+)
+
 func makeHandler(t *testing.T, err error) func(context.Context, *grpc.ClientConn) (int32, error) {
 	return func(ctx context.Context, client *grpc.ClientConn) (int32, error) {
 		require.NotNil(t, ctx)
@@ -36,7 +41,7 @@ func TestRunGitalyCommand(t *testing.T) {
 		newConfig(),
 		string(commandargs.UploadPack),
 		&accessverifier.Response{
-			Gitaly: accessverifier.Gitaly{Address: "tcp://localhost:9999"},
+			Gitaly: accessverifier.Gitaly{Address: gitalyAddress},
 		},
 	)
 
@@ -54,7 +59,7 @@ func TestCachingOfGitalyConnections(t *testing.T) {
 	response := &accessverifier.Response{
 		Username: "user",
 		Gitaly: accessverifier.Gitaly{
-			Address: "tcp://localhost:9999",
+			Address: gitalyAddress,
 			Token:   "token",
 		},
 	}
@@ -84,7 +89,7 @@ func TestUnavailableGitalyErr(t *testing.T) {
 		newConfig(),
 		string(commandargs.UploadPack),
 		&accessverifier.Response{
-			Gitaly: accessverifier.Gitaly{Address: "tcp://localhost:9999"},
+			Gitaly: accessverifier.Gitaly{Address: gitalyAddress},
 		},
 	)
 
@@ -97,7 +102,7 @@ func TestGitalyLimitErr(t *testing.T) {
 		newConfig(),
 		string(commandargs.UploadPack),
 		&accessverifier.Response{
-			Gitaly: accessverifier.Gitaly{Address: "tcp://localhost:9999"},
+			Gitaly: accessverifier.Gitaly{Address: gitalyAddress},
 		},
 	)
 	limitErr := errWithDetail(t, &pb.LimitError{
@@ -120,17 +125,17 @@ func TestRunGitalyCommandMetadata(t *testing.T) {
 				string(commandargs.UploadPack),
 				&accessverifier.Response{
 					Gitaly: accessverifier.Gitaly{
-						Address: "tcp://localhost:9999",
+						Address: gitalyAddress,
 						Features: map[string]string{
-							"gitaly-feature-cache_invalidator":        "true",
-							"other-ff":                                "true",
+							"gitaly-feature-cache_invalidator":        featureTrue,
+							"other-ff":                                featureTrue,
 							"gitaly-feature-inforef_uploadpack_cache": "false",
 						},
 					},
 				},
 			),
 			want: map[string]string{
-				"gitaly-feature-cache_invalidator":        "true",
+				"gitaly-feature-cache_invalidator":        featureTrue,
 				"gitaly-feature-inforef_uploadpack_cache": "false",
 			},
 		},
@@ -179,7 +184,7 @@ func TestPrepareContext(t *testing.T) {
 					UserID:   "user-6",
 					Username: "jane.doe",
 					Gitaly: accessverifier.Gitaly{
-						Address: "tcp://localhost:9999",
+						Address: gitalyAddress,
 					},
 				},
 			),
@@ -251,7 +256,7 @@ func TestNewGitalyCommandWithRetryConfig(t *testing.T) {
 		newConfig(),
 		string(commandargs.UploadPack),
 		&accessverifier.Response{
-			Gitaly:      accessverifier.Gitaly{Address: "tcp://localhost:9999"},
+			Gitaly:      accessverifier.Gitaly{Address: gitalyAddress},
 			RetryConfig: retryConfig,
 		},
 	)
@@ -267,7 +272,7 @@ func TestNewGitalyCommandWithoutRetryConfig(t *testing.T) {
 		newConfig(),
 		string(commandargs.UploadPack),
 		&accessverifier.Response{
-			Gitaly: accessverifier.Gitaly{Address: "tcp://localhost:9999"},
+			Gitaly: accessverifier.Gitaly{Address: gitalyAddress},
 		},
 	)
 

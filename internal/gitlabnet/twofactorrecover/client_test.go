@@ -16,6 +16,10 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
+const (
+	successKey = "success"
+)
+
 var (
 	requests []testserver.TestRequestHandler
 )
@@ -36,14 +40,14 @@ func initialize(t *testing.T) {
 				switch requestBody.KeyID {
 				case "0":
 					body := map[string]interface{}{
-						"success":        true,
+						successKey:       true,
 						"recovery_codes": [2]string{"recovery 1", "codes 1"},
 					}
 					json.NewEncoder(w).Encode(body)
 				case "1":
 					body := map[string]interface{}{
-						"success": false,
-						"message": "missing user",
+						successKey: false,
+						"message":  "missing user",
 					}
 					json.NewEncoder(w).Encode(body)
 				case "2":
@@ -60,7 +64,7 @@ func initialize(t *testing.T) {
 
 				if requestBody.UserID == 1 {
 					body := map[string]interface{}{
-						"success":        true,
+						successKey:       true,
 						"recovery_codes": [2]string{"recovery 2", "codes 2"},
 					}
 					json.NewEncoder(w).Encode(body)
