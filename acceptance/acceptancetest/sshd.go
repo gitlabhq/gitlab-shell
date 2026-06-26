@@ -96,6 +96,7 @@ func StartSSHD(t *testing.T, cfg SSHDConfig) *SSHD {
 		case <-done:
 		case <-time.After(2 * time.Second):
 			_ = cmd.Process.Kill()
+			<-done // ensure the Wait goroutine completes and the process is reaped
 		}
 		if t.Failed() {
 			t.Logf("gitlab-sshd output:\n%s", stderr.String())
