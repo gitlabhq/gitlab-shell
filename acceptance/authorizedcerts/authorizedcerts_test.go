@@ -64,3 +64,41 @@ func TestAuthorizedCerts_HappyPath(t *testing.T) {
 	require.Equal(t, "GitLab-Shell", captured.Header.Get("User-Agent"))
 	require.True(t, acceptancetest.JWTIsValid(captured.Header.Get("Gitlab-Shell-Api-Request"), secret))
 }
+
+func TestAuthorizedCerts_Rejections(t *testing.T) {
+	const secret = "test-secret"
+	const keyID = "testuser"
+
+	cases := []struct {
+		name   string
+		status int
+		body   string
+	}{
+		{"api_404", http.StatusNotFound, `{"message":"not found"}`},
+		{"api_403", http.StatusForbidden, `{"message":"forbidden"}`},
+		{"api_500", http.StatusInternalServerError, `boom`},
+		{"api_empty_200", http.StatusOK, ``},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var captured *http.Request
+			apiURL := authGatedCertsEndpoint(t, secret, tc.status, tc.body, &captured)
+
+			ca := acceptancetest.GenerateSSHKey(t)
+			userKey := acceptancetest.GenerateSSHKey(t)
+			certSigner := acceptancetest.SignUserCert(t, ca, userKey, keyID, []string{sshUser}, time.Hour)
+
+			d := acceptancetest.StartSSHD(t, acceptancetest.SSHDConfig{
+				InternalAPIURL: apiURL,
+				Secret:         secret,
+				User:           sshUser,
+				ExtraEnv:       map[string]string{"FF_GITLAB_SHELL_SSH_CERTIFICATES": "1"},
+			})
+
+			err := acceptancetest.DialSSHCert(d.Addr, sshUser, certSigner)
+			require.Error(t, err, "cert auth must be rejected when the API does not authorize the certificate")
+			require.NotNil(t, captured, "the daemon should still have called the API")
+		})
+	}
+}
