@@ -216,11 +216,12 @@ func TestLfsAuthenticateWithTopologyService(t *testing.T) {
 	t.Cleanup(defaultServer.Close)
 
 	// Create mock Topology Service returning PROXY -> cell
-	tsProxyAddr := strings.TrimPrefix(cellServer.URL, "http://")
+	cell := topologytest.CellAddressWithBogusPort(t, cellServer, 1)
+
 	mock := &topologytest.MockClassifyServer{
 		Response: &tspb.ClassifyResponse{
 			Action: tspb.ClassifyAction_PROXY,
-			Proxy:  &tspb.ProxyInfo{Address: tsProxyAddr},
+			Proxy:  &tspb.ProxyInfo{Address: cell.TopologyAddress},
 		},
 	}
 	tsAddr, tsStop := topologytest.StartMockServer(t, mock)
@@ -238,6 +239,10 @@ func TestLfsAuthenticateWithTopologyService(t *testing.T) {
 		GitlabURL:      defaultServer.URL,
 		Secret:         "test-secret",
 		TopologyClient: tsClient,
+		TopologyService: topology.Config{
+			Enabled:      true,
+			CellEndpoint: topology.CellEndpointConfig{Scheme: "http", Port: cell.RealPort},
+		},
 	}
 
 	// Execute the LFS authenticate command

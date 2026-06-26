@@ -12,6 +12,9 @@
 //	  tls:
 //	    enabled: true
 //	    ca_file: "/path/to/ca.crt"
+//	  cell_endpoint:
+//	    scheme: "https"
+//	    port: 8181
 //
 // For more details, see:
 //   - https://handbook.gitlab.com/handbook/engineering/architecture/design-documents/cells/topology_service/
@@ -28,6 +31,12 @@ import (
 // DefaultTimeout is the default timeout for Topology Service requests.
 const DefaultTimeout = 5 * time.Second
 
+// Supported cell endpoint URL schemes.
+const (
+	schemeHTTP  = "http"
+	schemeHTTPS = "https"
+)
+
 // Config contains Topology Service client configuration settings.
 type Config struct {
 	// Enabled indicates whether Topology Service integration is enabled.
@@ -42,6 +51,24 @@ type Config struct {
 
 	// TLS contains TLS configuration for secure connections.
 	TLS TLSConfig `yaml:"tls"`
+
+	// CellEndpoint configures how GitLab Shell reaches the resolved cell
+	// internal API. Required when enabled.
+	CellEndpoint CellEndpointConfig `yaml:"cell_endpoint"`
+}
+
+// CellEndpointConfig defines how GitLab Shell reaches the cell internal API
+// resolved by the Topology Service. It is decoupled from gitlab_url so that
+// changing gitlab_url cannot silently alter Topology Service routing.
+type CellEndpointConfig struct {
+	// Scheme is the URL scheme used for resolved cell internal API requests.
+	// Must be "http" or "https". Required when Topology Service is enabled.
+	Scheme string `yaml:"scheme"`
+
+	// Port is the port used for resolved cell internal API requests. It always
+	// overrides any port returned by the Topology Service. Required (1-65535)
+	// when Topology Service is enabled.
+	Port int `yaml:"port"`
 }
 
 // TLSConfig contains TLS settings for the Topology Service connection.
@@ -88,6 +115,22 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("topology_service.tls: %w", err)
 	}
 
+	if err := c.CellEndpoint.Validate(); err != nil {
+		return fmt.Errorf("topology_service.cell_endpoint: %w", err)
+	}
+
+	return nil
+}
+
+// Validate validates the cell endpoint configuration. It is only called when
+// Topology Service is enabled, so scheme and port are always required here.
+func (c *CellEndpointConfig) Validate() error {
+	if c.Scheme != schemeHTTP && c.Scheme != schemeHTTPS {
+		return errors.New("scheme is required and must be \"http\" or \"https\"")
+	}
+	if c.Port < 1 || c.Port > 65535 {
+		return errors.New("port is required and must be between 1 and 65535")
+	}
 	return nil
 }
 

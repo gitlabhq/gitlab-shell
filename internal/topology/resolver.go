@@ -3,6 +3,9 @@ package topology
 import (
 	"context"
 	"log/slog"
+	"net"
+	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,8 +29,8 @@ const (
 // unreachable, or returns an error, an empty string is returned and
 // the caller should use the default host.
 type Resolver struct {
-	client *Client
-	scheme string // "http" or "https", inferred from the original GitLab URL
+	client       *Client
+	cellEndpoint CellEndpointConfig
 }
 
 // RoutedClient holds an HTTP client that may have been routed to a
@@ -51,16 +54,12 @@ type UserArgs struct {
 	Krb5Principal string
 }
 
-// NewResolver creates a new Resolver. If client is nil (TS disabled),
-// all resolve calls return empty string immediately. The gitlabURL is used
-// to infer the URL scheme (http or https) for schemaless addresses returned
-// by the Topology Service.
-func NewResolver(client *Client, gitlabURL string) *Resolver {
-	scheme := "http" // default fallback
-	if strings.HasPrefix(gitlabURL, "https://") {
-		scheme = "https"
-	}
-	return &Resolver{client: client, scheme: scheme}
+// NewResolver creates a new Resolver. If client is nil (TS disabled), all
+// resolve calls return empty string immediately. The cellEndpoint config
+// determines the scheme and port used when constructing routed internal API
+// URLs from Topology Service responses.
+func NewResolver(client *Client, cellEndpoint CellEndpointConfig) *Resolver {
+	return &Resolver{client: client, cellEndpoint: cellEndpoint}
 }
 
 // ClientForSSHKey resolves the cell that owns key and returns a RoutedClient.
@@ -112,10 +111,10 @@ func ExtractTopLevelNamespace(repo string) string {
 }
 
 // resolve queries the Topology Service with the given claim and returns
-// the proxy address as an HTTP(S) URL string. The scheme is inferred from
-// the original GitLab URL when the Topology Service returns a schemaless
-// address. Returns empty string on any failure or when TS is not configured.
-// Transient errors are retried with exponential backoff.
+// the proxy address as an HTTP(S) URL string. The scheme and port come from
+// the explicit cell endpoint configuration. Returns empty string on any
+// failure or when TS is not configured. Transient errors are retried with
+// exponential backoff.
 func (r *Resolver) resolve(ctx context.Context, claim *types_proto.Claim) string {
 	if r == nil || r.client == nil || claim == nil {
 		return ""
@@ -151,18 +150,63 @@ func (r *Resolver) resolve(ctx context.Context, claim *types_proto.Claim) string
 
 	if resp.GetAction() == pb.ClassifyAction_PROXY && resp.GetProxy() != nil {
 		address := resp.GetProxy().GetAddress()
-		if address != "" {
-			address = r.scheme + "://" + address
+		if address == "" {
+			log.FromContext(ctx).WarnContext(ctx, "Topology Service returned a PROXY action with an empty cell address, falling back to default host")
+			return ""
 		}
+
+		url := r.buildCellURL(address)
+		if url == "" {
+			log.FromContext(ctx).WarnContext(ctx, "Topology Service returned an unusable cell address, falling back to default host",
+				slog.String("address", address))
+			return ""
+		}
+
 		log.FromContext(ctx).DebugContext(ctx, "Topology Service resolved cell address",
-			slog.String("address", address))
-		return address
+			slog.String("address", url))
+		return url
 	}
 
 	log.FromContext(ctx).DebugContext(ctx, "Topology Service returned non-PROXY response, falling back to default host",
 		slog.String("action", resp.GetAction().String()))
 
 	return ""
+}
+
+// buildCellURL constructs the routed internal API URL from a Topology
+// Service-provided address using the explicit cell endpoint configuration.
+// Any port present in the address is stripped and replaced with the
+// configured port; the configured scheme is always used.
+//
+// It defensively rejects addresses that are not a bare host or host:port:
+// anything containing a path separator ("/") or with an empty host.
+// Only IPv4 addresses and hostnames are supported; IPv6 is rejected.
+func (r *Resolver) buildCellURL(address string) string {
+	if strings.Contains(address, "/") {
+		return ""
+	}
+
+	host := address
+	if h, _, err := net.SplitHostPort(address); err == nil {
+		host = h
+	}
+
+	if host == "" || isIPv6(host) {
+		return ""
+	}
+
+	u := url.URL{
+		Scheme: r.cellEndpoint.Scheme,
+		Host:   net.JoinHostPort(host, strconv.Itoa(r.cellEndpoint.Port)),
+	}
+	return u.String()
+}
+
+// isIPv6 reports whether host is an IPv6 literal. It assumes the port has
+// already been stripped, so a remaining ":" can only be IPv6, which is
+// unsupported: cells are addressed by hostname or IPv4.
+func isIPv6(host string) bool {
+	return strings.Contains(host, ":")
 }
 
 // resolveByRoute resolves a cell address from a repository path.

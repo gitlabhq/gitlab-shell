@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -125,11 +124,12 @@ func TestGetByKeyWithTopologyService(t *testing.T) {
 		}))
 		t.Cleanup(defaultServer.Close)
 
-		cellAddress := strings.TrimPrefix(cellServer.URL, "http://")
+		cell := topologytest.CellAddressWithBogusPort(t, cellServer, 1)
+
 		mock := &topologytest.MockClassifyServer{
 			Response: &tspb.ClassifyResponse{
 				Action: tspb.ClassifyAction_PROXY,
-				Proxy:  &tspb.ProxyInfo{Address: cellAddress},
+				Proxy:  &tspb.ProxyInfo{Address: cell.TopologyAddress},
 			},
 		}
 		tsAddr, tsStop := topologytest.StartMockServer(t, mock)
@@ -146,6 +146,10 @@ func TestGetByKeyWithTopologyService(t *testing.T) {
 			GitlabURL:      defaultServer.URL,
 			Secret:         "test-secret",
 			TopologyClient: tsClient,
+			TopologyService: topology.Config{
+				Enabled:      true,
+				CellEndpoint: topology.CellEndpointConfig{Scheme: "http", Port: cell.RealPort},
+			},
 		}
 
 		client, err := NewClient(cfg)

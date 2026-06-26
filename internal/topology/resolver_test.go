@@ -44,10 +44,10 @@ func TestExtractTopLevelNamespace(t *testing.T) {
 
 func TestResolve(t *testing.T) {
 	tests := []struct {
-		name      string
-		mock      *topologytest.MockClassifyServer
-		gitlabURL string
-		expected  string
+		name         string
+		mock         *topologytest.MockClassifyServer
+		cellEndpoint CellEndpointConfig
+		expected     string
 	}{
 		{
 			name: "PROXY response returns address with http prefix",
@@ -57,16 +57,16 @@ func TestResolve(t *testing.T) {
 					Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
 				},
 			},
-			gitlabURL: "http://localhost",
-			expected:  "http://cell-2:8080",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTP, Port: 8080},
+			expected:     "http://cell-2:8080",
 		},
 		{
 			name: "server error returns empty string",
 			mock: &topologytest.MockClassifyServer{
 				Err: fmt.Errorf("internal server error"),
 			},
-			gitlabURL: "http://localhost",
-			expected:  "",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTP, Port: 8080},
+			expected:     "",
 		},
 		{
 			name: "non-PROXY action returns empty string",
@@ -75,19 +75,52 @@ func TestResolve(t *testing.T) {
 					Action: pb.ClassifyAction_ACTION_UNSPECIFIED,
 				},
 			},
-			gitlabURL: "http://localhost",
-			expected:  "",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTP, Port: 8080},
+			expected:     "",
 		},
 		{
-			name: "PROXY response with schemaless address uses https when GitLab URL is https",
+			name: "PROXY response uses configured https scheme",
 			mock: &topologytest.MockClassifyServer{
 				Response: &pb.ClassifyResponse{
 					Action: pb.ClassifyAction_PROXY,
 					Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
 				},
 			},
-			gitlabURL: "https://gitlab.example.com",
-			expected:  "https://cell-2:8080",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8080},
+			expected:     "https://cell-2:8080",
+		},
+		{
+			name: "PROXY response overrides TS port with configured port",
+			mock: &topologytest.MockClassifyServer{
+				Response: &pb.ClassifyResponse{
+					Action: pb.ClassifyAction_PROXY,
+					Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+				},
+			},
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8181},
+			expected:     "https://cell-2:8181",
+		},
+		{
+			name: "PROXY response with unusable address falls back to default host",
+			mock: &topologytest.MockClassifyServer{
+				Response: &pb.ClassifyResponse{
+					Action: pb.ClassifyAction_PROXY,
+					Proxy:  &pb.ProxyInfo{Address: "http://gitlab.com"},
+				},
+			},
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8181},
+			expected:     "",
+		},
+		{
+			name: "PROXY response with empty address falls back to default host",
+			mock: &topologytest.MockClassifyServer{
+				Response: &pb.ClassifyResponse{
+					Action: pb.ClassifyAction_PROXY,
+					Proxy:  &pb.ProxyInfo{Address: ""},
+				},
+			},
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8181},
+			expected:     "",
 		},
 	}
 
@@ -103,14 +136,14 @@ func TestResolve(t *testing.T) {
 			})
 			defer client.Close()
 
-			resolver := NewResolver(client, tc.gitlabURL)
+			resolver := NewResolver(client, tc.cellEndpoint)
 			result := resolver.resolve(context.Background(), RouteClaim("my-group"))
 			require.Equal(t, tc.expected, result)
 		})
 	}
 
 	t.Run("nil client returns empty string", func(t *testing.T) {
-		resolver := NewResolver(nil, "http://localhost")
+		resolver := NewResolver(nil, CellEndpointConfig{})
 		result := resolver.resolve(context.Background(), RouteClaim("my-group"))
 		require.Empty(t, result)
 	})
@@ -127,10 +160,93 @@ func TestResolve(t *testing.T) {
 		})
 		defer client.Close()
 
-		resolver := NewResolver(client, "http://localhost")
+		resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTP, Port: 8080})
 		result := resolver.resolve(context.Background(), nil)
 		require.Empty(t, result)
 	})
+}
+
+func TestBuildCellURL(t *testing.T) {
+	tests := []struct {
+		name         string
+		address      string
+		cellEndpoint CellEndpointConfig
+		expected     string
+	}{
+		{
+			name:         "address with port has port overridden",
+			address:      "cell-7:8080",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8181},
+			expected:     "https://cell-7:8181",
+		},
+		{
+			name:         "address without port gets configured port appended",
+			address:      "cell-1",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTP, Port: 8181},
+			expected:     "http://cell-1:8181",
+		},
+		{
+			name:         "IPv6 literal with port is rejected",
+			address:      "[::1]:8080",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8181},
+			expected:     "",
+		},
+		{
+			name:         "bare IPv6 is rejected",
+			address:      "::1",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8181},
+			expected:     "",
+		},
+		{
+			name:         "bracketed IPv6 is rejected",
+			address:      "[::1]",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8181},
+			expected:     "",
+		},
+		{
+			name:         "bracketed full IPv6 is rejected",
+			address:      "[2001:db8::1]",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8181},
+			expected:     "",
+		},
+		{
+			name:         "http scheme selection",
+			address:      "cell-2:9090",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTP, Port: 80},
+			expected:     "http://cell-2:80",
+		},
+		{
+			name:         "address with scheme is rejected",
+			address:      "http://gitlab.com",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8181},
+			expected:     "",
+		},
+		{
+			name:         "address with scheme and port is rejected",
+			address:      "http://gitlab.com:8080",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8181},
+			expected:     "",
+		},
+		{
+			name:         "address with empty host is rejected",
+			address:      ":8080",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8181},
+			expected:     "",
+		},
+		{
+			name:         "address with path is rejected",
+			address:      "gitlab.com/path",
+			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8181},
+			expected:     "",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			resolver := NewResolver(nil, tc.cellEndpoint)
+			require.Equal(t, tc.expected, resolver.buildCellURL(tc.address))
+		})
+	}
 }
 
 func TestResolveLogsIncludeCorrelationID(t *testing.T) {
@@ -155,7 +271,7 @@ func TestResolveLogsIncludeCorrelationID(t *testing.T) {
 	extracted := correlation.ExtractFromContext(ctx)
 	ctx = log.WithLogger(ctx, logger.With(slog.String(fields.CorrelationID, extracted)))
 
-	resolver := NewResolver(client, "http://localhost")
+	resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTP, Port: 8080})
 	result := resolver.resolve(ctx, RouteClaim("my-group"))
 	require.Empty(t, result)
 
@@ -193,7 +309,7 @@ func TestResolveByRoute(t *testing.T) {
 		})
 		defer client.Close()
 
-		resolver := NewResolver(client, "http://localhost")
+		resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTP, Port: 8080})
 		result := resolver.resolveByRoute(context.Background(), "group/project.git")
 		require.Equal(t, "http://cell-1:8080", result)
 
@@ -202,18 +318,18 @@ func TestResolveByRoute(t *testing.T) {
 	})
 
 	t.Run("empty repo path returns empty string", func(t *testing.T) {
-		resolver := NewResolver(nil, "")
+		resolver := NewResolver(nil, CellEndpointConfig{})
 		result := resolver.resolveByRoute(context.Background(), "")
 		require.Empty(t, result)
 	})
 
 	t.Run("nil client returns empty string", func(t *testing.T) {
-		resolver := NewResolver(nil, "http://localhost")
+		resolver := NewResolver(nil, CellEndpointConfig{})
 		result := resolver.resolveByRoute(context.Background(), "group/project.git")
 		require.Empty(t, result)
 	})
 
-	t.Run("uses https scheme from gitlabURL", func(t *testing.T) {
+	t.Run("uses configured https scheme", func(t *testing.T) {
 		mock := &topologytest.MockClassifyServer{
 			Response: &pb.ClassifyResponse{
 				Action: pb.ClassifyAction_PROXY,
@@ -230,7 +346,7 @@ func TestResolveByRoute(t *testing.T) {
 		})
 		defer client.Close()
 
-		resolver := NewResolver(client, "https://gitlab.example.com")
+		resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTPS, Port: 8080})
 		result := resolver.resolveByRoute(context.Background(), "group/project.git")
 		require.Equal(t, "https://cell-1:8080", result)
 	})
@@ -339,7 +455,7 @@ func TestResolveRetry(t *testing.T) {
 				cancel()
 			}
 
-			resolver := NewResolver(client, "http://localhost")
+			resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTP, Port: 8080})
 			result := resolver.resolve(ctx, RouteClaim("my-group"))
 			require.Equal(t, tc.expected, result)
 
@@ -370,7 +486,7 @@ func TestResolveBySSHKey(t *testing.T) {
 		})
 		defer client.Close()
 
-		resolver := NewResolver(client, "http://localhost")
+		resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTP, Port: 8080})
 		result := resolver.resolveBySSHKey(context.Background(), "ssh-rsa AAAAB3...")
 		require.Equal(t, "http://cell-2:8080", result)
 
@@ -379,18 +495,18 @@ func TestResolveBySSHKey(t *testing.T) {
 	})
 
 	t.Run("empty key returns empty string", func(t *testing.T) {
-		resolver := NewResolver(nil, "http://localhost")
+		resolver := NewResolver(nil, CellEndpointConfig{})
 		result := resolver.resolveBySSHKey(context.Background(), "")
 		require.Empty(t, result)
 	})
 
 	t.Run("nil client returns empty string", func(t *testing.T) {
-		resolver := NewResolver(nil, "http://localhost")
+		resolver := NewResolver(nil, CellEndpointConfig{})
 		result := resolver.resolveBySSHKey(context.Background(), "ssh-rsa AAAAB3...")
 		require.Empty(t, result)
 	})
 
-	t.Run("uses https scheme from gitlabURL", func(t *testing.T) {
+	t.Run("uses configured https scheme", func(t *testing.T) {
 		mock := &topologytest.MockClassifyServer{
 			Response: &pb.ClassifyResponse{
 				Action: pb.ClassifyAction_PROXY,
@@ -407,7 +523,7 @@ func TestResolveBySSHKey(t *testing.T) {
 		})
 		defer client.Close()
 
-		resolver := NewResolver(client, "https://gitlab.example.com")
+		resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTPS, Port: 8080})
 		result := resolver.resolveBySSHKey(context.Background(), "ssh-rsa AAAAB3...")
 		require.Equal(t, "https://cell-2:8080", result)
 	})
@@ -431,7 +547,7 @@ func TestResolveBySSHFingerprint(t *testing.T) {
 		})
 		defer client.Close()
 
-		resolver := NewResolver(client, "http://localhost")
+		resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTP, Port: 8080})
 		result := resolver.resolveBySSHFingerprint(context.Background(), "W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo")
 		require.Equal(t, "http://cell-2:8080", result)
 
@@ -439,18 +555,18 @@ func TestResolveBySSHFingerprint(t *testing.T) {
 	})
 
 	t.Run("empty fingerprint returns empty string", func(t *testing.T) {
-		resolver := NewResolver(nil, "http://localhost")
+		resolver := NewResolver(nil, CellEndpointConfig{})
 		result := resolver.resolveBySSHFingerprint(context.Background(), "")
 		require.Empty(t, result)
 	})
 
 	t.Run("nil client returns empty string", func(t *testing.T) {
-		resolver := NewResolver(nil, "http://localhost")
+		resolver := NewResolver(nil, CellEndpointConfig{})
 		result := resolver.resolveBySSHFingerprint(context.Background(), "W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo")
 		require.Empty(t, result)
 	})
 
-	t.Run("uses https scheme from gitlabURL", func(t *testing.T) {
+	t.Run("uses configured https scheme", func(t *testing.T) {
 		mock := &topologytest.MockClassifyServer{
 			Response: &pb.ClassifyResponse{
 				Action: pb.ClassifyAction_PROXY,
@@ -467,7 +583,7 @@ func TestResolveBySSHFingerprint(t *testing.T) {
 		})
 		defer client.Close()
 
-		resolver := NewResolver(client, "https://gitlab.example.com")
+		resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTPS, Port: 8080})
 		result := resolver.resolveBySSHFingerprint(context.Background(), "W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo")
 		require.Equal(t, "https://cell-2:8080", result)
 	})
@@ -491,7 +607,7 @@ func TestResolveByUserArgs(t *testing.T) {
 		})
 		defer client.Close()
 
-		resolver := NewResolver(client, "http://localhost")
+		resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTP, Port: 8080})
 		result := resolver.resolveByUserArgs(context.Background(), UserArgs{Username: "jane-doe"})
 		require.Equal(t, "http://cell-2:8080", result)
 
@@ -510,7 +626,7 @@ func TestResolveByUserArgs(t *testing.T) {
 
 	for _, tc := range fallbackTests {
 		t.Run(tc.name+" returns empty string", func(t *testing.T) {
-			resolver := NewResolver(nil, "http://localhost")
+			resolver := NewResolver(nil, CellEndpointConfig{})
 			result := resolver.resolveByUserArgs(context.Background(), tc.args)
 			require.Empty(t, result)
 		})
@@ -533,7 +649,7 @@ func TestResolveByUserArgs(t *testing.T) {
 		})
 		defer client.Close()
 
-		resolver := NewResolver(client, "http://localhost")
+		resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTP, Port: 8080})
 		result := resolver.resolveByUserArgs(context.Background(), UserArgs{KeyID: "123"})
 		require.Empty(t, result)
 
@@ -547,7 +663,7 @@ func TestResolveByUserArgs(t *testing.T) {
 		require.Empty(t, result)
 	})
 
-	t.Run("uses https scheme from gitlabURL", func(t *testing.T) {
+	t.Run("uses configured https scheme", func(t *testing.T) {
 		mock := &topologytest.MockClassifyServer{
 			Response: &pb.ClassifyResponse{
 				Action: pb.ClassifyAction_PROXY,
@@ -564,7 +680,7 @@ func TestResolveByUserArgs(t *testing.T) {
 		})
 		defer client.Close()
 
-		resolver := NewResolver(client, "https://gitlab.example.com")
+		resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTPS, Port: 8080})
 		result := resolver.resolveByUserArgs(context.Background(), UserArgs{Username: "jane-doe"})
 		require.Equal(t, "https://cell-2:8080", result)
 	})
