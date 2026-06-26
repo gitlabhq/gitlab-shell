@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path"
+	"sync"
 	"testing"
 	"time"
 
@@ -241,6 +242,29 @@ func TestCorrelationId(t *testing.T) {
 	require.NotEqual(t, previousCorrelationID, correlationID)
 }
 
+// syncBuffer is a goroutine-safe wrapper around bytes.Buffer. The sshd
+// package runs live SSH servers in background goroutines during other
+// tests; once slog.Default() is redirected here, those goroutines may
+// write concurrently while this test reads, so all access is mutex-guarded.
+type syncBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *syncBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *syncBuffer) Bytes() []byte {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	// Return a copy so the caller can read it without holding the lock
+	// while concurrent writes continue.
+	return append([]byte(nil), b.buf.Bytes()...)
+}
+
 // TestConnectionLoggerCorrelationIDMatchesContext verifies that the
 // per-connection ctx derivation performed at the top of handleConn keeps the
 // logger's correlation_id field in lockstep with the ctx's correlation value.
@@ -260,9 +284,9 @@ func TestCorrelationId(t *testing.T) {
 // shadowing failure mode where the logger keeps emitting the parent's
 // correlation_id even after the per-connection ID is assigned.
 func TestConnectionLoggerCorrelationIDMatchesContext(t *testing.T) {
-	var buf bytes.Buffer
+	buf := &syncBuffer{}
 	originalDefault := slog.Default()
-	slog.SetDefault(slog.New(slog.NewJSONHandler(&buf, nil)))
+	slog.SetDefault(slog.New(slog.NewJSONHandler(buf, nil)))
 	t.Cleanup(func() { slog.SetDefault(originalDefault) })
 
 	const processCorrelationID = "process-correlation-id"
@@ -284,9 +308,9 @@ func TestConnectionLoggerCorrelationIDMatchesContext(t *testing.T) {
 	log.FromContext(ctx).InfoContext(ctx, marker)
 
 	// Other goroutines in this package (server lifecycle tests, keepalives,
-	// etc.) can land log lines in slog.Default() between SetDefault and now,
-	// so locate our line by its message rather than assuming the buffer
-	// contains exactly one record.
+	// etc.) can land log lines in slog.Default() concurrently, so locate our
+	// line by its message rather than assuming the buffer contains exactly
+	// one record.
 	entry := findJSONLogByMessage(t, buf.Bytes(), marker)
 
 	require.Equal(t, perConnectionID, entry["correlation_id"],
