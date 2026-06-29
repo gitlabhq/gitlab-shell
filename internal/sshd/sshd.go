@@ -240,7 +240,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 
 	var ctxWithLogData context.Context
 
-	conn.handle(ctx, s.serverConfig.get(ctx), func(ctx context.Context, sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) error {
+	conn.handle(ctx, s.serverConfig.get(ctx, &conn.outcome), func(ctx context.Context, sconn *ssh.ServerConn, channel ssh.Channel, requests <-chan *ssh.Request) error {
 		session := &session{
 			cfg:                 s.Config,
 			channel:             channel,
