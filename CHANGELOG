@@ -1,3 +1,15 @@
+v14.55.0
+
+- Prevent gitlab-sshd crash on startup errors !1506
+- Fix data race in sshd connection logger test !1507
+- Add a connection-level SSH reliability SLI !1501
+- Include correlation_id in Topology Service resolver logs !1498
+- Count internal API failures toward the SSH error SLI !1499
+- Fix goconst violations in test files !1495
+- Do not follow redirects for internal API requests !1497
+- Fix goconst lint violations in cmd/ test files !1494
+- Fix goconst lint violations in cmd/ and some internal/ test files !1488
+
 v14.54.0
 
 - Update module golang.org/x/crypto to v0.52.0 !1487
