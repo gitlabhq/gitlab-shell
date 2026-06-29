@@ -643,6 +643,57 @@ func TestGitUploadArchiveSuccess(t *testing.T) {
 	require.Equal(t, []byte("0000"), output[len(output)-4:])
 }
 
+func TestStartupFailureExitsWithoutPanic(t *testing.T) {
+	tmpDir := t.TempDir()
+	missingHostKey := filepath.Join(tmpDir, "nonexistent-host-key")
+
+	testCases := []struct {
+		desc      string
+		config    string
+		wantInLog string
+	}{
+		{
+			// Malformed YAML makes config.NewFromDir fail before ConfigureLogger runs.
+			desc:      "invalid config",
+			config:    "gitlab_url: http://localhost:3000\nsecret: \"test-secret\"\nsshd: [this is not a mapping\n",
+			wantInLog: "failed to load configuration from specified directory",
+		},
+		{
+			// Config passes isConfigSane but its only host key file is missing, so
+			// sshd.NewServer fails and startup must abort instead of using a nil server.
+			desc: "server startup failure",
+			config: "gitlab_url: http://localhost:3000\n" +
+				"secret: \"test-secret\"\n" +
+				"log_file: \"\"\n" +
+				"log_format: json\n" +
+				"sshd:\n" +
+				"  listen: \"127.0.0.1:0\"\n" +
+				"  host_key_files:\n" +
+				"    - \"" + missingHostKey + "\"\n",
+			wantInLog: "Failed to start Gitlab built-in sshd",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			configDir := t.TempDir()
+			require.NoError(t, os.WriteFile(filepath.Join(configDir, "config.yml"), []byte(tc.config), 0644))
+
+			output, err := exec.Command(sshdPath, "-config-dir", configDir).CombinedOutput()
+
+			var exitErr *exec.ExitError
+			require.ErrorAs(t, err, &exitErr, "expected gitlab-sshd to exit non-zero")
+			require.Equal(t, 1, exitErr.ExitCode())
+
+			combined := string(output)
+			require.Contains(t, combined, tc.wantInLog)
+			require.NotContains(t, combined, "panic:")
+			require.NotContains(t, combined, "SIGSEGV")
+			require.NotContains(t, combined, "invalid memory address")
+		})
+	}
+}
+
 func newSession(t *testing.T, client *ssh.Client) (*ssh.Session, io.WriteCloser, io.Reader) {
 	session, err := client.NewSession()
 	require.NoError(t, err)

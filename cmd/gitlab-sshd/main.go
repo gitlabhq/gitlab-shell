@@ -54,6 +54,7 @@ func main() {
 		cfg, err = config.NewFromDir(*configDir)
 		if err != nil {
 			slog.Default().ErrorContext(ctx, "failed to load configuration from specified directory", v2log.ErrorMessage(err.Error()))
+			os.Exit(1)
 		}
 	}
 	logCloser := logger.ConfigureLogger(cfg)
@@ -83,6 +84,12 @@ func main() {
 	server, err := sshd.NewServer(cfg)
 	if err != nil {
 		v2log.FromContext(ctx).ErrorContext(ctx, "Failed to start Gitlab built-in sshd", v2log.ErrorMessage(err.Error()))
+		// server is nil, so continuing would dereference it and crash with a SIGSEGV.
+		// os.Exit skips deferred cleanups, so close the log writer first.
+		if logCloser != nil {
+			logCloser.Close() //nolint:errcheck
+		}
+		os.Exit(1)
 	}
 
 	// Startup monitoring endpoint.
