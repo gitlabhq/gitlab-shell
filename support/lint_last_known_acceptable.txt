@@ -35,7 +35,7 @@ internal/sshd/server_config_test.go:641:77: string `certificate KeyId does not m
 internal/sshd/server_config_test.go:645:76: string `certificate KeyId contains consecutive special characters` has 3 occurrences, make it a constant (goconst)
 internal/sshd/session_test.go:124:24: string `discover` has 4 occurrences, make it a constant (goconst)
 internal/sshd/session_test.go:140:22: string `root` has 6 occurrences, make it a constant (goconst)
-internal/sshd/sshd_test.go:62:18: string `127.0.0.1` has 10 occurrences, make it a constant (goconst)
+internal/sshd/sshd_test.go:63:18: string `127.0.0.1` has 10 occurrences, make it a constant (goconst)
 internal/topology/client_test.go:32:13: string `localhost:9090` has 3 occurrences, make it a constant (goconst)
 internal/topology/config_test.go:53:47: string `/cert.crt` has 3 occurrences, make it a constant (goconst)
 internal/topology/config_test.go:57:45: string `/key.pem` has 3 occurrences, make it a constant (goconst)
