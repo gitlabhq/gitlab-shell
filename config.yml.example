@@ -163,3 +163,11 @@ pat:
 #     # server_name: "topology.gitlab.com"
 #     # Skip TLS verification (development only, not recommended for production)
 #     # insecure_skip_verify: false
+#
+#   # How gitlab-shell reaches the cell internal API resolved by the Topology
+#   # Service. Required when enabled.
+#   cell_endpoint:
+#     # URL scheme for resolved cell internal API requests: http or https
+#     scheme: "https"
+#     # Internal API port; always overrides any port returned by the Topology Service
+#     port: 8181

@@ -6,6 +6,8 @@ package topologytest
 import (
 	"context"
 	"net"
+	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -64,4 +66,27 @@ func StartMockServer(t *testing.T, mock *MockClassifyServer) (string, func()) {
 	go func() { _ = server.Serve(lis) }()
 
 	return lis.Addr().String(), server.Stop
+}
+
+// CellAddressOverride captures the inputs for testing Topology Service port
+// override behavior. TopologyAddress is the cell host joined with a bogus port
+// (use it for the PROXY response Address); RealPort is the cell server's actual
+// listening port (configure it as CellEndpoint.Port). The request only reaches
+// the cell server if the resolver replaces the bogus port with RealPort.
+type CellAddressOverride struct {
+	TopologyAddress string
+	RealPort        int
+}
+
+// CellAddressWithBogusPort returns a CellAddressOverride built from the cell
+// server's host: TopologyAddress uses the given bogus port, RealPort is the
+// server's real port.
+func CellAddressWithBogusPort(t *testing.T, cellServer *httptest.Server, bogusPort int) CellAddressOverride {
+	t.Helper()
+	addr := cellServer.Listener.Addr().(*net.TCPAddr)
+	host := addr.IP.String()
+	return CellAddressOverride{
+		TopologyAddress: net.JoinHostPort(host, strconv.Itoa(bogusPort)),
+		RealPort:        addr.Port,
+	}
 }

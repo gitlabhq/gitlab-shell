@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path"
-	"strings"
+	"strconv"
 	"testing"
 	"time"
 
@@ -326,12 +327,13 @@ func TestVerifyWithTopologyService(t *testing.T) {
 		t.Cleanup(defaultServer.Close)
 
 		// Set up mock TS that returns a PROXY action pointing to the cell.
-		// Strip the scheme because the Resolver prepends it based on the GitLab URL.
-		cellAddress := strings.TrimPrefix(cellServer.URL, "http://")
+		// The Resolver applies the configured cell endpoint scheme and port.
+		cell := topologytest.CellAddressWithBogusPort(t, cellServer, 1)
+
 		mock := &topologytest.MockClassifyServer{
 			Response: &tspb.ClassifyResponse{
 				Action: tspb.ClassifyAction_PROXY,
-				Proxy:  &tspb.ProxyInfo{Address: cellAddress},
+				Proxy:  &tspb.ProxyInfo{Address: cell.TopologyAddress},
 			},
 		}
 		tsAddr, tsStop := topologytest.StartMockServer(t, mock)
@@ -348,6 +350,10 @@ func TestVerifyWithTopologyService(t *testing.T) {
 			GitlabURL:      defaultServer.URL,
 			Secret:         "test-secret",
 			TopologyClient: tsClient,
+			TopologyService: topology.Config{
+				Enabled:      true,
+				CellEndpoint: topology.CellEndpointConfig{Scheme: "http", Port: cell.RealPort},
+			},
 		}
 
 		client, err := NewClient(cfg)
@@ -361,7 +367,10 @@ func TestVerifyWithTopologyService(t *testing.T) {
 
 		require.True(t, cellReceived, "request should have been sent to the cell server")
 		require.False(t, defaultReceived, "request should NOT have been sent to the default server")
-		require.Equal(t, "http://"+cellAddress, result.CellAddress)
+
+		cellHost, _, err := net.SplitHostPort(cell.TopologyAddress)
+		require.NoError(t, err)
+		require.Equal(t, "http://"+net.JoinHostPort(cellHost, strconv.Itoa(cell.RealPort)), result.CellAddress)
 	})
 
 	t.Run("falls back to default when TS is nil", func(t *testing.T) {

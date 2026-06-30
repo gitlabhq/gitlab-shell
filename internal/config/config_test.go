@@ -129,6 +129,9 @@ topology_service:
     key_file: "/path/to/key.pem"
     server_name: "topology.example.com"
     insecure_skip_verify: true
+  cell_endpoint:
+    scheme: "https"
+    port: 8181
 `
 		var cfg Config
 		require.NoError(t, yaml.Unmarshal([]byte(yamlData), &cfg))
@@ -143,6 +146,8 @@ topology_service:
 		require.Equal(t, "/path/to/key.pem", ts.TLS.KeyFile)
 		require.Equal(t, "topology.example.com", ts.TLS.ServerName)
 		require.True(t, ts.TLS.InsecureSkipVerify)
+		require.Equal(t, "https", ts.CellEndpoint.Scheme)
+		require.Equal(t, 8181, ts.CellEndpoint.Port)
 	})
 }
 
@@ -165,6 +170,9 @@ func TestTopologyClient(t *testing.T) {
 topology_service:
   enabled: true
   address: "localhost:9090"
+  cell_endpoint:
+    scheme: "https"
+    port: 8181
 `
 		require.NoError(t, os.WriteFile(configPath, []byte(validConfig), 0o600))
 

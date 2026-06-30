@@ -194,10 +194,10 @@ func (c *Config) HTTPClient() (*client.HTTPClient, error) {
 }
 
 // NewTopologyResolver creates a topology.Resolver from this config's
-// TopologyClient and GitlabURL. This centralizes Resolver construction
-// so callers cannot accidentally forget the GitlabURL argument.
+// TopologyClient and cell endpoint configuration. This centralizes Resolver
+// construction so callers cannot accidentally forget the cell endpoint config.
 func (c *Config) NewTopologyResolver() *topology.Resolver {
-	return topology.NewResolver(c.TopologyClient, c.GitlabURL)
+	return topology.NewResolver(c.TopologyClient, c.TopologyService.CellEndpoint)
 }
 
 // Close releases resources owned by the Config, such as the Topology Service
