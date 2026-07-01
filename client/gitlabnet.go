@@ -61,6 +61,14 @@ func (e *APIError) Error() string {
 	return e.Msg
 }
 
+// NewSystemAPIError creates an APIError that represents an internal API or
+// transport failure (e.g. unreachable host, redirect, undecodable response,
+// or 5xx). System errors count toward error SLIs; use a plain APIError for
+// expected policy responses (e.g. access denied).
+func NewSystemAPIError(msg string, statusCode int) *APIError {
+	return &APIError{Msg: msg, StatusCode: statusCode, System: true}
+}
+
 // NewGitlabNetClient creates a new GitlabNetClient instance
 func NewGitlabNetClient(
 	user,
@@ -123,7 +131,7 @@ func newRequest(ctx context.Context, method, host, path string, data interface{}
 
 func parseError(resp *http.Response, respErr error) error {
 	if resp == nil || respErr != nil {
-		return &APIError{Msg: internalAPIUnreachable, System: true}
+		return NewSystemAPIError(internalAPIUnreachable, 0)
 	}
 
 	// Redirects are never followed for internal API requests (see
@@ -135,11 +143,10 @@ func parseError(resp *http.Response, respErr error) error {
 	// Geo) and its body must be parsed normally.
 	if IsFollowedRedirect(resp.StatusCode) {
 		defer func() { _ = resp.Body.Close() }()
-		return &APIError{
-			Msg:        fmt.Sprintf("Internal API returned redirect (%d) to %q", resp.StatusCode, resp.Header.Get("Location")),
-			StatusCode: resp.StatusCode,
-			System:     true,
-		}
+		return NewSystemAPIError(
+			fmt.Sprintf("Internal API returned redirect (%d) to %q", resp.StatusCode, resp.Header.Get("Location")),
+			resp.StatusCode,
+		)
 	}
 
 	if resp.StatusCode >= 200 && resp.StatusCode <= 399 {
@@ -151,11 +158,10 @@ func parseError(resp *http.Response, respErr error) error {
 	if err := json.NewDecoder(resp.Body).Decode(parsedResponse); err != nil {
 		// No structured body to interpret: this is a transport/infra failure
 		// (e.g. a gateway error page), not a deliberate policy response.
-		return &APIError{
-			Msg:        fmt.Sprintf("Internal API error (%v)", resp.StatusCode),
-			StatusCode: resp.StatusCode,
-			System:     true,
-		}
+		return NewSystemAPIError(
+			fmt.Sprintf("Internal API error (%v)", resp.StatusCode),
+			resp.StatusCode,
+		)
 	}
 	// A decoded {"message":…} body is a structured response from the API. Treat
 	// 4xx as an expected policy response (e.g. access denied) and 5xx as a

@@ -200,7 +200,7 @@ func (c *Client) do(ctx context.Context, method, apiPath string, data any) (*htt
 	resp, err := c.inner.DoWithRetry(req, defaultRetryConfig)
 	if err != nil {
 		slog.ErrorContext(ctx, "Internal API unreachable", lablog.ErrorMessage(err.Error()))
-		return nil, &client.APIError{Msg: "Internal API unreachable"}
+		return nil, client.NewSystemAPIError("Internal API unreachable", 0)
 	}
 	return resp, nil
 }
