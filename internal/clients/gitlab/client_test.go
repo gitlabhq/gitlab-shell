@@ -402,6 +402,8 @@ func TestGet_NetworkErrorReturnsAPIError(t *testing.T) {
 	var apiErr *client.APIError
 	require.ErrorAs(t, err, &apiErr)
 	require.Equal(t, "Internal API unreachable", apiErr.Msg)
+	require.Equal(t, 0, apiErr.StatusCode)
+	require.True(t, apiErr.System)
 }
 
 func TestWithHost(t *testing.T) {
