@@ -46,6 +46,30 @@ func TestIsFollowedRedirect(t *testing.T) {
 	}
 }
 
+func TestIsSystemErrorStatus(t *testing.T) {
+	for code, want := range map[int]bool{
+		http.StatusOK:                  false, // 200
+		http.StatusNoContent:           false, // 204
+		http.StatusMultipleChoices:     false, // 300: Geo custom action, must be parsed
+		http.StatusMovedPermanently:    true,  // 301
+		http.StatusFound:               true,  // 302
+		http.StatusSeeOther:            true,  // 303
+		http.StatusNotModified:         false, // 304: Go does not follow
+		http.StatusTemporaryRedirect:   true,  // 307
+		http.StatusPermanentRedirect:   true,  // 308
+		http.StatusBadRequest:          false, // 400
+		http.StatusUnauthorized:        false, // 401
+		http.StatusForbidden:           false, // 403
+		http.StatusNotFound:            false, // 404
+		http.StatusTooManyRequests:     false, // 429
+		http.StatusInternalServerError: true,  // 500
+		http.StatusBadGateway:          true,  // 502
+		http.StatusServiceUnavailable:  true,  // 503
+	} {
+		require.Equalf(t, want, IsSystemErrorStatus(code), "status %d", code)
+	}
+}
+
 func TestBasicAuthSettings(t *testing.T) {
 	requests := []testserver.TestRequestHandler{
 		{
