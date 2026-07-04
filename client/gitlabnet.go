@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -69,6 +70,22 @@ func NewSystemAPIError(msg string, statusCode int) *APIError {
 	return &APIError{Msg: msg, StatusCode: statusCode, System: true}
 }
 
+// NewTransportAPIError classifies a transport-level failure that produced no
+// HTTP response (nil response and/or a non-nil request error). The StatusCode
+// is always 0, since no response was received. A canceled context means the
+// caller went away mid-request (e.g. the SSH client disconnected), which is a
+// client-side outcome and must not count toward the server-side error SLIs.
+// Every other transport failure (a timeout, connection refused, DNS resolution
+// failure, etc.) is a genuine server-side/infrastructure problem and is marked
+// as a System error.
+func NewTransportAPIError(msg string, cause error) *APIError {
+	return &APIError{
+		Msg:        msg,
+		StatusCode: 0,
+		System:     !errors.Is(cause, context.Canceled),
+	}
+}
+
 // NewGitlabNetClient creates a new GitlabNetClient instance
 func NewGitlabNetClient(
 	user,
@@ -131,7 +148,7 @@ func newRequest(ctx context.Context, method, host, path string, data interface{}
 
 func parseError(resp *http.Response, respErr error) error {
 	if resp == nil || respErr != nil {
-		return NewSystemAPIError(internalAPIUnreachable, 0)
+		return NewTransportAPIError(internalAPIUnreachable, respErr)
 	}
 
 	// Redirects are never followed for internal API requests (see

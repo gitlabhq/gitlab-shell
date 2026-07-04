@@ -406,6 +406,38 @@ func TestGet_NetworkErrorReturnsAPIError(t *testing.T) {
 	require.True(t, apiErr.System)
 }
 
+func TestGet_CanceledContextIsClientError(t *testing.T) {
+	// A canceled context means the caller (e.g. the SSH client) went away
+	// mid-request. That is a client-side outcome and must not be classified as a
+	// System error, otherwise it would count toward the server-side error SLIs.
+	// The context is canceled before Get is called, so the request must fail
+	// before it ever reaches the server.
+	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+		t.Errorf("server should not be reached when context is already canceled")
+	}))
+	defer srv.Close()
+
+	c, err := gitlab.New(&gitlab.Config{
+		GitlabURL: srv.URL,
+		Secret:    testSecret,
+	})
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	resp, err := c.Get(ctx, "/check")
+	if resp != nil {
+		_ = resp.Body.Close()
+	}
+	require.Error(t, err)
+
+	var apiErr *client.APIError
+	require.ErrorAs(t, err, &apiErr)
+	require.Equal(t, "Internal API unreachable", apiErr.Msg)
+	require.False(t, apiErr.System, "a canceled context is client-side and must not count as a System error")
+}
+
 func TestWithHost(t *testing.T) {
 	originalServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{"source":"original"}`))
