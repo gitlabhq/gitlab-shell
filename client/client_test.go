@@ -381,11 +381,25 @@ func TestParseErrorClassification(t *testing.T) {
 			wantCode:   http.StatusInternalServerError,
 		},
 		{
-			desc:       "non-JSON error body is a system error",
+			desc:       "4xx with a non-JSON body is a policy response",
 			status:     http.StatusNotFound,
 			body:       "<html>not found</html>",
-			wantSystem: true,
+			wantSystem: false,
 			wantCode:   http.StatusNotFound,
+		},
+		{
+			desc:       "5xx with a non-JSON body is a system error",
+			status:     http.StatusBadGateway,
+			body:       "<html>bad gateway</html>",
+			wantSystem: true,
+			wantCode:   http.StatusBadGateway,
+		},
+		{
+			desc:       "400 with a JSON body is a system error",
+			status:     http.StatusBadRequest,
+			body:       `{"message":"bad request"}`,
+			wantSystem: true,
+			wantCode:   http.StatusBadRequest,
 		},
 		{
 			desc:       "followed redirect is a system error",

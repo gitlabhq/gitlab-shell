@@ -96,6 +96,11 @@ func TestRoundTripLogLevel(t *testing.T) {
 			wantErrorLog: true,
 		},
 		{
+			name:         "400 bad request logs error",
+			statusCode:   http.StatusBadRequest,
+			wantErrorLog: true,
+		},
+		{
 			name:            "403 access denied logs info, not error",
 			statusCode:      http.StatusForbidden,
 			body:            `{"message":"You are not allowed to push"}`,

@@ -57,7 +57,7 @@ func TestIsSystemErrorStatus(t *testing.T) {
 		http.StatusNotModified:         false, // 304: Go does not follow
 		http.StatusTemporaryRedirect:   true,  // 307
 		http.StatusPermanentRedirect:   true,  // 308
-		http.StatusBadRequest:          false, // 400
+		http.StatusBadRequest:          true,  // 400: malformed request from shell → system
 		http.StatusUnauthorized:        false, // 401
 		http.StatusForbidden:           false, // 403
 		http.StatusNotFound:            false, // 404

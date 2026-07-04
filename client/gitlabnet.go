@@ -47,8 +47,8 @@ type APIError struct {
 	StatusCode int
 
 	// System reports whether this is an internal API / transport failure
-	// (unreachable, a redirect, an undecodable response, or a 5xx) rather than a
-	// structured policy response from the API (e.g. "You are not allowed to push").
+	// (unreachable, a followed redirect, 400, or 5xx) rather than an expected
+	// policy response from the API (e.g. "You are not allowed to push").
 	// System errors indicate a gitlab-shell/infrastructure problem and should
 	// count toward error SLIs; policy responses are expected and should not.
 	System bool
@@ -62,8 +62,8 @@ func (e *APIError) Error() string {
 }
 
 // NewSystemAPIError creates an APIError that represents an internal API or
-// transport failure (e.g. unreachable host, redirect, undecodable response,
-// or 5xx). System errors count toward error SLIs; use a plain APIError for
+// transport failure (e.g. unreachable host, followed redirect, 400, or 5xx).
+// System errors count toward error SLIs; use a plain APIError for
 // expected policy responses (e.g. access denied).
 func NewSystemAPIError(msg string, statusCode int) *APIError {
 	return &APIError{Msg: msg, StatusCode: statusCode, System: true}
@@ -156,20 +156,26 @@ func parseError(resp *http.Response, respErr error) error {
 	parsedResponse := &ErrorResponse{}
 
 	if err := json.NewDecoder(resp.Body).Decode(parsedResponse); err != nil {
-		// No structured body to interpret: this is a transport/infra failure
-		// (e.g. a gateway error page), not a deliberate policy response.
-		return NewSystemAPIError(
-			fmt.Sprintf("Internal API error (%v)", resp.StatusCode),
-			resp.StatusCode,
-		)
+		// No structured body to interpret. Classify by status code so this agrees
+		// with the transport-layer logging (IsSystemErrorStatus): only followed
+		// redirects, 400, and 5xx are treated as system failures. A non-system 4xx
+		// with an empty or unparseable body (e.g. a 404 for an unknown SSH key) is
+		// still an expected client/policy response and must not count toward the
+		// error SLIs.
+		return &APIError{
+			Msg:        fmt.Sprintf("Internal API error (%v)", resp.StatusCode),
+			StatusCode: resp.StatusCode,
+			System:     IsSystemErrorStatus(resp.StatusCode),
+		}
 	}
-	// A decoded {"message":…} body is a structured response from the API. Treat
-	// 4xx as an expected policy response (e.g. access denied) and 5xx as a
-	// server-side failure that should count toward error SLIs.
+	// A decoded {"message":…} body is a structured response from the API.
+	// Classify via IsSystemErrorStatus so logging and SLI classification agree:
+	// followed redirects, 400, and 5xx are system failures; other 4xx (e.g. 403
+	// access denied, 404 key not found) are expected policy responses.
 	return &APIError{
 		Msg:        parsedResponse.Message,
 		StatusCode: resp.StatusCode,
-		System:     resp.StatusCode >= 500,
+		System:     IsSystemErrorStatus(resp.StatusCode),
 	}
 }
 

@@ -42,7 +42,7 @@ func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 	ctx = log.AppendFields(ctx, log.HTTPStatusCode(response.StatusCode))
 
 	if IsSystemErrorStatus(response.StatusCode) {
-		// Redirect misroute or 5xx: a gitlab-shell/infra failure.
+		// Redirect misroute, 400 malformed request, or 5xx: a gitlab-shell/infra failure.
 		log.FromContext(ctx).ErrorContext(ctx, "Internal API error")
 		return response, err
 	}
