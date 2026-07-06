@@ -132,13 +132,13 @@ func TestPushExecuteWithSSHReceivePack(t *testing.T) {
 				Data: accessverifier.CustomPayloadData{
 					PrimaryRepo:                    url,
 					GeoProxyPushSSHDirectToPrimary: true,
-					RequestHeaders:                 map[string]string{"Authorization": "token"},
+					RequestHeaders:                 map[string]string{"Authorization": testGitalyToken},
 				},
 			},
 		},
 		Args: &commandargs.Shell{
 			Env: sshenv.Env{
-				GitProtocolVersion: "version=2",
+				GitProtocolVersion: testGitProtocolVersion,
 			},
 		},
 	}
@@ -195,8 +195,8 @@ func setupSSHPush(t *testing.T, uploadPackStatusCode int) string {
 				defer r.Body.Close()
 
 				assert.True(t, strings.HasSuffix(string(body), "0009done\n"))
-				assert.Equal(t, "version=2", r.Header.Get("Git-Protocol"))
-				assert.Equal(t, "token", r.Header.Get("Authorization"))
+				assert.Equal(t, testGitProtocolVersion, r.Header.Get("Git-Protocol"))
+				assert.Equal(t, testGitalyToken, r.Header.Get("Authorization"))
 
 				w.WriteHeader(uploadPackStatusCode)
 				w.Write([]byte("receive-pack-response"))

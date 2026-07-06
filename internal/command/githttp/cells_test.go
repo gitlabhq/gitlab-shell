@@ -24,6 +24,11 @@ import (
 
 const testSecret = "test-secret-for-cells"
 
+const (
+	testGitProtocolVersion = "version=2"
+	testGitalyToken        = "token"
+)
+
 func TestCellsCommandExecute(t *testing.T) {
 	testCases := []struct {
 		desc         string
@@ -61,7 +66,7 @@ func TestCellsCommandExecute(t *testing.T) {
 				context.Background(),
 				cfg,
 				&readwriter.ReadWriter{Out: output, In: input},
-				&commandargs.Shell{Env: sshenv.Env{GitProtocolVersion: "version=2"}},
+				&commandargs.Shell{Env: sshenv.Env{GitProtocolVersion: testGitProtocolVersion}},
 				cellsTestResponse(cellServer.URL),
 			)
 
@@ -138,11 +143,11 @@ func TestBuildCellsGitClient(t *testing.T) {
 
 	t.Run("sets Git-Protocol header when GitProtocolVersion is set", func(t *testing.T) {
 		response := cellsTestResponse("http://cell1.example.com")
-		args := &commandargs.Shell{Env: sshenv.Env{GitProtocolVersion: "version=2"}}
+		args := &commandargs.Shell{Env: sshenv.Env{GitProtocolVersion: testGitProtocolVersion}}
 
 		gitClient, err := buildCellsGitClient(cfg, response, args)
 		require.NoError(t, err)
-		require.Equal(t, "version=2", gitClient.Headers["Git-Protocol"])
+		require.Equal(t, testGitProtocolVersion, gitClient.Headers["Git-Protocol"])
 	})
 
 	t.Run("omits Git-Protocol header when GitProtocolVersion is empty", func(t *testing.T) {
@@ -202,14 +207,14 @@ func TestCellsCommandVerifiesJWTAndHeaders(t *testing.T) {
 				context.Background(),
 				cfg,
 				&readwriter.ReadWriter{Out: &bytes.Buffer{}, In: strings.NewReader(inputData)},
-				&commandargs.Shell{Env: sshenv.Env{GitProtocolVersion: "version=2"}},
+				&commandargs.Shell{Env: sshenv.Env{GitProtocolVersion: testGitProtocolVersion}},
 				cellsTestResponse(cellServer.URL),
 			)
 
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedPath, receivedPath)
 			require.NotEmpty(t, receivedHeaders.Get("Gitlab-Shell-Api-Request"))
-			require.Equal(t, "version=2", receivedHeaders.Get("Git-Protocol"))
+			require.Equal(t, testGitProtocolVersion, receivedHeaders.Get("Git-Protocol"))
 			require.Equal(t, inputData, string(receivedBody))
 		})
 	}
@@ -251,7 +256,7 @@ func cellsTestResponse(cellAddress string) *accessverifier.Response {
 				GlProjectPath: "group/project",
 			},
 			Address: "unix:///fake/gitaly.sock",
-			Token:   "token",
+			Token:   testGitalyToken,
 		},
 	}
 }
