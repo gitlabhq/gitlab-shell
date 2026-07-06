@@ -41,8 +41,17 @@ func (rt *transport) RoundTrip(request *http.Request) (*http.Response, error) {
 
 	ctx = log.AppendFields(ctx, log.HTTPStatusCode(response.StatusCode))
 
-	if response.StatusCode >= 400 {
+	if IsSystemErrorStatus(response.StatusCode) {
+		// Redirect misroute, 400 malformed request, or 5xx: a gitlab-shell/infra failure.
 		log.FromContext(ctx).ErrorContext(ctx, "Internal API error")
+		return response, err
+	}
+
+	if response.StatusCode >= 400 {
+		// Expected policy response (e.g. authorized_keys 404 "Key Not Found",
+		// access denied). Log for visibility but keep it out of error-level
+		// signals/SLOs.
+		log.FromContext(ctx).InfoContext(ctx, "Internal API returned a client error")
 		return response, err
 	}
 

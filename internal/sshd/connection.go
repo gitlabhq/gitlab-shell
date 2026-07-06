@@ -239,8 +239,8 @@ func (c *connection) sendKeepAliveMsg(ctx context.Context, sconn *ssh.ServerConn
 func (c *connection) trackError(ctx context.Context, err error) {
 	// Policy responses from the internal API (e.g. "You are not allowed to
 	// push") are expected outcomes and must not count toward the error SLI.
-	// System/transport failures (unreachable, redirect, undecodable response,
-	// 5xx) indicate a gitlab-shell/infrastructure problem and should.
+	// System/transport failures (unreachable, followed redirect, 400, or 5xx)
+	// indicate a gitlab-shell/infrastructure problem and should.
 	var apiError *client.APIError
 	if errors.As(err, &apiError) && !apiError.System {
 		return

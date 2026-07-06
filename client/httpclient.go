@@ -164,6 +164,24 @@ func IsFollowedRedirect(code int) bool {
 	}
 }
 
+// IsSystemErrorStatus reports whether an HTTP status from the internal API
+// unambiguously indicates a gitlab-shell/infrastructure failure. Transport-layer
+// logging and APIError.System both use this status-only classification.
+//
+//   - Followed redirects (301/302/303/307/308): misroute → system.
+//   - 400 Bad Request: shell-facing internal API endpoints map policy outcomes
+//     to 401/403/404/422; a 400 indicates a malformed request from
+//     gitlab-shell, such as grape parameter-validation failures or bad_request!
+//     on a corrupt gitaly_client_context_bin → system.
+//   - 5xx: server-side failure → system.
+//
+// Other 4xx responses (401/403/404/422/429) are expected policy responses.
+// parseError reuses this function so that error-level logging and the error-SLI
+// (APIError.System) classification agree.
+func IsSystemErrorStatus(code int) bool {
+	return IsFollowedRedirect(code) || code == http.StatusBadRequest || code >= 500
+}
+
 func buildSocketTransport(gitlabURL, gitlabRelativeURLRoot string) (*http.Transport, string) {
 	socketPath := strings.TrimPrefix(gitlabURL, unixSocketProtocol)
 
