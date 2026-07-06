@@ -33,6 +33,26 @@ const (
 
 	// NotOurRefError represents the error message indicating that the git upload-pack is not our reference
 	NotOurRefError = `exit status 128, stderr: "fatal: git upload-pack: not our ref `
+
+	// brokenPipeError and copyResponseEOF are error-message fragments seen when
+	// the client disconnects or aborts a transfer mid-stream. They differ in how
+	// they surface, which is why trackError matches them differently:
+	//   - brokenPipeError: the git subprocess is killed by SIGPIPE once its
+	//     output to the SSH client closes; Gitaly reports this as a gRPC Internal
+	//     error, so it is matched only when the code is Internal.
+	//   - copyResponseEOF: copying the response back to the client fails with EOF;
+	//     this is a plain error at the SSH copy layer with no gRPC code, so it is
+	//     matched regardless of status.
+	// Both are client-side outcomes, not gitlab-shell/Gitaly failures, so they
+	// must not count toward the error SLI.
+	//
+	// Matching on the message detail is a stopgap. The durable fix is for Gitaly
+	// to return Canceled for client disconnects (see the Gitaly issue linked from
+	// https://gitlab.com/gitlab-org/gitlab-shell/-/work_items/863), after which
+	// the existing grpccodes.Canceled check would cover the broken-pipe case and
+	// this match could be simplified.
+	brokenPipeError = "signal: broken pipe"
+	copyResponseEOF = "copy response: EOF"
 )
 
 // EOFTimeout specifies the timeout duration for EOF (End of File) in SSH connections
@@ -253,7 +273,16 @@ func (c *connection) trackError(ctx context.Context, err error) {
 	grpcCode := grpcstatus.Code(err)
 	if grpcCode == grpccodes.Canceled || grpcCode == grpccodes.Unavailable {
 		return
-	} else if grpcCode == grpccodes.Internal && strings.Contains(err.Error(), NotOurRefError) {
+	} else if grpcCode == grpccodes.Internal &&
+		(strings.Contains(err.Error(), NotOurRefError) || strings.Contains(err.Error(), brokenPipeError)) {
+		return
+	}
+
+	// copyResponseEOF arrives as a plain error at the SSH copy layer (no gRPC
+	// code), so it is matched regardless of status. A client that disconnects
+	// mid-transfer is a client-side outcome, not a gitlab-shell/Gitaly failure,
+	// and must not count toward the error SLI.
+	if strings.Contains(err.Error(), copyResponseEOF) {
 		return
 	}
 

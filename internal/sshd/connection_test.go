@@ -337,6 +337,49 @@ func TestTrackErrorFeedsConnectionOutcome(t *testing.T) {
 	})
 }
 
+func TestTrackErrorClientDisconnects(t *testing.T) {
+	for _, tc := range []struct {
+		desc    string
+		err     error
+		counted bool
+	}{
+		{
+			desc:    "broken pipe (client disconnected mid-transfer) is not counted",
+			err:     grpcstatus.Error(grpccodes.Internal, `running upload-pack: cmd wait: signal: broken pipe, stderr: ""`),
+			counted: false,
+		},
+		{
+			desc:    "copy response EOF (client disconnected) is not counted",
+			err:     errors.New("copy response: EOF"),
+			counted: false,
+		},
+		{
+			desc:    "broken pipe without an Internal gRPC code is counted (match is gated on Internal)",
+			err:     errors.New("signal: broken pipe"),
+			counted: true,
+		},
+		{
+			desc:    "genuine internal server error is still counted",
+			err:     grpcstatus.Error(grpccodes.Internal, "running upload-pack: cmd wait: exit status 1"),
+			counted: true,
+		},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			initial := testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal)
+
+			c := &connection{}
+			c.trackError(context.Background(), tc.err)
+
+			expected := initial
+			if tc.counted {
+				expected = initial + 1
+			}
+			assert.InDelta(t, expected, testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal), 0.0001)
+			assert.Equal(t, tc.counted, c.outcome.serverError.Load())
+		})
+	}
+}
+
 func TestTrackConnection(t *testing.T) {
 	for _, tc := range []struct {
 		desc       string
