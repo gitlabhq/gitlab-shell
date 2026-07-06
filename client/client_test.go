@@ -355,7 +355,8 @@ func TestRedirectsAreNotFollowed(t *testing.T) {
 func TestParseErrorClassification(t *testing.T) {
 	for _, tc := range []struct {
 		desc       string
-		status     int // 0 simulates a connection failure (nil response, non-nil error)
+		status     int   // 0 simulates a connection failure (nil response, non-nil error)
+		respErr    error // request error to use when status == 0; defaults to a connection-refused error
 		body       string
 		wantSystem bool
 		wantCode   int
@@ -363,6 +364,27 @@ func TestParseErrorClassification(t *testing.T) {
 		{
 			desc:       "connection failure is a system error",
 			status:     0,
+			wantSystem: true,
+			wantCode:   0,
+		},
+		{
+			desc:       "canceled context is a client-side error",
+			status:     0,
+			respErr:    context.Canceled,
+			wantSystem: false,
+			wantCode:   0,
+		},
+		{
+			desc:       "wrapped canceled context is a client-side error",
+			status:     0,
+			respErr:    fmt.Errorf("Get %q: %w", "http://example.com", context.Canceled),
+			wantSystem: false,
+			wantCode:   0,
+		},
+		{
+			desc:       "deadline exceeded is a system error",
+			status:     0,
+			respErr:    context.DeadlineExceeded,
 			wantSystem: true,
 			wantCode:   0,
 		},
@@ -398,7 +420,10 @@ func TestParseErrorClassification(t *testing.T) {
 			var resp *http.Response
 			var respErr error
 			if tc.status == 0 {
-				respErr = errors.New("dial tcp: connection refused")
+				respErr = tc.respErr
+				if respErr == nil {
+					respErr = errors.New("dial tcp: connection refused")
+				}
 			} else {
 				resp = &http.Response{
 					StatusCode: tc.status,
