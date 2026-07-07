@@ -522,6 +522,23 @@ func TestResolveByUserArgs(t *testing.T) {
 	})
 }
 
+func TestHostForSSHFingerprint(t *testing.T) {
+	t.Run("nil resolver returns empty", func(t *testing.T) {
+		var r *Resolver
+		require.Empty(t, r.HostForSSHFingerprint(context.Background(), "fp"))
+	})
+
+	t.Run("nil topology client returns empty", func(t *testing.T) {
+		r := NewResolver(nil, "http://localhost")
+		require.Empty(t, r.HostForSSHFingerprint(context.Background(), "fp"))
+	})
+
+	t.Run("empty fingerprint returns empty", func(t *testing.T) {
+		r := NewResolver(nil, "http://localhost")
+		require.Empty(t, r.HostForSSHFingerprint(context.Background(), ""))
+	})
+}
+
 func TestIsRetryableError(t *testing.T) {
 	retryableCodes := []codes.Code{
 		codes.Unavailable,

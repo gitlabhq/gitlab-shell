@@ -81,6 +81,16 @@ func (r *Resolver) ClientForSSHFingerprint(ctx context.Context, httpClient *clie
 	return attachHost(httpClient, r.resolveBySSHFingerprint(ctx, fingerprint))
 }
 
+// HostForSSHFingerprint resolves the cell address that owns the SSH key
+// identified by its SHA-256 fingerprint, returning "" when the Topology Service
+// is not configured, errors, or returns a non-PROXY action. Unlike
+// ClientForSSHFingerprint, it returns only the address so the caller can apply
+// it to any client type via WithHost. The fingerprint must be the raw base64
+// body (43 chars), without the "SHA256:" prefix.
+func (r *Resolver) HostForSSHFingerprint(ctx context.Context, fingerprint string) string {
+	return r.resolveBySSHFingerprint(ctx, fingerprint)
+}
+
 // ClientForRoute resolves the cell that owns repoPath and returns a RoutedClient.
 // When the Topology Service is not configured, returns an error, or returns a
 // non-PROXY action, Address is empty and Client is the original httpClient.
