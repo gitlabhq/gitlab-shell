@@ -1,3 +1,13 @@
+v14.56.0
+
+- Add Cells SSH-over-HTTP routing for git push/pull !1472
+- Exclude client disconnects from the SSH session error SLI !1513
+- Log expected internal API 4xx responses below error level !1509
+- Exclude client cancellations from the SSH connection error SLI !1510
+- Update module golang.org/x/net to v0.55.0 !1512
+- Add NewSystemAPIError helper to reduce duplication !1502
+- Add explicit Topology Service cell endpoint configuration !1505
+
 v14.55.0
 
 - Prevent gitlab-sshd crash on startup errors !1506
