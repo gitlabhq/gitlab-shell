@@ -33,6 +33,26 @@ const (
 
 	// NotOurRefError represents the error message indicating that the git upload-pack is not our reference
 	NotOurRefError = `exit status 128, stderr: "fatal: git upload-pack: not our ref `
+
+	// brokenPipeError and copyResponseEOFError are error-message fragments seen
+	// when the client disconnects or aborts a transfer mid-stream. They differ in
+	// how they surface, which is why isClientDisconnect matches them differently:
+	//   - brokenPipeError: the git subprocess is killed by SIGPIPE once its
+	//     output to the SSH client closes; Gitaly reports this as a gRPC Internal
+	//     error, so it is matched only when the code is Internal.
+	//   - copyResponseEOFError: copying the response back to the client fails with
+	//     EOF; this is a plain error at the SSH copy layer with no gRPC code, so
+	//     it is matched regardless of status.
+	// Both are client-side outcomes, not gitlab-shell/Gitaly failures, so they
+	// must not count toward the error SLI.
+	//
+	// Matching on the message detail is a stopgap. The durable fix is for Gitaly
+	// to return Canceled for client disconnects (see the Gitaly issue linked from
+	// https://gitlab.com/gitlab-org/gitlab-shell/-/work_items/863), after which
+	// the existing grpccodes.Canceled check would cover the broken-pipe case and
+	// this match could be simplified.
+	brokenPipeError      = "signal: broken pipe"
+	copyResponseEOFError = "copy response: EOF"
 )
 
 // EOFTimeout specifies the timeout duration for EOF (End of File) in SSH connections
@@ -257,12 +277,28 @@ func (c *connection) trackError(ctx context.Context, err error) {
 		return
 	}
 
+	if isClientDisconnect(err.Error(), grpcCode) {
+		return
+	}
+
 	metrics.SliSshdSessionsErrorsTotal.Inc()
 	// Feed the connection-level SLI: a counted session error is a server-side
 	// failure for this connection. trackConnection (deferred in handle) emits the
 	// connection metrics once, after all sessions have completed.
 	c.outcome.serverError.Store(true)
 	log.FromContext(ctx).WarnContext(ctx, "connection: session error", log.ErrorMessage(err.Error()))
+}
+
+// isClientDisconnect reports whether err represents a client that disconnected
+// or aborted a transfer mid-stream, which is a client-side outcome and must not
+// count toward the error SLI. See the brokenPipeError/copyResponseEOFError
+// constants for why the two fragments are matched differently.
+func isClientDisconnect(msg string, grpcCode grpccodes.Code) bool {
+	if grpcCode == grpccodes.Internal && strings.Contains(msg, brokenPipeError) {
+		return true
+	}
+
+	return strings.Contains(msg, copyResponseEOFError)
 }
 
 // trackConnection emits the connection-level SLI once per connection. Only
