@@ -163,6 +163,13 @@ func parse(hr *http.Response, args *commandargs.Shell) (*Response, error) {
 	return response, nil
 }
 
+// IsCellRouted returns true when the /allowed request was routed to a
+// different Cell via the Topology Service. In this case, Gitaly is not
+// directly reachable and SSH-over-HTTP must be used.
+func (r *Response) IsCellRouted() bool {
+	return r.CellAddress != ""
+}
+
 // IsCustomAction checks if the response indicates a custom action
 func (r *Response) IsCustomAction() bool {
 	return r.StatusCode == http.StatusMultipleChoices

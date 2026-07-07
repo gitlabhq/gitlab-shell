@@ -251,6 +251,30 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	return response, nil
 }
 
+// ShellClaims extends RegisteredClaims with the gl_id field needed for
+// Cells SSH-over-HTTP authentication.
+type ShellClaims struct {
+	jwt.RegisteredClaims
+	GlID string `json:"gl_id,omitempty"`
+}
+
+// SignShellJWT creates a Shell JWT token with a gl_id claim, signed with
+// the given secret. This is used for Cells SSH-over-HTTP routing where
+// gitlab-shell authenticates with a remote Cell's Workhorse/Rails.
+func SignShellJWT(secret, glID string) (string, error) {
+	now := time.Now()
+	claims := ShellClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    jwtIssuer,
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(jwtTTL)),
+		},
+		GlID: glID,
+	}
+	secretBytes := []byte(strings.TrimSpace(secret))
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(secretBytes)
+}
+
 // WithHost returns a shallow copy of the client that sends requests to the
 // specified host instead of the default one. The returned client shares the
 // same HTTP transport, TLS settings, and authentication credentials.

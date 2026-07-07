@@ -499,6 +499,37 @@ func TestWithHost(t *testing.T) {
 	})
 }
 
+func TestSignShellJWT(t *testing.T) {
+	t.Run("generates valid JWT with gl_id claim", func(t *testing.T) {
+		tokenString, err := SignShellJWT(secret, "user-1")
+		require.NoError(t, err)
+		require.NotEmpty(t, tokenString)
+
+		claims := &ShellClaims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(_ *jwt.Token) (interface{}, error) {
+			return []byte(secret), nil
+		})
+		require.NoError(t, err)
+		require.True(t, token.Valid)
+		require.Equal(t, "gitlab-shell", claims.Issuer)
+		require.Equal(t, "user-1", claims.GlID)
+		require.WithinDuration(t, time.Now().Truncate(time.Second), claims.IssuedAt.Time, time.Second)
+		require.WithinDuration(t, time.Now().Truncate(time.Second).Add(time.Minute), claims.ExpiresAt.Time, time.Second)
+	})
+
+	t.Run("trims whitespace from secret", func(t *testing.T) {
+		tokenString, err := SignShellJWT("\n"+secret+"\n", "key-1")
+		require.NoError(t, err)
+
+		claims := &ShellClaims{}
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(_ *jwt.Token) (interface{}, error) {
+			return []byte(secret), nil
+		})
+		require.NoError(t, err)
+		require.True(t, token.Valid)
+	})
+}
+
 func TestRetryOnFailure(t *testing.T) {
 	reqAttempts := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
