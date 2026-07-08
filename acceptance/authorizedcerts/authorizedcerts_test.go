@@ -102,3 +102,74 @@ func TestAuthorizedCerts_Rejections(t *testing.T) {
 		})
 	}
 }
+
+// fakeFliptEndpoint starts a fake Flipt boolean evaluation server returning
+// enabled for the use_new_healthcheck_client flag (reused by authorized_certs).
+func fakeFliptEndpoint(t *testing.T, enabled bool) string {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/evaluate/v1/boolean", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{"enabled":%t,"flag_key":"use_new_healthcheck_client"}`, enabled)
+	})
+	return acceptancetest.NewFakeServer(t, mux)
+}
+
+// TestAuthorizedCerts_FeatureFlagMatrix proves the old and new client paths are
+// equivalent: cert auth succeeds and the API is contacted identically across FF
+// states.
+func TestAuthorizedCerts_FeatureFlagMatrix(t *testing.T) {
+	const secret = "test-secret"
+	const keyID = "testuser"
+
+	type ffState int
+	const (
+		ffUnconfigured ffState = iota
+		ffOff
+		ffOn
+	)
+	ffCases := []struct {
+		name  string
+		state ffState
+	}{
+		{"ff_unconfigured", ffUnconfigured},
+		{"ff_off", ffOff},
+		{"ff_on", ffOn},
+	}
+
+	for _, ff := range ffCases {
+		t.Run(ff.name, func(t *testing.T) {
+			var captured *http.Request
+			apiURL := authGatedCertsEndpoint(t, secret, http.StatusOK,
+				`{"username":"alice","namespace":"alice-group"}`, &captured)
+
+			ca := acceptancetest.GenerateSSHKey(t)
+			userKey := acceptancetest.GenerateSSHKey(t)
+			certSigner := acceptancetest.SignUserCert(t, ca, userKey, keyID, []string{sshUser}, time.Hour)
+
+			cfg := acceptancetest.SSHDConfig{
+				InternalAPIURL: apiURL,
+				Secret:         secret,
+				User:           sshUser,
+				ExtraEnv:       map[string]string{"FF_GITLAB_SHELL_SSH_CERTIFICATES": "1"},
+			}
+			switch ff.state {
+			case ffOff:
+				cfg.FeatureFlagURL = fakeFliptEndpoint(t, false)
+			case ffOn:
+				cfg.FeatureFlagURL = fakeFliptEndpoint(t, true)
+			}
+
+			d := acceptancetest.StartSSHD(t, cfg)
+
+			err := acceptancetest.DialSSHCert(d.Addr, sshUser, certSigner)
+			require.NoError(t, err, "cert auth should succeed regardless of which client is used")
+
+			require.NotNil(t, captured, "the daemon should have called the authorized_certs API")
+			require.Equal(t, "/api/v4/internal/authorized_certs", captured.URL.Path)
+			require.Equal(t, acceptancetest.CAFingerprint(ca), captured.URL.Query().Get("key"))
+			require.Equal(t, keyID, captured.URL.Query().Get("user_identifier"))
+			require.Equal(t, "GitLab-Shell", captured.Header.Get("User-Agent"))
+			require.True(t, acceptancetest.JWTIsValid(captured.Header.Get("Gitlab-Shell-Api-Request"), secret))
+		})
+	}
+}
