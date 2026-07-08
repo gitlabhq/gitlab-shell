@@ -40,6 +40,28 @@ func certHandlers(body string) []testserver.TestRequestHandler {
 	}
 }
 
+// TestNewClientNoSecret verifies that NewClient succeeds even when no secret is
+// configured (as in many unit-test server configs). It also verifies that
+// GetByKey correctly falls back to the legacy path when the unified client is
+// nil (flag on but newClient == nil must not panic or error).
+func TestNewClientNoSecret(t *testing.T) {
+	url := testserver.StartSocketHTTPServer(t, certHandlers(`{"username":"bob","namespace":"bob-group"}`))
+
+	// No Secret field — this previously caused "secret must not be empty".
+	cfg := &config.Config{GitlabURL: url}
+	client, err := NewClient(cfg)
+	require.NoError(t, err, "NewClient must succeed without a secret")
+	require.NotNil(t, client)
+
+	// Even with the flag evaluator returning true, newClient is nil so the
+	// legacy path must be used and the response must be parsed correctly.
+	ctx := command.ContextWithEvaluator(context.Background(), &mockEvaluator{value: true})
+	resp, err := client.GetByKey(ctx, "user-2", "fp-xyz")
+	require.NoError(t, err)
+	require.Equal(t, "bob", resp.Username)
+	require.Equal(t, "bob-group", resp.Namespace)
+}
+
 // TestGetByKeyDispatch verifies both the old and new client paths produce the
 // same parsed Response, regardless of which the feature flag selects.
 func TestGetByKeyDispatch(t *testing.T) {

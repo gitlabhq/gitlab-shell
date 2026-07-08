@@ -54,6 +54,11 @@ func NewClient(config *config.Config) (*Client, error) {
 		return nil, fmt.Errorf("error creating http client: %v", err)
 	}
 
+	// The unified client is optional: it requires a secret, which is not
+	// present in all configurations (e.g. unit tests that build server
+	// configs without a secret). When construction fails we leave newClient
+	// nil and always fall back to the legacy client path. This matches the
+	// behaviour before the unified client was introduced.
 	newClient, err := gitlab.New(&gitlab.Config{
 		GitlabURL:          config.GitlabURL,
 		User:               config.HTTPSettings.User,
@@ -64,7 +69,9 @@ func NewClient(config *config.Config) (*Client, error) {
 		ReadTimeoutSeconds: config.HTTPSettings.ReadTimeoutSeconds,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error creating gitlab client: %v", err)
+		// Do not fail construction — the legacy client is always available and
+		// has no secret requirement. A nil newClient means "always use legacy".
+		newClient = nil
 	}
 
 	return &Client{
@@ -127,9 +134,15 @@ func (c *Client) getByKeyLegacy(ctx context.Context, userID, fingerprint, host s
 }
 
 // useNewClient reports whether the unified gitlab client should be used. It
-// defaults to false (legacy client) when no evaluator is present or the flag
-// evaluation errors.
+// defaults to false (legacy client) when no evaluator is present, the flag
+// evaluation errors, or the unified client was not built (nil newClient).
 func (c *Client) useNewClient(ctx context.Context) bool {
+	// If the unified client could not be built (e.g. no secret configured),
+	// always use the legacy path regardless of the feature flag.
+	if c.newClient == nil {
+		return false
+	}
+
 	evaluator := command.FeatureFlagEvaluatorFromContext(ctx)
 	if evaluator == nil {
 		return false
