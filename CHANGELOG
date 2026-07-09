@@ -1,3 +1,8 @@
+v14.56.1
+
+- Fix gitlab-sshd CPU spin by upgrading golang.org/x/crypto to v0.54.0 !1517
+- Update the version of the logging field validator !1515
+
 v14.56.0
 
 - Add Cells SSH-over-HTTP routing for git push/pull !1472
