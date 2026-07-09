@@ -1,5 +1,10 @@
 .PHONY: validate verify test test_fancy acceptance-test coverage setup make_necessary_dirs build compile check clean install lint validate-log-fields
 
+# Use bash with pipefail so failures in a pipeline (e.g. `curl | tar`) are not
+# masked by the exit status of the last command in the pipe.
+SHELL := /usr/bin/env bash
+.SHELLFLAGS := -o pipefail -c
+
 FIPS_MODE ?= 0
 OS := $(shell uname | tr A-Z a-z)
 GO_SOURCES := $(shell git ls-files \*.go)
@@ -73,7 +78,7 @@ test_fancy: ${GOTESTSUM_FILE}
 
 ${GOTESTSUM_FILE}:
 	mkdir -p $(shell dirname ${GOTESTSUM_FILE})
-	curl -L https://github.com/gotestyourself/gotestsum/releases/download/v${GOTESTSUM_VERSION}/gotestsum_${GOTESTSUM_VERSION}_${OS}_${ARCH}.tar.gz | tar -zOxf - gotestsum > ${GOTESTSUM_FILE} && chmod +x ${GOTESTSUM_FILE}
+	curl -fL --retry 5 --retry-all-errors https://github.com/gotestyourself/gotestsum/releases/download/v${GOTESTSUM_VERSION}/gotestsum_${GOTESTSUM_VERSION}_${OS}_${ARCH}.tar.gz | tar -zOxf - gotestsum > ${GOTESTSUM_FILE} && chmod +x ${GOTESTSUM_FILE}
 
 test_race:
 	go test -race -timeout 1m -count 1 ./... -v
@@ -95,7 +100,7 @@ golangci: ${GOLANGCI_LINT_FILE}
 
 ${GOLANGCI_LINT_FILE}:
 	@mkdir -p $(shell dirname ${GOLANGCI_LINT_FILE})
-	@curl -L https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${ARCH}.tar.gz | tar --strip-components 1 -zOxf - golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${ARCH}/golangci-lint > ${GOLANGCI_LINT_FILE} && chmod +x ${GOLANGCI_LINT_FILE}
+	@curl -fL --retry 5 --retry-all-errors https://github.com/golangci/golangci-lint/releases/download/v${GOLANGCI_LINT_VERSION}/golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${ARCH}.tar.gz | tar --strip-components 1 -zOxf - golangci-lint-${GOLANGCI_LINT_VERSION}-${OS}-${ARCH}/golangci-lint > ${GOLANGCI_LINT_FILE} && chmod +x ${GOLANGCI_LINT_FILE}
 
 setup: make_necessary_dirs bin/gitlab-shell
 
