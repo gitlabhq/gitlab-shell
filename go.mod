@@ -14,7 +14,7 @@ require (
 	github.com/open-feature/go-sdk v1.17.2
 	github.com/openshift/gssapi v0.0.0-20161010215902-5fb4217df13b
 	github.com/otiai10/copy v1.14.1
-	github.com/pires/go-proxyproto v0.12.0
+	github.com/pires/go-proxyproto v0.14.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
 	gitlab.com/gitlab-org/cells/topology-service v0.0.0-20260522095121-2c761c2e9850
