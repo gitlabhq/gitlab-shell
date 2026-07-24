@@ -49,11 +49,20 @@ func TestCustomPrometheusMetrics(t *testing.T) {
 	require.NoError(t, err)
 
 	var actualNames []string
-	for _, m := range ms[0:12] {
+	for _, m := range ms[0:14] {
 		actualNames = append(actualNames, m.GetName())
 	}
 
 	expectedMetricNames := []string{
+		// These two are not registered by gitlab-shell itself. Gitaly's
+		// backchannel package registers them on the default Prometheus
+		// registry in an init(), so importing the Gitaly client (used for the
+		// SSH sidechannel) pulls them in. They are gathered here because
+		// gitlab-shell serves the default registry via labkit's monitoring
+		// endpoint. Metrics are gathered sorted by name, so "gitaly_*" sorts
+		// ahead of "gitlab_*".
+		"gitaly_backchannel_yamux_read_size_bytes",
+		"gitaly_backchannel_yamux_write_size_bytes",
 		"gitlab_shell_http_in_flight_requests",
 		"gitlab_shell_http_request_duration_seconds",
 		"gitlab_shell_http_requests_total",
