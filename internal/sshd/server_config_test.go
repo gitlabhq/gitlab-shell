@@ -372,6 +372,15 @@ func TestNonFipsDefaultAlgorithms(t *testing.T) {
 }
 
 func TestCustomAlgorithms(t *testing.T) {
+	if fips.Enabled() {
+		// Under the native Go FIPS 140-3 module, x/crypto's ssh package
+		// registers only FIPS-approved algorithms, and SetDefaults()
+		// silently drops non-approved custom choices (curve25519 kex,
+		// chacha20 ciphers, ...). Skip under any FIPS backend for
+		// consistency with the other tests in this file.
+		t.Skip("FIPS mode restricts SSH algorithms; custom non-approved algorithms are filtered by x/crypto")
+	}
+
 	customMACs := []string{"hmac-sha2-512-etm@openssh.com"}
 	customKexAlgos := []string{"curve25519-sha256", "curve25519-sha256@libssh.org"}
 	customCiphers := []string{"aes256-gcm@openssh.com"}
