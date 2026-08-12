@@ -21,7 +21,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
-	"gitlab.com/gitlab-org/labkit/fips"
+	"gitlab.com/gitlab-org/labkit/v2/fips"
+	"gitlab.com/gitlab-org/labkit/v2/fips/sshalgo"
 )
 
 const (
@@ -327,7 +328,7 @@ func TestFipsDefaultAlgorithms(t *testing.T) {
 	srvCfg := &serverConfig{cfg: &config.Config{}}
 	sshServerConfig := srvCfg.get(context.Background(), nil)
 
-	algorithms := fips.DefaultAlgorithms()
+	algorithms := sshalgo.DefaultAlgorithms()
 
 	require.Equal(t, algorithms.PublicKeyAuths, sshServerConfig.PublicKeyAuthAlgorithms)
 	require.Equal(t, algorithms.MACs, sshServerConfig.MACs)
