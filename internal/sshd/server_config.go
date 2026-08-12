@@ -19,7 +19,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedcerts"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedkeys"
 
-	"gitlab.com/gitlab-org/labkit/fips"
+	"gitlab.com/gitlab-org/labkit/v2/fips"
+	"gitlab.com/gitlab-org/labkit/v2/fips/sshalgo"
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
@@ -386,11 +387,11 @@ func (s *serverConfig) get(parentCtx context.Context, outcome *connOutcome) *ssh
 		// We need to constrain the list of supported algorithms for FIPS because
 		// ED25519 algorithms cause gitlab-sshd to panic.
 		//
-		// Right now we use fips.DefaultAlgorithms() instead of fips.SupportedAlgorithms()
+		// Right now we use sshalgo.DefaultAlgorithms() instead of sshalgo.SupportedAlgorithms()
 		// to preserve backwards compatibility with clients that are not configured properly.
-		// fips.DefaultAlgorithms() still allows ssh-rsa and ssh-dss. Admins can lock down
+		// sshalgo.DefaultAlgorithms() still allows ssh-rsa and ssh-dss. Admins can lock down
 		// these algorithms by setting `public_key_algorithms`.
-		algorithms := fips.DefaultAlgorithms()
+		algorithms := sshalgo.DefaultAlgorithms()
 		sshCfg.PublicKeyAuthAlgorithms = algorithms.PublicKeyAuths
 		sshCfg.Ciphers = algorithms.Ciphers
 		sshCfg.KeyExchanges = algorithms.KeyExchanges
