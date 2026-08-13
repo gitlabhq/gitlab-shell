@@ -20,7 +20,7 @@ require (
 	gitlab.com/gitlab-org/cells/topology-service v0.0.0-20260522095121-2c761c2e9850
 	gitlab.com/gitlab-org/gitaly/v18 v18.9.0-rc4
 	gitlab.com/gitlab-org/labkit v1.64.8
-	gitlab.com/gitlab-org/labkit/v2 v2.29.3-0.20260812164610-f9d3e3c13f51
+	gitlab.com/gitlab-org/labkit/v2 v2.33.0
 	golang.org/x/crypto v0.54.0
 	golang.org/x/sync v0.22.0
 	google.golang.org/grpc v1.81.1
