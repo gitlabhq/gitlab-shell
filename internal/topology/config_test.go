@@ -7,7 +7,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const testTopologyAddress = "localhost:8080"
+const (
+	testTopologyAddress = "localhost:8080"
+	certPath            = "/cert.crt"
+	keyPath             = "/key.pem"
+)
 
 func TestConfigValidate(t *testing.T) {
 	t.Run("disabled config is always valid", func(t *testing.T) {
@@ -97,17 +101,17 @@ func TestTLSConfigValidate(t *testing.T) {
 	})
 
 	t.Run("mTLS requires both cert and key", func(t *testing.T) {
-		err := (&TLSConfig{Enabled: true, CertFile: "/cert.crt"}).Validate()
+		err := (&TLSConfig{Enabled: true, CertFile: certPath}).Validate()
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "both cert_file and key_file must be provided")
 
-		err = (&TLSConfig{Enabled: true, KeyFile: "/key.pem"}).Validate()
+		err = (&TLSConfig{Enabled: true, KeyFile: keyPath}).Validate()
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "both cert_file and key_file must be provided")
 	})
 
 	t.Run("mTLS with both cert and key is valid", func(t *testing.T) {
-		cfg := &TLSConfig{Enabled: true, CertFile: "/cert.crt", KeyFile: "/key.pem"}
+		cfg := &TLSConfig{Enabled: true, CertFile: certPath, KeyFile: keyPath}
 		require.NoError(t, cfg.Validate())
 	})
 
@@ -115,8 +119,8 @@ func TestTLSConfigValidate(t *testing.T) {
 		cfg := &TLSConfig{
 			Enabled:    true,
 			CAFile:     "/ca.crt",
-			CertFile:   "/cert.crt",
-			KeyFile:    "/key.pem",
+			CertFile:   certPath,
+			KeyFile:    keyPath,
 			ServerName: "topology.gitlab.com",
 		}
 		require.NoError(t, cfg.Validate())

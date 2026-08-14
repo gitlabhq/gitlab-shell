@@ -21,6 +21,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+const localhostAddr = "localhost:9090"
+
 func TestNewClient(t *testing.T) {
 	t.Run("returns nil when disabled", func(t *testing.T) {
 		require.Nil(t, NewClient(&Config{Enabled: false}))
@@ -29,14 +31,14 @@ func TestNewClient(t *testing.T) {
 	t.Run("applies defaults and does not mutate original config", func(t *testing.T) {
 		cfg := &Config{
 			Enabled: true,
-			Address: "localhost:9090",
+			Address: localhostAddr,
 		}
 
 		client := NewClient(cfg)
 
 		// Client created successfully
 		require.NotNil(t, client)
-		require.Equal(t, "localhost:9090", client.config.Address)
+		require.Equal(t, localhostAddr, client.config.Address)
 
 		// Defaults applied to client config
 		require.Equal(t, DefaultTimeout, client.config.Timeout)
@@ -49,7 +51,7 @@ func TestNewClient(t *testing.T) {
 	t.Run("preserves custom values", func(t *testing.T) {
 		cfg := &Config{
 			Enabled: true,
-			Address: "localhost:9090",
+			Address: localhostAddr,
 			Timeout: 10 * time.Second,
 		}
 
@@ -61,7 +63,7 @@ func TestNewClient(t *testing.T) {
 
 func TestClient_Close(t *testing.T) {
 	t.Run("closing client with no connection does not error", func(t *testing.T) {
-		client := &Client{config: &Config{Enabled: true, Address: "localhost:9090"}}
+		client := &Client{config: &Config{Enabled: true, Address: localhostAddr}}
 		require.NoError(t, client.Close())
 	})
 

@@ -60,7 +60,7 @@ func TestListenAndServe(t *testing.T) {
 }
 
 func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {
-	xForwardedFor = "127.0.0.1"
+	xForwardedFor = localhostIP
 	defer func() {
 		xForwardedFor = "" // Cleanup for other test cases
 	}()
@@ -122,13 +122,13 @@ func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {
 		},
 		{
 			desc:         "Allow-listed IP with a header",
-			proxyAllowed: []string{"127.0.0.1"},
+			proxyAllowed: []string{localhostIP},
 			sendHeader:   true,
 			isRejected:   false,
 		},
 		{
 			desc:         "Allow-listed IP without a header",
-			proxyAllowed: []string{"127.0.0.1"},
+			proxyAllowed: []string{localhostIP},
 			sendHeader:   false,
 			isRejected:   false,
 		},

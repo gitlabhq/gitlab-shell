@@ -24,8 +24,20 @@ import (
 	"gitlab.com/gitlab-org/labkit/fips"
 )
 
+const (
+	localhostURL        = "http://localhost"
+	localhostIP         = "127.0.0.1"
+	testUser            = "user"
+	rootUser            = "root"
+	sourceAddressExt    = "source-address"
+	testUser2           = "testuser"
+	parseCAKeyErr       = "failed to parse trusted user CA key in file"
+	keyIDFormatErr      = "certificate KeyId does not match GitLab username format"
+	keyIDConsecutiveErr = "certificate KeyId contains consecutive special characters"
+)
+
 func TestNewServerConfigWithoutHosts(t *testing.T) {
-	_, err := newServerConfig(&config.Config{GitlabURL: "http://localhost"})
+	_, err := newServerConfig(&config.Config{GitlabURL: localhostURL})
 
 	require.Error(t, err)
 	require.Equal(t, "no host keys could be loaded, aborting", err.Error())
@@ -35,7 +47,7 @@ func TestHostKeyAndCerts(t *testing.T) {
 	testRoot := testhelper.PrepareTestRootDir(t)
 
 	srvCfg := config.ServerConfig{
-		Listen:                  "127.0.0.1",
+		Listen:                  localhostIP,
 		ConcurrentSessionsLimit: 1,
 		HostKeyFiles: []string{
 			path.Join(testRoot, "certs/valid/server.key"),
@@ -50,7 +62,7 @@ func TestHostKeyAndCerts(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabURL: "http://localhost", User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: localhostURL, User: testUser, Server: srvCfg},
 	)
 	require.NoError(t, err)
 
@@ -81,7 +93,7 @@ func TestNewServerConfigLoadsTrustedCAKeys(t *testing.T) {
 	require.NoError(t, err)
 
 	srvCfg := config.ServerConfig{
-		Listen:                  "127.0.0.1",
+		Listen:                  localhostIP,
 		ConcurrentSessionsLimit: 1,
 		HostKeyFiles: []string{
 			path.Join(testRoot, "certs/valid/server.key"),
@@ -90,7 +102,7 @@ func TestNewServerConfigLoadsTrustedCAKeys(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabURL: "http://localhost", User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: localhostURL, User: testUser, Server: srvCfg},
 	)
 	require.NoError(t, err)
 
@@ -102,7 +114,7 @@ func TestNewServerConfig_FailsOnBadCAKeyFile(t *testing.T) {
 	testRoot := testhelper.PrepareTestRootDir(t)
 
 	srvCfg := config.ServerConfig{
-		Listen:                  "127.0.0.1",
+		Listen:                  localhostIP,
 		ConcurrentSessionsLimit: 1,
 		HostKeyFiles: []string{
 			path.Join(testRoot, "certs/valid/server.key"),
@@ -111,7 +123,7 @@ func TestNewServerConfig_FailsOnBadCAKeyFile(t *testing.T) {
 	}
 
 	_, err := newServerConfig(
-		&config.Config{GitlabURL: "http://localhost", User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: localhostURL, User: testUser, Server: srvCfg},
 	)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to load trusted user CA keys")
@@ -146,7 +158,7 @@ func TestUserKeyHandling(t *testing.T) {
 	url := testserver.StartSocketHTTPServer(t, requests)
 
 	srvCfg := config.ServerConfig{
-		Listen:                  "127.0.0.1",
+		Listen:                  localhostIP,
 		ConcurrentSessionsLimit: 1,
 		HostKeyFiles: []string{
 			path.Join(testRoot, "certs/valid/server.key"),
@@ -156,7 +168,7 @@ func TestUserKeyHandling(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabURL: url, User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: url, User: testUser, Server: srvCfg},
 	)
 	require.NoError(t, err)
 
@@ -174,17 +186,17 @@ func TestUserKeyHandling(t *testing.T) {
 			expectedErr: errors.New("unknown user"),
 		}, {
 			desc:        "prohibited dsa key",
-			user:        "user",
+			user:        testUser,
 			key:         dsaPublicKey(t),
 			expectedErr: errors.New("DSA is prohibited"),
 		}, {
 			desc:        "API error",
-			user:        "user",
+			user:        testUser,
 			key:         rsaPublicKey(t),
 			expectedErr: &client.APIError{Msg: "Internal API unreachable", System: true},
 		}, {
 			desc: "successful request",
-			user: "user",
+			user: testUser,
 			key:  validRSAKey,
 			expectedPermissions: &ssh.Permissions{
 				Extensions: map[string]string{"key-id": "1"},
@@ -206,7 +218,7 @@ func TestUserCertificateHandling(t *testing.T) {
 
 	caSigner, _ := createCAKeyPair(t)
 	validUserCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "root@example.com")
-	validUserCertWithSourceAddr := userCertSignedByCAWithOptions(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "root@example.com", map[string]string{"source-address": "10.0.0.0/8"})
+	validUserCertWithSourceAddr := userCertSignedByCAWithOptions(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "root@example.com", map[string]string{sourceAddressExt: "10.0.0.0/8"})
 
 	requests := []testserver.TestRequestHandler{
 		{
@@ -225,7 +237,7 @@ func TestUserCertificateHandling(t *testing.T) {
 	url := testserver.StartSocketHTTPServer(t, requests)
 
 	srvCfg := config.ServerConfig{
-		Listen:                  "127.0.0.1",
+		Listen:                  localhostIP,
 		ConcurrentSessionsLimit: 1,
 		HostKeyFiles: []string{
 			path.Join(testRoot, "certs/valid/server.key"),
@@ -235,7 +247,7 @@ func TestUserCertificateHandling(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabURL: url, User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: url, User: testUser, Server: srvCfg},
 	)
 	require.NoError(t, err)
 
@@ -267,8 +279,8 @@ func TestUserCertificateHandling(t *testing.T) {
 			featureFlagValue: "1",
 			expectedPermissions: &ssh.Permissions{
 				Extensions: map[string]string{
-					"username":  "root",
-					"namespace": "namespace",
+					certPermUsername:  rootUser,
+					certPermNamespace: certPermNamespace,
 				},
 			},
 		}, {
@@ -287,10 +299,10 @@ func TestUserCertificateHandling(t *testing.T) {
 			cert:             validUserCertWithSourceAddr,
 			featureFlagValue: "1",
 			expectedPermissions: &ssh.Permissions{
-				CriticalOptions: map[string]string{"source-address": "10.0.0.0/8"},
+				CriticalOptions: map[string]string{sourceAddressExt: "10.0.0.0/8"},
 				Extensions: map[string]string{
-					"username":  "root",
-					"namespace": "namespace",
+					certPermUsername:  rootUser,
+					certPermNamespace: certPermNamespace,
 				},
 			},
 		},
@@ -299,7 +311,7 @@ func TestUserCertificateHandling(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			t.Setenv("FF_GITLAB_SHELL_SSH_CERTIFICATES", tc.featureFlagValue)
-			permissions, err := cfg.handleUserCertificate(context.Background(), "user", tc.cert)
+			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, tc.cert)
 			require.Equal(t, tc.expectedErr, err)
 			require.Equal(t, tc.expectedPermissions, permissions)
 		})
@@ -562,7 +574,7 @@ func TestParseTrustedUserCAKeys(t *testing.T) {
 			desc:        "invalid key file",
 			files:       []string{invalidKeyFile},
 			expectErr:   true,
-			errContains: "failed to parse trusted user CA key in file",
+			errContains: parseCAKeyErr,
 		},
 		{
 			desc:          "empty list",
@@ -573,13 +585,13 @@ func TestParseTrustedUserCAKeys(t *testing.T) {
 			desc:        "mix of valid then invalid files",
 			files:       []string{caKeyFile, invalidKeyFile},
 			expectErr:   true,
-			errContains: "failed to parse trusted user CA key in file",
+			errContains: parseCAKeyErr,
 		},
 		{
 			desc:        "partial parse - valid key followed by invalid content",
 			files:       []string{partialCAKeyFile},
 			expectErr:   true,
-			errContains: "failed to parse trusted user CA key in file",
+			errContains: parseCAKeyErr,
 		},
 	}
 
@@ -628,7 +640,7 @@ func TestValidateKeyID(t *testing.T) {
 		expectErr bool
 		errMsg    string
 	}{
-		{desc: "valid simple username", keyID: "testuser", expectErr: false},
+		{desc: "valid simple username", keyID: testUser2, expectErr: false},
 		{desc: "valid with dots", keyID: "jane.doe", expectErr: false},
 		{desc: "valid with hyphens", keyID: "user-name", expectErr: false},
 		{desc: "valid with underscores", keyID: "user_name", expectErr: false},
@@ -638,18 +650,18 @@ func TestValidateKeyID(t *testing.T) {
 		{desc: "empty KeyId", keyID: "", expectErr: true, errMsg: "certificate has empty KeyId"},
 		{desc: "single character", keyID: "a", expectErr: true, errMsg: "certificate KeyId length 1 is outside valid range [2, 255]"},
 		{desc: "too long", keyID: strings.Repeat("a", 256), expectErr: true, errMsg: "certificate KeyId length 256 is outside valid range [2, 255]"},
-		{desc: "starts with hyphen", keyID: "-username", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
-		{desc: "ends with hyphen", keyID: "username-", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
-		{desc: "starts with dot", keyID: ".username", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
-		{desc: "ends with dot", keyID: "username.", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
-		{desc: "consecutive dots", keyID: "user..name", expectErr: true, errMsg: "certificate KeyId contains consecutive special characters"},
-		{desc: "consecutive hyphens", keyID: "user--name", expectErr: true, errMsg: "certificate KeyId contains consecutive special characters"},
-		{desc: "consecutive mixed specials", keyID: "user.-name", expectErr: true, errMsg: "certificate KeyId contains consecutive special characters"},
-		{desc: "contains newline", keyID: "user\nname", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
-		{desc: "contains space", keyID: "user name", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
-		{desc: "contains null byte", keyID: "user\x00name", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
-		{desc: "contains at sign", keyID: "user@domain.com", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
-		{desc: "non-ASCII characters", keyID: "пользователь", expectErr: true, errMsg: "certificate KeyId does not match GitLab username format"},
+		{desc: "starts with hyphen", keyID: "-username", expectErr: true, errMsg: keyIDFormatErr},
+		{desc: "ends with hyphen", keyID: "username-", expectErr: true, errMsg: keyIDFormatErr},
+		{desc: "starts with dot", keyID: ".username", expectErr: true, errMsg: keyIDFormatErr},
+		{desc: "ends with dot", keyID: "username.", expectErr: true, errMsg: keyIDFormatErr},
+		{desc: "consecutive dots", keyID: "user..name", expectErr: true, errMsg: keyIDConsecutiveErr},
+		{desc: "consecutive hyphens", keyID: "user--name", expectErr: true, errMsg: keyIDConsecutiveErr},
+		{desc: "consecutive mixed specials", keyID: "user.-name", expectErr: true, errMsg: keyIDConsecutiveErr},
+		{desc: "contains newline", keyID: "user\nname", expectErr: true, errMsg: keyIDFormatErr},
+		{desc: "contains space", keyID: "user name", expectErr: true, errMsg: keyIDFormatErr},
+		{desc: "contains null byte", keyID: "user\x00name", expectErr: true, errMsg: keyIDFormatErr},
+		{desc: "contains at sign", keyID: "user@domain.com", expectErr: true, errMsg: keyIDFormatErr},
+		{desc: "non-ASCII characters", keyID: "пользователь", expectErr: true, errMsg: keyIDFormatErr},
 	}
 
 	for _, tc := range testCases {
@@ -675,21 +687,21 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 	untrustedSigner, _ := createCAKeyPair(t)
 
 	// Create certificates
-	validCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "testuser")
-	expiredCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(-time.Hour), "testuser")
-	hostCert := userCertSignedByCA(t, caSigner, ssh.HostCert, time.Now().Add(time.Hour), "testuser")
-	untrustedCert := userCertSignedByCA(t, untrustedSigner, ssh.UserCert, time.Now().Add(time.Hour), "testuser")
+	validCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), testUser2)
+	expiredCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(-time.Hour), testUser2)
+	hostCert := userCertSignedByCA(t, caSigner, ssh.HostCert, time.Now().Add(time.Hour), testUser2)
+	untrustedCert := userCertSignedByCA(t, untrustedSigner, ssh.UserCert, time.Now().Add(time.Hour), testUser2)
 	emptyKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "")
 	singleCharKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "a")
 	newlineKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "user\nname")
 	atSignKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "user@domain.com")
 	dottedKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "jane.doe")
 	consecutiveSpecialsCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "user..name")
-	sourceAddrCert := userCertSignedByCAWithOptions(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "testuser", map[string]string{"source-address": "10.0.0.0/8,192.168.1.0/24"})
-	multiOptionsCert := userCertSignedByCAWithOptions(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "testuser", map[string]string{"source-address": "10.0.0.1", "force-command": "/usr/bin/git"})
+	sourceAddrCert := userCertSignedByCAWithOptions(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), testUser2, map[string]string{sourceAddressExt: "10.0.0.0/8,192.168.1.0/24"})
+	multiOptionsCert := userCertSignedByCAWithOptions(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), testUser2, map[string]string{sourceAddressExt: "10.0.0.1", "force-command": "/usr/bin/git"})
 
 	srvCfg := config.ServerConfig{
-		Listen:                  "127.0.0.1",
+		Listen:                  localhostIP,
 		ConcurrentSessionsLimit: 1,
 		HostKeyFiles: []string{
 			path.Join(testRoot, "certs/valid/server.key"),
@@ -697,7 +709,7 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabURL: "http://localhost", User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: localhostURL, User: testUser, Server: srvCfg},
 	)
 	require.NoError(t, err)
 
@@ -717,7 +729,7 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 			cert: validCert,
 			expectedPermissions: &ssh.Permissions{
 				Extensions: map[string]string{
-					"username": "testuser",
+					certPermUsername: testUser2,
 				},
 			},
 		},
@@ -726,7 +738,7 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 			cert: dottedKeyIDCert,
 			expectedPermissions: &ssh.Permissions{
 				Extensions: map[string]string{
-					"username": "jane.doe",
+					certPermUsername: "jane.doe",
 				},
 			},
 		},
@@ -774,9 +786,9 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 			desc: "valid instance-level certificate with source-address",
 			cert: sourceAddrCert,
 			expectedPermissions: &ssh.Permissions{
-				CriticalOptions: map[string]string{"source-address": "10.0.0.0/8,192.168.1.0/24"},
+				CriticalOptions: map[string]string{sourceAddressExt: "10.0.0.0/8,192.168.1.0/24"},
 				Extensions: map[string]string{
-					"username": "testuser",
+					certPermUsername: testUser2,
 				},
 			},
 		},
@@ -789,7 +801,7 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			permissions, err := cfg.handleUserCertificate(context.Background(), "user", tc.cert)
+			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, tc.cert)
 			if tc.expectedErr != "" {
 				require.EqualError(t, err, tc.expectedErr)
 			} else {
@@ -812,7 +824,7 @@ func TestUserCertificateHandling_InstanceLevelWithMultipleCAs(t *testing.T) {
 	certFromCA2 := userCertSignedByCA(t, caSigner2, ssh.UserCert, time.Now().Add(time.Hour), "user2")
 
 	srvCfg := config.ServerConfig{
-		Listen:                  "127.0.0.1",
+		Listen:                  localhostIP,
 		ConcurrentSessionsLimit: 1,
 		HostKeyFiles: []string{
 			path.Join(testRoot, "certs/valid/server.key"),
@@ -820,7 +832,7 @@ func TestUserCertificateHandling_InstanceLevelWithMultipleCAs(t *testing.T) {
 	}
 
 	cfg, err := newServerConfig(
-		&config.Config{GitlabURL: "http://localhost", User: "user", Server: srvCfg},
+		&config.Config{GitlabURL: localhostURL, User: testUser, Server: srvCfg},
 	)
 	require.NoError(t, err)
 
@@ -831,15 +843,15 @@ func TestUserCertificateHandling_InstanceLevelWithMultipleCAs(t *testing.T) {
 	}
 
 	// Both certificates should be trusted
-	permissions1, err := cfg.handleUserCertificate(context.Background(), "user", certFromCA1)
+	permissions1, err := cfg.handleUserCertificate(context.Background(), testUser, certFromCA1)
 	require.NoError(t, err)
 	require.Equal(t, &ssh.Permissions{
-		Extensions: map[string]string{"username": "user1"},
+		Extensions: map[string]string{certPermUsername: "user1"},
 	}, permissions1)
 
-	permissions2, err := cfg.handleUserCertificate(context.Background(), "user", certFromCA2)
+	permissions2, err := cfg.handleUserCertificate(context.Background(), testUser, certFromCA2)
 	require.NoError(t, err)
 	require.Equal(t, &ssh.Permissions{
-		Extensions: map[string]string{"username": "user2"},
+		Extensions: map[string]string{certPermUsername: "user2"},
 	}, permissions2)
 }
