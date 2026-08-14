@@ -60,5 +60,10 @@ The FIPS build omits the ed25519 host key on purpose: ED25519 keys are not
 usable under the FIPS crypto module and are rejected at load time
 (`ED25519 keys are not allowed in FIPS mode`).
 
+`make-policy` writes a `host_key_sizes` line; delete it after regenerating. We
+do not pin host key sizes because they describe the harness's throwaway keys
+rather than the algorithm surface, and ssh-audit reports the RSA size as 0
+against the FIPS build.
+
 Review the regenerated diff carefully — the point of the check is that removing
 an algorithm is a deliberate, visible decision.
