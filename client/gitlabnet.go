@@ -212,6 +212,12 @@ func (c *GitlabNetClient) Do(request *http.Request) (*http.Response, error) {
 	if err := parseError(response, respErr); err != nil {
 		return nil, err
 	}
+	// parseError already returns an error when response is nil, so this branch is
+	// unreachable in practice. It is kept so callers (and static analysis) can
+	// rely on a non-nil response whenever the returned error is nil.
+	if response == nil {
+		return nil, NewTransportAPIError(internalAPIUnreachable, respErr)
+	}
 
 	return response, nil
 }
@@ -246,6 +252,12 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	response, respErr := c.httpClient.RetryableHTTP.Do(request)
 	if err := parseError(response, respErr); err != nil {
 		return nil, err
+	}
+	// parseError already returns an error when response is nil, so this branch is
+	// unreachable in practice. It is kept so callers (and static analysis) can
+	// rely on a non-nil response whenever the returned error is nil.
+	if response == nil {
+		return nil, NewTransportAPIError(internalAPIUnreachable, respErr)
 	}
 
 	return response, nil
