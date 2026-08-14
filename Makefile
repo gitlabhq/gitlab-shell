@@ -1,4 +1,4 @@
-.PHONY: validate verify test test_fancy acceptance-test coverage setup make_necessary_dirs build compile check clean install lint validate-log-fields
+.PHONY: validate verify test test_fancy acceptance-test coverage setup make_necessary_dirs build compile check clean install lint validate-log-fields ssh-audit-test ssh-audit-generate-policy
 
 # Use bash with pipefail so failures in a pipeline (e.g. `curl | tar`) are not
 # masked by the exit status of the last command in the pipe.
@@ -26,6 +26,17 @@ GOLANGCI_LINT_VERSION := 2.12.2
 GOLANGCI_LINT_FILE := support/bin/golangci-lint-${GOLANGCI_LINT_VERSION}
 
 LABKIT_VALIDATE_VERSION := v2.3.0
+
+SSH_AUDIT_VERSION := 3.9.0
+SSH_AUDIT_DIR := support/bin/ssh-audit-${SSH_AUDIT_VERSION}
+SSH_AUDIT_FILE := ${SSH_AUDIT_DIR}/ssh-audit.py
+
+# ssh-audit policy to check against / regenerate. Override for the FIPS build.
+SSH_AUDIT_POLICY ?= support/ssh-audit/gitlab-sshd.policy
+# Host key types gitlab-sshd is configured with during the audit. ED25519 keys
+# are not usable under the FIPS module (rejected at load time), so the FIPS job
+# overrides this to "rsa ecdsa".
+SSH_AUDIT_HOST_KEY_TYPES ?= rsa ecdsa ed25519
 
 export GOFLAGS := -mod=readonly
 
@@ -92,6 +103,21 @@ test_race:
 
 acceptance-test:
 	go test -tags=acceptance -count=1 -timeout=5m ./acceptance/...
+
+# ssh-audit ships as a package (ssh-audit.py is a thin launcher that imports the
+# ssh_audit package next to it), so we extract the whole release tree.
+${SSH_AUDIT_FILE}:
+	mkdir -p ${SSH_AUDIT_DIR}
+	curl -fL --retry 5 --retry-all-errors https://github.com/jtesta/ssh-audit/releases/download/v${SSH_AUDIT_VERSION}/v${SSH_AUDIT_VERSION}.tar.gz | tar -zxf - -C ${SSH_AUDIT_DIR} --strip-components=1
+	chmod +x ${SSH_AUDIT_FILE}
+
+# Verify gitlab-sshd's negotiated algorithms against the committed ssh-audit policy.
+ssh-audit-test: compile ${SSH_AUDIT_FILE}
+	SSH_AUDIT="${SSH_AUDIT_FILE}" SSH_AUDIT_HOST_KEY_TYPES="${SSH_AUDIT_HOST_KEY_TYPES}" support/ssh-audit/run.sh check "${SSH_AUDIT_POLICY}"
+
+# Regenerate the ssh-audit policy after an intentional algorithm change.
+ssh-audit-generate-policy: compile ${SSH_AUDIT_FILE}
+	SSH_AUDIT="${SSH_AUDIT_FILE}" SSH_AUDIT_HOST_KEY_TYPES="${SSH_AUDIT_HOST_KEY_TYPES}" support/ssh-audit/run.sh make-policy "${SSH_AUDIT_POLICY}"
 
 coverage:
 	[ -f cover.out ] && go tool cover -func cover.out
