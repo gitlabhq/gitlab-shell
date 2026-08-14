@@ -266,6 +266,8 @@ func readStatusArgsAndBinaryData(t *testing.T, pl *pktline.Pktline) (status stri
 }
 
 func readStatusArgsAndTextData(t *testing.T, pl *pktline.Pktline) (status string, args []string, data []string) {
+	data = []string{}
+
 	// Read status.
 	status, l, err := pl.ReadPacketTextWithLength()
 	require.NoError(t, err)
@@ -285,7 +287,7 @@ func readStatusArgsAndTextData(t *testing.T, pl *pktline.Pktline) (status string
 
 		switch l {
 		case 0:
-			return status, args, nil
+			return status, args, data
 		case 1:
 			end = true
 		default:

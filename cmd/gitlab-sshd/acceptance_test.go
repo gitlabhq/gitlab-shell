@@ -107,6 +107,7 @@ func ensureGitalyRepository(t *testing.T) (*grpc.ClientConn, *pb.Repository) {
 	if os.Getenv("GITALY_CONNECTION_INFO") == "" {
 		t.Skip("GITALY_CONNECTION_INFO is not set")
 	}
+	require.NotNil(t, gitalyConnInfo)
 
 	conn, err := gitalyClient.Dial(gitalyConnInfo.Address)
 	require.NoError(t, err)
