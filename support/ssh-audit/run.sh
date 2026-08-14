@@ -9,9 +9,8 @@
 # between FIPS and non-FIPS builds). This is what lets the policy catch an
 # algorithm silently appearing or disappearing after a dependency bump.
 #
-# Requires python3 (to run ssh-audit and pick a free port) and the Go toolchain
-# (to generate throwaway host keys). It intentionally does not use ssh-keygen,
-# which is absent from some CI images (e.g. the FIPS UBI image).
+# Requires python3 (to run ssh-audit and pick a free port) and ssh-keygen (to
+# generate throwaway host keys).
 #
 # Usage:
 #   support/ssh-audit/run.sh <check|make-policy> <policy-file>
@@ -41,7 +40,7 @@ SSHD_BIN="${GITLAB_SSHD_BIN:-$ROOT_DIR/bin/gitlab-sshd}"
 HOST_KEY_TYPES="${SSH_AUDIT_HOST_KEY_TYPES:-rsa ecdsa ed25519}"
 
 command -v python3 >/dev/null 2>&1 || { echo "error: python3 is required" >&2; exit 1; }
-command -v go >/dev/null 2>&1 || { echo "error: the Go toolchain is required" >&2; exit 1; }
+command -v ssh-keygen >/dev/null 2>&1 || { echo "error: ssh-keygen is required" >&2; exit 1; }
 
 if [[ -n "${SSH_AUDIT:-}" ]]; then
   SSH_AUDIT_CMD=(python3 "$SSH_AUDIT")
@@ -65,12 +64,16 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Generate throwaway host keys with a small Go helper (see genhostkey/main.go).
-( cd "$ROOT_DIR" && go run ./support/ssh-audit/genhostkey -dir "$WORKDIR" -types "$HOST_KEY_TYPES" )
-
 host_key_lines=()
 for type in $HOST_KEY_TYPES; do
-  host_key_lines+=("    - \"$WORKDIR/ssh_host_${type}_key\"")
+  key_file="$WORKDIR/ssh_host_${type}_key"
+  case "$type" in
+    rsa)     ssh-keygen -q -t rsa -b 4096 -N '' -f "$key_file" ;;
+    ecdsa)   ssh-keygen -q -t ecdsa -b 256 -N '' -f "$key_file" ;;
+    ed25519) ssh-keygen -q -t ed25519 -N '' -f "$key_file" ;;
+    *) echo "error: unsupported host key type '$type'" >&2; exit 1 ;;
+  esac
+  host_key_lines+=("    - \"$key_file\"")
 done
 
 # start_server picks a free port, writes the config, launches gitlab-sshd and

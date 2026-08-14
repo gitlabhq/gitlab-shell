@@ -18,7 +18,6 @@ algorithms has to be an explicit, reviewed update to the policy.
 | File | Description |
 | --- | --- |
 | `run.sh` | Boots gitlab-sshd with a defaults-only config and runs ssh-audit against it (`check` or `make-policy`). |
-| `genhostkey/` | Small Go helper that writes throwaway host keys (avoids depending on `ssh-keygen`, which is absent from some CI images). |
 | `gitlab-sshd.policy` | Golden algorithm snapshot for the default (non-FIPS) build. |
 | `gitlab-sshd-fips.policy` | Golden algorithm snapshot for the FIPS build. |
 
@@ -34,7 +33,7 @@ make ssh-audit-test
 ```
 
 This builds gitlab-sshd, downloads a pinned ssh-audit, and verifies the default
-build against `gitlab-sshd.policy`. `python3` and the Go toolchain must be
+build against `gitlab-sshd.policy`. `python3` and `ssh-keygen` must be
 available.
 
 ## Updating a policy after an intentional change
