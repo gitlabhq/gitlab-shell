@@ -91,6 +91,17 @@ default:
   cache:
     - *cached_go
 
+# The pinned ssh-audit download, cached so the ssh-audit jobs do not depend on
+# github.com being reachable on every run. Keyed on the Makefile so bumping
+# SSH_AUDIT_VERSION invalidates it.
+.cached-ssh-audit: &cached_ssh_audit
+  key:
+    prefix: "ssh-audit"
+    files:
+      - Makefile
+  paths:
+    - support/bin/ssh-audit-*
+
 .cached-job:
   cache:
     - *cached_go
@@ -204,6 +215,9 @@ ssh-audit:
     - .cached-go-job
   needs: ["modules:download"]
   rules: !reference [".rules:ssh-audit", rules]
+  cache:
+    - *cached_go
+    - *cached_ssh_audit
   script:
     - make ssh-audit-test
 
@@ -219,6 +233,9 @@ ssh-audit:fips:
     GOLANG_FIPS: 1
     SSH_AUDIT_POLICY: support/ssh-audit/gitlab-sshd-fips.policy
     SSH_AUDIT_HOST_KEY_TYPES: "rsa ecdsa"
+  cache:
+    - *cached_go
+    - *cached_ssh_audit
   before_script:
     # The FIPS UBI image ships neither ssh-keygen (from openssh) nor python3,
     # both of which the ssh-audit harness needs.
