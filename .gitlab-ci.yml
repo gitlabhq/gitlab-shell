@@ -91,25 +91,6 @@ default:
   cache:
     - *cached_go
 
-# Cache for the ssh-audit jobs: the Go module cache plus the pinned ssh-audit
-# download. The ssh-audit entry is keyed on the Makefile so bumping
-# SSH_AUDIT_VERSION invalidates it and triggers a fresh download.
-.cached-ssh-audit-job: &cached_ssh_audit_job
-  - key:
-      prefix: "golang-${GO_VERSION}-cache"
-      files:
-        - go.mod
-        - go.sum
-    policy: $POLICY
-    paths:
-      - .GOPATH/pkg/mod/
-  - key:
-      prefix: "ssh-audit"
-      files:
-        - Makefile
-    paths:
-      - support/bin/ssh-audit-*
-
 .cached-job:
   cache:
     - *cached_go
@@ -219,30 +200,29 @@ acceptance:
 # or MAC fails the pipeline. See support/ssh-audit/README.md.
 ssh-audit:
   stage: test
+  extends:
+    - .cached-go-job
   needs: ["modules:download"]
   rules: !reference [".rules:ssh-audit", rules]
-  variables:
-    CACHE_COMPRESSION_LEVEL: "fastest"
-  cache: *cached_ssh_audit_job
   script:
     - make ssh-audit-test
 
 ssh-audit:fips:
   stage: test
   image: ${FIPS_IMAGE}
+  extends:
+    - .cached-go-job
   needs: ["modules:download"]
   rules: !reference [".rules:ssh-audit", rules]
   variables:
     FIPS_MODE: 1
     GOLANG_FIPS: 1
-    CACHE_COMPRESSION_LEVEL: "fastest"
     SSH_AUDIT_POLICY: support/ssh-audit/gitlab-sshd-fips.policy
     SSH_AUDIT_HOST_KEY_TYPES: "rsa ecdsa"
-  cache: *cached_ssh_audit_job
   before_script:
-    # The FIPS UBI image does not ship ssh-keygen, which the ssh-audit harness
-    # uses to generate throwaway host keys.
-    - dnf install -y openssh
+    # The FIPS UBI image ships neither ssh-keygen (from openssh) nor python3,
+    # both of which the ssh-audit harness needs.
+    - dnf install -y openssh python3
   script:
     - make ssh-audit-test
 
