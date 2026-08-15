@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const pktlineHelloWorld = "0010hello world!"
+
 var (
 	largestString = strings.Repeat("z", 0xffff-4)
 )
@@ -22,29 +24,29 @@ func TestScanner(t *testing.T) {
 		{
 			desc: "happy path",
 			in:   "0010hello world!000000010010hello world!",
-			out:  []string{"0010hello world!", "0000", "0001", "0010hello world!"},
+			out:  []string{pktlineHelloWorld, "0000", "0001", pktlineHelloWorld},
 		},
 		{
 			desc: "large input",
 			in:   "0010hello world!0000" + largestPacket + "0000",
-			out:  []string{"0010hello world!", "0000", largestPacket, "0000"},
+			out:  []string{pktlineHelloWorld, "0000", largestPacket, "0000"},
 		},
 		{
 			desc: "missing byte middle",
 			in:   "0010hello world!00000010010hello world!",
-			out:  []string{"0010hello world!", "0000", "0010010hello wor"},
+			out:  []string{pktlineHelloWorld, "0000", "0010010hello wor"},
 			fail: true,
 		},
 		{
 			desc: "unfinished prefix",
 			in:   "0010hello world!000",
-			out:  []string{"0010hello world!"},
+			out:  []string{pktlineHelloWorld},
 			fail: true,
 		},
 		{
 			desc: "short read in data, only prefix",
 			in:   "0010hello world!0005",
-			out:  []string{"0010hello world!"},
+			out:  []string{pktlineHelloWorld},
 			fail: true,
 		},
 	}

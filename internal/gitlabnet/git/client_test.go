@@ -13,6 +13,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 )
 
+const infoRefsPath = "/info/refs"
+
 var customHeaders = map[string]string{
 	"Authorization": "Bearer: token",
 	"Header-One":    "Value-Two",
@@ -94,7 +96,7 @@ func TestSSHReceivePack(t *testing.T) {
 func TestFailedHTTPRequest(t *testing.T) {
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/info/refs",
+			Path: infoRefsPath,
 			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusBadRequest)
 				w.Write([]byte("You are not allowed to upload code."))
@@ -123,7 +125,7 @@ func TestFailedHTTPRequest(t *testing.T) {
 func TestFailedErrorReadRequest(t *testing.T) {
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/info/refs",
+			Path: infoRefsPath,
 			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				// Simulate a read error by saying Content-Length is larger than actual content.
 				w.Header().Set("Content-Length", "1")
@@ -154,7 +156,7 @@ func TestFailedErrorReadRequest(t *testing.T) {
 func setup(t *testing.T) *Client {
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/info/refs",
+			Path: infoRefsPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, customHeaders["Authorization"], r.Header.Get("Authorization"))
 				assert.Equal(t, customHeaders["Header-One"], r.Header.Get("Header-One"))

@@ -16,6 +16,13 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/discover"
 )
 
+const (
+	successResponse     = "success"
+	readAPIScope        = "read_api"
+	apiScope            = "api"
+	readRepositoryScope = "read_repository"
+)
+
 var (
 	requests []testserver.TestRequestHandler
 )
@@ -36,16 +43,16 @@ func initialize(t *testing.T) {
 				switch requestBody.KeyID {
 				case "0":
 					body := map[string]interface{}{
-						"success":    true,
-						"token":      "aAY1G3YPeemECgUvxuXY",
-						"scopes":     [2]string{"read_api", "read_repository"},
-						"expires_at": "9001-11-17",
+						successResponse: true,
+						"token":         "aAY1G3YPeemECgUvxuXY",
+						"scopes":        [2]string{readAPIScope, readRepositoryScope},
+						"expires_at":    "9001-11-17",
 					}
 					json.NewEncoder(w).Encode(body)
 				case "1":
 					body := map[string]interface{}{
-						"success": false,
-						"message": "missing user",
+						successResponse: false,
+						"message":       "missing user",
 					}
 					json.NewEncoder(w).Encode(body)
 				case "2":
@@ -62,10 +69,10 @@ func initialize(t *testing.T) {
 
 				if requestBody.UserID == 1 {
 					body := map[string]interface{}{
-						"success":    true,
-						"token":      "YXuxvUgCEmeePY3G1YAa",
-						"scopes":     [1]string{"api"},
-						"expires_at": nil,
+						successResponse: true,
+						"token":         "YXuxvUgCEmeePY3G1YAa",
+						"scopes":        [1]string{apiScope},
+						"expires_at":    nil,
 					}
 					json.NewEncoder(w).Encode(body)
 				}
@@ -90,13 +97,13 @@ func TestGetPersonalAccessTokenByKeyId(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabKeyID: "0"}
 	result, err := client.GetPersonalAccessToken(
-		context.Background(), args, "newtoken", &[]string{"read_api", "read_repository"}, "",
+		context.Background(), args, "newtoken", &[]string{readAPIScope, readRepositoryScope}, "",
 	)
 	require.NoError(t, err)
 	response := &Response{
 		true,
 		"aAY1G3YPeemECgUvxuXY",
-		[]string{"read_api", "read_repository"},
+		[]string{readAPIScope, readRepositoryScope},
 		"9001-11-17",
 		"",
 	}
@@ -108,10 +115,10 @@ func TestGetRecoveryCodesByUsername(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabUsername: "jane-doe"}
 	result, err := client.GetPersonalAccessToken(
-		context.Background(), args, "newtoken", &[]string{"api"}, "",
+		context.Background(), args, "newtoken", &[]string{apiScope}, "",
 	)
 	require.NoError(t, err)
-	response := &Response{true, "YXuxvUgCEmeePY3G1YAa", []string{"api"}, "", ""}
+	response := &Response{true, "YXuxvUgCEmeePY3G1YAa", []string{apiScope}, "", ""}
 	require.Equal(t, response, result)
 }
 
@@ -120,7 +127,7 @@ func TestMissingUser(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabKeyID: "1"}
 	_, err := client.GetPersonalAccessToken(
-		context.Background(), args, "newtoken", &[]string{"api"}, "",
+		context.Background(), args, "newtoken", &[]string{apiScope}, "",
 	)
 	require.Equal(t, "missing user", err.Error())
 }
@@ -154,7 +161,7 @@ func TestErrorResponses(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			args := &commandargs.Shell{GitlabKeyID: tc.fakeID}
 			resp, err := client.GetPersonalAccessToken(
-				context.Background(), args, "newtoken", &[]string{"api"}, "",
+				context.Background(), args, "newtoken", &[]string{apiScope}, "",
 			)
 
 			require.EqualError(t, err, tc.expectedError)

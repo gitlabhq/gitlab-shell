@@ -19,20 +19,26 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const (
+	groupNamespace = "group"
+	cell2Addr      = "cell-2:8080"
+	janeDoe        = "jane-doe"
+)
+
 func TestExtractTopLevelNamespace(t *testing.T) {
 	tests := []struct {
 		input string
 		want  string
 	}{
-		{"group/project.git", "group"},
-		{"/group/project.git", "group"},
-		{"group/sub/project.git", "group"},
+		{"group/project.git", groupNamespace},
+		{"/group/project.git", groupNamespace},
+		{"group/sub/project.git", groupNamespace},
 		{"", ""},
-		{"group", "group"},
+		{groupNamespace, groupNamespace},
 		{".git", ""},
-		{"//group/project.git", "group"},
-		{"///group/project.git", "group"},
-		{"//group", "group"},
+		{"//group/project.git", groupNamespace},
+		{"///group/project.git", groupNamespace},
+		{"//group", groupNamespace},
 	}
 
 	for _, tc := range tests {
@@ -54,7 +60,7 @@ func TestResolve(t *testing.T) {
 			mock: &topologytest.MockClassifyServer{
 				Response: &pb.ClassifyResponse{
 					Action: pb.ClassifyAction_PROXY,
-					Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+					Proxy:  &pb.ProxyInfo{Address: cell2Addr},
 				},
 			},
 			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTP, Port: 8080},
@@ -83,7 +89,7 @@ func TestResolve(t *testing.T) {
 			mock: &topologytest.MockClassifyServer{
 				Response: &pb.ClassifyResponse{
 					Action: pb.ClassifyAction_PROXY,
-					Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+					Proxy:  &pb.ProxyInfo{Address: cell2Addr},
 				},
 			},
 			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8080},
@@ -94,7 +100,7 @@ func TestResolve(t *testing.T) {
 			mock: &topologytest.MockClassifyServer{
 				Response: &pb.ClassifyResponse{
 					Action: pb.ClassifyAction_PROXY,
-					Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+					Proxy:  &pb.ProxyInfo{Address: cell2Addr},
 				},
 			},
 			cellEndpoint: CellEndpointConfig{Scheme: schemeHTTPS, Port: 8181},
@@ -314,7 +320,7 @@ func TestResolveByRoute(t *testing.T) {
 		require.Equal(t, "http://cell-1:8080", result)
 
 		// Verify the claim sent to the server used just the top-level namespace
-		require.Equal(t, "group", mock.LastRequest.GetClaim().GetRoute())
+		require.Equal(t, groupNamespace, mock.LastRequest.GetClaim().GetRoute())
 	})
 
 	t.Run("empty repo path returns empty string", func(t *testing.T) {
@@ -368,7 +374,7 @@ func TestResolveRetry(t *testing.T) {
 				ErrUntilAttempt: 2,
 				Response: &pb.ClassifyResponse{
 					Action: pb.ClassifyAction_PROXY,
-					Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+					Proxy:  &pb.ProxyInfo{Address: cell2Addr},
 				},
 			},
 			expected:    "http://cell-2:8080",
@@ -473,7 +479,7 @@ func TestResolveBySSHKey(t *testing.T) {
 		mock := &topologytest.MockClassifyServer{
 			Response: &pb.ClassifyResponse{
 				Action: pb.ClassifyAction_PROXY,
-				Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+				Proxy:  &pb.ProxyInfo{Address: cell2Addr},
 			},
 		}
 		addr, stop := topologytest.StartMockServer(t, mock)
@@ -510,7 +516,7 @@ func TestResolveBySSHKey(t *testing.T) {
 		mock := &topologytest.MockClassifyServer{
 			Response: &pb.ClassifyResponse{
 				Action: pb.ClassifyAction_PROXY,
-				Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+				Proxy:  &pb.ProxyInfo{Address: cell2Addr},
 			},
 		}
 		addr, stop := topologytest.StartMockServer(t, mock)
@@ -534,7 +540,7 @@ func TestResolveBySSHFingerprint(t *testing.T) {
 		mock := &topologytest.MockClassifyServer{
 			Response: &pb.ClassifyResponse{
 				Action: pb.ClassifyAction_PROXY,
-				Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+				Proxy:  &pb.ProxyInfo{Address: cell2Addr},
 			},
 		}
 		addr, stop := topologytest.StartMockServer(t, mock)
@@ -570,7 +576,7 @@ func TestResolveBySSHFingerprint(t *testing.T) {
 		mock := &topologytest.MockClassifyServer{
 			Response: &pb.ClassifyResponse{
 				Action: pb.ClassifyAction_PROXY,
-				Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+				Proxy:  &pb.ProxyInfo{Address: cell2Addr},
 			},
 		}
 		addr, stop := topologytest.StartMockServer(t, mock)
@@ -594,7 +600,7 @@ func TestResolveByUserArgs(t *testing.T) {
 		mock := &topologytest.MockClassifyServer{
 			Response: &pb.ClassifyResponse{
 				Action: pb.ClassifyAction_PROXY,
-				Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+				Proxy:  &pb.ProxyInfo{Address: cell2Addr},
 			},
 		}
 		addr, stop := topologytest.StartMockServer(t, mock)
@@ -608,11 +614,11 @@ func TestResolveByUserArgs(t *testing.T) {
 		defer client.Close()
 
 		resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTP, Port: 8080})
-		result := resolver.resolveByUserArgs(context.Background(), UserArgs{Username: "jane-doe"})
+		result := resolver.resolveByUserArgs(context.Background(), UserArgs{Username: janeDoe})
 		require.Equal(t, "http://cell-2:8080", result)
 
 		// Verify the claim sent to the server used the username
-		require.Equal(t, "jane-doe", mock.LastRequest.GetClaim().GetUsername())
+		require.Equal(t, janeDoe, mock.LastRequest.GetClaim().GetUsername())
 	})
 
 	fallbackTests := []struct {
@@ -636,7 +642,7 @@ func TestResolveByUserArgs(t *testing.T) {
 		mock := &topologytest.MockClassifyServer{
 			Response: &pb.ClassifyResponse{
 				Action: pb.ClassifyAction_PROXY,
-				Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+				Proxy:  &pb.ProxyInfo{Address: cell2Addr},
 			},
 		}
 		addr, stop := topologytest.StartMockServer(t, mock)
@@ -659,7 +665,7 @@ func TestResolveByUserArgs(t *testing.T) {
 
 	t.Run("nil resolver returns empty string", func(t *testing.T) {
 		var resolver *Resolver
-		result := resolver.resolveByUserArgs(context.Background(), UserArgs{Username: "jane-doe"})
+		result := resolver.resolveByUserArgs(context.Background(), UserArgs{Username: janeDoe})
 		require.Empty(t, result)
 	})
 
@@ -667,7 +673,7 @@ func TestResolveByUserArgs(t *testing.T) {
 		mock := &topologytest.MockClassifyServer{
 			Response: &pb.ClassifyResponse{
 				Action: pb.ClassifyAction_PROXY,
-				Proxy:  &pb.ProxyInfo{Address: "cell-2:8080"},
+				Proxy:  &pb.ProxyInfo{Address: cell2Addr},
 			},
 		}
 		addr, stop := topologytest.StartMockServer(t, mock)
@@ -681,7 +687,7 @@ func TestResolveByUserArgs(t *testing.T) {
 		defer client.Close()
 
 		resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTPS, Port: 8080})
-		result := resolver.resolveByUserArgs(context.Background(), UserArgs{Username: "jane-doe"})
+		result := resolver.resolveByUserArgs(context.Background(), UserArgs{Username: janeDoe})
 		require.Equal(t, "https://cell-2:8080", result)
 	})
 }

@@ -16,6 +16,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/console"
 )
 
+const discoverCmd = "discover"
+
 type fakeChannel struct {
 	stdErr             io.ReadWriter
 	stdOut             io.ReadWriter
@@ -119,9 +121,9 @@ func TestHandleExec(t *testing.T) {
 			sentRequestName: "",
 		}, {
 			desc:               "valid payload",
-			payload:            ssh.Marshal(execRequest{Command: "discover"}),
+			payload:            ssh.Marshal(execRequest{Command: discoverCmd}),
 			expectedErr:        nil,
-			expectedExecCmd:    "discover",
+			expectedExecCmd:    discoverCmd,
 			sentRequestName:    "exit-status",
 			sentRequestPayload: ssh.Marshal(exitStatusReq{ExitStatus: 0}),
 		},
@@ -137,7 +139,7 @@ func TestHandleExec(t *testing.T) {
 					cfg:         &config.Config{GitlabURL: url},
 				},
 				{
-					gitlabUsername: "root",
+					gitlabUsername: rootUser,
 					cfg:            &config.Config{GitlabURL: url},
 				},
 				{
@@ -179,7 +181,7 @@ func TestHandleShell(t *testing.T) {
 			desc:              "fails to parse command",
 			cmd:               `\`,
 			errMsg:            "ERROR: Failed to parse command: Invalid SSH command: invalid command line string\n",
-			gitlabKeyID:       "root",
+			gitlabKeyID:       rootUser,
 			expectedErrString: "Invalid SSH command: invalid command line string",
 			expectedExitCode:  128,
 		},
@@ -187,13 +189,13 @@ func TestHandleShell(t *testing.T) {
 			desc:              "specified command is unknown",
 			cmd:               "unknown-command",
 			errMsg:            "ERROR: Unknown command: unknown-command\n",
-			gitlabKeyID:       "root",
+			gitlabKeyID:       rootUser,
 			expectedErrString: "Disallowed command",
 			expectedExitCode:  128,
 		},
 		{
 			desc:              "fails to parse command",
-			cmd:               "discover",
+			cmd:               discoverCmd,
 			gitlabKeyID:       "",
 			errMsg:            "ERROR: Failed to get username: who='' is invalid\n",
 			expectedErrString: "Failed to get username: who='' is invalid",
@@ -201,9 +203,9 @@ func TestHandleShell(t *testing.T) {
 		},
 		{
 			desc:                 "parses command",
-			cmd:                  "discover",
+			cmd:                  discoverCmd,
 			errMsg:               "",
-			gitlabKeyID:          "root",
+			gitlabKeyID:          rootUser,
 			expectedOutString:    "Welcome to GitLab, @test-user!\n",
 			expectedErrString:    "",
 			expectedExitCode:     0,
