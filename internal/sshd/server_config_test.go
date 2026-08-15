@@ -31,6 +31,7 @@ const (
 	rootUser            = "root"
 	sourceAddressExt    = "source-address"
 	testUser2           = "testuser"
+	testNamespaceValue  = "namespace"
 	parseCAKeyErr       = "failed to parse trusted user CA key in file"
 	keyIDFormatErr      = "certificate KeyId does not match GitLab username format"
 	keyIDConsecutiveErr = "certificate KeyId contains consecutive special characters"
@@ -280,7 +281,7 @@ func TestUserCertificateHandling(t *testing.T) {
 			expectedPermissions: &ssh.Permissions{
 				Extensions: map[string]string{
 					certPermUsername:  rootUser,
-					certPermNamespace: certPermNamespace,
+					certPermNamespace: testNamespaceValue,
 				},
 			},
 		}, {
@@ -302,7 +303,7 @@ func TestUserCertificateHandling(t *testing.T) {
 				CriticalOptions: map[string]string{sourceAddressExt: "10.0.0.0/8"},
 				Extensions: map[string]string{
 					certPermUsername:  rootUser,
-					certPermNamespace: certPermNamespace,
+					certPermNamespace: testNamespaceValue,
 				},
 			},
 		},

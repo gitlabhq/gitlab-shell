@@ -21,7 +21,7 @@ const (
 	repo  = "group/repo"
 
 	lfsUsername       = "john"
-	lfsToken          = "lfs_token"
+	lfsTokenKey       = "lfs_token"
 	lfsRepoURL        = "https://gitlab.com/repo/path"
 	expiresInKey      = "expires_in"
 	downloadOperation = "download"
@@ -48,7 +48,7 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 				case keyID:
 					body := map[string]interface{}{
 						usernameKey:     lfsUsername,
-						lfsToken:        someToken,
+						lfsTokenKey:     someToken,
 						repoHTTPPathKey: lfsRepoURL,
 						expiresInKey:    1800,
 					}
@@ -152,7 +152,7 @@ func TestAuthenticateWithCellAddress(t *testing.T) {
 		cellReceived = true
 		body := map[string]interface{}{
 			usernameKey:     lfsUsername,
-			lfsToken:        someToken,
+			lfsTokenKey:     someToken,
 			repoHTTPPathKey: lfsRepoURL,
 			expiresInKey:    1800,
 		}
@@ -165,7 +165,7 @@ func TestAuthenticateWithCellAddress(t *testing.T) {
 		defaultReceived = true
 		body := map[string]interface{}{
 			usernameKey:     lfsUsername,
-			lfsToken:        someToken,
+			lfsTokenKey:     someToken,
 			repoHTTPPathKey: lfsRepoURL,
 			expiresInKey:    1800,
 		}
