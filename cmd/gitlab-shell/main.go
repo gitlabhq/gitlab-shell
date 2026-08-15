@@ -10,7 +10,7 @@ import (
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
-	"gitlab.com/gitlab-org/labkit/fips"
+	"gitlab.com/gitlab-org/labkit/v2/fips"
 	"gitlab.com/gitlab-org/labkit/v2/log"
 
 	shellCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell/command"
@@ -72,7 +72,7 @@ func run() int {
 
 	cmdName := reflect.TypeOf(cmd).String()
 	slog.InfoContext(ctx, "gitlab-shell: main: executing command", slog.Any("env", env), slog.String("command", cmdName))
-	fips.Check()
+	fips.LogStatus(slog.Default())
 
 	if _, err := cmd.Execute(ctx); err != nil {
 		slog.WarnContext(ctx, "gitlab-shell: main: command execution failed", log.ErrorMessage(err.Error()))
