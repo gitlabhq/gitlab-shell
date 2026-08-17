@@ -111,7 +111,7 @@ func TestErrorMessage(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabKeyID: "1"}
 	err := client.VerifyOTP(context.Background(), args, otpAttempt)
-	require.Equal(t, "error message", err.Error())
+	require.EqualError(t, err, "error message")
 }
 
 func TestErrorResponses(t *testing.T) {
@@ -162,7 +162,7 @@ func TestErrorMessagePush(t *testing.T) {
 
 	args := &commandargs.Shell{GitlabKeyID: "1"}
 	err := client.PushAuth(context.Background(), args)
-	require.Equal(t, "error message", err.Error())
+	require.EqualError(t, err, "error message")
 }
 
 func TestErrorResponsesPush(t *testing.T) {
