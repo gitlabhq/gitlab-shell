@@ -160,12 +160,37 @@ if [[ -z "$started" ]]; then
 fi
 
 if [[ "$MODE" == "make-policy" ]]; then
-  "${SSH_AUDIT_CMD[@]}" --skip-rate-test -M "$POLICY_FILE" 127.0.0.1 -p "$PORT"
+  # ssh-audit -M refuses to overwrite an existing file, so generate into a temp
+  # file first.
+  generated="$WORKDIR/policy"
+  "${SSH_AUDIT_CMD[@]}" --skip-rate-test -M "$generated" 127.0.0.1 -p "$PORT"
 
-  # ssh-audit records a host_key_sizes line (and its comment). We do not pin
-  # host key sizes (see README), so drop them for a clean, reviewable policy.
-  grep -v -e '^host_key_sizes' -e '^# Dictionary containing all host key' \
-    "$POLICY_FILE" > "$POLICY_FILE.tmp" && mv "$POLICY_FILE.tmp" "$POLICY_FILE"
+  if [[ -f "$POLICY_FILE" ]]; then
+    # Update only the algorithm lines, preserving the policy's name, comments
+    # and allow_* settings. host_key_sizes is deliberately not pinned (see
+    # README), so it is not carried over.
+    host_keys_line="$(grep -E '^host keys = ' "$generated" || true)"
+    kex_line="$(grep -E '^key exchanges = ' "$generated" || true)"
+    ciphers_line="$(grep -E '^ciphers = ' "$generated" || true)"
+    macs_line="$(grep -E '^macs = ' "$generated" || true)"
+    for line in "$host_keys_line" "$kex_line" "$ciphers_line" "$macs_line"; do
+      [[ -n "$line" ]] || { echo "error: generated policy is missing an algorithm line" >&2; exit 1; }
+    done
+
+    awk -v host_keys="$host_keys_line" -v kex="$kex_line" \
+        -v ciphers="$ciphers_line" -v macs="$macs_line" '
+      /^host keys = /     { print host_keys; next }
+      /^key exchanges = / { print kex; next }
+      /^ciphers = /       { print ciphers; next }
+      /^macs = /          { print macs; next }
+      { print }
+    ' "$POLICY_FILE" > "$POLICY_FILE.tmp" && mv "$POLICY_FILE.tmp" "$POLICY_FILE"
+  else
+    # No existing policy: install the generated one, dropping the host_key_sizes
+    # line (and its comment) that ssh-audit records.
+    grep -v -e '^host_key_sizes' -e '^# Dictionary containing all host key' \
+      "$generated" > "$POLICY_FILE"
+  fi
 else
   "${SSH_AUDIT_CMD[@]}" --skip-rate-test -P "$POLICY_FILE" 127.0.0.1 -p "$PORT"
 fi
