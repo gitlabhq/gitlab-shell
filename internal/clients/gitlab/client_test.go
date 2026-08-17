@@ -401,6 +401,7 @@ func TestGet_NetworkErrorReturnsAPIError(t *testing.T) {
 
 	var apiErr *client.APIError
 	require.ErrorAs(t, err, &apiErr)
+	require.NotNil(t, apiErr)
 	require.Equal(t, "Internal API unreachable", apiErr.Msg)
 	require.Equal(t, 0, apiErr.StatusCode)
 	require.True(t, apiErr.System)
@@ -434,6 +435,7 @@ func TestGet_CanceledContextIsClientError(t *testing.T) {
 
 	var apiErr *client.APIError
 	require.ErrorAs(t, err, &apiErr)
+	require.NotNil(t, apiErr)
 	require.Equal(t, "Internal API unreachable", apiErr.Msg)
 	require.False(t, apiErr.System, "a canceled context is client-side and must not count as a System error")
 }
@@ -514,6 +516,7 @@ func TestParseJSON_4xxWithMessageReturnsAPIError(t *testing.T) {
 
 	var apiErr *client.APIError
 	require.ErrorAs(t, err, &apiErr)
+	require.NotNil(t, apiErr)
 	require.Equal(t, "Not allowed!", apiErr.Msg)
 }
 
@@ -526,5 +529,6 @@ func TestParseJSON_5xxWithoutMessageReturnsAPIError(t *testing.T) {
 
 	var apiErr *client.APIError
 	require.ErrorAs(t, err, &apiErr)
+	require.NotNil(t, apiErr)
 	require.Equal(t, "Internal API error (500)", apiErr.Msg)
 }

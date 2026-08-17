@@ -48,6 +48,7 @@ func TestHealthcheckClient_Check_NonOKStatus(t *testing.T) {
 
 	var apiErr *client.APIError
 	require.ErrorAs(t, err, &apiErr)
+	require.NotNil(t, apiErr)
 	require.Equal(t, "Internal API error (502)", apiErr.Msg)
 }
 

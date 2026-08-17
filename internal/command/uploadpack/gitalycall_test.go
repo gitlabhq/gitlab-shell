@@ -133,5 +133,7 @@ func TestUploadPackWithRetryConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "SSHUploadPackWithSidechannel: "+repo, output.String())
-	require.Equal(t, "retry-test", testServer.ReceivedMD["x-gitlab-correlation-id"][0])
+	correlationID := testServer.ReceivedMD["x-gitlab-correlation-id"]
+	require.NotEmpty(t, correlationID)
+	require.Equal(t, "retry-test", correlationID[0])
 }
