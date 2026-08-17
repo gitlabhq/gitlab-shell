@@ -21,7 +21,7 @@ version = 1
 allow_algorithm_subset_and_reordering = false
 
 # When false, the host key list must match exactly.  When true, the target host may support a subset of the specified host keys and/or the keys may appear in a different order.
-allow_hostkey_subset_and_reordering = true
+allow_hostkey_subset_and_reordering = false
 
 # When false, host keys, CA keys, and Diffie-Hellman key sizes must exactly match what's specified in this policy.  When true, target systems are allowed to have larger keys; this feature is useful for specifying a baseline and allowing some hosts the option to implement stricter controls.
 allow_larger_keys = false

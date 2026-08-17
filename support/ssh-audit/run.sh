@@ -35,6 +35,19 @@ if [[ -z "$MODE" || -z "$POLICY_FILE" ]]; then
   exit 2
 fi
 
+# Validate the arguments before doing any work (generating keys, booting the
+# server) so bad input fails fast.
+case "$MODE" in
+  check)
+    [[ -f "$POLICY_FILE" ]] || { echo "error: policy file $POLICY_FILE not found" >&2; exit 1; }
+    ;;
+  make-policy) ;;
+  *)
+    echo "error: unknown mode '$MODE' (use check|make-policy)" >&2
+    exit 2
+    ;;
+esac
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SSHD_BIN="${GITLAB_SSHD_BIN:-$ROOT_DIR/bin/gitlab-sshd}"
 HOST_KEY_TYPES="${SSH_AUDIT_HOST_KEY_TYPES:-rsa ecdsa ed25519}"
@@ -55,11 +68,15 @@ fi
 
 WORKDIR="$(mktemp -d)"
 SSHD_PID=""
-cleanup() {
+stop_server() {
   if [[ -n "$SSHD_PID" ]]; then
     kill "$SSHD_PID" 2>/dev/null || true
     wait "$SSHD_PID" 2>/dev/null || true
+    SSHD_PID=""
   fi
+}
+cleanup() {
+  stop_server
   rm -rf "$WORKDIR"
 }
 trap cleanup EXIT
@@ -126,11 +143,7 @@ for _ in 1 2 3 4 5; do
   fi
 
   # Reap the failed attempt's process before retrying or bailing out.
-  if [[ -n "$SSHD_PID" ]]; then
-    kill "$SSHD_PID" 2>/dev/null || true
-    wait "$SSHD_PID" 2>/dev/null || true
-    SSHD_PID=""
-  fi
+  stop_server
 
   if [[ $rc -eq 2 ]]; then
     echo "error: gitlab-sshd did not start listening on port $PORT" >&2
@@ -146,16 +159,13 @@ if [[ -z "$started" ]]; then
   exit 1
 fi
 
-case "$MODE" in
-  make-policy)
-    "${SSH_AUDIT_CMD[@]}" --skip-rate-test -M "$POLICY_FILE" 127.0.0.1 -p "$PORT"
-    ;;
-  check)
-    [[ -f "$POLICY_FILE" ]] || { echo "error: policy file $POLICY_FILE not found" >&2; exit 1; }
-    "${SSH_AUDIT_CMD[@]}" --skip-rate-test -P "$POLICY_FILE" 127.0.0.1 -p "$PORT"
-    ;;
-  *)
-    echo "error: unknown mode '$MODE' (use check|make-policy)" >&2
-    exit 2
-    ;;
-esac
+if [[ "$MODE" == "make-policy" ]]; then
+  "${SSH_AUDIT_CMD[@]}" --skip-rate-test -M "$POLICY_FILE" 127.0.0.1 -p "$PORT"
+
+  # ssh-audit records a host_key_sizes line (and its comment). We do not pin
+  # host key sizes (see README), so drop them for a clean, reviewable policy.
+  grep -v -e '^host_key_sizes' -e '^# Dictionary containing all host key' \
+    "$POLICY_FILE" > "$POLICY_FILE.tmp" && mv "$POLICY_FILE.tmp" "$POLICY_FILE"
+else
+  "${SSH_AUDIT_CMD[@]}" --skip-rate-test -P "$POLICY_FILE" 127.0.0.1 -p "$PORT"
+fi
