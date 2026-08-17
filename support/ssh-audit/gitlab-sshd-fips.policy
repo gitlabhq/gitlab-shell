@@ -7,11 +7,13 @@
 # disappearing after a dependency bump fails the pipeline instead of shipping
 # unnoticed.
 #
-# Compared with the non-FIPS policy, labkit drops the X25519/ML-KEM key
-# exchanges (mlkem768x25519-sha256, curve25519-sha256 and its libssh alias);
-# ciphers and MACs are intentionally left untouched for backwards
-# compatibility. The ed25519 host key is omitted because ED25519 keys are not
-# usable under the FIPS crypto module (they are rejected at load time).
+# Compared with the non-FIPS policy, the FIPS build restricts the offered
+# algorithms to the FIPS-approved set: it drops the X25519/ML-KEM key exchanges
+# (mlkem768x25519-sha256, curve25519-sha256 and its libssh alias), the
+# ChaCha20-Poly1305 cipher, and every SHA-1-based algorithm
+# (diffie-hellman-group14-sha1, hmac-sha1, hmac-sha1-96). The ed25519 host key
+# is omitted because ED25519 keys are not usable under the FIPS crypto module
+# (they are rejected at load time).
 #
 # Regenerate after an intentional algorithm change with (in a FIPS build
 # environment, e.g. the CI FIPS image):
@@ -44,17 +46,17 @@ allow_larger_keys = false
 
 # host_key_sizes is intentionally omitted. The sizes are a property of the
 # throwaway keys the harness generates, not of the algorithm surface we care
-# about, and ssh-audit reports the RSA size as 0 against the FIPS (boringcrypto)
-# build, so pinning it is both irrelevant and environment-dependent.
+# about, and ssh-audit reports the RSA size as 0 against the FIPS build, so
+# pinning it is both irrelevant and environment-dependent.
 
 # The host key types that must match exactly (order matters).
 host keys = rsa-sha2-256, rsa-sha2-512, ssh-rsa, ecdsa-sha2-nistp256
 
 # The key exchange algorithms that must match exactly (order matters).
-key exchanges = ecdh-sha2-nistp256, ecdh-sha2-nistp384, ecdh-sha2-nistp521, diffie-hellman-group14-sha256, diffie-hellman-group14-sha1, kex-strict-s-v00@openssh.com
+key exchanges = ecdh-sha2-nistp256, ecdh-sha2-nistp384, ecdh-sha2-nistp521, diffie-hellman-group14-sha256, kex-strict-s-v00@openssh.com
 
 # The ciphers that must match exactly (order matters).
-ciphers = aes128-gcm@openssh.com, aes256-gcm@openssh.com, chacha20-poly1305@openssh.com, aes128-ctr, aes192-ctr, aes256-ctr
+ciphers = aes128-gcm@openssh.com, aes256-gcm@openssh.com, aes128-ctr, aes192-ctr, aes256-ctr
 
 # The MACs that must match exactly (order matters).
-macs = hmac-sha2-256-etm@openssh.com, hmac-sha2-512-etm@openssh.com, hmac-sha2-256, hmac-sha2-512, hmac-sha1, hmac-sha1-96
+macs = hmac-sha2-256-etm@openssh.com, hmac-sha2-512-etm@openssh.com, hmac-sha2-256, hmac-sha2-512
