@@ -19,7 +19,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	gitlab.com/gitlab-org/cells/topology-service v0.0.0-20260522095121-2c761c2e9850
 	gitlab.com/gitlab-org/gitaly/v18 v18.9.0-rc4
-	gitlab.com/gitlab-org/labkit v1.64.8
+	gitlab.com/gitlab-org/labkit v1.64.11
 	gitlab.com/gitlab-org/labkit/v2 v2.3.0
 	golang.org/x/crypto v0.54.0
 	golang.org/x/sync v0.22.0
