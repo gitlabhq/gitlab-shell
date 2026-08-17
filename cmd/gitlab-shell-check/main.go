@@ -33,22 +33,16 @@ func run() int {
 		ErrOut: os.Stderr,
 	}
 
-	exitOnError := func(err error, message string) int {
-		if err != nil {
-			_, _ = fmt.Fprintf(readWriter.ErrOut, "%s: %v\n", message, err)
-			return 1
-		}
-		return 0
-	}
-
 	executable, err := executable.New(executable.Healthcheck)
-	if code := exitOnError(err, "Failed to determine executable, exiting"); code != 0 {
-		return code
+	if err != nil {
+		_, _ = fmt.Fprintf(readWriter.ErrOut, "Failed to determine executable, exiting: %v\n", err)
+		return 1
 	}
 
 	config, err := config.NewFromDirExternal(executable.RootDir)
-	if code := exitOnError(err, "Failed to read config, exiting"); code != 0 {
-		return code
+	if err != nil {
+		_, _ = fmt.Fprintf(readWriter.ErrOut, "Failed to read config, exiting: %v\n", err)
+		return 1
 	}
 	defer config.Close() //nolint:errcheck
 
@@ -58,8 +52,9 @@ func run() int {
 	}
 
 	cmd, err := checkCmd.New(config, readWriter)
-	if code := exitOnError(err, "Failed to create command"); code != 0 {
-		return code
+	if err != nil {
+		_, _ = fmt.Fprintf(readWriter.ErrOut, "Failed to create command: %v\n", err)
+		return 1
 	}
 
 	ctx, finished := command.Setup(executable.Name, config)

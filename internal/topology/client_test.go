@@ -226,6 +226,19 @@ func TestClient_Classify(t *testing.T) {
 		require.Nil(t, result)
 		require.EqualError(t, err, "claim must not be nil")
 	})
+
+	t.Run("nil client returns error without panicking", func(t *testing.T) {
+		// NewClient returns nil when the Topology Service is disabled, so
+		// Classify must not panic on a nil receiver.
+		client := NewClient(&Config{Enabled: false})
+		require.Nil(t, client)
+
+		result, err := client.Classify(ctx, RouteClaim("test"))
+
+		require.Error(t, err)
+		require.Nil(t, result)
+		require.EqualError(t, err, "topology service is disabled")
+	})
 }
 
 func TestClient_ClassifyWithTLS(t *testing.T) {
