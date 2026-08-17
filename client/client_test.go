@@ -355,39 +355,11 @@ func TestRedirectsAreNotFollowed(t *testing.T) {
 func TestParseErrorClassification(t *testing.T) {
 	for _, tc := range []struct {
 		desc       string
-		status     int   // 0 simulates a connection failure (nil response, non-nil error)
-		respErr    error // request error to use when status == 0; defaults to a connection-refused error
+		status     int
 		body       string
 		wantSystem bool
 		wantCode   int
 	}{
-		{
-			desc:       "connection failure is a system error",
-			status:     0,
-			wantSystem: true,
-			wantCode:   0,
-		},
-		{
-			desc:       "canceled context is a client-side error",
-			status:     0,
-			respErr:    context.Canceled,
-			wantSystem: false,
-			wantCode:   0,
-		},
-		{
-			desc:       "wrapped canceled context is a client-side error",
-			status:     0,
-			respErr:    fmt.Errorf("Get %q: %w", "http://example.com", context.Canceled),
-			wantSystem: false,
-			wantCode:   0,
-		},
-		{
-			desc:       "deadline exceeded is a system error",
-			status:     0,
-			respErr:    context.DeadlineExceeded,
-			wantSystem: true,
-			wantCode:   0,
-		},
 		{
 			desc:       "4xx with a structured message is a policy response",
 			status:     http.StatusForbidden,
@@ -431,27 +403,68 @@ func TestParseErrorClassification(t *testing.T) {
 		},
 	} {
 		t.Run(tc.desc, func(t *testing.T) {
-			var resp *http.Response
-			var respErr error
-			if tc.status == 0 {
-				respErr = tc.respErr
-				if respErr == nil {
-					respErr = errors.New("dial tcp: connection refused")
-				}
-			} else {
-				resp = &http.Response{
-					StatusCode: tc.status,
-					Header:     http.Header{},
-					Body:       io.NopCloser(strings.NewReader(tc.body)),
-				}
+			resp := &http.Response{
+				StatusCode: tc.status,
+				Header:     http.Header{},
+				Body:       io.NopCloser(strings.NewReader(tc.body)),
 			}
 
-			err := parseError(resp, respErr)
+			err := parseError(resp)
 
 			var apiErr *APIError
 			require.ErrorAs(t, err, &apiErr)
 			require.Equal(t, tc.wantSystem, apiErr.System)
 			require.Equal(t, tc.wantCode, apiErr.StatusCode)
+		})
+	}
+}
+
+func TestCheckResponseTransportErrorClassification(t *testing.T) {
+	for _, tc := range []struct {
+		desc       string
+		response   *http.Response
+		respErr    error
+		wantSystem bool
+	}{
+		{
+			desc:       "connection failure is a system error",
+			respErr:    errors.New("dial tcp: connection refused"),
+			wantSystem: true,
+		},
+		{
+			desc:       "canceled context is a client-side error",
+			respErr:    context.Canceled,
+			wantSystem: false,
+		},
+		{
+			desc:       "wrapped canceled context is a client-side error",
+			respErr:    fmt.Errorf("Get %q: %w", "http://example.com", context.Canceled),
+			wantSystem: false,
+		},
+		{
+			desc:       "deadline exceeded is a system error",
+			respErr:    context.DeadlineExceeded,
+			wantSystem: true,
+		},
+		{
+			desc: "transport error discards a non-nil response",
+			response: &http.Response{
+				StatusCode: http.StatusForbidden,
+				Header:     http.Header{},
+				Body:       io.NopCloser(strings.NewReader(`{"message":"access denied"}`)),
+			},
+			respErr:    errors.New("dial tcp: connection refused"),
+			wantSystem: true,
+		},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			resp, err := checkResponse(tc.response, tc.respErr) //nolint:bodyclose // transport-error path always returns a nil response
+
+			require.Nil(t, resp)
+			var apiErr *APIError
+			require.ErrorAs(t, err, &apiErr)
+			require.Equal(t, tc.wantSystem, apiErr.System)
+			require.Zero(t, apiErr.StatusCode)
 		})
 	}
 }

@@ -111,17 +111,20 @@ type ListLocksVerifyResponse struct {
 }
 
 // ClientHeader specifies the content type for Git LFS JSON requests.
-var ClientHeader = "application/vnd.git-lfs+json"
+const ClientHeader = "application/vnd.git-lfs+json"
 
 // NewClient creates a new Client instance using the provided configuration and credentials.
 func NewClient(config *config.Config, args *commandargs.Shell, href string, auth string) (*Client, error) {
 	return &Client{config: config, args: args, href: href, auth: auth, header: ClientHeader}, nil
 }
-func newHTTPRequest(method string, ref string, reader io.Reader) (*retryablehttp.Request, error) {
-	req, err := retryablehttp.NewRequest(method, ref, reader)
+func (c *Client) newAuthenticatedPostRequest(url string, body io.Reader) (*retryablehttp.Request, error) {
+	req, err := retryablehttp.NewRequest(http.MethodPost, url, body)
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Content-Type", c.header)
+	req.Header.Set("Authorization", c.auth)
+
 	return req, nil
 }
 
@@ -150,13 +153,11 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 
 	jsonReader := bytes.NewReader(jsonData)
 
-	req, err := newHTTPRequest(http.MethodPost, fmt.Sprintf("%s/objects/batch", c.href), jsonReader)
+	req, err := c.newAuthenticatedPostRequest(fmt.Sprintf("%s/objects/batch", c.href), jsonReader)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", c.header)
-	req.Header.Set("Authorization", c.auth)
 	client := newHTTPClient()
 
 	res, err := client.Do(req)
@@ -181,7 +182,7 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 
 // GetObject performs an HTTP GET request for the object
 func (c *Client) GetObject(_, href string, headers map[string]string) (io.ReadCloser, int64, error) {
-	req, err := newHTTPRequest(http.MethodGet, href, nil)
+	req, err := retryablehttp.NewRequest(http.MethodGet, href, nil)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -205,7 +206,7 @@ func (c *Client) GetObject(_, href string, headers map[string]string) (io.ReadCl
 
 // PutObject performs an HTTP PUT request for the object
 func (c *Client) PutObject(_, href string, headers map[string]string, r io.Reader) error {
-	req, err := newHTTPRequest(http.MethodPut, href, r)
+	req, err := retryablehttp.NewRequest(http.MethodPut, href, r)
 	if err != nil {
 		return err
 	}
@@ -246,13 +247,10 @@ func (c *Client) Lock(path, refname string) (*Lock, error) {
 	}
 	jsonReader := bytes.NewReader(jsonData)
 
-	req, err := newHTTPRequest(http.MethodPost, c.href+"/locks", jsonReader)
+	req, err := c.newAuthenticatedPostRequest(c.href+"/locks", jsonReader)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
-	req.Header.Set("Authorization", c.auth)
 
 	client := newHTTPClient()
 	res, err := client.Do(req)
@@ -304,13 +302,10 @@ func (c *Client) Unlock(id string, force bool, refname string) (*Lock, error) {
 	}
 	jsonReader := bytes.NewReader(jsonData)
 
-	req, err := newHTTPRequest(http.MethodPost, fmt.Sprintf("%s/locks/%s/unlock", c.href, id), jsonReader)
+	req, err := c.newAuthenticatedPostRequest(fmt.Sprintf("%s/locks/%s/unlock", c.href, id), jsonReader)
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("Content-Type", "application/vnd.git-lfs+json")
-	req.Header.Set("Authorization", c.auth)
 
 	client := newHTTPClient()
 	res, err := client.Do(req)
@@ -366,12 +361,10 @@ func (c *Client) ListLocksVerify(path, id, cursor string, limit int, ref string)
 	}
 	jsonReader := bytes.NewReader(jsonData)
 
-	req, err := newHTTPRequest(http.MethodPost, url.String(), jsonReader)
+	req, err := c.newAuthenticatedPostRequest(url.String(), jsonReader)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", c.header)
-	req.Header.Set("Authorization", c.auth)
 
 	client := newHTTPClient()
 	res, err := client.Do(req)

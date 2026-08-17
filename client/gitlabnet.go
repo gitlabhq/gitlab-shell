@@ -146,11 +146,7 @@ func newRequest(ctx context.Context, method, host, path string, data interface{}
 	return request, nil
 }
 
-func parseError(resp *http.Response, respErr error) error {
-	if resp == nil || respErr != nil {
-		return NewTransportAPIError(internalAPIUnreachable, respErr)
-	}
-
+func parseError(resp *http.Response) error {
 	// Redirects are never followed for internal API requests (see
 	// NewHTTPClientWithOpts). If one of the redirect status codes that Go's
 	// client would otherwise follow comes back, the request was misrouted to a
@@ -196,6 +192,16 @@ func parseError(resp *http.Response, respErr error) error {
 	}
 }
 
+func checkResponse(response *http.Response, respErr error) (*http.Response, error) {
+	if response == nil || respErr != nil {
+		return nil, NewTransportAPIError(internalAPIUnreachable, respErr)
+	}
+	if err := parseError(response); err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
 // Get makes a GET request
 func (c *GitlabNetClient) Get(ctx context.Context, path string) (*http.Response, error) {
 	return c.DoRequest(ctx, http.MethodGet, normalizePath(path), nil)
@@ -209,17 +215,7 @@ func (c *GitlabNetClient) Post(ctx context.Context, path string, data interface{
 // Do executes a request
 func (c *GitlabNetClient) Do(request *http.Request) (*http.Response, error) {
 	response, respErr := c.httpClient.RetryableHTTP.HTTPClient.Do(request) // #nosec G704 -- request is constructed by internal callers
-	if err := parseError(response, respErr); err != nil {
-		return nil, err
-	}
-	// parseError already returns an error when response is nil, so this branch is
-	// unreachable in practice. It is kept so callers (and static analysis) can
-	// rely on a non-nil response whenever the returned error is nil.
-	if response == nil {
-		return nil, NewTransportAPIError(internalAPIUnreachable, respErr)
-	}
-
-	return response, nil
+	return checkResponse(response, respErr)
 }
 
 // DoRequest executes a request with the given method, path, and data
@@ -250,17 +246,7 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	request.Header.Add("User-Agent", c.userAgent)
 
 	response, respErr := c.httpClient.RetryableHTTP.Do(request)
-	if err := parseError(response, respErr); err != nil {
-		return nil, err
-	}
-	// parseError already returns an error when response is nil, so this branch is
-	// unreachable in practice. It is kept so callers (and static analysis) can
-	// rely on a non-nil response whenever the returned error is nil.
-	if response == nil {
-		return nil, NewTransportAPIError(internalAPIUnreachable, respErr)
-	}
-
-	return response, nil
+	return checkResponse(response, respErr)
 }
 
 // ShellClaims extends RegisteredClaims with the gl_id field needed for
