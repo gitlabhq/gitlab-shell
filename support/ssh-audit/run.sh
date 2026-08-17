@@ -161,9 +161,10 @@ fi
 
 if [[ "$MODE" == "make-policy" ]]; then
   # ssh-audit -M refuses to overwrite an existing file, so generate into a temp
-  # file first.
+  # file first. Silence its "Wrote policy to <temp>" message, which is
+  # misleading here since we then update the real policy below.
   generated="$WORKDIR/policy"
-  "${SSH_AUDIT_CMD[@]}" --skip-rate-test -M "$generated" 127.0.0.1 -p "$PORT"
+  "${SSH_AUDIT_CMD[@]}" --skip-rate-test -M "$generated" 127.0.0.1 -p "$PORT" >/dev/null
 
   if [[ -f "$POLICY_FILE" ]]; then
     # Update only the algorithm lines, preserving the policy's name, comments
@@ -191,6 +192,8 @@ if [[ "$MODE" == "make-policy" ]]; then
     grep -v -e '^host_key_sizes' -e '^# Dictionary containing all host key' \
       "$generated" > "$POLICY_FILE"
   fi
+
+  echo "Wrote policy to $POLICY_FILE"
 else
   "${SSH_AUDIT_CMD[@]}" --skip-rate-test -P "$POLICY_FILE" 127.0.0.1 -p "$PORT"
 fi
