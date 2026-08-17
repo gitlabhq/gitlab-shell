@@ -528,8 +528,8 @@ gitlab.com/gitlab-org/gitaly/v18 v18.9.0-rc4 h1:2PQlCQF5ioVdmcjY6Ut8zxwFY2TIgHWn
 gitlab.com/gitlab-org/gitaly/v18 v18.9.0-rc4/go.mod h1:ijDPC9GyV3UdmrZG4LiBQJyMjOuzLcbH5AuQ8GpSSIk=
 gitlab.com/gitlab-org/go/reopen v1.0.0 h1:6BujZ0lkkjGIejTUJdNO1w56mN1SI10qcVQyQlOPM+8=
 gitlab.com/gitlab-org/go/reopen v1.0.0/go.mod h1:D6OID8YJDzEVZNYW02R/Pkj0v8gYFSIhXFTArAsBQw8=
-gitlab.com/gitlab-org/labkit v1.64.8 h1:YyYvCGf1Drkf4V+9b5hjLtOM2pOxnwDueOgR1g2/mfs=
-gitlab.com/gitlab-org/labkit v1.64.8/go.mod h1:ARZnzZ49zdjPQfoyaW8sEpZz2EDFXN4NKNblste8nhc=
+gitlab.com/gitlab-org/labkit v1.64.11 h1:DaFI+CU2IcILZ6tULuCOOHbjEh1R+orOrkdbWCgdiyw=
+gitlab.com/gitlab-org/labkit v1.64.11/go.mod h1:ARZnzZ49zdjPQfoyaW8sEpZz2EDFXN4NKNblste8nhc=
 gitlab.com/gitlab-org/labkit/v2 v2.3.0 h1:N8ULmZ9WoFOqs4dFKu8ENfN/MPgMFtZu7/qFsIBk1d0=
 gitlab.com/gitlab-org/labkit/v2 v2.3.0/go.mod h1:oeJFqS+ECV8nD+Iye0o4rDKJPS+4rVFvVzBmb+7DcxM=
 go.etcd.io/raft/v3 v3.6.0 h1:5NtvbDVYpnfZWcIHgGRk9DyzkBIXOi8j+DDp1IcnUWQ=
