@@ -51,16 +51,17 @@ FIPS (run in a FIPS build environment such as the CI FIPS image; a FIPS binary
 cannot be built on non-Linux/amd64 hosts):
 
 ```sh
-make ssh-audit-generate-policy FIPS_MODE=1 GOFIPS140=off \
+make ssh-audit-generate-policy FIPS_MODE=1 \
   SSH_AUDIT_POLICY=support/ssh-audit/gitlab-sshd-fips.policy \
   SSH_AUDIT_HOST_KEY_TYPES="rsa ecdsa"
 ```
 
-`GOFIPS140=off` forces a boringcrypto (golang-fips) build, matching the shipped
-Omnibus/CNG FIPS build. Go's native FIPS module (`GOFIPS140` set) makes
-x/crypto advertise a stricter set (no ChaCha20, no SHA-1), which does not
-reflect what ships today; the `ssh-audit:fips` CI job sets `GOFIPS140=off` for
-the same reason.
+The FIPS algorithm set comes from labkit's `v2/fips/sshalgo` package
+([labkit!608](https://gitlab.com/gitlab-org/labkit/-/merge_requests/608)). It
+excludes ChaCha20-Poly1305, the X25519 key exchanges, and ML-KEM768/X25519, and
+keeps the SHA-1 algorithms by default. ML-KEM768/X25519 is offered only on Go's
+native FIPS module; regenerate on the same backend the CI job builds so the set
+matches.
 
 The FIPS build omits the ed25519 host key on purpose: ED25519 keys are not
 usable under the FIPS crypto module and are rejected at load time
