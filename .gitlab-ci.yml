@@ -46,7 +46,7 @@ workflow:
 
 .rules:go-changes:
   rules:
-    - changes:
+    - changes: &go_change_paths
         - .gitlab-ci.yml
         - "go.mod"
         - "go.sum"
@@ -54,12 +54,9 @@ workflow:
 
 .rules:ssh-audit:
   rules:
+    - changes: *go_change_paths
     - changes:
-        - .gitlab-ci.yml
         - Makefile
-        - "go.mod"
-        - "go.sum"
-        - "**/*.go"
         - "support/ssh-audit/**/*"
 
 default:
