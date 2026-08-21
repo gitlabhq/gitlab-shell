@@ -10,8 +10,8 @@
 # Compared with the non-FIPS policy, the FIPS build (labkit v2 fips/sshalgo)
 # excludes the non-approved algorithms: ChaCha20-Poly1305 and the X25519
 # curve25519 key exchanges and its libssh alias. ML-KEM768/X25519
-# (mlkem768x25519-sha256) is offered on the native Go module, which is what CI
-# builds, but is excluded under BoringCrypto. The SHA-1 algorithms (hmac-sha1,
+# (mlkem768x25519-sha256) is not offered under BoringCrypto (the FIPS backend
+# used in CI). The SHA-1 algorithms (hmac-sha1,
 # hmac-sha1-96, diffie-hellman-group14-sha1) are still FIPS-approved and offered
 # by default. The ed25519 host key is omitted because ED25519 keys are not
 # usable under the FIPS crypto module (they are rejected at load time).
@@ -55,7 +55,7 @@ allow_larger_keys = false
 host keys = rsa-sha2-256, rsa-sha2-512, ssh-rsa, ecdsa-sha2-nistp256
 
 # The key exchange algorithms that must match exactly (order matters).
-key exchanges = mlkem768x25519-sha256, ecdh-sha2-nistp256, ecdh-sha2-nistp384, ecdh-sha2-nistp521, diffie-hellman-group14-sha256, diffie-hellman-group14-sha1, kex-strict-s-v00@openssh.com
+key exchanges = ecdh-sha2-nistp256, ecdh-sha2-nistp384, ecdh-sha2-nistp521, diffie-hellman-group14-sha256, diffie-hellman-group14-sha1, kex-strict-s-v00@openssh.com
 
 # The ciphers that must match exactly (order matters).
 ciphers = aes128-gcm@openssh.com, aes256-gcm@openssh.com, aes128-ctr, aes192-ctr, aes256-ctr

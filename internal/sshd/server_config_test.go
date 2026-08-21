@@ -334,8 +334,9 @@ func TestFipsDefaultAlgorithms(t *testing.T) {
 	require.Equal(t, algorithms.MACs, sshServerConfig.MACs)
 	require.Equal(t, algorithms.KeyExchanges, sshServerConfig.KeyExchanges)
 	require.Equal(t, algorithms.Ciphers, sshServerConfig.Ciphers)
-	// PublicKeyAuths is set at handshake time and by default includes ssh-rsa and ssh-dss
-	require.Empty(t, algorithms.PublicKeyAuths)
+	// sshalgo.DefaultAlgorithms() explicitly sets PublicKeyAuths to the FIPS-approved
+	// host key algorithms, excluding non-approved types such as ssh-ed25519.
+	require.NotEmpty(t, algorithms.PublicKeyAuths)
 
 	sshServerConfig.SetDefaults()
 
