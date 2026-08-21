@@ -72,7 +72,9 @@ func run() int {
 
 	cmdName := reflect.TypeOf(cmd).String()
 	slog.InfoContext(ctx, "gitlab-shell: main: executing command", slog.Any("env", env), slog.String("command", cmdName))
-	fips.LogStatus(slog.Default())
+	if fips.Enabled() {
+		fips.LogStatus(slog.Default())
+	}
 
 	if _, err := cmd.Execute(ctx); err != nil {
 		slog.WarnContext(ctx, "gitlab-shell: main: command execution failed", log.ErrorMessage(err.Error()))
