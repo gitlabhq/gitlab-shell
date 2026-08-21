@@ -389,8 +389,10 @@ func (s *serverConfig) get(parentCtx context.Context, outcome *connOutcome) *ssh
 		//
 		// Right now we use sshalgo.DefaultAlgorithms() instead of sshalgo.SupportedAlgorithms()
 		// to preserve backwards compatibility with clients that are not configured properly.
-		// sshalgo.DefaultAlgorithms() still allows ssh-rsa and ssh-dss. Admins can lock down
-		// these algorithms by setting `public_key_algorithms`.
+		// As of labkit v2, DefaultAlgorithms() returns a populated, FIPS-filtered
+		// pubkey-auth set (v1 left it empty, so the policy never applied), which
+		// drops the SHA-1 ssh-rsa and ssh-dss signature algorithms. Admins can
+		// further lock down these algorithms by setting `public_key_algorithms`.
 		algorithms := sshalgo.DefaultAlgorithms()
 		sshCfg.PublicKeyAuthAlgorithms = algorithms.PublicKeyAuths
 		sshCfg.Ciphers = algorithms.Ciphers
