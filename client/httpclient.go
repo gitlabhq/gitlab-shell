@@ -129,6 +129,7 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	c.Logger = nil
 	c.HTTPClient.Transport = NewTransport(transport)
 	c.HTTPClient.Timeout = readTimeout(readTimeoutSeconds)
+	c.PrepareRetry = refreshJWTBeforeRetry
 
 	// The internal API (/api/v4/internal/*) must never be redirected. Go's
 	// default redirect policy follows 3xx responses and, on a 301/302/303,

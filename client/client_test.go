@@ -104,6 +104,57 @@ func TestClients(t *testing.T) {
 	}
 }
 
+func TestJWTHeaderRefreshesOnRateLimitRetry(t *testing.T) {
+	var attempts int32
+	var tokens [2]string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempt := atomic.AddInt32(&attempts, 1) - 1
+		tokens[attempt] = r.Header.Get(apiSecretHeaderName)
+		if attempt == 0 {
+			w.Header().Set("Retry-After", "1")
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+
+		fmt.Fprint(w, "ok")
+	}))
+	defer server.Close()
+
+	httpClient, err := NewHTTPClientWithOpts(server.URL, "", "", "", 5, []HTTPClientOpt{WithHTTPRetryOpts(time.Second, time.Second, 1)})
+	require.NoError(t, err)
+	client, err := NewGitlabNetClient("", "", secret, httpClient)
+	require.NoError(t, err)
+
+	response, err := client.Get(context.Background(), "/rate_limited")
+	require.NoError(t, err)
+	defer response.Body.Close()
+	require.Equal(t, "ok", mustReadBody(t, response))
+	require.EqualValues(t, 2, attempts)
+	require.NotEqual(t, tokens[0], tokens[1], "the retry must not reuse the original JWT")
+
+	firstClaims := parseJWTClaims(t, tokens[0])
+	secondClaims := parseJWTClaims(t, tokens[1])
+	require.True(t, secondClaims.IssuedAt.Time.After(firstClaims.IssuedAt.Time))
+}
+
+func mustReadBody(t *testing.T, response *http.Response) string {
+	t.Helper()
+	body, err := io.ReadAll(response.Body)
+	require.NoError(t, err)
+	return string(body)
+}
+
+func parseJWTClaims(t *testing.T, tokenString string) *jwt.RegisteredClaims {
+	t.Helper()
+	claims := &jwt.RegisteredClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(_ *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	})
+	require.NoError(t, err)
+	require.True(t, token.Valid)
+	return claims
+}
+
 func testSuccessfulGet(t *testing.T, client *GitlabNetClient) {
 	t.Run("Successful get", func(t *testing.T) {
 		response, err := client.Get(context.Background(), "/hello")
