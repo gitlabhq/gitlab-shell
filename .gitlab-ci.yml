@@ -19,18 +19,17 @@ variables:
   FF_USE_FASTZIP: "true"
   TRANSFER_METER_FREQUENCY: "1s"
   GOPATH: $CI_PROJECT_DIR/.GOPATH
-  DEBIAN_VERSION: "bookworm"
+  DEBIAN_VERSION: "trixie"
   POLICY: pull
   CI_DEBUG_SERVICES: "true"
   DOCKER_VERSION: "20.10.15"
   GO_VERSION: "1.25"
-  RUST_VERSION: "1.73"
-  UBI_VERSION: "9.7"
+  UBI_VERSION: "9.6"
   GITLAB_ADVANCED_SAST_ENABLED: "true"
-  IMAGE_TAG: "git-2.51"
-  DEFAULT_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${IMAGE_TAG}"
-  FIPS_IMAGE_TAG: "git-2.51"
-  FIPS_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${FIPS_IMAGE_TAG}"
+  IMAGE_TAG: "latest"
+  DEFAULT_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-golang-${GO_VERSION}:${IMAGE_TAG}"
+  FIPS_IMAGE_TAG: "latest"
+  FIPS_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-golang-${GO_VERSION}:${FIPS_IMAGE_TAG}"
   GOTOOLCHAIN: local
 
 workflow:
