@@ -134,7 +134,7 @@ func TestJWTHeaderRefreshesOnRateLimitRetry(t *testing.T) {
 
 	firstClaims := parseJWTClaims(t, tokens[0])
 	secondClaims := parseJWTClaims(t, tokens[1])
-	require.True(t, secondClaims.IssuedAt.Time.After(firstClaims.IssuedAt.Time))
+	require.True(t, secondClaims.IssuedAt.After(firstClaims.IssuedAt.Time))
 }
 
 func mustReadBody(t *testing.T, response *http.Response) string {
