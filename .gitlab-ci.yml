@@ -18,22 +18,19 @@ stages:
 variables:
   FF_USE_FASTZIP: "true"
   TRANSFER_METER_FREQUENCY: "1s"
-  BUNDLE_FROZEN: "true"
   GOPATH: $CI_PROJECT_DIR/.GOPATH
   DEBIAN_VERSION: "bookworm"
-  BUNDLE_PATH: vendor/ruby
   POLICY: pull
   CI_DEBUG_SERVICES: "true"
   DOCKER_VERSION: "20.10.15"
   GO_VERSION: "1.25"
-  RUBY_VERSION: "3.3.11"
-  RUST_VERSION: "1.89"
+  RUST_VERSION: "1.73"
   UBI_VERSION: "9.7"
   GITLAB_ADVANCED_SAST_ENABLED: "true"
-  IMAGE_TAG: "rubygems-3.6-git-2.51-exiftool-12.60"
-  DEFAULT_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-ruby-${RUBY_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${IMAGE_TAG}"
-  FIPS_IMAGE_TAG: "rubygems-3.6-git-2.51-exiftool-12.60"
-  FIPS_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-ruby-${RUBY_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${FIPS_IMAGE_TAG}"
+  IMAGE_TAG: "git-2.51"
+  DEFAULT_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/debian-${DEBIAN_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${IMAGE_TAG}"
+  FIPS_IMAGE_TAG: "git-2.51"
+  FIPS_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-golang-${GO_VERSION}-rust-${RUST_VERSION}:${FIPS_IMAGE_TAG}"
   GOTOOLCHAIN: local
 
 workflow:
@@ -114,7 +111,7 @@ modules:download:
   variables:
     GITALY_CONNECTION_INFO: '{"address":"tcp://gitaly:8075", "storage":"default"}'
   before_script:
-    # Set up the environment to run integration tests (still written in Ruby)
+    # Set up the environment to run integration tests
     - make build
     - cp config.yml.example config.yml
     - go version
