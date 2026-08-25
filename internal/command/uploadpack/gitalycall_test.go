@@ -81,7 +81,7 @@ func TestUploadPack(t *testing.T) {
 				require.Len(t, actual, 1)
 				require.Equal(t, v, actual[0])
 			}
-			require.Empty(t, testServer.ReceivedMD["some-other-ff"])
+			require.Empty(t, testServer.ReceivedMD["some-other-feature-flag"])
 			require.Equal(t, "a-correlation-id", testServer.ReceivedMD["x-gitlab-correlation-id"][0])
 		})
 	}
