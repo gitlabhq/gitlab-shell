@@ -1240,7 +1240,7 @@ func buildAllowedHandler(t *testing.T, gitalyAddress string) testserver.TestRequ
 					"features": map[string]string{
 						"gitaly-feature-cache_invalidator":        "true",
 						"gitaly-feature-inforef_uploadpack_cache": "false",
-						"some-other-ff":                           "true",
+						"some-other-feature-flag":                 "true",
 					},
 				},
 			}
