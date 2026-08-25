@@ -8,6 +8,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
@@ -66,29 +67,25 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 func (c *PullCommand) requestSSHUploadPack(ctx context.Context, client *git.Client) error {
 	slog.InfoContext(ctx, "Using Git over SSH upload pack")
 
-	// Fix for https://gitlab.com/gitlab-org/gitlab/-/work_items/584782:
-	// close the request body once negotiation ends instead of keeping it open
-	// (and thus subject to the primary's nginx client_body_timeout) for the whole
-	// pack transfer, which only flows on the response side.
-	pipeReader, pipeWriter := io.Pipe()
-	go c.readFromStdin(pipeWriter)
-
-	response, err := client.SSHUploadPack(ctx, pipeReader)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close() //nolint:errcheck
-
-	_, err = io.Copy(c.ReadWriter.Out, response.Body)
-
-	return err
+	return c.pipeUploadPack(ctx, client.SSHUploadPack)
 }
 
 func (c *PullCommand) requestUploadPack(ctx context.Context, client *git.Client) error {
+	return c.pipeUploadPack(ctx, client.UploadPack)
+}
+
+// pipeUploadPack streams the client's stdin into an upload-pack request via
+// requestFn, then copies the response back to stdout.
+//
+// Fix for https://gitlab.com/gitlab-org/gitlab/-/work_items/584782:
+// readFromStdin closes the request body once negotiation ends instead of
+// keeping it open (and thus subject to the primary's nginx client_body_timeout)
+// for the whole pack transfer, which only flows on the response side.
+func (c *PullCommand) pipeUploadPack(ctx context.Context, requestFn func(context.Context, io.Reader) (*http.Response, error)) error {
 	pipeReader, pipeWriter := io.Pipe()
 	go c.readFromStdin(pipeWriter)
 
-	response, err := client.UploadPack(ctx, pipeReader)
+	response, err := requestFn(ctx, pipeReader)
 	if err != nil {
 		return err
 	}
