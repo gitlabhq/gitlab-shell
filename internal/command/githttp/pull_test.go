@@ -21,9 +21,11 @@ import (
 )
 
 const (
-	testInfoRefsPath       = "/info/refs"
-	testUnexpectedResponse = "unexpected response"
-	pktDelim               = "0001"
+	testInfoRefsPath        = "/info/refs"
+	testUnexpectedResponse  = "unexpected response"
+	pktDelim                = "0001"
+	testAuthorizationHeader = "Authorization"
+	testSSHUploadPackPath   = "/ssh-upload-pack"
 )
 
 var cloneResponse = `0090want 11d731b83788cd556abea7b465c6bee52d89923c multi_ack_detailed side-band-64k thin-pack ofs-delta deepen-since deepen-not agent=git/2.41.0
@@ -115,7 +117,7 @@ func TestPullExecuteWithSSHUploadPackProtocolV2LsRefs(t *testing.T) {
 	var body string
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/ssh-upload-pack",
+			Path: testSSHUploadPackPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
 				assert.NoError(t, err)
@@ -139,7 +141,7 @@ func TestPullExecuteWithSSHUploadPackProtocolV2LsRefs(t *testing.T) {
 				Data: accessverifier.CustomPayloadData{
 					PrimaryRepo:                     url,
 					GeoProxyFetchSSHDirectToPrimary: true,
-					RequestHeaders:                  map[string]string{"Authorization": testGitalyToken},
+					RequestHeaders:                  map[string]string{testAuthorizationHeader: testGitalyToken},
 				},
 			},
 		},
@@ -160,7 +162,7 @@ func TestPullExecuteWithSSHUploadPackProtocolV2Fetch(t *testing.T) {
 	var body string
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/ssh-upload-pack",
+			Path: testSSHUploadPackPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				b, err := io.ReadAll(r.Body)
 				assert.NoError(t, err)
@@ -184,7 +186,7 @@ func TestPullExecuteWithSSHUploadPackProtocolV2Fetch(t *testing.T) {
 				Data: accessverifier.CustomPayloadData{
 					PrimaryRepo:                     url,
 					GeoProxyFetchSSHDirectToPrimary: true,
-					RequestHeaders:                  map[string]string{"Authorization": testGitalyToken},
+					RequestHeaders:                  map[string]string{testAuthorizationHeader: testGitalyToken},
 				},
 			},
 		},
