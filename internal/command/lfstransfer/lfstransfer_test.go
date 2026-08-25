@@ -1130,7 +1130,7 @@ func listLocks(cursor string, limit int, refspec string, id string, path string)
 			LockInfo: &LockInfo{
 				ID:       lockID2,
 				Path:     filePath2,
-				LockedAt: time.Date(1955, 11, 12, 22, 04, 0, 0, time.UTC).Format(time.RFC3339),
+				LockedAt: time.Date(1955, 11, 12, 22, 4, 0, 0, time.UTC).Format(time.RFC3339),
 				Owner: &Owner{
 					Name: "marty",
 				},
