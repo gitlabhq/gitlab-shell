@@ -48,6 +48,11 @@ func PktDone() []byte {
 	return []byte("0009done\n")
 }
 
+// PktFlush returns the bytes for a flush packet.
+func PktFlush() []byte {
+	return []byte("0000")
+}
+
 func pktLineSplitter(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if len(data) < 4 {
 		if atEOF && len(data) > 0 {

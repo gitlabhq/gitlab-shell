@@ -155,9 +155,9 @@ func TestPullExecuteWithSSHUploadPackProtocolV2LsRefs(t *testing.T) {
 }
 
 // TestPullExecuteWithSSHUploadPackProtocolV2Fetch covers a multi-round `have`
-// negotiation under protocol v2. readFromStdin stops as soon as it forwards
-// the `done` line, so the trailing flush-pkt that real git sends after `done`
-// is never forwarded to the primary.
+// negotiation under protocol v2. readFromStdin stops once it forwards the
+// `done` line and injects the flush-pkt that must terminate a v2 fetch
+// request, so the forwarded body matches what real git sends byte for byte.
 func TestPullExecuteWithSSHUploadPackProtocolV2Fetch(t *testing.T) {
 	var body string
 	requests := []testserver.TestRequestHandler{
@@ -196,7 +196,7 @@ func TestPullExecuteWithSSHUploadPackProtocolV2Fetch(t *testing.T) {
 	}
 
 	require.NoError(t, cmd.Execute(context.Background()))
-	require.Equal(t, strings.TrimSuffix(fetchV2Request, flush), body)
+	require.Equal(t, fetchV2Request, body)
 }
 
 func TestPullExecuteWithFailedInfoRefs(t *testing.T) {
@@ -289,7 +289,7 @@ func setupPull(t *testing.T, uploadPackStatusCode int) string {
 				assert.NoError(t, err)
 				defer r.Body.Close()
 
-				assert.True(t, strings.HasSuffix(string(body), "0009done\n"))
+				assert.True(t, strings.HasSuffix(string(body), "0009done\n"+flush))
 
 				w.WriteHeader(uploadPackStatusCode)
 			},
@@ -308,7 +308,7 @@ func setupSSHPull(t *testing.T, uploadPackStatusCode int) string {
 				assert.NoError(t, err)
 				defer r.Body.Close()
 
-				assert.True(t, strings.HasSuffix(string(body), "0009done\n"))
+				assert.True(t, strings.HasSuffix(string(body), "0009done\n"+flush))
 				assert.Equal(t, testGitProtocolVersion, r.Header.Get("Git-Protocol"))
 				assert.Equal(t, testGitalyToken, r.Header.Get("Authorization"))
 

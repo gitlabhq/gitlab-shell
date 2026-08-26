@@ -108,6 +108,13 @@ func (c *PullCommand) readFromStdin(pw *io.PipeWriter) {
 		}
 
 		if pktline.IsDone(line) {
+			// Inject a flush packet: protocol v2 needs one to terminate the request,
+			// and upload-pack dies on EOF without it. We don't read one from the
+			// client because v0/v1 send no flush after done, which would block.
+			if _, err := pw.Write(pktline.PktFlush()); err != nil {
+				slog.Error("failed to write flush packet", log.ErrorMessage(err.Error()))
+			}
+
 			break
 		}
 	}
