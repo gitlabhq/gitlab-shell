@@ -7,6 +7,7 @@ package pktline
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -51,6 +52,71 @@ func PktDone() []byte {
 // PktFlush returns the bytes for a flush packet.
 func PktFlush() []byte {
 	return []byte("0000")
+}
+
+// IsReady detects the "ready" packet a protocol v2 fetch response sends once
+// negotiation has concluded without the client sending `done`. Only matches
+// the plaintext form: if a client ever negotiates the (currently
+// unreachable - unadvertised by upload-pack, unenabled in Gitaly/workhorse)
+// sideband-all capability, "ready" is sideband-wrapped and this stops
+// matching silently.
+func IsReady(pkt []byte) bool {
+	return bytes.Equal(pkt, PktReady())
+}
+
+// PktReady returns the bytes for a "ready" packet.
+func PktReady() []byte {
+	return []byte("000aready\n")
+}
+
+// ErrNotPktLine indicates the next 4 bytes of a ReadPkt caller's reader
+// aren't a valid pkt-line length prefix. Unlike other ReadPkt errors, r is
+// left untouched, so the caller can fall back to reading it directly (e.g.
+// via io.Copy) without losing any bytes - important for forwarding a
+// response that turns out not to be pkt-line framed after all, such as a
+// plain-text error appended past an already-committed response.
+var ErrNotPktLine = errors.New("pktline: not a pkt-line")
+
+// ReadPkt reads and returns exactly one raw pkt-line (the 4-byte hex length
+// prefix plus its payload) from r. Unlike NewScanner, this doesn't wrap r in
+// its own lookahead buffer, so once pkt-line-aware reading is no longer
+// needed the caller can keep reading r directly (e.g. via io.Copy) without
+// losing any bytes buffered ahead by a scanner.
+func ReadPkt(r *bufio.Reader) ([]byte, error) {
+	peeked, err := r.Peek(4)
+	if err != nil {
+		if len(peeked) > 0 {
+			// Fewer than 4 bytes left: too short to be a length prefix, but
+			// still real data (e.g. a truncated trailing message). Report
+			// ErrNotPktLine so the caller falls back to io.Copy instead of
+			// silently dropping it.
+			return nil, ErrNotPktLine
+		}
+		return nil, err
+	}
+	var prefix [4]byte
+	copy(prefix[:], peeked)
+
+	length, parseErr := strconv.ParseInt(string(prefix[:]), 16, 0)
+	if parseErr != nil || length < 0 || length > maxPktSize {
+		return nil, ErrNotPktLine
+	}
+
+	if _, err := r.Discard(4); err != nil {
+		return nil, err
+	}
+	if length < 4 {
+		// Special case: magic empty packet 0000, 0001, 0002 or 0003.
+		return prefix[:], nil
+	}
+
+	pkt := make([]byte, length)
+	copy(pkt, prefix[:])
+	if _, err := io.ReadFull(r, pkt[4:]); err != nil {
+		return nil, err
+	}
+
+	return pkt, nil
 }
 
 func pktLineSplitter(data []byte, atEOF bool) (advance int, token []byte, err error) {

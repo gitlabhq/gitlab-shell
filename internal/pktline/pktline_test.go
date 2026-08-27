@@ -1,10 +1,17 @@
 package pktline
 
 import (
+	"bufio"
+	"io"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	testNonSpecialPkt = "0008abcd"
+	testInvalidPkt    = "invalid packet"
 )
 
 var (
@@ -90,8 +97,8 @@ func TestIsFlush(t *testing.T) {
 		in    string
 		flush bool
 	}{
-		{in: "0008abcd", flush: false},
-		{in: "invalid packet", flush: false},
+		{in: testNonSpecialPkt, flush: false},
+		{in: testInvalidPkt, flush: false},
 		{in: "0000", flush: true},
 	}
 
@@ -102,13 +109,77 @@ func TestIsFlush(t *testing.T) {
 	}
 }
 
+func TestIsReady(t *testing.T) {
+	testCases := []struct {
+		in    string
+		ready bool
+	}{
+		{in: testNonSpecialPkt, ready: false},
+		{in: testInvalidPkt, ready: false},
+		{in: "000aready\n", ready: true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.in, func(t *testing.T) {
+			require.Equal(t, tc.ready, IsReady([]byte(tc.in)))
+		})
+	}
+}
+
+func TestReadPkt(t *testing.T) {
+	t.Run("reads a normal packet", func(t *testing.T) {
+		r := bufio.NewReader(strings.NewReader("0009done\nrest"))
+		pkt, err := ReadPkt(r)
+		require.NoError(t, err)
+		require.Equal(t, "0009done\n", string(pkt))
+
+		rest, err := io.ReadAll(r)
+		require.NoError(t, err)
+		require.Equal(t, "rest", string(rest))
+	})
+
+	t.Run("reads a special empty packet", func(t *testing.T) {
+		r := bufio.NewReader(strings.NewReader("0000rest"))
+		pkt, err := ReadPkt(r)
+		require.NoError(t, err)
+		require.Equal(t, "0000", string(pkt))
+	})
+
+	t.Run("EOF with nothing read", func(t *testing.T) {
+		r := bufio.NewReader(strings.NewReader(""))
+		_, err := ReadPkt(r)
+		require.ErrorIs(t, err, io.EOF)
+	})
+
+	t.Run("invalid length prefix leaves r untouched", func(t *testing.T) {
+		r := bufio.NewReader(strings.NewReader("fatal: not a pkt-line at all"))
+		_, err := ReadPkt(r)
+		require.ErrorIs(t, err, ErrNotPktLine)
+
+		// Nothing was consumed: the caller can still read everything.
+		rest, err := io.ReadAll(r)
+		require.NoError(t, err)
+		require.Equal(t, "fatal: not a pkt-line at all", string(rest))
+	})
+
+	t.Run("truncated payload after a valid length prefix is a real error", func(t *testing.T) {
+		// Unlike an invalid prefix, once the length is known to be valid the
+		// bytes are committed to being a pkt-line - a short payload means the
+		// stream itself is broken, so this is not ErrNotPktLine.
+		r := bufio.NewReader(strings.NewReader("0009do"))
+		_, err := ReadPkt(r)
+		require.Error(t, err)
+		require.NotErrorIs(t, err, ErrNotPktLine)
+	})
+}
+
 func TestIsDone(t *testing.T) {
 	testCases := []struct {
 		in   string
 		done bool
 	}{
-		{in: "0008abcd", done: false},
-		{in: "invalid packet", done: false},
+		{in: testNonSpecialPkt, done: false},
+		{in: testInvalidPkt, done: false},
 		{in: "0009done\n", done: true},
 		{in: "0001", done: false},
 	}
