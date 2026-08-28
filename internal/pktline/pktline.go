@@ -35,7 +35,7 @@ func IsRefRemoval(pkt []byte) bool {
 
 // IsFlush detects the special flush packet '0000'
 func IsFlush(pkt []byte) bool {
-	return bytes.Equal(pkt, []byte("0000"))
+	return bytes.Equal(pkt, PktFlush())
 }
 
 // IsDone detects the special done packet '0009done\n'

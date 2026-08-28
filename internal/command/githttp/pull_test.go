@@ -109,94 +109,63 @@ func TestPullExecuteWithSSHUploadPack(t *testing.T) {
 	require.Equal(t, "upload-pack-response", output.String())
 }
 
-// TestPullExecuteWithSSHUploadPackProtocolV2LsRefs covers the multi-command,
-// no-`done` case of protocol v2 (e.g. `git ls-remote`): readFromStdin only
-// stops on a `done` line, so with none present it should forward the whole
-// request, including the trailing flush-pkt, up to EOF.
-func TestPullExecuteWithSSHUploadPackProtocolV2LsRefs(t *testing.T) {
-	var body string
-	requests := []testserver.TestRequestHandler{
-		{
-			Path: testSSHUploadPackPath,
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				assert.NoError(t, err)
-				defer r.Body.Close()
-
-				body = string(b)
-				w.Write([]byte("upload-pack-response"))
-			},
-		},
+// TestPullExecuteWithSSHUploadPackProtocolV2 covers protocol v2 requests.
+// readFromStdin only stops on a `done` line, so ls-refs (which has none)
+// forwards up to EOF as-is, while fetch's multi-round `have` negotiation ends
+// with readFromStdin forwarding `done` and injecting the trailing flush-pkt
+// that must terminate the request. Either way, the forwarded body should
+// match what real git sends byte for byte.
+func TestPullExecuteWithSSHUploadPackProtocolV2(t *testing.T) {
+	testCases := []struct {
+		desc    string
+		request string
+	}{
+		{desc: "ls-refs (no done)", request: lsRefsV2Request},
+		{desc: "fetch (multi-round have negotiation)", request: fetchV2Request},
 	}
-	url := testserver.StartHTTPServer(t, requests)
 
-	output := &bytes.Buffer{}
-	input := strings.NewReader(lsRefsV2Request)
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			var body string
+			requests := []testserver.TestRequestHandler{
+				{
+					Path: testSSHUploadPackPath,
+					Handler: func(w http.ResponseWriter, r *http.Request) {
+						b, err := io.ReadAll(r.Body)
+						assert.NoError(t, err)
+						defer r.Body.Close()
 
-	cmd := &PullCommand{
-		Config:     &config.Config{GitlabURL: url},
-		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
-		Response: &accessverifier.Response{
-			Payload: accessverifier.CustomPayload{
-				Data: accessverifier.CustomPayloadData{
-					PrimaryRepo:                     url,
-					GeoProxyFetchSSHDirectToPrimary: true,
-					RequestHeaders:                  map[string]string{testAuthorizationHeader: testGitalyToken},
+						body = string(b)
+						w.Write([]byte("upload-pack-response"))
+					},
 				},
-			},
-		},
-		Args: &commandargs.Shell{
-			Env: sshenv.Env{GitProtocolVersion: testGitProtocolVersion},
-		},
-	}
+			}
+			url := testserver.StartHTTPServer(t, requests)
 
-	require.NoError(t, cmd.Execute(context.Background()))
-	require.Equal(t, lsRefsV2Request, body)
-}
+			output := &bytes.Buffer{}
+			input := strings.NewReader(tc.request)
 
-// TestPullExecuteWithSSHUploadPackProtocolV2Fetch covers a multi-round `have`
-// negotiation under protocol v2. readFromStdin stops once it forwards the
-// `done` line and injects the flush-pkt that must terminate a v2 fetch
-// request, so the forwarded body matches what real git sends byte for byte.
-func TestPullExecuteWithSSHUploadPackProtocolV2Fetch(t *testing.T) {
-	var body string
-	requests := []testserver.TestRequestHandler{
-		{
-			Path: testSSHUploadPackPath,
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				assert.NoError(t, err)
-				defer r.Body.Close()
-
-				body = string(b)
-				w.Write([]byte("upload-pack-response"))
-			},
-		},
-	}
-	url := testserver.StartHTTPServer(t, requests)
-
-	output := &bytes.Buffer{}
-	input := strings.NewReader(fetchV2Request)
-
-	cmd := &PullCommand{
-		Config:     &config.Config{GitlabURL: url},
-		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
-		Response: &accessverifier.Response{
-			Payload: accessverifier.CustomPayload{
-				Data: accessverifier.CustomPayloadData{
-					PrimaryRepo:                     url,
-					GeoProxyFetchSSHDirectToPrimary: true,
-					RequestHeaders:                  map[string]string{testAuthorizationHeader: testGitalyToken},
+			cmd := &PullCommand{
+				Config:     &config.Config{GitlabURL: url},
+				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
+				Response: &accessverifier.Response{
+					Payload: accessverifier.CustomPayload{
+						Data: accessverifier.CustomPayloadData{
+							PrimaryRepo:                     url,
+							GeoProxyFetchSSHDirectToPrimary: true,
+							RequestHeaders:                  map[string]string{testAuthorizationHeader: testGitalyToken},
+						},
+					},
 				},
-			},
-		},
-		Args: &commandargs.Shell{
-			Env: sshenv.Env{GitProtocolVersion: testGitProtocolVersion},
-		},
-	}
+				Args: &commandargs.Shell{
+					Env: sshenv.Env{GitProtocolVersion: testGitProtocolVersion},
+				},
+			}
 
-	require.NoError(t, cmd.Execute(context.Background()))
-	require.Equal(t, fetchV2Request, body)
+			require.NoError(t, cmd.Execute(context.Background()))
+			require.Equal(t, tc.request, body)
+		})
+	}
 }
 
 func TestPullExecuteWithFailedInfoRefs(t *testing.T) {
