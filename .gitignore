@@ -12,6 +12,7 @@
 /go_build
 /support/bin/golangci-*
 /support/bin/gotestsum-*
+/support/bin/ssh-audit-*
 authorized_keys.lock
 config.yml
 cover.out

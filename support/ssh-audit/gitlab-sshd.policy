@@ -1,0 +1,50 @@
+#
+# ssh-audit policy for gitlab-sshd's default (non-FIPS) algorithms.
+#
+# This is a generated snapshot of the key exchanges, ciphers, MACs and host key
+# algorithms a default gitlab-sshd build offers on the wire. It is checked in CI
+# (the `ssh-audit` job) so that an algorithm silently appearing or disappearing
+# after a dependency bump fails the pipeline instead of shipping unnoticed.
+#
+# Regenerate after an intentional algorithm change with:
+#   make ssh-audit-generate-policy
+# See support/ssh-audit/README.md for details.
+#
+
+# The name of this policy (displayed in the output during scans).  Must be in quotes.
+name = "gitlab-sshd default algorithms (non-FIPS)"
+
+# The version of this policy (displayed in the output during scans).  Not parsed, and may be any value, including strings.
+version = 1
+
+# When false, host keys, kex, ciphers, and MAC lists must match exactly.  When true, the target host may support a subset of the specified algorithms and/or algorithms may appear in a different order; this feature is useful for specifying a baseline and allowing some hosts the option to implement stricter controls.  A value of true automatically sets "allow_hostkey_subset_and_reordering" to true as well.
+allow_algorithm_subset_and_reordering = false
+
+# When false, the host key list must match exactly.  When true, the target host may support a subset of the specified host keys and/or the keys may appear in a different order.
+allow_hostkey_subset_and_reordering = false
+
+# When false, host keys, CA keys, and Diffie-Hellman key sizes must exactly match what's specified in this policy.  When true, target systems are allowed to have larger keys; this feature is useful for specifying a baseline and allowing some hosts the option to implement stricter controls.
+allow_larger_keys = false
+
+# The banner that must match exactly.  Commented out to ignore banners, since minor variability in the banner is sometimes normal.
+# banner = "SSH-2.0-GitLab-SSHD"
+
+# The compression options that must match exactly (order matters).  Commented out to ignore by default.
+# compressions = none
+
+# host_key_sizes is intentionally omitted. The sizes are a property of the
+# throwaway keys the harness generates, not of the algorithm surface we care
+# about, and ssh-audit reports the RSA size as 0 against the FIPS (boringcrypto)
+# build, so pinning it is both irrelevant and environment-dependent.
+
+# The host key types that must match exactly (order matters).
+host keys = rsa-sha2-256, rsa-sha2-512, ssh-rsa, ecdsa-sha2-nistp256, ssh-ed25519
+
+# The key exchange algorithms that must match exactly (order matters).
+key exchanges = mlkem768x25519-sha256, curve25519-sha256, curve25519-sha256@libssh.org, ecdh-sha2-nistp256, ecdh-sha2-nistp384, ecdh-sha2-nistp521, diffie-hellman-group14-sha256, diffie-hellman-group14-sha1, kex-strict-s-v00@openssh.com
+
+# The ciphers that must match exactly (order matters).
+ciphers = aes128-gcm@openssh.com, aes256-gcm@openssh.com, chacha20-poly1305@openssh.com, aes128-ctr, aes192-ctr, aes256-ctr
+
+# The MACs that must match exactly (order matters).
+macs = hmac-sha2-256-etm@openssh.com, hmac-sha2-512-etm@openssh.com, hmac-sha2-256, hmac-sha2-512, hmac-sha1, hmac-sha1-96
