@@ -42,11 +42,18 @@ workflow:
 
 .rules:go-changes:
   rules:
-    - changes:
+    - changes: &go_change_paths
         - .gitlab-ci.yml
         - "go.mod"
         - "go.sum"
         - "**/*.go"
+
+.rules:ssh-audit:
+  rules:
+    - changes: *go_change_paths
+    - changes:
+        - Makefile
+        - "support/ssh-audit/**/*"
 
 default:
   image: ${DEFAULT_IMAGE}
@@ -76,6 +83,17 @@ default:
     CACHE_COMPRESSION_LEVEL: "fastest"
   cache:
     - *cached_go
+
+# The pinned ssh-audit download, cached so the ssh-audit jobs do not depend on
+# github.com being reachable on every run. Keyed on the Makefile so bumping
+# SSH_AUDIT_VERSION invalidates it.
+.cached-ssh-audit: &cached_ssh_audit
+  key:
+    prefix: "ssh-audit"
+    files:
+      - Makefile
+  paths:
+    - support/bin/ssh-audit-*
 
 .cached-job:
   cache:
@@ -180,6 +198,39 @@ acceptance:
   rules: !reference [".rules:go-changes", rules]
   script:
     - make acceptance-test
+
+# Verify gitlab-sshd's negotiated SSH algorithms against a committed ssh-audit
+# policy so a dependency bump that silently adds or drops a cipher, key exchange
+# or MAC fails the pipeline. See support/ssh-audit/README.md.
+.ssh-audit-base:
+  stage: test
+  extends:
+    - .cached-go-job
+  needs: ["modules:download"]
+  rules: !reference [".rules:ssh-audit", rules]
+  # Overriding cache replaces the list inherited from .cached-go-job, so
+  # *cached_go must be listed again alongside the ssh-audit cache.
+  cache:
+    - *cached_go
+    - *cached_ssh_audit
+  script:
+    - make ssh-audit-test
+
+ssh-audit:
+  extends: .ssh-audit-base
+
+ssh-audit:fips:
+  extends: .ssh-audit-base
+  image: ${FIPS_IMAGE}
+  variables:
+    FIPS_MODE: 1
+    GOLANG_FIPS: 1
+    SSH_AUDIT_POLICY: support/ssh-audit/gitlab-sshd-fips.policy
+    SSH_AUDIT_HOST_KEY_TYPES: "rsa ecdsa"
+  before_script:
+    # The FIPS UBI image ships neither ssh-keygen (from openssh) nor python3,
+    # both of which the ssh-audit harness needs.
+    - dnf install -y openssh python3
 
 code_quality:
   stage: lint
