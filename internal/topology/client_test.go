@@ -14,11 +14,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	pb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
+	types_proto "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto/types/v1"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology/topologytest"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 )
 
 const localhostAddr = "localhost:9090"
@@ -128,9 +130,13 @@ func TestClient_Classify(t *testing.T) {
 		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
 		require.Equal(t, "cell-1.gitlab.com:443", result.GetProxy().GetAddress())
 
-		// Verify the request was constructed correctly
-		require.NotNil(t, mock.LastRequest.GetClassificationKey())
-		require.Equal(t, "my-group/my-project", mock.LastRequest.GetClaim().GetRoute())
+		// Verify the request was constructed correctly. The claim must be sent
+		// as a single-element `claims` fallback chain: the Topology Service
+		// removed the legacy singular `claim` field, and an empty chain makes
+		// the server fall back to type/value classification and reject the
+		// request with `InvalidArgument: invalid type: "UNSPECIFIED"`.
+		require.Len(t, mock.LastRequest.GetClaims(), 1)
+		require.Equal(t, "my-group/my-project", mock.LastClaim().GetRoute())
 		require.Equal(t, pb.ClassifyType_UNSPECIFIED, mock.LastRequest.GetType())
 		require.Empty(t, mock.LastRequest.GetValue())
 	})
@@ -152,7 +158,7 @@ func TestClient_Classify(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
-		require.Equal(t, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ", mock.LastRequest.GetClaim().GetSshKey())
+		require.Equal(t, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ", mock.LastClaim().GetSshKey())
 	})
 
 	t.Run("successful project ID claim returns proxy info", func(t *testing.T) {
@@ -172,7 +178,56 @@ func TestClient_Classify(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
-		require.Equal(t, int64(42), mock.LastRequest.GetClaim().GetProjectId())
+		require.Equal(t, int64(42), mock.LastClaim().GetProjectId())
+	})
+
+	// Regression test for the client/server proto skew that made every
+	// Classify call fail with `InvalidArgument: invalid type: "UNSPECIFIED"`
+	// on GitLab.com staging. The Topology Service removed the singular `claim`
+	// field (reserved 4) in favor of `repeated claims = 5`; a client that
+	// still populated the old field sent an effectively empty request, so the
+	// server fell through to type/value classification with an unset type.
+	//
+	// This asserts the wire contract the server actually relies on: `claims`
+	// is populated and `type`/`value` are left at their zero values so the
+	// claims path takes precedence.
+	t.Run("sends the claim via the claims chain, not type/value", func(t *testing.T) {
+		mock := &topologytest.MockClassifyServer{}
+		addr, stop := topologytest.StartMockServer(t, mock)
+		defer stop()
+
+		client := NewClient(&Config{
+			Enabled: true,
+			Address: addr,
+			Timeout: 5 * time.Second,
+		})
+		defer client.Close()
+
+		for name, claim := range map[string]*types_proto.Claim{
+			"route":           RouteClaim("my-group"),
+			"ssh_key":         SSHKeyClaim("ssh-rsa AAAAB3"),
+			"ssh_fingerprint": SSHFingerprintClaim("W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo"),
+			"project_id":      ProjectIDClaim(42),
+			"username":        UsernameClaim("jane.doe"),
+		} {
+			t.Run(name, func(t *testing.T) {
+				_, err := client.Classify(ctx, claim)
+				require.NoError(t, err)
+
+				// The claims chain carries the claim, and is within the
+				// server's 5-claim limit.
+				claims := mock.LastRequest.GetClaims()
+				require.Len(t, claims, 1)
+				require.LessOrEqual(t, len(claims), 5)
+				require.True(t, proto.Equal(claim, claims[0]),
+					"claim must be sent unmodified in the claims chain")
+
+				// type/value must stay unset so the server takes the claims
+				// path; a populated `type` would change classification.
+				require.Equal(t, pb.ClassifyType_UNSPECIFIED, mock.LastRequest.GetType())
+				require.Empty(t, mock.LastRequest.GetValue())
+			})
+		}
 	})
 
 	t.Run("server error is propagated", func(t *testing.T) {

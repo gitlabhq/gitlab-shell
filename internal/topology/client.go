@@ -98,10 +98,11 @@ func (c *Client) Classify(ctx context.Context, claim *types_proto.Claim) (resp *
 	ctx, cancel := context.WithTimeout(ctx, c.config.Timeout)
 	defer cancel()
 
+	// The Topology Service takes an ordered fallback chain of claims and
+	// returns the cell for the first claim that resolves. We send a
+	// single-element chain: GitLab Shell resolves one claim at a time.
 	req := &pb.ClassifyRequest{
-		ClassificationKey: &pb.ClassifyRequest_Claim{
-			Claim: claim,
-		},
+		Claims: []*types_proto.Claim{claim},
 	}
 
 	resp, err = client.Classify(ctx, req)

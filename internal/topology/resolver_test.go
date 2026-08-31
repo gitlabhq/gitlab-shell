@@ -320,7 +320,7 @@ func TestResolveByRoute(t *testing.T) {
 		require.Equal(t, "http://cell-1:8080", result)
 
 		// Verify the claim sent to the server used just the top-level namespace
-		require.Equal(t, groupNamespace, mock.LastRequest.GetClaim().GetRoute())
+		require.Equal(t, groupNamespace, mock.LastClaim().GetRoute())
 	})
 
 	t.Run("empty repo path returns empty string", func(t *testing.T) {
@@ -497,7 +497,7 @@ func TestResolveBySSHKey(t *testing.T) {
 		require.Equal(t, "http://cell-2:8080", result)
 
 		// Verify the claim sent to the server used the SSH key
-		require.Equal(t, "ssh-rsa AAAAB3...", mock.LastRequest.GetClaim().GetSshKey())
+		require.Equal(t, "ssh-rsa AAAAB3...", mock.LastClaim().GetSshKey())
 	})
 
 	t.Run("empty key returns empty string", func(t *testing.T) {
@@ -557,7 +557,7 @@ func TestResolveBySSHFingerprint(t *testing.T) {
 		result := resolver.resolveBySSHFingerprint(context.Background(), "W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo")
 		require.Equal(t, "http://cell-2:8080", result)
 
-		require.Equal(t, "W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo", mock.LastRequest.GetClaim().GetSshKeyFingerprint())
+		require.Equal(t, "W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo", mock.LastClaim().GetSshKeyFingerprint())
 	})
 
 	t.Run("empty fingerprint returns empty string", func(t *testing.T) {
@@ -618,7 +618,7 @@ func TestResolveByUserArgs(t *testing.T) {
 		require.Equal(t, "http://cell-2:8080", result)
 
 		// Verify the claim sent to the server used the username
-		require.Equal(t, janeDoe, mock.LastRequest.GetClaim().GetUsername())
+		require.Equal(t, janeDoe, mock.LastClaim().GetUsername())
 	})
 
 	fallbackTests := []struct {
