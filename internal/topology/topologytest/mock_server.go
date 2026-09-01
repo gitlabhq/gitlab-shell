@@ -35,14 +35,12 @@ type MockClassifyServer struct {
 	ErrUntilAttempt int
 }
 
-// LastClaim returns the first claim of the most recent ClassifyRequest's
-// fallback chain, or nil when no request has been received or the chain is
-// empty. GitLab Shell sends a single-element chain, so this is the claim under
-// test.
-func (m *MockClassifyServer) LastClaim() *types_proto.Claim {
-	if m.LastRequest == nil || len(m.LastRequest.GetClaims()) == 0 {
-		return nil
-	}
+// LastClaim returns the first claim from the most recent request.
+func (m *MockClassifyServer) LastClaim(t *testing.T) *types_proto.Claim {
+	t.Helper()
+	require.NotNil(t, m.LastRequest)
+	require.NotEmpty(t, m.LastRequest.GetClaims())
+
 	return m.LastRequest.GetClaims()[0]
 }
 

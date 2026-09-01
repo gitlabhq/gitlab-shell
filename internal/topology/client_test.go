@@ -130,15 +130,7 @@ func TestClient_Classify(t *testing.T) {
 		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
 		require.Equal(t, "cell-1.gitlab.com:443", result.GetProxy().GetAddress())
 
-		// Verify the request was constructed correctly. The claim must be sent
-		// as a single-element `claims` fallback chain: the Topology Service
-		// removed the legacy singular `claim` field, and an empty chain makes
-		// the server fall back to type/value classification and reject the
-		// request with `InvalidArgument: invalid type: "UNSPECIFIED"`.
-		require.Len(t, mock.LastRequest.GetClaims(), 1)
-		require.Equal(t, "my-group/my-project", mock.LastClaim().GetRoute())
-		require.Equal(t, pb.ClassifyType_UNSPECIFIED, mock.LastRequest.GetType())
-		require.Empty(t, mock.LastRequest.GetValue())
+		require.Equal(t, "my-group/my-project", mock.LastClaim(t).GetRoute())
 	})
 
 	t.Run("successful SSH key claim returns proxy info", func(t *testing.T) {
@@ -158,7 +150,7 @@ func TestClient_Classify(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
-		require.Equal(t, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ", mock.LastClaim().GetSshKey())
+		require.Equal(t, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ", mock.LastClaim(t).GetSshKey())
 	})
 
 	t.Run("successful project ID claim returns proxy info", func(t *testing.T) {
@@ -178,19 +170,9 @@ func TestClient_Classify(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
-		require.Equal(t, int64(42), mock.LastClaim().GetProjectId())
+		require.Equal(t, int64(42), mock.LastClaim(t).GetProjectId())
 	})
 
-	// Regression test for the client/server proto skew that made every
-	// Classify call fail with `InvalidArgument: invalid type: "UNSPECIFIED"`
-	// on GitLab.com staging. The Topology Service removed the singular `claim`
-	// field (reserved 4) in favor of `repeated claims = 5`; a client that
-	// still populated the old field sent an effectively empty request, so the
-	// server fell through to type/value classification with an unset type.
-	//
-	// This asserts the wire contract the server actually relies on: `claims`
-	// is populated and `type`/`value` are left at their zero values so the
-	// claims path takes precedence.
 	t.Run("sends the claim via the claims chain, not type/value", func(t *testing.T) {
 		mock := &topologytest.MockClassifyServer{}
 		addr, stop := topologytest.StartMockServer(t, mock)
@@ -203,27 +185,27 @@ func TestClient_Classify(t *testing.T) {
 		})
 		defer client.Close()
 
-		for name, claim := range map[string]*types_proto.Claim{
-			"route":           RouteClaim("my-group"),
-			"ssh_key":         SSHKeyClaim("ssh-rsa AAAAB3"),
-			"ssh_fingerprint": SSHFingerprintClaim("W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo"),
-			"project_id":      ProjectIDClaim(42),
-			"username":        UsernameClaim("jane.doe"),
-		} {
-			t.Run(name, func(t *testing.T) {
-				_, err := client.Classify(ctx, claim)
+		tests := []struct {
+			name  string
+			claim *types_proto.Claim
+		}{
+			{name: "route", claim: RouteClaim("my-group")},
+			{name: "ssh_key", claim: SSHKeyClaim("ssh-rsa AAAAB3")},
+			{name: "ssh_fingerprint", claim: SSHFingerprintClaim("W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo")},
+			{name: "project_id", claim: ProjectIDClaim(42)},
+			{name: "username", claim: UsernameClaim("jane.doe")},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				_, err := client.Classify(ctx, tt.claim)
 				require.NoError(t, err)
 
-				// The claims chain carries the claim, and is within the
-				// server's 5-claim limit.
 				claims := mock.LastRequest.GetClaims()
 				require.Len(t, claims, 1)
-				require.LessOrEqual(t, len(claims), 5)
-				require.True(t, proto.Equal(claim, claims[0]),
+				require.True(t, proto.Equal(tt.claim, claims[0]),
 					"claim must be sent unmodified in the claims chain")
 
-				// type/value must stay unset so the server takes the claims
-				// path; a populated `type` would change classification.
 				require.Equal(t, pb.ClassifyType_UNSPECIFIED, mock.LastRequest.GetType())
 				require.Empty(t, mock.LastRequest.GetValue())
 			})
