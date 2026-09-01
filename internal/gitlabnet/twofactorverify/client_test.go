@@ -3,7 +3,6 @@ package twofactorverify
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"testing"
 
@@ -19,13 +18,11 @@ import (
 
 func initialize(t *testing.T) []testserver.TestRequestHandler {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		b, err := io.ReadAll(r.Body)
-		defer r.Body.Close()
-
-		assert.NoError(t, err)
-
-		var requestBody *RequestBody
-		assert.NoError(t, json.Unmarshal(b, &requestBody))
+		requestBody := &RequestBody{}
+		if !assert.NoError(t, testserver.DecodeJSON(r, requestBody)) {
+			http.Error(w, "invalid request", http.StatusBadRequest)
+			return
+		}
 
 		switch requestBody.KeyID {
 		case "0":

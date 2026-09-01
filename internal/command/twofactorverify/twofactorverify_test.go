@@ -33,13 +33,10 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 		{
 			Path: "/api/v4/internal/two_factor_manual_otp_check",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				defer r.Body.Close()
-
-				assert.NoError(t, err)
-
-				var requestBody *twofactorverify.RequestBody
-				assert.NoError(t, json.Unmarshal(b, &requestBody))
+				requestBody := &twofactorverify.RequestBody{}
+				if !assert.NoError(t, testserver.DecodeJSON(r, requestBody)) {
+					return
+				}
 
 				switch requestBody.KeyID {
 				case testVerifyViaOTP, testVerifyViaOTPWithPush:
@@ -63,13 +60,10 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 		{
 			Path: "/api/v4/internal/two_factor_push_otp_check",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				defer r.Body.Close()
-
-				assert.NoError(t, err)
-
-				var requestBody *twofactorverify.RequestBody
-				assert.NoError(t, json.Unmarshal(b, &requestBody))
+				requestBody := &twofactorverify.RequestBody{}
+				if !assert.NoError(t, testserver.DecodeJSON(r, requestBody)) {
+					return
+				}
 
 				switch requestBody.KeyID {
 				case "verify_via_push":

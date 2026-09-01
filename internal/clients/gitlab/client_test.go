@@ -3,7 +3,6 @@ package gitlab_test
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,9 +11,11 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/clients/gitlab"
 )
 
@@ -92,10 +93,12 @@ func TestGet_SetsRequiredHeaders(t *testing.T) {
 }
 
 func TestPost_SendsJSONBody(t *testing.T) {
-	var received map[string]string
+	received := make(map[string]string)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := io.ReadAll(r.Body)
-		_ = json.Unmarshal(body, &received)
+		if !assert.NoError(t, testserver.DecodeJSON(r, &received)) {
+			http.Error(w, "invalid request", http.StatusBadRequest)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer srv.Close()

@@ -3,7 +3,6 @@ package lfsauthenticate
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -37,12 +36,11 @@ func setup(t *testing.T) []testserver.TestRequestHandler {
 		{
 			Path: "/api/v4/internal/lfs_authenticate",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				defer r.Body.Close()
-				assert.NoError(t, err)
-
-				var request *Request
-				assert.NoError(t, json.Unmarshal(b, &request))
+				request := &Request{}
+				if !assert.NoError(t, testserver.DecodeJSON(r, request)) {
+					http.Error(w, "invalid request", http.StatusBadRequest)
+					return
+				}
 
 				switch request.KeyID {
 				case keyID:

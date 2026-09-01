@@ -1217,8 +1217,10 @@ func buildAllowedHandler(t *testing.T, gitalyAddress string) testserver.TestRequ
 	return testserver.TestRequestHandler{
 		Path: "/api/v4/internal/allowed",
 		Handler: func(w http.ResponseWriter, r *http.Request) {
-			var requestBody map[string]interface{}
-			json.NewDecoder(r.Body).Decode(&requestBody)
+			requestBody := map[string]interface{}{}
+			if !assert.NoError(t, testserver.DecodeJSON(r, &requestBody)) {
+				return
+			}
 
 			allowed := map[string]interface{}{
 				"status":      true,
@@ -1267,12 +1269,10 @@ func buildLFSAuthenticateHandler(t *testing.T, url *string) testserver.TestReque
 	return testserver.TestRequestHandler{
 		Path: "/api/v4/internal/lfs_authenticate",
 		Handler: func(w http.ResponseWriter, r *http.Request) {
-			b, err := io.ReadAll(r.Body)
-			defer r.Body.Close()
-			assert.NoError(t, err)
-
-			var request *lfsauthenticate.Request
-			assert.NoError(t, json.Unmarshal(b, &request))
+			request := &lfsauthenticate.Request{}
+			if !assert.NoError(t, testserver.DecodeJSON(r, request)) {
+				return
+			}
 			if request.KeyID == "rw" {
 				body := map[string]interface{}{
 					"username":             "john",
@@ -1294,8 +1294,10 @@ func buildBatchHandler(t *testing.T, url *string, op string) testserver.TestRequ
 		Handler: func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte("john:sometoken"))), r.Header.Get("Authorization"))
 
-			var requestBody map[string]interface{}
-			json.NewDecoder(r.Body).Decode(&requestBody)
+			requestBody := map[string]interface{}{}
+			if !assert.NoError(t, testserver.DecodeJSON(r, &requestBody)) {
+				return
+			}
 
 			reqObjects := requestBody["objects"].([]interface{})
 			retObjects := make([]map[string]interface{}, 0)

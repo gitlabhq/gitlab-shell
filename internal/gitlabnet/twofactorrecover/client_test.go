@@ -3,7 +3,6 @@ package twofactorrecover
 import (
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"testing"
 
@@ -29,13 +28,11 @@ func initialize(t *testing.T) {
 		{
 			Path: "/api/v4/internal/two_factor_recovery_codes",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				defer r.Body.Close()
-
-				assert.NoError(t, err)
-
-				var requestBody *RequestBody
-				json.Unmarshal(b, &requestBody)
+				requestBody := &RequestBody{}
+				if !assert.NoError(t, testserver.DecodeJSON(r, requestBody)) {
+					http.Error(w, "invalid request", http.StatusBadRequest)
+					return
+				}
 
 				switch requestBody.KeyID {
 				case "0":

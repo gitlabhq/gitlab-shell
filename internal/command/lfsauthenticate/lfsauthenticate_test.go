@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -84,12 +83,10 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 		{
 			Path: "/api/v4/internal/lfs_authenticate",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				defer r.Body.Close()
-				assert.NoError(t, err)
-
-				var request *lfsauthenticate.Request
-				assert.NoError(t, json.Unmarshal(b, &request))
+				request := &lfsauthenticate.Request{}
+				if !assert.NoError(t, testserver.DecodeJSON(r, request)) {
+					return
+				}
 				assert.Equal(t, request.Operation, operation)
 
 				if request.UserID == "123" {
@@ -108,12 +105,10 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 		{
 			Path: "/api/v4/internal/allowed",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				defer r.Body.Close()
-				assert.NoError(t, err)
-
-				var request *accessverifier.Request
-				assert.NoError(t, json.Unmarshal(b, &request))
+				request := &accessverifier.Request{}
+				if !assert.NoError(t, testserver.DecodeJSON(r, request)) {
+					return
+				}
 
 				var responseGlID string
 				if request.Username == testSomename {

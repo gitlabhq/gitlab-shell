@@ -2,8 +2,6 @@ package gitauditevent
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -82,28 +80,35 @@ func TestAuditFailed(t *testing.T) {
 }
 
 func setup(t *testing.T, responseStatus int, keyID int, expectKeyID bool) *Client {
+	type requestBody struct {
+		Action        commandargs.CommandType           `json:"action"`
+		Protocol      string                            `json:"protocol"`
+		Repo          string                            `json:"gl_repository"`
+		Username      string                            `json:"username"`
+		KeyID         *int                              `json:"key_id"`
+		PackfileStats *pb.PackfileNegotiationStatistics `json:"packfile_stats"`
+		CheckIP       string                            `json:"check_ip"`
+		Changes       string                            `json:"changes"`
+		NamespacePath string                            `json:"namespace_path"`
+	}
+
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: uri,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				body, err := io.ReadAll(r.Body)
-				assert.NoError(t, err)
-				defer r.Body.Close()
-
-				// Check if key_id is present/absent in raw JSON
-				var rawJSON map[string]interface{}
-				assert.NoError(t, json.Unmarshal(body, &rawJSON))
-				_, hasKeyID := rawJSON["key_id"]
-				if expectKeyID {
-					assert.True(t, hasKeyID, "key_id should be present in JSON")
-				} else {
-					assert.False(t, hasKeyID, "key_id should not be present in JSON")
+				request := &requestBody{}
+				if !assert.NoError(t, testserver.DecodeJSON(r, request)) {
+					http.Error(w, "invalid request", http.StatusBadRequest)
+					return
 				}
 
-				var request *Request
-				assert.NoError(t, json.Unmarshal(body, &request))
+				if expectKeyID {
+					assert.Equal(t, &keyID, request.KeyID)
+				} else {
+					assert.Nil(t, request.KeyID)
+				}
+
 				assert.Equal(t, testUsername, request.Username)
-				assert.Equal(t, keyID, request.KeyID)
 				assert.Equal(t, testArgs.Env.RemoteAddr, request.CheckIP)
 				assert.Equal(t, testArgs.CommandType, request.Action)
 				assert.Equal(t, testRepo, request.Repo)

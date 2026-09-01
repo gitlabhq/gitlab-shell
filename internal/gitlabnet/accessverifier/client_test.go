@@ -2,9 +2,7 @@ package accessverifier
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -271,11 +269,11 @@ func setup(t *testing.T, userResponses, keyResponses map[string]testResponse) *C
 		{
 			Path: "/api/v4/internal/allowed",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				assert.NoError(t, err)
-
-				var requestBody *Request
-				assert.NoError(t, json.Unmarshal(b, &requestBody))
+				requestBody := &Request{}
+				if !assert.NoError(t, testserver.DecodeJSON(r, requestBody)) {
+					http.Error(w, "invalid request", http.StatusBadRequest)
+					return
+				}
 
 				if tr, ok := userResponses[requestBody.Username]; ok {
 					w.WriteHeader(tr.status)
@@ -465,13 +463,12 @@ func setupWithAPIInspector(t *testing.T, inspector func(*Request)) *Client {
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: "/api/v4/internal/allowed",
-			Handler: func(_ http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				assert.NoError(t, err)
-
-				var requestBody *Request
-				err = json.Unmarshal(b, &requestBody)
-				assert.NoError(t, err)
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				requestBody := &Request{}
+				if !assert.NoError(t, testserver.DecodeJSON(r, requestBody)) {
+					http.Error(w, "invalid request", http.StatusBadRequest)
+					return
+				}
 
 				inspector(requestBody)
 			},

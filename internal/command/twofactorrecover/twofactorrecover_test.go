@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -26,13 +25,10 @@ func setup(t *testing.T) {
 		{
 			Path: "/api/v4/internal/two_factor_recovery_codes",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				defer r.Body.Close()
-
-				assert.NoError(t, err)
-
-				var requestBody *twofactorrecover.RequestBody
-				json.Unmarshal(b, &requestBody)
+				requestBody := &twofactorrecover.RequestBody{}
+				if !assert.NoError(t, testserver.DecodeJSON(r, requestBody)) {
+					return
+				}
 
 				switch requestBody.KeyID {
 				case "1":

@@ -2,8 +2,6 @@ package gitauditevent
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"net/http"
 	"testing"
 
@@ -13,7 +11,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/gitauditevent"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
@@ -41,25 +38,27 @@ func TestGitAudit(t *testing.T) {
 				Handler: func(w http.ResponseWriter, r *http.Request) {
 					called = true
 
-					body, err := io.ReadAll(r.Body)
-					assert.NoError(t, err)
-					defer r.Body.Close()
-
-					var rawJSON map[string]interface{}
-					assert.NoError(t, json.Unmarshal(body, &rawJSON))
-					_, hasKeyID := rawJSON["key_id"]
-					assert.Equal(t, tt.expectKeyID, hasKeyID)
-
-					if tt.expectKeyID {
-						keyIDFloat, ok := rawJSON["key_id"].(float64)
-						assert.True(t, ok, "key_id should be a number")
-						assert.Equal(t, tt.keyID, int(keyIDFloat))
+					requestBody := &struct {
+						Action   commandargs.CommandType `json:"action"`
+						Repo     string                  `json:"gl_repository"`
+						Username string                  `json:"username"`
+						KeyID    *int                    `json:"key_id"`
+					}{}
+					if !assert.NoError(t, testserver.DecodeJSON(r, requestBody)) {
+						return
 					}
 
-					var request *gitauditevent.Request
-					assert.NoError(t, json.Unmarshal(body, &request))
-					assert.Equal(t, testUsername, request.Username)
-					assert.Equal(t, testRepo, request.Repo)
+					if tt.expectKeyID {
+						if !assert.NotNil(t, requestBody.KeyID) {
+							return
+						}
+						assert.Equal(t, tt.keyID, *requestBody.KeyID)
+					} else {
+						assert.Nil(t, requestBody.KeyID)
+					}
+
+					assert.Equal(t, testUsername, requestBody.Username)
+					assert.Equal(t, testRepo, requestBody.Repo)
 
 					w.WriteHeader(http.StatusOK)
 				},

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -26,13 +25,10 @@ func setup(t *testing.T) {
 		{
 			Path: "/api/v4/internal/personal_access_token",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				defer r.Body.Close()
-
-				assert.NoError(t, err)
-
-				var requestBody *personalaccesstoken.RequestBody
-				json.Unmarshal(b, &requestBody)
+				requestBody := &personalaccesstoken.RequestBody{}
+				if !assert.NoError(t, testserver.DecodeJSON(r, requestBody)) {
+					return
+				}
 
 				switch requestBody.KeyID {
 				case "forbidden":

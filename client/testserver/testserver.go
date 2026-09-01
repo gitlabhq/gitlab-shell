@@ -3,6 +3,7 @@ package testserver
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"io"
 	"log"
 	"net"
@@ -22,6 +23,17 @@ import (
 type TestRequestHandler struct {
 	Path    string
 	Handler func(w http.ResponseWriter, r *http.Request)
+}
+
+// DecodeJSON reads and closes the request body, then unmarshals it into dst.
+func DecodeJSON(r *http.Request, dst any) error {
+	defer func() { _ = r.Body.Close() }()
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(body, dst)
 }
 
 // StartSocketHTTPServer starts a socket based HTTP server

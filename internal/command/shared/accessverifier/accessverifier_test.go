@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"testing"
 
@@ -28,12 +27,10 @@ func setup(t *testing.T) (*Command, *bytes.Buffer, *bytes.Buffer) {
 		{
 			Path: "/api/v4/internal/allowed",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				b, err := io.ReadAll(r.Body)
-				assert.NoError(t, err)
-
-				var requestBody *accessverifier.Request
-				err = json.Unmarshal(b, &requestBody)
-				assert.NoError(t, err)
+				requestBody := &accessverifier.Request{}
+				if !assert.NoError(t, testserver.DecodeJSON(r, requestBody)) {
+					return
+				}
 
 				if requestBody.KeyID == "1" {
 					body := map[string]interface{}{
