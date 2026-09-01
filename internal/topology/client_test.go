@@ -14,11 +14,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	pb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
+	types_proto "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto/types/v1"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology/topologytest"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 )
 
 const localhostAddr = "localhost:9090"
@@ -128,11 +130,7 @@ func TestClient_Classify(t *testing.T) {
 		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
 		require.Equal(t, "cell-1.gitlab.com:443", result.GetProxy().GetAddress())
 
-		// Verify the request was constructed correctly
-		require.NotNil(t, mock.LastRequest.GetClassificationKey())
-		require.Equal(t, "my-group/my-project", mock.LastRequest.GetClaim().GetRoute())
-		require.Equal(t, pb.ClassifyType_UNSPECIFIED, mock.LastRequest.GetType())
-		require.Empty(t, mock.LastRequest.GetValue())
+		require.Equal(t, "my-group/my-project", mock.LastClaim(t).GetRoute())
 	})
 
 	t.Run("successful SSH key claim returns proxy info", func(t *testing.T) {
@@ -152,7 +150,7 @@ func TestClient_Classify(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
-		require.Equal(t, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ", mock.LastRequest.GetClaim().GetSshKey())
+		require.Equal(t, "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ", mock.LastClaim(t).GetSshKey())
 	})
 
 	t.Run("successful project ID claim returns proxy info", func(t *testing.T) {
@@ -172,7 +170,46 @@ func TestClient_Classify(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, pb.ClassifyAction_PROXY, result.GetAction())
-		require.Equal(t, int64(42), mock.LastRequest.GetClaim().GetProjectId())
+		require.Equal(t, int64(42), mock.LastClaim(t).GetProjectId())
+	})
+
+	t.Run("sends the claim via the claims chain, not type/value", func(t *testing.T) {
+		mock := &topologytest.MockClassifyServer{}
+		addr, stop := topologytest.StartMockServer(t, mock)
+		defer stop()
+
+		client := NewClient(&Config{
+			Enabled: true,
+			Address: addr,
+			Timeout: 5 * time.Second,
+		})
+		defer client.Close()
+
+		tests := []struct {
+			name  string
+			claim *types_proto.Claim
+		}{
+			{name: "route", claim: RouteClaim("my-group")},
+			{name: "ssh_key", claim: SSHKeyClaim("ssh-rsa AAAAB3")},
+			{name: "ssh_fingerprint", claim: SSHFingerprintClaim("W3THTJOKxMaZp0VIOrjVSBVDnFjyzVSMFGMLmSPcaGo")},
+			{name: "project_id", claim: ProjectIDClaim(42)},
+			{name: "username", claim: UsernameClaim("jane.doe")},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				_, err := client.Classify(ctx, tt.claim)
+				require.NoError(t, err)
+
+				claims := mock.LastRequest.GetClaims()
+				require.Len(t, claims, 1)
+				require.True(t, proto.Equal(tt.claim, claims[0]),
+					"claim must be sent unmodified in the claims chain")
+
+				require.Equal(t, pb.ClassifyType_UNSPECIFIED, mock.LastRequest.GetType())
+				require.Empty(t, mock.LastRequest.GetValue())
+			})
+		}
 	})
 
 	t.Run("server error is propagated", func(t *testing.T) {

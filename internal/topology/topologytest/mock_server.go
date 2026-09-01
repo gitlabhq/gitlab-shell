@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	pb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
+	types_proto "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto/types/v1"
 	"google.golang.org/grpc"
 )
 
@@ -32,6 +33,15 @@ type MockClassifyServer struct {
 	// ErrUntilAttempt, when set to N, causes the server to return Err for
 	// calls 1..N-1 and then succeed from call N onwards.
 	ErrUntilAttempt int
+}
+
+// LastClaim returns the first claim from the most recent request.
+func (m *MockClassifyServer) LastClaim(t *testing.T) *types_proto.Claim {
+	t.Helper()
+	require.NotNil(t, m.LastRequest)
+	require.NotEmpty(t, m.LastRequest.GetClaims())
+
+	return m.LastRequest.GetClaims()[0]
 }
 
 // Classify implements the ClassifyService RPC.
