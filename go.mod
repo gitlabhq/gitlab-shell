@@ -17,7 +17,7 @@ require (
 	github.com/pires/go-proxyproto v0.14.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/stretchr/testify v1.11.1
-	gitlab.com/gitlab-org/cells/topology-service v0.0.0-20260522095121-2c761c2e9850
+	gitlab.com/gitlab-org/cells/topology-service v0.0.0-20260827174901-e70472732254
 	gitlab.com/gitlab-org/gitaly/v18 v18.9.0-rc4
 	gitlab.com/gitlab-org/labkit v1.64.11
 	gitlab.com/gitlab-org/labkit/v2 v2.35.0

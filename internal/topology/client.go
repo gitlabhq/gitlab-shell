@@ -98,10 +98,9 @@ func (c *Client) Classify(ctx context.Context, claim *types_proto.Claim) (resp *
 	ctx, cancel := context.WithTimeout(ctx, c.config.Timeout)
 	defer cancel()
 
+	// GitLab Shell resolves one claim per lookup.
 	req := &pb.ClassifyRequest{
-		ClassificationKey: &pb.ClassifyRequest_Claim{
-			Claim: claim,
-		},
+		Claims: []*types_proto.Claim{claim},
 	}
 
 	resp, err = client.Classify(ctx, req)
