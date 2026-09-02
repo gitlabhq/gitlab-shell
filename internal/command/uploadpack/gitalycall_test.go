@@ -1,19 +1,13 @@
 package uploadpack
 
 import (
-	"bytes"
-	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gitlab.com/gitlab-org/labkit/correlation"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper/gitalytest"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper/requesthandlers"
 )
 
@@ -24,67 +18,26 @@ const (
 )
 
 func TestUploadPack(t *testing.T) {
-	for _, network := range []string{"unix", "tcp", "dns"} {
-		t.Run(fmt.Sprintf("via %s network", network), func(t *testing.T) {
-			gitalyAddress, testServer := testserver.StartGitalyServer(t, network)
-			t.Logf("Server address: %s", gitalyAddress)
-
-			requests := requesthandlers.BuildAllowedWithGitalyHandlers(t, gitalyAddress)
-			url := testserver.StartHTTPServer(t, requests)
-
-			output := &bytes.Buffer{}
-			input := &bytes.Buffer{}
-
-			userID := "1"
-			repo := testRepo
-
-			env := sshenv.Env{
-				IsSSHConnection: true,
-				OriginalCommand: "git-upload-pack " + repo,
-				RemoteAddr:      testRemoteAddr,
-			}
-
-			args := &commandargs.Shell{
-				GitlabKeyID: userID,
-				CommandType: commandargs.UploadPack,
-				SSHArgs:     []string{testGitUploadPack, repo},
-				Env:         env,
-			}
-
-			ctx := correlation.ContextWithCorrelation(context.Background(), "a-correlation-id")
-			ctx = correlation.ContextWithClientName(ctx, "gitlab-shell-tests")
-
-			cfg := &config.Config{GitlabURL: url}
-			cfg.GitalyClient.InitSidechannelRegistry(ctx)
-
-			cmd := &Command{
-				Config:     cfg,
-				Args:       args,
-				ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
-			}
-
-			_, err := cmd.Execute(ctx)
-			require.NoError(t, err)
-
-			require.Equal(t, "SSHUploadPackWithSidechannel: "+repo, output.String())
-
-			for k, v := range map[string]string{
-				"gitaly-feature-cache_invalidator":        "true",
-				"gitaly-feature-inforef_uploadpack_cache": "false",
-				"x-gitlab-client-name":                    "gitlab-shell-tests-git-upload-pack",
-				"key_id":                                  "123",
-				"user_id":                                 "user-1",
-				"remote_ip":                               testRemoteAddr,
-				"key_type":                                "key",
-			} {
-				actual := testServer.ReceivedMD[k]
-				require.Len(t, actual, 1)
-				require.Equal(t, v, actual[0])
-			}
-			require.Empty(t, testServer.ReceivedMD["some-other-feature-flag"])
-			require.Equal(t, "a-correlation-id", testServer.ReceivedMD["x-gitlab-correlation-id"][0])
+	gitalytest.RunAllNetworks(t, func(t *testing.T, servers gitalytest.Servers) {
+		setup := gitalytest.NewCommandSetup(gitalytest.CommandOptions{
+			GitlabURL:     servers.GitlabURL,
+			CommandType:   commandargs.UploadPack,
+			Repository:    testRepo,
+			RemoteAddr:    testRemoteAddr,
+			GitlabKeyID:   "1",
+			CorrelationID: "a-correlation-id",
+			ClientName:    "gitlab-shell-tests",
 		})
-	}
+		cmd := &Command{Config: setup.Config, Args: setup.Args, ReadWriter: setup.ReadWriter}
+		_, err := cmd.Execute(setup.Context)
+		require.NoError(t, err)
+		require.Equal(t, "SSHUploadPackWithSidechannel: "+testRepo, setup.Output.String())
+		gitalytest.RequireMetadata(t, servers.Gitaly, gitalytest.MetadataExpectations{
+			ClientNameSuffix: "git-upload-pack",
+			CorrelationID:    "a-correlation-id",
+			RemoteAddr:       testRemoteAddr,
+		})
+	})
 }
 
 func TestUploadPackWithRetryConfig(t *testing.T) {
@@ -100,40 +53,21 @@ func TestUploadPackWithRetryConfig(t *testing.T) {
 	requests := requesthandlers.BuildAllowedWithGitalyHandlersAndRetryConfig(t, gitalyAddress, retryConfig)
 	url := testserver.StartHTTPServer(t, requests)
 
-	output := &bytes.Buffer{}
-	input := &bytes.Buffer{}
-
-	repo := testRepo
-	env := sshenv.Env{
-		IsSSHConnection: true,
-		OriginalCommand: "git-upload-pack " + repo,
-		RemoteAddr:      testRemoteAddr,
-	}
-
-	args := &commandargs.Shell{
-		GitlabKeyID: "1",
-		CommandType: commandargs.UploadPack,
-		SSHArgs:     []string{testGitUploadPack, repo},
-		Env:         env,
-	}
-
-	ctx := correlation.ContextWithCorrelation(context.Background(), "retry-test")
-	ctx = correlation.ContextWithClientName(ctx, "gitlab-shell-tests")
-
-	cfg := &config.Config{GitlabURL: url}
-	cfg.GitalyClient.InitSidechannelRegistry(ctx)
-
-	cmd := &Command{
-		Config:     cfg,
-		Args:       args,
-		ReadWriter: &readwriter.ReadWriter{ErrOut: output, Out: output, In: input},
-	}
-
-	_, err := cmd.Execute(ctx)
+	setup := gitalytest.NewCommandSetup(gitalytest.CommandOptions{
+		GitlabURL:     url,
+		CommandType:   commandargs.UploadPack,
+		Repository:    testRepo,
+		RemoteAddr:    testRemoteAddr,
+		GitlabKeyID:   "1",
+		CorrelationID: "retry-test",
+		ClientName:    "gitlab-shell-tests",
+	})
+	cmd := &Command{Config: setup.Config, Args: setup.Args, ReadWriter: setup.ReadWriter}
+	_, err := cmd.Execute(setup.Context)
 	require.NoError(t, err)
 
-	require.Equal(t, "SSHUploadPackWithSidechannel: "+repo, output.String())
-	correlationID := testServer.ReceivedMD["x-gitlab-correlation-id"]
-	require.NotEmpty(t, correlationID)
-	require.Equal(t, "retry-test", correlationID[0])
+	require.Equal(t, "SSHUploadPackWithSidechannel: "+testRepo, setup.Output.String())
+	correlationIDs := testServer.ReceivedMD["x-gitlab-correlation-id"]
+	require.Len(t, correlationIDs, 1)
+	require.Equal(t, "retry-test", correlationIDs[0])
 }
