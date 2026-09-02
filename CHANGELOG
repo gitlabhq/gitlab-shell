@@ -1,3 +1,7 @@
+v14.57.1
+
+- Send Classify claims via the claims chain !1541
+
 v14.57.0
 
 - Add ssh-audit CI check for FIPS and non-FIPS SSH algorithms !1526
