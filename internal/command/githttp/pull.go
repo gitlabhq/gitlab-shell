@@ -8,7 +8,6 @@ import (
 	"context"
 	"io"
 	"log/slog"
-	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
@@ -67,17 +66,11 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 func (c *PullCommand) requestSSHUploadPack(ctx context.Context, client *git.Client) error {
 	slog.InfoContext(ctx, "Using Git over SSH upload pack")
 
-	return c.pipeUploadPack(ctx, client.SSHUploadPack)
+	return pipeRequest(ctx, c.ReadWriter, c.readFromStdin, client.SSHUploadPack)
 }
 
 func (c *PullCommand) requestUploadPack(ctx context.Context, client *git.Client) error {
-	return c.pipeUploadPack(ctx, client.UploadPack)
-}
-
-// pipeUploadPack streams the client's stdin into an upload-pack request via
-// requestFn, then copies the response back to stdout.
-func (c *PullCommand) pipeUploadPack(ctx context.Context, requestFn func(context.Context, io.Reader) (*http.Response, error)) error {
-	return pipeRequest(ctx, c.ReadWriter, c.readFromStdin, requestFn)
+	return pipeRequest(ctx, c.ReadWriter, c.readFromStdin, client.UploadPack)
 }
 
 // readFromStdin forwards pkt-lines from stdin until it sees `done`.

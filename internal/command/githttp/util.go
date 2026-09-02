@@ -58,8 +58,8 @@ func executeSSHRequest(ctx context.Context, requestFn sshRequestFunc, rw *readwr
 }
 
 // pipeRequest streams stdin into requestFn's body via writeFn, then copies the
-// response back to rw.Out. Shared by PullCommand.pipeUploadPack and
-// PushCommand.requestReceivePack.
+// response back to rw.Out. Shared by PullCommand.requestUploadPack/
+// requestSSHUploadPack and PushCommand.requestReceivePack.
 func pipeRequest(ctx context.Context, rw *readwriter.ReadWriter, writeFn func(*io.PipeWriter), requestFn func(context.Context, io.Reader) (*http.Response, error)) error {
 	pipeReader, pipeWriter := io.Pipe()
 	go writeFn(pipeWriter)
