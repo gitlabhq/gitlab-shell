@@ -34,6 +34,7 @@ const (
 	fieldOid           = "oid"
 	fieldHref          = "href"
 	fieldHeaders       = "headers"
+	fieldOperation     = "operation"
 	fieldAuthorization = "Authorization"
 	fieldContentType   = "Content-Type"
 	fieldMessage       = "message"
@@ -47,9 +48,10 @@ const (
 	testIDGgg       = "id=ggg"
 	testTokenGgg    = "token=ggg"
 	testSizeZero    = "size=0"
-	testOperation   = "operation"
 	testAuthHeader  = "Basic 1234567890"
 	testContentType = "application/octet-stream"
+	testSecret      = "very secret"
+	evilSecret      = "evil secret"
 
 	// Error messages
 	errTokenHashMismatch = "error: token hash mismatch"
@@ -100,6 +102,81 @@ var (
 	evenLargerFileHash = sha256.Sum256([]byte(evenLargerFileContents))
 	evenLargerFileOid  = hex.EncodeToString(evenLargerFileHash[:])
 )
+
+type parsedBatchItem struct {
+	oid       string
+	size      string
+	operation string
+	id        map[string]interface{}
+}
+
+func standardLFSHeaders() map[string]interface{} {
+	return map[string]interface{}{
+		fieldAuthorization: testAuthHeader,
+		fieldContentType:   testContentType,
+	}
+}
+
+func buildIDJSON(operation, oid, href string) map[string]interface{} {
+	return map[string]interface{}{
+		fieldOperation: operation,
+		fieldOid:       oid,
+		fieldHref:      href,
+		fieldHeaders:   standardLFSHeaders(),
+	}
+}
+
+func buildIDAndToken(t *testing.T, idJSON map[string]interface{}, secret string) (idArg, tokenArg string) {
+	idBinary, err := json.Marshal(idJSON)
+	require.NoError(t, err)
+	idBase64 := base64.StdEncoding.EncodeToString(idBinary)
+	h := hmac.New(sha256.New, []byte(secret))
+	h.Write(idBinary)
+	tokenBase64 := base64.StdEncoding.EncodeToString(h.Sum(nil))
+
+	return "id=" + idBase64, "token=" + tokenBase64
+}
+
+func parseBatchItem(t *testing.T, dataLine, secret string) parsedBatchItem {
+	fields := strings.Split(dataLine, " ")
+	// A batch line has the format: <oid> <size> <operation> id=<base64> token=<base64>
+	require.Len(t, fields, 5)
+
+	item := parsedBatchItem{
+		oid:       fields[0],
+		size:      fields[1],
+		operation: fields[2],
+	}
+
+	var idArg string
+	var tokenArg string
+	for _, arg := range fields[3:] {
+		switch {
+		case strings.HasPrefix(arg, "id="):
+			idArg = arg
+		case strings.HasPrefix(arg, "token="):
+			tokenArg = arg
+		default:
+			require.Failf(t, "Unexpected batch item argument", "%v", arg)
+		}
+	}
+
+	idBase64, found := strings.CutPrefix(idArg, "id=")
+	require.True(t, found)
+	idBinary, err := base64.StdEncoding.DecodeString(idBase64)
+	require.NoError(t, err)
+	require.NoError(t, json.Unmarshal(idBinary, &item.id))
+
+	h := hmac.New(sha256.New, []byte(secret))
+	h.Write(idBinary)
+	tokenBase64, found := strings.CutPrefix(tokenArg, "token=")
+	require.True(t, found)
+	tokenBinary, err := base64.StdEncoding.DecodeString(tokenBase64)
+	require.NoError(t, err)
+	require.Equal(t, h.Sum(nil), tokenBinary)
+
+	return item
+}
 
 func setupWaitGroupForExecute(t *testing.T, cmd *Command) *sync.WaitGroup {
 	wg := &sync.WaitGroup{}
@@ -357,50 +434,15 @@ func TestLfsTransferBatchDownload(t *testing.T) {
 	require.Empty(t, args)
 	require.Equal(t, "00000000 0 noop", data[0])
 
-	largeFileArgs := strings.Split(data[1], " ")
-	require.Len(t, largeFileArgs, 5)
-	require.Equal(t, largeFileOid, largeFileArgs[0])
-	require.Equal(t, fmt.Sprint(largeFileLen), largeFileArgs[1])
-	require.Equal(t, "download", largeFileArgs[2])
-
-	var idArg string
-	var tokenArg string
-	for _, arg := range largeFileArgs[3:] {
-		switch {
-		case strings.HasPrefix(arg, "id="):
-			idArg = arg
-		case strings.HasPrefix(arg, "token="):
-			tokenArg = arg
-		default:
-			require.Failf(t, "Unexpected batch item argument", "%v", arg)
-		}
-	}
-
-	idBase64, found := strings.CutPrefix(idArg, "id=")
-	require.True(t, found)
-	idBinary, err := base64.StdEncoding.DecodeString(idBase64)
-	require.NoError(t, err)
-
-	var id map[string]interface{}
-	require.NoError(t, json.Unmarshal(idBinary, &id))
-	require.Equal(t, map[string]interface{}{
-		testOperation: opDownload,
-		fieldOid:      largeFileOid,
-		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
-		fieldHeaders: map[string]interface{}{
-			fieldAuthorization: testAuthHeader,
-			fieldContentType:   testContentType,
-		},
-	}, id)
-
-	h := hmac.New(sha256.New, []byte("very secret"))
-	h.Write(idBinary)
-	tokenBase64, found := strings.CutPrefix(tokenArg, "token=")
-	require.True(t, found)
-
-	tokenBinary, err := base64.StdEncoding.DecodeString(tokenBase64)
-	require.NoError(t, err)
-	require.Equal(t, h.Sum(nil), tokenBinary)
+	largeFileItem := parseBatchItem(t, data[1], testSecret)
+	require.Equal(t, largeFileOid, largeFileItem.oid)
+	require.Equal(t, fmt.Sprint(largeFileLen), largeFileItem.size)
+	require.Equal(t, "download", largeFileItem.operation)
+	require.Equal(t, buildIDJSON(
+		opDownload,
+		largeFileOid,
+		fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
+	), largeFileItem.id)
 
 	require.Equal(t, fmt.Sprintf("%s %d noop", evenLargerFileOid, evenLargerFileLen), data[2])
 
@@ -425,48 +467,15 @@ func TestLfsTransferBatchUpload(t *testing.T) {
 
 	require.Equal(t, fmt.Sprintf("%s %d noop", largeFileOid, largeFileLen), data[1])
 
-	evenLargerFileArgs := strings.Split(data[2], " ")
-	require.Len(t, evenLargerFileArgs, 5)
-	require.Equal(t, evenLargerFileOid, evenLargerFileArgs[0])
-	require.Equal(t, fmt.Sprint(evenLargerFileLen), evenLargerFileArgs[1])
-	require.Equal(t, opUpload, evenLargerFileArgs[2])
-
-	var idArg string
-	var tokenArg string
-	for _, arg := range evenLargerFileArgs[3:] {
-		switch {
-		case strings.HasPrefix(arg, "id="):
-			idArg = arg
-		case strings.HasPrefix(arg, "token="):
-			tokenArg = arg
-		default:
-			require.Failf(t, "Unexpected batch item argument", "%v", arg)
-		}
-	}
-
-	idBase64, found := strings.CutPrefix(idArg, "id=")
-	require.True(t, found)
-	idBinary, err := base64.StdEncoding.DecodeString(idBase64)
-	require.NoError(t, err)
-	var id map[string]interface{}
-	require.NoError(t, json.Unmarshal(idBinary, &id))
-	require.Equal(t, map[string]interface{}{
-		testOperation: opUpload,
-		fieldOid:      evenLargerFileOid,
-		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
-		fieldHeaders: map[string]interface{}{
-			fieldAuthorization: testAuthHeader,
-			fieldContentType:   testContentType,
-		},
-	}, id)
-
-	h := hmac.New(sha256.New, []byte("very secret"))
-	h.Write(idBinary)
-	tokenBase64, found := strings.CutPrefix(tokenArg, "token=")
-	require.True(t, found)
-	tokenBinary, err := base64.StdEncoding.DecodeString(tokenBase64)
-	require.NoError(t, err)
-	require.Equal(t, h.Sum(nil), tokenBinary)
+	evenLargerFileItem := parseBatchItem(t, data[2], testSecret)
+	require.Equal(t, evenLargerFileOid, evenLargerFileItem.oid)
+	require.Equal(t, fmt.Sprint(evenLargerFileLen), evenLargerFileItem.size)
+	require.Equal(t, opUpload, evenLargerFileItem.operation)
+	require.Equal(t, buildIDJSON(
+		opUpload,
+		evenLargerFileOid,
+		fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
+	), evenLargerFileItem.id)
 
 	quit(t, pl)
 	wg.Wait()
@@ -520,22 +529,9 @@ func TestLfsTransferGetObject(t *testing.T) {
 		errTokenHashMismatch,
 	}, data)
 
-	idJSON := map[string]interface{}{
-		testOperation: opDownload,
-		fieldOid:      largeFileOid,
-		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
-		fieldHeaders: map[string]interface{}{
-			fieldAuthorization: testAuthHeader,
-			fieldContentType:   testContentType,
-		},
-	}
-	idBinary, _ := json.Marshal(idJSON)
-	idBase64 := base64.StdEncoding.EncodeToString(idBinary)
-	h := hmac.New(sha256.New, []byte("very secret"))
-	h.Write(idBinary)
-	tokenBinary := h.Sum(nil)
-	tokenBase64 := base64.StdEncoding.EncodeToString(tokenBinary)
-	writeCommandArgs(t, pl, fmt.Sprintf("get-object %s", largeFileOid), []string{fmt.Sprintf("id=%s", idBase64), fmt.Sprintf("token=%s", tokenBase64)})
+	idJSON := buildIDJSON(opDownload, largeFileOid, fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid))
+	idArg, tokenArg := buildIDAndToken(t, idJSON, testSecret)
+	writeCommandArgs(t, pl, fmt.Sprintf("get-object %s", largeFileOid), []string{idArg, tokenArg})
 	status, args, binData := readStatusArgsAndBinaryData(t, pl)
 	require.Equal(t, "status 200", status)
 	require.Equal(t, []string{
@@ -543,22 +539,9 @@ func TestLfsTransferGetObject(t *testing.T) {
 	}, args)
 	require.Equal(t, [][]byte{[]byte(largeFileContents)}, binData)
 
-	idJSON = map[string]interface{}{
-		testOperation: opDownload,
-		fieldOid:      evenLargerFileOid,
-		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, evenLargerFileOid),
-		fieldHeaders: map[string]interface{}{
-			fieldAuthorization: testAuthHeader,
-			fieldContentType:   testContentType,
-		},
-	}
-	idBinary, _ = json.Marshal(idJSON)
-	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
-	h = hmac.New(sha256.New, []byte("very secret"))
-	h.Write(idBinary)
-	tokenBinary = h.Sum(nil)
-	tokenBase64 = base64.StdEncoding.EncodeToString(tokenBinary)
-	writeCommandArgs(t, pl, fmt.Sprintf("get-object %s", evenLargerFileOid), []string{fmt.Sprintf("id=%s", idBase64), fmt.Sprintf("token=%s", tokenBase64)})
+	idJSON = buildIDJSON(opDownload, evenLargerFileOid, fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, evenLargerFileOid))
+	idArg, tokenArg = buildIDAndToken(t, idJSON, testSecret)
+	writeCommandArgs(t, pl, fmt.Sprintf("get-object %s", evenLargerFileOid), []string{idArg, tokenArg})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 404", status)
 	require.Empty(t, args)
@@ -566,22 +549,9 @@ func TestLfsTransferGetObject(t *testing.T) {
 		fmt.Sprintf("object %s not found", evenLargerFileOid),
 	}, data)
 
-	idJSON = map[string]interface{}{
-		testOperation: opUpload,
-		fieldOid:      largeFileOid,
-		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
-		fieldHeaders: map[string]interface{}{
-			fieldAuthorization: testAuthHeader,
-			fieldContentType:   testContentType,
-		},
-	}
-	idBinary, _ = json.Marshal(idJSON)
-	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
-	h = hmac.New(sha256.New, []byte("very secret"))
-	h.Write(idBinary)
-	tokenBinary = h.Sum(nil)
-	tokenBase64 = base64.StdEncoding.EncodeToString(tokenBinary)
-	writeCommandArgs(t, pl, fmt.Sprintf("get-object %s", largeFileOid), []string{fmt.Sprintf("id=%s", idBase64), fmt.Sprintf("token=%s", tokenBase64)})
+	idJSON = buildIDJSON(opUpload, largeFileOid, fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid))
+	idArg, tokenArg = buildIDAndToken(t, idJSON, testSecret)
+	writeCommandArgs(t, pl, fmt.Sprintf("get-object %s", largeFileOid), []string{idArg, tokenArg})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
@@ -589,22 +559,9 @@ func TestLfsTransferGetObject(t *testing.T) {
 		"error: invalid operation",
 	}, data)
 
-	idJSON = map[string]interface{}{
-		testOperation: opDownload,
-		fieldOid:      evenLargerFileOid,
-		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid),
-		fieldHeaders: map[string]interface{}{
-			fieldAuthorization: testAuthHeader,
-			fieldContentType:   testContentType,
-		},
-	}
-	idBinary, _ = json.Marshal(idJSON)
-	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
-	h = hmac.New(sha256.New, []byte("very secret"))
-	h.Write(idBinary)
-	tokenBinary = h.Sum(nil)
-	tokenBase64 = base64.StdEncoding.EncodeToString(tokenBinary)
-	writeCommandArgs(t, pl, fmt.Sprintf("get-object %s", largeFileOid), []string{fmt.Sprintf("id=%s", idBase64), fmt.Sprintf("token=%s", tokenBase64)})
+	idJSON = buildIDJSON(opDownload, evenLargerFileOid, fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", url, largeFileOid))
+	idArg, tokenArg = buildIDAndToken(t, idJSON, testSecret)
+	writeCommandArgs(t, pl, fmt.Sprintf("get-object %s", largeFileOid), []string{idArg, tokenArg})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
@@ -612,22 +569,9 @@ func TestLfsTransferGetObject(t *testing.T) {
 		"error: invalid oid",
 	}, data)
 
-	idJSON = map[string]interface{}{
-		testOperation: opDownload,
-		fieldOid:      largeFileOid,
-		fieldHref:     fmt.Sprintf("%s/evil-url", url),
-		fieldHeaders: map[string]interface{}{
-			fieldAuthorization: testAuthHeader,
-			fieldContentType:   testContentType,
-		},
-	}
-	idBinary, _ = json.Marshal(idJSON)
-	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
-	h = hmac.New(sha256.New, []byte("evil secret"))
-	h.Write(idBinary)
-	tokenBinary = h.Sum(nil)
-	tokenBase64 = base64.StdEncoding.EncodeToString(tokenBinary)
-	writeCommandArgs(t, pl, fmt.Sprintf("get-object %s", largeFileOid), []string{fmt.Sprintf("id=%s", idBase64), fmt.Sprintf("token=%s", tokenBase64)})
+	idJSON = buildIDJSON(opDownload, largeFileOid, fmt.Sprintf("%s/evil-url", url))
+	idArg, tokenArg = buildIDAndToken(t, idJSON, evilSecret)
+	writeCommandArgs(t, pl, fmt.Sprintf("get-object %s", largeFileOid), []string{idArg, tokenArg})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
@@ -687,22 +631,9 @@ func TestLfsTransferPutObject(t *testing.T) {
 		errTokenHashMismatch,
 	}, data)
 
-	idJSON := map[string]interface{}{
-		testOperation: opUpload,
-		fieldOid:      largeFileOid,
-		fieldHref:     fmt.Sprintf("%s/group/noexist/gitlab-lfs/objects/%s/%d", url, largeFileOid, largeFileLen),
-		fieldHeaders: map[string]interface{}{
-			fieldAuthorization: testAuthHeader,
-			fieldContentType:   testContentType,
-		},
-	}
-	idBinary, _ := json.Marshal(idJSON)
-	idBase64 := base64.StdEncoding.EncodeToString(idBinary)
-	h := hmac.New(sha256.New, []byte("very secret"))
-	h.Write(idBinary)
-	tokenBinary := h.Sum(nil)
-	tokenBase64 := base64.StdEncoding.EncodeToString(tokenBinary)
-	writeCommandArgsAndBinaryData(t, pl, fmt.Sprintf("put-object %s", largeFileOid), []string{fmt.Sprintf("size=%d", largeFileLen), fmt.Sprintf("id=%s", idBase64), fmt.Sprintf("token=%s", tokenBase64)}, [][]byte{[]byte(largeFileContents)})
+	idJSON := buildIDJSON(opUpload, largeFileOid, fmt.Sprintf("%s/group/noexist/gitlab-lfs/objects/%s/%d", url, largeFileOid, largeFileLen))
+	idArg, tokenArg := buildIDAndToken(t, idJSON, testSecret)
+	writeCommandArgsAndBinaryData(t, pl, fmt.Sprintf("put-object %s", largeFileOid), []string{fmt.Sprintf("size=%d", largeFileLen), idArg, tokenArg}, [][]byte{[]byte(largeFileContents)})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 404", status)
 	require.Empty(t, args)
@@ -710,41 +641,15 @@ func TestLfsTransferPutObject(t *testing.T) {
 		"error: not found",
 	}, data)
 
-	idJSON = map[string]interface{}{
-		testOperation: opUpload,
-		fieldOid:      evenLargerFileOid,
-		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
-		fieldHeaders: map[string]interface{}{
-			fieldAuthorization: testAuthHeader,
-			fieldContentType:   testContentType,
-		},
-	}
-	idBinary, _ = json.Marshal(idJSON)
-	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
-	h = hmac.New(sha256.New, []byte("very secret"))
-	h.Write(idBinary)
-	tokenBinary = h.Sum(nil)
-	tokenBase64 = base64.StdEncoding.EncodeToString(tokenBinary)
-	writeCommandArgsAndBinaryData(t, pl, fmt.Sprintf("put-object %s", evenLargerFileOid), []string{fmt.Sprintf("size=%d", evenLargerFileLen), fmt.Sprintf("id=%s", idBase64), fmt.Sprintf("token=%s", tokenBase64)}, [][]byte{[]byte(evenLargerFileContents)})
+	idJSON = buildIDJSON(opUpload, evenLargerFileOid, fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen))
+	idArg, tokenArg = buildIDAndToken(t, idJSON, testSecret)
+	writeCommandArgsAndBinaryData(t, pl, fmt.Sprintf("put-object %s", evenLargerFileOid), []string{fmt.Sprintf("size=%d", evenLargerFileLen), idArg, tokenArg}, [][]byte{[]byte(evenLargerFileContents)})
 	status = readStatus(t, pl)
 	require.Equal(t, "status 200", status)
 
-	idJSON = map[string]interface{}{
-		testOperation: opDownload,
-		fieldOid:      evenLargerFileOid,
-		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
-		fieldHeaders: map[string]interface{}{
-			fieldAuthorization: testAuthHeader,
-			fieldContentType:   testContentType,
-		},
-	}
-	idBinary, _ = json.Marshal(idJSON)
-	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
-	h = hmac.New(sha256.New, []byte("very secret"))
-	h.Write(idBinary)
-	tokenBinary = h.Sum(nil)
-	tokenBase64 = base64.StdEncoding.EncodeToString(tokenBinary)
-	writeCommandArgsAndBinaryData(t, pl, fmt.Sprintf("put-object %s", evenLargerFileOid), []string{fmt.Sprintf("size=%d", evenLargerFileLen), fmt.Sprintf("id=%s", idBase64), fmt.Sprintf("token=%s", tokenBase64)}, [][]byte{[]byte(evenLargerFileContents)})
+	idJSON = buildIDJSON(opDownload, evenLargerFileOid, fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen))
+	idArg, tokenArg = buildIDAndToken(t, idJSON, testSecret)
+	writeCommandArgsAndBinaryData(t, pl, fmt.Sprintf("put-object %s", evenLargerFileOid), []string{fmt.Sprintf("size=%d", evenLargerFileLen), idArg, tokenArg}, [][]byte{[]byte(evenLargerFileContents)})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
@@ -752,22 +657,9 @@ func TestLfsTransferPutObject(t *testing.T) {
 		"error: invalid operation",
 	}, data)
 
-	idJSON = map[string]interface{}{
-		testOperation: opUpload,
-		fieldOid:      largeFileOid,
-		fieldHref:     fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen),
-		fieldHeaders: map[string]interface{}{
-			fieldAuthorization: testAuthHeader,
-			fieldContentType:   testContentType,
-		},
-	}
-	idBinary, _ = json.Marshal(idJSON)
-	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
-	h = hmac.New(sha256.New, []byte("very secret"))
-	h.Write(idBinary)
-	tokenBinary = h.Sum(nil)
-	tokenBase64 = base64.StdEncoding.EncodeToString(tokenBinary)
-	writeCommandArgsAndBinaryData(t, pl, fmt.Sprintf("put-object %s", evenLargerFileOid), []string{fmt.Sprintf("size=%d", evenLargerFileLen), fmt.Sprintf("id=%s", idBase64), fmt.Sprintf("token=%s", tokenBase64)}, [][]byte{[]byte(evenLargerFileContents)})
+	idJSON = buildIDJSON(opUpload, largeFileOid, fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen))
+	idArg, tokenArg = buildIDAndToken(t, idJSON, testSecret)
+	writeCommandArgsAndBinaryData(t, pl, fmt.Sprintf("put-object %s", evenLargerFileOid), []string{fmt.Sprintf("size=%d", evenLargerFileLen), idArg, tokenArg}, [][]byte{[]byte(evenLargerFileContents)})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
@@ -775,22 +667,9 @@ func TestLfsTransferPutObject(t *testing.T) {
 		"error: invalid oid",
 	}, data)
 
-	idJSON = map[string]interface{}{
-		testOperation: opUpload,
-		fieldOid:      largeFileOid,
-		fieldHref:     fmt.Sprintf("%s/evil-url", url),
-		fieldHeaders: map[string]interface{}{
-			fieldAuthorization: testAuthHeader,
-			fieldContentType:   testContentType,
-		},
-	}
-	idBinary, _ = json.Marshal(idJSON)
-	idBase64 = base64.StdEncoding.EncodeToString(idBinary)
-	h = hmac.New(sha256.New, []byte("evil secret"))
-	h.Write(idBinary)
-	tokenBinary = h.Sum(nil)
-	tokenBase64 = base64.StdEncoding.EncodeToString(tokenBinary)
-	writeCommandArgsAndBinaryData(t, pl, fmt.Sprintf("put-object %s", evenLargerFileOid), []string{fmt.Sprintf("size=%d", evenLargerFileLen), fmt.Sprintf("id=%s", idBase64), fmt.Sprintf("token=%s", tokenBase64)}, [][]byte{[]byte(evenLargerFileContents)})
+	idJSON = buildIDJSON(opUpload, largeFileOid, fmt.Sprintf("%s/evil-url", url))
+	idArg, tokenArg = buildIDAndToken(t, idJSON, evilSecret)
+	writeCommandArgsAndBinaryData(t, pl, fmt.Sprintf("put-object %s", evenLargerFileOid), []string{fmt.Sprintf("size=%d", evenLargerFileLen), idArg, tokenArg}, [][]byte{[]byte(evenLargerFileContents)})
 	status, args, data = readStatusArgsAndTextData(t, pl)
 	require.Equal(t, "status 403", status)
 	require.Empty(t, args)
@@ -1187,7 +1066,7 @@ func setup(t *testing.T, keyID string, op string) (string, *Command, *pktline.Pk
 	_, errorSink := io.Pipe()
 
 	cmd := &Command{
-		Config:     &config.Config{GitlabURL: url, Secret: "very secret"},
+		Config:     &config.Config{GitlabURL: url, Secret: testSecret},
 		Args:       &commandargs.Shell{GitlabKeyID: keyID, SSHArgs: []string{"git-lfs-transfer", repo, op}},
 		ReadWriter: &readwriter.ReadWriter{ErrOut: errorSink, Out: outputSink, In: inputSource},
 	}
@@ -1311,10 +1190,7 @@ func buildBatchHandler(t *testing.T, url *string, op string) testserver.TestRequ
 						retObject["actions"] = map[string]interface{}{
 							"download": map[string]interface{}{
 								fieldHref: fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s", *url, largeFileOid),
-								"header": map[string]interface{}{
-									fieldAuthorization: testAuthHeader,
-									fieldContentType:   testContentType,
-								},
+								"header":  standardLFSHeaders(),
 							},
 						}
 					}
@@ -1325,10 +1201,7 @@ func buildBatchHandler(t *testing.T, url *string, op string) testserver.TestRequ
 						retObject["actions"] = map[string]interface{}{
 							"upload": map[string]interface{}{
 								fieldHref: fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", *url, evenLargerFileOid, evenLargerFileLen),
-								"header": map[string]interface{}{
-									fieldAuthorization: testAuthHeader,
-									fieldContentType:   testContentType,
-								},
+								"header":  standardLFSHeaders(),
 							},
 						}
 					}
