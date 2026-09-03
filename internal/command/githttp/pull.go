@@ -66,24 +66,19 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 func (c *PullCommand) requestSSHUploadPack(ctx context.Context, client *git.Client) error {
 	slog.InfoContext(ctx, "Using Git over SSH upload pack")
 
-	return executeSSHRequest(ctx, client.SSHUploadPack, c.ReadWriter)
+	return pipeRequest(ctx, c.ReadWriter, c.readFromStdin, client.SSHUploadPack)
 }
 
 func (c *PullCommand) requestUploadPack(ctx context.Context, client *git.Client) error {
-	pipeReader, pipeWriter := io.Pipe()
-	go c.readFromStdin(pipeWriter)
-
-	response, err := client.UploadPack(ctx, pipeReader)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close() //nolint:errcheck
-
-	_, err = io.Copy(c.ReadWriter.Out, response.Body)
-
-	return err
+	return pipeRequest(ctx, c.ReadWriter, c.readFromStdin, client.UploadPack)
 }
 
+// readFromStdin forwards pkt-lines from stdin until it sees `done`.
+//
+// Fix for https://gitlab.com/gitlab-org/gitlab/-/work_items/584782: it closes
+// pw once negotiation ends instead of keeping it open (and thus subject to
+// the primary's nginx client_body_timeout) for the whole pack transfer, which
+// only flows on the response side.
 func (c *PullCommand) readFromStdin(pw *io.PipeWriter) {
 	scanner := pktline.NewScanner(c.ReadWriter.In)
 
@@ -96,6 +91,20 @@ func (c *PullCommand) readFromStdin(pw *io.PipeWriter) {
 		}
 
 		if pktline.IsDone(line) {
+			// The SSH client's request ends at `done`, and we stop reading stdin
+			// here so pw can be closed (see the function comment). But the
+			// primary's upload-pack is reached over HTTP, where protocol v2 expects
+			// the request body to end with a flush packet after `done`; without
+			// it, upload-pack sees an unexpected EOF and aborts the fetch.
+			//
+			// We synthesize the flush rather than forwarding the client's, because
+			// protocol v0/v1 clients never send one after `done`, so waiting to
+			// read it would block forever. Writing it unconditionally is safe for
+			// every protocol version.
+			if _, err := pw.Write(pktline.PktFlush()); err != nil {
+				slog.Error("failed to write flush packet", log.ErrorMessage(err.Error()))
+			}
+
 			break
 		}
 	}
