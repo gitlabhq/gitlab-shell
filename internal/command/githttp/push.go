@@ -67,18 +67,7 @@ func (c *PushCommand) requestSSHReceivePack(ctx context.Context, client *git.Cli
 }
 
 func (c *PushCommand) requestReceivePack(ctx context.Context, client *git.Client) error {
-	pipeReader, pipeWriter := io.Pipe()
-	go c.readFromStdin(pipeWriter)
-
-	response, err := client.ReceivePack(ctx, pipeReader)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close() //nolint:errcheck
-
-	_, err = io.Copy(c.ReadWriter.Out, response.Body)
-
-	return err
+	return pipeRequest(ctx, c.ReadWriter, c.readFromStdin, client.ReceivePack)
 }
 
 func (c *PushCommand) readFromStdin(pw *io.PipeWriter) {

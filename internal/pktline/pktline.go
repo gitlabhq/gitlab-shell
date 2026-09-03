@@ -35,7 +35,7 @@ func IsRefRemoval(pkt []byte) bool {
 
 // IsFlush detects the special flush packet '0000'
 func IsFlush(pkt []byte) bool {
-	return bytes.Equal(pkt, []byte("0000"))
+	return bytes.Equal(pkt, PktFlush())
 }
 
 // IsDone detects the special done packet '0009done\n'
@@ -46,6 +46,11 @@ func IsDone(pkt []byte) bool {
 // PktDone returns the bytes for a "done" packet.
 func PktDone() []byte {
 	return []byte("0009done\n")
+}
+
+// PktFlush returns the bytes for a flush packet.
+func PktFlush() []byte {
+	return []byte("0000")
 }
 
 func pktLineSplitter(data []byte, atEOF bool) (advance int, token []byte, err error) {
