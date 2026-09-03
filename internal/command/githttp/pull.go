@@ -91,9 +91,16 @@ func (c *PullCommand) readFromStdin(pw *io.PipeWriter) {
 		}
 
 		if pktline.IsDone(line) {
-			// Inject a flush packet: protocol v2 needs one to terminate the request,
-			// and upload-pack dies on EOF without it. We don't read one from the
-			// client because v0/v1 send no flush after done, which would block.
+			// The SSH client's request ends at `done`, and we stop reading stdin
+			// here so pw can be closed (see the function comment). But the
+			// primary's upload-pack is reached over HTTP, where protocol v2 expects
+			// the request body to end with a flush packet after `done`; without
+			// it, upload-pack sees an unexpected EOF and aborts the fetch.
+			//
+			// We synthesize the flush rather than forwarding the client's, because
+			// protocol v0/v1 clients never send one after `done`, so waiting to
+			// read it would block forever. Writing it unconditionally is safe for
+			// every protocol version.
 			if _, err := pw.Write(pktline.PktFlush()); err != nil {
 				slog.Error("failed to write flush packet", log.ErrorMessage(err.Error()))
 			}
