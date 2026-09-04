@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
@@ -19,6 +20,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
@@ -29,24 +31,40 @@ const (
 	testGitalyToken        = "token"
 )
 
-func TestCellsCommandExecute(t *testing.T) {
+func TestCellsCommandsExecute(t *testing.T) {
 	responseBody := "cell-response"
-	inputData := "test-stdin-data"
+	pushRequest := pktLine("0000000000000000000000000000000000000000 e56497bb5f03a90a51293fc6d516788730953899 refs/heads/main\x00report-status\n") +
+		string(pktline.PktFlush()) + "PACK receive-pack bytes"
 
 	testCases := []struct {
 		desc         string
+		input        string
+		expectedBody string
 		expectedPath string
 		execute      func(ctx context.Context, cfg *config.Config, rw *readwriter.ReadWriter, args *commandargs.Shell, resp *accessverifier.Response) error
 	}{
 		{
-			desc:         "pull uses ssh-upload-pack",
+			desc:         "protocol v2 fetch gets exactly one trailing flush",
+			input:        fetchV2Request,
+			expectedBody: fetchV2Request,
 			expectedPath: "/group/project.git/ssh-upload-pack",
 			execute: func(ctx context.Context, cfg *config.Config, rw *readwriter.ReadWriter, args *commandargs.Shell, resp *accessverifier.Response) error {
 				return NewCellsPullCommand(cfg, rw, args, resp).Execute(ctx)
 			},
 		},
 		{
-			desc:         "push uses ssh-receive-pack",
+			desc:         "protocol v2 ls-refs without done forwards through EOF",
+			input:        lsRefsV2Request,
+			expectedBody: lsRefsV2Request,
+			expectedPath: "/group/project.git/ssh-upload-pack",
+			execute: func(ctx context.Context, cfg *config.Config, rw *readwriter.ReadWriter, args *commandargs.Shell, resp *accessverifier.Response) error {
+				return NewCellsPullCommand(cfg, rw, args, resp).Execute(ctx)
+			},
+		},
+		{
+			desc:         "push remains raw streaming",
+			input:        pushRequest,
+			expectedBody: pushRequest,
 			expectedPath: "/group/project.git/ssh-receive-pack",
 			execute: func(ctx context.Context, cfg *config.Config, rw *readwriter.ReadWriter, args *commandargs.Shell, resp *accessverifier.Response) error {
 				return NewCellsPushCommand(cfg, rw, args, resp).Execute(ctx)
@@ -60,7 +78,7 @@ func TestCellsCommandExecute(t *testing.T) {
 			cfg := cellsTestConfig(t)
 
 			output := &bytes.Buffer{}
-			input := strings.NewReader(inputData)
+			input := strings.NewReader(tc.input)
 
 			err := tc.execute(
 				context.Background(),
@@ -71,13 +89,43 @@ func TestCellsCommandExecute(t *testing.T) {
 			)
 
 			require.NoError(t, err)
-			require.Equal(t, responseBody, output.String())
-			require.Equal(t, tc.expectedPath, captured.path)
-			require.NotEmpty(t, captured.headers.Get("Gitlab-Shell-Api-Request"))
-			require.Equal(t, testGitProtocolVersion, captured.headers.Get("Git-Protocol"))
-			require.Equal(t, inputData, string(captured.body))
+			assert.Equal(t, responseBody, output.String())
+			assert.Equal(t, tc.expectedPath, captured.path)
+			assert.NotEmpty(t, captured.headers.Get("Gitlab-Shell-Api-Request"))
+			assert.Equal(t, testGitProtocolVersion, captured.headers.Get("Git-Protocol"))
+			assert.Equal(t, tc.expectedBody, string(captured.body))
 		})
 	}
+}
+
+func TestCellsPullClosesRequestBodyAfterDone(t *testing.T) {
+	cellServer, captured := startCapturingCellServer(t, "cell-response")
+	inputReader, inputWriter := io.Pipe()
+	t.Cleanup(func() { inputWriter.Close() })
+
+	command := NewCellsPullCommand(
+		cellsTestConfig(t),
+		&readwriter.ReadWriter{Out: io.Discard, In: inputReader},
+		&commandargs.Shell{Env: sshenv.Env{GitProtocolVersion: testGitProtocolVersion}},
+		cellsTestResponse(cellServer.URL),
+	)
+	result := make(chan error, 1)
+	go func() {
+		result <- command.Execute(context.Background())
+	}()
+
+	request := pktLine("want e56497bb5f03a90a51293fc6d516788730953899\n") + string(pktline.PktDone())
+	_, err := io.WriteString(inputWriter, request)
+	require.NoError(t, err)
+
+	select {
+	case err := <-result:
+		require.NoError(t, err)
+	case <-time.After(time.Second):
+		require.Fail(t, "Cells pull waited for SSH EOF after done")
+	}
+
+	assert.Equal(t, request+string(pktline.PktFlush()), string(captured.body))
 }
 
 func TestBuildCellsGitClient(t *testing.T) {
