@@ -15,57 +15,71 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
 )
 
-// CellsCommand handles git pull/push via SSH-over-HTTP for Cells routing.
-// When the Topology Service routes to a different Cell, Gitaly is not
-// directly reachable, so we proxy SSH pack data through the Cell's
-// Workhorse via POST /{repo}.git/ssh-upload-pack or /ssh-receive-pack.
-type CellsCommand struct {
+// CellsPullCommand handles git pull (upload-pack) via SSH-over-HTTP for Cells
+// routing. When the Topology Service routes to a different Cell, Gitaly is not
+// directly reachable, so it proxies SSH pack data through the Cell's Workhorse
+// via POST /{repo}.git/ssh-upload-pack.
+type CellsPullCommand struct {
 	Config     *config.Config
 	ReadWriter *readwriter.ReadWriter
 	Args       *commandargs.Shell
 	Response   *accessverifier.Response
-
-	Operation string
-	RequestFn func(client *git.Client) sshRequestFunc
 }
 
-// Execute runs the Cells SSH-over-HTTP operation.
-func (c *CellsCommand) Execute(ctx context.Context) error {
-	slog.InfoContext(ctx, "Cells: using SSH-over-HTTP "+c.Operation,
+// Execute runs a Cells SSH-over-HTTP upload-pack request.
+func (c *CellsPullCommand) Execute(ctx context.Context) error {
+	slog.InfoContext(ctx, "Cells: using SSH-over-HTTP upload-pack",
 		slog.String("cell_address", c.Response.CellAddress))
 
 	gitClient, err := buildCellsGitClient(c.Config, c.Response, c.Args)
 	if err != nil {
 		return err
 	}
-	return executeSSHRequest(ctx, c.RequestFn(gitClient), c.ReadWriter)
+
+	return pipeRequest(ctx, c.ReadWriter, readUploadPackRequest, gitClient.SSHUploadPack)
 }
 
 // NewCellsPullCommand builds a Cells SSH-over-HTTP upload-pack command.
-func NewCellsPullCommand(cfg *config.Config, rw *readwriter.ReadWriter, args *commandargs.Shell, resp *accessverifier.Response) *CellsCommand {
-	return &CellsCommand{
+func NewCellsPullCommand(cfg *config.Config, rw *readwriter.ReadWriter, args *commandargs.Shell, resp *accessverifier.Response) *CellsPullCommand {
+	return &CellsPullCommand{
 		Config:     cfg,
 		ReadWriter: rw,
 		Args:       args,
 		Response:   resp,
-		Operation:  "upload-pack",
-		RequestFn: func(gc *git.Client) sshRequestFunc {
-			return gc.SSHUploadPack
-		},
 	}
 }
 
+// CellsPushCommand handles git push (receive-pack) via SSH-over-HTTP for Cells
+// routing. When the Topology Service routes to a different Cell, Gitaly is not
+// directly reachable, so it proxies SSH pack data through the Cell's Workhorse
+// via POST /{repo}.git/ssh-receive-pack.
+type CellsPushCommand struct {
+	Config     *config.Config
+	ReadWriter *readwriter.ReadWriter
+	Args       *commandargs.Shell
+	Response   *accessverifier.Response
+}
+
+// Execute runs a Cells SSH-over-HTTP receive-pack request.
+func (c *CellsPushCommand) Execute(ctx context.Context) error {
+	slog.InfoContext(ctx, "Cells: using SSH-over-HTTP receive-pack",
+		slog.String("cell_address", c.Response.CellAddress))
+
+	gitClient, err := buildCellsGitClient(c.Config, c.Response, c.Args)
+	if err != nil {
+		return err
+	}
+
+	return executeSSHRequest(ctx, gitClient.SSHReceivePack, c.ReadWriter)
+}
+
 // NewCellsPushCommand builds a Cells SSH-over-HTTP receive-pack command.
-func NewCellsPushCommand(cfg *config.Config, rw *readwriter.ReadWriter, args *commandargs.Shell, resp *accessverifier.Response) *CellsCommand {
-	return &CellsCommand{
+func NewCellsPushCommand(cfg *config.Config, rw *readwriter.ReadWriter, args *commandargs.Shell, resp *accessverifier.Response) *CellsPushCommand {
+	return &CellsPushCommand{
 		Config:     cfg,
 		ReadWriter: rw,
 		Args:       args,
 		Response:   resp,
-		Operation:  "receive-pack",
-		RequestFn: func(gc *git.Client) sshRequestFunc {
-			return gc.SSHReceivePack
-		},
 	}
 }
 

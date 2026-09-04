@@ -110,9 +110,9 @@ func TestPullExecuteWithSSHUploadPack(t *testing.T) {
 }
 
 // TestPullExecuteWithSSHUploadPackProtocolV2 covers protocol v2 requests.
-// readFromStdin only stops on a `done` line, so ls-refs (which has none)
+// readUploadPackRequest only stops on a `done` line, so ls-refs (which has none)
 // forwards up to EOF as-is, while fetch's multi-round `have` negotiation ends
-// with readFromStdin forwarding `done` and injecting the trailing flush-pkt
+// with readUploadPackRequest forwarding `done` and injecting the trailing flush-pkt
 // that must terminate the request. Either way, the forwarded body should
 // match what real git sends byte for byte.
 func TestPullExecuteWithSSHUploadPackProtocolV2(t *testing.T) {

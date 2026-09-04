@@ -2,7 +2,6 @@ package githttp
 
 import (
 	"context"
-	"io"
 	"log/slog"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
@@ -10,8 +9,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
-	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
-	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 const pushService = "git-receive-pack"
@@ -67,38 +64,5 @@ func (c *PushCommand) requestSSHReceivePack(ctx context.Context, client *git.Cli
 }
 
 func (c *PushCommand) requestReceivePack(ctx context.Context, client *git.Client) error {
-	return pipeRequest(ctx, c.ReadWriter, c.readFromStdin, client.ReceivePack)
-}
-
-func (c *PushCommand) readFromStdin(pw *io.PipeWriter) {
-	var needsPackData bool
-
-	scanner := pktline.NewScanner(c.ReadWriter.In)
-	for scanner.Scan() {
-		line := scanner.Bytes()
-		_, err := pw.Write(line)
-		if err != nil {
-			slog.Error("failed to write line", log.ErrorMessage(err.Error()))
-		}
-
-		if pktline.IsFlush(line) {
-			break
-		}
-
-		if !needsPackData && !pktline.IsRefRemoval(line) {
-			needsPackData = true
-		}
-	}
-
-	if needsPackData {
-		_, err := io.Copy(pw, c.ReadWriter.In)
-		if err != nil {
-			slog.Error("failed to copy", log.ErrorMessage(err.Error()))
-		}
-	}
-
-	err := pw.Close()
-	if err != nil {
-		slog.Error("failed to close writer", log.ErrorMessage(err.Error()))
-	}
+	return pipeRequest(ctx, c.ReadWriter, readReceivePackRequest, client.ReceivePack)
 }
