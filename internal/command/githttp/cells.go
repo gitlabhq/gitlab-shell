@@ -216,7 +216,7 @@ func buildCellsGitClient(
 
 	headers := map[string]string{}
 	if args.Env.GitProtocolVersion != "" {
-		headers["Git-Protocol"] = args.Env.GitProtocolVersion
+		headers[gitProtocolHeader] = args.Env.GitProtocolVersion
 	}
 
 	// The Shell JWT lives for one minute, but a push's second request can start

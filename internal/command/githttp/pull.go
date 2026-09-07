@@ -49,7 +49,7 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 
 	// For Git over SSH routing
 	if data.GeoProxyFetchSSHDirectToPrimary {
-		client.Headers["Git-Protocol"] = c.Args.Env.GitProtocolVersion
+		setGitProtocolHeader(client, c.Args.Env.GitProtocolVersion)
 		return c.requestSSHUploadPack(ctx, client)
 	}
 
