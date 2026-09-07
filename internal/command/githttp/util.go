@@ -18,9 +18,21 @@ type gitHTTPCommand interface {
 	ForInfoRefs() (*readwriter.ReadWriter, string, []byte)
 }
 
+type infoRefsClient interface {
+	InfoRefs(context.Context, string) (*http.Response, error)
+}
+
+func setGitProtocolHeader(client *git.Client, version string) {
+	if client.Headers == nil {
+		client.Headers = make(map[string]string)
+	}
+
+	client.Headers["Git-Protocol"] = version
+}
+
 // requestInfoRefs performs an HTTP request to the /info/refs endpoint for the specified Git service,
 // verifies the response prefix, and writes the result to the output stream.
-func requestInfoRefs(ctx context.Context, client *git.Client, command gitHTTPCommand) error {
+func requestInfoRefs(ctx context.Context, client infoRefsClient, command gitHTTPCommand) error {
 	readWriter, serviceName, httpPrefix := command.ForInfoRefs()
 
 	response, err := client.InfoRefs(ctx, serviceName)
@@ -34,7 +46,7 @@ func requestInfoRefs(ctx context.Context, client *git.Client, command gitHTTPCom
 	// pull - 001e# service=git-upload-pack\n0000 string
 	// to convert HTTP(S) Git response to the one expected by SSH
 	p := make([]byte, len(httpPrefix))
-	_, err = response.Body.Read(p)
+	_, err = io.ReadFull(response.Body, p)
 	if err != nil || !bytes.Equal(p, httpPrefix) {
 		return fmt.Errorf("unexpected %s response", serviceName)
 	}

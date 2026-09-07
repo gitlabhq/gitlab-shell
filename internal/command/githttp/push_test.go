@@ -26,6 +26,28 @@ var (
 		"agent=git/2.38.3.gl200\n" + flush
 )
 
+func setupSSHPush(t *testing.T) (string, *capturedSSHRequest) {
+	t.Helper()
+
+	captured := &capturedSSHRequest{}
+	url := testserver.StartHTTPServer(t, []testserver.TestRequestHandler{
+		{
+			Path: testSSHReceivePackPath,
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				body, err := io.ReadAll(r.Body)
+				assert.NoError(t, err)
+				captured.body = string(body)
+				captured.gitProtocol = r.Header.Get(gitProtocolHeader)
+				captured.authorization = r.Header.Get(testAuthorizationHeader)
+				_, err = w.Write([]byte("receive-pack-response"))
+				assert.NoError(t, err)
+			},
+		},
+	})
+
+	return url, captured
+}
+
 func TestExecute(t *testing.T) {
 	url, input := setup(t, http.StatusOK)
 	output := &bytes.Buffer{}
@@ -120,31 +142,45 @@ func TestExecuteWithFailedReceivePack(t *testing.T) {
 }
 
 func TestPushExecuteWithSSHReceivePack(t *testing.T) {
-	url := setupSSHPush(t, http.StatusOK)
-	output := &bytes.Buffer{}
-	input := strings.NewReader(cloneResponse + "0009done\n")
-
-	cmd := &PushCommand{
-		Config:     &config.Config{GitlabURL: url},
-		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
-		Response: &accessverifier.Response{
-			Payload: accessverifier.CustomPayload{
-				Data: accessverifier.CustomPayloadData{
-					PrimaryRepo:                    url,
-					GeoProxyPushSSHDirectToPrimary: true,
-					RequestHeaders:                 map[string]string{"Authorization": testGitalyToken},
-				},
-			},
+	testCases := []struct {
+		desc                  string
+		requestHeaders        map[string]string
+		expectedAuthorization string
+	}{
+		{
+			desc:                  "with request headers",
+			requestHeaders:        map[string]string{testAuthorizationHeader: testGitalyToken},
+			expectedAuthorization: testGitalyToken,
 		},
-		Args: &commandargs.Shell{
-			Env: sshenv.Env{
-				GitProtocolVersion: testGitProtocolVersion,
-			},
+		{
+			desc:                  "with nil request headers",
+			requestHeaders:        nil,
+			expectedAuthorization: "",
 		},
 	}
 
-	require.NoError(t, cmd.Execute(context.Background()))
-	assert.Equal(t, "receive-pack-response", output.String())
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			requestBody := "receive-pack-request"
+			url, captured := setupSSHPush(t)
+			output := &bytes.Buffer{}
+			cmd := &PushCommand{
+				ReadWriter: &readwriter.ReadWriter{Out: output, In: strings.NewReader(requestBody)},
+				Response: &accessverifier.Response{Payload: accessverifier.CustomPayload{Data: accessverifier.CustomPayloadData{
+					PrimaryRepo:                    url,
+					GeoProxyPushSSHDirectToPrimary: true,
+					RequestHeaders:                 tc.requestHeaders,
+				}}},
+				Args: &commandargs.Shell{Env: sshenv.Env{GitProtocolVersion: testGitProtocolVersion}},
+			}
+
+			require.NoError(t, cmd.Execute(context.Background()))
+			assert.Equal(t, requestBody, captured.body)
+			assert.Equal(t, testGitProtocolVersion, captured.gitProtocol)
+			assert.Equal(t, tc.expectedAuthorization, captured.authorization)
+			assert.Equal(t, "receive-pack-response", output.String())
+		})
+	}
 }
 
 func setup(t *testing.T, receivePackStatusCode int) (string, io.Reader) {
@@ -183,26 +219,4 @@ func setup(t *testing.T, receivePackStatusCode int) (string, io.Reader) {
 	}
 
 	return testserver.StartHTTPServer(t, requests), input
-}
-
-func setupSSHPush(t *testing.T, uploadPackStatusCode int) string {
-	requests := []testserver.TestRequestHandler{
-		{
-			Path: "/ssh-receive-pack",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				body, err := io.ReadAll(r.Body)
-				assert.NoError(t, err)
-				defer r.Body.Close()
-
-				assert.True(t, strings.HasSuffix(string(body), "0009done\n"))
-				assert.Equal(t, testGitProtocolVersion, r.Header.Get("Git-Protocol"))
-				assert.Equal(t, testGitalyToken, r.Header.Get("Authorization"))
-
-				w.WriteHeader(uploadPackStatusCode)
-				w.Write([]byte("receive-pack-response"))
-			},
-		},
-	}
-
-	return testserver.StartHTTPServer(t, requests)
 }
