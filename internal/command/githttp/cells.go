@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"path"
 
+	"gitlab.com/gitlab-org/labkit/v2/log"
+
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
@@ -28,7 +30,7 @@ type CellsPullCommand struct {
 
 // Execute runs a Cells SSH-over-HTTP upload-pack request.
 func (c *CellsPullCommand) Execute(ctx context.Context) error {
-	slog.InfoContext(ctx, "Cells: using SSH-over-HTTP upload-pack",
+	log.FromContext(ctx).InfoContext(ctx, "Cells: using SSH-over-HTTP upload-pack",
 		slog.String("cell_address", c.Response.CellAddress))
 
 	gitClient, err := buildCellsGitClient(c.Config, c.Response, c.Args)
@@ -62,7 +64,7 @@ type CellsPushCommand struct {
 
 // Execute runs a Cells SSH-over-HTTP receive-pack request.
 func (c *CellsPushCommand) Execute(ctx context.Context) error {
-	slog.InfoContext(ctx, "Cells: using SSH-over-HTTP receive-pack",
+	log.FromContext(ctx).InfoContext(ctx, "Cells: using SSH-over-HTTP receive-pack",
 		slog.String("cell_address", c.Response.CellAddress))
 
 	gitClient, err := buildCellsGitClient(c.Config, c.Response, c.Args)
