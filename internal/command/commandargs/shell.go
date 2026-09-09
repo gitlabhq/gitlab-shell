@@ -13,6 +13,8 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology"
 )
 
+const gitCommand = "git"
+
 // Define supported command types
 const (
 	Discover            CommandType = "discover"
@@ -138,7 +140,7 @@ func (s *Shell) ParseCommand(commandString string) error {
 	}
 
 	// Handle Git for Windows 2.14 using "git upload-pack" instead of git-upload-pack
-	if len(args) > 1 && args[0] == "git" {
+	if len(args) > 1 && args[0] == gitCommand {
 		command := args[0] + "-" + args[1]
 		commandArgs := args[2:]
 
