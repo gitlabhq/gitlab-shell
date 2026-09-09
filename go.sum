@@ -142,8 +142,8 @@ github.com/census-instrumentation/opencensus-proto v0.4.1/go.mod h1:4T9NM4+4Vw91
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
 github.com/cespare/xxhash/v2 v2.3.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
-github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20260309112543-12416315a635 h1:RwCfD5XyO8jAermEy6pauh5Q5o6mCvbeNcCPOZlIA5o=
-github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20260309112543-12416315a635/go.mod h1:R+SetERD4+IL7QH0WHp9MLifvITvh9gL3g8vX1j2Fcs=
+github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20260812203852-971c0284dc33 h1:YG5mXlv9SxS4rdtSxK3RuH146x1HIQzsbVJqSp/Rvfc=
+github.com/charmbracelet/git-lfs-transfer v0.1.1-0.20260812203852-971c0284dc33/go.mod h1:R+SetERD4+IL7QH0WHp9MLifvITvh9gL3g8vX1j2Fcs=
 github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575 h1:kHaBemcxl8o/pQ5VM1c8PVE1PubbNx3mjUr09OqWGCs=
 github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575/go.mod h1:9d6lWj8KzO/fd/NrVaLscBKmPigpZpn5YawRPw+e3Yo=
 github.com/cilium/ebpf v0.16.0 h1:+BiEnHL6Z7lXnlGUsXQPPAE7+kenAd4ES8MQ5min0Ok=
