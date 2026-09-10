@@ -236,7 +236,7 @@ func buildCertPermissions(cert *ssh.Certificate, extensions map[string]string) *
 	}
 }
 
-func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, cert *ssh.Certificate) (*ssh.Permissions, error) { //nolint:funlen
+func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, cert *ssh.Certificate) (*ssh.Permissions, error) {
 	fingerprint := ssh.FingerprintSHA256(cert.SignatureKey)
 
 	// Enrich context early so all rejection paths include audit-relevant fields.
@@ -281,33 +281,78 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 		}), nil
 	}
 
-	// Fall back to group-level certificate check via Rails API
+	// Fall back to certificate resolution via the Rails API (group- or instance-level)
 	if os.Getenv("FF_GITLAB_SHELL_SSH_CERTIFICATES") != "1" {
 		return nil, fmt.Errorf("handleUserCertificate: feature is disabled")
 	}
 
+	return s.resolveCertificateViaAPI(ctx, cert, fingerprint)
+}
+
+// resolveCertificateViaAPI authenticates a certificate whose signing CA is not
+// locally trusted, by asking the Rails API to resolve the CA fingerprint. The
+// response identifies whether the match was instance-scoped, which grants
+// instance-wide access, or group-scoped, which restricts access to a namespace.
+func (s *serverConfig) resolveCertificateViaAPI(ctx context.Context, cert *ssh.Certificate, fingerprint string) (*ssh.Permissions, error) {
 	res, err := s.authorizedCertsClient.GetByKey(ctx, cert.KeyId, strings.TrimPrefix(fingerprint, "SHA256:"))
 	if err != nil {
 		log.FromContext(ctx).WarnContext(ctx, "user certificate is not signed by a trusted key", log.ErrorMessage(err.Error()))
 		return nil, err
 	}
 
+	// A group-scoped match without a namespace would be indistinguishable from
+	// an instance-scoped one downstream, so fail closed rather than widening
+	// the grant to the whole instance.
+	if !res.Instance && res.Namespace == "" {
+		log.FromContext(ctx).WarnContext(ctx, "certificate rejected: group-scoped response has no namespace")
+		return nil, fmt.Errorf("handleUserCertificate: group-scoped response missing namespace")
+	}
+
+	if res.Username == "" {
+		log.FromContext(ctx).WarnContext(ctx, "certificate rejected: response has no username")
+		return nil, fmt.Errorf("handleUserCertificate: response missing username")
+	}
+
+	scope := "group"
+	if res.Instance {
+		scope = "instance"
+	}
+
 	ctx = log.AppendFields(ctx,
 		slog.String("certificate_username", res.Username),
-		slog.String("certificate_namespace", res.Namespace),
+		slog.String("certificate_scope", scope),
 	)
 
-	log.FromContext(ctx).InfoContext(ctx, "user certificate is signed by a trusted key (group-level)")
+	extensions := map[string]string{certPermUsername: res.Username}
+
+	if res.Instance {
+		// Instance-level CAs grant the same instance-wide trust as locally
+		// trusted ones, so hold their KeyId to the same standard. This runs
+		// after the API call, not before it: group-level resolution accepts an
+		// email address as the identifier, which validateKeyID's pattern
+		// rejects. No permissions have been granted yet, so a malformed KeyId
+		// never reaches a session.
+		if err := validateKeyID(cert.KeyId); err != nil {
+			log.FromContext(ctx).WarnContext(ctx, "instance-level certificate rejected: invalid KeyId",
+				log.ErrorMessage(err.Error()))
+			return nil, fmt.Errorf("handleUserCertificate: %w", err)
+		}
+
+		// No namespace key = instance-wide access (no namespace restriction)
+		log.FromContext(ctx).InfoContext(ctx, "user certificate is signed by a trusted key (instance-level)")
+	} else {
+		extensions[certPermNamespace] = res.Namespace
+
+		ctx = log.AppendFields(ctx, slog.String("certificate_namespace", res.Namespace))
+		log.FromContext(ctx).InfoContext(ctx, "user certificate is signed by a trusted key (group-level)")
+	}
 
 	if addr, ok := cert.CriticalOptions["source-address"]; ok {
 		log.FromContext(ctx).InfoContext(ctx, "certificate authorized with source-address restriction",
 			slog.String("source_address", addr))
 	}
 
-	return buildCertPermissions(cert, map[string]string{
-		certPermUsername:  res.Username,
-		certPermNamespace: res.Namespace,
-	}), nil
+	return buildCertPermissions(cert, extensions), nil
 }
 
 // publicKeyCallback returns the SSH PublicKeyCallback. It authenticates the key
