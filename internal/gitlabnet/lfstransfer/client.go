@@ -164,13 +164,12 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 	if err != nil {
 		return nil, err
 	}
+	defer func() { _ = res.Body.Close() }()
 
 	// Error condition taken from example: https://pkg.go.dev/net/http#example-Get
 	if res.StatusCode > 399 {
 		return nil, fmt.Errorf("response failed with status code: %d", res.StatusCode)
 	}
-
-	defer func() { _ = res.Body.Close() }()
 
 	response := &BatchResponse{}
 	if err := gitlabnet.ParseJSON(res, response); err != nil {
@@ -198,6 +197,7 @@ func (c *Client) GetObject(_, href string, headers map[string]string) (io.ReadCl
 		return nil, 0, err
 	}
 	if res.StatusCode < 200 || res.StatusCode > 299 {
+		_ = res.Body.Close()
 		return nil, 0, fs.ErrNotExist
 	}
 
