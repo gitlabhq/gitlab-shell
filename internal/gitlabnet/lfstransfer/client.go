@@ -25,6 +25,7 @@ type Client struct {
 	href   string
 	auth   string
 	header string
+	client *retryablehttp.Client
 }
 
 // BatchAction represents an action for a batch operation with metadata.
@@ -115,7 +116,11 @@ const ClientHeader = "application/vnd.git-lfs+json"
 
 // NewClient creates a new Client instance using the provided configuration and credentials.
 func NewClient(config *config.Config, args *commandargs.Shell, href string, auth string) (*Client, error) {
-	return &Client{config: config, args: args, href: href, auth: auth, header: ClientHeader}, nil
+	client := retryablehttp.NewClient()
+	client.RetryMax = 3
+	client.Logger = nil
+
+	return &Client{config: config, args: args, href: href, auth: auth, header: ClientHeader, client: client}, nil
 }
 func (c *Client) newAuthenticatedPostRequest(url string, body io.Reader) (*retryablehttp.Request, error) {
 	req, err := retryablehttp.NewRequest(http.MethodPost, url, body)
@@ -126,13 +131,6 @@ func (c *Client) newAuthenticatedPostRequest(url string, body io.Reader) (*retry
 	req.Header.Set("Authorization", c.auth)
 
 	return req, nil
-}
-
-func newHTTPClient() *retryablehttp.Client {
-	client := retryablehttp.NewClient()
-	client.RetryMax = 3
-	client.Logger = nil
-	return client
 }
 
 // Batch performs a batch operation on objects and returns the result.
@@ -158,9 +156,7 @@ func (c *Client) Batch(operation string, reqObjects []*BatchObject, ref string, 
 		return nil, err
 	}
 
-	client := newHTTPClient()
-
-	res, err := client.Do(req)
+	res, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -190,10 +186,9 @@ func (c *Client) GetObject(_, href string, headers map[string]string) (io.ReadCl
 		req.Header.Add(key, value)
 	}
 
-	client := newHTTPClient()
 	// See https://gitlab.com/gitlab-org/gitlab-shell/-/merge_requests/989#note_1891153531 for
 	// discussion on bypassing the linter
-	res, err := client.Do(req) // nolint:bodyclose
+	res, err := c.client.Do(req) // nolint:bodyclose
 	if err != nil {
 		return nil, 0, err
 	}
@@ -214,8 +209,7 @@ func (c *Client) PutObject(_, href string, headers map[string]string, r io.Reade
 		req.Header.Add(key, value)
 	}
 
-	client := newHTTPClient()
-	res, err := client.Do(req)
+	res, err := c.client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -252,8 +246,7 @@ func (c *Client) Lock(path, refname string) (*Lock, error) {
 		return nil, err
 	}
 
-	client := newHTTPClient()
-	res, err := client.Do(req)
+	res, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -307,8 +300,7 @@ func (c *Client) Unlock(id string, force bool, refname string) (*Lock, error) {
 		return nil, err
 	}
 
-	client := newHTTPClient()
-	res, err := client.Do(req)
+	res, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -366,8 +358,7 @@ func (c *Client) ListLocksVerify(path, id, cursor string, limit int, ref string)
 		return nil, err
 	}
 
-	client := newHTTPClient()
-	res, err := client.Do(req)
+	res, err := c.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
