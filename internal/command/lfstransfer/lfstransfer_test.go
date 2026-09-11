@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -29,6 +28,7 @@ import (
 const (
 	largeFileContents      = "This is a large file\n"
 	evenLargerFileContents = "This is an even larger file\n"
+	executeWaitTimeout     = 10 * time.Second
 
 	// JSON field names used in LFS batch responses
 	fieldOid           = "oid"
@@ -178,17 +178,25 @@ func parseBatchItem(t *testing.T, dataLine, secret string) parsedBatchItem {
 	return item
 }
 
-func setupWaitGroupForExecute(t *testing.T, cmd *Command) *sync.WaitGroup {
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
-
+func startExecute(cmd *Command) <-chan error {
+	errCh := make(chan error, 1)
 	go func() {
 		_, err := cmd.Execute(context.Background())
-		assert.NoError(t, err)
-		wg.Done()
+		errCh <- err
 	}()
 
-	return wg
+	return errCh
+}
+
+func waitForExecute(t *testing.T, errCh <-chan error) {
+	t.Helper()
+
+	select {
+	case err := <-errCh:
+		require.NoError(t, err)
+	case <-time.After(executeWaitTimeout):
+		require.FailNowf(t, "Command.Execute did not finish", "timed out after %s", executeWaitTimeout)
+	}
 }
 
 func writeCommand(t *testing.T, pl *pktline.Pktline, command string) {
@@ -406,11 +414,11 @@ func quit(t *testing.T, pl *pktline.Pktline) {
 
 func TestLfsTransferCapabilities(t *testing.T) {
 	_, cmd, pl := setup(t, "rw", opUpload)
-	wg := setupWaitGroupForExecute(t, cmd)
+	errCh := startExecute(cmd)
 	negotiateVersion(t, pl)
 
 	quit(t, pl)
-	wg.Wait()
+	waitForExecute(t, errCh)
 }
 
 func TestLfsTransferNoPermissions(t *testing.T) {
@@ -421,7 +429,7 @@ func TestLfsTransferNoPermissions(t *testing.T) {
 
 func TestLfsTransferBatchDownload(t *testing.T) {
 	url, cmd, pl := setup(t, "rw", opDownload)
-	wg := setupWaitGroupForExecute(t, cmd)
+	errCh := startExecute(cmd)
 	negotiateVersion(t, pl)
 
 	writeCommandArgsAndTextData(t, pl, "batch", nil, []string{
@@ -447,12 +455,12 @@ func TestLfsTransferBatchDownload(t *testing.T) {
 	require.Equal(t, fmt.Sprintf("%s %d noop", evenLargerFileOid, evenLargerFileLen), data[2])
 
 	quit(t, pl)
-	wg.Wait()
+	waitForExecute(t, errCh)
 }
 
 func TestLfsTransferBatchUpload(t *testing.T) {
 	url, cmd, pl := setup(t, "rw", opUpload)
-	wg := setupWaitGroupForExecute(t, cmd)
+	errCh := startExecute(cmd)
 	negotiateVersion(t, pl)
 
 	writeCommandArgsAndTextData(t, pl, "batch", nil, []string{
@@ -478,12 +486,12 @@ func TestLfsTransferBatchUpload(t *testing.T) {
 	), evenLargerFileItem.id)
 
 	quit(t, pl)
-	wg.Wait()
+	waitForExecute(t, errCh)
 }
 
 func TestLfsTransferGetObject(t *testing.T) {
 	url, cmd, pl := setup(t, "rw", opDownload)
-	wg := setupWaitGroupForExecute(t, cmd)
+	errCh := startExecute(cmd)
 	negotiateVersion(t, pl)
 
 	writeCommand(t, pl, "get-object 00000000")
@@ -580,12 +588,12 @@ func TestLfsTransferGetObject(t *testing.T) {
 	}, data)
 
 	quit(t, pl)
-	wg.Wait()
+	waitForExecute(t, errCh)
 }
 
 func TestLfsTransferPutObject(t *testing.T) {
 	url, cmd, pl := setup(t, "rw", opUpload)
-	wg := setupWaitGroupForExecute(t, cmd)
+	errCh := startExecute(cmd)
 	negotiateVersion(t, pl)
 
 	writeCommandArgsAndBinaryData(t, pl, "put-object 00000000", []string{testSizeZero}, nil)
@@ -678,12 +686,12 @@ func TestLfsTransferPutObject(t *testing.T) {
 	}, data)
 
 	quit(t, pl)
-	wg.Wait()
+	waitForExecute(t, errCh)
 }
 
 func TestLfsTransferVerifyObject(t *testing.T) {
 	_, cmd, pl := setup(t, "rw", opUpload)
-	wg := setupWaitGroupForExecute(t, cmd)
+	errCh := startExecute(cmd)
 	negotiateVersion(t, pl)
 
 	writeCommandArgs(t, pl, "verify-object 00000000", []string{testSizeZero})
@@ -691,12 +699,12 @@ func TestLfsTransferVerifyObject(t *testing.T) {
 	require.Equal(t, "status 200", status)
 
 	quit(t, pl)
-	wg.Wait()
+	waitForExecute(t, errCh)
 }
 
 func TestLfsTransferLock(t *testing.T) {
 	_, cmd, pl := setup(t, "rw", opUpload)
-	wg := setupWaitGroupForExecute(t, cmd)
+	errCh := startExecute(cmd)
 	negotiateVersion(t, pl)
 
 	writeCommandArgs(t, pl, "lock", []string{argPathFile1})
@@ -749,12 +757,12 @@ func TestLfsTransferLock(t *testing.T) {
 	}, args)
 
 	quit(t, pl)
-	wg.Wait()
+	waitForExecute(t, errCh)
 }
 
 func TestLfsTransferUnlock(t *testing.T) {
 	_, cmd, pl := setup(t, "rw", opUpload)
-	wg := setupWaitGroupForExecute(t, cmd)
+	errCh := startExecute(cmd)
 	negotiateVersion(t, pl)
 
 	writeCommandArgs(t, pl, "unlock lock1", []string{"refname=refs/heads/main"})
@@ -794,12 +802,12 @@ func TestLfsTransferUnlock(t *testing.T) {
 	}, data)
 
 	quit(t, pl)
-	wg.Wait()
+	waitForExecute(t, errCh)
 }
 
 func TestLfsTransferListLockDownload(t *testing.T) {
 	_, cmd, pl := setup(t, "rw", opDownload)
-	wg := setupWaitGroupForExecute(t, cmd)
+	errCh := startExecute(cmd)
 	negotiateVersion(t, pl)
 
 	writeCommand(t, pl, "list-lock")
@@ -880,12 +888,12 @@ func TestLfsTransferListLockDownload(t *testing.T) {
 	}, data)
 
 	quit(t, pl)
-	wg.Wait()
+	waitForExecute(t, errCh)
 }
 
 func TestLfsTransferListLockUpload(t *testing.T) {
 	_, cmd, pl := setup(t, "rw", opUpload)
-	wg := setupWaitGroupForExecute(t, cmd)
+	errCh := startExecute(cmd)
 	negotiateVersion(t, pl)
 
 	writeCommand(t, pl, "list-lock")
@@ -975,7 +983,7 @@ func TestLfsTransferListLockUpload(t *testing.T) {
 	}, data)
 
 	quit(t, pl)
-	wg.Wait()
+	waitForExecute(t, errCh)
 }
 
 type Owner struct {
@@ -1063,7 +1071,15 @@ func setup(t *testing.T, keyID string, op string) (string, *Command, *pktline.Pk
 
 	inputSource, inputSink := io.Pipe()
 	outputSource, outputSink := io.Pipe()
-	_, errorSink := io.Pipe()
+	errorSource, errorSink := io.Pipe()
+	t.Cleanup(func() {
+		_ = inputSource.Close()
+		_ = inputSink.Close()
+		_ = outputSource.Close()
+		_ = outputSink.Close()
+		_ = errorSource.Close()
+		_ = errorSink.Close()
+	})
 
 	cmd := &Command{
 		Config:     &config.Config{GitlabURL: url, Secret: testSecret},
