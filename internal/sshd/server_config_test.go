@@ -121,7 +121,7 @@ func TestNewServerConfig_RejectsUnsupportedPublicKeyAlgorithm(t *testing.T) {
 		HostKeyFiles: []string{
 			path.Join(testRoot, "certs/valid/server.key"),
 		},
-		PublicKeyAlgorithms: []string{"rsa-sha2-256", "rsa-sha2-999"},
+		PublicKeyAlgorithms: []string{"ssh-ed25519", "rsa-sha2-999"},
 	}
 
 	_, err := newServerConfig(
@@ -142,7 +142,7 @@ func TestNewServerConfig_AcceptsSupportedPublicKeyAlgorithms(t *testing.T) {
 		},
 		// One current and one insecure-but-still-accepted algorithm, matching what
 		// x/crypto lets NewServerConn use.
-		PublicKeyAlgorithms: []string{"rsa-sha2-256", "ssh-rsa"},
+		PublicKeyAlgorithms: []string{"rsa-sha2-512", "ssh-rsa"},
 	}
 
 	_, err := newServerConfig(
