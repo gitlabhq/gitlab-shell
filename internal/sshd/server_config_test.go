@@ -112,6 +112,46 @@ func TestNewServerConfigLoadsTrustedCAKeys(t *testing.T) {
 	require.Len(t, cfg.trustedUserCAKeySet, 1)
 }
 
+func TestNewServerConfig_RejectsUnsupportedPublicKeyAlgorithm(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
+
+	srvCfg := config.ServerConfig{
+		Listen:                  localhostIP,
+		ConcurrentSessionsLimit: 1,
+		HostKeyFiles: []string{
+			path.Join(testRoot, "certs/valid/server.key"),
+		},
+		PublicKeyAlgorithms: []string{"rsa-sha2-256", "rsa-sha2-999"},
+	}
+
+	_, err := newServerConfig(
+		&config.Config{GitlabURL: localhostURL, User: testUser, Server: srvCfg},
+	)
+
+	require.EqualError(t, err, `unsupported public key authentication algorithm in public_key_algorithms: "rsa-sha2-999"`)
+}
+
+func TestNewServerConfig_AcceptsSupportedPublicKeyAlgorithms(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
+
+	srvCfg := config.ServerConfig{
+		Listen:                  localhostIP,
+		ConcurrentSessionsLimit: 1,
+		HostKeyFiles: []string{
+			path.Join(testRoot, "certs/valid/server.key"),
+		},
+		// One current and one insecure-but-still-accepted algorithm, matching what
+		// x/crypto lets NewServerConn use.
+		PublicKeyAlgorithms: []string{"rsa-sha2-256", "ssh-rsa"},
+	}
+
+	_, err := newServerConfig(
+		&config.Config{GitlabURL: localhostURL, User: testUser, Server: srvCfg},
+	)
+
+	require.NoError(t, err)
+}
+
 func TestNewServerConfig_FailsOnBadCAKeyFile(t *testing.T) {
 	testRoot := testhelper.PrepareTestRootDir(t)
 
