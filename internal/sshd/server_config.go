@@ -155,7 +155,7 @@ func newServerConfig(cfg *config.Config) (*serverConfig, error) {
 
 	hostKeyToCertMap := parseHostCerts(hostKeys, cfg.Server.HostCertFiles)
 
-	if err := validatePublicKeyAlgorithms(cfg.Server.PublicKeyAlgorithms); err != nil {
+	if err = validatePublicKeyAlgorithms(cfg.Server.PublicKeyAlgorithms); err != nil {
 		return nil, err
 	}
 
