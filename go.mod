@@ -12,7 +12,7 @@ require (
 	github.com/mattn/go-shellwords v1.0.13
 	github.com/mikesmitty/edkey v0.0.0-20170222072505-3356ea4e686a
 	github.com/open-feature/go-sdk v1.18.0
-	github.com/openshift/gssapi v0.0.0-20161010215902-5fb4217df13b
+	github.com/openshift/gssapi v0.0.0-20260819120910-d6b72669a11e
 	github.com/otiai10/copy v1.14.1
 	github.com/pires/go-proxyproto v0.14.0
 	github.com/prometheus/client_golang v1.23.2
