@@ -47,8 +47,17 @@ func requireSignal(t *testing.T, signal <-chan struct{}) {
 	}
 }
 
+func TestNewClient(t *testing.T) {
+	client, err := NewClient(nil, nil, "https://example.com", "authorization")
+	require.NoError(t, err)
+	require.NotNil(t, client.client)
+	require.Equal(t, 3, client.client.RetryMax)
+	require.Nil(t, client.client.Logger)
+}
+
 func TestNewAuthenticatedPostRequest(t *testing.T) {
-	client := &Client{header: "custom-content-type", auth: "custom-authorization"}
+	client, err := NewClient(nil, nil, "", "custom-authorization")
+	require.NoError(t, err)
 
 	for _, tc := range []struct {
 		desc    string
@@ -77,7 +86,7 @@ func TestNewAuthenticatedPostRequest(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, http.MethodPost, req.Method)
 			require.Equal(t, "https://example.com/locks", req.URL.String())
-			require.Equal(t, "custom-content-type", req.Header.Get("Content-Type"))
+			require.Equal(t, ClientHeader, req.Header.Get("Content-Type"))
 			require.Len(t, req.Header.Values("Content-Type"), 1)
 			require.Equal(t, "custom-authorization", req.Header.Get("Authorization"))
 			require.Len(t, req.Header.Values("Authorization"), 1)
@@ -110,7 +119,8 @@ func requireClosesErrorResponseBody(t *testing.T, call func(*testing.T, *Client,
 	for _, statusCode := range nonRetryableStatusCodes {
 		t.Run(http.StatusText(statusCode), func(t *testing.T) {
 			server, requestCanceled := newStreamingServer(t, statusCode)
-			client := &Client{href: server.URL, auth: "authorization", header: ClientHeader}
+			client, err := NewClient(nil, nil, server.URL, "authorization")
+			require.NoError(t, err)
 
 			call(t, client, statusCode)
 			requireSignal(t, requestCanceled)
