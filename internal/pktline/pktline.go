@@ -53,6 +53,31 @@ func PktFlush() []byte {
 	return []byte("0000")
 }
 
+// ReadPacket reads exactly one pkt-line without consuming bytes from the next packet.
+func ReadPacket(reader io.Reader) ([]byte, error) {
+	lengthPrefix := make([]byte, 4)
+	if _, err := io.ReadFull(reader, lengthPrefix); err != nil {
+		return nil, err
+	}
+
+	packetLength, err := strconv.ParseUint(string(lengthPrefix), 16, 16)
+	if err != nil {
+		return nil, fmt.Errorf("decode length: %w", err)
+	}
+
+	if packetLength < 4 {
+		return lengthPrefix, nil
+	}
+
+	packet := make([]byte, int(packetLength))
+	copy(packet, lengthPrefix)
+	if _, err := io.ReadFull(reader, packet[4:]); err != nil {
+		return nil, err
+	}
+
+	return packet, nil
+}
+
 func pktLineSplitter(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if len(data) < 4 {
 		if atEOF && len(data) > 0 {
