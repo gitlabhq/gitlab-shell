@@ -58,6 +58,14 @@ type APIError struct {
 // OriginalRemoteIPContextKey is used as the key in a Context to set an X-Forwarded-For header in a request
 type OriginalRemoteIPContextKey struct{}
 
+// jwtRefresherContextKey stores the request-specific signer which refreshes
+// the internal API JWT before retryablehttp replays a request. The HTTP client
+// is shared by shallow client copies, so the signer belongs to the request
+// context rather than mutable client-wide retry configuration.
+type jwtRefresherContextKey struct{}
+
+type jwtRefresher func(*http.Request) error
+
 func (e *APIError) Error() string {
 	return e.Msg
 }
@@ -218,6 +226,31 @@ func (c *GitlabNetClient) Do(request *http.Request) (*http.Response, error) {
 	return checkResponse(response, respErr)
 }
 
+func refreshJWTBeforeRetry(request *http.Request) error {
+	refresher, ok := request.Context().Value(jwtRefresherContextKey{}).(jwtRefresher)
+	if !ok {
+		return nil
+	}
+
+	return refresher(request)
+}
+
+func (c *GitlabNetClient) setJWTHeader(request *http.Request) error {
+	claims := jwt.RegisteredClaims{
+		Issuer:    jwtIssuer,
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(jwtTTL)),
+	}
+	secretBytes := []byte(strings.TrimSpace(c.secret))
+	tokenString, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(secretBytes)
+	if err != nil {
+		return err
+	}
+
+	request.Header.Set(apiSecretHeaderName, tokenString)
+	return nil
+}
+
 // DoRequest executes a request with the given method, path, and data
 func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, data interface{}) (*http.Response, error) {
 	request, err := newRequest(ctx, method, c.httpClient.Host, path, data)
@@ -230,17 +263,10 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 		request.SetBasicAuth(user, password)
 	}
 
-	claims := jwt.RegisteredClaims{
-		Issuer:    jwtIssuer,
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(jwtTTL)),
-	}
-	secretBytes := []byte(strings.TrimSpace(c.secret))
-	tokenString, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(secretBytes)
-	if err != nil {
+	request.Request = request.Request.WithContext(context.WithValue(request.Context(), jwtRefresherContextKey{}, jwtRefresher(c.setJWTHeader)))
+	if err := c.setJWTHeader(request.Request); err != nil {
 		return nil, err
 	}
-	request.Header.Set(apiSecretHeaderName, tokenString)
 
 	request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("User-Agent", c.userAgent)
