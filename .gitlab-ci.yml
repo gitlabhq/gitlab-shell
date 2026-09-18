@@ -24,6 +24,7 @@ variables:
   CI_DEBUG_SERVICES: "true"
   DOCKER_VERSION: "20.10.15"
   GO_VERSION: "1.25"
+  NILAWAY_VERSION: "v0.0.0-20260915140140-59aa42bdc591"
   UBI_VERSION: "9.6"
   GITLAB_ADVANCED_SAST_ENABLED: "true"
   IMAGE_TAG: "latest"
@@ -325,12 +326,11 @@ nilaway:
   stage: lint
   rules: !reference [".rules:go-changes", rules]
   before_script:
-    - go install go.uber.org/nilaway/cmd/nilaway@latest
+    - go install go.uber.org/nilaway/cmd/nilaway@${NILAWAY_VERSION}
   script:
     - NILAWAY_EXIT_CODE=$(${GOPATH}/bin/nilaway -include-pkgs="gitlab.com/gitlab-org/gitlab-shell/v14" ./... > /tmp/out.txt 2>&1 ; echo $?) || true
     - cat /tmp/out.txt
     - exit ${NILAWAY_EXIT_CODE}
-  allow_failure: true
 
 logging-field-validator:
   stage: test
