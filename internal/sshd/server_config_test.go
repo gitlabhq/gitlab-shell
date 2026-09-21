@@ -887,6 +887,8 @@ func TestUserCertificateHandling_APIInstanceLevel(t *testing.T) {
 		blankNamespaceIdentity        = "blank-namespace"
 		noUsernameIdentity            = "no-username"
 		instanceWithNamespaceIdentity = "instance-ns-user"
+		instanceCasedIdentity         = "Instance-User"
+		instanceCasedUsername         = "instance-user"
 	)
 
 	testRoot := testhelper.PrepareTestRootDir(t)
@@ -906,6 +908,11 @@ func TestUserCertificateHandling_APIInstanceLevel(t *testing.T) {
 				switch id := r.URL.Query().Get("user_identifier"); id {
 				case instanceIdentity, dottedIdentity:
 					fmt.Fprintf(w, `{ "success": true, "username": %q, "instance": true }`, id)
+				case instanceCasedIdentity:
+					// Rails matches the identifier case-insensitively and returns
+					// the username as stored, so an instance-scoped response can
+					// differ from the KeyId without involving an email address.
+					fmt.Fprintf(w, `{ "success": true, "username": %q, "instance": true }`, instanceCasedUsername)
 				case groupIdentity:
 					fmt.Fprintf(w, `{ "success": true, "username": %q, "namespace": %q, "instance": false }`,
 						groupUsername, testNamespaceValue)
@@ -959,6 +966,13 @@ func TestUserCertificateHandling_APIInstanceLevel(t *testing.T) {
 			},
 		},
 		{
+			desc: "instance-scoped response grants the username the API returns, not the KeyId",
+			cert: signedCert(instanceCasedIdentity),
+			expectedPermissions: &ssh.Permissions{
+				Extensions: map[string]string{certPermUsername: instanceCasedUsername},
+			},
+		},
+		{
 			desc: "instance-scoped response ignores a namespace the API should not have sent",
 			cert: signedCert(instanceWithNamespaceIdentity),
 			expectedPermissions: &ssh.Permissions{
@@ -975,7 +989,7 @@ func TestUserCertificateHandling_APIInstanceLevel(t *testing.T) {
 			},
 		},
 		{
-			desc: "group-scoped response keeps its namespace restriction, with an email KeyId",
+			desc: "group-scoped response grants the resolved username for an email KeyId, and keeps its namespace restriction",
 			cert: signedCert(groupIdentity),
 			expectedPermissions: &ssh.Permissions{
 				Extensions: map[string]string{

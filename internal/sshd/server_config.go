@@ -328,10 +328,11 @@ func (s *serverConfig) resolveCertificateViaAPI(ctx context.Context, cert *ssh.C
 	if res.Instance {
 		// Instance-level CAs grant the same instance-wide trust as locally
 		// trusted ones, so hold their KeyId to the same standard. This runs
-		// after the API call, not before it: group-level resolution accepts an
-		// email address as the identifier, which validateKeyID's pattern
-		// rejects. No permissions have been granted yet, so a malformed KeyId
-		// never reaches a session.
+		// after the API call, not before it, because the rule applies
+		// only to instance-scoped results and the scope is not known until the
+		// response arrives; group-level resolution does accept an email
+		// identifier, which validateKeyID's pattern rejects. No permissions
+		// have been granted yet, so a malformed KeyId never reaches a session.
 		if err := validateKeyID(cert.KeyId); err != nil {
 			log.FromContext(ctx).WarnContext(ctx, "instance-level certificate rejected: invalid KeyId",
 				log.ErrorMessage(err.Error()))
