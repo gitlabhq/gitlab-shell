@@ -1,6 +1,7 @@
 package pktline
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 
@@ -23,8 +24,8 @@ func TestScanner(t *testing.T) {
 	}{
 		{
 			desc: "happy path",
-			in:   "0010hello world!000000010010hello world!",
-			out:  []string{pktlineHelloWorld, "0000", "0001", pktlineHelloWorld},
+			in:   "0010hello world!00000001000200030010hello world!",
+			out:  []string{pktlineHelloWorld, "0000", "0001", "0002", "0003", pktlineHelloWorld},
 		},
 		{
 			desc: "large input",
@@ -66,6 +67,41 @@ func TestScanner(t *testing.T) {
 			}
 
 			require.Equal(t, tc.out, output)
+		})
+	}
+}
+
+func TestReadPacket(t *testing.T) {
+	testCases := []struct {
+		desc    string
+		input   string
+		want    string
+		wantErr bool
+	}{
+		{desc: "flush packet", input: "0000trailing", want: "0000"},
+		{desc: "delimiter packet", input: "0001trailing", want: "0001"},
+		{desc: "response end packet", input: "0002trailing", want: "0002"},
+		{desc: "reserved packet", input: "0003trailing", want: "0003"},
+		{desc: "data packet", input: "000Ahello\ntrailing", want: "000Ahello\n"},
+		{desc: "empty input", wantErr: true},
+		{desc: "incomplete prefix", input: "000", wantErr: true},
+		{desc: "non-hexadecimal prefix", input: "zzzz", wantErr: true},
+		{desc: "incomplete data", input: "0008abc", wantErr: true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			reader := bytes.NewBufferString(tc.input)
+
+			packet, err := ReadPacket(reader)
+
+			if tc.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, []byte(tc.want), packet)
+			require.Equal(t, strings.TrimPrefix(tc.input, tc.want), reader.String())
 		})
 	}
 }
