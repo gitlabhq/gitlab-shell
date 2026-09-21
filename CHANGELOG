@@ -1,3 +1,16 @@
+v14.57.4
+
+- Fix Cells receive-pack server-first handshake !1561
+- fix: refresh JWT before rate-limit retries !1534
+- Update module github.com/mattn/go-shellwords to v1.0.14 !1559
+- Reuse HTTP client for LFS transfers !1554
+- Update github.com/openshift/gssapi digest to d6b7266 !1557
+- Update github.com/charmbracelet/git-lfs-transfer digest to 971c028 !1552
+- Fix LFS response body leaks !1553
+- Prevent goroutine leaks and hangs in transfer tests !1551
+- Add comprehensive commandargs test coverage !1548
+- Use the request logger for Cells routing logs !1550
+
 v14.57.3
 
 - Cells: Close Cells pull request body after negotiation !1546
