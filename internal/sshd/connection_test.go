@@ -3,6 +3,7 @@ package sshd
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -337,7 +338,7 @@ func TestTrackErrorFeedsConnectionOutcome(t *testing.T) {
 	})
 }
 
-func TestTrackErrorClientDisconnects(t *testing.T) {
+func TestTrackErrorSLIExclusions(t *testing.T) {
 	for _, tc := range []struct {
 		desc    string
 		err     error
@@ -352,6 +353,26 @@ func TestTrackErrorClientDisconnects(t *testing.T) {
 			desc:    "copy response EOF (client disconnected) is not counted",
 			err:     errors.New("copy response: EOF"),
 			counted: false,
+		},
+		{
+			desc:    "upload-pack negotiation timeout (DeadlineExceeded) is not counted",
+			err:     grpcstatus.Error(grpccodes.DeadlineExceeded, "running upload-pack: waiting for negotiation: context canceled"),
+			counted: false,
+		},
+		{
+			desc:    "wrapped (%w) negotiation timeout still unwraps and is not counted",
+			err:     fmt.Errorf("session failed: %w", grpcstatus.Error(grpccodes.DeadlineExceeded, "running upload-pack: waiting for negotiation: context canceled")),
+			counted: false,
+		},
+		{
+			desc:    "upload-pack negotiation message without DeadlineExceeded is counted",
+			err:     grpcstatus.Error(grpccodes.Internal, "running upload-pack: waiting for negotiation: context canceled"),
+			counted: true,
+		},
+		{
+			desc:    "unrelated deadline exceeded error is counted",
+			err:     grpcstatus.Error(grpccodes.DeadlineExceeded, "repository lookup timed out"),
+			counted: true,
 		},
 		{
 			desc:    "broken pipe without an Internal gRPC code is counted (match is gated on Internal)",
