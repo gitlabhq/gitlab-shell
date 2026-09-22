@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/charmbracelet/git-lfs-transfer/transfer"
@@ -199,17 +200,37 @@ func (c *Client) GetObject(_, href string, headers map[string]string) (io.ReadCl
 	return res.Body, res.ContentLength, nil
 }
 
-// PutObject performs an HTTP PUT request for the object
-func (c *Client) PutObject(_, href string, headers map[string]string, r io.Reader) error {
-	req, err := retryablehttp.NewRequest(http.MethodPut, href, r)
+// PutObject streams an HTTP PUT request without retries because the body is not replayable.
+//
+// PutObject does not return until the transport has closed the request body, so no
+// goroutine reads from r after it returns. Callers such as GitlabBackend.Upload rely on
+// this to drain r safely afterwards.
+//
+// Because the streamed body has no GetBody, 307 and 308 redirects are not followed when
+// size > 0; the 3xx response surfaces as "internal error (<code>)". Upload hrefs point
+// at Workhorse, which does not redirect.
+func (c *Client) PutObject(_, href string, headers map[string]string, size int64, r io.Reader) error {
+	if size < 0 {
+		return fmt.Errorf("%w: invalid size: %d", transfer.ErrParseError, size)
+	}
+
+	req, err := http.NewRequest(http.MethodPut, href, nil)
 	if err != nil {
 		return err
 	}
+	if size > 0 {
+		src := newSignalingReadCloser(r)
+		req.Body = src
+		// Registered before the response body close so it runs after it: closing an
+		// unread error response lets the transport abandon the upload and close the body.
+		defer func() { <-src.closed }()
+	}
+	req.ContentLength = size
 	for key, value := range headers {
 		req.Header.Add(key, value)
 	}
 
-	res, err := c.client.Do(req)
+	res, err := c.client.HTTPClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -221,6 +242,56 @@ func (c *Client) PutObject(_, href string, headers map[string]string, r io.Reade
 		return fmt.Errorf("internal error (%d)", res.StatusCode)
 	}
 	return nil
+}
+
+// signalingReadCloser signals on closed once the transport has closed the request body.
+//
+// mu is held across Read so that Close waits for any in-flight read to finish; once
+// closed is signaled, the underlying reader is never touched again. Close may therefore
+// block while a Read is blocked. This is deliberate: if Close returned early, the
+// caller's drain of r could race with the transport still reading the pktline stream.
+//
+// Waiting on closed has no timeout because the http.RoundTripper contract requires the
+// request body to be closed, including on errors.
+type signalingReadCloser struct {
+	mu     sync.Mutex
+	r      io.Reader
+	closed chan struct{}
+}
+
+func newSignalingReadCloser(r io.Reader) *signalingReadCloser {
+	return &signalingReadCloser{r: r, closed: make(chan struct{})}
+}
+
+func (s *signalingReadCloser) Read(p []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.isClosed() {
+		return 0, http.ErrBodyReadAfterClose
+	}
+
+	return s.r.Read(p)
+}
+
+func (s *signalingReadCloser) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.isClosed() {
+		close(s.closed)
+	}
+
+	return nil
+}
+
+func (s *signalingReadCloser) isClosed() bool {
+	select {
+	case <-s.closed:
+		return true
+	default:
+		return false
+	}
 }
 
 // Lock acquires a lock for the specified path with an optional reference name.

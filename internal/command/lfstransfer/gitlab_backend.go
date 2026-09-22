@@ -226,13 +226,20 @@ func (b *GitlabBackend) parseAndCheckBatchArgs(op, oid, id, token string) (href 
 }
 
 // Upload uploads an LFS object to GitLab
-func (b *GitlabBackend) Upload(oid string, _ int64, r io.Reader, args transfer.Args) error {
+func (b *GitlabBackend) Upload(oid string, size int64, r io.Reader, args transfer.Args) (err error) {
+	// Safe to drain after PutObject returns: it guarantees the transport no longer reads r.
+	// The drain may be the first to reach EOF, where r reports a size or OID mismatch.
+	defer func() {
+		if _, drainErr := io.Copy(io.Discard, r); err == nil {
+			err = drainErr
+		}
+	}()
+
 	href, headers, err := b.parseAndCheckBatchArgs(opUpload, oid, args[argID], args[argToken])
 	if err != nil {
-		_, _ = io.Copy(io.Discard, r)
 		return err
 	}
-	return b.client.PutObject(oid, href, headers, r)
+	return b.client.PutObject(oid, href, headers, size, r)
 }
 
 // Verify verifies an LFS object (verification is done during upload)
