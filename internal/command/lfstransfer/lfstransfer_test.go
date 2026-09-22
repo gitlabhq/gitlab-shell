@@ -55,6 +55,7 @@ const (
 
 	// Error messages
 	errTokenHashMismatch = "error: token hash mismatch"
+	errInternalError     = "internal error"
 
 	// Lock/file paths and IDs
 	lockID1    = "lock1"
@@ -649,6 +650,22 @@ func TestLfsTransferPutObject(t *testing.T) {
 		"error: not found",
 	}, data)
 
+	rejectedUploadChunk := []byte(strings.Repeat("x", 32*1024))
+	rejectedUploadData := make([][]byte, 128)
+	for i := range rejectedUploadData {
+		rejectedUploadData[i] = rejectedUploadChunk
+	}
+	rejectedUploadSize := len(rejectedUploadChunk) * len(rejectedUploadData)
+	idJSON = buildIDJSON(opUpload, largeFileOid, fmt.Sprintf("%s/reject-upload", url))
+	idArg, tokenArg = buildIDAndToken(t, idJSON, testSecret)
+	writeCommandArgsAndBinaryData(t, pl, fmt.Sprintf("put-object %s", largeFileOid), []string{fmt.Sprintf("size=%d", rejectedUploadSize), idArg, tokenArg}, rejectedUploadData)
+	status, args, data = readStatusArgsAndTextData(t, pl)
+	require.Equal(t, "status 500", status)
+	require.Empty(t, args)
+	require.Equal(t, []string{
+		errInternalError,
+	}, data)
+
 	idJSON = buildIDJSON(opUpload, evenLargerFileOid, fmt.Sprintf("%s/group/repo/gitlab-lfs/objects/%s/%d", url, evenLargerFileOid, evenLargerFileLen))
 	idArg, tokenArg = buildIDAndToken(t, idJSON, testSecret)
 	writeCommandArgsAndBinaryData(t, pl, fmt.Sprintf("put-object %s", evenLargerFileOid), []string{fmt.Sprintf("size=%d", evenLargerFileLen), idArg, tokenArg}, [][]byte{[]byte(evenLargerFileContents)})
@@ -733,7 +750,7 @@ func TestLfsTransferLock(t *testing.T) {
 	require.Equal(t, "status 500", status)
 	require.Empty(t, args)
 	require.Equal(t, []string{
-		"internal error",
+		errInternalError,
 	}, data)
 
 	writeCommandArgs(t, pl, "lock", []string{"path=/large/file/4"})
@@ -1097,6 +1114,7 @@ func buildTestRequestHandlers(t *testing.T, url *string, gitalyAddress string, o
 		buildLFSAuthenticateHandler(t, url),
 		buildBatchHandler(t, url, op),
 		buildEvilURLHandler(t),
+		buildRejectedUploadHandler(),
 		buildLargeFileObjectHandler(t),
 		buildEvenLargerFileObjectHandler(t),
 		buildLocksVerifyHandler(t),
@@ -1249,6 +1267,15 @@ func buildEvilURLHandler(t *testing.T) testserver.TestRequestHandler {
 	}
 }
 
+func buildRejectedUploadHandler() testserver.TestRequestHandler {
+	return testserver.TestRequestHandler{
+		Path: "/reject-upload",
+		Handler: func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		},
+	}
+}
+
 func buildLargeFileObjectHandler(t *testing.T) testserver.TestRequestHandler {
 	return testserver.TestRequestHandler{
 		Path: fmt.Sprintf("/group/repo/gitlab-lfs/objects/%s", largeFileOid),
@@ -1264,6 +1291,7 @@ func buildEvenLargerFileObjectHandler(t *testing.T) testserver.TestRequestHandle
 		Path: fmt.Sprintf("/group/repo/gitlab-lfs/objects/%s/%d", evenLargerFileOid, evenLargerFileLen),
 		Handler: func(_ http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPut, r.Method)
+			assert.Equal(t, int64(evenLargerFileLen), r.ContentLength)
 			assert.Equal(t, testAuthHeader, r.Header.Get("Authorization"))
 			body, _ := io.ReadAll(r.Body)
 			assert.Equal(t, []byte(evenLargerFileContents), body)
@@ -1387,7 +1415,7 @@ func handleLocksPost(t *testing.T, w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 	default:
 		response = map[string]interface{}{
-			fieldMessage: "internal error",
+			fieldMessage: errInternalError,
 		}
 		w.WriteHeader(http.StatusInternalServerError)
 	}

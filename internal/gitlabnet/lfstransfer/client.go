@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/charmbracelet/git-lfs-transfer/transfer"
@@ -199,17 +200,32 @@ func (c *Client) GetObject(_, href string, headers map[string]string) (io.ReadCl
 	return res.Body, res.ContentLength, nil
 }
 
-// PutObject performs an HTTP PUT request for the object
-func (c *Client) PutObject(_, href string, headers map[string]string, r io.Reader) error {
-	req, err := retryablehttp.NewRequest(http.MethodPut, href, r)
+// PutObject streams an HTTP PUT request without retries because the body is not replayable.
+func (c *Client) PutObject(_, href string, headers map[string]string, size int64, r io.Reader) error {
+	if size < 0 {
+		return fmt.Errorf("invalid size: %d", size)
+	}
+
+	var body io.Reader = http.NoBody
+	var src *signalingReadCloser
+	if size > 0 {
+		src = newSignalingReadCloser(r)
+		body = src
+	}
+
+	req, err := http.NewRequest(http.MethodPut, href, body)
 	if err != nil {
 		return err
 	}
+	if src != nil {
+		defer func() { <-src.closed }()
+	}
+	req.ContentLength = size
 	for key, value := range headers {
 		req.Header.Add(key, value)
 	}
 
-	res, err := c.client.Do(req)
+	res, err := c.client.HTTPClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -220,6 +236,40 @@ func (c *Client) PutObject(_, href string, headers map[string]string, r io.Reade
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		return fmt.Errorf("internal error (%d)", res.StatusCode)
 	}
+	return nil
+}
+
+type signalingReadCloser struct {
+	mu     sync.Mutex
+	r      io.Reader
+	done   bool
+	closed chan struct{}
+}
+
+func newSignalingReadCloser(r io.Reader) *signalingReadCloser {
+	return &signalingReadCloser{r: r, closed: make(chan struct{})}
+}
+
+func (s *signalingReadCloser) Read(p []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.done {
+		return 0, http.ErrBodyReadAfterClose
+	}
+
+	return s.r.Read(p)
+}
+
+func (s *signalingReadCloser) Close() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if !s.done {
+		s.done = true
+		close(s.closed)
+	}
+
 	return nil
 }
 
