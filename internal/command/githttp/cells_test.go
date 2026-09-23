@@ -492,7 +492,7 @@ func TestCellsCommandsReturnShellJWTSigningError(t *testing.T) {
 		cellsTestResponse(cellServer.URL),
 	).Execute(context.Background())
 	require.ErrorIs(t, err, signErr)
-	require.Contains(t, err.Error(), "generating Shell JWT")
+	require.ErrorContains(t, err, "generating Shell JWT")
 
 	err = NewCellsPullCommand(
 		cellsTestConfig(t),
