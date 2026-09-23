@@ -34,9 +34,13 @@ const (
 	// NotOurRefError represents the error message indicating that the git upload-pack is not our reference
 	NotOurRefError = `exit status 128, stderr: "fatal: git upload-pack: not our ref `
 
+	// negotiationTimeoutError matches Gitaly's DeadlineExceeded for a client that goes idle after
+	// ls-refs. Message matching is a stopgap until Gitaly returns Canceled for this case.
+	negotiationTimeoutError = "waiting for negotiation"
+
 	// brokenPipeError and copyResponseEOFError are error-message fragments seen
 	// when the client disconnects or aborts a transfer mid-stream. They differ in
-	// how they surface, which is why isClientDisconnect matches them differently:
+	// how they surface, which is why excludedFromSLI matches them differently:
 	//   - brokenPipeError: the git subprocess is killed by SIGPIPE once its
 	//     output to the SSH client closes; Gitaly reports this as a gRPC Internal
 	//     error, so it is matched only when the code is Internal.
@@ -270,14 +274,9 @@ func (c *connection) trackError(ctx context.Context, err error) {
 		return
 	}
 
+	msg := err.Error()
 	grpcCode := grpcstatus.Code(err)
-	if grpcCode == grpccodes.Canceled || grpcCode == grpccodes.Unavailable {
-		return
-	} else if grpcCode == grpccodes.Internal && strings.Contains(err.Error(), NotOurRefError) {
-		return
-	}
-
-	if isClientDisconnect(err.Error(), grpcCode) {
+	if excludedFromSLI(msg, grpcCode) {
 		return
 	}
 
@@ -286,16 +285,24 @@ func (c *connection) trackError(ctx context.Context, err error) {
 	// failure for this connection. trackConnection (deferred in handle) emits the
 	// connection metrics once, after all sessions have completed.
 	c.outcome.serverError.Store(true)
-	log.FromContext(ctx).WarnContext(ctx, "connection: session error", log.ErrorMessage(err.Error()))
+	log.FromContext(ctx).WarnContext(ctx, "connection: session error", log.ErrorMessage(msg))
 }
 
-// isClientDisconnect reports whether err represents a client that disconnected
-// or aborted a transfer mid-stream, which is a client-side outcome and must not
-// count toward the error SLI. See the brokenPipeError/copyResponseEOFError
-// constants for why the two fragments are matched differently.
-func isClientDisconnect(msg string, grpcCode grpccodes.Code) bool {
-	if grpcCode == grpccodes.Internal && strings.Contains(msg, brokenPipeError) {
+// excludedFromSLI reports whether a session error is an expected or client-caused
+// outcome that must not count toward the error SLI. See the brokenPipeError and
+// copyResponseEOFError constants for why those fragments are matched differently.
+func excludedFromSLI(msg string, code grpccodes.Code) bool {
+	switch code {
+	case grpccodes.Canceled, grpccodes.Unavailable:
 		return true
+	case grpccodes.Internal:
+		if strings.Contains(msg, NotOurRefError) || strings.Contains(msg, brokenPipeError) {
+			return true
+		}
+	case grpccodes.DeadlineExceeded:
+		if strings.Contains(msg, negotiationTimeoutError) {
+			return true
+		}
 	}
 
 	return strings.Contains(msg, copyResponseEOFError)
