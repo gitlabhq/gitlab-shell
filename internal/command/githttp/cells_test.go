@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -372,8 +373,12 @@ func TestBuildCellsGitClient(t *testing.T) {
 
 		gitClient, err := buildCellsGitClient(cfg, response, args)
 		require.NoError(t, err)
+		require.NotContains(t, gitClient.Headers, shellJWTHeaderName)
+		require.NotNil(t, gitClient.HeaderFunc)
 
-		tokenString := gitClient.Headers["Gitlab-Shell-Api-Request"]
+		headers, err := gitClient.HeaderFunc()
+		require.NoError(t, err)
+		tokenString := headers[shellJWTHeaderName]
 		require.NotEmpty(t, tokenString)
 
 		claims := &clientpkg.ShellClaims{}
@@ -413,6 +418,90 @@ func TestBuildCellsGitClient(t *testing.T) {
 		_, hasGitProtocol := gitClient.Headers["Git-Protocol"]
 		require.False(t, hasGitProtocol)
 	})
+}
+
+// stubShellJWTSigner replaces signShellJWT with a counter so tests can assert
+// that each request carries a token signed when that request started.
+func stubShellJWTSigner(t *testing.T) *int {
+	t.Helper()
+	calls := 0
+	original := signShellJWT
+	signShellJWT = func(_, _ string) (string, error) {
+		calls++
+		return fmt.Sprintf("jwt-%d", calls), nil
+	}
+	t.Cleanup(func() { signShellJWT = original })
+
+	return &calls
+}
+
+func TestCellsPushSignsShellJWTPerRequest(t *testing.T) {
+	calls := stubShellJWTSigner(t)
+	advertisement := pktLine("e56497bb5f03a90a51293fc6d516788730953899 refs/heads/main\x00report-status\n") + string(pktline.PktFlush())
+	reportStatus := pktLine("unpack ok\n") + string(pktline.PktFlush())
+	cellServer, captured := startCapturingPushCellServer(t, []string{advertisement, advertisement + reportStatus}, nil)
+	output := newAdvertisementGatedOutput(advertisement)
+	input := &advertisementGatedReader{
+		Reader:               strings.NewReader(pktLine("0000000000000000000000000000000000000000 e56497bb5f03a90a51293fc6d516788730953899 refs/heads/main\x00report-status\n") + string(pktline.PktFlush()) + "PACK"),
+		advertisementWritten: output.advertisementWritten,
+	}
+
+	err := NewCellsPushCommand(
+		cellsTestConfig(t),
+		&readwriter.ReadWriter{Out: output, In: input},
+		&commandargs.Shell{},
+		cellsTestResponse(cellServer.URL),
+	).Execute(context.Background())
+
+	require.NoError(t, err)
+	require.Len(t, *captured, 2)
+	assert.Equal(t, 2, *calls)
+	assert.Equal(t, "jwt-1", (*captured)[0].headers.Get(shellJWTHeaderName))
+	assert.Equal(t, "jwt-2", (*captured)[1].headers.Get(shellJWTHeaderName))
+}
+
+func TestCellsPullSignsShellJWTAtRequestTime(t *testing.T) {
+	calls := stubShellJWTSigner(t)
+	cellServer, captured := startCapturingCellServer(t, "cell-response")
+
+	command := NewCellsPullCommand(
+		cellsTestConfig(t),
+		&readwriter.ReadWriter{Out: io.Discard, In: strings.NewReader(fetchV2Request)},
+		&commandargs.Shell{},
+		cellsTestResponse(cellServer.URL),
+	)
+	assert.Equal(t, 0, *calls, "JWT must not be signed before the request starts")
+
+	require.NoError(t, command.Execute(context.Background()))
+	assert.Equal(t, 1, *calls)
+	assert.Equal(t, "jwt-1", captured.headers.Get(shellJWTHeaderName))
+}
+
+func TestCellsCommandsReturnShellJWTSigningError(t *testing.T) {
+	signErr := errors.New("signing failed")
+	original := signShellJWT
+	signShellJWT = func(_, _ string) (string, error) { return "", signErr }
+	t.Cleanup(func() { signShellJWT = original })
+
+	cellServer, captured := startCapturingPushCellServer(t, nil, nil)
+
+	err := NewCellsPushCommand(
+		cellsTestConfig(t),
+		&readwriter.ReadWriter{Out: io.Discard, In: strings.NewReader("0000")},
+		&commandargs.Shell{},
+		cellsTestResponse(cellServer.URL),
+	).Execute(context.Background())
+	require.ErrorIs(t, err, signErr)
+	require.Contains(t, err.Error(), "generating Shell JWT")
+
+	err = NewCellsPullCommand(
+		cellsTestConfig(t),
+		&readwriter.ReadWriter{Out: io.Discard, In: strings.NewReader(fetchV2Request)},
+		&commandargs.Shell{},
+		cellsTestResponse(cellServer.URL),
+	).Execute(context.Background())
+	require.ErrorIs(t, err, signErr)
+	require.Empty(t, *captured)
 }
 
 type capturedRequest struct {

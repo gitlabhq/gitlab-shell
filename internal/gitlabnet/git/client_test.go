@@ -3,6 +3,8 @@ package git
 import (
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -151,6 +153,62 @@ func TestFailedErrorReadRequest(t *testing.T) {
 	if response != nil && response.Body != nil {
 		defer response.Body.Close()
 	}
+}
+
+func TestHeaderFunc(t *testing.T) {
+	var received []string
+	url := testserver.StartHTTPServer(t, []testserver.TestRequestHandler{
+		{
+			Path: sshReceivePackPath,
+			Handler: func(_ http.ResponseWriter, r *http.Request) {
+				received = append(received, r.Header.Get("Authorization"))
+				assert.Equal(t, "Value-Two", r.Header.Get("Header-One"))
+			},
+		},
+	})
+
+	calls := 0
+	client := &Client{
+		URL:     url,
+		Headers: customHeaders,
+		HeaderFunc: func() (map[string]string, error) {
+			calls++
+			return map[string]string{"Authorization": fmt.Sprintf("Bearer: token-%d", calls)}, nil
+		},
+	}
+
+	for range 2 {
+		response, err := client.SSHReceivePack(context.Background(), bytes.NewReader(nil))
+		require.NoError(t, err)
+		require.NoError(t, response.Body.Close())
+	}
+
+	require.Equal(t, []string{"Bearer: token-1", "Bearer: token-2"}, received)
+}
+
+func TestHeaderFuncError(t *testing.T) {
+	headerErr := errors.New("header failed")
+	body := &closeTrackingReader{}
+	client := &Client{
+		URL:        "http://127.0.0.1:0",
+		HeaderFunc: func() (map[string]string, error) { return nil, headerErr },
+	}
+
+	response, err := client.SSHReceivePack(context.Background(), body) //nolint:bodyclose // no response on error
+	require.Nil(t, response)
+	require.ErrorIs(t, err, headerErr)
+	require.True(t, body.closed)
+}
+
+type closeTrackingReader struct {
+	closed bool
+}
+
+func (r *closeTrackingReader) Read(_ []byte) (int, error) { return 0, io.EOF }
+
+func (r *closeTrackingReader) Close() error {
+	r.closed = true
+	return nil
 }
 
 func setup(t *testing.T) *Client {

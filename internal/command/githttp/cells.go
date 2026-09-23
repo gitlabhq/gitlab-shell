@@ -22,6 +22,11 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
 )
 
+const shellJWTHeaderName = "Gitlab-Shell-Api-Request" // #nosec G101
+
+// signShellJWT is a variable so tests can observe when tokens are signed.
+var signShellJWT = client.SignShellJWT
+
 // CellsPullCommand handles git pull (upload-pack) via SSH-over-HTTP for Cells
 // routing. When the Topology Service routes to a different Cell, Gitaly is not
 // directly reachable, so it proxies SSH pack data through the Cell's Workhorse
@@ -195,18 +200,21 @@ func buildCellsGitClient(
 	base.Path = path.Join(base.Path, repoPath+".git")
 	repoURL := base.String()
 
-	shellJWT, err := client.SignShellJWT(cfg.Secret, response.UserID)
-	if err != nil {
-		return nil, fmt.Errorf("cells routing: generating Shell JWT: %w", err)
-	}
-
-	headers := map[string]string{
-		"Gitlab-Shell-Api-Request": shellJWT,
-	}
-
+	headers := map[string]string{}
 	if args.Env.GitProtocolVersion != "" {
 		headers["Git-Protocol"] = args.Env.GitProtocolVersion
 	}
 
-	return &git.Client{URL: repoURL, Headers: headers}, nil
+	// The Shell JWT lives for one minute, but a push's second request can start
+	// minutes later (e.g. after an LFS pre-push upload), so sign per request.
+	shellJWTHeader := func() (map[string]string, error) {
+		shellJWT, err := signShellJWT(cfg.Secret, response.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("cells routing: generating Shell JWT: %w", err)
+		}
+
+		return map[string]string{shellJWTHeaderName: shellJWT}, nil
+	}
+
+	return &git.Client{URL: repoURL, Headers: headers, HeaderFunc: shellJWTHeader}, nil
 }
