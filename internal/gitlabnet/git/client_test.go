@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -209,6 +211,55 @@ func (r *closeTrackingReader) Read(_ []byte) (int, error) { return 0, io.EOF }
 func (r *closeTrackingReader) Close() error {
 	r.closed = true
 	return nil
+}
+
+func TestSSHErrorResponseWithOpenRequestBodyOverHTTP2(t *testing.T) {
+	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("The project you were looking for could not be found."))
+	}))
+	server.EnableHTTP2 = true
+	server.StartTLS()
+	t.Cleanup(server.Close)
+
+	originalHTTPClient := httpClient
+	httpClient = &http.Client{Transport: httpclient.NewTransport(server.Client().Transport)}
+	t.Cleanup(func() { httpClient = originalHTTPClient })
+
+	client := &Client{URL: server.URL}
+
+	testCases := []struct {
+		desc      string
+		requestFn func(context.Context, io.Reader) (*http.Response, error)
+	}{
+		{desc: "upload pack", requestFn: client.SSHUploadPack},
+		{desc: "receive pack", requestFn: client.SSHReceivePack},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			// Like SSH stdin while git waits for the server's reply: open, silent,
+			// and not closable by the transport.
+			body, bodyWriter := io.Pipe()
+			t.Cleanup(func() { bodyWriter.Close() })
+
+			errCh := make(chan error, 1)
+			go func() {
+				response, err := tc.requestFn(context.Background(), io.NopCloser(body))
+				if response != nil {
+					response.Body.Close()
+				}
+				errCh <- err
+			}()
+
+			select {
+			case err := <-errCh:
+				require.EqualError(t, err, "The project you were looking for could not be found.")
+			case <-time.After(5 * time.Second):
+				t.Fatal("error not returned while the request body was open")
+			}
+		})
+	}
 }
 
 func setup(t *testing.T) *Client {
