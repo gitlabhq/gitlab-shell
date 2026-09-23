@@ -1,3 +1,9 @@
+v14.57.5
+
+- Exclude negotiation timeouts from the SSH error SLI !1566
+- Update dependency golangci-lint to v2.13.2 !1560
+- Enforce nilaway failures in CI !1563
+
 v14.57.4
 
 - Fix Cells receive-pack server-first handshake !1561
