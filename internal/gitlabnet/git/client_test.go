@@ -262,6 +262,33 @@ func TestSSHErrorResponseWithOpenRequestBodyOverHTTP2(t *testing.T) {
 	}
 }
 
+func TestSuccessResponseCloseCancelsRequestContext(t *testing.T) {
+	client := setup(t)
+
+	var requestCtx context.Context
+	originalHTTPClient := httpClient
+	httpClient = &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		requestCtx = r.Context()
+		return originalHTTPClient.Transport.RoundTrip(r)
+	})}
+	t.Cleanup(func() { httpClient = originalHTTPClient })
+
+	response, err := client.SSHUploadPack(context.Background(), bytes.NewReader([]byte(refsBody)))
+	require.NoError(t, err)
+
+	body, err := io.ReadAll(response.Body)
+	require.NoError(t, err)
+	require.Equal(t, "ssh-upload-pack: content", string(body))
+	require.NoError(t, requestCtx.Err(), "request context canceled before the response body was closed")
+
+	require.NoError(t, response.Body.Close())
+	require.ErrorIs(t, requestCtx.Err(), context.Canceled)
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
 func setup(t *testing.T) *Client {
 	requests := []testserver.TestRequestHandler{
 		{
