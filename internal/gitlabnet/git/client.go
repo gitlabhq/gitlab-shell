@@ -25,6 +25,9 @@ const (
 type Client struct {
 	URL     string
 	Headers map[string]string
+	// HeaderFunc, if set, is called for every request so that short-lived
+	// credentials such as the Shell JWT are fresh when each request starts.
+	HeaderFunc func() (map[string]string, error)
 }
 
 // InfoRefs retrieves information about the Git repository references.
@@ -84,6 +87,20 @@ func (c *Client) SSHReceivePack(ctx context.Context, body io.Reader) (*http.Resp
 func (c *Client) do(request *http.Request) (*http.Response, error) {
 	for k, v := range c.Headers {
 		request.Header.Add(k, v)
+	}
+
+	if c.HeaderFunc != nil {
+		headers, err := c.HeaderFunc()
+		if err != nil {
+			// Unblock any writer feeding the body, as httpClient.Do would.
+			if request.Body != nil {
+				_ = request.Body.Close()
+			}
+			return nil, err
+		}
+		for k, v := range headers {
+			request.Header.Set(k, v)
+		}
 	}
 
 	response, err := httpClient.Do(request) // #nosec G704 -- URL is constructed from configured GitLab internal API
