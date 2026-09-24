@@ -275,6 +275,7 @@ func TestSuccessResponseCloseCancelsRequestContext(t *testing.T) {
 
 	response, err := client.SSHUploadPack(context.Background(), bytes.NewReader([]byte(refsBody)))
 	require.NoError(t, err)
+	require.NotNil(t, requestCtx)
 
 	body, err := io.ReadAll(response.Body)
 	require.NoError(t, err)
