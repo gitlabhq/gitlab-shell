@@ -1,3 +1,8 @@
+v14.57.6
+
+- Sign Cells Shell JWT per request !1570
+- Update module github.com/mattn/go-shellwords to v1.0.15 !1565
+
 v14.57.5
 
 - Exclude negotiation timeouts from the SSH error SLI !1566
