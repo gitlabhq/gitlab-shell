@@ -22,8 +22,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
 )
 
-const shellJWTHeaderName = "Gitlab-Shell-Api-Request" // #nosec G101
-
 // signShellJWT is a variable so tests can observe when tokens are signed.
 var signShellJWT = client.SignShellJWT
 
@@ -49,7 +47,11 @@ func (c *CellsPullCommand) Execute(ctx context.Context) error {
 		return err
 	}
 
-	return pipeRequest(ctx, c.ReadWriter, readUploadPackRequest, gitClient.SSHUploadPack)
+	if err := pipeRequest(ctx, c.ReadWriter, readUploadPackRequest, gitClient.SSHUploadPack); err != nil {
+		return fmt.Errorf("cells routing: upload-pack: %w", err)
+	}
+
+	return nil
 }
 
 // NewCellsPullCommand builds a Cells SSH-over-HTTP upload-pack command.
@@ -210,10 +212,10 @@ func buildCellsGitClient(
 	shellJWTHeader := func() (map[string]string, error) {
 		shellJWT, err := signShellJWT(cfg.Secret, response.UserID)
 		if err != nil {
-			return nil, fmt.Errorf("cells routing: generating Shell JWT: %w", err)
+			return nil, fmt.Errorf("generating Shell JWT: %w", err)
 		}
 
-		return map[string]string{shellJWTHeaderName: shellJWT}, nil
+		return map[string]string{client.ShellAPIRequestHeader: shellJWT}, nil
 	}
 
 	return &git.Client{URL: repoURL, Headers: headers, HeaderFunc: shellJWTHeader}, nil
