@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"net/url"
 	"path"
 
@@ -221,14 +222,15 @@ func buildCellsGitClient(
 
 	// The Shell JWT lives for one minute, but a push's second request can start
 	// minutes later (e.g. after an LFS pre-push upload), so sign per request.
-	shellJWTHeader := func() (map[string]string, error) {
+	prepareRequest := func(request *http.Request) error {
 		shellJWT, err := signShellJWT(cfg.Secret, response.UserID)
 		if err != nil {
-			return nil, fmt.Errorf("generating Shell JWT: %w", err)
+			return fmt.Errorf("generating Shell JWT: %w", err)
 		}
 
-		return map[string]string{client.ShellAPIRequestHeader: shellJWT}, nil
+		request.Header.Set(client.ShellAPIRequestHeader, shellJWT)
+		return nil
 	}
 
-	return &git.Client{URL: repoURL, Headers: headers, HeaderFunc: shellJWTHeader}, nil
+	return &git.Client{URL: repoURL, Headers: headers, PrepareRequest: prepareRequest}, nil
 }

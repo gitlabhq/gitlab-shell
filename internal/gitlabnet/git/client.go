@@ -25,9 +25,13 @@ const (
 type Client struct {
 	URL     string
 	Headers map[string]string
-	// HeaderFunc, if set, is called for every request so that short-lived
-	// credentials such as the Shell JWT are fresh when each request starts.
-	HeaderFunc func() (map[string]string, error)
+	// PrepareRequest, if set, is called for every request after Headers and
+	// method-specific headers (such as Content-Type and Accept) are applied, so it
+	// can override them. Headers added later by the transport (User-Agent,
+	// X-Forwarded-For, correlation and tracing) are appended or replaced there, so
+	// they cannot be reliably set here. Implementations should only modify headers;
+	// replacing Body or URL is not supported.
+	PrepareRequest func(*http.Request) error
 }
 
 // InfoRefs retrieves information about the Git repository references.
@@ -89,17 +93,13 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 		request.Header.Add(k, v)
 	}
 
-	if c.HeaderFunc != nil {
-		headers, err := c.HeaderFunc()
-		if err != nil {
+	if c.PrepareRequest != nil {
+		if err := c.PrepareRequest(request); err != nil {
 			// Unblock any writer feeding the body, as httpClient.Do would.
 			if request.Body != nil {
 				_ = request.Body.Close()
 			}
 			return nil, err
-		}
-		for k, v := range headers {
-			request.Header.Set(k, v)
 		}
 	}
 
