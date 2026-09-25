@@ -236,6 +236,44 @@ func buildCertPermissions(cert *ssh.Certificate, extensions map[string]string) *
 	}
 }
 
+// validateInstanceKeyID applies the KeyId format rules that an instance-wide
+// grant requires, and logs the rejection. Both a locally trusted CA and an
+// instance-scoped API response resolve KeyId directly to a username, so they
+// hold it to the same standard.
+func validateInstanceKeyID(ctx context.Context, keyID string) error {
+	if err := validateKeyID(keyID); err != nil {
+		log.FromContext(ctx).WarnContext(ctx, "instance-level certificate rejected: invalid KeyId",
+			log.ErrorMessage(err.Error()))
+		return fmt.Errorf("handleUserCertificate: %w", err)
+	}
+
+	return nil
+}
+
+// grantCertificate logs an authorized certificate and builds its permissions.
+// An empty namespace means instance-wide access: no namespace key is set, which
+// is what downstream reads as an unrestricted grant.
+func grantCertificate(ctx context.Context, cert *ssh.Certificate, username, namespace, msg string) *ssh.Permissions {
+	extensions := map[string]string{certPermUsername: username}
+
+	scope := "instance"
+	if namespace != "" {
+		scope = "group"
+		extensions[certPermNamespace] = namespace
+		ctx = log.AppendFields(ctx, slog.String("certificate_namespace", namespace))
+	}
+
+	ctx = log.AppendFields(ctx, slog.String("certificate_scope", scope))
+	log.FromContext(ctx).InfoContext(ctx, msg)
+
+	if addr, ok := cert.CriticalOptions["source-address"]; ok {
+		log.FromContext(ctx).InfoContext(ctx, "certificate authorized with source-address restriction",
+			slog.String("source_address", addr))
+	}
+
+	return buildCertPermissions(cert, extensions)
+}
+
 func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, cert *ssh.Certificate) (*ssh.Permissions, error) {
 	fingerprint := ssh.FingerprintSHA256(cert.SignatureKey)
 
@@ -261,24 +299,14 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 	}
 
 	if s.isLocallyTrustedCA(cert.SignatureKey) {
-		if err := validateKeyID(cert.KeyId); err != nil {
-			log.FromContext(ctx).WarnContext(ctx, "instance-level certificate rejected: invalid KeyId",
-				log.ErrorMessage(err.Error()))
-			return nil, fmt.Errorf("handleUserCertificate: %w", err)
+		if err := validateInstanceKeyID(ctx, cert.KeyId); err != nil {
+			return nil, err
 		}
 
 		ctx = log.AppendFields(ctx, slog.String("certificate_username", cert.KeyId))
-		log.FromContext(ctx).InfoContext(ctx, "user certificate is signed by a locally trusted CA (instance-level)")
 
-		if addr, ok := cert.CriticalOptions["source-address"]; ok {
-			log.FromContext(ctx).InfoContext(ctx, "certificate authorized with source-address restriction",
-				slog.String("source_address", addr))
-		}
-
-		// No namespace key = instance-wide access (no namespace restriction)
-		return buildCertPermissions(cert, map[string]string{
-			certPermUsername: cert.KeyId,
-		}), nil
+		return grantCertificate(ctx, cert, cert.KeyId, "",
+			"user certificate is signed by a locally trusted CA (instance-level)"), nil
 	}
 
 	// Fall back to certificate resolution via the Rails API (group- or instance-level)
@@ -300,32 +328,22 @@ func (s *serverConfig) resolveCertificateViaAPI(ctx context.Context, cert *ssh.C
 		return nil, err
 	}
 
-	// A group-scoped match without a namespace would be indistinguishable from
-	// an instance-scoped one downstream, so fail closed rather than widening
-	// the grant to the whole instance.
-	if !res.Instance && res.Namespace == "" {
-		log.FromContext(ctx).WarnContext(ctx, "certificate rejected: group-scoped response has no namespace")
-		return nil, fmt.Errorf("handleUserCertificate: group-scoped response missing namespace")
-	}
-
 	if res.Username == "" {
 		log.FromContext(ctx).WarnContext(ctx, "certificate rejected: response has no username")
 		return nil, fmt.Errorf("handleUserCertificate: response missing username")
 	}
 
-	scope := "group"
-	if res.Instance {
-		scope = "instance"
-	}
-
-	ctx = log.AppendFields(ctx,
-		slog.String("certificate_username", res.Username),
-		slog.String("certificate_scope", scope),
-	)
-
-	extensions := map[string]string{certPermUsername: res.Username}
+	ctx = log.AppendFields(ctx, slog.String("certificate_username", res.Username))
 
 	if res.Instance {
+		// Rails never sets a namespace on an instance-scoped match, so one
+		// here means the response is inconsistent; reject it rather than
+		// guess which scope was intended.
+		if res.Namespace != "" {
+			log.FromContext(ctx).WarnContext(ctx, "certificate rejected: instance-scoped response has a namespace")
+			return nil, fmt.Errorf("handleUserCertificate: instance-scoped response has unexpected namespace")
+		}
+
 		// Instance-level CAs grant the same instance-wide trust as locally
 		// trusted ones, so hold their KeyId to the same standard. This runs
 		// after the API call, not before it, because the rule applies
@@ -333,27 +351,24 @@ func (s *serverConfig) resolveCertificateViaAPI(ctx context.Context, cert *ssh.C
 		// response arrives; group-level resolution does accept an email
 		// identifier, which validateKeyID's pattern rejects. No permissions
 		// have been granted yet, so a malformed KeyId never reaches a session.
-		if err := validateKeyID(cert.KeyId); err != nil {
-			log.FromContext(ctx).WarnContext(ctx, "instance-level certificate rejected: invalid KeyId",
-				log.ErrorMessage(err.Error()))
-			return nil, fmt.Errorf("handleUserCertificate: %w", err)
+		if err := validateInstanceKeyID(ctx, cert.KeyId); err != nil {
+			return nil, err
 		}
 
-		// No namespace key = instance-wide access (no namespace restriction)
-		log.FromContext(ctx).InfoContext(ctx, "user certificate is signed by a trusted key (instance-level)")
-	} else {
-		extensions[certPermNamespace] = res.Namespace
-
-		ctx = log.AppendFields(ctx, slog.String("certificate_namespace", res.Namespace))
-		log.FromContext(ctx).InfoContext(ctx, "user certificate is signed by a trusted key (group-level)")
+		return grantCertificate(ctx, cert, res.Username, "",
+			"user certificate is signed by a trusted key (instance-level)"), nil
 	}
 
-	if addr, ok := cert.CriticalOptions["source-address"]; ok {
-		log.FromContext(ctx).InfoContext(ctx, "certificate authorized with source-address restriction",
-			slog.String("source_address", addr))
+	// A group-scoped match without a namespace would be indistinguishable from
+	// an instance-scoped one downstream, so fail closed rather than widening
+	// the grant to the whole instance.
+	if res.Namespace == "" {
+		log.FromContext(ctx).WarnContext(ctx, "certificate rejected: group-scoped response has no namespace")
+		return nil, fmt.Errorf("handleUserCertificate: group-scoped response missing namespace")
 	}
 
-	return buildCertPermissions(cert, extensions), nil
+	return grantCertificate(ctx, cert, res.Username, res.Namespace,
+		"user certificate is signed by a trusted key (group-level)"), nil
 }
 
 // publicKeyCallback returns the SSH PublicKeyCallback. It authenticates the key

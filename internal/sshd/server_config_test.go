@@ -973,11 +973,9 @@ func TestUserCertificateHandling_APIInstanceLevel(t *testing.T) {
 			},
 		},
 		{
-			desc: "instance-scoped response ignores a namespace the API should not have sent",
-			cert: signedCert(instanceWithNamespaceIdentity),
-			expectedPermissions: &ssh.Permissions{
-				Extensions: map[string]string{certPermUsername: instanceWithNamespaceIdentity},
-			},
+			desc:        "instance-scoped response with a namespace the API should not have sent is rejected",
+			cert:        signedCert(instanceWithNamespaceIdentity),
+			expectedErr: "handleUserCertificate: instance-scoped response has unexpected namespace",
 		},
 		{
 			desc: "instance-scoped response propagates critical options",
