@@ -48,7 +48,7 @@ func (c *CellsPullCommand) Execute(ctx context.Context) error {
 	}
 
 	if err := pipeRequest(ctx, c.ReadWriter, readUploadPackRequest, gitClient.SSHUploadPack); err != nil {
-		return fmt.Errorf("cells routing: upload-pack: %w", err)
+		return withCellsContext("upload-pack", err)
 	}
 
 	return nil
@@ -87,7 +87,7 @@ func (c *CellsPushCommand) Execute(ctx context.Context) error {
 	}
 
 	if advertisementErr := c.forwardAdvertisement(ctx, gitClient); advertisementErr != nil {
-		return fmt.Errorf("cells routing: receive-pack advertisement: %w", advertisementErr)
+		return withCellsContext("receive-pack advertisement", advertisementErr)
 	}
 
 	return c.forwardPush(ctx, gitClient)
@@ -126,7 +126,7 @@ func (c *CellsPushCommand) waitForPushInput(ctx context.Context) (*bufio.Reader,
 func (c *CellsPushCommand) forwardReceivePack(ctx context.Context, gitClient *git.Client, clientInput io.Reader) error {
 	response, err := gitClient.SSHReceivePack(ctx, clientInput)
 	if err != nil {
-		return fmt.Errorf("cells routing: receive-pack response: %w", err)
+		return withCellsContext("receive-pack response", err)
 	}
 	defer response.Body.Close() //nolint:errcheck
 
@@ -183,6 +183,18 @@ func NewCellsPushCommand(cfg *config.Config, rw *readwriter.ReadWriter, args *co
 		Args:       args,
 		Response:   resp,
 	}
+}
+
+// withCellsContext adds routing context to Shell-side failures. A
+// *client.APIError carries the Cell's user-facing message, which is shown
+// verbatim to match the non-Cells path.
+func withCellsContext(op string, err error) error {
+	var apiErr *client.APIError
+	if errors.As(err, &apiErr) {
+		return err
+	}
+
+	return fmt.Errorf("cells routing: %s: %w", op, err)
 }
 
 func buildCellsGitClient(

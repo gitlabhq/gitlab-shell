@@ -456,6 +456,56 @@ func TestCellsPushSignsShellJWTPerRequest(t *testing.T) {
 	assert.Equal(t, "jwt-2", (*captured)[1].headers.Get(clientpkg.ShellAPIRequestHeader))
 }
 
+func TestCellsCommandsPassThroughCellErrorMessage(t *testing.T) {
+	testCases := []struct {
+		desc    string
+		body    string
+		execute func(string) error
+	}{
+		{
+			desc: "pull",
+			body: "You are not allowed to download code from this project.",
+			execute: func(cellAddress string) error {
+				return NewCellsPullCommand(
+					cellsTestConfig(t),
+					&readwriter.ReadWriter{Out: io.Discard, In: strings.NewReader(fetchV2Request)},
+					&commandargs.Shell{},
+					cellsTestResponse(cellAddress),
+				).Execute(context.Background())
+			},
+		},
+		{
+			desc: "push advertisement",
+			body: "You are not allowed to push code to this project.",
+			execute: func(cellAddress string) error {
+				return NewCellsPushCommand(
+					cellsTestConfig(t),
+					&readwriter.ReadWriter{Out: io.Discard, In: strings.NewReader("0000")},
+					&commandargs.Shell{},
+					cellsTestResponse(cellAddress),
+				).Execute(context.Background())
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			cellServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusForbidden)
+				_, err := w.Write([]byte(tc.body))
+				assert.NoError(t, err)
+			}))
+			t.Cleanup(cellServer.Close)
+
+			err := tc.execute(cellServer.URL)
+
+			require.EqualError(t, err, tc.body)
+			var apiErr *clientpkg.APIError
+			require.ErrorAs(t, err, &apiErr)
+		})
+	}
+}
+
 func TestCellsCommandsReturnShellJWTSigningError(t *testing.T) {
 	signErr := errors.New("signing failed")
 	stubShellJWTSigner(t, func(_, _ string) (string, error) { return "", signErr })
