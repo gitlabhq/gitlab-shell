@@ -35,6 +35,8 @@ func init() {
 						Username:  r.URL.Query().Get("user_identifier"),
 					}
 					json.NewEncoder(w).Encode(body)
+				case "instance-key":
+					w.Write([]byte(`{ "success": true, "username": "instance-user", "instance": true }`))
 				case "broken-message":
 					w.WriteHeader(http.StatusForbidden)
 					body := &client.ErrorResponse{
@@ -59,6 +61,14 @@ func TestGetByKey(t *testing.T) {
 	result, err := client.GetByKey(context.Background(), "user-id", "key")
 	require.NoError(t, err)
 	require.Equal(t, &Response{Namespace: "group", Username: "user-id"}, result)
+}
+
+func TestGetByKeyInstanceLevel(t *testing.T) {
+	client := setup(t)
+
+	result, err := client.GetByKey(context.Background(), "user-id", "instance-key")
+	require.NoError(t, err)
+	require.Equal(t, &Response{Username: "instance-user", Instance: true}, result)
 }
 
 func TestGetByKeyErrorResponses(t *testing.T) {
