@@ -27,6 +27,7 @@ type Client struct {
 type Response struct {
 	Username  string `json:"username"`
 	Namespace string `json:"namespace"`
+	Instance  bool   `json:"instance"`
 }
 
 // NewClient instantiates a Client with config
