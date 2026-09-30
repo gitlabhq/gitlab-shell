@@ -109,7 +109,7 @@ func TestJWTHeaderRefreshesOnRateLimitRetry(t *testing.T) {
 	var tokens [2]string
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		attempt := atomic.AddInt32(&attempts, 1) - 1
-		tokens[attempt] = r.Header.Get(apiSecretHeaderName)
+		tokens[attempt] = r.Header.Get(ShellAPIRequestHeader)
 		if attempt == 0 {
 			w.Header().Set("Retry-After", "1")
 			w.WriteHeader(http.StatusTooManyRequests)
@@ -331,7 +331,7 @@ func buildRequests(t *testing.T, relativeURLRoot string) []testserver.TestReques
 		{
 			Path: "/api/v4/internal/jwt_auth",
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				fmt.Fprint(w, r.Header.Get(apiSecretHeaderName))
+				fmt.Fprint(w, r.Header.Get(ShellAPIRequestHeader))
 			},
 		},
 		{

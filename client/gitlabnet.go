@@ -18,12 +18,14 @@ import (
 
 const (
 	internalAPIPath        = "/api/v4/internal"
-	apiSecretHeaderName    = "Gitlab-Shell-Api-Request" // #nosec G101
 	defaultUserAgent       = "GitLab-Shell"
 	jwtTTL                 = time.Minute
 	jwtIssuer              = "gitlab-shell"
 	internalAPIUnreachable = "Internal API unreachable"
 )
+
+// ShellAPIRequestHeader carries the JWT used to authenticate GitLab Shell requests.
+const ShellAPIRequestHeader = "Gitlab-Shell-Api-Request" // #nosec G101
 
 // ErrorResponse represents an error response from the API
 type ErrorResponse struct {
@@ -247,7 +249,7 @@ func (c *GitlabNetClient) setJWTHeader(request *http.Request) error {
 		return err
 	}
 
-	request.Header.Set(apiSecretHeaderName, tokenString)
+	request.Header.Set(ShellAPIRequestHeader, tokenString)
 	return nil
 }
 
