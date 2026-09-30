@@ -36,7 +36,7 @@ func TestForbiddenAccess(t *testing.T) {
 	cmd := setup(t, "disallowed", requests)
 
 	_, err := cmd.Execute(context.Background())
-	require.Equal(t, "Disallowed by API call", err.Error())
+	require.EqualError(t, err, "Disallowed by API call")
 }
 
 func setup(t *testing.T, keyID string, requests []testserver.TestRequestHandler) *Command {

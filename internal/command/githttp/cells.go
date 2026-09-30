@@ -22,8 +22,6 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
 )
 
-const shellJWTHeaderName = "Gitlab-Shell-Api-Request" // #nosec G101
-
 // signShellJWT is a variable so tests can observe when tokens are signed.
 var signShellJWT = client.SignShellJWT
 
@@ -49,7 +47,11 @@ func (c *CellsPullCommand) Execute(ctx context.Context) error {
 		return err
 	}
 
-	return pipeRequest(ctx, c.ReadWriter, readUploadPackRequest, gitClient.SSHUploadPack)
+	if err := pipeRequest(ctx, c.ReadWriter, readUploadPackRequest, gitClient.SSHUploadPack); err != nil {
+		return withCellsContext("upload-pack", err)
+	}
+
+	return nil
 }
 
 // NewCellsPullCommand builds a Cells SSH-over-HTTP upload-pack command.
@@ -85,7 +87,7 @@ func (c *CellsPushCommand) Execute(ctx context.Context) error {
 	}
 
 	if advertisementErr := c.forwardAdvertisement(ctx, gitClient); advertisementErr != nil {
-		return fmt.Errorf("cells routing: receive-pack advertisement: %w", advertisementErr)
+		return withCellsContext("receive-pack advertisement", advertisementErr)
 	}
 
 	return c.forwardPush(ctx, gitClient)
@@ -124,7 +126,7 @@ func (c *CellsPushCommand) waitForPushInput(ctx context.Context) (*bufio.Reader,
 func (c *CellsPushCommand) forwardReceivePack(ctx context.Context, gitClient *git.Client, clientInput io.Reader) error {
 	response, err := gitClient.SSHReceivePack(ctx, clientInput)
 	if err != nil {
-		return fmt.Errorf("cells routing: receive-pack response: %w", err)
+		return withCellsContext("receive-pack response", err)
 	}
 	defer response.Body.Close() //nolint:errcheck
 
@@ -183,6 +185,18 @@ func NewCellsPushCommand(cfg *config.Config, rw *readwriter.ReadWriter, args *co
 	}
 }
 
+// withCellsContext adds routing context to Shell-side failures. A
+// *client.APIError carries the Cell's user-facing message, which is shown
+// verbatim to match the non-Cells path.
+func withCellsContext(op string, err error) error {
+	var apiErr *client.APIError
+	if errors.As(err, &apiErr) {
+		return err
+	}
+
+	return fmt.Errorf("cells routing: %s: %w", op, err)
+}
+
 func buildCellsGitClient(
 	cfg *config.Config,
 	response *accessverifier.Response,
@@ -210,10 +224,10 @@ func buildCellsGitClient(
 	shellJWTHeader := func() (map[string]string, error) {
 		shellJWT, err := signShellJWT(cfg.Secret, response.UserID)
 		if err != nil {
-			return nil, fmt.Errorf("cells routing: generating Shell JWT: %w", err)
+			return nil, fmt.Errorf("generating Shell JWT: %w", err)
 		}
 
-		return map[string]string{shellJWTHeaderName: shellJWT}, nil
+		return map[string]string{client.ShellAPIRequestHeader: shellJWT}, nil
 	}
 
 	return &git.Client{URL: repoURL, Headers: headers, HeaderFunc: shellJWTHeader}, nil
