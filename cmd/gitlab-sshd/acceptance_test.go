@@ -21,7 +21,10 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/mikesmitty/edkey"
 	"github.com/pires/go-proxyproto"
@@ -32,6 +35,8 @@ import (
 	"gitlab.com/gitlab-org/gitaly/v18/streamio"
 	"golang.org/x/crypto/ssh"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
@@ -40,6 +45,8 @@ import (
 var (
 	sshdPath       = ""
 	gitalyConnInfo *gitalyConnectionInfo
+	gitalyRepoOnce sync.Once
+	gitalyRepoErr  error
 	keyTypes       = []string{
 		"rsa-2048",
 		"rsa-4096",
@@ -51,8 +58,17 @@ var (
 )
 
 const (
-	testRepo          = "test-gitlab-shell/gitlab-test.git"
-	testRepoImportURL = "https://gitlab.com/gitlab-org/gitlab-test.git"
+	testRepo              = "test-gitlab-shell/gitlab-test.git"
+	testRepoImportURL     = "https://gitlab.com/gitlab-org/gitlab-test.git"
+	gitalyInfoRefsTimeout = 10 * time.Second
+
+	// Clone setup is capped at 45s so the package stays under its 1m timeout (the rest takes about 5s).
+	// Each attempt gets up to 30s. The retry mainly covers fast transient failures such as Unavailable:
+	// a first attempt that stalls for the full 30s leaves too little budget for a full clone.
+	gitalyCloneBudget         = 45 * time.Second
+	gitalyCloneAttemptTimeout = 30 * time.Second
+	gitalyRemoveTimeout       = 2 * time.Second
+	gitalyCloneAttempts       = 2
 )
 
 type gitalyConnectionInfo struct {
@@ -103,34 +119,128 @@ func rootDir() string {
 	return filepath.Join(filepath.Dir(currentFile), "..", "..")
 }
 
-func ensureGitalyRepository(t *testing.T) (*grpc.ClientConn, *pb.Repository) {
+func ensureGitalyRepository(t *testing.T) *pb.Repository {
 	if os.Getenv("GITALY_CONNECTION_INFO") == "" {
 		t.Skip("GITALY_CONNECTION_INFO is not set")
 	}
 	require.NotNil(t, gitalyConnInfo)
 
-	conn, err := gitalyClient.Dial(gitalyConnInfo.Address)
-	require.NoError(t, err)
-
-	repository := pb.NewRepositoryServiceClient(conn)
-
 	glRepository := &pb.Repository{StorageName: gitalyConnInfo.Storage, RelativePath: testRepo}
 
-	// Remove the test repository before running the tests
+	// Tests share one clone per package and must treat it as read-only.
+	gitalyRepoOnce.Do(func() { gitalyRepoErr = cloneGitalyRepository(gitalyConnInfo.Address, glRepository) })
+	require.NoError(t, gitalyRepoErr)
+
+	return glRepository
+}
+
+func cloneGitalyRepository(address string, glRepository *pb.Repository) error {
+	conn, err := gitalyClient.Dial(address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	repository := pb.NewRepositoryServiceClient(conn)
 	removeReq := &pb.RemoveRepositoryRequest{Repository: glRepository}
-	// Ignore the error because the repository may not exist
-	repository.RemoveRepository(context.Background(), removeReq)
-
 	createReq := &pb.CreateRepositoryFromURLRequest{Repository: glRepository, Url: testRepoImportURL}
-	_, err = repository.CreateRepositoryFromURL(context.Background(), createReq)
-	require.NoError(t, err)
+	overallCtx, cancel := context.WithTimeout(context.Background(), gitalyCloneBudget)
+	defer cancel()
 
-	return conn, glRepository
+	var attempts int
+	for attempts < gitalyCloneAttempts && overallCtx.Err() == nil {
+		removeCtx, cancel := context.WithTimeout(overallCtx, gitalyRemoveTimeout)
+		_, _ = repository.RemoveRepository(removeCtx, removeReq)
+		cancel()
+
+		if overallCtx.Err() != nil {
+			break
+		}
+
+		cloneCtx, cancel := context.WithTimeout(overallCtx, gitalyCloneAttemptTimeout)
+		attempts++
+		_, err = repository.CreateRepositoryFromURL(cloneCtx, createReq)
+		cancel()
+		if err == nil {
+			return nil
+		}
+	}
+
+	if err == nil {
+		err = overallCtx.Err()
+	}
+	return fmt.Errorf("clone %s failed after %d attempts within %s: %w", testRepoImportURL, attempts, gitalyCloneBudget, err)
+}
+
+type repositoryCloneServer struct {
+	pb.UnimplementedRepositoryServiceServer
+	removeCalls     atomic.Int32
+	cloneCalls      atomic.Int32
+	deadlineMissing atomic.Bool
+	failures        int32
+}
+
+func (s *repositoryCloneServer) RemoveRepository(ctx context.Context, _ *pb.RemoveRepositoryRequest) (*pb.RemoveRepositoryResponse, error) {
+	s.removeCalls.Add(1)
+	deadline, ok := ctx.Deadline()
+	if !ok || time.Until(deadline) > gitalyRemoveTimeout {
+		s.deadlineMissing.Store(true)
+	}
+	return &pb.RemoveRepositoryResponse{}, nil
+}
+
+func (s *repositoryCloneServer) CreateRepositoryFromURL(ctx context.Context, _ *pb.CreateRepositoryFromURLRequest) (*pb.CreateRepositoryFromURLResponse, error) {
+	cloneCalls := s.cloneCalls.Add(1)
+	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > gitalyCloneAttemptTimeout {
+		s.deadlineMissing.Store(true)
+	}
+	if cloneCalls <= s.failures {
+		return nil, status.Error(codes.Unavailable, "clone unavailable")
+	}
+	return &pb.CreateRepositoryFromURLResponse{}, nil
+}
+
+func TestCloneGitalyRepository(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		failures int32
+		wantErr  bool
+	}{
+		{name: "successful first attempt"},
+		{name: "successful retry", failures: 1},
+		{name: "exhausted retries", failures: gitalyCloneAttempts, wantErr: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			listener, err := net.Listen("tcp", "127.0.0.1:0")
+			require.NoError(t, err)
+			server := grpc.NewServer()
+			repositoryServer := &repositoryCloneServer{failures: tc.failures}
+			pb.RegisterRepositoryServiceServer(server, repositoryServer)
+			go server.Serve(listener)
+			t.Cleanup(server.Stop)
+
+			err = cloneGitalyRepository("tcp://"+listener.Addr().String(), &pb.Repository{StorageName: "default", RelativePath: testRepo})
+			if tc.wantErr {
+				require.ErrorContains(t, err, "clone unavailable")
+				require.ErrorContains(t, err, testRepoImportURL)
+				require.ErrorContains(t, err, fmt.Sprintf("%d attempts", gitalyCloneAttempts))
+				require.ErrorContains(t, err, fmt.Sprintf("within %s", gitalyCloneBudget))
+			} else {
+				require.NoError(t, err)
+			}
+			require.Equal(t, min(tc.failures+1, gitalyCloneAttempts), repositoryServer.cloneCalls.Load())
+			require.Equal(t, repositoryServer.cloneCalls.Load(), repositoryServer.removeCalls.Load())
+			require.False(t, repositoryServer.deadlineMissing.Load())
+		})
+	}
 }
 
 func startGitOverHTTPServer(t *testing.T) string {
-	ctx := context.Background()
-	conn, glRepository := ensureGitalyRepository(t)
+	glRepository := ensureGitalyRepository(t)
+	require.NotNil(t, gitalyConnInfo)
+	conn, err := gitalyClient.Dial(gitalyConnInfo.Address)
+	require.NoError(t, err)
+	t.Cleanup(func() { conn.Close() })
 	client := pb.NewSmartHTTPServiceClient(conn)
 
 	requests := []testserver.TestRequestHandler{
@@ -144,6 +254,8 @@ func startGitOverHTTPServer(t *testing.T) string {
 				var reader io.Reader
 				switch r.URL.Query().Get("service") {
 				case "git-receive-pack":
+					ctx, cancel := context.WithTimeout(r.Context(), gitalyInfoRefsTimeout)
+					defer cancel()
 					stream, err := client.InfoRefsReceivePack(ctx, rpcRequest)
 					assert.NoError(t, err)
 					reader = streamio.NewReader(func() ([]byte, error) {
