@@ -103,9 +103,9 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 		}
 	}
 
-	// Over HTTP/2, closing an error response waits for the request body to finish
+	// Over HTTP/2, closing a response body waits for the request body to finish
 	// sending, but SSH stdin stays silent until git gets a reply. Canceling the
-	// request first ends that wait.
+	// request before closing ends that wait.
 	ctx, cancel := context.WithCancel(request.Context())
 	request = request.WithContext(ctx)
 
@@ -115,9 +115,10 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 		return nil, &client.APIError{Msg: repoUnavailableErrMsg}
 	}
 
+	response.Body = &cancelOnCloseBody{ReadCloser: response.Body, cancel: cancel}
+
 	if response.StatusCode >= 400 {
 		defer func() {
-			cancel()
 			if err := response.Body.Close(); err != nil {
 				slog.ErrorContext(request.Context(), "Unable to close response body", log.ErrorMessage(err.Error()))
 			}
@@ -135,19 +136,18 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 		return nil, &client.APIError{Msg: repoUnavailableErrMsg}
 	}
 
-	response.Body = &cancelOnCloseBody{ReadCloser: response.Body, cancel: cancel}
-
 	return response, nil
 }
 
-// cancelOnCloseBody releases the request context once the caller closes the response body.
+// cancelOnCloseBody cancels the request context before closing the response
+// body, so Close doesn't wait on a request body that is still open.
 type cancelOnCloseBody struct {
 	io.ReadCloser
 	cancel context.CancelFunc
 }
 
 func (b *cancelOnCloseBody) Close() error {
-	defer b.cancel()
+	b.cancel()
 
 	return b.ReadCloser.Close()
 }

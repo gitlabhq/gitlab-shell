@@ -213,11 +213,10 @@ func (r *closeTrackingReader) Close() error {
 	return nil
 }
 
-func TestSSHErrorResponseWithOpenRequestBodyOverHTTP2(t *testing.T) {
-	server := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("The project you were looking for could not be found."))
-	}))
+func setupHTTP2Server(t *testing.T, handler http.HandlerFunc) *Client {
+	t.Helper()
+
+	server := httptest.NewUnstartedServer(handler)
 	server.EnableHTTP2 = true
 	server.StartTLS()
 	t.Cleanup(server.Close)
@@ -226,7 +225,14 @@ func TestSSHErrorResponseWithOpenRequestBodyOverHTTP2(t *testing.T) {
 	httpClient = &http.Client{Transport: httpclient.NewTransport(server.Client().Transport)}
 	t.Cleanup(func() { httpClient = originalHTTPClient })
 
-	client := &Client{URL: server.URL}
+	return &Client{URL: server.URL}
+}
+
+func TestSSHErrorResponseWithOpenRequestBodyOverHTTP2(t *testing.T) {
+	client := setupHTTP2Server(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("The project you were looking for could not be found."))
+	})
 
 	testCases := []struct {
 		desc      string
@@ -257,6 +263,56 @@ func TestSSHErrorResponseWithOpenRequestBodyOverHTTP2(t *testing.T) {
 				require.EqualError(t, err, "The project you were looking for could not be found.")
 			case <-time.After(5 * time.Second):
 				t.Fatal("error not returned while the request body was open")
+			}
+		})
+	}
+}
+
+func TestSSHSuccessResponseWithOpenRequestBodyOverHTTP2(t *testing.T) {
+	client := setupHTTP2Server(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte("ok"))
+	})
+
+	testCases := []struct {
+		desc      string
+		requestFn func(context.Context, io.Reader) (*http.Response, error)
+	}{
+		{desc: "upload pack", requestFn: client.SSHUploadPack},
+		{desc: "receive pack", requestFn: client.SSHReceivePack},
+	}
+
+	type result struct {
+		requestErr error
+		body       []byte
+		readErr    error
+		closeErr   error
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			body, bodyWriter := io.Pipe()
+			t.Cleanup(func() { bodyWriter.Close() })
+
+			resultCh := make(chan result, 1)
+			go func() {
+				response, err := tc.requestFn(context.Background(), io.NopCloser(body))
+				if err != nil {
+					resultCh <- result{requestErr: err}
+					return
+				}
+
+				data, readErr := io.ReadAll(response.Body)
+				resultCh <- result{body: data, readErr: readErr, closeErr: response.Body.Close()}
+			}()
+
+			select {
+			case res := <-resultCh:
+				require.NoError(t, res.requestErr)
+				require.NoError(t, res.readErr)
+				require.Equal(t, "ok", string(res.body))
+				require.NoError(t, res.closeErr)
+			case <-time.After(5 * time.Second):
+				t.Fatal("response body close blocked while the request body was open")
 			}
 		})
 	}
