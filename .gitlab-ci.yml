@@ -33,6 +33,7 @@ variables:
   FIPS_IMAGE_TAG: "latest"
   FIPS_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-golang-${GO_VERSION}:${FIPS_IMAGE_TAG}"
   GOTOOLCHAIN: local
+  GLAB_VERSION: "v1.120.0"
 
 workflow:
   rules: &workflow_rules # For merge requests, create a pipeline.
@@ -350,13 +351,20 @@ logging-field-validator:
 # Release jobs
 #
 # See "Release Process" in README.md. Both jobs only run on the canonical
-# project, never on the security or dev.gitlab.org mirrors, and need the
-# GITLAB_SHELL_RELEASE_TOKEN CI/CD variable (a protected and masked project
-# access token with the `api` scope).
+# project, never on the security or dev.gitlab.org mirrors, and need these
+# protected and masked CI/CD variables:
+#
+# - GITLAB_SHELL_RELEASE_TOKEN: project access token with the `api` scope and
+#   the Maintainer role, to create the release merge request and the tag.
+# - SECURITY_REPO_READ_TOKEN: token with the `read_api` scope and at least the
+#   Reporter role in gitlab-org/security/gitlab-shell, to refuse versions a
+#   security release already tagged there.
 ################################################################################
 
 .release-job:
   stage: release
+  # The glab image ships git, jq and glab, but not bash.
+  image: registry.gitlab.com/gitlab-org/cli:${GLAB_VERSION}
   needs: []
   # Serialize release jobs so two pipelines can't prepare or tag concurrently.
   resource_group: release
@@ -364,7 +372,7 @@ logging-field-validator:
     # The full history and tags are needed to compute the changelog.
     GIT_DEPTH: 0
   before_script:
-    - apt-get update -qq && apt-get install -y -qq jq
+    - apk add --no-cache bash
 
 # Opens the "Release vX.Y.Z" merge request. Run it manually from a `main`
 # pipeline; set RELEASE_BUMP to `minor` or `major` when running the job to

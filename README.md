@@ -53,8 +53,16 @@ Releases are automated by the `release:prepare` and `release:tag` CI/CD jobs, wh
    Review that merge request instead of creating a new one.
 5. Announce in `#gitlab-shell` a new version has been created.
 
-Both jobs need the `GITLAB_SHELL_RELEASE_TOKEN` CI/CD variable: a protected and masked project access token with the `api` scope and the Maintainer role.
-`CI_JOB_TOKEN` can't be used because it can't create merge requests, and tags created with it don't trigger tag pipelines.
+Both jobs refuse a version that's already tagged in [`gitlab-org/security/gitlab-shell`](https://gitlab.com/gitlab-org/security/gitlab-shell/-/tags).
+Security releases are tagged there first, and those tags aren't visible here until the security release is synced back.
+Releasing the same version from this repository would make the repositories diverge. If a job fails for this reason,
+wait until the security release is synced back, or choose the next free version.
+
+Both jobs need these protected and masked CI/CD variables:
+
+- `GITLAB_SHELL_RELEASE_TOKEN`: a project access token with the `api` scope and the Maintainer role.
+  `CI_JOB_TOKEN` can't be used because it can't create merge requests, and tags created with it don't trigger tag pipelines.
+- `SECURITY_REPO_READ_TOKEN`: a token with the `read_api` scope and at least the Reporter role in `gitlab-org/security/gitlab-shell`.
 
 If the jobs can't be used, follow the same steps manually: create the release merge request, create an annotated `vX.Y.Z` tag on its merge commit, and let Renovate bump `GITLAB_SHELL_VERSION`.
 
