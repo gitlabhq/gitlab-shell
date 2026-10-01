@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -210,6 +212,139 @@ func (r *closeTrackingReader) Close() error {
 	r.closed = true
 	return nil
 }
+
+func setupHTTP2Server(t *testing.T, handler http.HandlerFunc) *Client {
+	t.Helper()
+
+	server := httptest.NewUnstartedServer(handler)
+	server.EnableHTTP2 = true
+	server.StartTLS()
+	t.Cleanup(server.Close)
+
+	originalHTTPClient := httpClient
+	httpClient = &http.Client{Transport: httpclient.NewTransport(server.Client().Transport)}
+	t.Cleanup(func() { httpClient = originalHTTPClient })
+
+	return &Client{URL: server.URL}
+}
+
+func TestSSHErrorResponseWithOpenRequestBodyOverHTTP2(t *testing.T) {
+	client := setupHTTP2Server(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("The project you were looking for could not be found."))
+	})
+
+	testCases := []struct {
+		desc      string
+		requestFn func(context.Context, io.Reader) (*http.Response, error)
+	}{
+		{desc: "upload pack", requestFn: client.SSHUploadPack},
+		{desc: "receive pack", requestFn: client.SSHReceivePack},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			// Like SSH stdin while git waits for the server's reply: open, silent,
+			// and not closable by the transport.
+			body, bodyWriter := io.Pipe()
+			t.Cleanup(func() { bodyWriter.Close() })
+
+			errCh := make(chan error, 1)
+			go func() {
+				response, err := tc.requestFn(context.Background(), io.NopCloser(body))
+				if response != nil {
+					response.Body.Close()
+				}
+				errCh <- err
+			}()
+
+			select {
+			case err := <-errCh:
+				require.EqualError(t, err, "The project you were looking for could not be found.")
+			case <-time.After(5 * time.Second):
+				t.Fatal("error not returned while the request body was open")
+			}
+		})
+	}
+}
+
+func TestSSHSuccessResponseWithOpenRequestBodyOverHTTP2(t *testing.T) {
+	client := setupHTTP2Server(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte("ok"))
+	})
+
+	testCases := []struct {
+		desc      string
+		requestFn func(context.Context, io.Reader) (*http.Response, error)
+	}{
+		{desc: "upload pack", requestFn: client.SSHUploadPack},
+		{desc: "receive pack", requestFn: client.SSHReceivePack},
+	}
+
+	type result struct {
+		requestErr error
+		body       []byte
+		readErr    error
+		closeErr   error
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			body, bodyWriter := io.Pipe()
+			t.Cleanup(func() { bodyWriter.Close() })
+
+			resultCh := make(chan result, 1)
+			go func() {
+				response, err := tc.requestFn(context.Background(), io.NopCloser(body))
+				if err != nil {
+					resultCh <- result{requestErr: err}
+					return
+				}
+
+				data, readErr := io.ReadAll(response.Body)
+				resultCh <- result{body: data, readErr: readErr, closeErr: response.Body.Close()}
+			}()
+
+			select {
+			case res := <-resultCh:
+				require.NoError(t, res.requestErr)
+				require.NoError(t, res.readErr)
+				require.Equal(t, "ok", string(res.body))
+				require.NoError(t, res.closeErr)
+			case <-time.After(5 * time.Second):
+				t.Fatal("response body close blocked while the request body was open")
+			}
+		})
+	}
+}
+
+func TestSuccessResponseCloseCancelsRequestContext(t *testing.T) {
+	client := setup(t)
+
+	var requestCtx context.Context
+	originalHTTPClient := httpClient
+	httpClient = &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		requestCtx = r.Context()
+		return originalHTTPClient.Transport.RoundTrip(r)
+	})}
+	t.Cleanup(func() { httpClient = originalHTTPClient })
+
+	response, err := client.SSHUploadPack(context.Background(), bytes.NewReader([]byte(refsBody)))
+	require.NoError(t, err)
+	require.NotNil(t, requestCtx)
+
+	body, err := io.ReadAll(response.Body)
+	require.NoError(t, err)
+	require.Equal(t, "ssh-upload-pack: content", string(body))
+	require.NoError(t, requestCtx.Err(), "request context canceled before the response body was closed")
+
+	require.NoError(t, response.Body.Close())
+	require.ErrorIs(t, requestCtx.Err(), context.Canceled)
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
 func setup(t *testing.T) *Client {
 	requests := []testserver.TestRequestHandler{
