@@ -390,8 +390,9 @@ release:prepare:
   script:
     - support/release.sh prepare
 
-# Creates the vX.Y.Z tag once the release merge request is merged. Renovate then
-# opens the merge request that bumps GITLAB_SHELL_VERSION in gitlab-org/gitlab.
+# Creates the vX.Y.Z tag and its GitLab release, with the CHANGELOG section as
+# release notes, once the release merge request is merged. Renovate then opens
+# the merge request that bumps GITLAB_SHELL_VERSION in gitlab-org/gitlab.
 release:tag:
   extends: .release-job
   rules:

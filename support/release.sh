@@ -5,7 +5,8 @@
 # Usage:
 #   support/release.sh changelog   Print the CHANGELOG entries since the latest release tag.
 #   support/release.sh prepare     Open a "Release vX.Y.Z" MR that bumps VERSION and CHANGELOG.
-#   support/release.sh tag         Tag the current commit with the version from VERSION.
+#   support/release.sh tag         Tag the current commit with the version from VERSION and
+#                                  create the GitLab release with its CHANGELOG section.
 #
 # Environment:
 #   RELEASE_BUMP                  patch (default), minor or major. Used by `prepare`.
@@ -337,7 +338,9 @@ cmd_tag() {
   # elsewhere, so refuse rather than skip.
   if tag_exists "$tag"; then
     if git merge-base --is-ancestor "$tag" "$CI_COMMIT_SHA"; then
-      log "Tag ${tag} already exists and is reachable from ${CI_COMMIT_SHA}, nothing to do."
+      log "Tag ${tag} already exists and is reachable from ${CI_COMMIT_SHA}."
+      # The tag may have been created by hand, without a release.
+      ensure_release "$tag"
       return 0
     fi
 
@@ -360,17 +363,75 @@ cmd_tag() {
   # synced back, its tags are pushed here too and the check above passes.
   ensure_tag_free_in_security_repo "$tag"
 
+  create_release "$tag" "$CI_COMMIT_SHA"
+}
+
+## Prints the CHANGELOG section of the tag: the lines between its `vX.Y.Z`
+## header and the next one, without surrounding blank lines.
+## Arguments: tag, revision to read CHANGELOG from.
+changelog_section() {
+  git show "$2:CHANGELOG" | awk -v tag="$1" '
+    $0 == tag { found = 1; next }
+    found && /^v[0-9]+\.[0-9]+\.[0-9]+$/ { exit }
+    found { lines[++n] = $0 }
+    END {
+      first = 1; last = n
+      while (first <= last && lines[first] ~ /^[[:space:]]*$/) first++
+      while (last >= first && lines[last] ~ /^[[:space:]]*$/) last--
+      for (i = first; i <= last; i++) print lines[i]
+    }'
+}
+
+## Creates the GitLab release for the tag, with its CHANGELOG section as the
+## release notes. When a ref is given, the release also creates the annotated
+## tag at that ref, which triggers the tag pipeline like a pushed tag.
+## Arguments: tag, ref (optional).
+create_release() {
+  local tag="$1" ref="${2:-}" notes
+  notes="$(changelog_section "$tag" "${ref:-$tag}")"
+  [[ -n "$notes" ]] || fail "CHANGELOG has no entries for ${tag}"
+
+  local args=(
+    "$tag"
+    --repo "$CI_PROJECT_PATH"
+    --notes "$notes"
+    --no-update
+  )
+  if [[ -n "$ref" ]]; then
+    args+=(--ref "$ref" --tag-message "Release ${tag}")
+  fi
+
   if dry_run; then
-    log "DRY_RUN: would create tag ${tag} at ${CI_COMMIT_SHA}"
+    log "DRY_RUN: would create release ${tag}${ref:+ and its tag at ${ref}} with these notes:"
+    log "$notes"
     return 0
   fi
 
-  glab_release api --method POST "projects/${CI_PROJECT_ID}/repository/tags" \
-    --raw-field "tag_name=${tag}" \
-    --raw-field "ref=${CI_COMMIT_SHA}" \
-    --raw-field "message=Release ${tag}" >/dev/null
+  glab_release release create "${args[@]}"
+}
 
-  log "Created tag ${tag} at ${CI_COMMIT_SHA}"
+## Creates the GitLab release for an existing tag, unless it already exists.
+ensure_release() {
+  local tag="$1" status
+
+  if dry_run && [[ -z "${GITLAB_SHELL_RELEASE_TOKEN:-}" ]]; then
+    log "DRY_RUN: would create release ${tag} if it doesn't exist"
+    return 0
+  fi
+
+  status="$(http_status "${GITLAB_SHELL_RELEASE_TOKEN:?must be set to a project access token with the api scope}" \
+    "projects/${CI_PROJECT_ID}/releases/${tag}")"
+  case "$status" in
+    200)
+      log "Release ${tag} already exists, nothing to do."
+      ;;
+    404)
+      create_release "$tag"
+      ;;
+    *)
+      fail "Could not check whether release ${tag} exists (HTTP ${status})."
+      ;;
+  esac
 }
 
 main() {
@@ -379,7 +440,7 @@ main() {
     prepare) cmd_prepare ;;
     tag) cmd_tag ;;
     *)
-      sed -n '3,8p' "$0" | sed 's/^# \{0,1\}//' >&2
+      sed -n '3,9p' "$0" | sed 's/^# \{0,1\}//' >&2
       exit 1
       ;;
   esac
