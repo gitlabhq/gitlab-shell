@@ -14,6 +14,7 @@ stages:
   - lint
   - test
   - post-test
+  - release
 
 variables:
   FF_USE_FASTZIP: "true"
@@ -344,3 +345,52 @@ logging-field-validator:
         - .labkit_logging_todo.yml
   script:
     - make validate-log-fields
+
+################################################################################
+# Release jobs
+#
+# See "Release Process" in README.md. Both jobs only run on the canonical
+# project, never on the security or dev.gitlab.org mirrors, and need the
+# GITLAB_SHELL_RELEASE_TOKEN CI/CD variable (a protected and masked project
+# access token with the `api` scope).
+################################################################################
+
+.release-job:
+  stage: release
+  needs: []
+  # Serialize release jobs so two pipelines can't prepare or tag concurrently.
+  resource_group: release
+  variables:
+    # The full history and tags are needed to compute the changelog.
+    GIT_DEPTH: 0
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq jq
+
+# Opens the "Release vX.Y.Z" merge request. Run it manually from a `main`
+# pipeline; set RELEASE_BUMP to `minor` or `major` when running the job to
+# override the default `patch` bump. It also runs on scheduled pipelines that
+# set RELEASE_BUMP.
+release:prepare:
+  extends: .release-job
+  rules:
+    - if: '$CI_SERVER_HOST != "gitlab.com" || $CI_PROJECT_PATH != "gitlab-org/gitlab-shell"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule" && $RELEASE_BUMP'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != "schedule"'
+      when: manual
+      allow_failure: true
+  script:
+    - support/release.sh prepare
+
+# Creates the vX.Y.Z tag once the release merge request is merged. Renovate then
+# opens the merge request that bumps GITLAB_SHELL_VERSION in gitlab-org/gitlab.
+release:tag:
+  extends: .release-job
+  rules:
+    - if: '$CI_SERVER_HOST != "gitlab.com" || $CI_PROJECT_PATH != "gitlab-org/gitlab-shell"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"'
+      changes:
+        - VERSION
+  script:
+    - support/release.sh tag

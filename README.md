@@ -39,10 +39,24 @@ Run `make test`.
 
 ## Release Process
 
-1. Create a `gitlab-org/gitlab-shell` MR to update [`VERSION`](https://gitlab.com/gitlab-org/gitlab-shell/-/blob/main/VERSION) and [`CHANGELOG`](https://gitlab.com/gitlab-org/gitlab-shell/-/blob/main/CHANGELOG) files, e.g. [Release v14.39.0](https://gitlab.com/gitlab-org/gitlab-shell/-/merge_requests/1123).
-2. Once `gitlab-org/gitlab-shell` MR is merged, create the corresponding git tag, e.g. https://gitlab.com/gitlab-org/gitlab-shell/-/tags/v14.39.0.
-3. Create a `gitlab-org/gitlab` MR to update [`GITLAB_SHELL_VERSION`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/GITLAB_SHELL_VERSION) to the proposed tag, e.g. [Bump GitLab Shell to 14.39.0](https://gitlab.com/gitlab-org/gitlab/-/merge_requests/162661).
-4. Announce in `#gitlab-shell` a new version has been created.
+Releases are automated by the `release:prepare` and `release:tag` CI/CD jobs, which run [`support/release.sh`](support/release.sh):
+
+1. In the latest [`main` pipeline](https://gitlab.com/gitlab-org/gitlab-shell/-/pipelines?ref=main), run the manual `release:prepare` job.
+   It opens a `Release vX.Y.Z` merge request, e.g. [Release v14.58.0](https://gitlab.com/gitlab-org/gitlab-shell/-/merge_requests/1576), that updates
+   [`VERSION`](https://gitlab.com/gitlab-org/gitlab-shell/-/blob/main/VERSION) and [`CHANGELOG`](https://gitlab.com/gitlab-org/gitlab-shell/-/blob/main/CHANGELOG)
+   with the merge requests merged since the latest tag.
+   - The patch version is bumped by default. To bump the minor or major version, set the `RELEASE_BUMP` variable to `minor` or `major` when running the job.
+   - To preview the changelog locally, run `support/release.sh changelog`.
+2. Review and merge the release merge request. Edit `CHANGELOG` in the merge request if needed, but keep the first line as `vX.Y.Z`.
+3. When the merge request is merged, the `release:tag` job in the `main` pipeline creates the `vX.Y.Z` tag.
+4. [Renovate](https://gitlab.com/gitlab-org/frontend/renovate-gitlab-bot/-/blob/main/renovate/gitlab/gitlab-shell-version.config.js) opens a `gitlab-org/gitlab` merge request to update [`GITLAB_SHELL_VERSION`](https://gitlab.com/gitlab-org/gitlab/-/blob/master/GITLAB_SHELL_VERSION) to the new tag.
+   Review that merge request instead of creating a new one.
+5. Announce in `#gitlab-shell` a new version has been created.
+
+Both jobs need the `GITLAB_SHELL_RELEASE_TOKEN` CI/CD variable: a protected and masked project access token with the `api` scope and the Maintainer role.
+`CI_JOB_TOKEN` can't be used because it can't create merge requests, and tags created with it don't trigger tag pipelines.
+
+If the jobs can't be used, follow the same steps manually: create the release merge request, create an annotated `vX.Y.Z` tag on its merge commit, and let Renovate bump `GITLAB_SHELL_VERSION`.
 
 ## Tag Management Guidelines
 
