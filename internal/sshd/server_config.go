@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -153,6 +154,10 @@ func newServerConfig(cfg *config.Config) (*serverConfig, error) {
 	}
 
 	hostKeyToCertMap := parseHostCerts(hostKeys, cfg.Server.HostCertFiles)
+
+	if err = validatePublicKeyAlgorithms(cfg.Server.PublicKeyAlgorithms); err != nil {
+		return nil, err
+	}
 
 	trustedUserCAKeySet, err := parseTrustedUserCAKeys(cfg.Server.TrustedUserCAKeys)
 	if err != nil {
@@ -473,6 +478,22 @@ func (s *serverConfig) get(parentCtx context.Context, outcome *connOutcome) *ssh
 	sshCfg.SetDefaults()
 
 	return sshCfg
+}
+
+// validatePublicKeyAlgorithms rejects unsupported entries at startup. x/crypto only
+// checks PublicKeyAuthAlgorithms in NewServerConn, so a typo would otherwise let the
+// server start and then fail every connection.
+func validatePublicKeyAlgorithms(algorithms []string) error {
+	supported := ssh.SupportedAlgorithms().PublicKeyAuths
+	insecure := ssh.InsecureAlgorithms().PublicKeyAuths
+
+	for _, algo := range algorithms {
+		if !slices.Contains(supported, algo) && !slices.Contains(insecure, algo) {
+			return fmt.Errorf("unsupported public key authentication algorithm in public_key_algorithms: %q", algo)
+		}
+	}
+
+	return nil
 }
 
 func (s *serverConfig) configurePublicKeyAlgorithms(sshCfg *ssh.ServerConfig) {
