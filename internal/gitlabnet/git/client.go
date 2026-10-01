@@ -103,10 +103,19 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 		}
 	}
 
+	// Over HTTP/2, closing a response body waits for the request body to finish
+	// sending, but SSH stdin stays silent until git gets a reply. Canceling the
+	// request before closing ends that wait.
+	ctx, cancel := context.WithCancel(request.Context())
+	request = request.WithContext(ctx)
+
 	response, err := httpClient.Do(request) // #nosec G704 -- URL is constructed from configured GitLab internal API
 	if err != nil {
+		cancel()
 		return nil, &client.APIError{Msg: repoUnavailableErrMsg}
 	}
+
+	response.Body = &cancelOnCloseBody{ReadCloser: response.Body, cancel: cancel}
 
 	if response.StatusCode >= 400 {
 		defer func() {
@@ -128,4 +137,17 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 	}
 
 	return response, nil
+}
+
+// cancelOnCloseBody cancels the request context before closing the response
+// body, so Close doesn't wait on a request body that is still open.
+type cancelOnCloseBody struct {
+	io.ReadCloser
+	cancel context.CancelFunc
+}
+
+func (b *cancelOnCloseBody) Close() error {
+	b.cancel()
+
+	return b.ReadCloser.Close()
 }
