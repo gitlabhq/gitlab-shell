@@ -374,11 +374,11 @@ func TestBuildCellsGitClient(t *testing.T) {
 		gitClient, err := buildCellsGitClient(cfg, response, args)
 		require.NoError(t, err)
 		require.NotContains(t, gitClient.Headers, clientpkg.ShellAPIRequestHeader)
-		require.NotNil(t, gitClient.HeaderFunc)
+		require.NotNil(t, gitClient.PrepareRequest)
 
-		headers, err := gitClient.HeaderFunc()
-		require.NoError(t, err)
-		tokenString := headers[clientpkg.ShellAPIRequestHeader]
+		request := httptest.NewRequest(http.MethodGet, gitClient.URL, nil)
+		require.NoError(t, gitClient.PrepareRequest(request))
+		tokenString := request.Header.Get(clientpkg.ShellAPIRequestHeader)
 		require.NotEmpty(t, tokenString)
 
 		claims := &clientpkg.ShellClaims{}
