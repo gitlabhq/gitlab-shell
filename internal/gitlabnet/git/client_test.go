@@ -155,13 +155,22 @@ func TestFailedErrorReadRequest(t *testing.T) {
 	}
 }
 
-func TestHeaderFunc(t *testing.T) {
-	var received []string
+func TestPrepareRequest(t *testing.T) {
+	type receivedHeaders struct {
+		authorization []string
+		contentType   []string
+		accept        []string
+	}
+	var received []receivedHeaders
 	url := testserver.StartHTTPServer(t, []testserver.TestRequestHandler{
 		{
-			Path: sshReceivePackPath,
+			Path: "/git-upload-pack",
 			Handler: func(_ http.ResponseWriter, r *http.Request) {
-				received = append(received, r.Header.Get("Authorization"))
+				received = append(received, receivedHeaders{
+					authorization: r.Header.Values("Authorization"),
+					contentType:   r.Header.Values("Content-Type"),
+					accept:        r.Header.Values("Accept"),
+				})
 				assert.Equal(t, "Value-Two", r.Header.Get("Header-One"))
 			},
 		},
@@ -169,29 +178,36 @@ func TestHeaderFunc(t *testing.T) {
 
 	calls := 0
 	client := &Client{
-		URL:     url,
-		Headers: customHeaders,
-		HeaderFunc: func() (map[string]string, error) {
+		URL: url,
+		// Authorization is set here so the test verifies PrepareRequest overrides static Headers.
+		Headers: map[string]string{"Authorization": "Bearer: static", "Header-One": "Value-Two"},
+		PrepareRequest: func(request *http.Request) error {
 			calls++
-			return map[string]string{"Authorization": fmt.Sprintf("Bearer: token-%d", calls)}, nil
+			request.Header.Set("Authorization", fmt.Sprintf("Bearer: token-%d", calls))
+			request.Header.Set("Content-Type", "application/custom")
+			request.Header.Set("Accept", "application/custom-result")
+			return nil
 		},
 	}
 
 	for range 2 {
-		response, err := client.SSHReceivePack(context.Background(), bytes.NewReader(nil))
+		response, err := client.UploadPack(context.Background(), bytes.NewReader(nil))
 		require.NoError(t, err)
 		require.NoError(t, response.Body.Close())
 	}
 
-	require.Equal(t, []string{"Bearer: token-1", "Bearer: token-2"}, received)
+	require.Equal(t, []receivedHeaders{
+		{authorization: []string{"Bearer: token-1"}, contentType: []string{"application/custom"}, accept: []string{"application/custom-result"}},
+		{authorization: []string{"Bearer: token-2"}, contentType: []string{"application/custom"}, accept: []string{"application/custom-result"}},
+	}, received)
 }
 
-func TestHeaderFuncError(t *testing.T) {
+func TestPrepareRequestError(t *testing.T) {
 	headerErr := errors.New("header failed")
 	body := &closeTrackingReader{}
 	client := &Client{
-		URL:        "http://127.0.0.1:0",
-		HeaderFunc: func() (map[string]string, error) { return nil, headerErr },
+		URL:            "http://127.0.0.1:0",
+		PrepareRequest: func(*http.Request) error { return headerErr },
 	}
 
 	response, err := client.SSHReceivePack(context.Background(), body) //nolint:bodyclose // no response on error
