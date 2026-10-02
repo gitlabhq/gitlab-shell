@@ -18,7 +18,7 @@ import (
 func ConfigureLogger(cfg *config.Config) io.Closer {
 	logConfig := &v2log.Config{}
 	if gitlabLogFormat := os.Getenv("GITLAB_LOG_FORMAT"); gitlabLogFormat == "text" {
-		logConfig.UseTextFormat = true
+		logConfig.Format = v2log.FormatText
 	}
 	if cfg.LogLevel != "" {
 		var level slog.Level

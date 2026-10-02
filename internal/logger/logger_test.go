@@ -24,6 +24,20 @@ func createTempFile(t *testing.T) string {
 }
 
 func TestConfigureLabkitV2Log(t *testing.T) {
+	t.Run("text format from GITLAB_LOG_FORMAT", func(t *testing.T) {
+		t.Setenv("GITLAB_LOG_FORMAT", "text")
+		tmpFile := createTempFile(t)
+		closer := ConfigureLogger(&config.Config{LogFile: tmpFile})
+		if closer != nil {
+			defer MustClose(t, closer)
+		}
+		slog.Info("text format test")
+
+		data, err := os.ReadFile(tmpFile)
+		require.NoError(t, err)
+		require.Contains(t, string(data), `msg="text format test"`)
+	})
+
 	t.Run("log level from config file", func(t *testing.T) {
 		tmpFile := createTempFile(t)
 		cfg := config.Config{
