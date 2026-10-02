@@ -59,9 +59,14 @@ glab_with_token() {
   GITLAB_TOKEN="$token" GITLAB_HOST="${CI_SERVER_HOST:-gitlab.com}" glab "$@"
 }
 
+## Fails unless the release token is set. Call it wherever the token is used.
+require_release_token() {
+  : "${GITLAB_SHELL_RELEASE_TOKEN:?must be set to a project access token with the api scope}"
+}
+
 ## Runs glab authenticated with the release token.
 glab_release() {
-  : "${GITLAB_SHELL_RELEASE_TOKEN:?must be set to a project access token with the api scope}"
+  require_release_token
 
   glab_with_token "$GITLAB_SHELL_RELEASE_TOKEN" "$@"
 }
@@ -75,6 +80,20 @@ http_status() {
   echo "${status:-000}"
 }
 
+## Returns 0 if the resource exists (HTTP 200), 1 if it doesn't (HTTP 404),
+## and fails on any other response.
+## Arguments: token, API path, description for the error message.
+api_resource_exists() {
+  local status
+  status="$(http_status "$1" "$2")"
+
+  case "$status" in
+    200) return 0 ;;
+    404) return 1 ;;
+    *) fail "Could not check ${3} (HTTP ${status})." ;;
+  esac
+}
+
 ## Fails if the tag already exists in the security repository.
 ##
 ## Security releases are tagged in the security repository first, and those tags
@@ -82,7 +101,7 @@ http_status() {
 ## version from this repository would make the repositories diverge and break
 ## the mirror sync, so fail closed: no release is better than a duplicate version.
 ensure_tag_free_in_security_repo() {
-  local tag="$1" project status
+  local tag="$1" project
   project="${SECURITY_PROJECT_PATH//\//%2F}"
 
   if [[ -z "${SECURITY_REPO_READ_TOKEN:-}" ]]; then
@@ -97,31 +116,33 @@ ensure_tag_free_in_security_repo() {
 
   # GitLab returns 404 for a private project the token can't see, which would
   # read as "tag is free". Check access to the project first.
-  status="$(http_status "$SECURITY_REPO_READ_TOKEN" "projects/${project}")"
-  if [[ "$status" != "200" ]]; then
-    fail "SECURITY_REPO_READ_TOKEN can't read ${SECURITY_PROJECT_PATH} (HTTP ${status})." \
+  if ! api_resource_exists "$SECURITY_REPO_READ_TOKEN" "projects/${project}" "access to ${SECURITY_PROJECT_PATH}"; then
+    fail "SECURITY_REPO_READ_TOKEN can't read ${SECURITY_PROJECT_PATH} (HTTP 404)." \
       "The token is most likely expired, revoked, or no longer a member of that project."
   fi
 
-  status="$(http_status "$SECURITY_REPO_READ_TOKEN" "projects/${project}/repository/tags/${tag}")"
-  case "$status" in
-    404)
-      log "${tag} is free in ${SECURITY_PROJECT_PATH}"
-      ;;
-    200)
-      fail "${tag} is already tagged in ${SECURITY_PROJECT_PATH} by a security release." \
-        "Wait until the security release is synced back to ${CI_PROJECT_PATH}, or choose the next free version."
-      ;;
-    *)
-      fail "Could not check ${tag} in ${SECURITY_PROJECT_PATH} (HTTP ${status})."
-      ;;
-  esac
+  if api_resource_exists "$SECURITY_REPO_READ_TOKEN" "projects/${project}/repository/tags/${tag}" "${tag} in ${SECURITY_PROJECT_PATH}"; then
+    fail "${tag} is already tagged in ${SECURITY_PROJECT_PATH} by a security release." \
+      "Wait until the security release is synced back to ${CI_PROJECT_PATH}, or choose the next free version."
+  fi
+
+  log "${tag} is free in ${SECURITY_PROJECT_PATH}"
 }
 
 ## Prints the highest vX.Y.Z tag.
 latest_release_tag() {
   git tag --list 'v*' --sort=-v:refname | grep -E "$RELEASE_TAG_PATTERN" | head -n1 || true
 }
+
+## Prints the highest vX.Y.Z tag, or fails if there is none.
+require_latest_tag() {
+  local tag
+  tag="$(latest_release_tag)"
+  [[ -n "$tag" ]] || fail "No vX.Y.Z tag found"
+
+  echo "$tag"
+}
+
 
 tag_exists() {
   git rev-parse --quiet --verify "refs/tags/$1" >/dev/null
@@ -196,12 +217,21 @@ ensure_last_release_tagged() {
   fi
 }
 
+## Fails unless the commit is the tip of the default branch. Otherwise a
+## release would be prepared from a stale commit, with an incomplete CHANGELOG.
+ensure_default_branch_tip() {
+  git fetch --quiet origin "$CI_DEFAULT_BRANCH"
+
+  if [[ "$(git rev-parse FETCH_HEAD)" != "$(git rev-parse "$1")" ]]; then
+    fail "${1} isn't the tip of ${CI_DEFAULT_BRANCH}. Run release:prepare from the latest ${CI_DEFAULT_BRANCH} pipeline."
+  fi
+}
+
 cmd_changelog() {
   git fetch --tags --quiet origin || log "Could not fetch tags, using local tags"
 
   local latest_tag
-  latest_tag="$(latest_release_tag)"
-  [[ -n "$latest_tag" ]] || fail "No vX.Y.Z tag found"
+  latest_tag="$(require_latest_tag)"
 
   log "Changes since ${latest_tag}:"
   changelog_entries "${latest_tag}..${CI_COMMIT_SHA}"
@@ -210,11 +240,11 @@ cmd_changelog() {
 cmd_prepare() {
   local bump="${RELEASE_BUMP:-patch}"
 
+  ensure_default_branch_tip "$CI_COMMIT_SHA"
   git fetch --tags --quiet origin
 
   local latest_tag
-  latest_tag="$(latest_release_tag)"
-  [[ -n "$latest_tag" ]] || fail "No vX.Y.Z tag found"
+  latest_tag="$(require_latest_tag)"
   log "Latest release tag: ${latest_tag}"
 
   ensure_last_release_tagged "$CI_COMMIT_SHA" "$latest_tag"
@@ -231,10 +261,6 @@ cmd_prepare() {
   tag="v${version}"
   branch="release-${version//./-}"
 
-  if tag_exists "$tag"; then
-    fail "Tag ${tag} already exists, but it isn't the latest release tag on ${CI_DEFAULT_BRANCH}." \
-      "It was most likely tagged by a security or backport release. Choose the next free version."
-  fi
   ensure_tag_free_in_security_repo "$tag"
 
   log "Preparing ${tag} (${bump}) from ${CI_COMMIT_SHA} on branch ${branch}:"
@@ -265,18 +291,11 @@ cmd_prepare() {
   # branch, so a branch left by a failed run or a closed merge request would
   # put a stale commit in the release. Don't delete it automatically, it may
   # have someone's edits.
-  local branch_status
-  branch_status="$(http_status "$GITLAB_SHELL_RELEASE_TOKEN" "projects/${CI_PROJECT_ID}/repository/branches/${branch}")"
-  case "$branch_status" in
-    404) ;;
-    200)
-      fail "Branch ${branch} already exists without an open merge request." \
-        "It was most likely left by a failed run or a closed merge request. Delete it and run the job again."
-      ;;
-    *)
-      fail "Could not check whether branch ${branch} exists (HTTP ${branch_status})."
-      ;;
-  esac
+  require_release_token
+  if api_resource_exists "$GITLAB_SHELL_RELEASE_TOKEN" "projects/${CI_PROJECT_ID}/repository/branches/${branch}" "branch ${branch}"; then
+    fail "Branch ${branch} already exists without an open merge request." \
+      "It was most likely left by a failed run or a closed merge request. Delete it and run the job again."
+  fi
 
   # A single commit with both files, created from the exact commit the
   # changelog was computed from. glab has no command for this, so use the API.
@@ -354,8 +373,9 @@ cmd_tag() {
     fail "${tag} is lower than the latest release tag ${latest_tag}"
   fi
 
-  local changelog_head
-  changelog_head="$(git show "${CI_COMMIT_SHA}:CHANGELOG" | head -n1 | tr -d '[:space:]')"
+  local changelog changelog_head
+  changelog="$(git show "${CI_COMMIT_SHA}:CHANGELOG")"
+  changelog_head="$(sed -n '1p' <<<"$changelog" | tr -d '[:space:]')"
   [[ "$changelog_head" == "$tag" ]] || fail "CHANGELOG starts with '${changelog_head}', expected '${tag}'"
 
   # A security release can tag this version after the release merge request
@@ -369,8 +389,14 @@ cmd_tag() {
 ## Prints the CHANGELOG section of the tag: the lines between its `vX.Y.Z`
 ## header and the next one, without surrounding blank lines.
 ## Arguments: tag, revision to read CHANGELOG from.
+##
+## CHANGELOG is read whole before awk stops early: piping `git show` into it
+## would kill `git show` with SIGPIPE once CHANGELOG outgrows the pipe buffer.
 changelog_section() {
-  git show "$2:CHANGELOG" | awk -v tag="$1" '
+  local changelog
+  changelog="$(git show "$2:CHANGELOG")"
+
+  awk -v tag="$1" '
     $0 == tag { found = 1; next }
     found && /^v[0-9]+\.[0-9]+\.[0-9]+$/ { exit }
     found { lines[++n] = $0 }
@@ -379,7 +405,7 @@ changelog_section() {
       while (first <= last && lines[first] ~ /^[[:space:]]*$/) first++
       while (last >= first && lines[last] ~ /^[[:space:]]*$/) last--
       for (i = first; i <= last; i++) print lines[i]
-    }'
+    }' <<<"$changelog"
 }
 
 ## Creates the GitLab release for the tag, with its CHANGELOG section as the
@@ -412,26 +438,26 @@ create_release() {
 
 ## Creates the GitLab release for an existing tag, unless it already exists.
 ensure_release() {
-  local tag="$1" status
+  local tag="$1"
 
   if dry_run && [[ -z "${GITLAB_SHELL_RELEASE_TOKEN:-}" ]]; then
     log "DRY_RUN: would create release ${tag} if it doesn't exist"
     return 0
   fi
 
-  status="$(http_status "${GITLAB_SHELL_RELEASE_TOKEN:?must be set to a project access token with the api scope}" \
-    "projects/${CI_PROJECT_ID}/releases/${tag}")"
-  case "$status" in
-    200)
-      log "Release ${tag} already exists, nothing to do."
-      ;;
-    404)
-      create_release "$tag"
-      ;;
-    *)
-      fail "Could not check whether release ${tag} exists (HTTP ${status})."
-      ;;
-  esac
+  require_release_token
+  if api_resource_exists "$GITLAB_SHELL_RELEASE_TOKEN" "projects/${CI_PROJECT_ID}/releases/${tag}" "release ${tag}"; then
+    log "Release ${tag} already exists, nothing to do."
+    return 0
+  fi
+
+  create_release "$tag"
+}
+
+## Prints the "Usage:" section of the header comment, up to the next empty
+## comment line.
+usage() {
+  sed -n '/^# Usage:$/,/^#$/p' "$0" | sed '$d; s/^# \{0,1\}//'
 }
 
 main() {
@@ -440,7 +466,7 @@ main() {
     prepare) cmd_prepare ;;
     tag) cmd_tag ;;
     *)
-      sed -n '3,9p' "$0" | sed 's/^# \{0,1\}//' >&2
+      usage >&2
       exit 1
       ;;
   esac

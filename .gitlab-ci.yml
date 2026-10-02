@@ -374,6 +374,12 @@ logging-field-validator:
   before_script:
     - apk add --no-cache bash
 
+.rules:release-canonical-only:
+  rules:
+    # Never run on the security or dev.gitlab.org mirrors.
+    - if: '$CI_SERVER_HOST != "gitlab.com" || $CI_PROJECT_PATH != "gitlab-org/gitlab-shell"'
+      when: never
+
 # Opens the "Release vX.Y.Z" merge request. Run it manually from a `main`
 # pipeline; set RELEASE_BUMP to `minor` or `major` when running the job to
 # override the default `patch` bump. It also runs on scheduled pipelines that
@@ -381,8 +387,7 @@ logging-field-validator:
 release:prepare:
   extends: .release-job
   rules:
-    - if: '$CI_SERVER_HOST != "gitlab.com" || $CI_PROJECT_PATH != "gitlab-org/gitlab-shell"'
-      when: never
+    - !reference [".rules:release-canonical-only", rules]
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule" && $RELEASE_BUMP'
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != "schedule"'
       when: manual
@@ -396,8 +401,7 @@ release:prepare:
 release:tag:
   extends: .release-job
   rules:
-    - if: '$CI_SERVER_HOST != "gitlab.com" || $CI_PROJECT_PATH != "gitlab-org/gitlab-shell"'
-      when: never
+    - !reference [".rules:release-canonical-only", rules]
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"'
       changes:
         - VERSION
