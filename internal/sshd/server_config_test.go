@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"path"
@@ -16,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pires/go-proxyproto"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 
@@ -356,7 +358,7 @@ func TestUserCertificateHandling(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			t.Setenv("FF_GITLAB_SHELL_SSH_CERTIFICATES", tc.featureFlagValue)
-			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, tc.cert)
+			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, "", tc.cert)
 			require.Equal(t, tc.expectedErr, err)
 			require.Equal(t, tc.expectedPermissions, permissions)
 		})
@@ -868,7 +870,7 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, tc.cert)
+			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, "", tc.cert)
 			if tc.expectedErr != "" {
 				require.EqualError(t, err, tc.expectedErr)
 			} else {
@@ -910,13 +912,13 @@ func TestUserCertificateHandling_InstanceLevelWithMultipleCAs(t *testing.T) {
 	}
 
 	// Both certificates should be trusted
-	permissions1, err := cfg.handleUserCertificate(context.Background(), testUser, certFromCA1)
+	permissions1, err := cfg.handleUserCertificate(context.Background(), testUser, "", certFromCA1)
 	require.NoError(t, err)
 	require.Equal(t, &ssh.Permissions{
 		Extensions: certExtensions(caPubKey1, "user1", commandargs.CertificateTrustSourceFile, "user1", ""),
 	}, permissions1)
 
-	permissions2, err := cfg.handleUserCertificate(context.Background(), testUser, certFromCA2)
+	permissions2, err := cfg.handleUserCertificate(context.Background(), testUser, "", certFromCA2)
 	require.NoError(t, err)
 	require.Equal(t, &ssh.Permissions{
 		Extensions: certExtensions(caPubKey2, "user2", commandargs.CertificateTrustSourceFile, "user2", ""),
@@ -1074,7 +1076,7 @@ func TestUserCertificateHandling_APIInstanceLevel(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			t.Setenv("FF_GITLAB_SHELL_SSH_CERTIFICATES", "1")
 
-			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, tc.cert)
+			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, "", tc.cert)
 			if tc.expectedErr != "" {
 				require.EqualError(t, err, tc.expectedErr)
 			} else {
@@ -1125,10 +1127,111 @@ func TestUserCertificateHandling_FileBasedCAPrecedence(t *testing.T) {
 		string(caPubKey.Marshal()): {},
 	}
 
-	permissions, err := cfg.handleUserCertificate(context.Background(), testUser, cert)
+	permissions, err := cfg.handleUserCertificate(context.Background(), testUser, "", cert)
 	require.NoError(t, err)
 	require.Equal(t, &ssh.Permissions{
 		Extensions: certExtensions(caPubKey, testUser2, commandargs.CertificateTrustSourceFile, testUser2, ""),
 	}, permissions)
 	require.Zero(t, apiCalls.Load(), "locally trusted CA must not trigger an API call")
+}
+
+// connMetadata stands in for an ssh.ServerConn, whose RemoteAddr delegates
+// to the accepted net.Conn.
+type connMetadata struct {
+	ssh.ConnMetadata
+	user       string
+	remoteAddr func() net.Addr
+}
+
+func (c connMetadata) User() string         { return c.user }
+func (c connMetadata) RemoteAddr() net.Addr { return c.remoteAddr() }
+
+// proxiedConn returns a PROXY protocol connection whose header names source
+// as the client, over a pipe whose raw peer address is not an IP.
+func proxiedConn(t *testing.T, source *net.TCPAddr) net.Conn {
+	serverSide, clientSide := net.Pipe()
+	t.Cleanup(func() {
+		_ = serverSide.Close()
+		_ = clientSide.Close()
+	})
+
+	header := &proxyproto.Header{
+		Version:           2,
+		Command:           proxyproto.PROXY,
+		TransportProtocol: proxyproto.TCPv4,
+		SourceAddr:        source,
+		DestinationAddr:   &net.TCPAddr{IP: net.ParseIP("10.0.0.2"), Port: 22},
+	}
+	go func() { _, _ = header.WriteTo(clientSide) }()
+
+	return proxyproto.NewConn(serverSide)
+}
+
+func TestPublicKeyCallback_ForwardsCertificateClientIP(t *testing.T) {
+	t.Setenv("FF_GITLAB_SHELL_SSH_CERTIFICATES", "1")
+
+	testRoot := testhelper.PrepareTestRootDir(t)
+	caSigner, _ := createCAKeyPair(t)
+	cert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), testUser2)
+
+	var checkIP atomic.Value
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: authorizedCertsAPIPath,
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				checkIP.Store(r.URL.Query().Get("check_ip"))
+				fmt.Fprintf(w, `{ "success": true, "username": %q, "namespace": %q }`, testUser2, testNamespaceValue)
+			},
+		},
+	}
+
+	cfg, err := newServerConfig(&config.Config{
+		GitlabURL: testserver.StartSocketHTTPServer(t, requests),
+		User:      testUser,
+		Server: config.ServerConfig{
+			Listen:                  localhostIP,
+			ConcurrentSessionsLimit: 1,
+			HostKeyFiles:            []string{path.Join(testRoot, "certs/valid/server.key")},
+		},
+	})
+	require.NoError(t, err)
+
+	testCases := []struct {
+		desc       string
+		remoteAddr func() net.Addr
+		expectedIP string
+	}{
+		{
+			desc:       "IPv4 client",
+			remoteAddr: func() net.Addr { return &net.TCPAddr{IP: net.ParseIP("192.0.2.10"), Port: 50000} },
+			expectedIP: "192.0.2.10",
+		},
+		{
+			desc:       "IPv6 client",
+			remoteAddr: func() net.Addr { return &net.TCPAddr{IP: net.ParseIP("2001:db8::1"), Port: 50000} },
+			expectedIP: "2001:db8::1",
+		},
+		{
+			desc:       "PROXY protocol client",
+			remoteAddr: proxiedConn(t, &net.TCPAddr{IP: net.ParseIP("203.0.113.7"), Port: 1000}).RemoteAddr,
+			expectedIP: "203.0.113.7",
+		},
+		{
+			desc:       "unknown client address",
+			remoteAddr: func() net.Addr { return nil },
+			expectedIP: "",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			checkIP.Store("unset")
+
+			callback := cfg.publicKeyCallback(context.Background(), nil)
+			_, err := callback(connMetadata{user: testUser, remoteAddr: tc.remoteAddr}, cert)
+			require.NoError(t, err)
+
+			require.Equal(t, tc.expectedIP, checkIP.Load())
+		})
+	}
 }
