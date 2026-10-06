@@ -42,6 +42,7 @@ const (
 
 	sourceAddrCIDR         = "10.0.0.0/8"
 	authorizedCertsAPIPath = "/api/v4/internal/authorized_certs"
+	authorizedKeysAPIPath  = "/api/v4/internal/authorized_keys"
 )
 
 func TestNewServerConfigWithoutHosts(t *testing.T) {
@@ -191,7 +192,7 @@ func TestUserKeyHandling(t *testing.T) {
 
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/authorized_keys",
+			Path: authorizedKeysAPIPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				key := base64.RawStdEncoding.EncodeToString(validRSAKey.Marshal())
 				if key == r.URL.Query().Get("key") {

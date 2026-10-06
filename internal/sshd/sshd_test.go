@@ -87,7 +87,7 @@ func TestGitAuditEventCertificateMetadata(t *testing.T) {
 	auditBodies := make(chan []byte, 1)
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/authorized_keys",
+			Path: authorizedKeysAPIPath,
 			Handler: func(w http.ResponseWriter, _ *http.Request) {
 				fmt.Fprint(w, `{"id": 1000, "key": "key"}`)
 			},
@@ -612,7 +612,7 @@ func setupServerWithContext(ctx context.Context, t *testing.T, cfg *config.Confi
 
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/authorized_keys",
+			Path: authorizedKeysAPIPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				correlationID = r.Header.Get("X-Request-Id")
 
