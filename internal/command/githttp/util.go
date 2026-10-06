@@ -3,10 +3,12 @@ package githttp
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
@@ -15,6 +17,12 @@ import (
 )
 
 const gitProtocolHeader = "Git-Protocol"
+
+// defaultInfoRefsTimeout bounds the /info/refs request and prefix read so a stalled primary cannot hang the session.
+// The ref advertisement copy is not bounded because large repositories can take longer.
+const defaultInfoRefsTimeout = 30 * time.Second
+
+var errInfoRefsTimeout = errors.New("timed out reading info/refs response")
 
 type gitHTTPCommand interface {
 	ForInfoRefs() (*readwriter.ReadWriter, string, []byte)
@@ -34,21 +42,33 @@ func setGitProtocolHeader(client *git.Client, version string) {
 
 // requestInfoRefs performs an HTTP request to the /info/refs endpoint for the specified Git service,
 // verifies the response prefix, and writes the result to the output stream.
-func requestInfoRefs(ctx context.Context, client infoRefsClient, command gitHTTPCommand) error {
+func requestInfoRefs(ctx context.Context, client infoRefsClient, command gitHTTPCommand, timeout time.Duration) error {
 	readWriter, serviceName, httpPrefix := command.ForInfoRefs()
 
-	response, err := client.InfoRefs(ctx, serviceName)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close() //nolint:errcheck
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	timer := time.AfterFunc(timeout, cancel)
 
-	// Read the first bytes that contain for
-	// push - 001f# service=git-receive-pack\n0000 string
-	// pull - 001e# service=git-upload-pack\n0000 string
-	// to convert HTTP(S) Git response to the one expected by SSH
+	response, requestErr := client.InfoRefs(ctx, serviceName)
 	p := make([]byte, len(httpPrefix))
-	_, err = io.ReadFull(response.Body, p)
+	var err error
+	if requestErr == nil {
+		defer response.Body.Close() //nolint:errcheck
+
+		// Read the first bytes that contain for
+		// push - 001f# service=git-receive-pack\n0000 string
+		// pull - 001e# service=git-upload-pack\n0000 string
+		// to convert HTTP(S) Git response to the one expected by SSH
+		_, err = io.ReadFull(response.Body, p)
+	}
+	// Report a timeout if the timer fired at any point, including just after a successful
+	// prefix read: ctx is already canceled then, so the body copy would fail anyway.
+	if !timer.Stop() {
+		return fmt.Errorf("unexpected %s response: %w", serviceName, errInfoRefsTimeout)
+	}
+	if requestErr != nil {
+		return requestErr
+	}
 	if err != nil || !bytes.Equal(p, httpPrefix) {
 		return fmt.Errorf("unexpected %s response", serviceName)
 	}

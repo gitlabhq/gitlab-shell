@@ -50,7 +50,7 @@ func (c *PushCommand) Execute(ctx context.Context) error {
 		return c.requestSSHReceivePack(ctx, client)
 	}
 
-	if err := requestInfoRefs(ctx, client, c); err != nil {
+	if err := requestInfoRefs(ctx, client, c, defaultInfoRefsTimeout); err != nil {
 		return err
 	}
 

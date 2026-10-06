@@ -76,7 +76,7 @@ func TestCellsCommandsExecute(t *testing.T) {
 			assert.Equal(t, responseBody, output.String())
 			assert.Equal(t, tc.expectedPath, captured.path)
 			assert.NotEmpty(t, captured.headers.Get(clientpkg.ShellAPIRequestHeader))
-			assert.Equal(t, testGitProtocolVersion, captured.headers.Get(gitProtocolHeader))
+			assert.Equal(t, testGitProtocolVersion, captured.headers.Get("Git-Protocol"))
 			assert.Equal(t, tc.expectedBody, string(captured.body))
 		})
 	}
@@ -176,7 +176,7 @@ func TestCellsPushGatesStreamingOnClientInput(t *testing.T) {
 				assert.Equal(t, tc.wantBodies[index], string(request.body))
 				assert.Equal(t, "/group/project.git/ssh-receive-pack", request.path)
 				assert.NotEmpty(t, request.headers.Get(clientpkg.ShellAPIRequestHeader))
-				assert.Equal(t, testGitProtocolVersion, request.headers.Get(gitProtocolHeader))
+				assert.Equal(t, testGitProtocolVersion, request.headers.Get("Git-Protocol"))
 			}
 			assert.Equal(t, tc.wantOutput, output.String())
 		})

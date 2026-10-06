@@ -6,9 +6,11 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"slices"
 	"testing"
 	"testing/iotest"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -72,7 +74,7 @@ func setupSSHServer(t *testing.T, path, response string) (string, *capturedSSHRe
 				body, err := io.ReadAll(r.Body)
 				assert.NoError(t, err)
 				captured.body = string(body)
-				captured.gitProtocol = r.Header.Get(gitProtocolHeader)
+				captured.gitProtocol = r.Header.Get("Git-Protocol")
 				captured.authorization = r.Header.Get(testAuthorizationHeader)
 				_, err = w.Write([]byte(response))
 				assert.NoError(t, err)
@@ -123,7 +125,7 @@ func TestRequestInfoRefs(t *testing.T) {
 				httpPrefix:  prefix,
 			}
 
-			err := requestInfoRefs(context.Background(), fakeInfoRefsClient{response: &http.Response{Body: body}}, command)
+			err := requestInfoRefs(context.Background(), fakeInfoRefsClient{response: &http.Response{Body: body}}, command, defaultInfoRefsTimeout)
 
 			require.NoError(t, err)
 			assert.Equal(t, payload, output.Bytes())
@@ -147,7 +149,7 @@ func TestRequestInfoRefs(t *testing.T) {
 				httpPrefix:  prefix,
 			}
 
-			err := requestInfoRefs(context.Background(), fakeInfoRefsClient{response: &http.Response{Body: body}}, command)
+			err := requestInfoRefs(context.Background(), fakeInfoRefsClient{response: &http.Response{Body: body}}, command, defaultInfoRefsTimeout)
 
 			require.EqualError(t, err, "unexpected git-test-pack response")
 			assert.True(t, body.closed)
@@ -158,7 +160,7 @@ func TestRequestInfoRefs(t *testing.T) {
 		requestError := errors.New("request failed")
 		command := fakeGitHTTPCommand{readWriter: &readwriter.ReadWriter{}, serviceName: serviceName, httpPrefix: prefix}
 
-		err := requestInfoRefs(context.Background(), fakeInfoRefsClient{err: requestError}, command)
+		err := requestInfoRefs(context.Background(), fakeInfoRefsClient{err: requestError}, command, defaultInfoRefsTimeout)
 
 		require.ErrorIs(t, err, requestError)
 	})
@@ -172,9 +174,84 @@ func TestRequestInfoRefs(t *testing.T) {
 			httpPrefix:  prefix,
 		}
 
-		err := requestInfoRefs(context.Background(), fakeInfoRefsClient{response: &http.Response{Body: body}}, command)
+		err := requestInfoRefs(context.Background(), fakeInfoRefsClient{response: &http.Response{Body: body}}, command, defaultInfoRefsTimeout)
 
 		require.ErrorIs(t, err, writeError)
 		assert.True(t, body.closed)
 	})
+}
+
+func TestRequestInfoRefsPrefixTimeout(t *testing.T) {
+	const serviceName = "git-upload-pack"
+	prefix := []byte("001e# service=git-upload-pack\n0000")
+	tests := []struct {
+		name         string
+		timeout      time.Duration
+		writePrefix  bool
+		cancelParent bool
+	}{
+		{name: "waiting for response", timeout: 75 * time.Millisecond},
+		{name: "reading prefix", timeout: time.Second, writePrefix: true},
+		{name: "parent context canceled", timeout: time.Second, cancelParent: true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if tc.writePrefix {
+					_, _ = w.Write(prefix[:len(prefix)/2])
+					w.(http.Flusher).Flush()
+				}
+				<-r.Context().Done()
+			}))
+			t.Cleanup(server.Close)
+
+			ctx := context.Background()
+			if tc.cancelParent {
+				var cancel context.CancelFunc
+				ctx, cancel = context.WithCancel(ctx)
+				cancel()
+			}
+			command := fakeGitHTTPCommand{
+				readWriter:  &readwriter.ReadWriter{Out: io.Discard},
+				serviceName: serviceName,
+				httpPrefix:  prefix,
+			}
+
+			err := requestInfoRefs(ctx, &git.Client{URL: server.URL}, command, tc.timeout)
+
+			if tc.cancelParent {
+				require.Error(t, err)
+				require.NotErrorIs(t, err, errInfoRefsTimeout)
+			} else {
+				require.ErrorIs(t, err, errInfoRefsTimeout)
+				require.ErrorContains(t, err, "unexpected "+serviceName+" response")
+			}
+		})
+	}
+}
+
+func TestRequestInfoRefsCopyOutlivesPrefixTimeout(t *testing.T) {
+	const serviceName = "git-upload-pack"
+	prefix := []byte("001e# service=git-upload-pack\n0000")
+	payload := []byte("advertised refs")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write(prefix)
+		w.(http.Flusher).Flush()
+		time.Sleep(2 * time.Second)
+		_, _ = w.Write(payload)
+	}))
+	t.Cleanup(server.Close)
+
+	output := &bytes.Buffer{}
+	command := fakeGitHTTPCommand{
+		readWriter:  &readwriter.ReadWriter{Out: output},
+		serviceName: serviceName,
+		httpPrefix:  prefix,
+	}
+
+	err := requestInfoRefs(context.Background(), &git.Client{URL: server.URL}, command, time.Second)
+
+	require.NoError(t, err)
+	assert.Equal(t, payload, output.Bytes())
 }
