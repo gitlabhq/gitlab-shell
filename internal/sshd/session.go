@@ -16,6 +16,7 @@ import (
 
 	shellCmd "gitlab.com/gitlab-org/gitlab-shell/v14/cmd/gitlab-shell/command"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/shared/disallowedcommand"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
@@ -32,6 +33,7 @@ type session struct {
 	gitlabKrb5Principal string
 	gitlabUsername      string
 	namespace           string
+	certificate         *commandargs.CertificateMetadata
 	remoteAddr          string
 
 	// State managed by the session
@@ -232,7 +234,7 @@ func (s *session) getCommand(env sshenv.Env, rw *readwriter.ReadWriter) (command
 	case s.gitlabKrb5Principal != "":
 		cmd, err = shellCmd.NewWithKrb5Principal(s.gitlabKrb5Principal, env, s.cfg, rw)
 	case s.gitlabUsername != "":
-		cmd, err = shellCmd.NewWithUsername(s.gitlabUsername, env, s.cfg, rw)
+		cmd, err = shellCmd.NewWithUsername(s.gitlabUsername, s.certificate, env, s.cfg, rw)
 	default:
 		cmd, err = shellCmd.NewWithKey(s.gitlabKeyID, env, s.cfg, rw)
 	}

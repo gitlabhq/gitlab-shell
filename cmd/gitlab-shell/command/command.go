@@ -66,8 +66,8 @@ func NewWithKrb5Principal(gitlabKrb5Principal string, env sshenv.Env, config *co
 	return nil, disallowedcommand.Error
 }
 
-// NewWithUsername creates a new command with the provided username
-func NewWithUsername(gitlabUsername string, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
+// NewWithUsername creates a new command with the provided username and optional certificate metadata.
+func NewWithUsername(gitlabUsername string, certificate *commandargs.CertificateMetadata, env sshenv.Env, config *config.Config, readWriter *readwriter.ReadWriter) (command.Command, error) {
 	args, err := Parse(nil, env)
 	if err != nil {
 		return nil, err
@@ -80,6 +80,7 @@ func NewWithUsername(gitlabUsername string, env sshenv.Env, config *config.Confi
 	}
 
 	args.GitlabUsername = gitlabUsername
+	args.Certificate = certificate
 	if cmd := Build(args, config, readWriter); cmd != nil {
 		return cmd, nil
 	}
