@@ -31,26 +31,42 @@ var (
 )
 
 func TestAudit(t *testing.T) {
+	certArgs := *testArgs
+	certArgs.Certificate = &commandargs.CertificateMetadata{
+		CAFingerprint: "SHA256:ca-fingerprint",
+		Identity:      "User@Example.com",
+		TrustSource:   commandargs.CertificateTrustSourceGroup,
+	}
+
 	tests := []struct {
 		name        string
 		keyID       int
 		expectKeyID bool
+		args        *commandargs.Shell
 	}{
 		{
 			name:        "with key_id",
 			keyID:       testKeyID,
 			expectKeyID: true,
+			args:        testArgs,
 		},
 		{
 			name:        "without key_id",
 			keyID:       0,
 			expectKeyID: false,
+			args:        testArgs,
+		},
+		{
+			name:        "with certificate metadata",
+			keyID:       0,
+			expectKeyID: false,
+			args:        &certArgs,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client := setup(t, http.StatusOK, tt.keyID, tt.expectKeyID)
+			client := setup(t, http.StatusOK, tt.keyID, tt.expectKeyID, tt.args)
 
 			err := client.Audit(context.Background(), AuditParams{
 				Username: testUsername,
@@ -60,14 +76,14 @@ func TestAudit(t *testing.T) {
 					Wants: testPackfileWants,
 					Haves: testPackfileHaves,
 				},
-			}, testArgs)
+			}, tt.args)
 			require.NoError(t, err)
 		})
 	}
 }
 
 func TestAuditFailed(t *testing.T) {
-	client := setup(t, http.StatusBadRequest, testKeyID, true)
+	client := setup(t, http.StatusBadRequest, testKeyID, true, testArgs)
 
 	err := client.Audit(context.Background(), AuditParams{
 		Username: testUsername,
@@ -81,7 +97,7 @@ func TestAuditFailed(t *testing.T) {
 	require.Error(t, err)
 }
 
-func setup(t *testing.T, responseStatus int, keyID int, expectKeyID bool) *Client {
+func setup(t *testing.T, responseStatus int, keyID int, expectKeyID bool, args *commandargs.Shell) *Client {
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: uri,
@@ -100,12 +116,29 @@ func setup(t *testing.T, responseStatus int, keyID int, expectKeyID bool) *Clien
 					assert.False(t, hasKeyID, "key_id should not be present in JSON")
 				}
 
+				certFields := map[string]string{}
+				if args.Certificate != nil {
+					certFields = map[string]string{
+						"ca_fingerprint":           args.Certificate.CAFingerprint,
+						"certificate_identity":     args.Certificate.Identity,
+						"certificate_trust_source": args.Certificate.TrustSource,
+					}
+				}
+				for _, key := range []string{"ca_fingerprint", "certificate_identity", "certificate_trust_source"} {
+					value, present := rawJSON[key]
+					if expected, ok := certFields[key]; ok {
+						assert.Equal(t, expected, value)
+					} else {
+						assert.False(t, present, "%s should not be present in JSON", key)
+					}
+				}
+
 				var request *Request
 				assert.NoError(t, json.Unmarshal(body, &request))
 				assert.Equal(t, testUsername, request.Username)
 				assert.Equal(t, keyID, request.KeyID)
-				assert.Equal(t, testArgs.Env.RemoteAddr, request.CheckIP)
-				assert.Equal(t, testArgs.CommandType, request.Action)
+				assert.Equal(t, args.Env.RemoteAddr, request.CheckIP)
+				assert.Equal(t, args.CommandType, request.Action)
 				assert.Equal(t, testRepo, request.Repo)
 				assert.Equal(t, "ssh", request.Protocol)
 				assert.Equal(t, testPackfileWants, request.PackfileStats.Wants)

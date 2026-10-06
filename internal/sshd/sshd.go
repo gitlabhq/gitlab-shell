@@ -16,6 +16,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
@@ -250,6 +251,13 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 			namespace:           sconn.Permissions.Extensions[certPermNamespace],
 			remoteAddr:          remoteAddr,
 			started:             time.Now(),
+		}
+		if ext := sconn.Permissions.Extensions; ext[certPermTrustSource] != "" {
+			session.certificate = &commandargs.CertificateMetadata{
+				CAFingerprint: ext[certPermCAFP],
+				Identity:      ext[certPermIdentity],
+				TrustSource:   ext[certPermTrustSource],
+			}
 		}
 
 		var err error

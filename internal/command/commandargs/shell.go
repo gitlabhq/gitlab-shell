@@ -43,6 +43,20 @@ var (
 	ErrOnlySSHAllowed = errors.New("Only SSH allowed") //nolint:staticcheck // message is customer facing
 )
 
+// Trust sources for an SSH certificate: the authentication branch that accepted it.
+const (
+	CertificateTrustSourceFile     = "file"
+	CertificateTrustSourceGroup    = "group"
+	CertificateTrustSourceInstance = "instance"
+)
+
+// CertificateMetadata identifies the SSH certificate that authenticated the connection.
+type CertificateMetadata struct {
+	CAFingerprint string
+	Identity      string
+	TrustSource   string
+}
+
 // Shell represents a parsed shell command with its arguments and related information.
 type Shell struct {
 	Arguments           []string
@@ -52,6 +66,8 @@ type Shell struct {
 	SSHArgs             []string
 	CommandType         CommandType
 	Env                 sshenv.Env
+	// Certificate is nil unless the connection authenticated with an SSH certificate.
+	Certificate *CertificateMetadata
 }
 
 // Parse validates and parses the command-line arguments and SSH environment.

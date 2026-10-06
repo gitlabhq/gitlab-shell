@@ -3,8 +3,11 @@ package sshd
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -57,6 +60,110 @@ func TestListenAndServe(t *testing.T) {
 	client.Close()
 
 	verifyStatus(t, s, StatusClosed)
+}
+
+func TestGitAuditEventCertificateMetadata(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
+
+	caSigner, caPubKey := createCAKeyPair(t)
+	caFile := path.Join(t.TempDir(), "ca.pub")
+	require.NoError(t, os.WriteFile(caFile, ssh.MarshalAuthorizedKey(caPubKey), 0o600))
+
+	clientKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	clientSigner, err := ssh.NewSignerFromKey(clientKey)
+	require.NoError(t, err)
+	cert := &ssh.Certificate{
+		CertType:    ssh.UserCert,
+		Key:         clientSigner.PublicKey(),
+		KeyId:       "cert-user",
+		ValidBefore: uint64(time.Now().Add(time.Hour).Unix()),
+	}
+	require.NoError(t, cert.SignCert(rand.Reader, caSigner))
+	certSigner, err := ssh.NewCertSigner(cert, clientSigner)
+	require.NoError(t, err)
+
+	gitalyAddress, _ := testserver.StartGitalyServer(t, "unix")
+	auditBodies := make(chan []byte, 1)
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: "/api/v4/internal/authorized_keys",
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
+				fmt.Fprint(w, `{"id": 1000, "key": "key"}`)
+			},
+		}, {
+			Path: "/api/v4/internal/allowed",
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
+				fmt.Fprintf(w, `{"status": true, "gl_id": "user-1", "gl_username": "cert-user", "need_audit": true,
+					"gitaly": {"repository": {"storage_name": "default", "relative_path": "repo.git", "gl_repository": "project-1"},
+					"address": %q, "token": "token"}}`, gitalyAddress)
+			},
+		}, {
+			Path: "/api/v4/internal/shellhorse/git_audit_event",
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				body, readErr := io.ReadAll(r.Body)
+				assert.NoError(t, readErr)
+				auditBodies <- body
+				w.WriteHeader(http.StatusOK)
+			},
+		},
+	}
+
+	cfg := &config.Config{GitlabURL: testserver.StartSocketHTTPServer(t, requests), RootDir: "/tmp", User: user}
+	cfg.Server.Listen = "127.0.0.1:0"
+	cfg.Server.ConcurrentSessionsLimit = 1
+	cfg.Server.HostKeyFiles = []string{path.Join(testRoot, "certs/valid/server.key")}
+	cfg.Server.TrustedUserCAKeys = []string{caFile}
+	cfg.GitalyClient.InitSidechannelRegistry(context.Background())
+
+	s, err := NewServer(cfg)
+	require.NoError(t, err)
+	go func() { s.ListenAndServe(context.Background()) }()
+	t.Cleanup(func() { s.Shutdown() })
+	verifyStatus(t, s, StatusReady)
+
+	testCases := []struct {
+		desc        string
+		signer      ssh.Signer
+		certificate bool
+	}{
+		{desc: "certificate authentication", signer: certSigner, certificate: true},
+		{desc: "public key authentication", signer: clientSigner},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			clientCfg := clientConfig(t, testRoot)
+			clientCfg.Auth = []ssh.AuthMethod{ssh.PublicKeys(tc.signer)}
+			client, err := ssh.Dial("tcp", s.Addr(), clientCfg)
+			require.NoError(t, err)
+			defer client.Close()
+
+			session, err := client.NewSession()
+			require.NoError(t, err)
+			defer session.Close()
+			session.Stdin = &bytes.Buffer{}
+			require.NoError(t, session.Run("git-receive-pack group/repo"))
+
+			var body []byte
+			select {
+			case body = <-auditBodies:
+			case <-time.After(5 * time.Second):
+				require.FailNow(t, "git audit event was not sent")
+			}
+
+			var payload map[string]any
+			require.NoError(t, json.Unmarshal(body, &payload))
+			if tc.certificate {
+				require.Equal(t, ssh.FingerprintSHA256(caPubKey), payload["ca_fingerprint"])
+				require.Equal(t, "cert-user", payload["certificate_identity"])
+				require.Equal(t, "file", payload["certificate_trust_source"])
+			} else {
+				require.NotContains(t, payload, "ca_fingerprint")
+				require.NotContains(t, payload, "certificate_identity")
+				require.NotContains(t, payload, "certificate_trust_source")
+			}
+		})
+	}
 }
 
 func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {

@@ -16,6 +16,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedcerts"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedkeys"
@@ -26,8 +27,11 @@ import (
 )
 
 const (
-	certPermUsername  = "username"
-	certPermNamespace = "namespace"
+	certPermUsername    = "username"
+	certPermNamespace   = "namespace"
+	certPermCAFP        = "ca-fingerprint"
+	certPermIdentity    = "certificate-identity"
+	certPermTrustSource = "certificate-trust-source"
 )
 
 type serverConfig struct {
@@ -258,8 +262,13 @@ func validateInstanceKeyID(ctx context.Context, keyID string) error {
 // grantCertificate logs an authorized certificate and builds its permissions.
 // An empty namespace means instance-wide access: no namespace key is set, which
 // is what downstream reads as an unrestricted grant.
-func grantCertificate(ctx context.Context, cert *ssh.Certificate, username, namespace, msg string) *ssh.Permissions {
-	extensions := map[string]string{certPermUsername: username}
+func grantCertificate(ctx context.Context, cert *ssh.Certificate, caFingerprint, trustSource, username, namespace, msg string) *ssh.Permissions {
+	extensions := map[string]string{
+		certPermUsername:    username,
+		certPermCAFP:        caFingerprint,
+		certPermIdentity:    cert.KeyId,
+		certPermTrustSource: trustSource,
+	}
 
 	scope := "instance"
 	if namespace != "" {
@@ -310,7 +319,7 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 
 		ctx = log.AppendFields(ctx, slog.String("certificate_username", cert.KeyId))
 
-		return grantCertificate(ctx, cert, cert.KeyId, "",
+		return grantCertificate(ctx, cert, fingerprint, commandargs.CertificateTrustSourceFile, cert.KeyId, "",
 			"user certificate is signed by a locally trusted CA (instance-level)"), nil
 	}
 
@@ -360,7 +369,7 @@ func (s *serverConfig) resolveCertificateViaAPI(ctx context.Context, cert *ssh.C
 			return nil, err
 		}
 
-		return grantCertificate(ctx, cert, res.Username, "",
+		return grantCertificate(ctx, cert, fingerprint, commandargs.CertificateTrustSourceInstance, res.Username, "",
 			"user certificate is signed by a trusted key (instance-level)"), nil
 	}
 
@@ -372,7 +381,7 @@ func (s *serverConfig) resolveCertificateViaAPI(ctx context.Context, cert *ssh.C
 		return nil, fmt.Errorf("handleUserCertificate: group-scoped response missing namespace")
 	}
 
-	return grantCertificate(ctx, cert, res.Username, res.Namespace,
+	return grantCertificate(ctx, cert, fingerprint, commandargs.CertificateTrustSourceGroup, res.Username, res.Namespace,
 		"user certificate is signed by a trusted key (group-level)"), nil
 }
 
