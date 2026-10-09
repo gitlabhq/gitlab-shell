@@ -2,7 +2,6 @@
 *.swp
 .DS_Store
 .GOPATH
-.bundle
 .bundle/
 .gitlab_shell_secret
 .idea

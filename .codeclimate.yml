@@ -1,12 +1,10 @@
 ---
 engines:
-  bundler-audit:
-    enabled: true
   duplication:
     enabled: true
     config:
       languages:
-      - ruby
+      - go
   fixme:
     enabled: true
 exclude_paths:
