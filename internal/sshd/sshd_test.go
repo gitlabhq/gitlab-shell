@@ -64,7 +64,6 @@ func TestListenAndServe(t *testing.T) {
 }
 
 func TestGitAuditEventCertificateMetadata(t *testing.T) {
-	t.Setenv("FF_GITLAB_SHELL_SSH_CERTIFICATES", "1")
 	testRoot := testhelper.PrepareTestRootDir(t)
 
 	caSigner, caPubKey := createCAKeyPair(t)

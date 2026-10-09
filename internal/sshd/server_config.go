@@ -335,11 +335,6 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 		}), nil
 	}
 
-	// Fall back to certificate resolution via the Rails API (group- or instance-level)
-	if os.Getenv("FF_GITLAB_SHELL_SSH_CERTIFICATES") != "1" {
-		return nil, fmt.Errorf("handleUserCertificate: feature is disabled")
-	}
-
 	return s.resolveCertificateViaAPI(ctx, cert, caFingerprint)
 }
 
