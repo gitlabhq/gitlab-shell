@@ -21,6 +21,7 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/testhelper"
 	"gitlab.com/gitlab-org/labkit/v2/fips"
@@ -40,6 +41,7 @@ const (
 	keyIDConsecutiveErr = "certificate KeyId contains consecutive special characters"
 
 	sourceAddrCIDR         = "10.0.0.0/8"
+	authorizedKeysAPIPath  = "/api/v4/internal/authorized_keys"
 	authorizedCertsAPIPath = "/api/v4/internal/authorized_certs"
 )
 
@@ -190,7 +192,7 @@ func TestUserKeyHandling(t *testing.T) {
 
 	requests := []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/authorized_keys",
+			Path: authorizedKeysAPIPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				key := base64.RawStdEncoding.EncodeToString(validRSAKey.Marshal())
 				if key == r.URL.Query().Get("key") {
@@ -325,10 +327,8 @@ func TestUserCertificateHandling(t *testing.T) {
 			cert:             validUserCert,
 			featureFlagValue: "1",
 			expectedPermissions: &ssh.Permissions{
-				Extensions: map[string]string{
-					certPermUsername:  rootUser,
-					certPermNamespace: testNamespaceValue,
-				},
+				Extensions: certExtensions(caSigner.PublicKey(), "root@example.com",
+					commandargs.CertificateTrustSourceGroup, rootUser, testNamespaceValue),
 			},
 		}, {
 			desc:                "feature flag is not enabled",
@@ -347,10 +347,8 @@ func TestUserCertificateHandling(t *testing.T) {
 			featureFlagValue: "1",
 			expectedPermissions: &ssh.Permissions{
 				CriticalOptions: map[string]string{sourceAddressExt: sourceAddrCIDR},
-				Extensions: map[string]string{
-					certPermUsername:  rootUser,
-					certPermNamespace: testNamespaceValue,
-				},
+				Extensions: certExtensions(caSigner.PublicKey(), "root@example.com",
+					commandargs.CertificateTrustSourceGroup, rootUser, testNamespaceValue),
 			},
 		},
 	}
@@ -576,6 +574,19 @@ func userCert(t *testing.T, certType uint32, validBefore time.Time) *ssh.Certifi
 	return userCertSignedByCA(t, signer, certType, validBefore, "root@example.com")
 }
 
+func certExtensions(ca ssh.PublicKey, keyID, trustSource, username, namespace string) map[string]string {
+	ext := map[string]string{
+		certPermUsername:      username,
+		certPermCAFingerprint: ssh.FingerprintSHA256(ca),
+		certPermIdentity:      keyID,
+		certPermTrustSource:   trustSource,
+	}
+	if namespace != "" {
+		ext[certPermNamespace] = namespace
+	}
+	return ext
+}
+
 func TestParseTrustedUserCAKeys(t *testing.T) {
 	testRoot := testhelper.PrepareTestRootDir(t)
 
@@ -790,18 +801,14 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 			desc: "valid instance-level certificate",
 			cert: validCert,
 			expectedPermissions: &ssh.Permissions{
-				Extensions: map[string]string{
-					certPermUsername: testUser2,
-				},
+				Extensions: certExtensions(caPubKey, testUser2, commandargs.CertificateTrustSourceFile, testUser2, ""),
 			},
 		},
 		{
 			desc: "valid instance-level certificate with dots in username",
 			cert: dottedKeyIDCert,
 			expectedPermissions: &ssh.Permissions{
-				Extensions: map[string]string{
-					certPermUsername: "jane.doe",
-				},
+				Extensions: certExtensions(caPubKey, "jane.doe", commandargs.CertificateTrustSourceFile, "jane.doe", ""),
 			},
 		},
 		{
@@ -849,9 +856,7 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 			cert: sourceAddrCert,
 			expectedPermissions: &ssh.Permissions{
 				CriticalOptions: map[string]string{sourceAddressExt: "10.0.0.0/8,192.168.1.0/24"},
-				Extensions: map[string]string{
-					certPermUsername: testUser2,
-				},
+				Extensions:      certExtensions(caPubKey, testUser2, commandargs.CertificateTrustSourceFile, testUser2, ""),
 			},
 		},
 		{
@@ -908,13 +913,13 @@ func TestUserCertificateHandling_InstanceLevelWithMultipleCAs(t *testing.T) {
 	permissions1, err := cfg.handleUserCertificate(context.Background(), testUser, certFromCA1)
 	require.NoError(t, err)
 	require.Equal(t, &ssh.Permissions{
-		Extensions: map[string]string{certPermUsername: "user1"},
+		Extensions: certExtensions(caPubKey1, "user1", commandargs.CertificateTrustSourceFile, "user1", ""),
 	}, permissions1)
 
 	permissions2, err := cfg.handleUserCertificate(context.Background(), testUser, certFromCA2)
 	require.NoError(t, err)
 	require.Equal(t, &ssh.Permissions{
-		Extensions: map[string]string{certPermUsername: "user2"},
+		Extensions: certExtensions(caPubKey2, "user2", commandargs.CertificateTrustSourceFile, "user2", ""),
 	}, permissions2)
 }
 
@@ -922,7 +927,7 @@ func TestUserCertificateHandling_APIInstanceLevel(t *testing.T) {
 	const (
 		instanceIdentity              = "instance-user"
 		dottedIdentity                = "john.doe"
-		groupIdentity                 = "group-user@example.com"
+		groupIdentity                 = "Group-User@Example.com"
 		groupUsername                 = "group-user"
 		blankNamespaceIdentity        = "blank-namespace"
 		noUsernameIdentity            = "no-username"
@@ -935,7 +940,7 @@ func TestUserCertificateHandling_APIInstanceLevel(t *testing.T) {
 
 	// This CA is deliberately not added to trustedUserCAKeySet, so every
 	// certificate below resolves through the Rails API.
-	caSigner, _ := createCAKeyPair(t)
+	caSigner, caPubKey := createCAKeyPair(t)
 
 	signedCert := func(keyID string) *ssh.Certificate {
 		return userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), keyID)
@@ -995,21 +1000,21 @@ func TestUserCertificateHandling_APIInstanceLevel(t *testing.T) {
 			desc: "instance-scoped response grants instance-wide access",
 			cert: signedCert(instanceIdentity),
 			expectedPermissions: &ssh.Permissions{
-				Extensions: map[string]string{certPermUsername: instanceIdentity},
+				Extensions: certExtensions(caPubKey, instanceIdentity, commandargs.CertificateTrustSourceInstance, instanceIdentity, ""),
 			},
 		},
 		{
 			desc: "instance-scoped response with dots in the username",
 			cert: signedCert(dottedIdentity),
 			expectedPermissions: &ssh.Permissions{
-				Extensions: map[string]string{certPermUsername: dottedIdentity},
+				Extensions: certExtensions(caPubKey, dottedIdentity, commandargs.CertificateTrustSourceInstance, dottedIdentity, ""),
 			},
 		},
 		{
 			desc: "instance-scoped response grants the username the API returns, not the KeyId",
 			cert: signedCert(instanceCasedIdentity),
 			expectedPermissions: &ssh.Permissions{
-				Extensions: map[string]string{certPermUsername: instanceCasedUsername},
+				Extensions: certExtensions(caPubKey, instanceCasedIdentity, commandargs.CertificateTrustSourceInstance, instanceCasedUsername, ""),
 			},
 		},
 		{
@@ -1023,17 +1028,14 @@ func TestUserCertificateHandling_APIInstanceLevel(t *testing.T) {
 				map[string]string{sourceAddressExt: sourceAddrCIDR}),
 			expectedPermissions: &ssh.Permissions{
 				CriticalOptions: map[string]string{sourceAddressExt: sourceAddrCIDR},
-				Extensions:      map[string]string{certPermUsername: instanceIdentity},
+				Extensions:      certExtensions(caPubKey, instanceIdentity, commandargs.CertificateTrustSourceInstance, instanceIdentity, ""),
 			},
 		},
 		{
-			desc: "group-scoped response grants the resolved username for an email KeyId, and keeps its namespace restriction",
+			desc: "group-scoped response grants the resolved username for an email KeyId, keeps the raw KeyId as identity, and keeps its namespace restriction",
 			cert: signedCert(groupIdentity),
 			expectedPermissions: &ssh.Permissions{
-				Extensions: map[string]string{
-					certPermUsername:  groupUsername,
-					certPermNamespace: testNamespaceValue,
-				},
+				Extensions: certExtensions(caPubKey, groupIdentity, commandargs.CertificateTrustSourceGroup, groupUsername, testNamespaceValue),
 			},
 		},
 		{
@@ -1126,7 +1128,7 @@ func TestUserCertificateHandling_FileBasedCAPrecedence(t *testing.T) {
 	permissions, err := cfg.handleUserCertificate(context.Background(), testUser, cert)
 	require.NoError(t, err)
 	require.Equal(t, &ssh.Permissions{
-		Extensions: map[string]string{certPermUsername: testUser2},
+		Extensions: certExtensions(caPubKey, testUser2, commandargs.CertificateTrustSourceFile, testUser2, ""),
 	}, permissions)
 	require.Zero(t, apiCalls.Load(), "locally trusted CA must not trigger an API call")
 }

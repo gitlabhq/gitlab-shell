@@ -16,6 +16,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedcerts"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedkeys"
@@ -26,8 +27,11 @@ import (
 )
 
 const (
-	certPermUsername  = "username"
-	certPermNamespace = "namespace"
+	certPermUsername      = "username"
+	certPermNamespace     = "namespace"
+	certPermCAFingerprint = "ca-fingerprint"
+	certPermIdentity      = "certificate-identity"
+	certPermTrustSource   = "certificate-trust-source"
 )
 
 type serverConfig struct {
@@ -255,21 +259,34 @@ func validateInstanceKeyID(ctx context.Context, keyID string) error {
 	return nil
 }
 
+type certificateGrantParams struct {
+	caFingerprint string
+	trustSource   string
+	username      string
+	namespace     string
+	message       string
+}
+
 // grantCertificate logs an authorized certificate and builds its permissions.
 // An empty namespace means instance-wide access: no namespace key is set, which
 // is what downstream reads as an unrestricted grant.
-func grantCertificate(ctx context.Context, cert *ssh.Certificate, username, namespace, msg string) *ssh.Permissions {
-	extensions := map[string]string{certPermUsername: username}
+func grantCertificate(ctx context.Context, cert *ssh.Certificate, params certificateGrantParams) *ssh.Permissions {
+	extensions := map[string]string{
+		certPermUsername:      params.username,
+		certPermCAFingerprint: params.caFingerprint,
+		certPermIdentity:      cert.KeyId,
+		certPermTrustSource:   params.trustSource,
+	}
 
 	scope := "instance"
-	if namespace != "" {
+	if params.namespace != "" {
 		scope = "group"
-		extensions[certPermNamespace] = namespace
-		ctx = log.AppendFields(ctx, slog.String("certificate_namespace", namespace))
+		extensions[certPermNamespace] = params.namespace
+		ctx = log.AppendFields(ctx, slog.String("certificate_namespace", params.namespace))
 	}
 
 	ctx = log.AppendFields(ctx, slog.String("certificate_scope", scope))
-	log.FromContext(ctx).InfoContext(ctx, msg)
+	log.FromContext(ctx).InfoContext(ctx, params.message)
 
 	if addr, ok := cert.CriticalOptions["source-address"]; ok {
 		log.FromContext(ctx).InfoContext(ctx, "certificate authorized with source-address restriction",
@@ -280,13 +297,13 @@ func grantCertificate(ctx context.Context, cert *ssh.Certificate, username, name
 }
 
 func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, cert *ssh.Certificate) (*ssh.Permissions, error) {
-	fingerprint := ssh.FingerprintSHA256(cert.SignatureKey)
+	caFingerprint := ssh.FingerprintSHA256(cert.SignatureKey)
 
 	// Enrich context early so all rejection paths include audit-relevant fields.
 	ctx = log.AppendFields(ctx,
 		slog.String("ssh_user", user),
 		slog.String("public_key_fingerprint", ssh.FingerprintSHA256(cert)),
-		slog.String("signing_ca_fingerprint", fingerprint),
+		slog.String("signing_ca_fingerprint", caFingerprint),
 		slog.String("certificate_identity", cert.KeyId),
 	)
 
@@ -310,8 +327,12 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 
 		ctx = log.AppendFields(ctx, slog.String("certificate_username", cert.KeyId))
 
-		return grantCertificate(ctx, cert, cert.KeyId, "",
-			"user certificate is signed by a locally trusted CA (instance-level)"), nil
+		return grantCertificate(ctx, cert, certificateGrantParams{
+			caFingerprint: caFingerprint,
+			trustSource:   commandargs.CertificateTrustSourceFile,
+			username:      cert.KeyId,
+			message:       "user certificate is signed by a locally trusted CA (instance-level)",
+		}), nil
 	}
 
 	// Fall back to certificate resolution via the Rails API (group- or instance-level)
@@ -319,15 +340,15 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 		return nil, fmt.Errorf("handleUserCertificate: feature is disabled")
 	}
 
-	return s.resolveCertificateViaAPI(ctx, cert, fingerprint)
+	return s.resolveCertificateViaAPI(ctx, cert, caFingerprint)
 }
 
 // resolveCertificateViaAPI authenticates a certificate whose signing CA is not
 // locally trusted, by asking the Rails API to resolve the CA fingerprint. The
 // response identifies whether the match was instance-scoped, which grants
 // instance-wide access, or group-scoped, which restricts access to a namespace.
-func (s *serverConfig) resolveCertificateViaAPI(ctx context.Context, cert *ssh.Certificate, fingerprint string) (*ssh.Permissions, error) {
-	res, err := s.authorizedCertsClient.GetByKey(ctx, cert.KeyId, strings.TrimPrefix(fingerprint, "SHA256:"))
+func (s *serverConfig) resolveCertificateViaAPI(ctx context.Context, cert *ssh.Certificate, caFingerprint string) (*ssh.Permissions, error) {
+	res, err := s.authorizedCertsClient.GetByKey(ctx, cert.KeyId, strings.TrimPrefix(caFingerprint, "SHA256:"))
 	if err != nil {
 		log.FromContext(ctx).WarnContext(ctx, "user certificate is not signed by a trusted key", log.ErrorMessage(err.Error()))
 		return nil, err
@@ -360,8 +381,12 @@ func (s *serverConfig) resolveCertificateViaAPI(ctx context.Context, cert *ssh.C
 			return nil, err
 		}
 
-		return grantCertificate(ctx, cert, res.Username, "",
-			"user certificate is signed by a trusted key (instance-level)"), nil
+		return grantCertificate(ctx, cert, certificateGrantParams{
+			caFingerprint: caFingerprint,
+			trustSource:   commandargs.CertificateTrustSourceInstance,
+			username:      res.Username,
+			message:       "user certificate is signed by a trusted key (instance-level)",
+		}), nil
 	}
 
 	// A group-scoped match without a namespace would be indistinguishable from
@@ -372,8 +397,13 @@ func (s *serverConfig) resolveCertificateViaAPI(ctx context.Context, cert *ssh.C
 		return nil, fmt.Errorf("handleUserCertificate: group-scoped response missing namespace")
 	}
 
-	return grantCertificate(ctx, cert, res.Username, res.Namespace,
-		"user certificate is signed by a trusted key (group-level)"), nil
+	return grantCertificate(ctx, cert, certificateGrantParams{
+		caFingerprint: caFingerprint,
+		trustSource:   commandargs.CertificateTrustSourceGroup,
+		username:      res.Username,
+		namespace:     res.Namespace,
+		message:       "user certificate is signed by a trusted key (group-level)",
+	}), nil
 }
 
 // publicKeyCallback returns the SSH PublicKeyCallback. It authenticates the key
