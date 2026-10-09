@@ -423,10 +423,17 @@ func TestParseFailure(t *testing.T) {
 }
 
 func TestNewWithUsername(t *testing.T) {
+	testCertificate := &commandargs.CertificateMetadata{
+		CAFingerprint: "SHA256:ca",
+		Identity:      "User@Example.com",
+		TrustSource:   commandargs.CertificateTrustSourceGroup,
+	}
+
 	tests := []struct {
 		desc         string
 		command      string
 		namespace    string
+		certificate  *commandargs.CertificateMetadata
 		expectedErr  error
 		expectedType interface{}
 	}{
@@ -488,13 +495,30 @@ func TestNewWithUsername(t *testing.T) {
 			namespace:    testNamespace,
 			expectedErr:  disallowedcommand.Error,
 			expectedType: nil,
+		}, {
+			desc:        "git command with certificate metadata",
+			command:     testReceivePackRepo,
+			certificate: testCertificate,
+			expectedErr: nil,
+			expectedType: &receivepack.Command{
+				Args: &commandargs.Shell{
+					CommandType:    commandargs.ReceivePack,
+					GitlabUsername: testUsername,
+					SSHArgs:        []string{testReceivePack, testRepo},
+					Env: sshenv.Env{
+						IsSSHConnection: true,
+						OriginalCommand: testReceivePackRepo,
+					},
+					Certificate: testCertificate,
+				},
+			},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
 			env := sshenv.Env{IsSSHConnection: true, OriginalCommand: tc.command, NamespacePath: tc.namespace}
-			c, err := cmd.NewWithUsername(testUsername, env, nil, nil)
+			c, err := cmd.NewWithUsername(testUsername, tc.certificate, env, nil, nil)
 			if tc.expectedErr != nil {
 				require.Equal(t, tc.expectedErr, err)
 			} else {

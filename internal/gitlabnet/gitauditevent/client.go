@@ -41,6 +41,10 @@ type Request struct {
 	CheckIP       string                            `json:"check_ip,omitempty"`
 	Changes       string                            `json:"changes"`
 	NamespacePath string                            `json:"namespace_path,omitempty"`
+
+	CAFingerprint          string `json:"ca_fingerprint,omitempty"`
+	CertificateIdentity    string `json:"certificate_identity,omitempty"`
+	CertificateTrustSource string `json:"certificate_trust_source,omitempty"`
 }
 
 // AuditParams contains parameters for sending an audit event.
@@ -64,6 +68,11 @@ func (c *Client) Audit(ctx context.Context, params AuditParams, args *commandarg
 		CheckIP:       gitlabnet.ParseIP(args.Env.RemoteAddr),
 		Changes:       "_any",
 		NamespacePath: args.Env.NamespacePath,
+	}
+	if cert := args.Certificate; cert != nil {
+		request.CAFingerprint = cert.CAFingerprint
+		request.CertificateIdentity = cert.Identity
+		request.CertificateTrustSource = cert.TrustSource
 	}
 
 	httpClient := c.client
