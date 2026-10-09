@@ -105,7 +105,8 @@ sshd:
     - /run/secrets/ssh-hostkeys/ssh_host_rsa_key
     - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key
     - /run/secrets/ssh-hostkeys/ssh_host_ed25519_key
-  host_key_certs:
+  # SSH host certificate files. Each certificate must match one of the host keys above.
+  host_cert_files:
     - /run/secrets/ssh-hostkeys/ssh_host_rsa_key-cert.pub
     - /run/secrets/ssh-hostkeys/ssh_host_ecdsa_key-cert.pub
     - /run/secrets/ssh-hostkeys/ssh_host_ed25519_key-cert.pub
