@@ -10,17 +10,15 @@ import (
 	"net/http"
 	"time"
 
+	httpclient "gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
 const gitProtocolHeader = "Git-Protocol"
-
-// defaultInfoRefsTimeout bounds the /info/refs request and prefix read so a stalled primary cannot hang the session.
-// The ref advertisement copy is not bounded because large repositories can take longer.
-const defaultInfoRefsTimeout = 30 * time.Second
 
 var errInfoRefsTimeout = errors.New("timed out reading info/refs response")
 
@@ -42,6 +40,8 @@ func setGitProtocolHeader(client *git.Client, version string) {
 
 // requestInfoRefs performs an HTTP request to the /info/refs endpoint for the specified Git service,
 // verifies the response prefix, and writes the result to the output stream.
+// The http_settings.read_timeout deadline bounds only the request and prefix read so a stalled primary
+// cannot hang the session. Slow healthy primaries get the internal API's budget; the ref copy is unbounded.
 func requestInfoRefs(ctx context.Context, client infoRefsClient, command gitHTTPCommand, timeout time.Duration) error {
 	readWriter, serviceName, httpPrefix := command.ForInfoRefs()
 
@@ -49,25 +49,28 @@ func requestInfoRefs(ctx context.Context, client infoRefsClient, command gitHTTP
 	defer cancel()
 	timer := time.AfterFunc(timeout, cancel)
 
-	response, requestErr := client.InfoRefs(ctx, serviceName)
-	p := make([]byte, len(httpPrefix))
-	var err error
-	if requestErr == nil {
-		defer response.Body.Close() //nolint:errcheck
-
-		// Read the first bytes that contain for
-		// push - 001f# service=git-receive-pack\n0000 string
-		// pull - 001e# service=git-upload-pack\n0000 string
-		// to convert HTTP(S) Git response to the one expected by SSH
-		_, err = io.ReadFull(response.Body, p)
+	response, err := client.InfoRefs(ctx, serviceName)
+	if err != nil {
+		// git.Client.do replaces all transport errors, including cancellation, with APIError{"Remote repository is unavailable"}.
+		// Both our timer and parent cancellation yield context.Canceled, so ctx.Err() cannot distinguish them.
+		// Ask the timer whether it fired instead.
+		if !timer.Stop() {
+			return infoRefsTimeoutError(serviceName)
+		}
+		return err
 	}
+	defer response.Body.Close() //nolint:errcheck
+
+	// Read the first bytes that contain for
+	// push - 001f# service=git-receive-pack\n0000 string
+	// pull - 001e# service=git-upload-pack\n0000 string
+	// to convert HTTP(S) Git response to the one expected by SSH
+	p := make([]byte, len(httpPrefix))
+	_, err = io.ReadFull(response.Body, p)
 	// Report a timeout if the timer fired at any point, including just after a successful
 	// prefix read: ctx is already canceled then, so the body copy would fail anyway.
 	if !timer.Stop() {
-		return fmt.Errorf("unexpected %s response: %w", serviceName, errInfoRefsTimeout)
-	}
-	if requestErr != nil {
-		return requestErr
+		return infoRefsTimeoutError(serviceName)
 	}
 	if err != nil || !bytes.Equal(p, httpPrefix) {
 		return fmt.Errorf("unexpected %s response", serviceName)
@@ -76,6 +79,14 @@ func requestInfoRefs(ctx context.Context, client infoRefsClient, command gitHTTP
 	_, err = io.Copy(readWriter.Out, response.Body)
 
 	return err
+}
+
+func infoRefsTimeoutError(serviceName string) error {
+	return fmt.Errorf("unexpected %s response: %w", serviceName, errInfoRefsTimeout)
+}
+
+func infoRefsTimeout(cfg *config.Config) time.Duration {
+	return httpclient.ReadTimeout(cfg.HTTPSettings.ReadTimeoutSeconds)
 }
 
 // sshRequestFunc is a function type for SSH pack requests

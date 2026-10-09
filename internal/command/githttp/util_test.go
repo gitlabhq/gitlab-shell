@@ -17,6 +17,8 @@ import (
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client/testserver"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
 )
 
@@ -125,7 +127,7 @@ func TestRequestInfoRefs(t *testing.T) {
 				httpPrefix:  prefix,
 			}
 
-			err := requestInfoRefs(context.Background(), fakeInfoRefsClient{response: &http.Response{Body: body}}, command, defaultInfoRefsTimeout)
+			err := requestInfoRefs(context.Background(), fakeInfoRefsClient{response: &http.Response{Body: body}}, command, time.Second)
 
 			require.NoError(t, err)
 			assert.Equal(t, payload, output.Bytes())
@@ -149,7 +151,7 @@ func TestRequestInfoRefs(t *testing.T) {
 				httpPrefix:  prefix,
 			}
 
-			err := requestInfoRefs(context.Background(), fakeInfoRefsClient{response: &http.Response{Body: body}}, command, defaultInfoRefsTimeout)
+			err := requestInfoRefs(context.Background(), fakeInfoRefsClient{response: &http.Response{Body: body}}, command, time.Second)
 
 			require.EqualError(t, err, "unexpected git-test-pack response")
 			assert.True(t, body.closed)
@@ -160,7 +162,7 @@ func TestRequestInfoRefs(t *testing.T) {
 		requestError := errors.New("request failed")
 		command := fakeGitHTTPCommand{readWriter: &readwriter.ReadWriter{}, serviceName: serviceName, httpPrefix: prefix}
 
-		err := requestInfoRefs(context.Background(), fakeInfoRefsClient{err: requestError}, command, defaultInfoRefsTimeout)
+		err := requestInfoRefs(context.Background(), fakeInfoRefsClient{err: requestError}, command, time.Second)
 
 		require.ErrorIs(t, err, requestError)
 	})
@@ -174,7 +176,7 @@ func TestRequestInfoRefs(t *testing.T) {
 			httpPrefix:  prefix,
 		}
 
-		err := requestInfoRefs(context.Background(), fakeInfoRefsClient{response: &http.Response{Body: body}}, command, defaultInfoRefsTimeout)
+		err := requestInfoRefs(context.Background(), fakeInfoRefsClient{response: &http.Response{Body: body}}, command, time.Second)
 
 		require.ErrorIs(t, err, writeError)
 		assert.True(t, body.closed)
@@ -254,4 +256,42 @@ func TestRequestInfoRefsCopyOutlivesPrefixTimeout(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, payload, output.Bytes())
+}
+
+func TestInfoRefsUsesConfiguredReadTimeout(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		execute func(context.Context, *config.Config, *accessverifier.Response) error
+	}{
+		{
+			name: "pull",
+			execute: func(ctx context.Context, cfg *config.Config, response *accessverifier.Response) error {
+				return (&PullCommand{Config: cfg, Response: response}).Execute(ctx)
+			},
+		},
+		{
+			name: "push",
+			execute: func(ctx context.Context, cfg *config.Config, response *accessverifier.Response) error {
+				return (&PushCommand{Config: cfg, Response: response}).Execute(ctx)
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+				<-r.Context().Done()
+			}))
+			t.Cleanup(server.Close)
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+			cfg := &config.Config{}
+			cfg.HTTPSettings.ReadTimeoutSeconds = 1
+			response := &accessverifier.Response{Payload: accessverifier.CustomPayload{
+				Data: accessverifier.CustomPayloadData{PrimaryRepo: server.URL},
+			}}
+
+			err := tc.execute(ctx, cfg, response)
+
+			require.ErrorIs(t, err, errInfoRefsTimeout)
+		})
+	}
 }

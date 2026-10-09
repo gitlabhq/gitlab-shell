@@ -128,7 +128,7 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	c.RetryWaitMin = hcc.retryWaitMin
 	c.Logger = nil
 	c.HTTPClient.Transport = NewTransport(transport)
-	c.HTTPClient.Timeout = readTimeout(readTimeoutSeconds)
+	c.HTTPClient.Timeout = ReadTimeout(readTimeoutSeconds)
 	c.PrepareRetry = refreshJWTBeforeRetry
 
 	// The internal API (/api/v4/internal/*) must never be redirected. Go's
@@ -253,10 +253,11 @@ func buildHTTPTransport(gitlabURL string) (*http.Transport, string) {
 	return &http.Transport{}, gitlabURL
 }
 
-func readTimeout(timeoutSeconds uint64) time.Duration {
-	if timeoutSeconds == 0 || timeoutSeconds > math.MaxInt64 {
+// ReadTimeout returns the configured HTTP read timeout, defaulting to 300 seconds when unset or too large to represent.
+func ReadTimeout(timeoutSeconds uint64) time.Duration {
+	if timeoutSeconds == 0 || timeoutSeconds > uint64(math.MaxInt64/int64(time.Second)) {
 		timeoutSeconds = defaultReadTimeoutSeconds
 	}
 
-	return time.Duration(timeoutSeconds) * time.Second // #nosec G115
+	return time.Duration(timeoutSeconds) * time.Second
 }

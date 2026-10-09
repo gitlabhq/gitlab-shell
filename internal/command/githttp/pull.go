@@ -53,7 +53,7 @@ func (c *PullCommand) Execute(ctx context.Context) error {
 		return c.requestSSHUploadPack(ctx, client)
 	}
 
-	if err := requestInfoRefs(ctx, client, c, defaultInfoRefsTimeout); err != nil {
+	if err := requestInfoRefs(ctx, client, c, infoRefsTimeout(c.Config)); err != nil {
 		return err
 	}
 
