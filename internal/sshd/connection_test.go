@@ -384,6 +384,26 @@ func TestTrackErrorSLIExclusions(t *testing.T) {
 			err:     grpcstatus.Error(grpccodes.Internal, "running upload-pack: cmd wait: exit status 1"),
 			counted: true,
 		},
+		{
+			desc:    "not our ref as Internal (Gitaly today) is not counted",
+			err:     grpcstatus.Error(grpccodes.Internal, `running upload-pack: cmd wait: exit status 128, stderr: "fatal: git upload-pack: not our ref 0000000000000000000000000000000000000000\n"`),
+			counted: false,
+		},
+		{
+			desc:    "not our ref as FailedPrecondition (Gitaly after the SSH upload-pack change) is not counted",
+			err:     grpcstatus.Error(grpccodes.FailedPrecondition, `running upload-pack: cmd wait: exit status 128, stderr: "fatal: git upload-pack: not our ref 0000000000000000000000000000000000000000\n"`),
+			counted: false,
+		},
+		{
+			desc:    "not our ref without a gRPC code is not counted (the message identifies the outcome)",
+			err:     errors.New(`running upload-pack: cmd wait: exit status 128, stderr: "fatal: git upload-pack: not our ref 0000000000000000000000000000000000000000\n"`),
+			counted: false,
+		},
+		{
+			desc:    "unrelated FailedPrecondition is counted",
+			err:     grpcstatus.Error(grpccodes.FailedPrecondition, "running upload-pack: cmd wait: exit status 128, stderr: \"fatal: not a git repository\""),
+			counted: true,
+		},
 	} {
 		t.Run(tc.desc, func(t *testing.T) {
 			initial := testutil.ToFloat64(metrics.SliSshdSessionsErrorsTotal)

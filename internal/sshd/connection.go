@@ -31,7 +31,9 @@ const (
 	// sessionChannelType is the SSH channel type for interactive sessions.
 	sessionChannelType = "session"
 
-	// NotOurRefError represents the error message indicating that the git upload-pack is not our reference
+	// NotOurRefError is what git-upload-pack(1) prints when a client wants an
+	// object the repository does not have. Matched regardless of gRPC code in
+	// excludedFromSLI.
 	NotOurRefError = `exit status 128, stderr: "fatal: git upload-pack: not our ref `
 
 	// negotiationTimeoutError matches Gitaly's DeadlineExceeded for a client that goes idle after
@@ -296,7 +298,7 @@ func excludedFromSLI(msg string, code grpccodes.Code) bool {
 	case grpccodes.Canceled, grpccodes.Unavailable:
 		return true
 	case grpccodes.Internal:
-		if strings.Contains(msg, NotOurRefError) || strings.Contains(msg, brokenPipeError) {
+		if strings.Contains(msg, brokenPipeError) {
 			return true
 		}
 	case grpccodes.DeadlineExceeded:
@@ -305,7 +307,12 @@ func excludedFromSLI(msg string, code grpccodes.Code) bool {
 		}
 	}
 
-	return strings.Contains(msg, copyResponseEOFError)
+	// "not our ref" is git refusing a want for an object the repository does
+	// not have: the client asked for a commit that does not exist here. That
+	// is the client's outcome whatever gRPC code carries it (Gitaly's SSH
+	// upload-pack returns Internal today and is moving to FailedPrecondition,
+	// which its HTTP counterpart has always used), so match the message alone.
+	return strings.Contains(msg, NotOurRefError) || strings.Contains(msg, copyResponseEOFError)
 }
 
 // trackConnection emits the connection-level SLI once per connection. Only
