@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"maps"
 	"net/http"
+	"time"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
@@ -27,13 +28,22 @@ func withGitProtocolHeader(headers map[string]string, version string) map[string
 }
 
 type gitHTTPCommand interface {
-	ForInfoRefs() (*readwriter.ReadWriter, string, []byte)
+	ForInfoRefs() (*readwriter.ReadWriter, string, []byte, time.Duration)
+}
+
+type infoRefsClient interface {
+	InfoRefs(context.Context, string) (*http.Response, error)
 }
 
 // requestInfoRefs performs an HTTP request to the /info/refs endpoint for the specified Git service,
 // verifies the response prefix, and writes the result to the output stream.
-func requestInfoRefs(ctx context.Context, client *git.Client, command gitHTTPCommand) error {
-	readWriter, serviceName, httpPrefix := command.ForInfoRefs()
+func requestInfoRefs(ctx context.Context, client infoRefsClient, command gitHTTPCommand) error {
+	readWriter, serviceName, httpPrefix, timeout := command.ForInfoRefs()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	timer := time.AfterFunc(timeout, cancel)
+	defer timer.Stop()
 
 	response, err := client.InfoRefs(ctx, serviceName)
 	if err != nil {
@@ -46,8 +56,13 @@ func requestInfoRefs(ctx context.Context, client *git.Client, command gitHTTPCom
 	// pull - 001e# service=git-upload-pack\n0000 string
 	// to convert HTTP(S) Git response to the one expected by SSH
 	p := make([]byte, len(httpPrefix))
-	_, err = response.Body.Read(p)
+	_, err = io.ReadFull(response.Body, p)
 	if err != nil || !bytes.Equal(p, httpPrefix) {
+		return fmt.Errorf("unexpected %s response", serviceName)
+	}
+
+	// An expired timer may still be canceling the request even if the prefix read succeeded.
+	if !timer.Stop() {
 		return fmt.Errorf("unexpected %s response", serviceName)
 	}
 

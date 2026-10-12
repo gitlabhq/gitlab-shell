@@ -3,7 +3,9 @@ package githttp
 import (
 	"context"
 	"log/slog"
+	"time"
 
+	httpclient "gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
@@ -35,8 +37,8 @@ type PushCommand struct {
 // 6. Return the output to the user
 
 // ForInfoRefs returns the necessary Push specifics for client.InfoRefs()
-func (c *PushCommand) ForInfoRefs() (*readwriter.ReadWriter, string, []byte) {
-	return c.ReadWriter, pushService, receivePackHTTPPrefix
+func (c *PushCommand) ForInfoRefs() (*readwriter.ReadWriter, string, []byte, time.Duration) {
+	return c.ReadWriter, pushService, receivePackHTTPPrefix, httpclient.ReadTimeout(c.Config.HTTPSettings.ReadTimeoutSeconds)
 }
 
 // Execute runs the push command by determining the appropriate method (HTTP/SSH)
