@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"testing/iotest"
 	"testing/synctest"
 	"time"
 
@@ -149,6 +150,7 @@ func TestRequestInfoRefs(t *testing.T) {
 		wantErr   string
 	}{
 		{desc: "normal read", body: bytes.NewReader(fullBody), wantOut: payload},
+		{desc: "one byte at a time", body: iotest.OneByteReader(bytes.NewReader(fullBody)), wantOut: payload},
 		{desc: "rejects a mismatched prefix", body: bytes.NewReader([]byte("wrong-prefix!!")), wantErr: unexpectedResponseMsg},
 		{desc: "rejects a truncated prefix", body: bytes.NewReader(prefix[:len(prefix)-1]), wantErr: unexpectedResponseMsg},
 		{desc: "rejects an empty body", body: bytes.NewReader(nil), wantErr: unexpectedResponseMsg},
@@ -244,28 +246,36 @@ func TestRequestInfoRefsTimeout(t *testing.T) {
 		})
 	})
 
-	t.Run("times out while waiting for the prefix", func(t *testing.T) {
-		synctest.Test(t, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), 10*timeout)
-			defer cancel()
-			client := &fakeInfoRefsClient{}
-			body := &trackingReadCloser{Reader: readerFunc(func([]byte) (int, error) {
-				<-client.requestCtx.Done()
-				return 0, client.requestCtx.Err()
-			})}
-			client.response = &http.Response{Body: body}
-			output := &bytes.Buffer{}
-			command := fakeGitHTTPCommand{readWriter: &readwriter.ReadWriter{Out: output}, serviceName: serviceName, httpPrefix: prefix}
-			start := time.Now()
+	for _, tc := range []struct {
+		desc            string
+		sentBeforeStall []byte
+	}{
+		{desc: "times out while waiting for the prefix", sentBeforeStall: nil},
+		{desc: "times out while reading a partial prefix", sentBeforeStall: prefix[:1]},
+	} {
+		t.Run(tc.desc, func(t *testing.T) {
+			synctest.Test(t, func(t *testing.T) {
+				ctx, cancel := context.WithTimeout(context.Background(), 10*timeout)
+				defer cancel()
+				client := &fakeInfoRefsClient{}
+				body := &trackingReadCloser{Reader: io.MultiReader(bytes.NewReader(tc.sentBeforeStall), readerFunc(func([]byte) (int, error) {
+					<-client.requestCtx.Done()
+					return 0, client.requestCtx.Err()
+				}))}
+				client.response = &http.Response{Body: body}
+				output := &bytes.Buffer{}
+				command := fakeGitHTTPCommand{readWriter: &readwriter.ReadWriter{Out: output}, serviceName: serviceName, httpPrefix: prefix}
+				start := time.Now()
 
-			err := requestInfoRefs(ctx, client, command, timeout)
+				err := requestInfoRefs(ctx, client, command, timeout)
 
-			require.EqualError(t, err, timedOutMsg)
-			assert.Equal(t, timeout, time.Since(start))
-			assert.Empty(t, output.Bytes())
-			assert.True(t, body.closed)
+				require.EqualError(t, err, timedOutMsg)
+				assert.Equal(t, timeout, time.Since(start))
+				assert.Empty(t, output.Bytes())
+				assert.True(t, body.closed)
+			})
 		})
-	})
+	}
 
 	t.Run("rejects a complete prefix returned after the timer expires", func(t *testing.T) {
 		synctest.Test(t, func(t *testing.T) {
