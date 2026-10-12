@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"net/http"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
@@ -13,6 +14,17 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
+
+const gitProtocolHeader = "Git-Protocol"
+
+// withGitProtocolHeader returns a copy so the access-verifier response map is never mutated.
+// It sets Git-Protocol even for an empty version to preserve existing behavior.
+func withGitProtocolHeader(headers map[string]string, version string) map[string]string {
+	result := make(map[string]string, len(headers)+1)
+	maps.Copy(result, headers)
+	result[gitProtocolHeader] = version
+	return result
+}
 
 type gitHTTPCommand interface {
 	ForInfoRefs() (*readwriter.ReadWriter, string, []byte)

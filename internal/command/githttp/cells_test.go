@@ -59,7 +59,7 @@ func TestCellsCommandsExecute(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			cellServer, captured := startCapturingCellServer(t, responseBody)
+			cellServer, captured := startCapturingServer(t, responseBody)
 			cfg := cellsTestConfig(t)
 
 			output := &bytes.Buffer{}
@@ -76,14 +76,14 @@ func TestCellsCommandsExecute(t *testing.T) {
 			assert.Equal(t, responseBody, output.String())
 			assert.Equal(t, tc.expectedPath, captured.path)
 			assert.NotEmpty(t, captured.headers.Get(clientpkg.ShellAPIRequestHeader))
-			assert.Equal(t, testGitProtocolVersion, captured.headers.Get("Git-Protocol"))
+			assert.Equal(t, testGitProtocolVersion, captured.headers.Get(gitProtocolHeader))
 			assert.Equal(t, tc.expectedBody, string(captured.body))
 		})
 	}
 }
 
 func TestCellsPullClosesRequestBodyAfterDone(t *testing.T) {
-	cellServer, captured := startCapturingCellServer(t, "cell-response")
+	cellServer, captured := startCapturingServer(t, "cell-response")
 	inputReader, inputWriter := io.Pipe()
 	t.Cleanup(func() { inputWriter.Close() })
 
@@ -176,7 +176,7 @@ func TestCellsPushGatesStreamingOnClientInput(t *testing.T) {
 				assert.Equal(t, tc.wantBodies[index], string(request.body))
 				assert.Equal(t, "/group/project.git/ssh-receive-pack", request.path)
 				assert.NotEmpty(t, request.headers.Get(clientpkg.ShellAPIRequestHeader))
-				assert.Equal(t, testGitProtocolVersion, request.headers.Get("Git-Protocol"))
+				assert.Equal(t, testGitProtocolVersion, request.headers.Get(gitProtocolHeader))
 			}
 			assert.Equal(t, tc.wantOutput, output.String())
 		})
@@ -406,7 +406,7 @@ func TestBuildCellsGitClient(t *testing.T) {
 
 		gitClient, err := buildCellsGitClient(cfg, response, args)
 		require.NoError(t, err)
-		require.Equal(t, testGitProtocolVersion, gitClient.Headers["Git-Protocol"])
+		require.Equal(t, testGitProtocolVersion, gitClient.Headers[gitProtocolHeader])
 	})
 
 	t.Run("omits Git-Protocol header when GitProtocolVersion is empty", func(t *testing.T) {
@@ -415,7 +415,7 @@ func TestBuildCellsGitClient(t *testing.T) {
 
 		gitClient, err := buildCellsGitClient(cfg, response, args)
 		require.NoError(t, err)
-		_, hasGitProtocol := gitClient.Headers["Git-Protocol"]
+		_, hasGitProtocol := gitClient.Headers[gitProtocolHeader]
 		require.False(t, hasGitProtocol)
 	})
 }
@@ -534,12 +534,6 @@ func TestCellsCommandsReturnShellJWTSigningError(t *testing.T) {
 	require.Empty(t, *captured)
 }
 
-type capturedRequest struct {
-	path    string
-	headers http.Header
-	body    []byte
-}
-
 func startCapturingPushCellServer(t *testing.T, responseBodies []string, secondRequestStarted chan struct{}) (*httptest.Server, *[]capturedRequest) {
 	t.Helper()
 	captured := &[]capturedRequest{}
@@ -562,23 +556,6 @@ func startCapturingPushCellServer(t *testing.T, responseBodies []string, secondR
 	}))
 	t.Cleanup(server.Close)
 
-	return server, captured
-}
-
-func startCapturingCellServer(t *testing.T, responseBody string) (*httptest.Server, *capturedRequest) {
-	t.Helper()
-	captured := &capturedRequest{}
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		captured.path = r.URL.Path
-		captured.headers = r.Header
-		body, err := io.ReadAll(r.Body)
-		assert.NoError(t, err)
-		captured.body = body
-		w.WriteHeader(http.StatusOK)
-		_, err = w.Write([]byte(responseBody))
-		assert.NoError(t, err)
-	}))
-	t.Cleanup(server.Close)
 	return server, captured
 }
 
