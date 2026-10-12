@@ -303,48 +303,31 @@ func TestUserCertificateHandling(t *testing.T) {
 	testCases := []struct {
 		desc                string
 		cert                *ssh.Certificate
-		featureFlagValue    string
 		expectedErr         error
 		expectedPermissions *ssh.Permissions
 	}{
 		{
-			desc:             "wrong cert type",
-			cert:             userCert(t, ssh.HostCert, time.Now().Add(time.Hour)),
-			featureFlagValue: "1",
-			expectedErr:      errors.New("handleUserCertificate: cert has type 2"),
+			desc:        "wrong cert type",
+			cert:        userCert(t, ssh.HostCert, time.Now().Add(time.Hour)),
+			expectedErr: errors.New("handleUserCertificate: cert has type 2"),
 		}, {
-			desc:             "expired cert",
-			cert:             userCert(t, ssh.UserCert, time.Now().Add(-time.Hour)),
-			featureFlagValue: "1",
-			expectedErr:      errors.New("ssh: cert has expired"),
+			desc:        "expired cert",
+			cert:        userCert(t, ssh.UserCert, time.Now().Add(-time.Hour)),
+			expectedErr: errors.New("ssh: cert has expired"),
 		}, {
-			desc:             "API error",
-			cert:             userCert(t, ssh.UserCert, time.Now().Add(time.Hour)),
-			featureFlagValue: "1",
-			expectedErr:      &client.APIError{Msg: "Internal API unreachable", System: true},
+			desc:        "API error",
+			cert:        userCert(t, ssh.UserCert, time.Now().Add(time.Hour)),
+			expectedErr: &client.APIError{Msg: "Internal API unreachable", System: true},
 		}, {
-			desc:             "successful request",
-			cert:             validUserCert,
-			featureFlagValue: "1",
+			desc: "successful request",
+			cert: validUserCert,
 			expectedPermissions: &ssh.Permissions{
 				Extensions: certExtensions(caSigner.PublicKey(), "root@example.com",
 					commandargs.CertificateTrustSourceGroup, rootUser, testNamespaceValue),
 			},
 		}, {
-			desc:                "feature flag is not enabled",
-			cert:                validUserCert,
-			expectedErr:         errors.New("handleUserCertificate: feature is disabled"),
-			expectedPermissions: nil,
-		}, {
-			desc:                "feature flag is disabled",
-			cert:                validUserCert,
-			featureFlagValue:    "0",
-			expectedErr:         errors.New("handleUserCertificate: feature is disabled"),
-			expectedPermissions: nil,
-		}, {
-			desc:             "successful request with source-address",
-			cert:             validUserCertWithSourceAddr,
-			featureFlagValue: "1",
+			desc: "successful request with source-address",
+			cert: validUserCertWithSourceAddr,
 			expectedPermissions: &ssh.Permissions{
 				CriticalOptions: map[string]string{sourceAddressExt: sourceAddrCIDR},
 				Extensions: certExtensions(caSigner.PublicKey(), "root@example.com",
@@ -355,7 +338,6 @@ func TestUserCertificateHandling(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			t.Setenv("FF_GITLAB_SHELL_SSH_CERTIFICATES", tc.featureFlagValue)
 			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, tc.cert)
 			require.Equal(t, tc.expectedErr, err)
 			require.Equal(t, tc.expectedPermissions, permissions)
@@ -756,14 +738,10 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 	// Create a trusted CA key pair
 	caSigner, caPubKey := createCAKeyPair(t)
 
-	// Create an untrusted CA key pair
-	untrustedSigner, _ := createCAKeyPair(t)
-
 	// Create certificates
 	validCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), testUser2)
 	expiredCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(-time.Hour), testUser2)
 	hostCert := userCertSignedByCA(t, caSigner, ssh.HostCert, time.Now().Add(time.Hour), testUser2)
-	untrustedCert := userCertSignedByCA(t, untrustedSigner, ssh.UserCert, time.Now().Add(time.Hour), testUser2)
 	emptyKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "")
 	singleCharKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "a")
 	newlineKeyIDCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "user\nname")
@@ -820,11 +798,6 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 			desc:        "wrong cert type (host cert)",
 			cert:        hostCert,
 			expectedErr: "handleUserCertificate: cert has type 2",
-		},
-		{
-			desc:        "untrusted CA without feature flag",
-			cert:        untrustedCert,
-			expectedErr: "handleUserCertificate: feature is disabled",
 		},
 		{
 			desc:        "empty KeyId rejected",
@@ -1072,8 +1045,6 @@ func TestUserCertificateHandling_APIInstanceLevel(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			t.Setenv("FF_GITLAB_SHELL_SSH_CERTIFICATES", "1")
-
 			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, tc.cert)
 			if tc.expectedErr != "" {
 				require.EqualError(t, err, tc.expectedErr)
@@ -1086,11 +1057,8 @@ func TestUserCertificateHandling_APIInstanceLevel(t *testing.T) {
 }
 
 // TestUserCertificateHandling_FileBasedCAPrecedence pins the requirement that a
-// locally trusted CA is resolved without consulting the Rails API, even when the
-// API path is enabled.
+// locally trusted CA is resolved without consulting the Rails API.
 func TestUserCertificateHandling_FileBasedCAPrecedence(t *testing.T) {
-	t.Setenv("FF_GITLAB_SHELL_SSH_CERTIFICATES", "1")
-
 	testRoot := testhelper.PrepareTestRootDir(t)
 
 	caSigner, caPubKey := createCAKeyPair(t)
