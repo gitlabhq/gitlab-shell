@@ -25,10 +25,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 )
 
-const (
-	internalAPIPath    = "/api/v4/internal"
-	defaultReadTimeout = 300 * time.Second
-)
+const internalAPIPath = "/api/v4/internal"
 
 // defaultRetryConfig mirrors the legacy client.GitlabNetClient retry policy
 // (hashicorp/go-retryablehttp with RetryMax=2): three total attempts, retries
@@ -71,7 +68,8 @@ type Config struct {
 	CaFile string
 	// CaPath is the path to a directory of custom CA certificate files.
 	CaPath string
-	// ReadTimeoutSeconds is the HTTP read timeout. Defaults to 300s when zero.
+	// ReadTimeoutSeconds is the HTTP read timeout in seconds. Zero or values
+	// that would overflow time.Duration fall back to the 300s default.
 	ReadTimeoutSeconds uint64
 }
 
@@ -112,14 +110,9 @@ func New(cfg *Config) (*Client, error) {
 	transport = metrics.NewRoundTripper(transport)
 	transport = correlation.NewInstrumentedRoundTripper(transport)
 
-	timeout := time.Duration(cfg.ReadTimeoutSeconds) * time.Second // #nosec G115
-	if cfg.ReadTimeoutSeconds == 0 {
-		timeout = defaultReadTimeout
-	}
-
 	inner := httpclient.NewWithConfig(&httpclient.Config{
 		Transport: transport,
-		Timeout:   timeout,
+		Timeout:   client.ReadTimeout(cfg.ReadTimeoutSeconds),
 	})
 
 	return &Client{
