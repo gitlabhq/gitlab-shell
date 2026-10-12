@@ -2,6 +2,7 @@ package topology
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"net"
 	"net/url"
@@ -140,6 +141,13 @@ func (r *Resolver) resolve(ctx context.Context, claim *types_proto.Claim) string
 			)
 		}),
 	)
+	if IsClaimNotFound(err) {
+		// The claim is not assigned to a cell. This is the expected answer for
+		// every project that lives on the default host, so it is not a warning
+		// and the "fail" metric does not count it.
+		log.FromContext(ctx).DebugContext(ctx, "Topology Service has no claim for this route, using default host")
+		return ""
+	}
 	if err != nil {
 		log.FromContext(ctx).WarnContext(ctx, "Topology Service classify failed after retries, falling back to default host",
 			slog.Int("max_attempts", classifyMaxAttempts),
@@ -274,6 +282,21 @@ func attachHost(c *client.GitlabNetClient, addr string) RoutedClient {
 		return RoutedClient{Client: c}
 	}
 	return RoutedClient{Client: c.WithHost(addr), Address: addr}
+}
+
+// IsClaimNotFound reports whether err is the Topology Service saying the claim
+// is not assigned to any cell, which means the request stays on the default
+// host. It sees through the backoff.Permanent wrapper used by resolve.
+func IsClaimNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	var permanent *backoff.PermanentError
+	if errors.As(err, &permanent) {
+		err = permanent.Err
+	}
+
+	return status.Code(err) == codes.NotFound
 }
 
 // isRetryableError returns true if the gRPC error is transient and the
