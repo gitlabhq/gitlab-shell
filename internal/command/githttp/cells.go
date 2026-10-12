@@ -125,7 +125,17 @@ func (c *CellsPushCommand) waitForPushInput(ctx context.Context) (*bufio.Reader,
 }
 
 func (c *CellsPushCommand) forwardReceivePack(ctx context.Context, gitClient *git.Client, clientInput io.Reader) error {
-	response, err := gitClient.SSHReceivePack(ctx, clientInput)
+	// Feed the push through a replayable body so a pooled connection lost
+	// before the Cell handled the request is retried instead of failing the
+	// push. Pushes beyond the replay limit stream as before, without retry.
+	body := git.NewReplayBody(git.DefaultReplayLimit)
+	defer body.Abort()
+	go func() {
+		_, copyErr := io.Copy(body, clientInput)
+		_ = body.CloseWithError(copyErr)
+	}()
+
+	response, err := gitClient.SSHReceivePack(ctx, body.Reader())
 	if err != nil {
 		return withCellsContext("receive-pack response", err)
 	}

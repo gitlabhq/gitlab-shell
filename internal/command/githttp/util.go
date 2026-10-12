@@ -61,11 +61,19 @@ func executeSSHRequest(ctx context.Context, requestFn sshRequestFunc, rw *readwr
 }
 
 // pipeRequest streams stdin into requestFn's body via writeFn, then copies the response to rw.Out.
-func pipeRequest(ctx context.Context, rw *readwriter.ReadWriter, writeFn func(io.Reader, *io.PipeWriter), requestFn func(context.Context, io.Reader) (*http.Response, error)) error {
-	pipeReader, pipeWriter := io.Pipe()
-	go writeFn(rw.In, pipeWriter)
+//
+// The body is a git.ReplayBody rather than an io.Pipe so the transport can
+// resend it on a fresh connection when a pooled one is lost before the server
+// handled the request. With a plain pipe those retries failed with
+// "net/http: cannot rewind body after connection loss".
+func pipeRequest(ctx context.Context, rw *readwriter.ReadWriter, writeFn func(io.Reader, io.WriteCloser), requestFn func(context.Context, io.Reader) (*http.Response, error)) error {
+	body := git.NewReplayBody(git.DefaultReplayLimit)
+	// The writer goroutine may still be reading stdin when the response ends;
+	// Abort makes its next Write fail instead of blocking forever.
+	defer body.Abort()
+	go writeFn(rw.In, body)
 
-	response, err := requestFn(ctx, pipeReader)
+	response, err := requestFn(ctx, body.Reader())
 	if err != nil {
 		return err
 	}
@@ -84,7 +92,7 @@ func pipeRequest(ctx context.Context, rw *readwriter.ReadWriter, writeFn func(io
 // the primary's nginx client_body_timeout, for the whole pack transfer, which
 // only flows on the response side. Requests that never send `done`, such as
 // protocol v2 ls-refs, fall through to stdin EOF, which also closes the writer.
-func readUploadPackRequest(in io.Reader, pw *io.PipeWriter) {
+func readUploadPackRequest(in io.Reader, pw io.WriteCloser) {
 	scanner := pktline.NewScanner(in)
 
 	for scanner.Scan() {
@@ -120,7 +128,7 @@ func readUploadPackRequest(in io.Reader, pw *io.PipeWriter) {
 	}
 }
 
-func readReceivePackRequest(in io.Reader, pw *io.PipeWriter) {
+func readReceivePackRequest(in io.Reader, pw io.WriteCloser) {
 	var needsPackData bool
 
 	scanner := pktline.NewScanner(in)

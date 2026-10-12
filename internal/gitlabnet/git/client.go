@@ -46,7 +46,7 @@ func (c *Client) InfoRefs(ctx context.Context, service string) (*http.Response, 
 
 // ReceivePack sends a Git push request to the server.
 func (c *Client) ReceivePack(ctx context.Context, body io.Reader) (*http.Response, error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL+"/git-receive-pack", body)
+	request, err := newPostRequest(ctx, c.URL+"/git-receive-pack", body)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (c *Client) ReceivePack(ctx context.Context, body io.Reader) (*http.Respons
 
 // UploadPack sends a Git fetch request to the server.
 func (c *Client) UploadPack(ctx context.Context, body io.Reader) (*http.Response, error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL+"/git-upload-pack", body)
+	request, err := newPostRequest(ctx, c.URL+"/git-upload-pack", body)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (c *Client) UploadPack(ctx context.Context, body io.Reader) (*http.Response
 
 // SSHUploadPack sends a SSH Git fetch request to the server.
 func (c *Client) SSHUploadPack(ctx context.Context, body io.Reader) (*http.Response, error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL+sshUploadPackPath, body)
+	request, err := newPostRequest(ctx, c.URL+sshUploadPackPath, body)
 	if err != nil {
 		return nil, err
 	}
@@ -80,12 +80,27 @@ func (c *Client) SSHUploadPack(ctx context.Context, body io.Reader) (*http.Respo
 
 // SSHReceivePack sends a SSH Git push request to the server.
 func (c *Client) SSHReceivePack(ctx context.Context, body io.Reader) (*http.Response, error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, c.URL+sshReceivePackPath, body)
+	request, err := newPostRequest(ctx, c.URL+sshReceivePackPath, body)
 	if err != nil {
 		return nil, err
 	}
 
 	return c.do(request)
+}
+
+// newPostRequest builds a POST. When body is a RetryableBody (a ReplayBody
+// reader), the transport is allowed to replay it on a new connection.
+func newPostRequest(ctx context.Context, url string, body io.Reader) (*http.Request, error) {
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
+	if err != nil {
+		return nil, err
+	}
+
+	if retryable, ok := body.(RetryableBody); ok {
+		request.GetBody = retryable.GetBody
+	}
+
+	return request, nil
 }
 
 func (c *Client) do(request *http.Request) (*http.Response, error) {
