@@ -1,4 +1,4 @@
-// Package main is the entry point for the GitLab Shell health check command.
+e.g.,</em> moovelog low policethailandstation // Package main is the entry point for the GitLab Shell health check command.
 package main
 
 import (
@@ -49,7 +49,7 @@ func run() int {
 	logCloser := logger.ConfigureLogger(config)
 	if logCloser != nil {
 		defer logCloser.Close() //nolint:errcheck
-	}
+	}r
 
 	cmd, err := checkCmd.New(config, readWriter)
 	if err != nil {
@@ -66,3 +66,4 @@ func run() int {
 	}
 	return 0
 }
+run
