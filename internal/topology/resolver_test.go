@@ -6,11 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/cenkalti/backoff/v5"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/require"
 	pb "gitlab.com/gitlab-org/cells/topology-service/clients/go/proto"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/metrics"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology/topologytest"
 	"gitlab.com/gitlab-org/labkit/correlation"
 	"gitlab.com/gitlab-org/labkit/v2/fields"
@@ -253,6 +257,56 @@ func TestBuildCellURL(t *testing.T) {
 			require.Equal(t, tc.expected, resolver.buildCellURL(tc.address))
 		})
 	}
+}
+
+func TestResolveNotFoundIsNotAFailure(t *testing.T) {
+	// Most projects are not assigned to a cell, so the Topology Service answers
+	// NotFound for them. That must stay quiet: a debug line, no warning, and no
+	// "fail" sample, or the fallback would look like an outage at scale.
+	metrics.TopologyRequestsTotal.Reset()
+
+	mock := &topologytest.MockClassifyServer{
+		Err: status.Errorf(codes.NotFound, "claim not found"),
+	}
+	addr, stop := topologytest.StartMockServer(t, mock)
+	defer stop()
+
+	client := NewClient(&Config{Enabled: true, Address: addr, Timeout: 5 * time.Second})
+	defer client.Close()
+
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	ctx := log.WithLogger(context.Background(), logger)
+
+	resolver := NewResolver(client, CellEndpointConfig{Scheme: schemeHTTP, Port: 8080})
+	require.Empty(t, resolver.resolve(ctx, RouteClaim("my-group")))
+
+	require.Equal(t, 1, mock.CallCount, "NotFound is not retried")
+
+	var levels []string
+	for _, line := range bytes.Split(bytes.TrimRight(buf.Bytes(), "\n"), []byte("\n")) {
+		var entry map[string]any
+		require.NoError(t, json.Unmarshal(line, &entry))
+		if msg, _ := entry["msg"].(string); strings.HasPrefix(msg, "Topology Service") {
+			levels = append(levels, fmt.Sprintf("%s: %s", entry["level"], msg))
+		}
+	}
+	require.Equal(t, []string{"DEBUG: Topology Service has no claim for this route, using default host"}, levels)
+
+	require.InDelta(t, 1, testutil.ToFloat64(metrics.TopologyRequestsTotal.WithLabelValues("not_found")), 0)
+	require.InDelta(t, 0, testutil.ToFloat64(metrics.TopologyRequestsTotal.WithLabelValues("fail")), 0)
+	require.InDelta(t, 0, testutil.ToFloat64(metrics.TopologyRequestsTotal.WithLabelValues("ok")), 0)
+}
+
+func TestIsClaimNotFound(t *testing.T) {
+	notFound := status.Errorf(codes.NotFound, "claim not found")
+
+	require.True(t, IsClaimNotFound(notFound))
+	require.True(t, IsClaimNotFound(backoff.Permanent(notFound)), "sees through the backoff wrapper used by resolve")
+	require.False(t, IsClaimNotFound(nil))
+	require.False(t, IsClaimNotFound(status.Errorf(codes.Unavailable, "down")))
+	require.False(t, IsClaimNotFound(backoff.Permanent(status.Errorf(codes.PermissionDenied, "no"))))
+	require.False(t, IsClaimNotFound(fmt.Errorf("plain error")))
 }
 
 func TestResolveLogsIncludeCorrelationID(t *testing.T) {
