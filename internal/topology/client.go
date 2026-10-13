@@ -29,6 +29,11 @@ import (
 const (
 	metricsStatusOK   = "ok"
 	metricsStatusFail = "fail"
+	// metricsStatusNotFound counts lookups the Topology Service answered with
+	// NotFound: the claim has no cell, so the request stays on the default
+	// host. That is a normal outcome, not a failure, and is kept out of "fail"
+	// so error-rate alerts only see real problems.
+	metricsStatusNotFound = "not_found"
 )
 
 // Client provides a gRPC client for the Topology Service.
@@ -78,14 +83,18 @@ func (c *Client) Classify(ctx context.Context, claim *types_proto.Claim) (resp *
 	}
 
 	start := time.Now()
-	status := metricsStatusOK
 
 	defer func() {
+		status := metricsStatusOK
 		if err != nil {
 			status = metricsStatusFail
+			if IsClaimNotFound(err) {
+				status = metricsStatusNotFound
+			}
 		}
 		metrics.TopologyRequestsTotal.WithLabelValues(status).Inc()
-		if status == metricsStatusOK {
+		// NotFound is a completed round trip, so its latency counts too.
+		if status != metricsStatusFail {
 			metrics.TopologyRequestDurationSeconds.Observe(time.Since(start).Seconds())
 		}
 	}()
