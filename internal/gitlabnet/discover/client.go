@@ -53,8 +53,8 @@ func (c *Client) GetByCommandArgs(ctx context.Context, args *commandargs.Shell) 
 	case args.GitlabKrb5Principal != "":
 		params.Add("krb5principal", args.GitlabKrb5Principal)
 	default:
-		// There was no 'who' information, this matches the ruby error
-		// message.
+		// No 'who' information was provided. Keep this message stable: it is shown to users
+		// and asserted in tests.
 		return nil, fmt.Errorf("who='' is invalid")
 	}
 

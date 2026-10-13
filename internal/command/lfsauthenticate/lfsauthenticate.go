@@ -76,7 +76,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 
 	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserID, accessResponse.CellAddress)
 	if err != nil {
-		// return nothing just like Ruby's GitlabShell#lfs_authenticate does
+		// On failure, log at debug level and return success without writing a payload.
 		attrs := []any{
 			slog.String("operation", operation),
 			slog.String("gl_repository", repo),

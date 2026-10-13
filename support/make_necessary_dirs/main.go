@@ -60,7 +60,8 @@ func resolveKeyDir() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// Mirror Ruby's File.join without filepath.Join: cleaning .. before a symlink changes filesystem traversal.
+	// Concatenate instead of using filepath.Join, which lexically cleans the path:
+	// a .. after a symlink must be resolved by the filesystem, not collapsed.
 	authFile, err := readAuthFile(strings.TrimRight(root, "/") + "/" + configFileName)
 	if err != nil {
 		return "", err
@@ -89,8 +90,9 @@ func homeDir() (string, error) {
 	return u.HomeDir, nil
 }
 
-// Mirror Ruby's File.dirname without filepath.Clean: .. after a symlink must resolve through
-// the filesystem during mkdir -p, so filepath.Dir must not replace this function.
+// keyDirectory returns the parent directory of authFile without lexical cleaning,
+// so a .. after a symlink is resolved by the filesystem during mkdir -p.
+// filepath.Dir would Clean the result and change that traversal.
 func keyDirectory(authFile string) string {
 	if authFile == "" {
 		return "."
