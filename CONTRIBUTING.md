@@ -47,5 +47,5 @@ This Code of Conduct is adapted from the [Contributor Covenant][contributor-cove
 available at [http://contributor-covenant.org/version/1/1/0/](http://contributor-covenant.org/version/1/1/0/).
 
 [contributor-covenant]: http://contributor-covenant.org
-[individual-agreement]: https://docs.gitlab.com/ee/legal/individual_contributor_license_agreement.html
-[corporate-agreement]: https://docs.gitlab.com/ee/legal/corporate_contributor_license_agreement.html
+[individual-agreement]: https://docs.gitlab.com/legal/individual_contributor_license_agreement/
+[corporate-agreement]: https://docs.gitlab.com/legal/corporate_contributor_license_agreement/

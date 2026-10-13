@@ -17,7 +17,7 @@ GitLab supports Git LFS authentication through SSH.
 
 ## Development Documentation
 
-Development documentation for GitLab Shell [has moved into the `gitlab` repository](https://docs.gitlab.com/ee/development/gitlab_shell/).
+Development documentation for GitLab Shell [has moved into the `gitlab` repository](https://docs.gitlab.com/development/gitlab_shell/).
 
 ## Project structure
 
