@@ -381,8 +381,8 @@ logging-field-validator:
       when: never
 
 # Opens the "Release vX.Y.Z" merge request. Run it manually from a `main`
-# pipeline; set RELEASE_BUMP to `minor` or `major` when running the job to
-# override the default `patch` bump. It also runs on scheduled pipelines that
+# pipeline; set RELEASE_BUMP to `patch` or `major` when running the job to
+# override the default `minor` bump. It also runs on scheduled pipelines that
 # set RELEASE_BUMP.
 release:prepare:
   extends: .release-job

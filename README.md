@@ -45,7 +45,7 @@ Releases are automated by the `release:prepare` and `release:tag` CI/CD jobs, wh
    It opens a `Release vX.Y.Z` merge request, e.g. [Release v14.58.0](https://gitlab.com/gitlab-org/gitlab-shell/-/merge_requests/1576), that updates
    [`VERSION`](https://gitlab.com/gitlab-org/gitlab-shell/-/blob/main/VERSION) and [`CHANGELOG`](https://gitlab.com/gitlab-org/gitlab-shell/-/blob/main/CHANGELOG)
    with the merge requests merged since the latest tag.
-   - The patch version is bumped by default. To bump the minor or major version, set the `RELEASE_BUMP` variable to `minor` or `major` when running the job.
+   - The minor version is bumped by default. To bump the patch or major version, set the `RELEASE_BUMP` variable to `patch` or `major` when running the job.
    - To preview the changelog locally, run `support/release.sh changelog`.
 2. Review and merge the release merge request. Edit `CHANGELOG` in the merge request if needed, but keep the first line as `vX.Y.Z`.
 3. When the merge request is merged, the `release:tag` job in the `main` pipeline creates the `vX.Y.Z` tag and its

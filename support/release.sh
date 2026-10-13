@@ -9,7 +9,7 @@
 #                                  create the GitLab release with its CHANGELOG section.
 #
 # Environment:
-#   RELEASE_BUMP                  patch (default), minor or major. Used by `prepare`.
+#   RELEASE_BUMP                  minor (default), patch or major. Used by `prepare`.
 #   GITLAB_SHELL_RELEASE_TOKEN    Project access token with the `api` scope, passed to glab.
 #                                 CI_JOB_TOKEN can't be used: it can't create commits or
 #                                 merge requests, and tags created with it don't trigger
@@ -201,7 +201,7 @@ bump_version() {
     major) echo "$((major + 1)).0.0" ;;
     minor) echo "${major}.$((minor + 1)).0" ;;
     patch) echo "${major}.${minor}.$((patch + 1))" ;;
-    *) fail "RELEASE_BUMP must be one of patch, minor or major, got '$2'" ;;
+    *) fail "RELEASE_BUMP must be one of minor, patch or major, got '$2'" ;;
   esac
 }
 
@@ -238,7 +238,7 @@ cmd_changelog() {
 }
 
 cmd_prepare() {
-  local bump="${RELEASE_BUMP:-patch}"
+  local bump="${RELEASE_BUMP:-minor}"
 
   ensure_default_branch_tip "$CI_COMMIT_SHA"
   git fetch --tags --quiet origin
