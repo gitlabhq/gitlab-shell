@@ -1,3 +1,17 @@
+v14.59.0
+
+- Use request preparation for Cells JWT headers !1574
+- Update labkit and remove deprecated Config.UseTextFormat !1579
+- Update module gitlab.com/gitlab-org/labkit/v2 to v2.61.0 !1486
+- Remove stale Ruby Code Climate configuration !1589
+- Send SSH certificate provenance in Git audit events !1580
+- Remove FF_GITLAB_SHELL_SSH_CERTIFICATES environment variable !1595
+- Use host_cert_files for host certificates in config.yml.example !1592
+- Remove unused audit_usernames from config.yml.example !1593
+- Replace Ruby make_necessary_dirs script with Go !1590
+- Remove Ruby Gemfile !1594
+- Make proxied Git pack request bodies replayable !1605
+
 v14.58.0
 
 - Validate public_key_algorithms when the server starts !1555
