@@ -53,11 +53,6 @@ log_level: INFO
 # Log format. 'json' by default, can be changed to 'text' if needed
 log_format: text
 
-# Audit usernames.
-# Set to true to see real usernames in the logs instead of key ids, which is easier to follow, but
-# incurs an extra API call on every gitlab-shell command.
-audit_usernames: false
-
 # Distributed Tracing. GitLab-Shell has distributed tracing instrumentation.
 # For more details, visit https://docs.gitlab.com/ee/development/distributed_tracing.html
 # gitlab_tracing: opentracing://driver
