@@ -128,14 +128,10 @@ func (c *CellsPushCommand) forwardReceivePack(ctx context.Context, gitClient *gi
 	// Feed the push through a replayable body so a pooled connection lost
 	// before the Cell handled the request is retried instead of failing the
 	// push. Pushes beyond the replay limit stream as before, without retry.
-	body := git.NewReplayBody(git.DefaultReplayLimit)
+	body, reader := startReplayBody(clientInput, copyRequestBody)
 	defer body.Abort()
-	go func() {
-		_, copyErr := io.Copy(body, clientInput)
-		_ = body.CloseWithError(copyErr)
-	}()
 
-	response, err := gitClient.SSHReceivePack(ctx, body.Reader())
+	response, err := gitClient.SSHReceivePack(ctx, reader)
 	if err != nil {
 		return withCellsContext("receive-pack response", err)
 	}

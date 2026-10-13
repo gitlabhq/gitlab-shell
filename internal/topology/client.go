@@ -86,12 +86,11 @@ func (c *Client) Classify(ctx context.Context, claim *types_proto.Claim) (resp *
 
 	defer func() {
 		status := metricsStatusOK
-		switch {
-		case err == nil:
-		case IsClaimNotFound(err):
-			status = metricsStatusNotFound
-		default:
+		if err != nil {
 			status = metricsStatusFail
+			if IsClaimNotFound(err) {
+				status = metricsStatusNotFound
+			}
 		}
 		metrics.TopologyRequestsTotal.WithLabelValues(status).Inc()
 		// NotFound is a completed round trip, so its latency counts too.

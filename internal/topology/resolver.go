@@ -2,7 +2,6 @@ package topology
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"net"
 	"net/url"
@@ -286,16 +285,8 @@ func attachHost(c *client.GitlabNetClient, addr string) RoutedClient {
 
 // IsClaimNotFound reports whether err is the Topology Service saying the claim
 // is not assigned to any cell, which means the request stays on the default
-// host. It sees through the backoff.Permanent wrapper used by resolve.
+// host. status.Code unwraps wrapped errors and returns OK for nil.
 func IsClaimNotFound(err error) bool {
-	if err == nil {
-		return false
-	}
-	var permanent *backoff.PermanentError
-	if errors.As(err, &permanent) {
-		err = permanent.Err
-	}
-
 	return status.Code(err) == codes.NotFound
 }
 

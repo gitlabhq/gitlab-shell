@@ -60,20 +60,44 @@ func executeSSHRequest(ctx context.Context, requestFn sshRequestFunc, rw *readwr
 	return err
 }
 
-// pipeRequest streams stdin into requestFn's body via writeFn, then copies the response to rw.Out.
+// bodyWriter is the write side of a request body. *git.ReplayBody and
+// *io.PipeWriter both satisfy it.
+type bodyWriter interface {
+	io.WriteCloser
+	CloseWithError(err error) error
+}
+
+// startReplayBody creates a replayable request body fed by fill from in.
 //
 // The body is a git.ReplayBody rather than an io.Pipe so the transport can
 // resend it on a fresh connection when a pooled one is lost before the server
 // handled the request. With a plain pipe those retries failed with
 // "net/http: cannot rewind body after connection loss".
-func pipeRequest(ctx context.Context, rw *readwriter.ReadWriter, writeFn func(io.Reader, io.WriteCloser), requestFn func(context.Context, io.Reader) (*http.Response, error)) error {
+//
+// The first reader is taken before fill starts, so backpressure applies from
+// the first Write. Callers must defer body.Abort(): the fill goroutine may
+// still be reading stdin when the response ends, and Abort makes its next
+// Write fail instead of blocking forever.
+func startReplayBody(in io.Reader, fill func(io.Reader, bodyWriter)) (*git.ReplayBody, io.ReadCloser) {
 	body := git.NewReplayBody(git.DefaultReplayLimit)
-	// The writer goroutine may still be reading stdin when the response ends;
-	// Abort makes its next Write fail instead of blocking forever.
-	defer body.Abort()
-	go writeFn(rw.In, body)
+	reader := body.Reader()
+	go fill(in, body)
 
-	response, err := requestFn(ctx, body.Reader())
+	return body, reader
+}
+
+// copyRequestBody forwards in to w unchanged, passing any read error through.
+func copyRequestBody(in io.Reader, w bodyWriter) {
+	_, err := io.Copy(w, in)
+	_ = w.CloseWithError(err)
+}
+
+// pipeRequest streams stdin into requestFn's body via writeFn, then copies the response to rw.Out.
+func pipeRequest(ctx context.Context, rw *readwriter.ReadWriter, writeFn func(io.Reader, bodyWriter), requestFn func(context.Context, io.Reader) (*http.Response, error)) error {
+	body, reader := startReplayBody(rw.In, writeFn)
+	defer body.Abort()
+
+	response, err := requestFn(ctx, reader)
 	if err != nil {
 		return err
 	}
@@ -92,20 +116,20 @@ func pipeRequest(ctx context.Context, rw *readwriter.ReadWriter, writeFn func(io
 // the primary's nginx client_body_timeout, for the whole pack transfer, which
 // only flows on the response side. Requests that never send `done`, such as
 // protocol v2 ls-refs, fall through to stdin EOF, which also closes the writer.
-func readUploadPackRequest(in io.Reader, pw io.WriteCloser) {
+func readUploadPackRequest(in io.Reader, w bodyWriter) {
 	scanner := pktline.NewScanner(in)
 
 	for scanner.Scan() {
 		line := scanner.Bytes()
 
-		_, err := pw.Write(line)
+		_, err := w.Write(line)
 		if err != nil {
 			slog.Error("failed to write line", log.ErrorMessage(err.Error()))
 		}
 
 		if pktline.IsDone(line) {
 			// The SSH client's request ends at `done`, and we stop reading stdin
-			// here so pw can be closed (see the function comment). But the
+			// here so w can be closed (see the function comment). But the
 			// primary's upload-pack is reached over HTTP, where protocol v2 expects
 			// the request body to end with a flush packet after `done`; without
 			// it, upload-pack sees an unexpected EOF and aborts the fetch.
@@ -114,7 +138,7 @@ func readUploadPackRequest(in io.Reader, pw io.WriteCloser) {
 			// protocol v0/v1 clients never send one after `done`, so waiting to
 			// read it would block forever. Writing it unconditionally is safe for
 			// every protocol version.
-			if _, err := pw.Write(pktline.PktFlush()); err != nil {
+			if _, err := w.Write(pktline.PktFlush()); err != nil {
 				slog.Error("failed to write flush packet", log.ErrorMessage(err.Error()))
 			}
 
@@ -122,19 +146,19 @@ func readUploadPackRequest(in io.Reader, pw io.WriteCloser) {
 		}
 	}
 
-	err := pw.Close()
+	err := w.Close()
 	if err != nil {
 		slog.Error("failed to close writer", log.ErrorMessage(err.Error()))
 	}
 }
 
-func readReceivePackRequest(in io.Reader, pw io.WriteCloser) {
+func readReceivePackRequest(in io.Reader, w bodyWriter) {
 	var needsPackData bool
 
 	scanner := pktline.NewScanner(in)
 	for scanner.Scan() {
 		line := scanner.Bytes()
-		_, err := pw.Write(line)
+		_, err := w.Write(line)
 		if err != nil {
 			slog.Error("failed to write line", log.ErrorMessage(err.Error()))
 		}
@@ -149,13 +173,13 @@ func readReceivePackRequest(in io.Reader, pw io.WriteCloser) {
 	}
 
 	if needsPackData {
-		_, err := io.Copy(pw, in)
+		_, err := io.Copy(w, in)
 		if err != nil {
 			slog.Error("failed to copy", log.ErrorMessage(err.Error()))
 		}
 	}
 
-	err := pw.Close()
+	err := w.Close()
 	if err != nil {
 		slog.Error("failed to close writer", log.ErrorMessage(err.Error()))
 	}

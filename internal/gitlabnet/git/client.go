@@ -3,6 +3,7 @@ package git
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -12,7 +13,26 @@ import (
 )
 
 var httpClient = &http.Client{
-	Transport: client.NewTransport(client.DefaultTransport()),
+	Transport:     client.NewTransport(client.DefaultTransport()),
+	CheckRedirect: checkRedirect,
+}
+
+const maxGetRedirects = 10
+
+// checkRedirect keeps POST bodies, and the Shell JWT copied with them, from
+// being replayed to a redirect target. Pack requests are POSTs with a
+// replayable body, so without this Go would follow a 307/308 and resend both.
+// The internal API client refuses redirects for the same reason. GET requests
+// (InfoRefs) keep following redirects as before.
+func checkRedirect(req *http.Request, via []*http.Request) error {
+	if req.Method == http.MethodPost || (len(via) > 0 && via[0].Method == http.MethodPost) {
+		return http.ErrUseLastResponse
+	}
+	if len(via) >= maxGetRedirects {
+		return errors.New("stopped after 10 redirects")
+	}
+
+	return nil
 }
 
 const (
@@ -88,16 +108,17 @@ func (c *Client) SSHReceivePack(ctx context.Context, body io.Reader) (*http.Resp
 	return c.do(request)
 }
 
-// newPostRequest builds a POST. When body is a RetryableBody (a ReplayBody
-// reader), the transport is allowed to replay it on a new connection.
+// newPostRequest builds a POST. When body can be re-opened from the start (a
+// ReplayBody reader), the transport is allowed to replay it on a new
+// connection.
 func newPostRequest(ctx context.Context, url string, body io.Reader) (*http.Request, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
 	if err != nil {
 		return nil, err
 	}
 
-	if retryable, ok := body.(RetryableBody); ok {
-		request.GetBody = retryable.GetBody
+	if rewinder, ok := body.(bodyRewinder); ok {
+		request.GetBody = rewinder.GetBody
 	}
 
 	return request, nil
@@ -131,6 +152,18 @@ func (c *Client) do(request *http.Request) (*http.Response, error) {
 	}
 
 	response.Body = &cancelOnCloseBody{ReadCloser: response.Body, cancel: cancel}
+
+	// A redirect we refused to follow means the request was misrouted. Report
+	// it as a system error instead of passing the 3xx body to git as protocol
+	// data.
+	if client.IsFollowedRedirect(response.StatusCode) {
+		slog.ErrorContext(request.Context(), "Git HTTP request was redirected, not following",
+			slog.Int("status", response.StatusCode),
+			slog.String("location", response.Header.Get("Location")))
+		_ = response.Body.Close()
+
+		return nil, &client.APIError{Msg: repoUnavailableErrMsg, StatusCode: response.StatusCode, System: true}
+	}
 
 	if response.StatusCode >= 400 {
 		defer func() {

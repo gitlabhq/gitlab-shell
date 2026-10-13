@@ -109,7 +109,7 @@ func useTestTransport(t *testing.T, server *httptest.Server) {
 	transport.ForceAttemptHTTP2 = true
 
 	previous := httpClient
-	httpClient = &http.Client{Transport: client.NewTransport(transport)}
+	httpClient = &http.Client{Transport: client.NewTransport(transport), CheckRedirect: checkRedirect}
 	t.Cleanup(func() {
 		transport.CloseIdleConnections()
 		httpClient = previous
