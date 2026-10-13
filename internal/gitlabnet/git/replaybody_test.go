@@ -5,14 +5,13 @@ import (
 	"errors"
 	"io"
 	"testing"
-	"time"
+	"testing/synctest"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestReplayBodyStreamsAndReplays(t *testing.T) {
-	body := NewReplayBody(1024)
-	first := body.Reader()
+	body, first := NewReplayBody(1024)
 
 	_, err := body.Write([]byte("0032want deadbeef\n"))
 	require.NoError(t, err)
@@ -41,17 +40,13 @@ func TestReplayBodyStreamsAndReplays(t *testing.T) {
 }
 
 func TestReplayBodyGetBodyFailsBeyondLimit(t *testing.T) {
-	body := NewReplayBody(8)
-	reader := body.Reader()
-	require.True(t, replayable(body))
+	body, reader := NewReplayBody(8)
 
 	_, err := body.Write([]byte("12345"))
 	require.NoError(t, err)
-	require.True(t, replayable(body))
 
 	_, err = body.Write([]byte("6789"))
 	require.NoError(t, err)
-	require.False(t, replayable(body), "9 bytes exceed an 8-byte limit")
 
 	_, err = body.GetBody()
 	require.ErrorIs(t, err, errReplayExceeded)
@@ -64,8 +59,7 @@ func TestReplayBodyGetBodyFailsBeyondLimit(t *testing.T) {
 }
 
 func TestReplayBodyTrimsConsumedBytesOnceNotReplayable(t *testing.T) {
-	body := NewReplayBody(4)
-	reader := body.Reader()
+	body, reader := NewReplayBody(4)
 
 	_, err := body.Write(bytes.Repeat([]byte("a"), 10))
 	require.NoError(t, err)
@@ -79,8 +73,7 @@ func TestReplayBodyTrimsConsumedBytesOnceNotReplayable(t *testing.T) {
 }
 
 func TestReplayBodyCloseWithErrorSurfacesToReaders(t *testing.T) {
-	body := NewReplayBody(1024)
-	reader := body.Reader()
+	body, reader := NewReplayBody(1024)
 	stdinErr := errors.New("stdin broke")
 
 	_, err := body.Write([]byte("partial"))
@@ -93,109 +86,66 @@ func TestReplayBodyCloseWithErrorSurfacesToReaders(t *testing.T) {
 }
 
 func TestReplayBodyReaderCloseUnblocksPendingRead(t *testing.T) {
-	// The transport closes an abandoned request body while a Read may be
-	// waiting for SSH input. That Read must return, or the retry deadlocks.
-	body := NewReplayBody(1024)
-	reader := body.Reader()
+	synctest.Test(t, func(t *testing.T) {
+		// The transport closes an abandoned request body while a Read may be
+		// waiting for SSH input. That Read must return, or the retry deadlocks.
+		body, reader := NewReplayBody(1024)
 
-	result := make(chan error, 1)
-	go func() {
-		_, err := reader.Read(make([]byte, 8))
-		result <- err
-	}()
+		result := make(chan error, 1)
+		go func() {
+			_, err := reader.Read(make([]byte, 8))
+			result <- err
+		}()
 
-	time.Sleep(20 * time.Millisecond)
-	require.NoError(t, reader.Close())
+		synctest.Wait()
+		require.NoError(t, reader.Close())
 
-	select {
-	case err := <-result:
-		require.ErrorIs(t, err, io.ErrClosedPipe)
-	case <-time.After(time.Second):
-		require.Fail(t, "Read did not return after the reader was closed")
-	}
+		require.ErrorIs(t, <-result, io.ErrClosedPipe)
 
-	// Closing one reader does not end the stream for a replay reader.
-	_, err := body.Write([]byte("late"))
-	require.NoError(t, err)
-	require.NoError(t, body.Close())
-	replay, err := body.GetBody()
-	require.NoError(t, err)
-	all, err := io.ReadAll(replay)
-	require.NoError(t, err)
-	require.Equal(t, "late", string(all))
+		// Closing one reader does not end the stream for a replay reader.
+		_, err := body.Write([]byte("late"))
+		require.NoError(t, err)
+		require.NoError(t, body.Close())
+		replay, err := body.GetBody()
+		require.NoError(t, err)
+		all, err := io.ReadAll(replay)
+		require.NoError(t, err)
+		require.Equal(t, "late", string(all))
+	})
 }
 
 func TestReplayBodyAbortUnblocks(t *testing.T) {
-	assertUnblocked := func(t *testing.T, ch <-chan error) {
-		t.Helper()
-		select {
-		case err := <-ch:
-			require.ErrorIs(t, err, io.ErrClosedPipe)
-		case <-time.After(time.Second):
-			require.Fail(t, "did not return after Abort")
-		}
-	}
-
 	t.Run("blocked Write", func(t *testing.T) {
-		body := NewReplayBody(1 << 20)
-		body.Reader() // never drained, so the window stays full
-		_, err := body.Write(make([]byte, replayWindow))
-		require.NoError(t, err)
+		synctest.Test(t, func(t *testing.T) {
+			body, _ := NewReplayBody(1 << 20)
+			_, err := body.Write(make([]byte, replayWindow))
+			require.NoError(t, err)
 
-		result := make(chan error, 1)
-		go func() {
-			_, err := body.Write([]byte("x"))
-			result <- err
-		}()
-		time.Sleep(20 * time.Millisecond)
-		body.Abort()
-		assertUnblocked(t, result)
+			result := make(chan error, 1)
+			go func() {
+				_, err := body.Write([]byte("x"))
+				result <- err
+			}()
+			synctest.Wait()
+			body.Abort()
+			require.ErrorIs(t, <-result, io.ErrClosedPipe)
+		})
 	})
 
 	t.Run("blocked Read", func(t *testing.T) {
-		body := NewReplayBody(1024)
-		reader := body.Reader()
+		synctest.Test(t, func(t *testing.T) {
+			body, reader := NewReplayBody(1024)
 
-		result := make(chan error, 1)
-		go func() {
-			_, err := reader.Read(make([]byte, 1))
-			result <- err
-		}()
-		time.Sleep(20 * time.Millisecond)
-		body.Abort()
-		assertUnblocked(t, result)
+			result := make(chan error, 1)
+			go func() {
+				_, err := reader.Read(make([]byte, 1))
+				result <- err
+			}()
+			synctest.Wait()
+			body.Abort()
+			require.ErrorIs(t, <-result, io.ErrClosedPipe)
+		})
 	})
-}
-
-func TestReplayBodyWriterBlocksBeforeFirstReader(t *testing.T) {
-	// With no reader yet, the start of the stream is the read position, so the
-	// writer cannot buffer SSH input without bound before the request starts.
-	body := NewReplayBody(1 << 20)
-	_, err := body.Write(make([]byte, replayWindow))
-	require.NoError(t, err)
-
-	wrote := make(chan struct{})
-	go func() {
-		_, _ = body.Write([]byte("y"))
-		close(wrote)
-	}()
-
-	select {
-	case <-wrote:
-		require.Fail(t, "Write returned with no reader and a full window")
-	case <-time.After(50 * time.Millisecond):
-	}
-
-	reader := body.Reader()
-	_, err = io.CopyN(io.Discard, reader, 1)
-	require.NoError(t, err)
-
-	select {
-	case <-wrote:
-	case <-time.After(time.Second):
-		require.Fail(t, "Write did not return after the first reader consumed data")
-	}
-	body.Abort()
 }
 
 func TestReplayBodyGetBodyNeverReturnsATrimmedReader(t *testing.T) {
@@ -204,8 +154,7 @@ func TestReplayBodyGetBodyNeverReturnsATrimmedReader(t *testing.T) {
 	// Write that crosses the limit cannot slip in between.
 	const limit = 64 << 10
 	for i := 0; i < 200; i++ {
-		body := NewReplayBody(limit)
-		reader := body.Reader()
+		body, reader := NewReplayBody(limit)
 		go func() { _, _ = io.Copy(io.Discard, reader) }()
 
 		done := make(chan struct{})
@@ -232,45 +181,36 @@ func TestReplayBodyGetBodyNeverReturnsATrimmedReader(t *testing.T) {
 }
 
 func TestReplayBodyWriterBlocksUntilReaderCatchesUp(t *testing.T) {
-	body := NewReplayBody(1 << 20)
-	reader := body.Reader()
+	synctest.Test(t, func(t *testing.T) {
+		body, reader := NewReplayBody(1 << 20)
 
-	_, err := body.Write(make([]byte, replayWindow))
-	require.NoError(t, err)
+		_, err := body.Write(make([]byte, replayWindow))
+		require.NoError(t, err)
 
-	wrote := make(chan struct{})
-	go func() {
-		_, _ = body.Write([]byte("y"))
-		close(wrote)
-	}()
+		wrote := make(chan struct{})
+		go func() {
+			_, _ = body.Write([]byte("y"))
+			close(wrote)
+		}()
 
-	select {
-	case <-wrote:
-		require.Fail(t, "Write returned while the reader was replayWindow behind")
-	case <-time.After(50 * time.Millisecond):
-	}
+		synctest.Wait()
+		select {
+		case <-wrote:
+			require.Fail(t, "Write returned while the reader was replayWindow behind")
+		default:
+		}
 
-	_, err = io.CopyN(io.Discard, reader, 1)
-	require.NoError(t, err)
+		_, err = io.CopyN(io.Discard, reader, 1)
+		require.NoError(t, err)
 
-	select {
-	case <-wrote:
-	case <-time.After(time.Second):
-		require.Fail(t, "Write did not return after the reader consumed data")
-	}
+		<-wrote
+	})
 }
 
 func TestReplayBodyWriteAfterCloseFails(t *testing.T) {
-	body := NewReplayBody(1024)
+	body, _ := NewReplayBody(1024)
 	require.NoError(t, body.Close())
 
 	_, err := body.Write([]byte("x"))
 	require.ErrorIs(t, err, io.ErrClosedPipe)
-}
-
-func replayable(b *ReplayBody) bool {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	return b.replayableLocked()
 }

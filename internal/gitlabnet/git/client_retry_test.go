@@ -30,13 +30,13 @@ func TestSSHUploadPackRetriesAfterGoAway(t *testing.T) {
 		server, state := startGoAwayServer(t)
 		useTestTransport(t, server)
 
-		body := NewReplayBody(DefaultReplayLimit)
+		body, reader := NewReplayBody(DefaultReplayLimit)
 		_, err := io.WriteString(body, requestBody)
 		require.NoError(t, err)
 		require.NoError(t, body.Close())
 
 		gitClient := &Client{URL: server.URL}
-		response, err := gitClient.SSHUploadPack(context.Background(), body.Reader())
+		response, err := gitClient.SSHUploadPack(context.Background(), reader)
 		require.NoError(t, err)
 		defer response.Body.Close()
 
@@ -109,7 +109,7 @@ func useTestTransport(t *testing.T, server *httptest.Server) {
 	transport.ForceAttemptHTTP2 = true
 
 	previous := httpClient
-	httpClient = &http.Client{Transport: client.NewTransport(transport), CheckRedirect: checkRedirect}
+	httpClient = newHTTPClient(client.NewTransport(transport))
 	t.Cleanup(func() {
 		transport.CloseIdleConnections()
 		httpClient = previous

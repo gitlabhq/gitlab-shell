@@ -16,6 +16,7 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/accessverifier"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 )
 
@@ -147,6 +148,28 @@ func TestPushExecuteWithSSHReceivePack(t *testing.T) {
 	assert.Equal(t, "receive-pack-response", output.String())
 }
 
+func TestSSHReceivePackSetsGetBody(t *testing.T) {
+	url := setupSSHPush(t, http.StatusOK)
+	output := &bytes.Buffer{}
+	cmd := &PushCommand{
+		ReadWriter: &readwriter.ReadWriter{Out: output, In: strings.NewReader(cloneResponse + "0009done\n")},
+	}
+	client := &git.Client{
+		URL: url,
+		Headers: map[string]string{
+			"Git-Protocol":          testGitProtocolVersion,
+			testAuthorizationHeader: testGitalyToken,
+		},
+		PrepareRequest: func(request *http.Request) error {
+			assert.NotNil(t, request.GetBody)
+			return nil
+		},
+	}
+
+	require.NoError(t, cmd.requestSSHReceivePack(context.Background(), client))
+	assert.Equal(t, "receive-pack-response", output.String())
+}
+
 func setup(t *testing.T, receivePackStatusCode int) (string, io.Reader) {
 	infoRefs := "001f# service=git-receive-pack\n" + flush + infoRefsWithoutPrefix
 	receivePackPrefix := "00ab4c9d98d7750fa65db8ddcc60a89ef919f7a179f9 df505c066e4e63a801268a84627d7e8f7e033c7a " +
@@ -194,7 +217,7 @@ func setupSSHPush(t *testing.T, uploadPackStatusCode int) string {
 				assert.NoError(t, err)
 				defer r.Body.Close()
 
-				assert.True(t, strings.HasSuffix(string(body), "0009done\n"))
+				assert.Equal(t, cloneResponse+"0009done\n", string(body))
 				assert.Equal(t, testGitProtocolVersion, r.Header.Get("Git-Protocol"))
 				assert.Equal(t, testGitalyToken, r.Header.Get("Authorization"))
 

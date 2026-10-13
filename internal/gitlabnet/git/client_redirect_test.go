@@ -33,13 +33,13 @@ func TestPackRequestsDoNotFollowRedirects(t *testing.T) {
 			}))
 			t.Cleanup(origin.Close)
 
-			body := NewReplayBody(DefaultReplayLimit)
+			body, reader := NewReplayBody(DefaultReplayLimit)
 			_, err := io.WriteString(body, requestBody)
 			require.NoError(t, err)
 			require.NoError(t, body.Close())
 
 			gitClient := &Client{URL: origin.URL, Headers: map[string]string{"Gitlab-Shell-Api-Request": "jwt"}}
-			response, err := gitClient.SSHUploadPack(context.Background(), body.Reader()) //nolint:bodyclose // no response on error
+			response, err := gitClient.SSHUploadPack(context.Background(), reader) //nolint:bodyclose // no response on error
 			require.Nil(t, response)
 
 			var apiErr *client.APIError
@@ -69,4 +69,13 @@ func TestInfoRefsStillFollowsRedirects(t *testing.T) {
 	result, err := io.ReadAll(response.Body)
 	require.NoError(t, err)
 	require.True(t, strings.HasPrefix(string(result), "refs for git-upload-pack"))
+}
+
+func TestCheckRedirectLimit(t *testing.T) {
+	via := make([]*http.Request, maxGetRedirects)
+	for i := range via {
+		via[i] = &http.Request{Method: http.MethodGet}
+	}
+	require.NoError(t, checkRedirect(&http.Request{}, via[:maxGetRedirects-1]))
+	require.EqualError(t, checkRedirect(&http.Request{}, via), "stopped after 10 redirects")
 }

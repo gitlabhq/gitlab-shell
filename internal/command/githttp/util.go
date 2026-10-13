@@ -47,26 +47,6 @@ func requestInfoRefs(ctx context.Context, client *git.Client, command gitHTTPCom
 // sshRequestFunc is a function type for SSH pack requests
 type sshRequestFunc func(ctx context.Context, body io.Reader) (*http.Response, error)
 
-// executeSSHRequest executes an SSH request and copies the response to the output
-func executeSSHRequest(ctx context.Context, requestFn sshRequestFunc, rw *readwriter.ReadWriter) error {
-	response, err := requestFn(ctx, io.NopCloser(rw.In))
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close() //nolint:errcheck
-
-	_, err = io.Copy(rw.Out, response.Body)
-
-	return err
-}
-
-// bodyWriter is the write side of a request body. *git.ReplayBody and
-// *io.PipeWriter both satisfy it.
-type bodyWriter interface {
-	io.WriteCloser
-	CloseWithError(err error) error
-}
-
 // startReplayBody creates a replayable request body fed by fill from in.
 //
 // The body is a git.ReplayBody rather than an io.Pipe so the transport can
@@ -74,28 +54,27 @@ type bodyWriter interface {
 // handled the request. With a plain pipe those retries failed with
 // "net/http: cannot rewind body after connection loss".
 //
-// The first reader is taken before fill starts, so backpressure applies from
-// the first Write. Callers must defer body.Abort(): the fill goroutine may
-// still be reading stdin when the response ends, and Abort makes its next
-// Write fail instead of blocking forever.
-func startReplayBody(in io.Reader, fill func(io.Reader, bodyWriter)) (*git.ReplayBody, io.ReadCloser) {
-	body := git.NewReplayBody(git.DefaultReplayLimit)
-	reader := body.Reader()
+// Callers must defer the returned abort: the fill goroutine may still be
+// reading stdin when the response ends, and abort makes its next Write fail
+// instead of blocking forever. Pass the reader to the git client unwrapped;
+// wrapping it hides the replay hook and disables retries.
+func startReplayBody(in io.Reader, fill func(io.Reader, *git.ReplayBody)) (io.ReadCloser, func()) {
+	body, reader := git.NewReplayBody(git.DefaultReplayLimit)
 	go fill(in, body)
 
-	return body, reader
+	return reader, body.Abort
 }
 
 // copyRequestBody forwards in to w unchanged, passing any read error through.
-func copyRequestBody(in io.Reader, w bodyWriter) {
+func copyRequestBody(in io.Reader, w *git.ReplayBody) {
 	_, err := io.Copy(w, in)
 	_ = w.CloseWithError(err)
 }
 
 // pipeRequest streams stdin into requestFn's body via writeFn, then copies the response to rw.Out.
-func pipeRequest(ctx context.Context, rw *readwriter.ReadWriter, writeFn func(io.Reader, bodyWriter), requestFn func(context.Context, io.Reader) (*http.Response, error)) error {
-	body, reader := startReplayBody(rw.In, writeFn)
-	defer body.Abort()
+func pipeRequest(ctx context.Context, rw *readwriter.ReadWriter, writeFn func(io.Reader, *git.ReplayBody), requestFn sshRequestFunc) error {
+	reader, abort := startReplayBody(rw.In, writeFn)
+	defer abort()
 
 	response, err := requestFn(ctx, reader)
 	if err != nil {
@@ -116,7 +95,7 @@ func pipeRequest(ctx context.Context, rw *readwriter.ReadWriter, writeFn func(io
 // the primary's nginx client_body_timeout, for the whole pack transfer, which
 // only flows on the response side. Requests that never send `done`, such as
 // protocol v2 ls-refs, fall through to stdin EOF, which also closes the writer.
-func readUploadPackRequest(in io.Reader, w bodyWriter) {
+func readUploadPackRequest(in io.Reader, w *git.ReplayBody) {
 	scanner := pktline.NewScanner(in)
 
 	for scanner.Scan() {
@@ -152,7 +131,7 @@ func readUploadPackRequest(in io.Reader, w bodyWriter) {
 	}
 }
 
-func readReceivePackRequest(in io.Reader, w bodyWriter) {
+func readReceivePackRequest(in io.Reader, w *git.ReplayBody) {
 	var needsPackData bool
 
 	scanner := pktline.NewScanner(in)

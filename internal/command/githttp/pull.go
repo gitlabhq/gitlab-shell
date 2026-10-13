@@ -2,6 +2,8 @@
 // including executing Git commands like git-upload-pack and converting responses to the
 // expected format for SSH protocols. It integrates with GitLab's internal components
 // for secure access verification and data transfer.
+//
+//nolint:dupl // Push and pull keep separate protocol-specific command paths despite symmetric routing.
 package githttp
 
 import (

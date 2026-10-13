@@ -1,3 +1,4 @@
+//nolint:dupl // Push and pull keep separate protocol-specific command paths despite symmetric routing.
 package githttp
 
 import (
@@ -60,7 +61,7 @@ func (c *PushCommand) Execute(ctx context.Context) error {
 func (c *PushCommand) requestSSHReceivePack(ctx context.Context, client *git.Client) error {
 	slog.InfoContext(ctx, "Using Git over SSH receive pack")
 
-	return executeSSHRequest(ctx, client.SSHReceivePack, c.ReadWriter)
+	return pipeRequest(ctx, c.ReadWriter, copyRequestBody, client.SSHReceivePack)
 }
 
 func (c *PushCommand) requestReceivePack(ctx context.Context, client *git.Client) error {

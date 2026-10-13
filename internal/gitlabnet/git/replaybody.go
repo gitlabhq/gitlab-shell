@@ -35,12 +35,11 @@ type bodyRewinder interface {
 // failed with "net/http: cannot rewind body after connection loss". ReplayBody
 // records what was consumed, up to a limit, and hands out fresh readers.
 //
-// The write side is used by the goroutine forwarding SSH stdin. Each call to
-// Reader or GetBody returns an independent reader that starts at the first
-// byte; the transport closes the old one before replaying. Readers block for
-// data, and the writer blocks when it is replayWindow ahead of the newest
-// reader (or of the start, before any reader exists). Abort unblocks everyone
-// once the request is over.
+// The write side is used by the goroutine forwarding SSH stdin. Construction
+// and each call to GetBody return an independent reader that starts at the
+// first byte; the transport closes the old one before replaying. Readers block
+// for data, and the writer blocks when it is replayWindow ahead of the newest
+// reader. Abort unblocks everyone once the request is over.
 type ReplayBody struct {
 	mu   sync.Mutex
 	cond *sync.Cond
@@ -57,16 +56,18 @@ type ReplayBody struct {
 	current *replayReader // newest reader; drives backpressure and trimming
 }
 
-// NewReplayBody returns a ReplayBody that keeps up to limit bytes for replay.
-func NewReplayBody(limit int) *ReplayBody {
+// NewReplayBody returns a ReplayBody that keeps up to limit bytes for replay
+// and its first reader.
+func NewReplayBody(limit int) (*ReplayBody, io.ReadCloser) {
 	b := &ReplayBody{limit: int64(limit)}
 	b.cond = sync.NewCond(&b.mu)
+	b.current = &replayReader{body: b}
 
-	return b
+	return b, b.current
 }
 
-// Write appends p for readers. It blocks while the newest reader is more than
-// replayWindow behind. It fails with io.ErrClosedPipe after Close or Abort.
+// Write appends p for readers. It blocks while the newest reader is
+// replayWindow or more behind. It fails with io.ErrClosedPipe after Close or Abort.
 func (b *ReplayBody) Write(p []byte) (int, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -75,7 +76,7 @@ func (b *ReplayBody) Write(p []byte) (int, error) {
 		if b.aborted || b.writeClosed {
 			return 0, io.ErrClosedPipe
 		}
-		if b.written-b.readPosLocked() < replayWindow {
+		if b.written-b.current.pos < replayWindow {
 			break
 		}
 		b.cond.Wait()
@@ -120,16 +121,6 @@ func (b *ReplayBody) Abort() {
 	b.cond.Broadcast()
 }
 
-// Reader returns a new reader positioned at the start of the stream. It
-// becomes the reader that controls backpressure. Take the first reader before
-// starting the writer, so backpressure applies from the first Write.
-func (b *ReplayBody) Reader() io.ReadCloser {
-	b.mu.Lock()
-	defer b.mu.Unlock()
-
-	return b.newReaderLocked()
-}
-
 // GetBody is the http.Request.GetBody hook. It fails once more than the
 // replay limit has been written, which makes the transport give up the retry
 // exactly as it did before, instead of replaying a truncated body. The check
@@ -139,35 +130,15 @@ func (b *ReplayBody) GetBody() (io.ReadCloser, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
-	if !b.replayableLocked() {
+	if b.written > b.limit {
 		return nil, errReplayExceeded
 	}
 
-	return b.newReaderLocked(), nil
-}
-
-func (b *ReplayBody) newReaderLocked() *replayReader {
 	r := &replayReader{body: b}
 	b.current = r
 	b.cond.Broadcast()
 
-	return r
-}
-
-// replayableLocked reports whether every byte written so far is still kept.
-// written only grows, so once false it stays false.
-func (b *ReplayBody) replayableLocked() bool {
-	return b.written <= b.limit
-}
-
-// readPosLocked is the newest reader's position, or the start of the stream
-// before any reader exists.
-func (b *ReplayBody) readPosLocked() int64 {
-	if b.current == nil {
-		return 0
-	}
-
-	return b.current.pos
+	return r, nil
 }
 
 // trimLocked drops bytes no reader can need: everything before the newest
@@ -175,10 +146,11 @@ func (b *ReplayBody) readPosLocked() int64 {
 // reallocates once capacity runs out and the dropped prefix is then freed, so
 // memory stays bounded by the window.
 func (b *ReplayBody) trimLocked() {
-	if b.replayableLocked() {
+	// written only grows, so exceeding the limit permanently rules out replay.
+	if b.written <= b.limit {
 		return
 	}
-	pos := b.readPosLocked()
+	pos := b.current.pos
 	if drop := pos - b.base; drop > 0 {
 		b.buf = b.buf[drop:]
 		b.base = pos

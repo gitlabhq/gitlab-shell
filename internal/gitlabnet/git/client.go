@@ -3,7 +3,7 @@ package git
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -12,9 +12,13 @@ import (
 	"gitlab.com/gitlab-org/labkit/v2/log"
 )
 
-var httpClient = &http.Client{
-	Transport:     client.NewTransport(client.DefaultTransport()),
-	CheckRedirect: checkRedirect,
+var httpClient = newHTTPClient(client.NewTransport(client.DefaultTransport()))
+
+func newHTTPClient(rt http.RoundTripper) *http.Client {
+	return &http.Client{
+		Transport:     rt,
+		CheckRedirect: checkRedirect,
+	}
 }
 
 const maxGetRedirects = 10
@@ -24,12 +28,12 @@ const maxGetRedirects = 10
 // replayable body, so without this Go would follow a 307/308 and resend both.
 // The internal API client refuses redirects for the same reason. GET requests
 // (InfoRefs) keep following redirects as before.
-func checkRedirect(req *http.Request, via []*http.Request) error {
-	if req.Method == http.MethodPost || (len(via) > 0 && via[0].Method == http.MethodPost) {
+func checkRedirect(_ *http.Request, via []*http.Request) error {
+	if via[0].Method == http.MethodPost {
 		return http.ErrUseLastResponse
 	}
 	if len(via) >= maxGetRedirects {
-		return errors.New("stopped after 10 redirects")
+		return fmt.Errorf("stopped after %d redirects", maxGetRedirects)
 	}
 
 	return nil
@@ -110,7 +114,7 @@ func (c *Client) SSHReceivePack(ctx context.Context, body io.Reader) (*http.Resp
 
 // newPostRequest builds a POST. When body can be re-opened from the start (a
 // ReplayBody reader), the transport is allowed to replay it on a new
-// connection.
+// connection. Wrapping that reader hides its replay hook and disables replay.
 func newPostRequest(ctx context.Context, url string, body io.Reader) (*http.Request, error) {
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
 	if err != nil {

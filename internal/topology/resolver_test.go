@@ -301,12 +301,12 @@ func TestResolveNotFoundIsNotAFailure(t *testing.T) {
 func TestIsClaimNotFound(t *testing.T) {
 	notFound := status.Errorf(codes.NotFound, "claim not found")
 
-	require.True(t, IsClaimNotFound(notFound))
-	require.True(t, IsClaimNotFound(backoff.Permanent(notFound)), "sees through the backoff wrapper used by resolve")
-	require.False(t, IsClaimNotFound(nil))
-	require.False(t, IsClaimNotFound(status.Errorf(codes.Unavailable, "down")))
-	require.False(t, IsClaimNotFound(backoff.Permanent(status.Errorf(codes.PermissionDenied, "no"))))
-	require.False(t, IsClaimNotFound(fmt.Errorf("plain error")))
+	require.True(t, isClaimNotFound(notFound))
+	require.True(t, isClaimNotFound(backoff.Permanent(notFound)), "sees through the backoff wrapper used by resolve")
+	require.False(t, isClaimNotFound(nil))
+	require.False(t, isClaimNotFound(status.Errorf(codes.Unavailable, "down")))
+	require.False(t, isClaimNotFound(backoff.Permanent(status.Errorf(codes.PermissionDenied, "no"))))
+	require.False(t, isClaimNotFound(fmt.Errorf("plain error")))
 }
 
 func TestResolveLogsIncludeCorrelationID(t *testing.T) {

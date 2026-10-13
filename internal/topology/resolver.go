@@ -140,7 +140,7 @@ func (r *Resolver) resolve(ctx context.Context, claim *types_proto.Claim) string
 			)
 		}),
 	)
-	if IsClaimNotFound(err) {
+	if isClaimNotFound(err) {
 		// The claim is not assigned to a cell. This is the expected answer for
 		// every project that lives on the default host, so it is not a warning
 		// and the "fail" metric does not count it.
@@ -283,10 +283,10 @@ func attachHost(c *client.GitlabNetClient, addr string) RoutedClient {
 	return RoutedClient{Client: c.WithHost(addr), Address: addr}
 }
 
-// IsClaimNotFound reports whether err is the Topology Service saying the claim
+// isClaimNotFound reports whether err is the Topology Service saying the claim
 // is not assigned to any cell, which means the request stays on the default
 // host. status.Code unwraps wrapped errors and returns OK for nil.
-func IsClaimNotFound(err error) bool {
+func isClaimNotFound(err error) bool {
 	return status.Code(err) == codes.NotFound
 }
 
