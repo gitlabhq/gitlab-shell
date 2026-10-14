@@ -475,6 +475,97 @@ func findJSONLogByMessage(t *testing.T, output []byte, msg string) map[string]an
 	return nil
 }
 
+// TestAccessFinishLogsCommandLogData runs a Git command over gitlab-sshd and
+// checks that the "access: finish" line logged when the connection ends
+// carries the user and the project the command recorded in its log data,
+// whether the command succeeds or fails after its access check.
+func TestAccessFinishLogsCommandLogData(t *testing.T) {
+	gitalyAddress, _ := testserver.StartGitalyServer(t, "unix")
+
+	testCases := []struct {
+		desc          string
+		gitalyAddress string
+		commandFails  bool
+	}{
+		{
+			desc:          "the command succeeds",
+			gitalyAddress: gitalyAddress,
+		},
+		{
+			desc:          "the command fails after its access check",
+			gitalyAddress: "unix:/nonexistent/gitaly.socket",
+			commandFails:  true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			buf := &syncBuffer{}
+			originalDefault := slog.Default()
+			slog.SetDefault(slog.New(slog.NewJSONHandler(buf, nil)))
+			t.Cleanup(func() { slog.SetDefault(originalDefault) })
+
+			allowed := testserver.TestRequestHandler{
+				Path: "/api/v4/internal/allowed",
+				Handler: func(w http.ResponseWriter, _ *http.Request) {
+					fmt.Fprintf(w, `{"status": true, "gl_id": "user-1", "gl_username": "alex-doe",
+						"gl_project_id": 1, "gl_root_namespace_id": 2,
+						"gitaly": {"repository": {"storage_name": "default", "relative_path": "repo.git",
+						"gl_repository": "project-1", "gl_project_path": "flightjs/Flight"},
+						"address": %q, "token": "token"}}`, tc.gitalyAddress)
+				},
+			}
+
+			cfg := &config.Config{}
+			cfg.GitalyClient.InitSidechannelRegistry(context.Background())
+			s, testRoot := setupServerWithContext(context.Background(), t, cfg, allowed)
+
+			client, err := ssh.Dial("tcp", s.Addr(), clientConfig(t, testRoot))
+			require.NoError(t, err)
+			remoteAddr := client.LocalAddr().String()
+
+			session, err := client.NewSession()
+			require.NoError(t, err)
+			session.Stdin = &bytes.Buffer{}
+			err = session.Run("git-receive-pack flightjs/Flight")
+			if tc.commandFails {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+			require.NoError(t, client.Close())
+
+			require.Eventually(t, func() bool {
+				return accessFinishLog(buf.Bytes(), remoteAddr) != nil
+			}, 5*time.Second, 10*time.Millisecond)
+
+			entry := accessFinishLog(buf.Bytes(), remoteAddr)
+			require.Equal(t, "alex-doe", entry["gl_user_name"])
+			require.Equal(t, map[string]any{
+				"project":           "flightjs/Flight",
+				"root_namespace":    "flightjs",
+				"project_id":        float64(1),
+				"root_namespace_id": float64(2),
+			}, entry["meta"])
+		})
+	}
+}
+
+// accessFinishLog returns the "access: finish" entry logged for the connection
+// from remoteAddr, or nil when gitlab-sshd has not logged it yet.
+func accessFinishLog(output []byte, remoteAddr string) map[string]any {
+	for _, line := range bytes.Split(output, []byte("\n")) {
+		var entry map[string]any
+		if json.Unmarshal(line, &entry) != nil {
+			continue
+		}
+		if entry["msg"] == "access: finish" && entry["remote_addr"] == remoteAddr {
+			return entry
+		}
+	}
+	return nil
+}
+
 func TestReadinessProbe(t *testing.T) {
 	s := &Server{Config: &config.Config{Server: config.DefaultServerConfig}}
 
@@ -606,7 +697,7 @@ func TestExtractMetaDataFromContext(t *testing.T) {
 	project := fmt.Sprintf("%s/Flight", rootNameSpace)
 	projectID := 1
 	rootNamespaceID := 2
-	ctx := context.WithValue(context.Background(), logInfo{}, command.NewLogData(project, username, projectID, rootNamespaceID))
+	ctx := context.WithValue(context.Background(), command.LogDataKey, command.NewLogData(project, username, projectID, rootNamespaceID))
 
 	data := extractLogDataFromContext(ctx)
 
@@ -639,7 +730,7 @@ func setupServerWithConfig(t *testing.T, cfg *config.Config) (*Server, string) {
 	return setupServerWithContext(context.Background(), t, cfg)
 }
 
-func setupServerWithContext(ctx context.Context, t *testing.T, cfg *config.Config) (*Server, string) {
+func setupServerWithContext(ctx context.Context, t *testing.T, cfg *config.Config, extraRequests ...testserver.TestRequestHandler) (*Server, string) {
 	t.Helper()
 
 	testRoot := testhelper.PrepareTestRootDir(t)
@@ -665,6 +756,7 @@ func setupServerWithContext(ctx context.Context, t *testing.T, cfg *config.Confi
 			},
 		},
 	}
+	requests = append(requests, extraRequests...)
 
 	url := testserver.StartSocketHTTPServer(t, requests)
 

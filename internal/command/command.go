@@ -44,7 +44,10 @@ type LogData struct {
 
 type contextKey string
 
-// LogDataKey is the context key used to store log data in request contexts.
+// LogDataKey is the context key under which a command stores its LogData in
+// the context it returns from Execute. gitlab-sshd reads the value back under
+// this key for its "access: finish" log line, so a command must not store it
+// under a key type of its own.
 const LogDataKey contextKey = "logData"
 
 // featureFlagClientKey is the context key used to store the feature flag evaluator.

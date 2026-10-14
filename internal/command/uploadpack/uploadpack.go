@@ -22,8 +22,6 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-type logDataKey struct{}
-
 // Execute executes the upload-pack command
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SSHArgs
@@ -43,7 +41,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		response.ProjectID,
 		response.RootNamespaceID,
 	)
-	ctxWithLogData := context.WithValue(ctx, logDataKey{}, logData)
+	ctxWithLogData := context.WithValue(ctx, command.LogDataKey, logData)
 
 	if response.IsCellRouted() {
 		return ctxWithLogData, githttp.NewCellsPullCommand(c.Config, c.ReadWriter, c.Args, response).Execute(ctx)
