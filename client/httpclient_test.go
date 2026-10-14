@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strings"
 	"testing"
@@ -23,6 +24,20 @@ func TestReadTimeout(t *testing.T) {
 
 	require.NotNil(t, client)
 	require.Equal(t, time.Duration(expectedSeconds)*time.Second, client.RetryableHTTP.HTTPClient.Timeout)
+}
+
+func TestReadTimeoutBounds(t *testing.T) {
+	defaultTimeout := defaultReadTimeoutSeconds * time.Second
+	for seconds, expected := range map[uint64]time.Duration{
+		0:                         defaultTimeout,
+		maxReadTimeoutSeconds:     time.Duration(maxReadTimeoutSeconds) * time.Second,
+		maxReadTimeoutSeconds + 1: defaultTimeout,
+		math.MaxUint64:            defaultTimeout,
+	} {
+		t.Run(fmt.Sprint(seconds), func(t *testing.T) {
+			require.Equal(t, expected, ReadTimeout(seconds))
+		})
+	}
 }
 
 const (

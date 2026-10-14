@@ -24,9 +24,11 @@ const (
 	httpProtocol              = "http://"
 	httpsProtocol             = "https://"
 	defaultReadTimeoutSeconds = 300
-	defaultRetryWaitMinimum   = time.Second
-	defaultRetryWaitMaximum   = 15 * time.Second
-	defaultRetryMax           = 2
+	// Largest whole number of seconds that fits in a time.Duration.
+	maxReadTimeoutSeconds   = uint64(math.MaxInt64 / time.Second)
+	defaultRetryWaitMinimum = time.Second
+	defaultRetryWaitMaximum = 15 * time.Second
+	defaultRetryMax         = 2
 )
 
 // ErrCafileNotFound indicates that the specified CA file was not found
@@ -128,7 +130,7 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	c.RetryWaitMin = hcc.retryWaitMin
 	c.Logger = nil
 	c.HTTPClient.Transport = NewTransport(transport)
-	c.HTTPClient.Timeout = readTimeout(readTimeoutSeconds)
+	c.HTTPClient.Timeout = ReadTimeout(readTimeoutSeconds)
 	c.PrepareRetry = refreshJWTBeforeRetry
 
 	// The internal API (/api/v4/internal/*) must never be redirected. Go's
@@ -253,10 +255,12 @@ func buildHTTPTransport(gitlabURL string) (*http.Transport, string) {
 	return &http.Transport{}, gitlabURL
 }
 
-func readTimeout(timeoutSeconds uint64) time.Duration {
-	if timeoutSeconds == 0 || timeoutSeconds > math.MaxInt64 {
-		timeoutSeconds = defaultReadTimeoutSeconds
+// ReadTimeout returns the HTTP read timeout for the configured seconds.
+// Zero or values that would overflow time.Duration fall back to the 300s default.
+func ReadTimeout(timeoutSeconds uint64) time.Duration {
+	if timeoutSeconds == 0 || timeoutSeconds > maxReadTimeoutSeconds {
+		return defaultReadTimeoutSeconds * time.Second
 	}
 
-	return time.Duration(timeoutSeconds) * time.Second // #nosec G115
+	return time.Duration(timeoutSeconds) * time.Second
 }
