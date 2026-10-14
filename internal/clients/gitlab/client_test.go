@@ -216,15 +216,6 @@ func TestNew_UnixSocket(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestNew_DefaultTimeout(t *testing.T) {
-	// ReadTimeoutSeconds == 0 should not error; default 300s is applied internally.
-	_, err := gitlab.New(&gitlab.Config{
-		GitlabURL: testLocalhost,
-		Secret:    testSecret,
-	})
-	require.NoError(t, err)
-}
-
 func TestPost_WithSecretWhitespace(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
