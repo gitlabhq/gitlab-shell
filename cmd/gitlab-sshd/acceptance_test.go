@@ -2,6 +2,7 @@ package main_test
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"crypto/ed25519"
@@ -22,7 +23,6 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -59,16 +59,11 @@ var (
 
 const (
 	testRepo              = "test-gitlab-shell/gitlab-test.git"
-	testRepoImportURL     = "https://gitlab.com/gitlab-org/gitlab-test.git"
 	gitalyInfoRefsTimeout = 10 * time.Second
 
-	// Clone setup is capped at 45s so the package stays under its 1m timeout (the rest takes about 5s).
-	// Each attempt gets up to 30s. The retry mainly covers fast transient failures such as Unavailable:
-	// a first attempt that stalls for the full 30s leaves too little budget for a full clone.
-	gitalyCloneBudget         = 45 * time.Second
-	gitalyCloneAttemptTimeout = 30 * time.Second
-	gitalyRemoveTimeout       = 2 * time.Second
-	gitalyCloneAttempts       = 2
+	// Bound local seeding so setup fits within the package's 1m test timeout.
+	gitalySeedTimeout   = 15 * time.Second
+	gitalyRemoveTimeout = 2 * time.Second
 )
 
 type gitalyConnectionInfo struct {
@@ -119,6 +114,79 @@ func rootDir() string {
 	return filepath.Join(filepath.Dir(currentFile), "..", "..")
 }
 
+func gitEnv() []string {
+	var env []string
+	for _, entry := range os.Environ() {
+		if !strings.HasPrefix(entry, "GIT_") {
+			env = append(env, entry)
+		}
+	}
+	return append(env,
+		"GIT_CONFIG_GLOBAL="+os.DevNull,
+		"GIT_CONFIG_NOSYSTEM=1",
+		"GIT_AUTHOR_NAME=GitLab Shell",
+		"GIT_AUTHOR_EMAIL=gitlab-shell@example.com",
+		"GIT_COMMITTER_NAME=GitLab Shell",
+		"GIT_COMMITTER_EMAIL=gitlab-shell@example.com",
+		"GIT_AUTHOR_DATE=2020-01-01T00:00:00Z",
+		"GIT_COMMITTER_DATE=2020-01-01T00:00:00Z",
+	)
+}
+
+func runGit(ctx context.Context, dir string, args ...string) ([]byte, error) {
+	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.Dir = dir
+	cmd.Env = gitEnv()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return output, fmt.Errorf("git %v: %w: %s", args, err, output)
+	}
+	return output, nil
+}
+
+func createTestRepoBundle(ctx context.Context, dir string) (string, error) {
+	if _, err := runGit(ctx, dir, "init", "--quiet", "--object-format=sha1", "--initial-branch=main", "src"); err != nil {
+		return "", err
+	}
+	srcDir := filepath.Join(dir, "src")
+	if err := os.WriteFile(filepath.Join(srcDir, "README.md"), []byte("GitLab Shell acceptance test repository\n"), 0644); err != nil {
+		return "", fmt.Errorf("write README.md: %w", err)
+	}
+	bundlePath := filepath.Join(dir, "seed.bundle")
+	for _, args := range [][]string{
+		{"add", "README.md"},
+		{"commit", "--quiet", "-m", "Initial commit"},
+		{"tag", "v1.0.0"},
+		{"bundle", "create", "--quiet", bundlePath, "--all"},
+	} {
+		if _, err := runGit(ctx, srcDir, args...); err != nil {
+			return "", err
+		}
+	}
+	return bundlePath, nil
+}
+
+func TestCreateTestRepoBundle(t *testing.T) {
+	t.Setenv("GIT_CONFIG_COUNT", "1")
+	t.Setenv("GIT_CONFIG_KEY_0", "commit.gpgsign")
+	t.Setenv("GIT_CONFIG_VALUE_0", "true")
+	t.Setenv("GIT_DIR", filepath.Join(t.TempDir(), "nonexistent"))
+
+	ctx, cancel := context.WithTimeout(t.Context(), gitalySeedTimeout)
+	defer cancel()
+	dir := t.TempDir()
+	bundlePath, err := createTestRepoBundle(ctx, dir)
+	require.NoError(t, err)
+
+	output, err := runGit(ctx, dir, "bundle", "list-heads", bundlePath)
+	require.NoError(t, err)
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	require.Len(t, lines, 3)
+	for _, ref := range []string{"HEAD", "refs/heads/main", "refs/tags/v1.0.0"} {
+		require.Regexp(t, `(?m)^[0-9a-f]{40} `+regexp.QuoteMeta(ref)+`$`, string(output))
+	}
+}
+
 func ensureGitalyRepository(t *testing.T) *pb.Repository {
 	if os.Getenv("GITALY_CONNECTION_INFO") == "" {
 		t.Skip("GITALY_CONNECTION_INFO is not set")
@@ -127,14 +195,38 @@ func ensureGitalyRepository(t *testing.T) *pb.Repository {
 
 	glRepository := &pb.Repository{StorageName: gitalyConnInfo.Storage, RelativePath: testRepo}
 
-	// Tests share one clone per package and must treat it as read-only.
-	gitalyRepoOnce.Do(func() { gitalyRepoErr = cloneGitalyRepository(gitalyConnInfo.Address, glRepository) })
+	// Tests share one seeded repo per package and must treat it as read-only.
+	gitalyRepoOnce.Do(func() { gitalyRepoErr = seedGitalyRepository(gitalyConnInfo.Address, glRepository) })
 	require.NoError(t, gitalyRepoErr)
 
 	return glRepository
 }
 
-func cloneGitalyRepository(address string, glRepository *pb.Repository) error {
+func seedGitalyRepository(address string, glRepository *pb.Repository) (err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), gitalySeedTimeout)
+	defer cancel()
+
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("seed gitaly repository from bundle: %w", err)
+		}
+	}()
+
+	dir, err := os.MkdirTemp("", "gitlab-shell-gitaly-seed-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(dir)
+	bundlePath, err := createTestRepoBundle(ctx, dir)
+	if err != nil {
+		return err
+	}
+	bundle, err := os.Open(bundlePath)
+	if err != nil {
+		return err
+	}
+	defer bundle.Close()
+
 	conn, err := gitalyClient.Dial(address)
 	if err != nil {
 		return err
@@ -142,97 +234,53 @@ func cloneGitalyRepository(address string, glRepository *pb.Repository) error {
 	defer conn.Close()
 
 	repository := pb.NewRepositoryServiceClient(conn)
-	removeReq := &pb.RemoveRepositoryRequest{Repository: glRepository}
-	createReq := &pb.CreateRepositoryFromURLRequest{Repository: glRepository, Url: testRepoImportURL}
-	overallCtx, cancel := context.WithTimeout(context.Background(), gitalyCloneBudget)
-	defer cancel()
+	removeCtx, removeCancel := context.WithTimeout(ctx, gitalyRemoveTimeout)
+	_, _ = repository.RemoveRepository(removeCtx, &pb.RemoveRepositoryRequest{Repository: glRepository})
+	removeCancel()
 
-	var attempts int
-	for attempts < gitalyCloneAttempts && overallCtx.Err() == nil {
-		removeCtx, cancel := context.WithTimeout(overallCtx, gitalyRemoveTimeout)
-		_, _ = repository.RemoveRepository(removeCtx, removeReq)
-		cancel()
-
-		if overallCtx.Err() != nil {
-			break
-		}
-
-		cloneCtx, cancel := context.WithTimeout(overallCtx, gitalyCloneAttemptTimeout)
-		attempts++
-		_, err = repository.CreateRepositoryFromURL(cloneCtx, createReq)
-		cancel()
-		if err == nil {
-			return nil
-		}
+	stream, err := repository.CreateRepositoryFromBundle(ctx)
+	if err != nil {
+		return err
 	}
-
-	if err == nil {
-		err = overallCtx.Err()
+	if err = stream.Send(&pb.CreateRepositoryFromBundleRequest{Repository: glRepository}); err != nil {
+		if _, recvErr := stream.CloseAndRecv(); recvErr != nil {
+			return recvErr
+		}
+		return err
 	}
-	return fmt.Errorf("clone %s failed after %d attempts within %s: %w", testRepoImportURL, attempts, gitalyCloneBudget, err)
+	writer := streamio.NewWriter(func(p []byte) error {
+		return stream.Send(&pb.CreateRepositoryFromBundleRequest{Data: p})
+	})
+	if _, err = io.Copy(writer, bundle); err != nil {
+		if _, recvErr := stream.CloseAndRecv(); recvErr != nil {
+			return recvErr
+		}
+		return err
+	}
+	_, err = stream.CloseAndRecv()
+	return err
 }
 
-type repositoryCloneServer struct {
+type rejectingRepositoryServer struct {
 	pb.UnimplementedRepositoryServiceServer
-	removeCalls     atomic.Int32
-	cloneCalls      atomic.Int32
-	deadlineMissing atomic.Bool
-	failures        int32
+	err error
 }
 
-func (s *repositoryCloneServer) RemoveRepository(ctx context.Context, _ *pb.RemoveRepositoryRequest) (*pb.RemoveRepositoryResponse, error) {
-	s.removeCalls.Add(1)
-	deadline, ok := ctx.Deadline()
-	if !ok || time.Until(deadline) > gitalyRemoveTimeout {
-		s.deadlineMissing.Store(true)
-	}
-	return &pb.RemoveRepositoryResponse{}, nil
+func (s *rejectingRepositoryServer) CreateRepositoryFromBundle(pb.RepositoryService_CreateRepositoryFromBundleServer) error {
+	return s.err
 }
 
-func (s *repositoryCloneServer) CreateRepositoryFromURL(ctx context.Context, _ *pb.CreateRepositoryFromURLRequest) (*pb.CreateRepositoryFromURLResponse, error) {
-	cloneCalls := s.cloneCalls.Add(1)
-	if deadline, ok := ctx.Deadline(); !ok || time.Until(deadline) > gitalyCloneAttemptTimeout {
-		s.deadlineMissing.Store(true)
-	}
-	if cloneCalls <= s.failures {
-		return nil, status.Error(codes.Unavailable, "clone unavailable")
-	}
-	return &pb.CreateRepositoryFromURLResponse{}, nil
-}
+func TestSeedGitalyRepositoryRejection(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	server := grpc.NewServer()
+	pb.RegisterRepositoryServiceServer(server, &rejectingRepositoryServer{err: status.Error(codes.AlreadyExists, "bundle rejected")})
+	go server.Serve(listener)
+	t.Cleanup(server.Stop)
 
-func TestCloneGitalyRepository(t *testing.T) {
-	for _, tc := range []struct {
-		name     string
-		failures int32
-		wantErr  bool
-	}{
-		{name: "successful first attempt"},
-		{name: "successful retry", failures: 1},
-		{name: "exhausted retries", failures: gitalyCloneAttempts, wantErr: true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			listener, err := net.Listen("tcp", "127.0.0.1:0")
-			require.NoError(t, err)
-			server := grpc.NewServer()
-			repositoryServer := &repositoryCloneServer{failures: tc.failures}
-			pb.RegisterRepositoryServiceServer(server, repositoryServer)
-			go server.Serve(listener)
-			t.Cleanup(server.Stop)
-
-			err = cloneGitalyRepository("tcp://"+listener.Addr().String(), &pb.Repository{StorageName: "default", RelativePath: testRepo})
-			if tc.wantErr {
-				require.ErrorContains(t, err, "clone unavailable")
-				require.ErrorContains(t, err, testRepoImportURL)
-				require.ErrorContains(t, err, fmt.Sprintf("%d attempts", gitalyCloneAttempts))
-				require.ErrorContains(t, err, fmt.Sprintf("within %s", gitalyCloneBudget))
-			} else {
-				require.NoError(t, err)
-			}
-			require.Equal(t, min(tc.failures+1, gitalyCloneAttempts), repositoryServer.cloneCalls.Load())
-			require.Equal(t, repositoryServer.cloneCalls.Load(), repositoryServer.removeCalls.Load())
-			require.False(t, repositoryServer.deadlineMissing.Load())
-		})
-	}
+	err = seedGitalyRepository("tcp://"+listener.Addr().String(), &pb.Repository{StorageName: "default", RelativePath: testRepo})
+	require.Equal(t, codes.AlreadyExists, status.Code(err))
+	require.ErrorContains(t, err, "bundle rejected")
 }
 
 func startGitOverHTTPServer(t *testing.T) string {
@@ -715,12 +763,13 @@ func TestGitUploadPackSuccess(t *testing.T) {
 			_, err = fmt.Fprintln(stdin, "0000")
 			require.NoError(t, err)
 
-			output, err := io.ReadAll(stdout)
+			output, err := io.ReadAll(reader)
 			require.NoError(t, err)
 
 			outputLines := strings.Split(string(output), "\n")
 
-			for i := 1; i < (len(outputLines) - 1); i++ {
+			require.Greater(t, len(outputLines), 1)
+			for i := 0; i < (len(outputLines) - 1); i++ {
 				require.Regexp(t, "^[0-9a-f]{44} refs/(heads|tags)/[^ ]+", outputLines[i])
 			}
 
@@ -750,10 +799,10 @@ func TestGitUploadArchiveSuccess(t *testing.T) {
 	_, err = fmt.Fprintln(stdin, "0000")
 	require.NoError(t, err)
 
-	output, err := io.ReadAll(stdout)
+	output, err := io.ReadAll(reader)
 	require.NoError(t, err)
 
-	require.Equal(t, []byte("0000"), output[len(output)-4:])
+	require.True(t, bytes.HasSuffix(output, []byte("0000")))
 }
 
 func TestStartupFailureExitsWithoutPanic(t *testing.T) {
