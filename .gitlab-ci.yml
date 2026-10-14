@@ -181,6 +181,11 @@ tests:fips:
   variables:
     FIPS_MODE: 1
     GOLANG_FIPS: 1
+  before_script:
+    # The FIPS UBI image ships no git binary, which the acceptance tests in
+    # cmd/gitlab-sshd need to seed Gitaly repositories and `make build` uses.
+    - dnf install -y git
+    - !reference [.test-job, before_script]
   script:
     - make test_fancy
 
