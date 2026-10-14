@@ -19,8 +19,6 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-type logInfo struct{}
-
 // Execute executes the upload archive command
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SSHArgs
@@ -40,7 +38,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		response.ProjectID,
 		response.RootNamespaceID,
 	)
-	ctxWithLogData := context.WithValue(ctx, logInfo{}, logData)
+	ctxWithLogData := context.WithValue(ctx, command.LogDataKey, logData)
 
 	return ctxWithLogData, c.performGitalyCall(ctx, response)
 }

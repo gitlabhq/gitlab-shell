@@ -14,8 +14,6 @@ import (
 
 const anonymousUsername = "Anonymous"
 
-type logDataKey struct{}
-
 // Command struct encapsulates the necessary components for executing the Discover command.
 type Command struct {
 	Config     *config.Config
@@ -39,7 +37,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		_, _ = fmt.Fprintf(c.ReadWriter.Out, "Welcome to GitLab, @%s!\n", response.Username)
 	}
 
-	ctxWithLogData := context.WithValue(ctx, logDataKey{}, logData)
+	ctxWithLogData := context.WithValue(ctx, command.LogDataKey, logData)
 
 	return ctxWithLogData, nil
 }

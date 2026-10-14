@@ -25,7 +25,7 @@ func TestAllowedAccess(t *testing.T) {
 	ctxWithLogData, err := cmd.Execute(context.Background())
 	require.NoError(t, err)
 
-	data := ctxWithLogData.Value(logDataKey{}).(command.LogData)
+	data := ctxWithLogData.Value(command.LogDataKey).(command.LogData)
 	require.Equal(t, "alex-doe", data.Username)
 	require.Equal(t, "group/project-path", data.Meta.Project)
 	require.Equal(t, "group", data.Meta.RootNamespace)

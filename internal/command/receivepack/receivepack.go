@@ -21,8 +21,6 @@ type Command struct {
 	ReadWriter *readwriter.ReadWriter
 }
 
-type logData struct{}
-
 // Execute executes the receive-pack command
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SSHArgs
@@ -36,7 +34,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		return ctx, err
 	}
 
-	ctxWithLogData := context.WithValue(ctx, logData{}, command.NewLogData(
+	ctxWithLogData := context.WithValue(ctx, command.LogDataKey, command.NewLogData(
 		response.Gitaly.Repo.GlProjectPath,
 		response.Username,
 		response.ProjectID,

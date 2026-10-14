@@ -43,8 +43,6 @@ type Payload struct {
 	ExpiresIn int           `json:"expires_in,omitempty"`
 }
 
-type logInfo struct{}
-
 // Execute executes the LFS authentication command
 func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 	args := c.Args.SSHArgs
@@ -72,7 +70,7 @@ func (c *Command) Execute(ctx context.Context) (context.Context, error) {
 		accessResponse.ProjectID,
 		accessResponse.RootNamespaceID,
 	)
-	ctxWithLogData := context.WithValue(ctx, logInfo{}, logData)
+	ctxWithLogData := context.WithValue(ctx, command.LogDataKey, logData)
 
 	payload, err := c.authenticate(ctx, operation, repo, accessResponse.UserID, accessResponse.CellAddress)
 	if err != nil {

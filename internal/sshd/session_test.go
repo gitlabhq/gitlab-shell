@@ -176,6 +176,7 @@ func TestHandleShell(t *testing.T) {
 		expectedErrString    string
 		expectedExitCode     uint32
 		expectedWrittenBytes int64
+		expectedUsername     string
 	}{
 		{
 			desc:              "fails to parse command",
@@ -210,6 +211,7 @@ func TestHandleShell(t *testing.T) {
 			expectedErrString:    "",
 			expectedExitCode:     0,
 			expectedWrittenBytes: 31,
+			expectedUsername:     "test-user",
 		},
 	}
 
@@ -241,6 +243,7 @@ func TestHandleShell(t *testing.T) {
 
 			require.Equal(t, tc.expectedExitCode, exitCode)
 			require.Equal(t, tc.expectedWrittenBytes, logInfo.WrittenBytes)
+			require.Equal(t, tc.expectedUsername, logInfo.Username)
 
 			formattedErr := &bytes.Buffer{}
 			if tc.errMsg != "" {

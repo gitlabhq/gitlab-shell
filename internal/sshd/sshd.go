@@ -59,8 +59,6 @@ type Server struct {
 	serverConfig *serverConfig
 }
 
-type logInfo struct{}
-
 // NewServer creates a new instance of Server
 func NewServer(cfg *config.Config) (*Server, error) {
 	serverConfig, err := newServerConfig(cfg)
@@ -269,6 +267,7 @@ func (s *Server) handleConn(ctx context.Context, nconn net.Conn) {
 	logData := extractLogDataFromContext(ctxWithLogData)
 	log.FromContext(ctx).InfoContext(ctx, "access: finish",
 		log.DurationS(time.Since(started)),
+		log.GitLabUserName(logData.Username),
 		slog.Int64("written_bytes", logData.WrittenBytes),
 		slog.Any("meta", logData.Meta),
 	)
@@ -300,8 +299,8 @@ func extractLogDataFromContext(ctx context.Context) command.LogData {
 		return logData
 	}
 
-	if ctx.Value(logInfo{}) != nil {
-		logData = ctx.Value(logInfo{}).(command.LogData)
+	if ctx.Value(command.LogDataKey) != nil {
+		logData = ctx.Value(command.LogDataKey).(command.LogData)
 	}
 
 	return logData

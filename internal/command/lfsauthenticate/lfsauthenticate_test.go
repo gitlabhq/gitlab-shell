@@ -170,7 +170,7 @@ func TestLfsAuthenticateRequests(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedOutput, output.String())
 
-			data := ctxWithLogData.Value(logInfo{}).(command.LogData)
+			data := ctxWithLogData.Value(command.LogDataKey).(command.LogData)
 			require.Equal(t, "alex-doe", data.Username)
 			require.Equal(t, "group/project-path", data.Meta.Project)
 			require.Equal(t, "group", data.Meta.RootNamespace)
@@ -268,7 +268,7 @@ func TestLfsAuthenticateWithTopologyService(t *testing.T) {
 	require.Contains(t, output.String(), "\"header\":")
 
 	// Verify the context was enriched with log data through the routed path
-	data := ctxWithLogData.Value(logInfo{}).(command.LogData)
+	data := ctxWithLogData.Value(command.LogDataKey).(command.LogData)
 	require.Equal(t, "alex-doe", data.Username)
 	require.Equal(t, "group/project-path", data.Meta.Project)
 	require.Equal(t, "group", data.Meta.RootNamespace)

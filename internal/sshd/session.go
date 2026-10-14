@@ -200,7 +200,7 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 	logData := extractLogDataFromContext(ctxWithLogData)
 	logData.WrittenBytes = countingWriter.N
 
-	ctxWithLogData = context.WithValue(ctx, logInfo{}, logData)
+	ctxWithLogData = context.WithValue(ctx, command.LogDataKey, logData)
 
 	if err != nil {
 		grpcStatus := grpcstatus.Convert(err)
@@ -208,7 +208,7 @@ func (s *session) handleShell(ctx context.Context, req *ssh.Request) (context.Co
 			s.toStderr(ctx, "ERROR: %v\n", grpcStatus.Message())
 		}
 
-		return ctx, 1, err
+		return ctxWithLogData, 1, err
 	}
 
 	log.FromContext(ctx).InfoContext(ctx, "session: handleShell: command executed successfully")
