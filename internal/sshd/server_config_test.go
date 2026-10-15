@@ -1113,6 +1113,8 @@ func (c connMetadata) User() string         { return c.user }
 func (c connMetadata) RemoteAddr() net.Addr { return c.remoteAddr() }
 
 func proxiedConn(t *testing.T, source *net.TCPAddr) net.Conn {
+	t.Helper()
+
 	serverSide, clientSide := net.Pipe()
 	t.Cleanup(func() {
 		_ = serverSide.Close()
@@ -1126,9 +1128,17 @@ func proxiedConn(t *testing.T, source *net.TCPAddr) net.Conn {
 		SourceAddr:        source,
 		DestinationAddr:   &net.TCPAddr{IP: net.ParseIP("10.0.0.2"), Port: 22},
 	}
-	go func() { _, _ = header.WriteTo(clientSide) }()
+	writeErr := make(chan error, 1)
+	go func() {
+		_, err := header.WriteTo(clientSide)
+		writeErr <- err
+	}()
 
-	return proxyproto.NewConn(serverSide)
+	conn := proxyproto.NewConn(serverSide)
+	conn.RemoteAddr()
+	require.NoError(t, <-writeErr)
+
+	return conn
 }
 
 func TestPublicKeyCallback_ForwardsCertificateClientIP(t *testing.T) {
@@ -1196,6 +1206,9 @@ func TestPublicKeyCallback_ForwardsCertificateClientIP(t *testing.T) {
 			require.NoError(t, err)
 
 			require.Equal(t, tc.expectedIP, checkIP.Load())
+			if tc.expectedIP != "" {
+				require.NotNil(t, net.ParseIP(checkIP.Load().(string)), "check_ip must be an IP address without a port")
+			}
 		})
 	}
 }

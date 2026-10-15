@@ -101,8 +101,12 @@ func TestGetByKeyForwardsRemoteIP(t *testing.T) {
 			_, err = client.GetByKey(context.Background(), "user-id", "key", tc.remoteIP)
 			require.NoError(t, err)
 
-			require.Equal(t, tc.remoteIP, query.Get("check_ip"))
-			require.Equal(t, tc.remoteIP != "", query.Has("check_ip"))
+			if tc.remoteIP == "" {
+				require.False(t, query.Has("check_ip"), "check_ip must be omitted when the client address is unknown")
+			} else {
+				require.True(t, query.Has("check_ip"))
+				require.Equal(t, tc.remoteIP, query.Get("check_ip"))
+			}
 		})
 	}
 }
