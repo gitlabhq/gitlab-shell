@@ -26,25 +26,22 @@ type Env struct {
 
 // NewFromEnv creates a new Env instance based on the current environment variables
 func NewFromEnv() Env {
-	isSSHConnection := false
-	if ok := os.Getenv(SSHConnectionEnv); ok != "" {
-		isSSHConnection = true
-	}
+	remoteAddr := remoteAddrFromEnv()
 
 	return Env{
 		GitProtocolVersion: os.Getenv(GitProtocolEnv),
-		IsSSHConnection:    isSSHConnection,
-		RemoteAddr:         remoteAddrFromEnv(),
+		IsSSHConnection:    remoteAddr != "",
+		RemoteAddr:         remoteAddr,
 		OriginalCommand:    os.Getenv(SSHOriginalCommandEnv),
 	}
 }
 
 // remoteAddrFromEnv returns the connection address from ENV string
 func remoteAddrFromEnv() string {
-	address := os.Getenv(SSHConnectionEnv)
+	fields := strings.Fields(os.Getenv(SSHConnectionEnv))
 
-	if address != "" {
-		return strings.Fields(address)[0]
+	if len(fields) > 0 {
+		return fields[0]
 	}
 	return ""
 }
