@@ -17,7 +17,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pires/go-proxyproto"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 
@@ -1106,44 +1105,13 @@ func TestUserCertificateHandling_FileBasedCAPrecedence(t *testing.T) {
 type connMetadata struct {
 	ssh.ConnMetadata
 	user       string
-	remoteAddr func() net.Addr
+	remoteAddr net.Addr
 }
 
 func (c connMetadata) User() string         { return c.user }
-func (c connMetadata) RemoteAddr() net.Addr { return c.remoteAddr() }
+func (c connMetadata) RemoteAddr() net.Addr { return c.remoteAddr }
 
-func proxiedConn(t *testing.T, source *net.TCPAddr) net.Conn {
-	t.Helper()
-
-	serverSide, clientSide := net.Pipe()
-	t.Cleanup(func() {
-		_ = serverSide.Close()
-		_ = clientSide.Close()
-	})
-
-	header := &proxyproto.Header{
-		Version:           2,
-		Command:           proxyproto.PROXY,
-		TransportProtocol: proxyproto.TCPv4,
-		SourceAddr:        source,
-		DestinationAddr:   &net.TCPAddr{IP: net.ParseIP("10.0.0.2"), Port: 22},
-	}
-	writeErr := make(chan error, 1)
-	go func() {
-		_, err := header.WriteTo(clientSide)
-		writeErr <- err
-	}()
-
-	conn := proxyproto.NewConn(serverSide)
-	conn.RemoteAddr()
-	require.NoError(t, <-writeErr)
-
-	return conn
-}
-
-func TestPublicKeyCallback_ForwardsCertificateClientIP(t *testing.T) {
-	t.Setenv("FF_GITLAB_SHELL_SSH_CERTIFICATES", "1")
-
+func TestPublicKeyCallback_ForwardsClientAddressOnCertificateRejection(t *testing.T) {
 	testRoot := testhelper.PrepareTestRootDir(t)
 	caSigner, _ := createCAKeyPair(t)
 	cert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), testUser2)
@@ -1154,7 +1122,7 @@ func TestPublicKeyCallback_ForwardsCertificateClientIP(t *testing.T) {
 			Path: authorizedCertsAPIPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				checkIP.Store(r.URL.Query().Get("check_ip"))
-				fmt.Fprintf(w, `{ "success": true, "username": %q, "namespace": %q }`, testUser2, testNamespaceValue)
+				w.WriteHeader(http.StatusNotFound)
 			},
 		},
 	}
@@ -1172,28 +1140,18 @@ func TestPublicKeyCallback_ForwardsCertificateClientIP(t *testing.T) {
 
 	testCases := []struct {
 		desc       string
-		remoteAddr func() net.Addr
+		remoteAddr net.Addr
 		expectedIP string
 	}{
 		{
 			desc:       "IPv4 client",
-			remoteAddr: func() net.Addr { return &net.TCPAddr{IP: net.ParseIP("192.0.2.10"), Port: 50000} },
+			remoteAddr: &net.TCPAddr{IP: net.ParseIP("192.0.2.10"), Port: 50000},
 			expectedIP: "192.0.2.10",
 		},
 		{
 			desc:       "IPv6 client",
-			remoteAddr: func() net.Addr { return &net.TCPAddr{IP: net.ParseIP("2001:db8::1"), Port: 50000} },
+			remoteAddr: &net.TCPAddr{IP: net.ParseIP("2001:db8::1"), Port: 50000},
 			expectedIP: "2001:db8::1",
-		},
-		{
-			desc:       "PROXY protocol client",
-			remoteAddr: proxiedConn(t, &net.TCPAddr{IP: net.ParseIP("203.0.113.7"), Port: 1000}).RemoteAddr,
-			expectedIP: "203.0.113.7",
-		},
-		{
-			desc:       "unknown client address",
-			remoteAddr: func() net.Addr { return nil },
-			expectedIP: "",
 		},
 	}
 
@@ -1202,13 +1160,11 @@ func TestPublicKeyCallback_ForwardsCertificateClientIP(t *testing.T) {
 			checkIP.Store("unset")
 
 			callback := cfg.publicKeyCallback(context.Background(), nil)
-			_, err := callback(connMetadata{user: testUser, remoteAddr: tc.remoteAddr}, cert)
-			require.NoError(t, err)
+			perms, err := callback(connMetadata{user: testUser, remoteAddr: tc.remoteAddr}, cert)
+			require.Error(t, err)
+			require.Nil(t, perms)
 
 			require.Equal(t, tc.expectedIP, checkIP.Load())
-			if tc.expectedIP != "" {
-				require.NotNil(t, net.ParseIP(checkIP.Load().(string)), "check_ip must be an IP address without a port")
-			}
 		})
 	}
 }

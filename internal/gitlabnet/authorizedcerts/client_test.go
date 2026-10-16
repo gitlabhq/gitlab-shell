@@ -73,13 +73,23 @@ func TestGetByKeyInstanceLevel(t *testing.T) {
 }
 
 func TestGetByKeyForwardsRemoteIP(t *testing.T) {
+	const (
+		ipv4 = "192.0.2.10"
+		ipv6 = "2001:db8::1"
+	)
+
 	testCases := []struct {
-		desc     string
-		remoteIP string
+		desc       string
+		remoteAddr string
+		expectedIP string
 	}{
-		{desc: "IPv4 address", remoteIP: "192.0.2.10"},
-		{desc: "IPv6 address", remoteIP: "2001:db8::1"},
-		{desc: "no address", remoteIP: ""},
+		{desc: "IPv4 with port", remoteAddr: ipv4 + ":50000", expectedIP: ipv4},
+		{desc: "IPv6 with port", remoteAddr: "[" + ipv6 + "]:50000", expectedIP: ipv6},
+		{desc: "bare IPv4", remoteAddr: ipv4, expectedIP: ipv4},
+		{desc: "bare IPv6", remoteAddr: ipv6, expectedIP: ipv6},
+		{desc: "zoned IPv6", remoteAddr: "fe80::1%eth0", expectedIP: "fe80::1%eth0"},
+		{desc: "no address", remoteAddr: ""},
+		{desc: "Unix socket path", remoteAddr: "/run/lb.sock"},
 	}
 
 	for _, tc := range testCases {
@@ -98,14 +108,14 @@ func TestGetByKeyForwardsRemoteIP(t *testing.T) {
 			client, err := NewClient(&config.Config{GitlabURL: testserver.StartSocketHTTPServer(t, handlers)})
 			require.NoError(t, err)
 
-			_, err = client.GetByKey(context.Background(), "user-id", "key", tc.remoteIP)
+			_, err = client.GetByKey(context.Background(), "user-id", "key", tc.remoteAddr)
 			require.NoError(t, err)
 
-			if tc.remoteIP == "" {
-				require.False(t, query.Has("check_ip"), "check_ip must be omitted when the client address is unknown")
+			if tc.expectedIP == "" {
+				require.False(t, query.Has("check_ip"), "check_ip must be omitted when the client address is unknown or invalid")
 			} else {
 				require.True(t, query.Has("check_ip"))
-				require.Equal(t, tc.remoteIP, query.Get("check_ip"))
+				require.Equal(t, tc.expectedIP, query.Get("check_ip"))
 			}
 		})
 	}
