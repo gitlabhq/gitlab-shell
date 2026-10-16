@@ -82,31 +82,45 @@ func TestPullExecute(t *testing.T) {
 }
 
 func TestPullExecuteWithSSHUploadPack(t *testing.T) {
-	url := setupSSHPull(t, http.StatusOK)
-	output := &bytes.Buffer{}
-	input := strings.NewReader(cloneResponse)
-
-	cmd := &PullCommand{
-		Config:     &config.Config{GitlabURL: url},
-		ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
-		Response: &accessverifier.Response{
-			Payload: accessverifier.CustomPayload{
-				Data: accessverifier.CustomPayloadData{
-					PrimaryRepo:                     url,
-					GeoProxyFetchSSHDirectToPrimary: true,
-					RequestHeaders:                  map[string]string{"Authorization": testGitalyToken},
-				},
-			},
+	testCases := []struct {
+		desc                  string
+		requestHeaders        map[string]string
+		expectedAuthorization string
+	}{
+		{
+			desc:                  "with request headers",
+			requestHeaders:        map[string]string{testAuthorizationHeader: testGitalyToken},
+			expectedAuthorization: testGitalyToken,
 		},
-		Args: &commandargs.Shell{
-			Env: sshenv.Env{
-				GitProtocolVersion: testGitProtocolVersion,
-			},
+		{
+			desc:                  "with nil request headers",
+			requestHeaders:        nil,
+			expectedAuthorization: "",
 		},
 	}
 
-	require.NoError(t, cmd.Execute(context.Background()))
-	require.Equal(t, "upload-pack-response", output.String())
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			server, captured := startCapturingServer(t, "upload-pack-response")
+			output := &bytes.Buffer{}
+			cmd := &PullCommand{
+				ReadWriter: &readwriter.ReadWriter{Out: output, In: strings.NewReader(cloneResponse)},
+				Response: &accessverifier.Response{Payload: accessverifier.CustomPayload{Data: accessverifier.CustomPayloadData{
+					PrimaryRepo:                     server.URL,
+					GeoProxyFetchSSHDirectToPrimary: true,
+					RequestHeaders:                  tc.requestHeaders,
+				}}},
+				Args: &commandargs.Shell{Env: sshenv.Env{GitProtocolVersion: testGitProtocolVersion}},
+			}
+
+			require.NoError(t, cmd.Execute(context.Background()))
+			assert.Equal(t, testSSHUploadPackPath, captured.path)
+			assert.Equal(t, cloneResponse+flush, string(captured.body))
+			assert.Equal(t, testGitProtocolVersion, captured.headers.Get(gitProtocolHeader))
+			assert.Equal(t, tc.expectedAuthorization, captured.headers.Get(testAuthorizationHeader))
+			assert.Equal(t, "upload-pack-response", output.String())
+		})
+	}
 }
 
 // TestPullExecuteWithSSHUploadPackProtocolV2 covers protocol v2 requests.
@@ -126,32 +140,17 @@ func TestPullExecuteWithSSHUploadPackProtocolV2(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			var body string
-			requests := []testserver.TestRequestHandler{
-				{
-					Path: testSSHUploadPackPath,
-					Handler: func(w http.ResponseWriter, r *http.Request) {
-						b, err := io.ReadAll(r.Body)
-						assert.NoError(t, err)
-						defer r.Body.Close()
-
-						body = string(b)
-						w.Write([]byte("upload-pack-response"))
-					},
-				},
-			}
-			url := testserver.StartHTTPServer(t, requests)
+			server, captured := startCapturingServer(t, "upload-pack-response")
 
 			output := &bytes.Buffer{}
 			input := strings.NewReader(tc.request)
 
 			cmd := &PullCommand{
-				Config:     &config.Config{GitlabURL: url},
 				ReadWriter: &readwriter.ReadWriter{Out: output, In: input},
 				Response: &accessverifier.Response{
 					Payload: accessverifier.CustomPayload{
 						Data: accessverifier.CustomPayloadData{
-							PrimaryRepo:                     url,
+							PrimaryRepo:                     server.URL,
 							GeoProxyFetchSSHDirectToPrimary: true,
 							RequestHeaders:                  map[string]string{testAuthorizationHeader: testGitalyToken},
 						},
@@ -163,7 +162,8 @@ func TestPullExecuteWithSSHUploadPackProtocolV2(t *testing.T) {
 			}
 
 			require.NoError(t, cmd.Execute(context.Background()))
-			require.Equal(t, tc.request, body)
+			assert.Equal(t, testSSHUploadPackPath, captured.path)
+			assert.Equal(t, tc.request, string(captured.body))
 		})
 	}
 }
@@ -260,28 +260,6 @@ func setupPull(t *testing.T, uploadPackStatusCode int) string {
 
 				assert.True(t, strings.HasSuffix(string(body), "0009done\n"+flush))
 
-				w.WriteHeader(uploadPackStatusCode)
-			},
-		},
-	}
-
-	return testserver.StartHTTPServer(t, requests)
-}
-
-func setupSSHPull(t *testing.T, uploadPackStatusCode int) string {
-	requests := []testserver.TestRequestHandler{
-		{
-			Path: "/ssh-upload-pack",
-			Handler: func(w http.ResponseWriter, r *http.Request) {
-				body, err := io.ReadAll(r.Body)
-				assert.NoError(t, err)
-				defer r.Body.Close()
-
-				assert.True(t, strings.HasSuffix(string(body), "0009done\n"+flush))
-				assert.Equal(t, testGitProtocolVersion, r.Header.Get("Git-Protocol"))
-				assert.Equal(t, testGitalyToken, r.Header.Get("Authorization"))
-
-				w.Write([]byte("upload-pack-response"))
 				w.WriteHeader(uploadPackStatusCode)
 			},
 		},
