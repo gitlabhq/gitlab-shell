@@ -24,6 +24,26 @@ func TestNewFromEnv(t *testing.T) {
 			want:        Env{IsSSHConnection: true, RemoteAddr: "127.0.0.1"},
 		},
 		{
+			desc:        "It parses SSH_CONNECTION with leading whitespace",
+			environment: map[string]string{SSHConnectionEnv: " 192.0.2.1 50000 192.0.2.2 22"},
+			want:        Env{IsSSHConnection: true, RemoteAddr: "192.0.2.1"},
+		},
+		{
+			desc:        "It parses SSH_CONNECTION with a single field",
+			environment: map[string]string{SSHConnectionEnv: "198.51.100.1"},
+			want:        Env{IsSSHConnection: true, RemoteAddr: "198.51.100.1"},
+		},
+		{
+			desc:        "It treats an empty SSH_CONNECTION as unset",
+			environment: map[string]string{SSHConnectionEnv: ""},
+			want:        Env{},
+		},
+		{
+			desc:        "It treats a whitespace-only SSH_CONNECTION as unset",
+			environment: map[string]string{SSHConnectionEnv: " \t "},
+			want:        Env{},
+		},
+		{
 			desc:        "It parses SSH_ORIGINAL_COMMAND",
 			environment: map[string]string{SSHOriginalCommandEnv: "git-receive-pack"},
 			want:        Env{OriginalCommand: "git-receive-pack"},
@@ -47,4 +67,12 @@ func TestRemoteAddrFromEnv(t *testing.T) {
 
 func TestEmptyRemoteAddrFromEnv(t *testing.T) {
 	require.Empty(t, remoteAddrFromEnv())
+}
+
+func TestBlankRemoteAddrFromEnv(t *testing.T) {
+	for _, value := range []string{" ", "\t", " \t\n "} {
+		t.Setenv(SSHConnectionEnv, value)
+
+		require.Empty(t, remoteAddrFromEnv())
+	}
 }
