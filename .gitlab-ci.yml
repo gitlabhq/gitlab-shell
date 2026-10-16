@@ -16,6 +16,7 @@ stages:
   - lint
   - test
   - post-test
+  - release
 
 variables:
   FF_USE_FASTZIP: "true"
@@ -34,6 +35,7 @@ variables:
   FIPS_IMAGE_TAG: "latest"
   FIPS_IMAGE: "registry.gitlab.com/gitlab-org/gitlab-build-images/ubi-${UBI_VERSION}-golang-${GO_VERSION}:${FIPS_IMAGE_TAG}"
   GOTOOLCHAIN: local
+  GLAB_VERSION: "v1.120.0"
 
 workflow:
   rules: &workflow_rules # For merge requests, create a pipeline.
@@ -346,3 +348,64 @@ logging-field-validator:
         - .labkit_logging_todo.yml
   script:
     - make validate-log-fields
+
+################################################################################
+# Release jobs
+#
+# See "Release Process" in README.md. Both jobs only run on the canonical
+# project, never on the security or dev.gitlab.org mirrors, and need these
+# protected and masked CI/CD variables:
+#
+# - GITLAB_SHELL_RELEASE_TOKEN: project access token with the `api` scope and
+#   the Maintainer role, to create the release merge request and the tag.
+# - SECURITY_REPO_READ_TOKEN: token with the `read_api` scope and at least the
+#   Reporter role in gitlab-org/security/gitlab-shell, to refuse versions a
+#   security release already tagged there.
+################################################################################
+
+.release-job:
+  stage: release
+  # The glab image ships git, jq and glab, but not bash.
+  image: registry.gitlab.com/gitlab-org/cli:${GLAB_VERSION}
+  needs: []
+  # Serialize release jobs so two pipelines can't prepare or tag concurrently.
+  resource_group: release
+  variables:
+    # The full history and tags are needed to compute the changelog.
+    GIT_DEPTH: 0
+  before_script:
+    - apk add --no-cache bash
+
+.rules:release-canonical-only:
+  rules:
+    # Never run on the security or dev.gitlab.org mirrors.
+    - if: '$CI_SERVER_HOST != "gitlab.com" || $CI_PROJECT_PATH != "gitlab-org/gitlab-shell"'
+      when: never
+
+# Opens the "Release vX.Y.Z" merge request. Run it manually from a `main`
+# pipeline; set RELEASE_BUMP to `patch` or `major` when running the job to
+# override the default `minor` bump. It also runs on scheduled pipelines that
+# set RELEASE_BUMP.
+release:prepare:
+  extends: .release-job
+  rules:
+    - !reference [".rules:release-canonical-only", rules]
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "schedule" && $RELEASE_BUMP'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != "schedule"'
+      when: manual
+      allow_failure: true
+  script:
+    - support/release.sh prepare
+
+# Creates the vX.Y.Z tag and its GitLab release, with the CHANGELOG section as
+# release notes, once the release merge request is merged. Renovate then opens
+# the merge request that bumps GITLAB_SHELL_VERSION in gitlab-org/gitlab.
+release:tag:
+  extends: .release-job
+  rules:
+    - !reference [".rules:release-canonical-only", rules]
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"'
+      changes:
+        - VERSION
+  script:
+    - support/release.sh tag
