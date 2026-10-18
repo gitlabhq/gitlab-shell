@@ -312,6 +312,16 @@ func TestConnOutcomeObserveAuth(t *testing.T) {
 		require.False(t, o.serverError.Load())
 	})
 
+	t.Run("banner-wrapped policy APIError does not mark a server error", func(t *testing.T) {
+		var o connOutcome
+		o.observeAuth(&ssh.BannerError{
+			Err:     &client.APIError{Msg: "Internal API error (429)", StatusCode: 429},
+			Message: tooManyRequestsBanner,
+		})
+		require.True(t, o.authAttempted)
+		require.False(t, o.serverError.Load())
+	})
+
 	t.Run("a later successful attempt clears an earlier server error", func(t *testing.T) {
 		var o connOutcome
 		o.observeAuth(&client.APIError{Msg: "redirect", StatusCode: 301, System: true})

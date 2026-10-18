@@ -34,6 +34,28 @@ const (
 // ErrCafileNotFound indicates that the specified CA file was not found
 var ErrCafileNotFound = errors.New("cafile not found")
 
+// The 429 opt-out is carried per request in the context: WithHost shallow
+// copies share one retryablehttp.Client, so per-request client settings would race.
+type noRetryOnTooManyRequestsKey struct{}
+
+// WithoutRetryOnTooManyRequests returns a context for which 429 responses are
+// returned to the caller as-is instead of being retried, so they surface as a
+// non-System APIError. Transport errors and retryable 5xx responses still retry.
+func WithoutRetryOnTooManyRequests(ctx context.Context) context.Context {
+	return context.WithValue(ctx, noRetryOnTooManyRequestsKey{}, true)
+}
+
+func checkRetry(ctx context.Context, resp *http.Response, err error) (bool, error) {
+	// A 429 is handed back even if the context is done: the server did answer,
+	// and surfacing it keeps it a non-System APIError instead of a transport error.
+	if noRetry, _ := ctx.Value(noRetryOnTooManyRequestsKey{}).(bool); noRetry &&
+		resp != nil && resp.StatusCode == http.StatusTooManyRequests {
+		return false, nil
+	}
+
+	return retryablehttp.DefaultRetryPolicy(ctx, resp, err)
+}
+
 // HTTPClient provides an HTTP client with retry capabilities.
 // Fields other than Host must be safe to share across shallow copies,
 // because GitlabNetClient.WithHost creates a copy with a different Host
@@ -132,6 +154,7 @@ func NewHTTPClientWithOpts(gitlabURL, gitlabRelativeURLRoot, caFile, caPath stri
 	c.HTTPClient.Transport = NewTransport(transport)
 	c.HTTPClient.Timeout = ReadTimeout(readTimeoutSeconds)
 	c.PrepareRetry = refreshJWTBeforeRetry
+	c.CheckRetry = checkRetry
 
 	// The internal API (/api/v4/internal/*) must never be redirected. Go's
 	// default redirect policy follows 3xx responses and, on a 301/302/303,

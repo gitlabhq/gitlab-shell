@@ -56,7 +56,7 @@ func (c *Client) GetByKey(ctx context.Context, userID, fingerprint, remoteAddr s
 	// "SHA256:" prefix), used as the SSHFingerprintClaim to identify which cell
 	// holds certificates signed by this CA.
 	routed := c.resolver.ClientForSSHFingerprint(ctx, c.client, fingerprint)
-	response, err := routed.Client.Get(ctx, path)
+	response, err := routed.Client.Get(client.WithoutRetryOnTooManyRequests(ctx), path)
 	if err != nil {
 		return nil, err
 	}

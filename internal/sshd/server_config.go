@@ -4,8 +4,10 @@ package sshd
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -16,6 +18,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
+	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/commandargs"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/authorizedcerts"
@@ -32,6 +35,7 @@ const (
 	certPermCAFingerprint = "ca-fingerprint"
 	certPermIdentity      = "certificate-identity"
 	certPermTrustSource   = "certificate-trust-source"
+	tooManyRequestsBanner = "GitLab: Too many requests. Try again later.\n"
 )
 
 type serverConfig struct {
@@ -345,7 +349,15 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user, remoteAd
 func (s *serverConfig) resolveCertificateViaAPI(ctx context.Context, cert *ssh.Certificate, caFingerprint, remoteAddr string) (*ssh.Permissions, error) {
 	res, err := s.authorizedCertsClient.GetByKey(ctx, cert.KeyId, strings.TrimPrefix(caFingerprint, "SHA256:"), remoteAddr)
 	if err != nil {
+		var apiErr *client.APIError
+		if errors.As(err, &apiErr) && apiErr.StatusCode == http.StatusTooManyRequests {
+			log.FromContext(ctx).WarnContext(ctx, "certificate lookup rate limited by internal API", log.ErrorMessage(err.Error()))
+
+			return nil, &ssh.BannerError{Err: err, Message: tooManyRequestsBanner}
+		}
+
 		log.FromContext(ctx).WarnContext(ctx, "user certificate is not signed by a trusted key", log.ErrorMessage(err.Error()))
+
 		return nil, err
 	}
 

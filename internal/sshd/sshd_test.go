@@ -3,6 +3,7 @@ package sshd
 import (
 	"bytes"
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
@@ -198,6 +199,46 @@ func TestGitAuditEventCertificateMetadata(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRateLimitedCertificateSendsBanner(t *testing.T) {
+	caSigner, _ := createCAKeyPair(t)
+	// ed25519 so the client makes a single publickey attempt; RSA certs retry
+	// across hash algorithms and would produce several banners.
+	_, clientKey, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	clientSigner, err := ssh.NewSignerFromKey(clientKey)
+	require.NoError(t, err)
+	cert := &ssh.Certificate{
+		CertType:    ssh.UserCert,
+		Key:         clientSigner.PublicKey(),
+		KeyId:       "rate-limited",
+		ValidBefore: uint64(time.Now().Add(time.Hour).Unix()),
+	}
+	require.NoError(t, cert.SignCert(rand.Reader, caSigner))
+	certSigner, err := ssh.NewCertSigner(cert, clientSigner)
+	require.NoError(t, err)
+
+	s, testRoot := setupServerWithContext(context.Background(), t, nil, testserver.TestRequestHandler{
+		Path: authorizedCertsAPIPath,
+		Handler: func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("Retry-After", "60")
+			w.WriteHeader(http.StatusTooManyRequests)
+			fmt.Fprint(w, `{"message":{"error":"This endpoint has been requested too many times. Try again later."}}`)
+		},
+	})
+
+	var banners []string
+	clientCfg := clientConfig(t, testRoot)
+	clientCfg.Auth = []ssh.AuthMethod{ssh.PublicKeys(certSigner)}
+	clientCfg.BannerCallback = func(message string) error {
+		banners = append(banners, message)
+		return nil
+	}
+
+	_, err = ssh.Dial("tcp", s.Addr(), clientCfg)
+	require.ErrorContains(t, err, "ssh: handshake failed")
+	require.Equal(t, []string{tooManyRequestsBanner}, banners)
 }
 
 func TestListenAndServe_proxyProtocolEnabled(t *testing.T) {

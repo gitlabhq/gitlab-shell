@@ -615,3 +615,57 @@ func TestRetryOnFailure(t *testing.T) {
 	require.EqualError(t, err, "Internal API unreachable")
 	require.Equal(t, 3, reqAttempts)
 }
+
+func TestWithoutRetryOnTooManyRequests(t *testing.T) {
+	t.Run("a 429 response is returned without retrying", func(t *testing.T) {
+		var attempts atomic.Int32
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			attempts.Add(1)
+			w.Header().Set("Retry-After", "60")
+			w.WriteHeader(http.StatusTooManyRequests)
+		}))
+		defer srv.Close()
+
+		httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, defaultHTTPOpts)
+		require.NoError(t, err)
+		client, err := NewGitlabNetClient("", "", "", httpClient)
+		require.NoError(t, err)
+
+		// A regressed client would sleep on Retry-After until this deadline.
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		resp, err := client.Get(WithoutRetryOnTooManyRequests(ctx), "/")
+		if resp != nil {
+			resp.Body.Close()
+		}
+
+		require.EqualValues(t, 1, attempts.Load())
+
+		var apiErr *APIError
+		require.ErrorAs(t, err, &apiErr)
+		require.Equal(t, http.StatusTooManyRequests, apiErr.StatusCode)
+		require.False(t, apiErr.System, "a rate-limit response is a policy denial, not a system error")
+	})
+
+	t.Run("other retryable responses are still retried", func(t *testing.T) {
+		var attempts atomic.Int32
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			attempts.Add(1)
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		defer srv.Close()
+
+		httpClient, err := NewHTTPClientWithOpts(srv.URL, "/", "", "", 1, defaultHTTPOpts)
+		require.NoError(t, err)
+		client, err := NewGitlabNetClient("", "", "", httpClient)
+		require.NoError(t, err)
+
+		resp, err := client.Get(WithoutRetryOnTooManyRequests(context.Background()), "/")
+		if resp != nil {
+			resp.Body.Close()
+		}
+		require.EqualError(t, err, "Internal API unreachable")
+		require.EqualValues(t, 3, attempts.Load())
+	})
+}

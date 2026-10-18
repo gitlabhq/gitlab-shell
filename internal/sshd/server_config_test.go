@@ -270,14 +270,26 @@ func TestUserCertificateHandling(t *testing.T) {
 	validUserCert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "root@example.com")
 	validUserCertWithSourceAddr := userCertSignedByCAWithOptions(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), "root@example.com", map[string]string{sourceAddressExt: sourceAddrCIDR})
 
+	rateLimitedCASigner, _ := createCAKeyPair(t)
+	rateLimitedUserCert := userCertSignedByCA(t, rateLimitedCASigner, ssh.UserCert, time.Now().Add(time.Hour), "root@example.com")
+	var rateLimitedRequests atomic.Int32
+
+	key := strings.TrimPrefix(ssh.FingerprintSHA256(validUserCert.SignatureKey), "SHA256:")
+	rateLimitedKey := strings.TrimPrefix(ssh.FingerprintSHA256(rateLimitedUserCert.SignatureKey), "SHA256:")
+
 	requests := []testserver.TestRequestHandler{
 		{
 			Path: authorizedCertsAPIPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
-				key := strings.TrimPrefix(ssh.FingerprintSHA256(validUserCert.SignatureKey), "SHA256:")
-				if key == r.URL.Query().Get("key") && r.URL.Query().Get("user_identifier") == "root@example.com" {
+				switch {
+				case key == r.URL.Query().Get("key") && r.URL.Query().Get("user_identifier") == "root@example.com":
 					w.Write([]byte(`{ "username": "root", "namespace": "namespace" }`))
-				} else {
+				case rateLimitedKey == r.URL.Query().Get("key"):
+					rateLimitedRequests.Add(1)
+					w.Header().Set("Retry-After", "60")
+					w.WriteHeader(http.StatusTooManyRequests)
+					w.Write([]byte(`{"message":{"error":"This endpoint has been requested too many times. Try again later."}}`))
+				default:
 					w.WriteHeader(http.StatusInternalServerError)
 				}
 			},
@@ -306,6 +318,7 @@ func TestUserCertificateHandling(t *testing.T) {
 		cert                *ssh.Certificate
 		expectedErr         error
 		expectedPermissions *ssh.Permissions
+		assertAfter         func(t *testing.T)
 	}{
 		{
 			desc:        "wrong cert type",
@@ -319,6 +332,16 @@ func TestUserCertificateHandling(t *testing.T) {
 			desc:        "API error",
 			cert:        userCert(t, ssh.UserCert, time.Now().Add(time.Hour)),
 			expectedErr: &client.APIError{Msg: "Internal API unreachable", System: true},
+		}, {
+			desc: "rate limited",
+			cert: rateLimitedUserCert,
+			expectedErr: &ssh.BannerError{
+				Err:     &client.APIError{Msg: "Internal API error (429)", StatusCode: http.StatusTooManyRequests, System: false},
+				Message: tooManyRequestsBanner,
+			},
+			assertAfter: func(t *testing.T) {
+				require.EqualValues(t, 1, rateLimitedRequests.Load(), "a 429 must not be retried")
+			},
 		}, {
 			desc: "successful request",
 			cert: validUserCert,
@@ -339,9 +362,17 @@ func TestUserCertificateHandling(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, "", tc.cert)
+			// Same deadline as publicKeyCallback, so an honored Retry-After fails fast.
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+
+			permissions, err := cfg.handleUserCertificate(ctx, testUser, "", tc.cert)
 			require.Equal(t, tc.expectedErr, err)
 			require.Equal(t, tc.expectedPermissions, permissions)
+
+			if tc.assertAfter != nil {
+				tc.assertAfter(t)
+			}
 		})
 	}
 }

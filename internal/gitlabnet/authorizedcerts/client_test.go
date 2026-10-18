@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -20,6 +21,11 @@ import (
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology/topologytest"
 )
 
+const (
+	testSecret              = "test-secret"
+	testAuthorizedCertsPath = "/api/v4/internal/authorized_certs"
+)
+
 var (
 	requests []testserver.TestRequestHandler
 )
@@ -27,7 +33,7 @@ var (
 func init() {
 	requests = []testserver.TestRequestHandler{
 		{
-			Path: "/api/v4/internal/authorized_certs",
+			Path: testAuthorizedCertsPath,
 			Handler: func(w http.ResponseWriter, r *http.Request) {
 				switch key := r.URL.Query().Get("key"); key {
 				case "key":
@@ -97,7 +103,7 @@ func TestGetByKeyForwardsRemoteIP(t *testing.T) {
 			var query url.Values
 			handlers := []testserver.TestRequestHandler{
 				{
-					Path: "/api/v4/internal/authorized_certs",
+					Path: testAuthorizedCertsPath,
 					Handler: func(w http.ResponseWriter, r *http.Request) {
 						query = r.URL.Query()
 						_, _ = w.Write([]byte(`{ "username": "user-id", "namespace": "group" }`))
@@ -161,6 +167,39 @@ func TestGetByKeyErrorResponses(t *testing.T) {
 	}
 }
 
+func TestGetByKeyRateLimited(t *testing.T) {
+	var rateLimitedRequests atomic.Int32
+	handlers := []testserver.TestRequestHandler{
+		{
+			Path: testAuthorizedCertsPath,
+			Handler: func(w http.ResponseWriter, _ *http.Request) {
+				rateLimitedRequests.Add(1)
+				// Rails' check_rate_limit! body; its object message doesn't decode into ErrorResponse.
+				w.Header().Set("Retry-After", "60")
+				w.WriteHeader(http.StatusTooManyRequests)
+				_, _ = w.Write([]byte(`{"message":{"error":"This endpoint has been requested too many times. Try again later."}}`))
+			},
+		},
+	}
+
+	c, err := NewClient(&config.Config{GitlabURL: testserver.StartSocketHTTPServer(t, handlers)})
+	require.NoError(t, err)
+
+	// A regressed client would sleep on Retry-After until this deadline.
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	resp, err := c.GetByKey(ctx, "user-id", "key", "")
+
+	require.EqualValues(t, 1, rateLimitedRequests.Load())
+	require.Nil(t, resp)
+	require.Equal(t, &client.APIError{
+		Msg:        "Internal API error (429)",
+		StatusCode: http.StatusTooManyRequests,
+		System:     false,
+	}, err)
+}
+
 func TestGetByKeyWithTopologyService(t *testing.T) {
 	t.Run("routes /authorized_certs to cell when TS returns PROXY", func(t *testing.T) {
 		var cellReceived bool
@@ -184,36 +223,7 @@ func TestGetByKeyWithTopologyService(t *testing.T) {
 		}))
 		t.Cleanup(defaultServer.Close)
 
-		cell := topologytest.CellAddressWithBogusPort(t, cellServer, 1)
-
-		mock := &topologytest.MockClassifyServer{
-			Response: &tspb.ClassifyResponse{
-				Action: tspb.ClassifyAction_PROXY,
-				Proxy:  &tspb.ProxyInfo{Address: cell.TopologyAddress},
-			},
-		}
-		tsAddr, tsStop := topologytest.StartMockServer(t, mock)
-		t.Cleanup(tsStop)
-
-		tsClient := topology.NewClient(&topology.Config{
-			Enabled: true,
-			Address: tsAddr,
-			Timeout: 5 * time.Second,
-		})
-		t.Cleanup(func() { _ = tsClient.Close() })
-
-		cfg := &config.Config{
-			GitlabURL:      defaultServer.URL,
-			Secret:         "test-secret",
-			TopologyClient: tsClient,
-			TopologyService: topology.Config{
-				Enabled:      true,
-				CellEndpoint: topology.CellEndpointConfig{Scheme: "http", Port: cell.RealPort},
-			},
-		}
-
-		client, err := NewClient(cfg)
-		require.NoError(t, err)
+		client, mock := newRoutedClient(t, cellServer, defaultServer)
 
 		result, err := client.GetByKey(context.Background(), "user-id", "fingerprint-value", "")
 		require.NoError(t, err)
@@ -224,6 +234,38 @@ func TestGetByKeyWithTopologyService(t *testing.T) {
 		require.False(t, defaultReceived, "request should NOT have been sent to the default server")
 
 		require.Equal(t, "fingerprint-value", mock.LastClaim(t).GetSshKeyFingerprint())
+	})
+
+	t.Run("does not retry a 429 from the routed cell", func(t *testing.T) {
+		var cellRequests atomic.Int32
+		cellServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			cellRequests.Add(1)
+			w.Header().Set("Retry-After", "60")
+			w.WriteHeader(http.StatusTooManyRequests)
+		}))
+		t.Cleanup(cellServer.Close)
+
+		defaultServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			assert.Fail(t, "request should NOT have been sent to the default server")
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		t.Cleanup(defaultServer.Close)
+
+		c, _ := newRoutedClient(t, cellServer, defaultServer)
+
+		// A regressed client would sleep on Retry-After until this deadline.
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		result, err := c.GetByKey(ctx, "user-id", "fingerprint-value", "")
+
+		require.EqualValues(t, 1, cellRequests.Load())
+		require.Nil(t, result)
+
+		var apiErr *client.APIError
+		require.ErrorAs(t, err, &apiErr)
+		require.Equal(t, http.StatusTooManyRequests, apiErr.StatusCode)
+		require.False(t, apiErr.System)
 	})
 
 	t.Run("falls back to default", func(t *testing.T) {
@@ -263,7 +305,7 @@ func TestGetByKeyWithTopologyService(t *testing.T) {
 
 				cfg := &config.Config{
 					GitlabURL: defaultServer.URL,
-					Secret:    "test-secret",
+					Secret:    testSecret,
 				}
 
 				if tc.mock != nil {
@@ -291,6 +333,43 @@ func TestGetByKeyWithTopologyService(t *testing.T) {
 			})
 		}
 	})
+}
+
+// newRoutedClient returns a Client whose Topology Service mock always routes
+// (PROXY) to cellServer, with defaultServer as the instance's own GitlabURL.
+func newRoutedClient(t *testing.T, cellServer, defaultServer *httptest.Server) (*Client, *topologytest.MockClassifyServer) {
+	t.Helper()
+
+	cell := topologytest.CellAddressWithBogusPort(t, cellServer, 1)
+
+	mock := &topologytest.MockClassifyServer{
+		Response: &tspb.ClassifyResponse{
+			Action: tspb.ClassifyAction_PROXY,
+			Proxy:  &tspb.ProxyInfo{Address: cell.TopologyAddress},
+		},
+	}
+	tsAddr, tsStop := topologytest.StartMockServer(t, mock)
+	t.Cleanup(tsStop)
+
+	tsClient := topology.NewClient(&topology.Config{
+		Enabled: true,
+		Address: tsAddr,
+		Timeout: 5 * time.Second,
+	})
+	t.Cleanup(func() { _ = tsClient.Close() })
+
+	c, err := NewClient(&config.Config{
+		GitlabURL:      defaultServer.URL,
+		Secret:         testSecret,
+		TopologyClient: tsClient,
+		TopologyService: topology.Config{
+			Enabled:      true,
+			CellEndpoint: topology.CellEndpointConfig{Scheme: "http", Port: cell.RealPort},
+		},
+	})
+	require.NoError(t, err)
+
+	return c, mock
 }
 
 func setup(t *testing.T) *Client {
