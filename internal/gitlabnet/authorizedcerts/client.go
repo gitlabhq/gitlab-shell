@@ -4,6 +4,7 @@ package authorizedcerts
 import (
 	"context"
 	"fmt"
+	"net/netip"
 	"net/url"
 
 	"gitlab.com/gitlab-org/gitlab-shell/v14/client"
@@ -44,9 +45,9 @@ func NewClient(config *config.Config) (*Client, error) {
 	}, nil
 }
 
-// GetByKey makes a request to authorized_certs for the namespace configured with a cert that matches fingerprint
-func (c *Client) GetByKey(ctx context.Context, userID, fingerprint string) (*Response, error) {
-	path, err := pathWithKey(userID, fingerprint)
+// GetByKey makes a request to authorized_certs for the namespace configured with a cert that matches fingerprint.
+func (c *Client) GetByKey(ctx context.Context, userID, fingerprint, remoteAddr string) (*Response, error) {
+	path, err := pathWithKey(userID, fingerprint, remoteAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +72,7 @@ func (c *Client) GetByKey(ctx context.Context, userID, fingerprint string) (*Res
 	return parsedResponse, nil
 }
 
-func pathWithKey(userID, fingerprint string) (string, error) {
+func pathWithKey(userID, fingerprint, remoteAddr string) (string, error) {
 	u, err := url.Parse(authorizedCertsPath)
 	if err != nil {
 		return "", err
@@ -80,6 +81,10 @@ func pathWithKey(userID, fingerprint string) (string, error) {
 	params := u.Query()
 	params.Set("key", fingerprint)
 	params.Set("user_identifier", userID)
+	ip := gitlabnet.ParseIP(remoteAddr)
+	if _, err := netip.ParseAddr(ip); err == nil {
+		params.Set("check_ip", ip)
+	}
 	u.RawQuery = params.Encode()
 
 	return u.String(), nil

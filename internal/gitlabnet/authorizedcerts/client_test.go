@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
@@ -58,7 +59,7 @@ func init() {
 func TestGetByKey(t *testing.T) {
 	client := setup(t)
 
-	result, err := client.GetByKey(context.Background(), "user-id", "key")
+	result, err := client.GetByKey(context.Background(), "user-id", "key", "")
 	require.NoError(t, err)
 	require.Equal(t, &Response{Namespace: "group", Username: "user-id"}, result)
 }
@@ -66,9 +67,58 @@ func TestGetByKey(t *testing.T) {
 func TestGetByKeyInstanceLevel(t *testing.T) {
 	client := setup(t)
 
-	result, err := client.GetByKey(context.Background(), "user-id", "instance-key")
+	result, err := client.GetByKey(context.Background(), "user-id", "instance-key", "")
 	require.NoError(t, err)
 	require.Equal(t, &Response{Username: "instance-user", Instance: true}, result)
+}
+
+func TestGetByKeyForwardsRemoteIP(t *testing.T) {
+	const (
+		ipv4 = "192.0.2.10"
+		ipv6 = "2001:db8::1"
+	)
+
+	testCases := []struct {
+		desc       string
+		remoteAddr string
+		expectedIP string
+	}{
+		{desc: "IPv4 with port", remoteAddr: ipv4 + ":50000", expectedIP: ipv4},
+		{desc: "IPv6 with port", remoteAddr: "[" + ipv6 + "]:50000", expectedIP: ipv6},
+		{desc: "bare IPv4", remoteAddr: ipv4, expectedIP: ipv4},
+		{desc: "bare IPv6", remoteAddr: ipv6, expectedIP: ipv6},
+		{desc: "zoned IPv6", remoteAddr: "fe80::1%eth0", expectedIP: "fe80::1%eth0"},
+		{desc: "no address", remoteAddr: ""},
+		{desc: "Unix socket path", remoteAddr: "/run/lb.sock"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			var query url.Values
+			handlers := []testserver.TestRequestHandler{
+				{
+					Path: "/api/v4/internal/authorized_certs",
+					Handler: func(w http.ResponseWriter, r *http.Request) {
+						query = r.URL.Query()
+						_, _ = w.Write([]byte(`{ "username": "user-id", "namespace": "group" }`))
+					},
+				},
+			}
+
+			client, err := NewClient(&config.Config{GitlabURL: testserver.StartSocketHTTPServer(t, handlers)})
+			require.NoError(t, err)
+
+			_, err = client.GetByKey(context.Background(), "user-id", "key", tc.remoteAddr)
+			require.NoError(t, err)
+
+			if tc.expectedIP == "" {
+				require.False(t, query.Has("check_ip"), "check_ip must be omitted when the client address is unknown or invalid")
+			} else {
+				require.True(t, query.Has("check_ip"))
+				require.Equal(t, tc.expectedIP, query.Get("check_ip"))
+			}
+		})
+	}
 }
 
 func TestGetByKeyErrorResponses(t *testing.T) {
@@ -103,7 +153,7 @@ func TestGetByKeyErrorResponses(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			resp, err := client.GetByKey(context.Background(), "user-id", tc.key)
+			resp, err := client.GetByKey(context.Background(), "user-id", tc.key, "")
 
 			require.EqualError(t, err, tc.expectedError)
 			require.Nil(t, resp)
@@ -165,7 +215,7 @@ func TestGetByKeyWithTopologyService(t *testing.T) {
 		client, err := NewClient(cfg)
 		require.NoError(t, err)
 
-		result, err := client.GetByKey(context.Background(), "user-id", "fingerprint-value")
+		result, err := client.GetByKey(context.Background(), "user-id", "fingerprint-value", "")
 		require.NoError(t, err)
 		require.NotNil(t, result)
 		require.Equal(t, "root", result.Username)
@@ -233,7 +283,7 @@ func TestGetByKeyWithTopologyService(t *testing.T) {
 				client, err := NewClient(cfg)
 				require.NoError(t, err)
 
-				result, err := client.GetByKey(context.Background(), "user-id", "fingerprint-value")
+				result, err := client.GetByKey(context.Background(), "user-id", "fingerprint-value", "")
 				require.NoError(t, err)
 				require.NotNil(t, result)
 				require.Equal(t, "root", result.Username)
