@@ -183,6 +183,11 @@ tests:fips:
   variables:
     FIPS_MODE: 1
     GOLANG_FIPS: 1
+  before_script:
+    # The FIPS UBI image does not ship git, which the SSHD acceptance tests
+    # need to build the Gitaly seed bundle.
+    - dnf install -y git
+    - !reference [.test-job, before_script]
   script:
     - make test_fancy
 
