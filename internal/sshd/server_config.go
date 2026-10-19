@@ -296,7 +296,7 @@ func grantCertificate(ctx context.Context, cert *ssh.Certificate, params certifi
 	return buildCertPermissions(cert, extensions)
 }
 
-func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, cert *ssh.Certificate) (*ssh.Permissions, error) {
+func (s *serverConfig) handleUserCertificate(ctx context.Context, user, remoteAddr string, cert *ssh.Certificate) (*ssh.Permissions, error) {
 	caFingerprint := ssh.FingerprintSHA256(cert.SignatureKey)
 
 	// Enrich context early so all rejection paths include audit-relevant fields.
@@ -335,15 +335,15 @@ func (s *serverConfig) handleUserCertificate(ctx context.Context, user string, c
 		}), nil
 	}
 
-	return s.resolveCertificateViaAPI(ctx, cert, caFingerprint)
+	return s.resolveCertificateViaAPI(ctx, cert, caFingerprint, remoteAddr)
 }
 
 // resolveCertificateViaAPI authenticates a certificate whose signing CA is not
 // locally trusted, by asking the Rails API to resolve the CA fingerprint. The
 // response identifies whether the match was instance-scoped, which grants
 // instance-wide access, or group-scoped, which restricts access to a namespace.
-func (s *serverConfig) resolveCertificateViaAPI(ctx context.Context, cert *ssh.Certificate, caFingerprint string) (*ssh.Permissions, error) {
-	res, err := s.authorizedCertsClient.GetByKey(ctx, cert.KeyId, strings.TrimPrefix(caFingerprint, "SHA256:"))
+func (s *serverConfig) resolveCertificateViaAPI(ctx context.Context, cert *ssh.Certificate, caFingerprint, remoteAddr string) (*ssh.Permissions, error) {
+	res, err := s.authorizedCertsClient.GetByKey(ctx, cert.KeyId, strings.TrimPrefix(caFingerprint, "SHA256:"), remoteAddr)
 	if err != nil {
 		log.FromContext(ctx).WarnContext(ctx, "user certificate is not signed by a trusted key", log.ErrorMessage(err.Error()))
 		return nil, err
@@ -413,7 +413,7 @@ func (s *serverConfig) publicKeyCallback(parentCtx context.Context, outcome *con
 		var perms *ssh.Permissions
 		var err error
 		if cert, ok := key.(*ssh.Certificate); ok {
-			perms, err = s.handleUserCertificate(ctx, conn.User(), cert)
+			perms, err = s.handleUserCertificate(ctx, conn.User(), conn.RemoteAddr().String(), cert)
 		} else {
 			perms, err = s.handleUserKey(ctx, conn.User(), key)
 		}

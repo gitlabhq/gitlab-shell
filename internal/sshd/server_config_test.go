@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"path"
@@ -338,7 +339,7 @@ func TestUserCertificateHandling(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, tc.cert)
+			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, "", tc.cert)
 			require.Equal(t, tc.expectedErr, err)
 			require.Equal(t, tc.expectedPermissions, permissions)
 		})
@@ -841,7 +842,7 @@ func TestUserCertificateHandling_InstanceLevel(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, tc.cert)
+			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, "", tc.cert)
 			if tc.expectedErr != "" {
 				require.EqualError(t, err, tc.expectedErr)
 			} else {
@@ -883,13 +884,13 @@ func TestUserCertificateHandling_InstanceLevelWithMultipleCAs(t *testing.T) {
 	}
 
 	// Both certificates should be trusted
-	permissions1, err := cfg.handleUserCertificate(context.Background(), testUser, certFromCA1)
+	permissions1, err := cfg.handleUserCertificate(context.Background(), testUser, "", certFromCA1)
 	require.NoError(t, err)
 	require.Equal(t, &ssh.Permissions{
 		Extensions: certExtensions(caPubKey1, "user1", commandargs.CertificateTrustSourceFile, "user1", ""),
 	}, permissions1)
 
-	permissions2, err := cfg.handleUserCertificate(context.Background(), testUser, certFromCA2)
+	permissions2, err := cfg.handleUserCertificate(context.Background(), testUser, "", certFromCA2)
 	require.NoError(t, err)
 	require.Equal(t, &ssh.Permissions{
 		Extensions: certExtensions(caPubKey2, "user2", commandargs.CertificateTrustSourceFile, "user2", ""),
@@ -1045,7 +1046,7 @@ func TestUserCertificateHandling_APIInstanceLevel(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
-			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, tc.cert)
+			permissions, err := cfg.handleUserCertificate(context.Background(), testUser, "", tc.cert)
 			if tc.expectedErr != "" {
 				require.EqualError(t, err, tc.expectedErr)
 			} else {
@@ -1093,10 +1094,77 @@ func TestUserCertificateHandling_FileBasedCAPrecedence(t *testing.T) {
 		string(caPubKey.Marshal()): {},
 	}
 
-	permissions, err := cfg.handleUserCertificate(context.Background(), testUser, cert)
+	permissions, err := cfg.handleUserCertificate(context.Background(), testUser, "", cert)
 	require.NoError(t, err)
 	require.Equal(t, &ssh.Permissions{
 		Extensions: certExtensions(caPubKey, testUser2, commandargs.CertificateTrustSourceFile, testUser2, ""),
 	}, permissions)
 	require.Zero(t, apiCalls.Load(), "locally trusted CA must not trigger an API call")
+}
+
+type connMetadata struct {
+	ssh.ConnMetadata
+	user       string
+	remoteAddr net.Addr
+}
+
+func (c connMetadata) User() string         { return c.user }
+func (c connMetadata) RemoteAddr() net.Addr { return c.remoteAddr }
+
+func TestPublicKeyCallback_ForwardsClientAddressOnCertificateRejection(t *testing.T) {
+	testRoot := testhelper.PrepareTestRootDir(t)
+	caSigner, _ := createCAKeyPair(t)
+	cert := userCertSignedByCA(t, caSigner, ssh.UserCert, time.Now().Add(time.Hour), testUser2)
+
+	var checkIP atomic.Value
+	requests := []testserver.TestRequestHandler{
+		{
+			Path: authorizedCertsAPIPath,
+			Handler: func(w http.ResponseWriter, r *http.Request) {
+				checkIP.Store(r.URL.Query().Get("check_ip"))
+				w.WriteHeader(http.StatusNotFound)
+			},
+		},
+	}
+
+	cfg, err := newServerConfig(&config.Config{
+		GitlabURL: testserver.StartSocketHTTPServer(t, requests),
+		User:      testUser,
+		Server: config.ServerConfig{
+			Listen:                  localhostIP,
+			ConcurrentSessionsLimit: 1,
+			HostKeyFiles:            []string{path.Join(testRoot, "certs/valid/server.key")},
+		},
+	})
+	require.NoError(t, err)
+
+	testCases := []struct {
+		desc       string
+		remoteAddr net.Addr
+		expectedIP string
+	}{
+		{
+			desc:       "IPv4 client",
+			remoteAddr: &net.TCPAddr{IP: net.ParseIP("192.0.2.10"), Port: 50000},
+			expectedIP: "192.0.2.10",
+		},
+		{
+			desc:       "IPv6 client",
+			remoteAddr: &net.TCPAddr{IP: net.ParseIP("2001:db8::1"), Port: 50000},
+			expectedIP: "2001:db8::1",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			checkIP.Store("unset")
+
+			callback := cfg.publicKeyCallback(context.Background(), nil)
+			perms, err := callback(connMetadata{user: testUser, remoteAddr: tc.remoteAddr}, cert)
+			require.Error(t, err)
+			require.Nil(t, perms)
+
+			require.Equal(t, tc.expectedIP, checkIP.Load())
+		})
+	}
 }
