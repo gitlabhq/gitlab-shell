@@ -65,7 +65,7 @@ func (c *Client) Audit(ctx context.Context, params AuditParams, args *commandarg
 		Username:      params.Username,
 		KeyID:         params.KeyID,
 		PackfileStats: params.PackfileStats,
-		CheckIP:       gitlabnet.ParseIP(args.Env.RemoteAddr),
+		CheckIP:       args.CheckIP(),
 		Changes:       "_any",
 		NamespacePath: args.Env.NamespacePath,
 	}

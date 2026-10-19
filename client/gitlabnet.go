@@ -277,17 +277,27 @@ func (c *GitlabNetClient) DoRequest(ctx context.Context, method, path string, da
 	return checkResponse(response, respErr)
 }
 
-// ShellClaims extends RegisteredClaims with the gl_id field needed for
-// Cells SSH-over-HTTP authentication.
-type ShellClaims struct {
-	jwt.RegisteredClaims
-	GlID string `json:"gl_id,omitempty"`
+// ShellActor is the identity and client IP sent to the Cell. Field names
+// match /api/v4/internal/allowed so the Cell can rebuild the original actor
+// and client IP.
+type ShellActor struct {
+	GlID      string `json:"gl_id,omitempty"`
+	GlKeyID   int    `json:"gl_key_id,omitempty"`
+	GlKeyType string `json:"gl_key_type,omitempty"`
+	CheckIP   string `json:"check_ip,omitempty"`
 }
 
-// SignShellJWT creates a Shell JWT token with a gl_id claim, signed with
-// the given secret. This is used for Cells SSH-over-HTTP routing where
-// gitlab-shell authenticates with a remote Cell's Workhorse/Rails.
-func SignShellJWT(secret, glID string) (string, error) {
+// ShellClaims are the claims of the Shell JWT that gitlab-shell sends with
+// Cells SSH-over-HTTP pack requests.
+type ShellClaims struct {
+	jwt.RegisteredClaims
+	ShellActor
+}
+
+// SignShellJWT signs a Shell JWT for the given actor with the given secret.
+// This is used for Cells SSH-over-HTTP routing where gitlab-shell
+// authenticates with a remote Cell's Workhorse/Rails.
+func SignShellJWT(secret string, actor ShellActor) (string, error) {
 	now := time.Now()
 	claims := ShellClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -295,7 +305,7 @@ func SignShellJWT(secret, glID string) (string, error) {
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(jwtTTL)),
 		},
-		GlID: glID,
+		ShellActor: actor,
 	}
 	secretBytes := []byte(strings.TrimSpace(secret))
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(secretBytes)

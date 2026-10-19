@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/mattn/go-shellwords"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/sshenv"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/topology"
 )
@@ -83,6 +84,12 @@ func (s *Shell) Parse() error {
 // GetArguments returns the list of command-line arguments.
 func (s *Shell) GetArguments() []string {
 	return s.Arguments
+}
+
+// CheckIP returns the client IP from Env.RemoteAddr without the port.
+// /allowed, audit events and the Shell JWT use it so they all send the same IP.
+func (s *Shell) CheckIP() string {
+	return gitlabnet.ParseIP(s.Env.RemoteAddr)
 }
 
 // UserArgs returns the topology.UserArgs for this shell session's identity fields.

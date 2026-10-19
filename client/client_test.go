@@ -27,6 +27,8 @@ var (
 	defaultHTTPOpts = []HTTPClientOpt{WithHTTPRetryOpts(time.Millisecond, time.Millisecond, 2)}
 )
 
+const testShellGlID = "user-1"
+
 func TestClients(t *testing.T) {
 	testRoot := testhelper.PrepareTestRootDir(t)
 
@@ -565,33 +567,62 @@ func TestWithHost(t *testing.T) {
 
 func TestSignShellJWT(t *testing.T) {
 	t.Run("generates valid JWT with gl_id claim", func(t *testing.T) {
-		tokenString, err := SignShellJWT(secret, "user-1")
+		tokenString, err := SignShellJWT(secret, ShellActor{GlID: testShellGlID})
 		require.NoError(t, err)
 		require.NotEmpty(t, tokenString)
 
-		claims := &ShellClaims{}
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(_ *jwt.Token) (interface{}, error) {
-			return []byte(secret), nil
-		})
-		require.NoError(t, err)
-		require.True(t, token.Valid)
+		claims := parseShellJWT(t, tokenString, &ShellClaims{})
 		require.Equal(t, "gitlab-shell", claims.Issuer)
-		require.Equal(t, "user-1", claims.GlID)
+		require.Equal(t, testShellGlID, claims.GlID)
 		require.WithinDuration(t, time.Now().Truncate(time.Second), claims.IssuedAt.Time, time.Second)
 		require.WithinDuration(t, time.Now().Truncate(time.Second).Add(time.Minute), claims.ExpiresAt.Time, time.Second)
 	})
 
 	t.Run("trims whitespace from secret", func(t *testing.T) {
-		tokenString, err := SignShellJWT("\n"+secret+"\n", "key-1")
+		tokenString, err := SignShellJWT("\n"+secret+"\n", ShellActor{GlID: "key-1"})
 		require.NoError(t, err)
 
-		claims := &ShellClaims{}
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(_ *jwt.Token) (interface{}, error) {
-			return []byte(secret), nil
+		parseShellJWT(t, tokenString, &ShellClaims{})
+	})
+
+	t.Run("includes key and check_ip claims", func(t *testing.T) {
+		tokenString, err := SignShellJWT(secret, ShellActor{
+			GlID:      testShellGlID,
+			GlKeyID:   42,
+			GlKeyType: "deploy_key",
+			CheckIP:   "1.2.3.4",
 		})
 		require.NoError(t, err)
-		require.True(t, token.Valid)
+
+		claims := parseShellJWT(t, tokenString, &ShellClaims{})
+		require.Equal(t, testShellGlID, claims.GlID)
+		require.Equal(t, 42, claims.GlKeyID)
+		require.Equal(t, "deploy_key", claims.GlKeyType)
+		require.Equal(t, "1.2.3.4", claims.CheckIP)
 	})
+
+	t.Run("omits empty optional claims", func(t *testing.T) {
+		tokenString, err := SignShellJWT(secret, ShellActor{GlID: testShellGlID})
+		require.NoError(t, err)
+
+		claims := parseShellJWT(t, tokenString, jwt.MapClaims{})
+		require.Equal(t, testShellGlID, claims["gl_id"])
+		require.NotContains(t, claims, "gl_key_id")
+		require.NotContains(t, claims, "gl_key_type")
+		require.NotContains(t, claims, "check_ip")
+	})
+}
+
+func parseShellJWT[T jwt.Claims](t *testing.T, tokenString string, claims T) T {
+	t.Helper()
+
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(_ *jwt.Token) (interface{}, error) {
+		return []byte(secret), nil
+	})
+	require.NoError(t, err)
+	require.True(t, token.Valid)
+
+	return claims
 }
 
 func TestRetryOnFailure(t *testing.T) {

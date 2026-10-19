@@ -226,10 +226,12 @@ func buildCellsGitClient(
 		headers[gitProtocolHeader] = args.Env.GitProtocolVersion
 	}
 
+	actor := shellJWTActor(response, args.CheckIP())
+
 	// The Shell JWT lives for one minute, but a push's second request can start
 	// minutes later (e.g. after an LFS pre-push upload), so sign per request.
 	prepareRequest := func(request *http.Request) error {
-		shellJWT, err := signShellJWT(cfg.Secret, response.UserID)
+		shellJWT, err := signShellJWT(cfg.Secret, actor)
 		if err != nil {
 			return fmt.Errorf("generating Shell JWT: %w", err)
 		}
@@ -239,4 +241,17 @@ func buildCellsGitClient(
 	}
 
 	return &git.Client{URL: repoURL, Headers: headers, PrepareRequest: prepareRequest}, nil
+}
+
+// shellJWTActor builds the Shell JWT actor for a Cell request. gl_id stays
+// the user so Cells that don't read key claims keep working; gl_key_id and
+// gl_key_type let the Cell check deploy-key access; checkIP must match the
+// IP sent to /allowed, since the Cell otherwise sees the egress IP.
+func shellJWTActor(response *accessverifier.Response, checkIP string) client.ShellActor {
+	return client.ShellActor{
+		GlID:      response.UserID,
+		GlKeyID:   response.KeyID,
+		GlKeyType: response.KeyType,
+		CheckIP:   checkIP,
+	}
 }

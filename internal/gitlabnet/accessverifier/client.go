@@ -128,7 +128,7 @@ func (c *Client) Verify(ctx context.Context, args *commandargs.Shell, action com
 		request.KeyID = args.GitlabKeyID
 	}
 
-	request.CheckIP = gitlabnet.ParseIP(args.Env.RemoteAddr)
+	request.CheckIP = args.CheckIP()
 
 	routed := c.resolver.ClientForRoute(ctx, c.client, repo)
 

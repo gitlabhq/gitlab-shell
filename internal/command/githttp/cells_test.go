@@ -32,6 +32,16 @@ const testSecret = "test-secret-for-cells"
 const (
 	testGitProtocolVersion = "version=2"
 	testGitalyToken        = "token"
+	testGlID               = "user-1"
+	testDeployKeyType      = "deploy_key"
+	testUserKeyType        = "key"
+)
+
+const (
+	claimGlID      = "gl_id"
+	claimGlKeyID   = "gl_key_id"
+	claimGlKeyType = "gl_key_type"
+	claimCheckIP   = "check_ip"
 )
 
 func TestCellsCommandsExecute(t *testing.T) {
@@ -378,17 +388,9 @@ func TestBuildCellsGitClient(t *testing.T) {
 
 		request := httptest.NewRequest(http.MethodGet, gitClient.URL, nil)
 		require.NoError(t, gitClient.PrepareRequest(request))
-		tokenString := request.Header.Get(clientpkg.ShellAPIRequestHeader)
-		require.NotEmpty(t, tokenString)
-
-		claims := &clientpkg.ShellClaims{}
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(_ *jwt.Token) (interface{}, error) {
-			return []byte(testSecret), nil
-		})
-		require.NoError(t, err)
-		require.True(t, token.Valid)
-		require.Equal(t, "gitlab-shell", claims.Issuer)
-		require.Equal(t, "user-1", claims.GlID)
+		claims := parseShellJWT(t, request.Header.Get(clientpkg.ShellAPIRequestHeader))
+		require.Equal(t, "gitlab-shell", claims["iss"])
+		require.Equal(t, testGlID, claims[claimGlID])
 	})
 
 	t.Run("returns error when CellAddress has no scheme", func(t *testing.T) {
@@ -420,7 +422,96 @@ func TestBuildCellsGitClient(t *testing.T) {
 	})
 }
 
-func stubShellJWTSigner(t *testing.T, fn func(secret, glID string) (string, error)) {
+func TestBuildCellsGitClientShellJWTClaims(t *testing.T) {
+	testCases := []struct {
+		desc           string
+		keyID          int
+		keyType        string
+		args           *commandargs.Shell
+		expectedClaims jwt.MapClaims
+	}{
+		{
+			desc:    "deploy key",
+			keyID:   42,
+			keyType: testDeployKeyType,
+			args:    &commandargs.Shell{Env: sshenv.Env{RemoteAddr: "203.0.113.5:2222"}},
+			expectedClaims: jwt.MapClaims{
+				claimGlID:      testGlID,
+				claimGlKeyID:   float64(42),
+				claimGlKeyType: testDeployKeyType,
+				claimCheckIP:   "203.0.113.5",
+			},
+		},
+		{
+			desc:    "user key",
+			keyID:   1,
+			keyType: testUserKeyType,
+			args:    &commandargs.Shell{Env: sshenv.Env{RemoteAddr: "2001:db8::1"}},
+			expectedClaims: jwt.MapClaims{
+				claimGlID:      testGlID,
+				claimGlKeyID:   float64(1),
+				claimGlKeyType: testUserKeyType,
+				claimCheckIP:   "2001:db8::1",
+			},
+		},
+		{
+			desc: "omits key claims when response has no key",
+			args: &commandargs.Shell{Env: sshenv.Env{RemoteAddr: "198.51.100.9"}},
+			expectedClaims: jwt.MapClaims{
+				claimGlID:    testGlID,
+				claimCheckIP: "198.51.100.9",
+			},
+		},
+		{
+			desc:    "no remote address",
+			keyID:   1,
+			keyType: testUserKeyType,
+			args:    &commandargs.Shell{},
+			expectedClaims: jwt.MapClaims{
+				claimGlID:      testGlID,
+				claimGlKeyID:   float64(1),
+				claimGlKeyType: testUserKeyType,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			response := cellsTestResponse("http://cell1.example.com")
+			response.KeyID = tc.keyID
+			response.KeyType = tc.keyType
+
+			gitClient, err := buildCellsGitClient(cellsTestConfig(t), response, tc.args)
+			require.NoError(t, err)
+
+			request := httptest.NewRequest(http.MethodPost, gitClient.URL, nil)
+			require.NoError(t, gitClient.PrepareRequest(request))
+
+			claims := parseShellJWT(t, request.Header.Get(clientpkg.ShellAPIRequestHeader))
+			for _, registeredClaim := range []string{"iss", "iat", "exp"} {
+				require.Contains(t, claims, registeredClaim)
+				delete(claims, registeredClaim)
+			}
+			require.Equal(t, tc.expectedClaims, claims)
+		})
+	}
+}
+
+func parseShellJWT(t *testing.T, tokenString string) jwt.MapClaims {
+	t.Helper()
+	require.NotEmpty(t, tokenString)
+
+	claims := jwt.MapClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(_ *jwt.Token) (interface{}, error) {
+		return []byte(testSecret), nil
+	})
+	require.NoError(t, err)
+	require.True(t, token.Valid)
+
+	return claims
+}
+
+func stubShellJWTSigner(t *testing.T, fn func(secret string, actor clientpkg.ShellActor) (string, error)) {
 	t.Helper()
 	original := signShellJWT
 	signShellJWT = fn
@@ -429,7 +520,7 @@ func stubShellJWTSigner(t *testing.T, fn func(secret, glID string) (string, erro
 
 func TestCellsPushSignsShellJWTPerRequest(t *testing.T) {
 	calls := 0
-	stubShellJWTSigner(t, func(_, _ string) (string, error) {
+	stubShellJWTSigner(t, func(_ string, _ clientpkg.ShellActor) (string, error) {
 		calls++
 		return fmt.Sprintf("jwt-%d", calls), nil
 	})
@@ -508,7 +599,7 @@ func TestCellsCommandsPassThroughCellErrorMessage(t *testing.T) {
 
 func TestCellsCommandsReturnShellJWTSigningError(t *testing.T) {
 	signErr := errors.New("signing failed")
-	stubShellJWTSigner(t, func(_, _ string) (string, error) { return "", signErr })
+	stubShellJWTSigner(t, func(_ string, _ clientpkg.ShellActor) (string, error) { return "", signErr })
 
 	cellServer, captured := startCapturingPushCellServer(t, nil, nil)
 
@@ -570,7 +661,7 @@ func cellsTestConfig(t *testing.T) *config.Config {
 func cellsTestResponse(cellAddress string) *accessverifier.Response {
 	return &accessverifier.Response{
 		Success:     true,
-		UserID:      "user-1",
+		UserID:      testGlID,
 		Username:    "alex-doe",
 		CellAddress: cellAddress,
 		Who:         "key-123",
