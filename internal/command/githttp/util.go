@@ -8,8 +8,11 @@ import (
 	"log/slog"
 	"maps"
 	"net/http"
+	"time"
 
+	httpclient "gitlab.com/gitlab-org/gitlab-shell/v14/client"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/command/readwriter"
+	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/config"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/gitlabnet/git"
 	"gitlab.com/gitlab-org/gitlab-shell/v14/internal/pktline"
 	"gitlab.com/gitlab-org/labkit/v2/log"
@@ -30,13 +33,29 @@ type gitHTTPCommand interface {
 	ForInfoRefs() (*readwriter.ReadWriter, string, []byte)
 }
 
+func infoRefsTimeout(cfg *config.Config) time.Duration {
+	return httpclient.ReadTimeout(cfg.HTTPSettings.ReadTimeoutSeconds)
+}
+
+type infoRefsClient interface {
+	InfoRefs(context.Context, string) (*http.Response, error)
+}
+
 // requestInfoRefs performs an HTTP request to the /info/refs endpoint for the specified Git service,
 // verifies the response prefix, and writes the result to the output stream.
-func requestInfoRefs(ctx context.Context, client *git.Client, command gitHTTPCommand) error {
+func requestInfoRefs(ctx context.Context, client infoRefsClient, command gitHTTPCommand, timeout time.Duration) error {
 	readWriter, serviceName, httpPrefix := command.ForInfoRefs()
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	timer := time.AfterFunc(timeout, cancel)
+	defer timer.Stop()
 
 	response, err := client.InfoRefs(ctx, serviceName)
 	if err != nil {
+		if !timer.Stop() {
+			return fmt.Errorf("%s info/refs timed out after %s", serviceName, timeout)
+		}
 		return err
 	}
 	defer response.Body.Close() //nolint:errcheck
@@ -47,10 +66,15 @@ func requestInfoRefs(ctx context.Context, client *git.Client, command gitHTTPCom
 	// to convert HTTP(S) Git response to the one expected by SSH
 	p := make([]byte, len(httpPrefix))
 	_, err = response.Body.Read(p)
+	// An expired timer may still be canceling the request even if the prefix read succeeded.
+	if !timer.Stop() {
+		return fmt.Errorf("%s info/refs timed out after %s", serviceName, timeout)
+	}
 	if err != nil || !bytes.Equal(p, httpPrefix) {
 		return fmt.Errorf("unexpected %s response", serviceName)
 	}
 
+	// Copying the advertisement is left unbounded: its size scales with the number of refs.
 	_, err = io.Copy(readWriter.Out, response.Body)
 
 	return err
