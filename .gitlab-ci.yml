@@ -1,5 +1,4 @@
 include:
-  - template: Code-Quality.gitlab-ci.yml
   - template: Security/SAST.gitlab-ci.yml
   - template: Security/Dependency-Scanning.gitlab-ci.yml
   - template: Security/Secret-Detection.gitlab-ci.yml
@@ -25,7 +24,6 @@ variables:
   DEBIAN_VERSION: "trixie"
   POLICY: pull
   CI_DEBUG_SERVICES: "true"
-  DOCKER_VERSION: "20.10.15"
   GO_VERSION: "1.25"
   NILAWAY_VERSION: "v0.0.0-20260915140140-59aa42bdc591"
   UBI_VERSION: "9.6"
@@ -64,14 +62,6 @@ default:
   image: ${DEFAULT_IMAGE}
   tags:
     - gitlab-org
-
-.use-docker-in-docker:
-  image: docker:${DOCKER_VERSION}
-  services:
-    - docker:${DOCKER_VERSION}-dind
-  tags:
-    # See https://gitlab.com/gitlab-com/www-gitlab-com/-/issues/7019 for tag descriptions
-    - gitlab-org-docker
 
 .cached-go: &cached_go
   - key:
@@ -241,11 +231,6 @@ ssh-audit:fips:
     # The FIPS UBI image ships neither ssh-keygen (from openssh) nor python3,
     # both of which the ssh-audit harness needs.
     - dnf install -y openssh python3
-
-code_quality:
-  stage: lint
-  extends: .use-docker-in-docker
-  rules: *workflow_rules
 
 check_gitaly_version:
   stage: lint
