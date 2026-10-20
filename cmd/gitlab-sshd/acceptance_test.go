@@ -790,16 +790,14 @@ func TestGitUploadArchiveSuccess(t *testing.T) {
 	err := session.Start(fmt.Sprintf("git-upload-archive %s", testRepo))
 	require.NoError(t, err)
 
-	_, err = fmt.Fprintln(stdin, "0012argument HEAD\n0000")
+	// git-upload-archive stops reading at this flush; writing another flush
+	// races with the channel closing.
+	_, err = fmt.Fprint(stdin, "0012argument HEAD\n0000")
 	require.NoError(t, err)
 
 	line, err := reader.ReadString('\n')
+	require.NoError(t, err)
 	require.Equal(t, "0008ACK\n", line)
-	require.NoError(t, err)
-
-	// Gracefully close connection
-	_, err = fmt.Fprintln(stdin, "0000")
-	require.NoError(t, err)
 
 	output, err := io.ReadAll(reader)
 	require.NoError(t, err)
