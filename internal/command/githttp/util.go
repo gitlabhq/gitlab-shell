@@ -65,7 +65,7 @@ func requestInfoRefs(ctx context.Context, client infoRefsClient, command gitHTTP
 	// pull - 001e# service=git-upload-pack\n0000 string
 	// to convert HTTP(S) Git response to the one expected by SSH
 	p := make([]byte, len(httpPrefix))
-	_, err = response.Body.Read(p)
+	_, err = io.ReadFull(response.Body, p)
 	// An expired timer may still be canceling the request even if the prefix read succeeded.
 	if !timer.Stop() {
 		return fmt.Errorf("%s info/refs timed out after %s", serviceName, timeout)
